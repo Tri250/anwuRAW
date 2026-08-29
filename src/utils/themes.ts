@@ -20,9 +20,9 @@ export const THEMES: Array<ThemeProps> = [
       '--app-button-text': 'rgb(0, 0, 0)',
       '--app-text-primary': 'rgb(232, 234, 237)',
       '--app-text-secondary': 'rgb(158, 158, 158)',
-      '--app-accent': 'rgb(255, 255, 255)',
+      '--app-accent': 'rgb(42, 157, 143)',
       '--app-border-color': 'rgb(45, 45, 45)',
-      '--app-hover-color': 'rgb(255, 255, 255)',
+      '--app-hover-color': 'rgb(42, 157, 143)',
     },
   },
   {
