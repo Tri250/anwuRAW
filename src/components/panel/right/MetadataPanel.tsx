@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Check, ChevronDown, ChevronRight, Plus, Star, Tag, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { Invokes } from '../../ui/AppProperties';
@@ -363,7 +364,7 @@ export default function MetadataPanel() {
         handleTagsChanged(targetPaths, newTags);
         setTagInputValue('');
       } catch (err) {
-        console.error(`Failed to add tag: ${err}`);
+        toast.error(`添加标签失败: ${err}`);
       }
     }
   };
@@ -377,7 +378,7 @@ export default function MetadataPanel() {
       const newTags = currentTags.filter((t) => t.tag !== tagToRemove.tag);
       handleTagsChanged(targetPaths, newTags);
     } catch (err) {
-      console.error(`Failed to remove tag: ${err}`);
+      toast.error(`移除标签失败: ${err}`);
     }
   };
 

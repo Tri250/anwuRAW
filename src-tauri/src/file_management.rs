@@ -473,40 +473,52 @@ pub async fn update_exif_fields(
     updates: HashMap<String, String>,
 ) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
-        paths.par_iter().for_each(|path| {
-            let original_path = Path::new(&path);
-            let primary_path = crate::exif_processing::get_primary_sidecar_path(original_path);
-            let temp_metadata = crate::exif_processing::load_sidecar(&primary_path);
+        let errors: Vec<String> = paths
+            .par_iter()
+            .filter_map(|path| {
+                let original_path = Path::new(&path);
+                let primary_path = crate::exif_processing::get_primary_sidecar_path(original_path);
+                let temp_metadata = crate::exif_processing::load_sidecar(&primary_path);
 
-            let mut exif_data = temp_metadata.exif.unwrap_or_else(|| {
-                if let Some(existing) = crate::exif_processing::read_rrexif_sidecar(original_path) {
-                    existing
-                } else if let Ok(mmap) = read_file_mapped(original_path) {
-                    crate::exif_processing::read_exif_data_from_bytes(path, &mmap)
-                } else if let Ok(bytes) = fs::read(original_path) {
-                    crate::exif_processing::read_exif_data_from_bytes(path, &bytes)
-                } else {
-                    HashMap::new()
+                let mut exif_data = temp_metadata.exif.unwrap_or_else(|| {
+                    if let Some(existing) = crate::exif_processing::read_rrexif_sidecar(original_path) {
+                        existing
+                    } else if let Ok(mmap) = read_file_mapped(original_path) {
+                        crate::exif_processing::read_exif_data_from_bytes(path, &mmap)
+                    } else if let Ok(bytes) = fs::read(original_path) {
+                        crate::exif_processing::read_exif_data_from_bytes(path, &bytes)
+                    } else {
+                        HashMap::new()
+                    }
+                });
+
+                for (k, v) in &updates {
+                    let trimmed = v.trim();
+                    if trimmed.is_empty() {
+                        exif_data.remove(k);
+                    } else {
+                        exif_data.insert(k.clone(), trimmed.to_string());
+                    }
                 }
-            });
 
-            for (k, v) in &updates {
-                let trimmed = v.trim();
-                if trimmed.is_empty() {
-                    exif_data.remove(k);
-                } else {
-                    exif_data.insert(k.clone(), trimmed.to_string());
+                let mut final_metadata = crate::exif_processing::load_sidecar(&primary_path);
+                final_metadata.exif = Some(exif_data);
+
+                match serde_json::to_string_pretty(&final_metadata) {
+                    Ok(json) => match std::fs::write(&primary_path, json) {
+                        Ok(_) => None,
+                        Err(e) => Some(format!("{}: 写入 sidecar 失败: {}", path, e)),
+                    },
+                    Err(e) => Some(format!("{}: JSON 序列化失败: {}", path, e)),
                 }
-            }
+            })
+            .collect();
 
-            let mut final_metadata = crate::exif_processing::load_sidecar(&primary_path);
-
-            final_metadata.exif = Some(exif_data);
-            if let Ok(json) = serde_json::to_string_pretty(&final_metadata) {
-                let _ = std::fs::write(&primary_path, json);
-            }
-        });
-        Ok(())
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(format!("部分文件 EXIF 更新失败:\n{}", errors.join("\n")))
+        }
     })
     .await
     .map_err(|e| format!("Task failed: {}", e))?
@@ -2634,44 +2646,56 @@ pub async fn apply_adjustments_to_paths(
             .state::<AppState>()
             .lens_db
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .clone();
 
-        paths.par_iter().for_each(|path| {
-            let (_, sidecar_path) = parse_virtual_path(path);
+        let errors: Vec<String> = paths
+            .par_iter()
+            .filter_map(|path| {
+                let (_, sidecar_path) = parse_virtual_path(path);
 
-            let mut existing_metadata = crate::exif_processing::load_sidecar(&sidecar_path);
+                let mut existing_metadata = crate::exif_processing::load_sidecar(&sidecar_path);
 
-            let mut new_adjustments = existing_metadata.adjustments;
-            if new_adjustments.is_null() {
-                new_adjustments = serde_json::json!({});
-            }
-
-            if let (Some(new_map), Some(pasted_map)) =
-                (new_adjustments.as_object_mut(), adjustments.as_object())
-            {
-                for (k, v) in pasted_map {
-                    new_map.insert(k.clone(), v.clone());
+                let mut new_adjustments = existing_metadata.adjustments;
+                if new_adjustments.is_null() {
+                    new_adjustments = serde_json::json!({});
                 }
-            }
 
-            resolve_lens_params_in_adjustments(
-                &mut new_adjustments,
-                &existing_metadata.exif,
-                lens_db.as_deref(),
-            );
+                if let (Some(new_map), Some(pasted_map)) =
+                    (new_adjustments.as_object_mut(), adjustments.as_object())
+                {
+                    for (k, v) in pasted_map {
+                        new_map.insert(k.clone(), v.clone());
+                    }
+                }
 
-            existing_metadata.adjustments = new_adjustments;
+                resolve_lens_params_in_adjustments(
+                    &mut new_adjustments,
+                    &existing_metadata.exif,
+                    lens_db.as_deref(),
+                );
 
-            if let Ok(json_string) = serde_json::to_string_pretty(&existing_metadata) {
-                let _ = std::fs::write(&sidecar_path, json_string);
-            }
+                existing_metadata.adjustments = new_adjustments;
 
-            if enable_xmp_sync {
-                let source_path = parse_virtual_path(path).0;
-                sync_metadata_to_xmp(&source_path, &existing_metadata, create_xmp_if_missing);
-            }
-        });
+                match serde_json::to_string_pretty(&existing_metadata) {
+                    Ok(json_string) => match std::fs::write(&sidecar_path, json_string) {
+                        Ok(_) => {
+                            if enable_xmp_sync {
+                                let source_path = parse_virtual_path(path).0;
+                                sync_metadata_to_xmp(&source_path, &existing_metadata, create_xmp_if_missing);
+                            }
+                            None
+                        }
+                        Err(e) => Some(format!("{}: 写入 sidecar 失败: {}", path, e)),
+                    },
+                    Err(e) => Some(format!("{}: JSON 序列化失败: {}", path, e)),
+                }
+            })
+            .collect();
+
+        if !errors.is_empty() {
+            eprintln!("apply_adjustments_to_paths partial errors:\n{}", errors.join("\n"));
+        }
 
         let state = app_handle.state::<AppState>();
         let thumb_cache_dir = match resolve_thumbnail_cache_dir(&app_handle) {
@@ -2732,22 +2756,32 @@ pub async fn reset_adjustments_for_paths(
         let enable_xmp_sync = settings.enable_xmp_sync.unwrap_or(false);
         let create_xmp_if_missing = settings.create_xmp_if_missing.unwrap_or(false);
 
-        paths.par_iter().for_each(|path| {
-            let (_, sidecar_path) = parse_virtual_path(path);
+        let errors: Vec<String> = paths
+            .par_iter()
+            .filter_map(|path| {
+                let (_, sidecar_path) = parse_virtual_path(path);
+                let mut existing_metadata = crate::exif_processing::load_sidecar(&sidecar_path);
+                existing_metadata.adjustments = serde_json::json!({});
 
-            let mut existing_metadata = crate::exif_processing::load_sidecar(&sidecar_path);
+                match serde_json::to_string_pretty(&existing_metadata) {
+                    Ok(json_string) => match std::fs::write(&sidecar_path, json_string) {
+                        Ok(_) => {
+                            if enable_xmp_sync {
+                                let source_path = parse_virtual_path(path).0;
+                                sync_metadata_to_xmp(&source_path, &existing_metadata, create_xmp_if_missing);
+                            }
+                            None
+                        }
+                        Err(e) => Some(format!("{}: 写入 sidecar 失败: {}", path, e)),
+                    },
+                    Err(e) => Some(format!("{}: JSON 序列化失败: {}", path, e)),
+                }
+            })
+            .collect();
 
-            existing_metadata.adjustments = serde_json::json!({});
-
-            if let Ok(json_string) = serde_json::to_string_pretty(&existing_metadata) {
-                let _ = std::fs::write(&sidecar_path, json_string);
-            }
-
-            if enable_xmp_sync {
-                let source_path = parse_virtual_path(path).0;
-                sync_metadata_to_xmp(&source_path, &existing_metadata, create_xmp_if_missing);
-            }
-        });
+        if !errors.is_empty() {
+            eprintln!("reset_adjustments_for_paths partial errors:\n{}", errors.join("\n"));
+        }
 
         let state = app_handle.state::<AppState>();
         let thumb_cache_dir = match resolve_thumbnail_cache_dir(&app_handle) {
@@ -2872,9 +2906,10 @@ pub async fn apply_auto_adjustments_to_paths(
                     }
                 }
 
-                if let Ok(json_string) = serde_json::to_string_pretty(&existing_metadata) {
-                    let _ = std::fs::write(&sidecar_path, json_string);
-                }
+                let json_string = serde_json::to_string_pretty(&existing_metadata)
+                    .map_err(|e| format!("JSON 序列化失败: {}", e))?;
+                std::fs::write(&sidecar_path, json_string)
+                    .map_err(|e| format!("写入 sidecar 失败: {}", e))?;
 
                 if enable_xmp_sync {
                     sync_metadata_to_xmp(&source_path, &existing_metadata, create_xmp_if_missing);
@@ -2922,37 +2957,49 @@ pub fn set_color_label_for_paths(
     let enable_xmp_sync = settings.enable_xmp_sync.unwrap_or(false);
     let create_xmp_if_missing = settings.create_xmp_if_missing.unwrap_or(false);
 
-    paths.par_iter().for_each(|path| {
-        let (_, sidecar_path) = parse_virtual_path(path);
+    let errors: Vec<String> = paths
+        .par_iter()
+        .filter_map(|path| {
+            let (_, sidecar_path) = parse_virtual_path(path);
 
-        let mut metadata = crate::exif_processing::load_sidecar(&sidecar_path);
+            let mut metadata = crate::exif_processing::load_sidecar(&sidecar_path);
 
-        let mut tags = metadata.tags.unwrap_or_default();
-        tags.retain(|tag| !tag.starts_with(COLOR_TAG_PREFIX));
+            let mut tags = metadata.tags.unwrap_or_default();
+            tags.retain(|tag| !tag.starts_with(COLOR_TAG_PREFIX));
 
-        if let Some(c) = &color
-            && !c.is_empty()
-        {
-            tags.push(format!("{}{}", COLOR_TAG_PREFIX, c));
-        }
+            if let Some(c) = &color
+                && !c.is_empty()
+            {
+                tags.push(format!("{}{}", COLOR_TAG_PREFIX, c));
+            }
 
-        if tags.is_empty() {
-            metadata.tags = None;
-        } else {
-            metadata.tags = Some(tags);
-        }
+            if tags.is_empty() {
+                metadata.tags = None;
+            } else {
+                metadata.tags = Some(tags);
+            }
 
-        if let Ok(json_string) = serde_json::to_string_pretty(&metadata) {
-            let _ = std::fs::write(&sidecar_path, json_string);
-        }
+            match serde_json::to_string_pretty(&metadata) {
+                Ok(json_string) => match std::fs::write(&sidecar_path, json_string) {
+                    Ok(_) => {
+                        if enable_xmp_sync {
+                            let source_path = parse_virtual_path(path).0;
+                            sync_metadata_to_xmp(&source_path, &metadata, create_xmp_if_missing);
+                        }
+                        None
+                    }
+                    Err(e) => Some(format!("{}: 写入 sidecar 失败: {}", path, e)),
+                },
+                Err(e) => Some(format!("{}: JSON 序列化失败: {}", path, e)),
+            }
+        })
+        .collect();
 
-        if enable_xmp_sync {
-            let source_path = parse_virtual_path(path).0;
-            sync_metadata_to_xmp(&source_path, &metadata, create_xmp_if_missing);
-        }
-    });
-
-    Ok(())
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("部分文件颜色标签更新失败:\n{}", errors.join("\n")))
+    }
 }
 
 #[tauri::command]
@@ -2965,24 +3012,35 @@ pub fn set_rating_for_paths(
     let enable_xmp_sync = settings.enable_xmp_sync.unwrap_or(false);
     let create_xmp_if_missing = settings.create_xmp_if_missing.unwrap_or(false);
 
-    paths.par_iter().for_each(|path| {
-        let (_, sidecar_path) = parse_virtual_path(path);
+    let errors: Vec<String> = paths
+        .par_iter()
+        .filter_map(|path| {
+            let (_, sidecar_path) = parse_virtual_path(path);
 
-        let mut metadata = crate::exif_processing::load_sidecar(&sidecar_path);
+            let mut metadata = crate::exif_processing::load_sidecar(&sidecar_path);
+            metadata.rating = rating;
 
-        metadata.rating = rating;
+            match serde_json::to_string_pretty(&metadata) {
+                Ok(json_string) => match std::fs::write(&sidecar_path, json_string) {
+                    Ok(_) => {
+                        if enable_xmp_sync {
+                            let source_path = parse_virtual_path(path).0;
+                            sync_metadata_to_xmp(&source_path, &metadata, create_xmp_if_missing);
+                        }
+                        None
+                    }
+                    Err(e) => Some(format!("{}: 写入 sidecar 失败: {}", path, e)),
+                },
+                Err(e) => Some(format!("{}: JSON 序列化失败: {}", path, e)),
+            }
+        })
+        .collect();
 
-        if let Ok(json_string) = serde_json::to_string_pretty(&metadata) {
-            let _ = std::fs::write(&sidecar_path, json_string);
-        }
-
-        if enable_xmp_sync {
-            let source_path = parse_virtual_path(path).0;
-            sync_metadata_to_xmp(&source_path, &metadata, create_xmp_if_missing);
-        }
-    });
-
-    Ok(())
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("部分文件评分更新失败:\n{}", errors.join("\n")))
+    }
 }
 
 #[tauri::command]

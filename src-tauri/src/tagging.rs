@@ -370,9 +370,19 @@ pub async fn start_background_indexing(
 
                                     metadata.tags = Some(final_tags);
 
-                                    if let Ok(json_string) = serde_json::to_string_pretty(&metadata)
-                                    {
-                                        let _ = fs::write(sidecar_path, json_string);
+                                    match serde_json::to_string_pretty(&metadata) {
+                                        Ok(json_string) => {
+                                            if let Err(e) = fs::write(sidecar_path, json_string) {
+                                                eprintln!(
+                                                    "Failed to write AI tags sidecar for {}: {}",
+                                                    path_str, e
+                                                );
+                                            }
+                                        }
+                                        Err(e) => eprintln!(
+                                            "Failed to serialize AI tags metadata for {}: {}",
+                                            path_str, e
+                                        ),
                                     }
                                 }
                             }
@@ -453,17 +463,25 @@ pub fn add_tag_for_paths(
     tag: String,
     app_handle: AppHandle,
 ) -> Result<(), String> {
-    paths.par_iter().for_each(|path| {
-        let tag_clone = tag.clone();
-        if let Err(e) = modify_tags_for_path(path, &app_handle, |tags| {
-            if !tags.contains(&tag_clone) {
-                tags.push(tag_clone.clone());
-            }
-        }) {
-            eprintln!("Failed to add tag to {}: {}", path, e);
-        }
-    });
-    Ok(())
+    let errors: Vec<String> = paths
+        .par_iter()
+        .filter_map(|path| {
+            let tag_clone = tag.clone();
+            modify_tags_for_path(path, &app_handle, |tags| {
+                if !tags.contains(&tag_clone) {
+                    tags.push(tag_clone.clone());
+                }
+            })
+            .err()
+            .map(|e| format!("{}: {}", path, e))
+        })
+        .collect();
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("部分文件加标签失败:\n{}", errors.join("\n")))
+    }
 }
 
 #[tauri::command]
@@ -472,15 +490,23 @@ pub fn remove_tag_for_paths(
     tag: String,
     app_handle: AppHandle,
 ) -> Result<(), String> {
-    paths.par_iter().for_each(|path| {
-        let tag_clone = tag.clone();
-        if let Err(e) = modify_tags_for_path(path, &app_handle, |tags| {
-            tags.retain(|t| t != &tag_clone);
-        }) {
-            eprintln!("Failed to remove tag from {}: {}", path, e);
-        }
-    });
-    Ok(())
+    let errors: Vec<String> = paths
+        .par_iter()
+        .filter_map(|path| {
+            let tag_clone = tag.clone();
+            modify_tags_for_path(path, &app_handle, |tags| {
+                tags.retain(|t| t != &tag_clone);
+            })
+            .err()
+            .map(|e| format!("{}: {}", path, e))
+        })
+        .collect();
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("部分文件移除标签失败:\n{}", errors.join("\n")))
+    }
 }
 
 fn rrdata_source_path(rrdata: &Path) -> Option<PathBuf> {
