@@ -13,12 +13,11 @@
     "core:window:allow-minimize",
     "core:window:allow-close",
     "core:window:allow-toggle-maximize",
-    "process:allow-relaunch",
     "process:allow-exit",
     "os:allow-os-type",
     "core:window:allow-set-fullscreen",
     "core:window:allow-set-decorations",
     "shell:allow-open",
-    "shell:allow-open-path"
+    "process:allow-restart"
   ]
 }
