@@ -279,7 +279,7 @@ export function useImageProcessing(
         }
       }
     },
-    [selectedImage?.path, calculateROI, isWaveformVisible, setEditor, previewJobIdRef, latestRenderedJobIdRef],
+    [selectedImage?.path, calculateROI, isWaveformVisible, setEditor],
   );
 
   const flushPipeline = useCallback(() => {

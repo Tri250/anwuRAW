@@ -417,6 +417,7 @@ export default function AIPanel() {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [isSettingsPanelEverOpened, setIsSettingsPanelEverOpened] = useState(false);
   const hasPerformedInitialSelection = useRef(false);
+  const prevImagePathRef = useRef<string | null | undefined>(undefined);
   const [analyzingSubMaskId, setAnalyzingSubMaskId] = useState<string | null>(null);
   const [copiedPatch, setCopiedPatch] = useState<AiPatch | null>(null);
   const [copiedSubMask, setCopiedSubMask] = useState<SubMask | null>(null);
@@ -464,6 +465,13 @@ export default function AIPanel() {
   }, [adjustments.aiPatches, activePatchContainerId, activeSubMaskId, onSelectPatchContainer, onSelectSubMask]);
 
   useEffect(() => {
+    // Reset initial-selection state when user switches to a different image
+    const currentPath = selectedImage?.path;
+    if (prevImagePathRef.current !== currentPath) {
+      prevImagePathRef.current = currentPath;
+      hasPerformedInitialSelection.current = false;
+    }
+
     const hasPatches = (adjustments.aiPatches || []).length > 0;
 
     if (hasPatches) {
@@ -481,7 +489,7 @@ export default function AIPanel() {
       hasPerformedInitialSelection.current = true;
       setIsSettingsPanelEverOpened(true);
     }
-  }, [activePatchContainerId, activeSubMaskId, adjustments.aiPatches, onSelectPatchContainer, onSelectSubMask]);
+  }, [activePatchContainerId, activeSubMaskId, adjustments.aiPatches, onSelectPatchContainer, onSelectSubMask, selectedImage?.path]);
 
   useEffect(() => {
     const handler = () => {

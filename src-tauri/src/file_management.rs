@@ -1377,11 +1377,11 @@ pub fn is_cloud_placeholder(_path: &Path) -> bool {
 }
 
 pub fn read_file_mapped(path: &Path) -> Result<Mmap, ReadFileError> {
-    if !path.is_file() {
-        return Err(ReadFileError::Invalid);
-    }
     if !path.exists() {
         return Err(ReadFileError::NotFound);
+    }
+    if !path.is_file() {
+        return Err(ReadFileError::Invalid);
     }
     if path.metadata().map_err(ReadFileError::Io)?.len() == 0 {
         return Err(ReadFileError::Empty);

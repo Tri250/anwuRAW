@@ -31,6 +31,10 @@ const getTransformAdjustments = (adj: Adjustments) => ({
 export function useAiMasking() {
   const { setAdjustments } = useEditorActions();
   const setEditor = useEditorStore((state) => state.setEditor);
+  const activeMaskId = useEditorStore((state) => state.activeMaskId);
+  const activeAiSubMaskId = useEditorStore((state) => state.activeAiSubMaskId);
+  const selectedImagePath = useEditorStore((state) => state.selectedImage?.path);
+  const adjustments = useEditorStore((state) => state.adjustments);
   const { getToken } = useAuth();
 
   const updateSubMask = useCallback(
@@ -129,7 +133,6 @@ export function useAiMasking() {
         });
 
         const newPatchData = JSON.parse(newPatchDataJson);
-        patchesSentToBackend.delete(patchId);
 
         setAdjustments((prev: Adjustments) => ({
           ...prev,
@@ -144,6 +147,7 @@ export function useAiMasking() {
               : p,
           ),
         }));
+        patchesSentToBackend.delete(patchId);
         setEditor({ activeAiPatchContainerId: null, activeAiSubMaskId: null });
       } catch (err) {
         toast.error(`AI Replace Failed: ${err}`);
@@ -216,7 +220,6 @@ export function useAiMasking() {
         });
 
         const newPatchData = JSON.parse(newPatchDataJson);
-        patchesSentToBackend.delete(patchId);
 
         setAdjustments((prev: Partial<Adjustments>) => ({
           ...prev,
@@ -233,6 +236,7 @@ export function useAiMasking() {
               : p,
           ),
         }));
+        patchesSentToBackend.delete(patchId);
         setEditor({ activeAiPatchContainerId: null, activeAiSubMaskId: null });
       } catch (err: any) {
         toast.error(`Quick Erase Failed: ${err.message || String(err)}`);
@@ -407,23 +411,19 @@ export function useAiMasking() {
   };
 
   useEffect(() => {
-    const { activeMaskId, activeAiSubMaskId, adjustments, selectedImage } = useEditorStore.getState();
+    if (!adjustments) return;
     const activeSubMask =
-      adjustments?.masks?.flatMap((m: MaskContainer) => m.subMasks).find((sm: SubMask) => sm.id === activeMaskId) ||
-      adjustments?.aiPatches?.flatMap((p: AiPatch) => p.subMasks).find((sm: SubMask) => sm.id === activeAiSubMaskId);
+      adjustments.masks?.flatMap((m: MaskContainer) => m.subMasks).find((sm: SubMask) => sm.id === activeMaskId) ||
+      adjustments.aiPatches?.flatMap((p: AiPatch) => p.subMasks).find((sm: SubMask) => sm.id === activeAiSubMaskId);
 
-    if (activeSubMask?.type === 'ai-subject' && selectedImage?.path) {
+    if (activeSubMask?.type === 'ai-subject' && selectedImagePath) {
       const transformAdjustments = getTransformAdjustments(adjustments);
       invoke('precompute_ai_subject_mask', {
         jsAdjustments: transformAdjustments,
-        path: selectedImage.path,
+        path: selectedImagePath,
       }).catch((err) => console.error('Failed to precompute AI subject mask:', err));
     }
-  }, [
-    useEditorStore.getState().activeMaskId,
-    useEditorStore.getState().activeAiSubMaskId,
-    useEditorStore.getState().selectedImage?.path,
-  ]);
+  }, [activeMaskId, activeAiSubMaskId, selectedImagePath, adjustments]);
 
   return {
     updateSubMask,

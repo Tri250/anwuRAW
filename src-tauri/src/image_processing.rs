@@ -494,6 +494,19 @@ fn interpolate_pixel_with_tca(
         let x_clamped = target_x.clamp(0.0, src_width as f32 - 1.0);
         let y_clamped = target_y.clamp(0.0, src_height as f32 - 1.0);
 
+        // Handle degenerate (width < 2 or height < 2) images: no room for bilinear
+        // interpolation, so sample the single available pixel repeatedly.
+        if src_width < 2 || src_height < 2 {
+            let sx = x_clamped as usize;
+            let sy = y_clamped as usize;
+            let idx = sy * src_width * 3 + sx * 3 + channel_idx;
+            return if idx < src_raw.len() {
+                src_raw[idx]
+            } else {
+                0.0
+            };
+        }
+
         let mut x0 = x_clamped.floor() as usize;
         let mut y0 = y_clamped.floor() as usize;
 

@@ -179,6 +179,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   const [toolbarOverflowVisible, setToolbarOverflowVisible] = useState(!isFullScreen);
   const isGeneratingOverlayRef = useRef(false);
   const pendingOverlayRequestRef = useRef<any>(null);
+  const overlayVersionRef = useRef(0);
   const animationFrameId = useRef<number | null>(null);
   const physicsFrameId = useRef<number | null>(null);
   const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -1104,6 +1105,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
 
     const { maskDef, renderSize, jsAdjustments } = pendingOverlayRequestRef.current;
     pendingOverlayRequestRef.current = null;
+    const myVersion = overlayVersionRef.current;
 
     if (!maskDef || !maskDef.visible || renderSize.width === 0) {
       setMaskOverlayUrl(null);
@@ -1146,6 +1148,10 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         jsAdjustments: strippedAdjustments,
       });
 
+      // Discard result if a newer request was queued while we were awaiting —
+      // prevents stale overlay values from flashing before the next call finishes.
+      if (overlayVersionRef.current !== myVersion) return;
+
       if (dataUrl) {
         setMaskOverlayUrl(dataUrl);
       } else {
@@ -1164,6 +1170,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
 
   const requestMaskOverlay = useCallback(
     (maskDef: any, renderSize: any, currentAdjustments: any) => {
+      overlayVersionRef.current++;
       pendingOverlayRequestRef.current = { maskDef, renderSize, jsAdjustments: currentAdjustments };
       processOverlayQueue();
     },

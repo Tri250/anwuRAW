@@ -361,6 +361,7 @@ export default function MasksPanel() {
   const [isSettingsSectionOpen, setSettingsSectionOpen] = useState(true);
   const [isSettingsPanelEverOpened, setIsSettingsPanelEverOpened] = useState(false);
   const hasPerformedInitialSelection = useRef(false);
+  const prevImagePathRef = useRef<string | null | undefined>(undefined);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [analyzingSubMaskId, setAnalyzingSubMaskId] = useState<string | null>(null);
 
@@ -397,6 +398,13 @@ export default function MasksPanel() {
   }, [adjustments.masks, activeMaskContainerId, onSelectContainer, onSelectMask]);
 
   useEffect(() => {
+    // Reset initial-selection state when user switches to a different image
+    const currentPath = selectedImage?.path;
+    if (prevImagePathRef.current !== currentPath) {
+      prevImagePathRef.current = currentPath;
+      hasPerformedInitialSelection.current = false;
+    }
+
     if (!hasPerformedInitialSelection.current && !activeMaskContainerId && adjustments.masks?.length > 0) {
       const lastMask = adjustments.masks[adjustments.masks.length - 1];
       if (lastMask) {
@@ -423,7 +431,7 @@ export default function MasksPanel() {
     if (activeMaskContainerId || adjustments.masks?.length > 0) {
       setIsSettingsPanelEverOpened(true);
     }
-  }, [activeMaskContainerId, activeMaskId, adjustments.masks, onSelectContainer, onSelectMask]);
+  }, [activeMaskContainerId, activeMaskId, adjustments.masks, onSelectContainer, onSelectMask, selectedImage?.path]);
 
   useEffect(() => {
     const handler = () => {

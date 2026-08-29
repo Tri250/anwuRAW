@@ -875,18 +875,20 @@ pub async fn generate_liquify_patch(
 
     let crop_w = max_x_u32 - min_x_u32 + 1;
     let crop_h = max_y_u32 - min_y_u32 + 1;
+    let crop_w_usize = crop_w as usize;
+    let crop_h_usize = crop_h as usize;
 
-    let mut color_pixels = vec![0u8; (crop_w * crop_h * 3) as usize];
-    let mut mask_pixels = vec![0u8; (crop_w * crop_h) as usize];
+    let mut color_pixels = vec![0u8; crop_w_usize * crop_h_usize * 3];
+    let mut mask_pixels = vec![0u8; crop_w_usize * crop_h_usize];
 
     color_pixels
-        .par_chunks_mut((crop_w * 3) as usize)
-        .zip(mask_pixels.par_chunks_mut(crop_w as usize))
+        .par_chunks_mut(crop_w_usize * 3)
+        .zip(mask_pixels.par_chunks_mut(crop_w_usize))
         .enumerate()
         .for_each(|(y, (color_row, mask_row))| {
             let orig_y = y as f32 + min_y_u32 as f32;
 
-            for x in 0..(crop_w as usize) {
+            for x in 0..crop_w_usize {
                 let orig_x = x as f32 + min_x_u32 as f32;
                 let mut disp_x = 0.0_f32;
                 let mut disp_y = 0.0_f32;
@@ -999,8 +1001,10 @@ pub async fn generate_liquify_patch(
             }
         });
 
-    let color_image = RgbImage::from_raw(crop_w, crop_h, color_pixels).unwrap();
-    let mask_image = image::GrayImage::from_raw(crop_w, crop_h, mask_pixels).unwrap();
+    let color_image = RgbImage::from_raw(crop_w, crop_h, color_pixels)
+        .ok_or_else(|| "Liquify: failed to build RgbImage from pixel buffer".to_string())?;
+    let mask_image = image::GrayImage::from_raw(crop_w, crop_h, mask_pixels)
+        .ok_or_else(|| "Liquify: failed to build GrayImage from pixel buffer".to_string())?;
 
     encode_patch_result(
         &color_image,
@@ -1190,16 +1194,18 @@ pub async fn generate_retouch_patch(
     let max_y_u32 = (max_y + pad).clamp(0.0, img_h as f32 - 1.0) as u32;
     let crop_w = max_x_u32 - min_x_u32 + 1;
     let crop_h = max_y_u32 - min_y_u32 + 1;
+    let crop_w_usize = crop_w as usize;
+    let crop_h_usize = crop_h as usize;
 
     let orig_crop =
         image::imageops::crop_imm(&source_image, min_x_u32, min_y_u32, crop_w, crop_h).to_image();
     let orig_raw = orig_crop.as_raw();
 
-    let mut mask_pixels = vec![0u8; (crop_w * crop_h) as usize];
-    for y in 0..crop_h {
-        for x in 0..crop_w {
-            let m_val = mask_canvas[((y + min_y_u32) * img_w + (x + min_x_u32)) as usize];
-            mask_pixels[(y * crop_w + x) as usize] = m_val;
+    let mut mask_pixels = vec![0u8; crop_w_usize * crop_h_usize];
+    for y in 0..crop_h_usize {
+        for x in 0..crop_w_usize {
+            let m_val = mask_canvas[((y as u32 + min_y_u32) * img_w + (x as u32 + min_x_u32)) as usize];
+            mask_pixels[y * crop_w_usize + x] = m_val;
         }
     }
 
@@ -1228,10 +1234,9 @@ pub async fn generate_retouch_patch(
         .map(|i| (-(i as f32) / (2.0 * sig_c_sq)).exp())
         .collect();
 
-    let mut color_pixels = vec![0u8; (crop_w * crop_h * 3) as usize];
+    let mut color_pixels = vec![0u8; crop_w_usize * crop_h_usize * 3];
     let crop_w_i32 = crop_w as i32;
     let crop_h_i32 = crop_h as i32;
-    let crop_w_usize = crop_w as usize;
 
     color_pixels
         .par_chunks_mut(crop_w_usize * 3)
@@ -1310,8 +1315,10 @@ pub async fn generate_retouch_patch(
             }
         });
 
-    let color_image = RgbImage::from_raw(crop_w, crop_h, color_pixels).unwrap();
-    let mask_image = image::GrayImage::from_raw(crop_w, crop_h, mask_pixels).unwrap();
+    let color_image = RgbImage::from_raw(crop_w, crop_h, color_pixels)
+        .ok_or_else(|| "Retouch: failed to build RgbImage from pixel buffer".to_string())?;
+    let mask_image = image::GrayImage::from_raw(crop_w, crop_h, mask_pixels)
+        .ok_or_else(|| "Retouch: failed to build GrayImage from pixel buffer".to_string())?;
 
     encode_patch_result(
         &color_image,

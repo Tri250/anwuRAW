@@ -1,4 +1,4 @@
-use crate::Cursor;
+use std::io::Cursor;
 use crate::app_settings::{AppSettings, load_settings};
 use crate::app_state::{AppState, LoadedImage};
 use crate::exif_processing;

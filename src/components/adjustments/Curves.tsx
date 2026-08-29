@@ -305,18 +305,19 @@ export default function CurveGraph({
   const updateParametricValue = (key: keyof ParametricCurveSettings, value: number) => {
     setAdjustments((prev: any) => {
       const pC = prev.parametricCurve || DEFAULT_PARAMETRIC_CURVE;
-      const updatedSettings = { ...pC[activeChannel], [key]: value };
+      const channel = activeChannelRef.current;
+      const updatedSettings = { ...pC[channel], [key]: value };
       const newPoints = buildParametricPoints(updatedSettings);
 
       return {
         ...prev,
         parametricCurve: {
           ...pC,
-          [activeChannel]: updatedSettings,
+          [channel]: updatedSettings,
         },
         curves: {
           ...prev.curves,
-          [activeChannel]: newPoints,
+          [channel]: newPoints,
         },
       };
     });
