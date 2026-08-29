@@ -22,14 +22,12 @@
       }
     ],
     "security": {
-      "csp": null,
-      "capabilities": [
-        "default"
-      ],
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data: https://*; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com https://huggingface.co https://api.github.com https://*.github.com https://*.public-apis.org; asset-src 'self' asset:; object-src 'none'",
       "assetProtocol": {
         "enable": true,
         "scope": [
-          "$APPCACHE/thumbnails/*"
+          "$APPCACHE/thumbnails/**",
+          "$APPDATA/presets/**"
         ]
       }
     },
@@ -122,15 +120,5 @@
       "hardenedRuntime": true
     }
   },
-  "version": "1.6.2",
-  "security": {
-    "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data: https://*; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com https://huggingface.co https://api.github.com https://*.github.com https://*.public-apis.org; asset-src 'self' asset:; object-src 'none'",
-    "assetProtocol": {
-      "enable": true,
-      "scope": [
-        "$APPCACHE/thumbnails/**",
-        "$APPDATA/presets/**"
-      ]
-    }
-  }
+  "version": "1.6.2"
 }
