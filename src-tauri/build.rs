@@ -29,6 +29,10 @@ fn download_and_verify(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set"));
     let temp_path = out_dir.join(filename);
+    // 确保 temp_path 父目录存在（filename 可能包含子路径如 "onnxruntimes-v1.22.0/xxx.so"）
+    if let Some(parent) = temp_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
 
     let mut last_err: Option<Box<dyn std::error::Error>> = None;
 
