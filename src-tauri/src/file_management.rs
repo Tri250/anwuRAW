@@ -3445,31 +3445,6 @@ pub fn delete_files_from_disk(paths: Vec<String>, app_handle: AppHandle) -> Resu
     Ok(())
 }
 
-fn deletion_stem_for(filename: &str) -> Option<&str> {
-    let image_filename = if filename.ends_with(".rrdata") {
-        let without_rrdata = filename.trim_end_matches(".rrdata");
-        if let Some(dot_pos) = without_rrdata.rfind('.') {
-            let suffix = &without_rrdata[dot_pos + 1..];
-            if suffix.len() == 6 && suffix.chars().all(|c| c.is_ascii_hexdigit()) {
-                &without_rrdata[..dot_pos]
-            } else {
-                without_rrdata
-            }
-        } else {
-            without_rrdata
-        }
-    } else if filename.ends_with(".rrexif") {
-        filename.trim_end_matches(".rrexif")
-    } else if is_supported_image_file(filename) {
-        filename
-    } else {
-        return None;
-    };
-    Path::new(image_filename)
-        .file_stem()
-        .and_then(|s| s.to_str())
-}
-
 #[tauri::command]
 pub fn delete_files_with_associated(
     paths: Vec<String>,
@@ -3479,43 +3454,24 @@ pub fn delete_files_with_associated(
         return Ok(());
     }
 
-    let mut stems_to_delete = HashSet::new();
-    let mut parent_dirs = HashSet::new();
+    let mut files_to_trash = HashSet::new();
     let mut deletions = HashSet::new();
 
     for path_str in &paths {
         deletions.insert(path_str.clone());
         let (source_path, _) = parse_virtual_path(path_str);
-        if let Some(stem) = source_path.file_stem().and_then(|s| s.to_str()) {
-            stems_to_delete.insert(stem.to_string());
-        }
-        if let Some(parent) = source_path.parent() {
-            parent_dirs.insert(parent.to_path_buf());
-        }
-    }
-
-    if stems_to_delete.is_empty() {
-        return Ok(());
-    }
-
-    let mut files_to_trash = HashSet::new();
-
-    for parent_dir in parent_dirs {
-        if let Ok(entries) = fs::read_dir(parent_dir) {
-            for entry in entries.filter_map(Result::ok) {
-                let entry_path = entry.path();
-                if !entry_path.is_file() {
-                    continue;
+        match find_all_associated_files(&source_path) {
+            Ok(associated) => {
+                for file in associated {
+                    files_to_trash.insert(file);
                 }
-
-                let entry_filename = entry.file_name();
-                let entry_filename_str = entry_filename.to_string_lossy();
-
-                if let Some(stem) = deletion_stem_for(&entry_filename_str)
-                    && stems_to_delete.contains(stem)
-                {
-                    files_to_trash.insert(entry_path);
-                }
+            }
+            Err(e) => {
+                log::warn!(
+                    "Could not find associated files for {}: {}",
+                    source_path.display(),
+                    e
+                );
             }
         }
     }
