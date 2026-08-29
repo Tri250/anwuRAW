@@ -1084,15 +1084,13 @@
     },
     "splash": {
       "addFolder": "Добавить папку",
-      "brand": "RapidRAW",
+      "brand": "anwuRAW",
+
       "continueSession": "Продолжить сеанс",
-      "contribute": "Участвовать на GitHub",
       "descriptionAndroid": "Невероятно быстрый редактор RAW-файлов с GPU-ускорением. Откройте библиотеку, чтобы начать.",
       "descriptionDesktop": "Невероятно быстрый редактор RAW-файлов с GPU-ускорением. Откройте папку, чтобы начать.",
-      "donate": "Поддержать на Ko-Fi",
       "downloadVersion": "Нажмите, чтобы загрузить версию {{version}}",
       "goToSettings": "Перейти в настройки",
-      "imagesBy": "Фото от",
       "latestVersion": "У вас установлена последняя версия",
       "newVersionAvailable": "Доступна новая версия!",
       "openFolder": "Открыть папку",
