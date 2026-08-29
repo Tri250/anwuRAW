@@ -484,7 +484,7 @@
           "name": "原始"
         },
         "r169": {
-          "desc": "16:9 - 宽屏、桌面壁纸、YouTube",
+          "desc": "16:9 - 宽屏、桌面壁纸、视频平台",
           "name": "16:9"
         },
         "r219": {
@@ -500,7 +500,7 @@
           "name": "4:3"
         },
         "r54": {
-          "desc": "5:4 - Instagram 横向、8x10 打印",
+          "desc": "5:4 - 社交平台横图、8×10 打印",
           "name": "5:4"
         },
         "r6524": {
@@ -508,7 +508,7 @@
           "name": "65:24"
         },
         "sq": {
-          "desc": "正方形 - Instagram、头像",
+          "desc": "正方形 - 社交平台头像、商品图",
           "name": "1:1"
         }
       },
@@ -1034,15 +1034,12 @@
     },
     "splash": {
       "addFolder": "添加文件夹",
-      "brand": "RapidRAW",
+      "brand": "anwuRAW",
       "continueSession": "继续会话",
-      "contribute": "在 GitHub 上贡献",
       "descriptionAndroid": "一款极速、GPU 加速的 RAW 图像编辑器。打开图库以开始。",
       "descriptionDesktop": "一款极速、GPU 加速的 RAW 图像编辑器。打开文件夹以开始。",
-      "donate": "在 Ko-Fi 上捐赠",
       "downloadVersion": "点击下载版本 {{version}}",
       "goToSettings": "前往设置",
-      "imagesBy": "图像来源",
       "latestVersion": "您已是最新版本",
       "newVersionAvailable": "新版本可用！",
       "openFolder": "打开文件夹",
@@ -1787,7 +1784,7 @@
       "title": "标签"
     },
     "thanks": {
-      "description": "热爱摄影的开发者，为摄影爱好者打造专业工具。我只是「带娃的小陈工」，一名热爱摄影的开发者。",
+      "description": "热爱摄影的开发者，为摄影爱好者打造专业工具 我只是「带娃的小陈工」，一名热爱摄影的开发者",
       "list": {
         "darktable": "为部分参考实现提供了指导。",
         "depth": "为强大的单目深度估计模型提供支持，实现了 AI 深度蒙版功能。",
