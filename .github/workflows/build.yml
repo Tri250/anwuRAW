@@ -120,15 +120,22 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
         run: |
+          cd src-tauri/gen/android
           if [[ -n "${ANDROID_KEY_ALIAS}" && -n "${ANDROID_KEY_PASSWORD}" && -n "${ANDROID_KEY_BASE64}" ]]; then
-            cd src-tauri/gen/android
             echo "keyAlias=${ANDROID_KEY_ALIAS}" > keystore.properties
             echo "password=${ANDROID_KEY_PASSWORD}" >> keystore.properties
             echo "${ANDROID_KEY_BASE64}" | base64 -d > $RUNNER_TEMP/keystore.jks
             echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
-            echo "✅ Android release signing configured."
+            echo "✅ Android release signing configured from secrets."
           else
-            echo "⚠️ Android signing secrets not configured, building with debug signature."
+            echo "⚠️ Android release signing secrets not configured. Generating a temporary debug keystore..."
+            DEBUG_KS=$RUNNER_TEMP/debug.keystore
+            keytool -genkeypair -v -keystore "$DEBUG_KS" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" 2>&1
+            echo "keyAlias=androiddebugkey" > keystore.properties
+            echo "password=android" >> keystore.properties
+            echo "storeFile=$DEBUG_KS" >> keystore.properties
+            echo "storePassword=android" >> keystore.properties
+            echo "✅ Debug keystore created at $DEBUG_KS"
           fi
 
       - name: rustup install target
