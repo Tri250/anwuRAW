@@ -22,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data: https://*; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com https://huggingface.co https://api.github.com https://*.github.com https://*.public-apis.org; asset-src 'self' asset:; object-src 'none'",
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data: https://*; font-src 'self' data:; frame-src https://www.openstreetmap.org http://127.0.0.1:* http://localhost:*; connect-src 'self' http://127.0.0.1:* http://localhost:* https://raw.githubusercontent.com https://huggingface.co https://api.github.com https://*.github.com https://*.public-apis.org https://www.openstreetmap.org https://lensfun.github.io https://www.getrapidraw.com; asset-src 'self' asset:; object-src 'none'",
       "assetProtocol": {
         "enable": true,
         "scope": [
