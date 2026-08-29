@@ -11,7 +11,7 @@ import { computeSortedLibrary } from './useSortedLibrary';
 import { expandGroupedPaths } from '../utils/imageGrouping';
 
 export function useLibraryActions(handleImageSelect?: (path: string, openInEditor?: boolean) => void) {
-  const handleRate = useCallback((newRating: number, paths?: string[]) => {
+  const handleRate = useCallback(async (newRating: number, paths?: string[]) => {
     const { multiSelectedPaths, imageList, imageRatings, setLibrary } = useLibraryStore.getState();
     const { selectedImage } = useEditorStore.getState();
 
@@ -25,18 +25,18 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
     const currentRating = imageRatings[selectedPaths[0]] || 0;
     const finalRating = newRating === currentRating ? 0 : newRating;
 
-    setLibrary((state) => {
-      const newRatings = { ...state.imageRatings };
-      pathsToRate.forEach((p) => {
-        newRatings[p] = finalRating;
+    try {
+      await invoke(Invokes.SetRatingForPaths, { paths: pathsToRate, rating: finalRating });
+      setLibrary((state) => {
+        const newRatings = { ...state.imageRatings };
+        pathsToRate.forEach((p) => {
+          newRatings[p] = finalRating;
+        });
+        return { imageRatings: newRatings };
       });
-      return { imageRatings: newRatings };
-    });
-
-    invoke(Invokes.SetRatingForPaths, { paths: pathsToRate, rating: finalRating }).catch((err) => {
-      console.error(err);
-      toast.error(`Failed to apply rating: ${err}`);
-    });
+    } catch (err) {
+      toast.error(`评分失败: ${err}`);
+    }
   }, []);
 
   const handleSetColorLabel = useCallback(async (color: string | null, paths?: string[]) => {
