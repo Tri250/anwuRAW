@@ -23,19 +23,40 @@
     ],
     "security": {
       "csp": null,
-      "capabilities": ["default"],
+      "capabilities": [
+        "default"
+      ],
       "assetProtocol": {
         "enable": true,
-        "scope": ["$APPCACHE/thumbnails/*"]
+        "scope": [
+          "$APPCACHE/thumbnails/*"
+        ]
       }
     },
     "macOSPrivateApi": true
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
-    "resources": ["resources", "lensfun_db"],
+    "targets": [
+      "nsis",
+      "msi",
+      "app",
+      "dmg",
+      "deb",
+      "rpm",
+      "apk"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": [
+      "resources",
+      "lensfun_db"
+    ],
     "category": "Photography",
     "fileAssociations": [
       {
@@ -89,9 +110,27 @@
     ],
     "windows": {
       "nsis": {
-        "installerIcon": "icons/icon.ico"
+        "installerIcon": "icons/icon.ico",
+        "installMode": "perMachine",
+        "languages": [
+          "SimpChinese",
+          "English"
+        ]
       }
+    },
+    "macOS": {
+      "hardenedRuntime": true
     }
   },
-  "version": "1.6.2"
+  "version": "1.6.2",
+  "security": {
+    "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data: https://*; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com https://huggingface.co https://api.github.com https://*.github.com https://*.public-apis.org; asset-src 'self' asset:; object-src 'none'",
+    "assetProtocol": {
+      "enable": true,
+      "scope": [
+        "$APPCACHE/thumbnails/**",
+        "$APPDATA/presets/**"
+      ]
+    }
+  }
 }

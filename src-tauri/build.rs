@@ -149,17 +149,37 @@ fn main() {
     }
 
     if !is_valid {
-        println!(
-            "cargo:warning=Downloading ONNX Runtime library for {}-{}...",
-            target_os, target_arch
-        );
-        let base_url =
-            "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/onnxruntimes-v1.22.0/";
-        let download_url = format!("{}{}?download=true", base_url, download_filename);
-        println!("cargo:warning=URL: {}", download_url);
+        // 旁路 1: 开发者手动指定了 ORT_LIB_LOCATION=/path/to/lib 时直接拷贝
+        if let Ok(lib_dir) = std::env::var("ORT_LIB_LOCATION") {
+            let src_lib = std::path::PathBuf::from(&lib_dir).join(lib_name);
+            if src_lib.exists() {
+                println!("cargo:warning=Using pre-shipped ONNX Runtime from ORT_LIB_LOCATION={}", lib_dir);
+                if let Err(e) = std::fs::copy(&src_lib, &dest_path) {
+                    panic!("Failed to copy ORT lib from ORT_LIB_LOCATION: {}", e);
+                }
+                is_valid = true;
+            } else {
+                panic!("ORT_LIB_LOCATION={} does not contain {}", lib_dir, lib_name);
+            }
+        // 旁路 2: ORT_SKIP_DOWNLOAD=1 时信任已有的 / vendor 目录，跳过下载
+        } else if std::env::var("ORT_SKIP_DOWNLOAD").is_ok_and(|v| v != "0") {
+            panic!(
+                "ORT not found at {} and ORT_SKIP_DOWNLOAD=1 is set.                  Place the correct ONNX Runtime library there, or set ORT_LIB_LOCATION.",
+                dest_path.display()
+            );
+        } else {
+            println!(
+                "cargo:warning=Downloading ONNX Runtime library for {}-{}...",
+                target_os, target_arch
+            );
+            let base_url =
+                "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/onnxruntimes-v1.22.0/";
+            let download_url = format!("{}{}?download=true", base_url, download_filename);
+            println!("cargo:warning=URL: {}", download_url);
 
-        if let Err(e) = download_and_verify(&download_url, &dest_path, expected_hash) {
-            panic!("Failed to download and verify ONNX Runtime library: {}", e);
+            if let Err(e) = download_and_verify(&download_url, &dest_path, expected_hash) {
+                panic!("Failed to download and verify ONNX Runtime library: {}", e);
+            }
         }
     }
 

@@ -222,7 +222,6 @@ jobs:
         with:
           name: ${{ inputs.asset-prefix }}_${{ inputs.platform }}${{ inputs.target && format('_{0}', inputs.target) || '' }}_artifacts
           path: |
-            src-tauri/target/${{ inputs.target || 'release' }}/bundle/**/*.exe
             src-tauri/target/${{ inputs.target || 'release' }}/release/bundle/**/*.exe
           retention-days: 7
           compression-level: 6

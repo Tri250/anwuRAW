@@ -462,6 +462,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
 
   useEffect(() => {
     let active = true;
+    const frameIdRef: { current: number | null } = { current: null };
     let currentUrl: string | null = null;
     let isFetching = false;
     let lastFrameTime = 0;
@@ -508,16 +509,20 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
       }
 
       if (active && liveViewEnabled) {
-        requestAnimationFrame(frameLoop);
+        frameIdRef.current = requestAnimationFrame(frameLoop);
       }
     };
 
     if (liveViewEnabled) {
-      requestAnimationFrame(frameLoop);
+      frameIdRef.current = requestAnimationFrame(frameLoop);
     }
 
     return () => {
       active = false;
+      if (frameIdRef.current !== null) {
+        cancelAnimationFrame(frameIdRef.current);
+        frameIdRef.current = null;
+      }
       if (currentUrl) URL.revokeObjectURL(currentUrl);
     };
   }, [liveViewEnabled, isConnected, handleDisconnect, t]);

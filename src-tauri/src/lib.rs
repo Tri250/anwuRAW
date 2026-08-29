@@ -1974,6 +1974,8 @@ pub fn run() {
                 *state.lens_db.lock().unwrap() = Some(Arc::new(lens_db));
             }
 
+            // env::set_var 在 Rust 1.76+ 是 unsafe（多线程下 UB）。
+            // 这里明确在 setup hook 最开头执行，任何 thread::spawn 之前，安全。
             unsafe {
                 if let Some(backend) = &settings.processing_backend
                     && backend != "auto" {

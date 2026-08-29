@@ -68,5 +68,10 @@
   "allowScripts": {
     "@swc/core@1.16.1": true,
     "esbuild@0.28.2": true
-  }
+  },
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  },
+  "packageManager": "npm@10"
 }

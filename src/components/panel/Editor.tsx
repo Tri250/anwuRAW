@@ -178,6 +178,26 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   const isTransitioningRef = useRef(false);
   const [toolbarOverflowVisible, setToolbarOverflowVisible] = useState(!isFullScreen);
   const isGeneratingOverlayRef = useRef(false);
+  // ========== UNMOUNT CLEANUP ==========
+  // 确保所有 rAF / timeout 都被 cancel，防止 setState on unmounted component
+  useEffect(() => {
+    return () => {
+      if (animationFrameId.current !== null) cancelAnimationFrame(animationFrameId.current);
+      if (physicsFrameId.current !== null) cancelAnimationFrame(physicsFrameId.current);
+      animationFrameId.current = null;
+      physicsFrameId.current = null;
+      if (wheelSnapTimeout.current !== null) {
+        clearTimeout(wheelSnapTimeout.current);
+        wheelSnapTimeout.current = null;
+      }
+      if (zoomDebounceTimeoutRef.current !== null) {
+        clearTimeout(zoomDebounceTimeoutRef.current);
+        zoomDebounceTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+
   const pendingOverlayRequestRef = useRef<any>(null);
   const overlayVersionRef = useRef(0);
   const animationFrameId = useRef<number | null>(null);
