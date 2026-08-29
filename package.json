@@ -1,6 +1,6 @@
 {
   "name": "rapidraw",
-  "author": "Timon Käch",
+  "author": "Timon K\u00e4ch",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -68,10 +68,5 @@
   "allowScripts": {
     "@swc/core@1.16.1": true,
     "esbuild@0.28.2": true
-  },
-  "engines": {
-    "node": ">=22",
-    "npm": ">=10"
-  },
-  "packageManager": "npm@10"
+  }
 }
