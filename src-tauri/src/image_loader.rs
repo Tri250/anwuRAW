@@ -1,4 +1,3 @@
-use std::io::Cursor;
 use crate::app_settings::{AppSettings, load_settings};
 use crate::app_state::{AppState, LoadedImage};
 use crate::exif_processing;
@@ -19,6 +18,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
+use std::io::Cursor;
 use std::panic;
 use std::path::Path;
 use std::sync::OnceLock;

@@ -249,7 +249,10 @@ export function useEditorActions() {
 
       if (!copiedAdjustments || !appSettings) return;
 
-      const { mode, includedAdjustments } = appSettings.copyPasteSettings;
+      const copyPasteSettings = appSettings.copyPasteSettings;
+      if (!copyPasteSettings) return;
+
+      const { mode, includedAdjustments } = copyPasteSettings;
       const adjustmentsToApply: Partial<Adjustments> = {};
 
       for (const key of includedAdjustments) {

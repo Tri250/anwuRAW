@@ -394,7 +394,7 @@ pub fn parse_virtual_path(virtual_path: &str) -> (PathBuf, PathBuf) {
     // 安全加固：canonicalize 过滤 ".." / "." / 软链接穿越。
     // 若文件尚不存在（删除/移动场景）则跳过 canonicalize，仅做路径分隔符规范。
     let source_path = PathBuf::from(source_path_str);
-    let source_path = source_path.canonicalize().unwrap_or_else(|_| source_path);
+    let source_path = source_path.canonicalize().unwrap_or(source_path);
 
     let sidecar_filename = if let Some(id) = copy_id {
         format!(
@@ -3800,7 +3800,10 @@ pub fn generate_filename_from_template(
     let local_date = file_date.with_timezone(&chrono::Local);
 
     // 路径安全：过滤用户可控模板里的路径分隔符，防止 ../ 和 \\ 穿越
-    let template: String = template.chars().map(|c| if c == '/' || c == '\\' { '_' } else { c }).collect();
+    let template: String = template
+        .chars()
+        .map(|c| if c == '/' || c == '\\' { '_' } else { c })
+        .collect();
     let mut result = template;
     result = result.replace("{original_filename}", stem);
     result = result.replace("{sequence}", &sequence_str);

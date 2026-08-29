@@ -326,6 +326,7 @@ export interface Progress {
   completed?: number;
   current?: number;
   total: number;
+  stage?: string;
 }
 
 export interface SelectedImage {

@@ -1204,7 +1204,8 @@ pub async fn generate_retouch_patch(
     let mut mask_pixels = vec![0u8; crop_w_usize * crop_h_usize];
     for y in 0..crop_h_usize {
         for x in 0..crop_w_usize {
-            let m_val = mask_canvas[((y as u32 + min_y_u32) * img_w + (x as u32 + min_x_u32)) as usize];
+            let m_val =
+                mask_canvas[((y as u32 + min_y_u32) * img_w + (x as u32 + min_x_u32)) as usize];
             mask_pixels[y * crop_w_usize + x] = m_val;
         }
     }
