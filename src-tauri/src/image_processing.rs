@@ -1941,7 +1941,7 @@ pub fn apply_cpu_agx_tonemap(image: &mut DynamicImage) {
         // agx_compress_gamut：和 shader 端完全一致
         // 1) 负值平移
         let min_c = r.min(g).min(b);
-        let mut (r, g, b) = if min_c < 0.0 {
+        let (mut r, mut g, mut b) = if min_c < 0.0 {
             (r - min_c, g - min_c, b - min_c)
         } else {
             (r, g, b)

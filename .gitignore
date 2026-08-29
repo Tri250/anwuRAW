@@ -41,3 +41,5 @@ src-tauri/libs/
 
 # bench/replay.js result dumps
 bench/out/
+# Trae 环境临时包
+.trae-html-share-packages/

@@ -529,7 +529,7 @@ fn save_image_with_metadata(
         &extension,
         export_settings.jpeg_quality,
         &export_settings.color_space,
-        &export_settings.bit_depth,
+        export_settings.bit_depth,
     )?;
 
     exif_processing::write_image_with_metadata(
@@ -702,7 +702,8 @@ fn apply_color_space_transform(
         out_buf.push(a);
     }
 
-    let out = image::RgbaImage::from_raw(w, h, out_buf).unwrap();
+    let out: image::ImageBuffer<image::Rgba<u16>, Vec<u16>> =
+        image::ImageBuffer::from_raw(w, h, out_buf).unwrap();
     DynamicImage::ImageRgba16(out)
 }
 
@@ -1472,6 +1473,8 @@ pub async fn run_headless_export(
         watermark: None,
         export_masks: false,
         preserve_folders: true,
+        color_space: ExportColorSpace::default(),
+        bit_depth: default_bit_depth(),
     };
 
     let mut custom_adjustments = None;
@@ -1664,7 +1667,7 @@ pub async fn estimate_export_sizes(
             &output_format,
             export_settings.jpeg_quality,
             &export_settings.color_space,
-            &export_settings.bit_depth,
+            export_settings.bit_depth,
         )?;
         let preview_byte_size = preview_bytes.len();
 
@@ -1805,7 +1808,7 @@ pub async fn estimate_export_sizes(
             &output_format,
             export_settings.jpeg_quality,
             &export_settings.color_space,
-            &export_settings.bit_depth,
+            export_settings.bit_depth,
         )?;
         let single_image_estimated_size = preview_bytes.len();
 
