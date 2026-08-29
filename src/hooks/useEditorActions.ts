@@ -6,6 +6,7 @@ import { useEditorStore } from '../store/useEditorStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useProcessStore } from '../store/useProcessStore';
+import { useUIStore } from '../store/useUIStore';
 import {
   Adjustments,
   INITIAL_ADJUSTMENTS,
@@ -182,22 +183,43 @@ export function useEditorActions() {
       const pathsToReset = paths || multiSelectedPaths;
       if (pathsToReset.length === 0) return;
 
-      pathsToReset.forEach((p) => globalImageCache.delete(p));
-      debouncedSetHistory.cancel();
+      const count = pathsToReset.length;
+      const title = count === 1 ? 'Reset Adjustments' : `Reset Adjustments (${count} images)`;
+      const message =
+        count === 1
+          ? 'This will remove all local adjustments (exposure, tone, color, masks, crop, etc.) and restore defaults.\n\nThis can be undone with Ctrl+Z right after.'
+          : `This will remove all local adjustments for ${count} selected images and restore defaults.\n\nAfter reset, individual images can still be undone with Ctrl+Z if not switched away.`;
 
-      invoke(Invokes.ResetAdjustmentsForPaths, { paths: pathsToReset })
-        .then(() => {
-          if (libraryActivePath && pathsToReset.includes(libraryActivePath))
-            setLibrary({ libraryActiveAdjustments: { ...INITIAL_ADJUSTMENTS } });
-          if (selectedImage && pathsToReset.includes(selectedImage.path)) {
-            const aspect =
-              selectedImage.width && selectedImage.height ? selectedImage.width / selectedImage.height : null;
-            const resetData = { ...INITIAL_ADJUSTMENTS, aspectRatio: aspect, aiPatches: [] };
-            resetHistory(resetData);
-            setEditor({ adjustments: resetData });
-          }
-        })
-        .catch((err) => toast.error(`Failed to reset adjustments: ${err}`));
+      const doReset = () => {
+        pathsToReset.forEach((p) => globalImageCache.delete(p));
+        debouncedSetHistory.cancel();
+
+        invoke(Invokes.ResetAdjustmentsForPaths, { paths: pathsToReset })
+          .then(() => {
+            if (libraryActivePath && pathsToReset.includes(libraryActivePath))
+              setLibrary({ libraryActiveAdjustments: { ...INITIAL_ADJUSTMENTS } });
+            if (selectedImage && pathsToReset.includes(selectedImage.path)) {
+              const aspect =
+                selectedImage.width && selectedImage.height ? selectedImage.width / selectedImage.height : null;
+              const resetData = { ...INITIAL_ADJUSTMENTS, aspectRatio: aspect, aiPatches: [] };
+              resetHistory(resetData);
+              setEditor({ adjustments: resetData });
+            }
+          })
+          .catch((err) => toast.error(`Failed to reset adjustments: ${err}`));
+      };
+
+      // 弹二次确认
+      useUIStore.getState().setUI({
+        confirmModalState: {
+          isOpen: true,
+          title,
+          message,
+          confirmText: 'Reset',
+          confirmVariant: 'danger',
+          onConfirm: doReset,
+        },
+      });
     },
     [setEditor],
   );

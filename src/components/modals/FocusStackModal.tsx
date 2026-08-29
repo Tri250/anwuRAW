@@ -62,10 +62,20 @@ export default function FocusStackModal({
     }
   }, [isOpen]);
 
+  // Esc 关闭模态（合成中 / 保存中不可关闭）
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSaving && !isProcessing) handleClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, isSaving, isProcessing, handleClose]);
+
   const handleClose = useCallback(() => {
-    if (isSaving) return;
+    if (isSaving || isProcessing) return;
     onClose();
-  }, [onClose, isSaving]);
+  }, [onClose, isSaving, isProcessing]);
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
     mouseDownTarget.current = e.target;
