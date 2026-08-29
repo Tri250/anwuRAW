@@ -114,7 +114,7 @@ jobs:
         run: npm install
 
       - name: Setup Android signing
-        if: inputs.mobile == 'android' && github.event_name != 'pull_request'
+        if: inputs.mobile == 'android' && github.event_name != 'pull_request' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' && secrets.ANDROID_KEY_BASE64 != ''
         run: |
           cd src-tauri/gen/android
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
