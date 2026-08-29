@@ -38,10 +38,11 @@ fn is_linear_raw_format(raw_image: &RawImage) -> bool {
 
 #[inline]
 fn srgb_to_linear(value: f32) -> f32 {
-    if value <= 0.04045 {
-        value / 12.92
+    let v = value.max(0.0);
+    if v <= 0.04045 {
+        v / 12.92
     } else {
-        ((value + 0.055) / 1.055).powf(3.0)
+        ((v + 0.055) / 1.055).powf(3.0)
     }
 }
 
