@@ -97,6 +97,8 @@ struct GrowFeatherParameters {
     grow: f32,
     #[serde(default)]
     feather: f32,
+    #[serde(default)]
+    decontaminate: f32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -199,6 +201,8 @@ struct ParametricMaskParameters {
     #[serde(default)]
     feather: f32,
     #[serde(default)]
+    decontaminate: f32,
+    #[serde(default)]
     rotation: f32,
     #[serde(default)]
     flip_horizontal: bool,
@@ -220,6 +224,7 @@ impl Default for ParametricMaskParameters {
             tolerance: default_tolerance(),
             grow: 0.0,
             feather: 35.0,
+            decontaminate: 0.0,
             rotation: 0.0,
             flip_horizontal: false,
             flip_vertical: false,
@@ -310,7 +315,14 @@ fn grayscale_erode(image: &GrayImage, k: u8) -> GrayImage {
     GrayImage::from_raw(width, height, out).unwrap()
 }
 
-fn apply_grow_and_feather(mask: &mut GrayImage, grow: f32, feather: f32, width: u32, height: u32) {
+fn apply_grow_and_feather(
+    mask: &mut GrayImage,
+    grow: f32,
+    feather: f32,
+    decontaminate: f32,
+    width: u32,
+    height: u32,
+) {
     let base_dimension = width.min(height) as f32;
 
     if grow.abs() > 0.01 {
@@ -335,6 +347,28 @@ fn apply_grow_and_feather(mask: &mut GrayImage, grow: f32, feather: f32, width: 
         if sigma > 0.01 {
             *mask = imageproc::filter::gaussian_blur_f32(mask, sigma);
         }
+    }
+
+    // decontaminate: edge-aware re-sharpening on mask transition zone (where mask ≈ 0.5)
+    // Pulls fuzzy edges back toward solid 0 or 1 to eliminate color fringing
+    if decontaminate > 0.0 {
+        const DECON_SIGMA: f32 = 0.8; // small sigma — only affects edge pixels
+        const DECON_AMOUNT_SCALE: f32 = 0.8; // caps sharpening amount
+        let amount = (decontaminate / 100.0) * DECON_AMOUNT_SCALE;
+
+        let smoothed = imageproc::filter::gaussian_blur_f32(mask, DECON_SIGMA);
+        // unsharp mask: sharp = base + amount * (base - blurred)
+        // clamp so values stay in [0, 255] and we don't create new rings
+        let mut out = GrayImage::new(width, height);
+        for (x, y, p) in mask.enumerate_pixels() {
+            let base = p[0] as f32;
+            let blur = smoothed.get_pixel(x, y)[0] as f32;
+            // only apply sharpening where mask is in transition zone (avoid solid areas)
+            let transition_weight = (1.0 - ((base - 128.0).abs() / 128.0)).clamp(0.0, 1.0);
+            let sharpened = base + amount * (base - blur) * transition_weight;
+            out.put_pixel(x, y, Luma([sharpened.clamp(0.0, 255.0) as u8]));
+        }
+        *mask = out;
     }
 }
 
@@ -896,6 +930,7 @@ fn generate_ai_sky_bitmap(
         &mut mask,
         grow_feather.grow,
         grow_feather.feather,
+        grow_feather.decontaminate,
         width,
         height,
     );
@@ -960,6 +995,7 @@ fn generate_ai_depth_bitmap(
         &mut mask,
         grow_feather.grow,
         grow_feather.feather,
+        grow_feather.decontaminate,
         width,
         height,
     );
@@ -995,6 +1031,7 @@ fn generate_ai_foreground_bitmap(
         &mut mask,
         grow_feather.grow,
         grow_feather.feather,
+        grow_feather.decontaminate,
         width,
         height,
     );
@@ -1030,6 +1067,7 @@ fn generate_ai_subject_bitmap(
         &mut mask,
         grow_feather.grow,
         grow_feather.feather,
+        grow_feather.decontaminate,
         width,
         height,
     );
@@ -1134,7 +1172,7 @@ fn generate_color_bitmap(
         }
     }
 
-    apply_grow_and_feather(&mut mask, params.grow, params.feather, width, height);
+    apply_grow_and_feather(&mut mask, params.grow, params.feather, params.decontaminate, width, height);
     Some(mask)
 }
 
@@ -1234,7 +1272,7 @@ fn generate_luminance_bitmap(
         }
     }
 
-    apply_grow_and_feather(&mut mask, params.grow, params.feather, width, height);
+    apply_grow_and_feather(&mut mask, params.grow, params.feather, params.decontaminate, width, height);
     Some(mask)
 }
 

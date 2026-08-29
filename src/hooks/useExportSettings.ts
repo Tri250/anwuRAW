@@ -20,6 +20,8 @@ export function useExportSettings() {
   const [watermarkScale, setWatermarkScale] = useState(10);
   const [watermarkSpacing, setWatermarkSpacing] = useState(5);
   const [watermarkOpacity, setWatermarkOpacity] = useState(75);
+  const [colorSpace, setColorSpace] = useState<'srgb' | 'displayP3' | 'adobeRgb' | 'proPhoto'>('srgb');
+  const [bitDepth, setBitDepth] = useState<8 | 16>(8);
 
   const handleApplyPreset = useCallback((preset: ExportPreset) => {
     setFileFormat(preset.fileFormat);
@@ -40,6 +42,8 @@ export function useExportSettings() {
     setWatermarkScale(preset.watermarkScale);
     setWatermarkSpacing(preset.watermarkSpacing);
     setWatermarkOpacity(preset.watermarkOpacity);
+    setColorSpace((preset as any).colorSpace ?? 'srgb');
+    setBitDepth((preset as any).bitDepth ?? 8);
   }, []);
 
   const currentSettingsObject = useMemo(
@@ -62,6 +66,8 @@ export function useExportSettings() {
       watermarkScale,
       watermarkSpacing,
       watermarkOpacity,
+      colorSpace,
+      bitDepth,
     }),
     [
       fileFormat,
@@ -82,6 +88,8 @@ export function useExportSettings() {
       watermarkScale,
       watermarkSpacing,
       watermarkOpacity,
+      colorSpace,
+      bitDepth,
     ]
   );
 
@@ -122,6 +130,10 @@ export function useExportSettings() {
     setWatermarkSpacing,
     watermarkOpacity,
     setWatermarkOpacity,
+    colorSpace,
+    setColorSpace,
+    bitDepth,
+    setBitDepth,
     handleApplyPreset,
     currentSettingsObject,
   };

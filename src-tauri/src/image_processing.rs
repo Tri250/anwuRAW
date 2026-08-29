@@ -1854,7 +1854,14 @@ pub fn resolve_tonemapper_override(settings: &crate::AppSettings, is_raw: bool) 
             .as_deref()
             .unwrap_or("basic")
     };
-    Some(if tm == "agx" { 1 } else { 0 })
+    Some(match tm {
+        "agx" => 1,
+        "reinhard" => 2,
+        "filmic" | "filmic_pro" => 3,
+        "gamma" => 4,
+        "none" => 5,
+        _ => 0,
+    })
 }
 
 pub fn resolve_tonemapper_override_from_handle(
@@ -2263,8 +2270,14 @@ fn get_global_adjustments_from_json(
         has_lut,
         lut_intensity,
 
-        tonemapper_mode: tonemapper_override
-            .unwrap_or_else(|| if tone_mapper == "agx" { 1 } else { 0 }),
+        tonemapper_mode: tonemapper_override.unwrap_or_else(|| match tone_mapper {
+            "agx" => 1,
+            "reinhard" => 2,
+            "filmic" | "filmic_pro" => 3,
+            "gamma" => 4,
+            "none" => 5,
+            _ => 0,
+        }),
         lut_is_scene_referred,
         _pad_lut3: 0.0,
         _pad_lut4: 0.0,

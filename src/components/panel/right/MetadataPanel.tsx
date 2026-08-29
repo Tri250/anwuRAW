@@ -757,29 +757,63 @@ export default function MetadataPanel() {
                   {t('editor.metadata.gps.title')}
                 </Text>
                 <div className="bg-surface border border-surface rounded-xl p-3 flex flex-col gap-3">
-                  <div className="relative rounded-md overflow-hidden shadow-sm">
-                    <iframe
-                      className="pointer-events-none"
-                      frameBorder="0"
-                      height="180"
-                      loading="lazy"
-                      marginHeight={0}
-                      marginWidth={0}
-                      scrolling="no"
-                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${gpsData.lon - 0.01}%2C${
-                        gpsData.lat - 0.01
-                      }%2C${gpsData.lon + 0.01}%2C${gpsData.lat + 0.01}&layer=mapnik&marker=${gpsData.lat}%2C${
-                        gpsData.lon
-                      }`}
-                      width="100%"
-                    ></iframe>
+                  <div className="relative rounded-md overflow-hidden shadow-sm bg-bg-secondary">
+                    {/* 纯离线 SVG 世界地图缩略图，红点标记拍摄位置 */}
+                    <svg
+                      viewBox="0 0 360 180"
+                      className="w-full h-[180px]"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-label={t('editor.metadata.gps.offlineMapLabel')}
+                    >
+                      {/* 海洋背景 */}
+                      <rect width="360" height="180" fill="var(--surface, #2a2a2a)" />
+                      {/* 简化大陆轮廓线（多段 path，不依赖外部资源） */}
+                      <g
+                        fill="none"
+                        stroke="currentColor"
+                        strokeOpacity="0.25"
+                        strokeWidth="0.7"
+                        className="text-text-secondary"
+                      >
+                        {/* 北美 */}
+                        <path d="M45,40 L80,35 L95,45 L100,65 L90,75 L75,80 L60,75 L45,60 Z" />
+                        {/* 南美 */}
+                        <path d="M115,90 L130,95 L140,120 L135,150 L120,160 L110,140 L108,110 Z" />
+                        {/* 欧洲 */}
+                        <path d="M170,40 L200,38 L215,50 L210,65 L190,70 L175,65 L168,55 Z" />
+                        {/* 非洲 */}
+                        <path d="M185,75 L215,72 L225,100 L220,135 L200,150 L185,135 L180,105 Z" />
+                        {/* 亚洲 */}
+                        <path d="M215,40 L270,35 L300,45 L310,65 L300,80 L270,85 L245,80 L225,70 L218,55 Z" />
+                        {/* 澳洲 */}
+                        <path d="M290,130 L315,128 L325,140 L318,152 L300,155 L288,145 Z" />
+                      </g>
+                      {/* 赤道 + 经纬辅助线 */}
+                      <line x1="0" y1="90" x2="360" y2="90" stroke="currentColor" strokeOpacity="0.08" strokeWidth="0.4" />
+                      <line x1="180" y1="0" x2="180" y2="180" stroke="currentColor" strokeOpacity="0.08" strokeWidth="0.4" />
+                      {/* 拍摄位置红点 */}
+                      {(() => {
+                        // 经纬度 → SVG 坐标：lon [-180,180]→x[0,360], lat [90,-90]→y[0,180]
+                        const x = ((gpsData.lon! + 180) / 360) * 360;
+                        const y = ((90 - gpsData.lat!) / 180) * 180;
+                        return (
+                          <g>
+                            <circle cx={x} cy={y} r="6" fill="currentColor" className="text-accent" opacity="0.3" />
+                            <circle cx={x} cy={y} r="3" fill="currentColor" className="text-accent" />
+                            <circle cx={x} cy={y} r="1.2" fill="white" />
+                          </g>
+                        );
+                      })()}
+                    </svg>
+                    {/* 打开在线地图入口（显式动作，需用户点击才联网） */}
                     <a
-                      className="absolute inset-0 cursor-pointer hover:bg-black/10 transition-colors"
+                      className="absolute bottom-1 right-1 bg-bg-primary/80 backdrop-blur-sm text-text-secondary text-[10px] rounded-md px-2 py-1 border border-surface/50 hover:text-accent transition-colors cursor-pointer flex items-center gap-1"
                       href={`https://www.openstreetmap.org/?mlat=${gpsData.lat}&mlon=${gpsData.lon}#map=15/${gpsData.lat}/${gpsData.lon}`}
                       rel="noopener noreferrer"
                       target="_blank"
-                      data-tooltip={t('editor.metadata.gps.clickToOpenTooltip')}
-                    ></a>
+                    >
+                      {t('editor.metadata.gps.openOnlineMap')} ↗
+                    </a>
                   </div>
                   <div className="flex flex-col gap-0.5">
                     <MetadataItem label={t('editor.metadata.gps.latitude')} value={gpsData.lat?.toFixed(6)} />

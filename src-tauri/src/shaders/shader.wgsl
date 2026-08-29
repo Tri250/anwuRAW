@@ -1352,6 +1352,38 @@ fn no_tonemap(c: vec3<f32>) -> vec3<f32> {
     return c;
 }
 
+// Reinhard tonemap — simple, reliable, best for low-end devices
+fn reinhard_tonemap(c: vec3<f32>) -> vec3<f32> {
+    let x = max(c, vec3<f32>(0.0));
+    let mapped = x / (x + vec3<f32>(1.0));
+    return clamp(mapped, vec3<f32>(0.0), vec3<f32>(1.0));
+}
+
+// Filmic Pro (Uncharted 2) — keeps more highlight detail, richer shadows
+fn filmic_tonemap(c: vec3<f32>) -> vec3<f32> {
+    const A: f32 = 0.15;
+    const B: f32 = 0.50;
+    const C: f32 = 0.10;
+    const D: f32 = 0.20;
+    const E: f32 = 0.02;
+    const F: f32 = 0.30;
+    const W: f32 = 11.2;
+
+    fn uncharted(x: f32) -> f32 {
+        return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
+    }
+
+    let w_ = uncharted(W);
+    let x = max(c, vec3<f32>(0.0));
+    let mapped = (uncharted(x.r), uncharted(x.g), uncharted(x.b));
+    let out = vec3<f32>(mapped.0, mapped.1, mapped.2) / w_;
+    return clamp(out, vec3<f32>(0.0), vec3<f32>(1.0));
+}
+
+fn gamma_tonemap(c: vec3<f32>) -> vec3<f32> {
+    return linear_to_srgb(max(c, vec3<f32>(0.0)));
+}
+
 fn is_default_curve(points: array<Point, 16>, count: u32) -> bool {
     if (count < 2u) {
         return false;
@@ -1823,6 +1855,14 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     var default_tonemapped: vec3<f32>;
     if (adjustments.global.tonemapper_mode == 1u) {
         default_tonemapped = agx_full_transform(composite_rgb_linear);
+    } else if (adjustments.global.tonemapper_mode == 2u) {
+        default_tonemapped = reinhard_tonemap(composite_rgb_linear);
+    } else if (adjustments.global.tonemapper_mode == 3u) {
+        default_tonemapped = filmic_tonemap(composite_rgb_linear);
+    } else if (adjustments.global.tonemapper_mode == 4u) {
+        default_tonemapped = gamma_tonemap(composite_rgb_linear);
+    } else if (adjustments.global.tonemapper_mode == 5u) {
+        default_tonemapped = linear_to_srgb(max(composite_rgb_linear, vec3<f32>(0.0)));
     } else if (is_raw == 1u) {
         var srgb_emulated = linear_to_srgb(composite_rgb_linear);
         const BRIGHTNESS_GAMMA: f32 = 1.1;
