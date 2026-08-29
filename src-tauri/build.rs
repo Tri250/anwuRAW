@@ -21,51 +21,80 @@ fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool, io::Error> {
 }
 
 fn download_and_verify(
-    url: &str,
+    endpoints: &[&str],
+    repo_path: &str,
+    filename: &str,
     dest_path: &Path,
     expected_hash: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set"));
-    let temp_filename = dest_path.file_name().unwrap();
-    let temp_path = out_dir.join(temp_filename);
+    let temp_path = out_dir.join(filename);
 
-    println!(
-        "cargo:warning=Downloading to temporary path: {:?}",
-        temp_path
-    );
-    let mut response = reqwest::blocking::get(url)?;
+    let mut last_err: Option<Box<dyn std::error::Error>> = None;
 
-    if !response.status().is_success() {
-        let status = response.status();
-        let error_body = response
-            .text()
-            .unwrap_or_else(|_| "Could not read error body".to_string());
-        return Err(format!("Download failed with status {}: {}", status, error_body).into());
+    for endpoint in endpoints {
+        let url = format!(
+            "{}/{}/resolve/main/{}?download=true",
+            endpoint.trim_end_matches('/'),
+            repo_path,
+            filename
+        );
+
+        println!("cargo:warning=Trying {} ...", url);
+
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(120))
+            .connect_timeout(std::time::Duration::from_secs(20))
+            .build()?;
+
+        let mut response = match client.get(&url).send() {
+            Ok(r) => r,
+            Err(e) => {
+                last_err = Some(e.into());
+                continue;
+            }
+        };
+
+        if !response.status().is_success() {
+            last_err = Some(format!(
+                "{} returned status {}",
+                url,
+                response.status()
+            )
+            .into());
+            continue;
+        }
+
+        {
+            let mut file = fs::File::create(&temp_path)?;
+            response.copy_to(&mut file)?;
+        }
+        println!("cargo:warning=Download complete. Verifying file integrity...");
+
+        match verify_sha256(&temp_path, expected_hash) {
+            Ok(true) => {
+                fs::copy(&temp_path, dest_path)?;
+                fs::remove_file(&temp_path)?;
+                println!(
+                    "cargo:warning=Successfully downloaded and verified {:?}.",
+                    dest_path
+                );
+                return Ok(());
+            }
+            Ok(false) => {
+                fs::remove_file(&temp_path).ok();
+                last_err = Some("Verification failed! The downloaded file is corrupt.".into());
+                continue;
+            }
+            Err(e) => {
+                fs::remove_file(&temp_path).ok();
+                last_err = Some(format!("Could not verify file after download: {}", e).into());
+                continue;
+            }
+        }
     }
 
-    let mut temp_file = fs::File::create(&temp_path)?;
-    response.copy_to(&mut temp_file)?;
-    println!("cargo:warning=Download complete. Verifying file integrity...");
-
-    match verify_sha256(&temp_path, expected_hash) {
-        Ok(true) => {
-            fs::copy(&temp_path, dest_path)?;
-            fs::remove_file(&temp_path)?;
-            println!(
-                "cargo:warning=Successfully downloaded and verified {:?}.",
-                dest_path
-            );
-            Ok(())
-        }
-        Ok(false) => {
-            fs::remove_file(&temp_path)?;
-            Err("Verification failed! The downloaded file is corrupt.".into())
-        }
-        Err(e) => {
-            fs::remove_file(&temp_path).ok();
-            Err(format!("Could not verify file after download: {}", e).into())
-        }
-    }
+    Err(last_err.unwrap_or_else(|| "All download endpoints failed".into()))
 }
 
 fn main() {
@@ -149,17 +178,36 @@ fn main() {
     }
 
     if !is_valid {
-        println!(
-            "cargo:warning=Downloading ONNX Runtime library for {}-{}...",
-            target_os, target_arch
-        );
-        let base_url =
-            "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/onnxruntimes-v1.22.0/";
-        let download_url = format!("{}{}?download=true", base_url, download_filename);
-        println!("cargo:warning=URL: {}", download_url);
+        // 允许通过环境变量跳过 ONNX Runtime 库的下载（例如在离线构建环境中）
+        if env::var("RAPIDRAW_SKIP_ORT_DOWNLOAD").is_ok() {
+            println!(
+                "cargo:warning=RAPIDRAW_SKIP_ORT_DOWNLOAD is set, skipping ONNX Runtime download. \
+                 AI features will not work until {} is placed in {}.",
+                lib_name,
+                dest_dir.display()
+            );
+        } else {
+            println!(
+                "cargo:warning=Downloading ONNX Runtime library for {}-{}...",
+                target_os, target_arch
+            );
+            // 国内优先：hf-mirror 镜像 + HuggingFace 官方降级
+            const HF_MIRROR: &str = "https://hf-mirror.com";
+            const HF_OFFICIAL: &str = "https://huggingface.co";
+            let endpoints: &[&str] = &[HF_MIRROR, HF_OFFICIAL];
+            let repo_path = "CyberTimon/RapidRAW-Models";
+            let filename = format!("onnxruntimes-v1.22.0/{}", download_filename);
+            println!("cargo:warning=Endpoints: {:?}", endpoints);
 
-        if let Err(e) = download_and_verify(&download_url, &dest_path, expected_hash) {
-            panic!("Failed to download and verify ONNX Runtime library: {}", e);
+            if let Err(e) = download_and_verify(
+                endpoints,
+                repo_path,
+                &filename,
+                &dest_path,
+                expected_hash,
+            ) {
+                panic!("Failed to download and verify ONNX Runtime library: {}", e);
+            }
         }
     }
 

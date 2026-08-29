@@ -5,7 +5,7 @@ import { KEYBIND_DEFINITIONS, normalizeCombo } from '../utils/keyboardUtils';
 import { useEditorStore } from '../store/useEditorStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
-import { useUIStore } from '../store/useUIStore';
+import { useUIStore, hasAnyModalOpen } from '../store/useUIStore';
 import { useProcessStore } from '../store/useProcessStore';
 import { useEditorActions } from './useEditorActions';
 import { useLibraryActions } from './useLibraryActions';
@@ -629,20 +629,8 @@ export const useKeyboardShortcuts = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       const state = getStoreState();
 
-      const isModalOpen =
-        state.ui.isCreateFolderModalOpen ||
-        state.ui.isRenameFolderModalOpen ||
-        state.ui.isRenameFileModalOpen ||
-        state.ui.isImportModalOpen ||
-        state.ui.isCopyPasteSettingsModalOpen ||
-        state.ui.confirmModalState.isOpen ||
-        state.ui.panoramaModalState.isOpen ||
-        state.ui.cullingModalState.isOpen ||
-        state.ui.collageModalState.isOpen ||
-        state.ui.denoiseModalState.isOpen ||
-        state.ui.negativeModalState.isOpen;
-
-      if (isModalOpen) return;
+      // 任意 Modal 打开时屏蔽所有编辑器快捷键（Modal 各自处理 Esc/Enter）
+      if (hasAnyModalOpen(state.ui)) return;
 
       if (state.ui.isSettingsOpen) {
         if (event.code === 'Escape') {

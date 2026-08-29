@@ -265,6 +265,16 @@ export default function TransformModal({ isOpen, onClose, onApply, currentAdjust
     }
   }, [isOpen, currentAdjustments]);
 
+  // Esc 关闭模态（应用中不可关闭）
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isApplying) onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, isApplying, onClose]);
+
   const handleChange = (key: keyof typeof DEFAULT_PARAMS, value: number) => {
     const newParams = { ...params, [key]: value };
     setParams(newParams);

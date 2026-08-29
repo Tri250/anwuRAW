@@ -63,6 +63,7 @@ export default function CropPanel() {
 
   const [localRotation, setLocalRotation] = useState<number | null>(null);
   const localRotationRef = useRef<number | null>(null);
+  const [autoCropAfterRotate, setAutoCropAfterRotate] = useState(true);
 
   const PRESETS = useMemo<Array<CropPreset>>(
     () => [
@@ -133,8 +134,37 @@ export default function CropPanel() {
   );
 
   const lastSyncedRatio = useRef<number | null>(null);
+  const autoCropTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { aspectRatio, rotation = 0, flipHorizontal = false, flipVertical = false, orientationSteps = 0 } = adjustments;
+
+  // Auto-crop after rotation settles (debounced 400ms) to eliminate black borders
+  useEffect(() => {
+    if (!autoCropAfterRotate) return;
+    if (!selectedImage?.width || !selectedImage?.height) return;
+    if (!rotation || Math.abs(rotation) < 0.05) return;
+
+    if (autoCropTimerRef.current) clearTimeout(autoCropTimerRef.current);
+    autoCropTimerRef.current = setTimeout(() => {
+      const ratio = aspectRatio || (selectedImage.width / selectedImage.height);
+      const newCrop = calculateAutoCropForRotation(
+        selectedImage.width,
+        selectedImage.height,
+        orientationSteps,
+        ratio,
+        rotation,
+        adjustments.crop,
+      );
+      if (newCrop) {
+        setAdjustments((prev: Adjustments) => ({ ...prev, crop: newCrop }));
+      }
+    }, 400);
+
+    return () => {
+      if (autoCropTimerRef.current) clearTimeout(autoCropTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rotation, autoCropAfterRotate, orientationSteps, aspectRatio]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -612,6 +642,26 @@ export default function CropPanel() {
                   onDragStateChange={handleDragStateChange}
                 />
               </div>
+              {/* Auto-crop after rotation toggle */}
+              <label className="flex items-center justify-between px-4 py-2 rounded-lg bg-surface cursor-pointer select-none">
+                <span className="text-[12px] text-text-secondary">
+                  {t('editor.crop.autoCropAfterRotate')}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAutoCropAfterRotate((v) => !v)}
+                  className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
+                    autoCropAfterRotate ? 'bg-accent' : 'bg-text-muted/40'
+                  }`}
+                  aria-pressed={autoCropAfterRotate}
+                >
+                  <span
+                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                      autoCropAfterRotate ? 'translate-x-3.5' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+              </label>
             </div>
 
             <div className="space-y-4">

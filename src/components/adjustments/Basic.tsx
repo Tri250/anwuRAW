@@ -41,9 +41,24 @@ const ToneMapperSwitch = ({
         title: t('adjustments.basic.mappers.basicDesc'),
       },
       {
+        id: 'reinhard',
+        label: t('adjustments.basic.mappers.reinhard'),
+        title: t('adjustments.basic.mappers.reinhardDesc'),
+      },
+      {
+        id: 'filmic',
+        label: t('adjustments.basic.mappers.filmic'),
+        title: t('adjustments.basic.mappers.filmicDesc'),
+      },
+      {
         id: 'agx',
         label: t('adjustments.basic.mappers.agx'),
         title: t('adjustments.basic.mappers.agxDesc'),
+      },
+      {
+        id: 'gamma',
+        label: t('adjustments.basic.mappers.gamma'),
+        title: t('adjustments.basic.mappers.gammaDesc'),
       },
     ],
     [t],

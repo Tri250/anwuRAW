@@ -111,6 +111,7 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
       { key: 'tolerance', min: 1, max: 100, step: 1, defaultValue: 20 },
       { key: 'grow', min: -100, max: 100, step: 1, defaultValue: 0 },
       { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 35 },
+      { key: 'decontaminate', min: 0, max: 100, step: 1, defaultValue: 0 },
     ],
   },
   [Mask.Luminance]: {
@@ -118,28 +119,35 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
       { key: 'tolerance', min: 1, max: 100, step: 1, defaultValue: 20 },
       { key: 'grow', min: -100, max: 100, step: 1, defaultValue: 0 },
       { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 35 },
+      { key: 'decontaminate', min: 0, max: 100, step: 1, defaultValue: 0 },
     ],
   },
   [Mask.All]: { parameters: [] },
   [Mask.AiDepth]: {
-    parameters: [{ key: 'feather', min: 0, max: 100, step: 1, defaultValue: 15 }],
+    parameters: [
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 15 },
+      { key: 'decontaminate', min: 0, max: 100, step: 1, defaultValue: 0 },
+    ],
   },
   [Mask.AiSubject]: {
     parameters: [
       { key: 'grow', min: -100, max: 100, step: 1, defaultValue: 0 },
       { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 0 },
+      { key: 'decontaminate', min: 0, max: 100, step: 1, defaultValue: 20 },
     ],
   },
   [Mask.AiForeground]: {
     parameters: [
       { key: 'grow', min: -100, max: 100, step: 1, defaultValue: 0 },
       { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 0 },
+      { key: 'decontaminate', min: 0, max: 100, step: 1, defaultValue: 20 },
     ],
   },
   [Mask.AiSky]: {
     parameters: [
       { key: 'grow', min: -100, max: 100, step: 1, defaultValue: 0 },
       { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 0 },
+      { key: 'decontaminate', min: 0, max: 100, step: 1, defaultValue: 15 },
     ],
   },
   [Mask.QuickEraser]: { parameters: [] },

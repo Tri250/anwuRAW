@@ -508,3 +508,27 @@ export const useUIStore = create<UIState>((set, get) => ({
   searchFocusRequest: 0,
   requestSearchFocus: () => set((state) => ({ searchFocusRequest: state.searchFocusRequest + 1 })),
 }));
+
+/**
+ * 判断是否有任意模态/设置面板打开 —— 供全局快捷键、键盘事件处理器做统一短路
+ */
+export function hasAnyModalOpen(state: ReturnType<typeof useUIStore.getState>): boolean {
+  return (
+    state.isCreateFolderModalOpen ||
+    state.isRenameFolderModalOpen ||
+    state.isRenameFileModalOpen ||
+    state.isImportModalOpen ||
+    state.isCopyPasteSettingsModalOpen ||
+    state.isCreateAlbumModalOpen ||
+    state.isCreateAlbumGroupModalOpen ||
+    state.isRenameAlbumModalOpen ||
+    state.confirmModalState.isOpen ||
+    state.panoramaModalState.isOpen ||
+    state.focusStackModalState.isOpen ||
+    state.hdrModalState.isOpen ||
+    state.negativeModalState.isOpen ||
+    state.denoiseModalState.isOpen ||
+    state.cullingModalState.isOpen ||
+    state.collageModalState.isOpen
+  );
+}

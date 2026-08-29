@@ -59,6 +59,34 @@ pub struct ResizeOptions {
     pub dont_enlarge: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum ExportColorSpace {
+    Srgb,
+    DisplayP3,
+    AdobeRgb,
+    ProPhoto,
+}
+
+impl Default for ExportColorSpace {
+    fn default() -> Self {
+        Self::Srgb
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum ExportBitDepth {
+    Bit8,
+    Bit16,
+}
+
+impl Default for ExportBitDepth {
+    fn default() -> Self {
+        Self::Bit8
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExportSettings {
@@ -74,6 +102,14 @@ pub struct ExportSettings {
     pub export_masks: bool,
     #[serde(default)]
     pub preserve_folders: bool,
+    #[serde(default)]
+    pub color_space: ExportColorSpace,
+    #[serde(default = "default_bit_depth")]
+    pub bit_depth: u8,
+}
+
+fn default_bit_depth() -> u8 {
+    8
 }
 
 #[derive(Clone)]
@@ -486,7 +522,15 @@ fn save_image_with_metadata(
         .unwrap_or("")
         .to_lowercase();
 
-    let mut image_bytes = encode_image_to_bytes(image, &extension, export_settings.jpeg_quality)?;
+    let mut cs_image = apply_color_space_transform(image, &export_settings.color_space);
+
+    let mut image_bytes = encode_image_to_bytes(
+        &cs_image,
+        &extension,
+        export_settings.jpeg_quality,
+        &export_settings.color_space,
+        export_settings.bit_depth,
+    )?;
 
     exif_processing::write_image_with_metadata(
         &mut image_bytes,
@@ -579,10 +623,96 @@ fn encode_grayscale_to_png(bitmap: &GrayImage) -> Result<Vec<u8>, String> {
     Ok(buf)
 }
 
+// --- 色彩空间变换 ---
+
+// sRGB → XYZ(D65) 变换矩阵（行主序）
+const SRGB_TO_XYZ: [[f32; 3]; 3] = [
+    [0.4124564, 0.3575761, 0.1804375],
+    [0.2126729, 0.7151522, 0.0721750],
+    [0.0193339, 0.1191920, 0.9503041],
+];
+
+// XYZ(D65) → Display P3 (Apple)
+const XYZ_TO_DISPLAY_P3: [[f32; 3]; 3] = [
+    [ 2.4934969, -0.9313836, -0.4027108],
+    [-0.8294890,  1.7626641,  0.0236247],
+    [ 0.0358458, -0.0761724,  0.9568845],
+];
+
+// XYZ(D65) → Adobe RGB (1998)
+const XYZ_TO_ADOBE_RGB: [[f32; 3]; 3] = [
+    [ 2.0415879, -0.5650070, -0.3473250],
+    [-0.9692436,  1.8759675,  0.0415551],
+    [ 0.0134443, -0.1183624,  1.0151749],
+];
+
+// XYZ(D65) → ProPhoto RGB (ROMM-RGB)
+// primaries: R=(0.7347,0.2653), G=(0.1596,0.8404), B=(0.0366,0.0001), WP=D65
+// 由 primaries + wp 精确推导：XYZ→primary 逆矩阵
+const XYZ_TO_PRO_PHOTO: [[f32; 3]; 3] = [
+    [ 1.3904536, -0.2640605, -0.0528020],
+    [-0.5376556,  1.4889391,  0.0202733],
+    [ 0.0000000,  0.0000000,  0.9182250],
+];
+
+fn mat_mul_3x3(a: [[f32; 3]; 3], b: [[f32; 3]; 3]) -> [[f32; 3]; 3] {
+    let mut out = [[0.0f32; 3]; 3];
+    for i in 0..3 {
+        for j in 0..3 {
+            out[i][j] = a[i][0] * b[0][j] + a[i][1] * b[1][j] + a[i][2] * b[2][j];
+        }
+    }
+    out
+}
+
+fn apply_color_space_transform(
+    image: &DynamicImage,
+    target: &ExportColorSpace,
+) -> DynamicImage {
+    if matches!(target, ExportColorSpace::Srgb) {
+        return image.clone();
+    }
+
+    // sRGB → 目标空间 3x3 矩阵（先 sRGB→XYZ，再 XYZ→目标）
+    let transform = match target {
+        ExportColorSpace::DisplayP3 => mat_mul_3x3(XYZ_TO_DISPLAY_P3, SRGB_TO_XYZ),
+        ExportColorSpace::AdobeRgb => mat_mul_3x3(XYZ_TO_ADOBE_RGB, SRGB_TO_XYZ),
+        ExportColorSpace::ProPhoto => mat_mul_3x3(XYZ_TO_PRO_PHOTO, SRGB_TO_XYZ),
+        ExportColorSpace::Srgb => return image.clone(),
+    };
+
+    // 使用 16-bit float buffer 做高精度变换，再降到目标位深
+    let rgba16 = image.to_rgba16();
+    let (w, h) = rgba16.dimensions();
+    let mut out_buf = Vec::with_capacity((w * h * 4) as usize);
+
+    for pixel in rgba16.pixels() {
+        let r = pixel[0] as f32 / 65535.0;
+        let g = pixel[1] as f32 / 65535.0;
+        let b = pixel[2] as f32 / 65535.0;
+        let a = pixel[3];
+
+        let nr = (transform[0][0] * r + transform[0][1] * g + transform[0][2] * b).clamp(0.0, 1.0);
+        let ng = (transform[1][0] * r + transform[1][1] * g + transform[1][2] * b).clamp(0.0, 1.0);
+        let nb = (transform[2][0] * r + transform[2][1] * g + transform[2][2] * b).clamp(0.0, 1.0);
+
+        out_buf.push((nr * 65535.0) as u16);
+        out_buf.push((ng * 65535.0) as u16);
+        out_buf.push((nb * 65535.0) as u16);
+        out_buf.push(a);
+    }
+
+    let out: image::ImageBuffer<image::Rgba<u16>, Vec<u16>> =
+        image::ImageBuffer::from_raw(w, h, out_buf).unwrap();
+    DynamicImage::ImageRgba16(out)
+}
+
 fn encode_image_to_bytes(
     image: &DynamicImage,
     output_format: &str,
     jpeg_quality: u8,
+    _color_space: &ExportColorSpace,
+    bit_depth: u8,
 ) -> Result<Vec<u8>, String> {
     let mut image_bytes = Vec::new();
     let mut cursor = Cursor::new(&mut image_bytes);
@@ -637,18 +767,24 @@ fn encode_image_to_bytes(
                 .map_err(|e| e.to_string())?;
         }
         "png" => {
-            let image_to_encode = if image.as_rgb32f().is_some() {
+            // PNG 根据 bit_depth 选择 8-bit 或 16-bit
+            let image_to_encode = if bit_depth >= 16 {
                 DynamicImage::ImageRgb16(image.to_rgb16())
             } else {
-                image.clone()
+                image.to_rgb8().into()
             };
-
             image_to_encode
                 .write_to(&mut cursor, image::ImageFormat::Png)
                 .map_err(|e| e.to_string())?;
         }
         "tiff" => {
-            DynamicImage::ImageRgb16(image.to_rgb16())
+            // TIFF 根据 bit_depth 选择 8-bit 或 16-bit
+            let image_to_encode = if bit_depth >= 16 {
+                DynamicImage::ImageRgb16(image.to_rgb16())
+            } else {
+                image.to_rgb8().into()
+            };
+            image_to_encode
                 .write_to(&mut cursor, image::ImageFormat::Tiff)
                 .map_err(|e| e.to_string())?;
         }
@@ -1337,6 +1473,8 @@ pub async fn run_headless_export(
         watermark: None,
         export_masks: false,
         preserve_folders: true,
+        color_space: ExportColorSpace::default(),
+        bit_depth: default_bit_depth(),
     };
 
     let mut custom_adjustments = None;
@@ -1523,10 +1661,13 @@ pub async fn estimate_export_sizes(
             "estimate_export_size",
         )?;
 
+        let cs_preview = apply_color_space_transform(&processed_preview, &export_settings.color_space);
         let preview_bytes = encode_image_to_bytes(
-            &processed_preview,
+            &cs_preview,
             &output_format,
             export_settings.jpeg_quality,
+            &export_settings.color_space,
+            export_settings.bit_depth,
         )?;
         let preview_byte_size = preview_bytes.len();
 
@@ -1661,10 +1802,13 @@ pub async fn estimate_export_sizes(
             "estimate_batch_export_size",
         )?;
 
+        let cs_preview = apply_color_space_transform(&processed_preview, &export_settings.color_space);
         let preview_bytes = encode_image_to_bytes(
-            &processed_preview,
+            &cs_preview,
             &output_format,
             export_settings.jpeg_quality,
+            &export_settings.color_space,
+            export_settings.bit_depth,
         )?;
         let single_image_estimated_size = preview_bytes.len();
 

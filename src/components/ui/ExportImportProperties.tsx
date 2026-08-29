@@ -44,6 +44,8 @@ export interface ExportSettings {
   watermark: WatermarkSettings | null;
   exportMasks?: boolean;
   preserveFolders?: boolean;
+  colorSpace?: 'srgb' | 'displayP3' | 'adobeRgb' | 'proPhoto';
+  bitDepth?: 8 | 16;
 }
 
 export enum WatermarkAnchor {

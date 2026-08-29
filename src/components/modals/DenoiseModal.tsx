@@ -278,6 +278,16 @@ export default function DenoiseModal({
     }
   }, [isOpen, isRaw]);
 
+  // Esc 关闭模态（处理中 / 保存中 / 批量处理中不可关闭）
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSaving && !isProcessing) handleClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, isSaving, isProcessing, handleClose]);
+
   const handleClose = useCallback(() => {
     if (isSaving) return;
     onClose();

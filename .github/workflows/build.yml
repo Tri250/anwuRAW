@@ -178,7 +178,7 @@ jobs:
         shell: bash
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-          ORT_SKIP_DOWNLOAD: '1'
+          # build.rs 会自动从 hf-mirror → HuggingFace 降级链下载 Android ORT 到 src-tauri/libs/arm64-v8a/
           ORT_LIB_LOCATION: ${{ format('{0}/src-tauri/libs/arm64-v8a', github.workspace) }}
           ORT_STRATEGY: manual
         run: |

@@ -166,6 +166,16 @@ export default function NegativeConversionModal({
     }
   }, [isOpen, selectedImagePath, updatePreview]);
 
+  // Esc 关闭模态（保存中 / 加载预览中不可关闭）
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSaving && !isLoading) onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, isSaving, isLoading, onClose]);
+
   const handleParamChange = (key: keyof NegativeParams, value: number) => {
     const newParams = { ...params, [key]: value };
     setParams(newParams);

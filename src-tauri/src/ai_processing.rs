@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use image::imageops::{self, FilterType};
 use image::{
     DynamicImage, GenericImageView, GrayImage, ImageBuffer, Luma, Rgb, Rgb32FImage, Rgba, RgbaImage,
@@ -18,43 +18,74 @@ use tauri::Manager;
 use tokenizers::Tokenizer;
 use tokio::sync::Mutex as TokioMutex;
 
-const ENCODER_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/sam_vit_b_01ec64_encoder.onnx?download=true";
-const DECODER_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/sam_vit_b_01ec64_decoder.onnx?download=true";
+// --- 模型仓库端点（按「国内优先」排序） ---
+// hf-mirror.com 是官方 HuggingFace Hub API 兼容镜像，国内访问速度快
+// huggingface.co 是官方主站，作为降级后备
+const MODEL_REPO: &str = "CyberTimon/RapidRAW-Models";
+const HF_MIRROR_ENDPOINT: &str = "https://hf-mirror.com";
+const HF_OFFICIAL_ENDPOINT: &str = "https://huggingface.co";
+
+fn build_hf_url(endpoint: &str, filename: &str) -> String {
+    format!(
+        "{}/{}/resolve/main/{}?download=true",
+        endpoint.trim_end_matches('/'),
+        MODEL_REPO,
+        filename
+    )
+}
+
+// --- 从 AppHandle 读取用户配置的模型下载端点并解析 ---
+fn endpoints_from_handle(app_handle: &tauri::AppHandle) -> Vec<String> {
+    let user_setting = crate::app_settings::load_settings(app_handle.clone())
+        .ok()
+        .and_then(|s| {
+            let v = s.model_endpoint.trim();
+            if v.is_empty() || v == "auto" || v == "default" {
+                None
+            } else {
+                Some(v.to_string())
+            }
+        });
+    resolve_model_endpoints(user_setting.as_deref())
+}
+
+// --- 端点解析：支持 "auto" / "hf-mirror" / "huggingface" / 自定义 URL ---
+fn resolve_model_endpoints(user_setting: Option<&str>) -> Vec<String> {
+    let user = user_setting.map(|s| s.trim()).filter(|s| !s.is_empty());
+    match user {
+        Some("hf-mirror") | Some("mirror") => vec![HF_MIRROR_ENDPOINT.to_string()],
+        Some("huggingface") | Some("official") => vec![HF_OFFICIAL_ENDPOINT.to_string()],
+        Some(custom) if custom != "auto" && custom != "default" => vec![custom.to_string()],
+        _ => vec![HF_MIRROR_ENDPOINT.to_string(), HF_OFFICIAL_ENDPOINT.to_string()],
+    }
+}
+
+// --- 模型文件元数据 ---
 const ENCODER_FILENAME: &str = "sam_vit_b_01ec64_encoder.onnx";
 const DECODER_FILENAME: &str = "sam_vit_b_01ec64_decoder.onnx";
 const SAM_INPUT_SIZE: u32 = 1024;
 const ENCODER_SHA256: &str = "16ab73d9c824886f0de2938c19df22fb9ec3deebfd0de58e65177e479213d7d1";
 const DECODER_SHA256: &str = "85d0d672cf5b7fe763edcde429e5533e62f674af4b15c7d688b7673b0ef00bf7";
 
-const U2NETP_URL: &str =
-    "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/u2net.onnx?download=true";
 const U2NETP_FILENAME: &str = "u2net.onnx";
 const U2NETP_INPUT_SIZE: u32 = 320;
 const U2NETP_SHA256: &str = "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491";
 
-const SKYSEG_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/skyseg-u2net.onnx?download=true";
 const SKYSEG_FILENAME: &str = "skyseg_u2net.onnx";
 const SKYSEG_LEGACY_FILENAME: &str = "skyseg-u2net.onnx";
 const SKYSEG_INPUT_SIZE: u32 = 320;
 const SKYSEG_SHA256: &str = "ab9c34c64c3d821220a2886a4a06da4642ffa14d5b30e8d5339056a089aa1d39";
 
-const CLIP_MODEL_URL: &str =
-    "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/clip_model.onnx?download=true";
 const CLIP_MODEL_FILENAME: &str = "clip_model.onnx";
-const CLIP_TOKENIZER_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/clip_tokenizer.json?download=true";
 const CLIP_TOKENIZER_FILENAME: &str = "clip_tokenizer.json";
 const CLIP_MODEL_SHA256: &str = "57879bb1c23cdeb350d23569dd251ed4b740a96d747c529e94a2bb8040ac5d00";
 
-const DENOISE_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/nind_denoise_utnet_684.onnx?download=true";
 const DENOISE_FILENAME: &str = "nind_denoise_utnet_684.onnx";
 const DENOISE_SHA256: &str = "ee3586279d514df557ff3f7dec6df37fafc51ba5d3a3435b2cc9ac2d9017e7fe";
 
-const LAMA_URL: &str =
-    "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/lama_fp16.onnx?download=true";
 const LAMA_FILENAME: &str = "lama_fp16.onnx";
 const LAMA_SHA256: &str = "2d6be6277c400d6f1b91819737f7c3da935e5c63d1b521d393be1196a2bfa82c";
 
-const DEPTH_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/depth_anything_v2_vits.onnx?download=true";
 const DEPTH_FILENAME: &str = "depth_anything_v2_vits.onnx";
 const DEPTH_INPUT_SIZE: u32 = 518;
 const DEPTH_SHA256: &str = "d2b11a11c1d4a12b47608fa65a17ee9a4c605b55ee1730c8e3b526304f2562be";
@@ -211,9 +242,95 @@ fn persist_downloaded_asset(dest: &Path, bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
-async fn download_model(url: &str, dest: &Path) -> Result<()> {
-    let response = reqwest::get(url).await?.error_for_status()?;
-    let bytes = response.bytes().await?;
+async fn download_model_with_endpoints(
+    endpoints: &[String],
+    filename: &str,
+    dest: &Path,
+) -> Result<()> {
+    const MAX_RETRIES_PER_ENDPOINT: u32 = 3;
+    const RETRY_BACKOFF_MS: u64 = 1500;
+
+    let mut last_error: Option<anyhow::Error> = None;
+
+    for endpoint in endpoints {
+        let url = build_hf_url(endpoint, filename);
+        for attempt in 1..=MAX_RETRIES_PER_ENDPOINT {
+            println!(
+                "[AI] Downloading {} from {} (attempt {}/{})",
+                filename, endpoint, attempt, MAX_RETRIES_PER_ENDPOINT
+            );
+            match download_single(&url, dest).await {
+                Ok(_) => {
+                    // 成功后把 last_error 清掉，不再尝试其它端点
+                    return Ok(());
+                }
+                Err(e) => {
+                    last_error = Some(anyhow::anyhow!(
+                        "Endpoint {} attempt {} failed: {}",
+                        endpoint,
+                        attempt,
+                        e
+                    ));
+                    // 最后一次尝试失败就换端点
+                    if attempt < MAX_RETRIES_PER_ENDPOINT {
+                        tokio::time::sleep(tokio::time::Duration::from_millis(
+                            RETRY_BACKOFF_MS * attempt as u64,
+                        ))
+                        .await;
+                    }
+                }
+            }
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| anyhow!("All model download endpoints failed")))
+}
+
+async fn download_single(url: &str, dest: &Path) -> Result<()> {
+    let client = reqwest::Client::builder()
+        .timeout(tokio::time::Duration::from_secs(120))
+        .connect_timeout(tokio::time::Duration::from_secs(20))
+        .build()?;
+
+    // 支持断点续传：检查已下载的部分
+    let existing_size = if dest.exists() {
+        fs::metadata(dest)?.len()
+    } else {
+        0
+    };
+
+    let mut request = client.get(url);
+    if existing_size > 0 {
+        request = request.header(reqwest::header::RANGE, format!("bytes={}-", existing_size));
+    }
+
+    let response = request.send().await?;
+    let status = response.status();
+
+    let bytes = if status == reqwest::StatusCode::PARTIAL_CONTENT {
+        // 断点续传：读取新的 bytes 追加到已有文件
+        let new_bytes = response.bytes().await?;
+        let mut file = fs::OpenOptions::new().append(true).open(dest)?;
+        file.write_all(&new_bytes)?;
+        // 返回整个文件用于后续 persist
+        fs::read(dest)?.into()
+    } else {
+        // 全新下载（或服务器不支持 Range）
+        if dest.exists() {
+            let _ = fs::remove_file(dest);
+        }
+        if !status.is_success() {
+            let body = response.text().await.unwrap_or_default();
+            return Err(anyhow::anyhow!(
+                "HTTP {} for {}: {}",
+                status,
+                url,
+                &body[..body.len().min(200)]
+            ));
+        }
+        response.bytes().await?
+    };
+
     persist_downloaded_asset(dest, &bytes)
 }
 
@@ -266,7 +383,7 @@ async fn download_and_verify_model(
     app_handle: &tauri::AppHandle,
     models_dir: &Path,
     filename: &str,
-    url: &str,
+    endpoints: &[String],
     expected_hash: &str,
     model_name: &str,
 ) -> Result<()> {
@@ -287,7 +404,8 @@ async fn download_and_verify_model(
             fs::remove_file(&dest_path)?;
         }
         let _ = app_handle.emit("ai-model-download-start", model_name);
-        let download_result = download_model(url, &dest_path).await;
+        let download_result =
+            download_model_with_endpoints(endpoints, filename, &dest_path).await;
         let _ = app_handle.emit("ai-model-download-finish", model_name);
         download_result?;
 
@@ -327,12 +445,13 @@ pub async fn get_or_init_ai_models(
     }
 
     let models_dir = get_models_dir(app_handle)?;
+    let endpoints = endpoints_from_handle(app_handle);
 
     download_and_verify_model(
         app_handle,
         &models_dir,
         ENCODER_FILENAME,
-        ENCODER_URL,
+        &endpoints,
         ENCODER_SHA256,
         "SAM Encoder",
     )
@@ -341,7 +460,7 @@ pub async fn get_or_init_ai_models(
         app_handle,
         &models_dir,
         DECODER_FILENAME,
-        DECODER_URL,
+        &endpoints,
         DECODER_SHA256,
         "SAM Decoder",
     )
@@ -350,7 +469,7 @@ pub async fn get_or_init_ai_models(
         app_handle,
         &models_dir,
         U2NETP_FILENAME,
-        U2NETP_URL,
+        &endpoints,
         U2NETP_SHA256,
         "Foreground Model",
     )
@@ -359,7 +478,7 @@ pub async fn get_or_init_ai_models(
         app_handle,
         &models_dir,
         SKYSEG_FILENAME,
-        SKYSEG_URL,
+        &endpoints,
         SKYSEG_SHA256,
         "Sky Model",
     )
@@ -368,7 +487,7 @@ pub async fn get_or_init_ai_models(
         app_handle,
         &models_dir,
         DEPTH_FILENAME,
-        DEPTH_URL,
+        &endpoints,
         DEPTH_SHA256,
         "Depth Model",
     )
@@ -441,11 +560,12 @@ pub async fn get_or_init_denoise_model(
     }
 
     let models_dir = get_models_dir(app_handle)?;
+    let endpoints = endpoints_from_handle(app_handle);
     download_and_verify_model(
         app_handle,
         &models_dir,
         DENOISE_FILENAME,
-        DENOISE_URL,
+        &endpoints,
         DENOISE_SHA256,
         "NIND Denoise Model",
     )
@@ -501,12 +621,13 @@ pub async fn get_or_init_clip_models(
     }
 
     let models_dir = get_models_dir(app_handle)?;
+    let endpoints = endpoints_from_handle(app_handle);
 
     download_and_verify_model(
         app_handle,
         &models_dir,
         CLIP_MODEL_FILENAME,
-        CLIP_MODEL_URL,
+        &endpoints,
         CLIP_MODEL_SHA256,
         "CLIP Model",
     )
@@ -515,7 +636,9 @@ pub async fn get_or_init_clip_models(
     let clip_tokenizer_path = models_dir.join(CLIP_TOKENIZER_FILENAME);
     if !clip_tokenizer_path.exists() {
         let _ = app_handle.emit("ai-model-download-start", "CLIP Tokenizer");
-        let download_result = download_model(CLIP_TOKENIZER_URL, &clip_tokenizer_path).await;
+        let download_result =
+            download_model_with_endpoints(&endpoints, CLIP_TOKENIZER_FILENAME, &clip_tokenizer_path)
+                .await;
         let _ = app_handle.emit("ai-model-download-finish", "CLIP Tokenizer");
         download_result?;
     }
@@ -573,11 +696,12 @@ pub async fn get_or_init_lama_model(
     }
 
     let models_dir = get_models_dir(app_handle)?;
+    let endpoints = endpoints_from_handle(app_handle);
     download_and_verify_model(
         app_handle,
         &models_dir,
         LAMA_FILENAME,
-        LAMA_URL,
+        &endpoints,
         LAMA_SHA256,
         "Inpainting Model",
     )

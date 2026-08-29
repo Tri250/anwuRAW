@@ -10,53 +10,62 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # --- Windows x64 (NSIS installer) ---
           - platform: 'windows-latest'
             args: '--bundles nsis'
             target: ''
-            asset-prefix: '01'
-          - platform: 'windows-11-arm'
-            args: '--bundles nsis'
-            target: 'aarch64-pc-windows-msvc'
-            asset-prefix: '01'
+            asset-prefix: '01_win-x64'
+
+          # --- macOS Apple Silicon (M1/M2/M3) ---
           - platform: 'macos-14'
             target: aarch64-apple-darwin
-            asset-prefix: '02'
-          - platform: 'macos-15-intel'
-            target: x86_64-apple-darwin
-            asset-prefix: '02'
+            asset-prefix: '02_macos-arm64'
+
+          # --- macOS Apple Silicon + Tethering feature ---
           - platform: 'macos-14'
             target: aarch64-apple-darwin
             args: '--features tethering'
-            asset-prefix: '02_tethering'
-          - platform: 'macos-15-intel'
+            asset-prefix: '02_macos-arm64_tethering'
+
+          # --- macOS Intel (x86_64, last official runner = macos-13) ---
+          - platform: 'macos-13'
+            target: x86_64-apple-darwin
+            asset-prefix: '02_macos-intel'
+
+          # --- macOS Intel + Tethering feature ---
+          - platform: 'macos-13'
             target: x86_64-apple-darwin
             args: '--features tethering'
-            asset-prefix: '02_tethering'
+            asset-prefix: '02_macos-intel_tethering'
+
+          # --- Linux x86_64 (Ubuntu 22.04 LTS) ---
           - platform: 'ubuntu-22.04'
             target: ''
-            asset-prefix: '03'
-          - platform: 'ubuntu-22.04-arm'
-            target: ''
-            asset-prefix: '03'
+            asset-prefix: '03_linux-x64'
+
+          # --- Linux x86_64 (Ubuntu 24.04 LTS) ---
           - platform: 'ubuntu-24.04'
             target: ''
-            asset-prefix: '03'
-          - platform: 'ubuntu-24.04-arm'
-            target: ''
-            asset-prefix: '03'
+            asset-prefix: '03_linux-x64'
+
+          # --- Linux + Tethering (Ubuntu 22.04) ---
           - platform: 'ubuntu-22.04'
             target: ''
             args: '--features tethering'
-            asset-prefix: '03_tethering'
+            asset-prefix: '03_linux-x64_tethering'
+
+          # --- Linux + Tethering (Ubuntu 24.04) ---
           - platform: 'ubuntu-24.04'
             target: ''
             args: '--features tethering'
-            asset-prefix: '03_tethering'
+            asset-prefix: '03_linux-x64_tethering'
+
+          # --- Android ARM64-v8a (Ubuntu runner 交叉编译) ---
           - platform: 'ubuntu-latest'
             mobile: 'android'
             target: 'aarch64-linux-android'
             args: '--target aarch64'
-            asset-prefix: '04'
+            asset-prefix: '04_android-arm64'
     uses: ./.github/workflows/build.yml
     with:
       release-id: ${{ github.event.release.id }}

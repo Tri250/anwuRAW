@@ -1854,7 +1854,14 @@ pub fn resolve_tonemapper_override(settings: &crate::AppSettings, is_raw: bool) 
             .as_deref()
             .unwrap_or("basic")
     };
-    Some(if tm == "agx" { 1 } else { 0 })
+    Some(match tm {
+        "agx" => 1,
+        "reinhard" => 2,
+        "filmic" | "filmic_pro" => 3,
+        "gamma" => 4,
+        "none" => 5,
+        _ => 0,
+    })
 }
 
 pub fn resolve_tonemapper_override_from_handle(
@@ -1931,12 +1938,25 @@ pub fn apply_cpu_agx_tonemap(image: &mut DynamicImage) {
         let g = pixel_chunk[1];
         let b = pixel_chunk[2];
 
+        // agx_compress_gamut：和 shader 端完全一致
+        // 1) 负值平移
         let min_c = r.min(g).min(b);
-        let (r, g, b) = if min_c < 0.0 {
+        let (mut r, mut g, mut b) = if min_c < 0.0 {
             (r - min_c, g - min_c, b - min_c)
         } else {
             (r, g, b)
         };
+
+        // 2) 超 gamut 平滑压缩（通道 > 1.0 时做 hue-preserving soft saturate）
+        let max_c = r.max(g).max(b);
+        if max_c > 1.0 {
+            let luma = (r * 0.2126 + g * 0.7152 + b * 0.0722).max(1e-6);
+            let (rr, gg, bb) = (r / luma, g / luma, b / luma);
+            let (rc, gc, bc) = (rr / (1.0 + rr), gg / (1.0 + gg), bb / (1.0 + bb));
+            r = rc * luma;
+            g = gc * luma;
+            b = bc * luma;
+        }
 
         let in_rendering = pipe_to_rendering * Vec3::new(r, g, b);
 
@@ -2263,8 +2283,14 @@ fn get_global_adjustments_from_json(
         has_lut,
         lut_intensity,
 
-        tonemapper_mode: tonemapper_override
-            .unwrap_or_else(|| if tone_mapper == "agx" { 1 } else { 0 }),
+        tonemapper_mode: tonemapper_override.unwrap_or_else(|| match tone_mapper {
+            "agx" => 1,
+            "reinhard" => 2,
+            "filmic" | "filmic_pro" => 3,
+            "gamma" => 4,
+            "none" => 5,
+            _ => 0,
+        }),
         lut_is_scene_referred,
         _pad_lut3: 0.0,
         _pad_lut4: 0.0,

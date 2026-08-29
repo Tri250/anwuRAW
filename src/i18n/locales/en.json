@@ -8,9 +8,15 @@
       "highlights": "Highlights",
       "mappers": {
         "agx": "AgX",
-        "agxDesc": "Film-like Tonemapping",
+        "agxDesc": "Film-like Tonemapping — rich colors, smooth highlights",
         "basic": "Basic",
-        "basicDesc": "Standard Tonemapping"
+        "basicDesc": "Standard Tonemapping — simple, fast",
+        "reinhard": "Reinhard",
+        "reinhardDesc": "Simple & reliable — best for low-end devices",
+        "filmic": "Filmic Pro",
+        "filmicDesc": "Uncharted 2 — preserves highlight detail, filmic look",
+        "gamma": "Gamma 2.2",
+        "gammaDesc": "Pure sRGB gamma — minimal processing, most accurate baseline"
       },
       "reset": "Reset",
       "shadows": "Shadows",
@@ -378,6 +384,7 @@
       "manualCleanupTitle": "Manual Cleanup",
       "noImageSelected": "No image selected.",
       "params": {
+        "decontaminate": "Edge Cleanup",
         "feather": "Feather",
         "grow": "Grow",
         "intensity": "Intensity",
@@ -514,6 +521,7 @@
           "name": "1:1"
         }
       },
+      "autoCropAfterRotate": "Auto-crop black borders after rotation",
       "resetTooltip": "Reset Crop & Transform",
       "rotationHeading": "Rotation",
       "title": "Crop & Transform",
@@ -668,6 +676,8 @@
         "clickToOpenTooltip": "Click to open map in a new tab",
         "latitude": "Latitude",
         "longitude": "Longitude",
+        "offlineMapLabel": "Offline world map with photo location marker",
+        "openOnlineMap": "Open online map",
         "title": "GPS Location"
       },
       "organization": {
@@ -789,6 +799,17 @@
       "lut": "LUT",
       "lut_plural": "LUTs"
     },
+    "color": {
+      "bitDepth": "Bit Depth",
+      "bitDepth8Desc": "Smaller files, standard display",
+      "bitDepth16Desc": "Larger files, posterization-free editing",
+      "colorSpace": "Color Space",
+      "colorSpaceDesc_srgb": "Standard for the web and most screens",
+      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
+      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
+      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
+      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
+    },
     "metadata": {
       "removeGps": "Remove GPS Data",
       "saveWithMetadata": "Save with Metadata"
@@ -806,6 +827,7 @@
     },
     "sections": {
       "advanced": "Advanced",
+      "color": "Color Output",
       "fileNaming": "File Naming",
       "fileSettings": "File Settings",
       "imageSizing": "Image Sizing",
@@ -1724,7 +1746,10 @@
         "title": "Image Preprocessing",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "Basic"
+          "basic": "Basic",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "Global Tonemapper Override",
         "tonemapperOverrideDesc": "Force a specific tonemapper globally for all images, hiding the tonemapper switch from the adjustments panel."

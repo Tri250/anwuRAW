@@ -233,6 +233,10 @@ export default function ExportPanel({
     setWatermarkOpacity,
     preserveFolders,
     setPreserveFolders,
+    colorSpace,
+    setColorSpace,
+    bitDepth,
+    setBitDepth,
     handleApplyPreset,
     currentSettingsObject,
   } = useExportSettings();
@@ -381,6 +385,8 @@ export default function ExportPanel({
       keepMetadata,
       preserveTimestamps,
       preserveFolders,
+      colorSpace,
+      bitDepth,
       resize: enableResize ? { mode: resizeMode, value: resizeValue, dontEnlarge } : null,
       stripGps,
       exportMasks: !isLibraryContext ? exportMasks : undefined,
@@ -473,6 +479,8 @@ export default function ExportPanel({
       keepMetadata,
       preserveTimestamps,
       preserveFolders,
+      colorSpace,
+      bitDepth,
       resize: enableResize ? { mode: resizeMode, value: resizeValue, dontEnlarge } : null,
       stripGps,
       exportMasks: !isLibraryContext ? exportMasks : undefined,
@@ -689,6 +697,84 @@ export default function ExportPanel({
                         onChange={setDontEnlarge}
                         trackClassName="bg-surface"
                       />
+                    </div>
+                  )}
+                </Section>
+
+                {/* 输出色彩空间 + 位深 — 所有格式可见 */}
+                <Section title={t('export.sections.color')}>
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center justify-between text-[13px] text-text-secondary">
+                      <span>{t('export.color.colorSpace')}</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {(['srgb', 'displayP3', 'adobeRgb', 'proPhoto'] as const).map((cs) => {
+                        const labels: Record<string, string> = {
+                          srgb: 'sRGB',
+                          displayP3: 'Display P3',
+                          adobeRgb: 'Adobe RGB',
+                          proPhoto: 'ProPhoto',
+                        };
+                        const descs: Record<string, string> = {
+                          srgb: t('export.color.colorSpaceDesc_srgb'),
+                          displayP3: t('export.color.colorSpaceDesc_displayP3'),
+                          adobeRgb: t('export.color.colorSpaceDesc_adobeRgb'),
+                          proPhoto: t('export.color.colorSpaceDesc_proPhoto'),
+                        };
+                        const active = colorSpace === cs;
+                        return (
+                          <button
+                            key={cs}
+                            disabled={isExporting}
+                            title={descs[cs]}
+                            className={`text-left text-[12px] px-2 py-1.5 rounded-md border transition-colors disabled:opacity-50 ${
+                              active
+                                ? 'border-accent bg-accent/10 text-accent'
+                                : 'border-surface/60 bg-bg-secondary hover:border-text-muted/40 text-text-secondary'
+                            }`}
+                            onClick={() => setColorSpace(cs)}
+                          >
+                            <div className="font-medium">{labels[cs]}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* JPEG 提示：JPEG 仅原生支持 sRGB/CMYK，非 sRGB 会以 Tagged ICC 嵌入 */}
+                    {fileFormat === FileFormats.Jpeg && colorSpace !== 'srgb' && (
+                      <div className="text-[11px] text-text-muted mt-1 leading-tight">
+                        {t('export.color.jpgIccWarning')}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 位深选择器（仅对支持可变位深的格式可见） */}
+                  {(fileFormat === FileFormats.Png || fileFormat === FileFormats.Tiff || fileFormat === FileFormats.Jxl) && (
+                    <div className="flex flex-col gap-2 mt-3">
+                      <label className="flex items-center justify-between text-[13px] text-text-secondary">
+                        <span>{t('export.color.bitDepth')}</span>
+                        <span className="text-text-muted text-[11px]">
+                          {bitDepth === 16 ? t('export.color.bitDepth16Desc') : t('export.color.bitDepth8Desc')}
+                        </span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[8, 16].map((b) => {
+                          const active = bitDepth === (b as 8 | 16);
+                          return (
+                            <button
+                              key={b}
+                              disabled={isExporting}
+                              className={`text-center text-[12px] px-2 py-1.5 rounded-md border transition-colors disabled:opacity-50 ${
+                                active
+                                  ? 'border-accent bg-accent/10 text-accent font-medium'
+                                  : 'border-surface/60 bg-bg-secondary hover:border-text-muted/40 text-text-secondary'
+                              }`}
+                              onClick={() => setBitDepth(b as 8 | 16)}
+                            >
+                              {b}-bit
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </Section>

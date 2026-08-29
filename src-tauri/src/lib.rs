@@ -1145,26 +1145,48 @@ fn generate_preset_preview(
 
 #[tauri::command]
 async fn fetch_community_presets() -> Result<Vec<CommunityPreset>, String> {
-    let client = reqwest::Client::new();
-    let url = "https://raw.githubusercontent.com/CyberTimon/RapidRAW-Presets/main/manifest.json";
+    // GitHub raw 国内镜像降级链：先 ghproxy 加速，失败再走官方
+    const PRESET_PATHS: &[&str] = &[
+        "https://ghproxy.com/https://raw.githubusercontent.com/CyberTimon/RapidRAW-Presets/main/manifest.json",
+        "https://mirror.ghproxy.com/https://raw.githubusercontent.com/CyberTimon/RapidRAW-Presets/main/manifest.json",
+        "https://raw.githubusercontent.com/CyberTimon/RapidRAW-Presets/main/manifest.json",
+    ];
 
-    let response = client
-        .get(url)
-        .header("User-Agent", "RapidRAW-App")
-        .send()
-        .await
-        .map_err(|e| format!("Failed to fetch manifest from GitHub: {}", e))?;
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
 
-    if !response.status().is_success() {
-        return Err(format!("GitHub returned an error: {}", response.status()));
+    let mut last_err: Option<String> = None;
+    for url in PRESET_PATHS {
+        let response = match client
+            .get(*url)
+            .header("User-Agent", "RapidRAW-App")
+            .send()
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                last_err = Some(format!("{} 连接失败: {}", url, e));
+                continue;
+            }
+        };
+
+        if !response.status().is_success() {
+            last_err = Some(format!("{} 返回错误: {}", url, response.status()));
+            continue;
+        }
+
+        match response.json::<Vec<CommunityPreset>>().await {
+            Ok(presets) => return Ok(presets),
+            Err(e) => {
+                last_err = Some(format!("{} 解析失败: {}", url, e));
+                continue;
+            }
+        }
     }
 
-    let presets: Vec<CommunityPreset> = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse manifest.json: {}", e))?;
-
-    Ok(presets)
+    Err(last_err.unwrap_or_else(|| "所有预设源均不可用".to_string()))
 }
 
 #[tauri::command]
