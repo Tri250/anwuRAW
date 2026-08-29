@@ -97,7 +97,7 @@ pub async fn stitch_panorama(
                 let base64_str = general_purpose::STANDARD.encode(buf.get_ref());
                 let final_base64 = format!("data:image/png;base64,{}", base64_str);
 
-                *panorama_result_handle.lock().unwrap() = Some(panorama_image);
+                *panorama_result_handle.lock().unwrap_or_else(|e| e.into_inner()) = Some(panorama_image);
 
                 let _ = app_handle.emit(
                     "panorama-complete",

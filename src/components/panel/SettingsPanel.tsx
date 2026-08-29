@@ -1133,7 +1133,7 @@ export default function SettingsPanel({
                             { value: 'zh-CN', label: '简体中文' },
                             { value: 'zh-TW', label: '繁體中文' },
                           ]}
-                          value={appSettings?.language || 'en'}
+                          value={appSettings?.language || 'zh-CN'}
                           triggerClassName="bg-bg-primary"
                         />
                       </SettingItem>

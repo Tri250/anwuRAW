@@ -45,7 +45,7 @@ pub fn hydrate_sub_masks(
 }
 
 pub fn hydrate_adjustments(state: &tauri::State<AppState>, adjustments: &mut serde_json::Value) {
-    let mut cache = state.patch_cache.lock().unwrap();
+    let mut cache = state.patch_cache.lock().unwrap_or_else(|e| e.into_inner());
 
     if let Some(patches) = adjustments
         .get_mut("aiPatches")

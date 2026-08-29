@@ -1336,7 +1336,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
               pixelated: false,
             },
           })
-            .catch(() => {})
+            .catch((err) => console.warn('WGPU Sync Error:', err))
             .finally(() => {
               isInvoking = false;
               scheduleSync();

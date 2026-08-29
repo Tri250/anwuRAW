@@ -165,7 +165,7 @@ pub fn generate_transformed_preview(
     let transform_hash = calculate_transform_hash(adjustments);
 
     let (transformed_full_res, unscaled_crop_offset) = {
-        let mut cache_lock = state.full_transformed_cache.lock().unwrap();
+        let mut cache_lock = state.full_transformed_cache.lock().unwrap_or_else(|e| e.into_inner());
         if let Some((hash, img, offset)) = cache_lock.as_ref() {
             if *hash == transform_hash {
                 (Arc::clone(img), *offset)
@@ -236,7 +236,7 @@ fn cancel_thumbnail_generation(
         .thumbnail_cancellation_token
         .store(true, Ordering::SeqCst);
 
-    let mut tracker = state.thumbnail_progress.lock().unwrap();
+    let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
     tracker.total = 0;
     tracker.completed = 0;
     drop(tracker);
@@ -255,7 +255,7 @@ pub fn get_cached_full_warped_image(
     let geo_hash = calculate_geometry_hash(js_adjustments);
 
     {
-        let cache_lock = state.full_warped_cache.lock().unwrap();
+        let cache_lock = state.full_warped_cache.lock().unwrap_or_else(|e| e.into_inner());
         if let Some((hash, img)) = cache_lock.as_ref()
             && *hash == geo_hash
         {
@@ -274,7 +274,7 @@ pub fn get_cached_full_warped_image(
     let warped_arc = Arc::new(warped_image);
 
     {
-        let mut cache_lock = state.full_warped_cache.lock().unwrap();
+        let mut cache_lock = state.full_warped_cache.lock().unwrap_or_else(|e| e.into_inner());
         *cache_lock = Some((geo_hash, Arc::clone(&warped_arc)));
     }
 
@@ -286,13 +286,13 @@ async fn update_wgpu_transform(
     payload: WgpuTransformPayload,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
-    let context = match state.gpu_context.lock().unwrap().as_ref() {
+    let context = match state.gpu_context.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
         Some(c) => c.clone(),
         None => return Ok(()),
     };
 
     tokio::task::spawn_blocking(move || {
-        let mut display_lock = context.display.lock().unwrap();
+        let mut display_lock = context.display.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(display) = display_lock.as_mut() {
             display.latest_transform.rect = [payload.x, payload.y, payload.width, payload.height];
             display.latest_transform.clip = [
@@ -337,7 +337,7 @@ fn process_preview_job(
     hydrate_adjustments(&state, &mut adjustments_json);
     let adjustments_clone = adjustments_json;
 
-    let loaded_image_guard = state.original_image.lock().unwrap();
+    let loaded_image_guard = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
     let loaded_image = loaded_image_guard
         .as_ref()
         .ok_or("No original image loaded")?
@@ -362,7 +362,7 @@ fn process_preview_job(
         _ => (if has_roi { 1.4_f32 } else { 1.0_f32 }, 75_u8),
     };
 
-    let mut cached_preview_lock = state.cached_preview.lock().unwrap();
+    let mut cached_preview_lock = state.cached_preview.lock().unwrap_or_else(|e| e.into_inner());
 
     let base_valid = cached_preview_lock
         .as_ref()
@@ -380,7 +380,7 @@ fn process_preview_job(
             cached.unscaled_crop_offset,
         )
     } else {
-        *state.gpu_image_cache.lock().unwrap() = None;
+        *state.gpu_image_cache.lock().unwrap_or_else(|e| e.into_inner()) = None;
 
         let (base, scale, offset) =
             generate_transformed_preview(&state, &loaded_image, &adjustments_clone, preview_dim)?;
@@ -410,7 +410,7 @@ fn process_preview_job(
         };
 
         if is_interactive && base_valid {
-            *state.gpu_image_cache.lock().unwrap() = None;
+            *state.gpu_image_cache.lock().unwrap_or_else(|e| e.into_inner()) = None;
         }
 
         small
@@ -611,7 +611,7 @@ fn process_preview_job(
 fn start_analytics_worker(app_handle: tauri::AppHandle) {
     let state = app_handle.state::<AppState>();
     let (tx, rx): (Sender<AnalyticsJob>, Receiver<AnalyticsJob>) = mpsc::channel();
-    *state.analytics_worker_tx.lock().unwrap() = Some(tx);
+    *state.analytics_worker_tx.lock().unwrap_or_else(|e| e.into_inner()) = Some(tx);
 
     std::thread::spawn(move || {
         while let Ok(mut job) = rx.recv() {
@@ -649,7 +649,7 @@ fn start_preview_worker(app_handle: tauri::AppHandle) {
     let state = app_handle.state::<AppState>();
     let (tx, rx): (Sender<PreviewJob>, Receiver<PreviewJob>) = mpsc::channel();
 
-    *state.preview_worker_tx.lock().unwrap() = Some(tx);
+    *state.preview_worker_tx.lock().unwrap_or_else(|e| e.into_inner()) = Some(tx);
 
     std::thread::spawn(move || {
         while let Ok(mut job) = rx.recv() {
@@ -696,7 +696,7 @@ async fn apply_adjustments(
     let (tx, rx) = tokio::sync::oneshot::channel();
 
     {
-        let tx_guard = state.preview_worker_tx.lock().unwrap();
+        let tx_guard = state.preview_worker_tx.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(worker_tx) = tx_guard.as_ref() {
             let job = PreviewJob {
                 adjustments: js_adjustments,
@@ -863,7 +863,7 @@ async fn preview_geometry_transform(
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
     let (loaded_image_path, is_raw) = {
-        let guard = state.original_image.lock().unwrap();
+        let guard = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
         let loaded = guard.as_ref().ok_or("No image loaded")?;
         (loaded.path.clone(), loaded.is_raw)
     };
@@ -884,7 +884,7 @@ async fn preview_geometry_transform(
             let context = get_or_init_gpu_context(&state, &app_handle)?;
 
             let original_image = {
-                let guard = state.original_image.lock().unwrap();
+                let guard = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
                 let loaded = guard.as_ref().ok_or("No image loaded")?;
                 loaded.image.clone()
             };
@@ -952,7 +952,7 @@ async fn preview_geometry_transform(
                 "preview_geometry_transform_base_gen",
             )?;
 
-            let mut cache = state.geometry_cache.lock().unwrap();
+            let mut cache = state.geometry_cache.lock().unwrap_or_else(|e| e.into_inner());
             if cache.len() > 5 {
                 cache.clear();
             }
@@ -1056,7 +1056,7 @@ async fn preview_geometry_transform(
 pub fn get_original_image(
     state: &tauri::State<AppState>,
 ) -> Result<(std::sync::Arc<image::DynamicImage>, bool), String> {
-    let original_image_lock = state.original_image.lock().unwrap();
+    let original_image_lock = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
     let loaded_image = original_image_lock
         .as_ref()
         .ok_or("No original image loaded")?;
@@ -1393,7 +1393,7 @@ async fn merge_hdr(
 
     let _ = app_handle.emit("hdr-progress", "Creating preview...");
 
-    *hdr_result_handle.lock().unwrap() = Some(hdr_merged);
+    *hdr_result_handle.lock().unwrap_or_else(|e| e.into_inner()) = Some(hdr_merged);
 
     let _ = app_handle.emit(
         "hdr-complete",
@@ -1409,7 +1409,7 @@ async fn save_hdr(
     first_path_str: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
-    let hdr_image = state.hdr_result.lock().unwrap().take().ok_or_else(|| {
+    let hdr_image = state.hdr_result.lock().unwrap_or_else(|e| e.into_inner()).take().ok_or_else(|| {
         "No hdr image found in memory to save. It might have already been saved.".to_string()
     })?;
 
@@ -1828,8 +1828,8 @@ fn frontend_ready(
         }
     }
 
-    let open_with_file = state.initial_file_path.lock().unwrap().take();
-    let edit_session = state.pending_edit_session.lock().unwrap().take();
+    let open_with_file = state.initial_file_path.lock().unwrap_or_else(|e| e.into_inner()).take();
+    let edit_session = state.pending_edit_session.lock().unwrap_or_else(|e| e.into_inner()).take();
     if let Some(path) = &open_with_file {
         log::info!("Frontend is ready, returning initial path: {}", path);
     }
@@ -1889,7 +1889,7 @@ pub fn run() {
         .plugin(PinchZoomDisablePlugin)
         .on_window_event(|window, event| if let tauri::WindowEvent::Resized(size) = event {
             let state = window.state::<AppState>();
-            if let Some(ctx) = state.gpu_context.lock().unwrap().as_ref()
+            if let Some(ctx) = state.gpu_context.lock().unwrap_or_else(|e| e.into_inner()).as_ref()
                 && let Ok(mut display_lock) = ctx.display.try_lock()
                     && let Some(display) = display_lock.as_mut() {
                         display.config.width = size.width.max(1);
@@ -1924,11 +1924,11 @@ pub fn run() {
                 match launch_req.clone() {
                     LaunchRequest::EditSession(session) => {
                         log::info!("Initial launch with external edit session for: {}", session.source);
-                        *state.pending_edit_session.lock().unwrap() = Some(session);
+                        *state.pending_edit_session.lock().unwrap_or_else(|e| e.into_inner()) = Some(session);
                     }
                     LaunchRequest::OpenFile(path) => {
                         log::info!("Initial open: Storing path {} for later.", path);
-                        *state.initial_file_path.lock().unwrap() = Some(path);
+                        *state.initial_file_path.lock().unwrap_or_else(|e| e.into_inner()) = Some(path);
                     }
                     _ => {}
                 }
@@ -1941,7 +1941,7 @@ pub fn run() {
                 std::thread::spawn(move || {
                     let disks = sysinfo::Disks::new_with_refreshed_list();
                     let state = disks_app_handle.state::<AppState>();
-                    *state.disks_cache.lock().unwrap() = Some(disks);
+                    *state.disks_cache.lock().unwrap_or_else(|e| e.into_inner()) = Some(disks);
                 });
             }
 
@@ -1950,7 +1950,7 @@ pub fn run() {
 
             {
                 let state = app.state::<AppState>();
-                *state.gpu_crash_flag_path.lock().unwrap() = Some(crash_flag_path.clone());
+                *state.gpu_crash_flag_path.lock().unwrap_or_else(|e| e.into_inner()) = Some(crash_flag_path.clone());
             }
 
             let mut settings: AppSettings = load_settings(app_handle.clone()).unwrap_or_default();
@@ -1958,7 +1958,7 @@ pub fn run() {
             {
                 let state = app.state::<AppState>();
                 let cache_size = settings.image_cache_size.unwrap_or(5) as usize;
-                state.decoded_image_cache.lock().unwrap().set_capacity(cache_size);
+                state.decoded_image_cache.lock().unwrap_or_else(|e| e.into_inner()).set_capacity(cache_size);
             }
 
             if crash_flag_path.exists() {
@@ -1971,7 +1971,7 @@ pub fn run() {
             let lens_db = lens_correction::load_lensfun_db(&app_handle);
             {
                 let state = app.state::<AppState>();
-                *state.lens_db.lock().unwrap() = Some(Arc::new(lens_db));
+                *state.lens_db.lock().unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(lens_db));
             }
 
             // env::set_var 在 Rust 1.76+ 是 unsafe（多线程下 UB）。
@@ -2146,7 +2146,7 @@ pub fn run() {
                         tokio::time::sleep(Duration::from_millis(500)).await;
 
                         let state_to_save = {
-                            let mut lock = pending_state_for_saver.lock().unwrap();
+                            let mut lock = pending_state_for_saver.lock().unwrap_or_else(|e| e.into_inner());
                             lock.take()
                         };
 
@@ -2206,7 +2206,7 @@ pub fn run() {
                             state.height = size.height;
                         }
 
-                        *pending_state_for_handler.lock().unwrap() = Some(state);
+                        *pending_state_for_handler.lock().unwrap_or_else(|e| e.into_inner()) = Some(state);
                     }
                     _ => {}
                 });
@@ -2381,7 +2381,7 @@ pub fn run() {
                         && let Some(path_str) = path.to_str()
                     {
                         let state = app_handle.state::<AppState>();
-                        *state.initial_file_path.lock().unwrap() = Some(path_str.to_string());
+                        *state.initial_file_path.lock().unwrap_or_else(|e| e.into_inner()) = Some(path_str.to_string());
                         log::info!("macOS initial open: Stored path {} for later.", path_str);
                     }
                 }

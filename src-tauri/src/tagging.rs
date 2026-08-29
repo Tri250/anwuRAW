@@ -202,7 +202,7 @@ pub fn generate_tags_with_clip(
     let ids_val = Tensor::from_array(ids_layout.into_owned())?;
     let mask_val = Tensor::from_array(mask_layout.into_owned())?;
 
-    let mut clip_session = clip_session_mutex.lock().unwrap();
+    let mut clip_session = clip_session_mutex.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = clip_session.run(ort::inputs![ids_val, image_val, mask_val])?;
 
     let logits_dyn = outputs[0].try_extract_array::<f32>()?.to_owned();
@@ -254,7 +254,7 @@ pub async fn start_background_indexing(
     app_handle: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    if let Some(handle) = state.indexing_task_handle.lock().unwrap().take() {
+    if let Some(handle) = state.indexing_task_handle.lock().unwrap_or_else(|e| e.into_inner()).take() {
         println!("Cancelling previous indexing task.");
         handle.abort();
     }
@@ -385,7 +385,7 @@ pub async fn start_background_indexing(
                         }
                     }
 
-                    let mut count = processed_count_inner.lock().unwrap();
+                    let mut count = processed_count_inner.lock().unwrap_or_else(|e| e.into_inner());
                     *count += 1;
                     let _ = app_handle_inner.emit(
                         "indexing-progress",
@@ -408,7 +408,7 @@ pub async fn start_background_indexing(
             .unwrap() = None;
     });
 
-    *state.indexing_task_handle.lock().unwrap() = Some(task);
+    *state.indexing_task_handle.lock().unwrap_or_else(|e| e.into_inner()) = Some(task);
 
     Ok(())
 }

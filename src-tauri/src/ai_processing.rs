@@ -398,7 +398,7 @@ pub async fn get_or_init_ai_models(
         depth_anything: Mutex::new(depth_anything),
     });
 
-    let mut ai_state_lock = ai_state_mutex.lock().unwrap();
+    let mut ai_state_lock = ai_state_mutex.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(state) = ai_state_lock.as_mut() {
         state.models = Some(models.clone());
     } else {
@@ -458,7 +458,7 @@ pub async fn get_or_init_denoise_model(
 
     crate::register_exit_handler();
 
-    let mut ai_state_lock = ai_state_mutex.lock().unwrap();
+    let mut ai_state_lock = ai_state_mutex.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(state) = ai_state_lock.as_mut() {
         state.denoise_model = Some(denoise_model.clone());
     } else {
@@ -530,7 +530,7 @@ pub async fn get_or_init_clip_models(
 
     let clip_models = Arc::new(ClipModels { model, tokenizer });
 
-    let mut ai_state_lock = ai_state_mutex.lock().unwrap();
+    let mut ai_state_lock = ai_state_mutex.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(state) = ai_state_lock.as_mut() {
         state.clip_models = Some(clip_models.clone());
     } else {
@@ -590,7 +590,7 @@ pub async fn get_or_init_lama_model(
 
     crate::register_exit_handler();
 
-    let mut ai_state_lock = ai_state_mutex.lock().unwrap();
+    let mut ai_state_lock = ai_state_mutex.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(state) = ai_state_lock.as_mut() {
         state.lama_model = Some(lama_model.clone());
     } else {
@@ -767,7 +767,7 @@ fn run_native_denoise(
         let t_input = Tensor::from_array(input_values)?;
 
         let out = {
-            let mut sess = session.lock().unwrap();
+            let mut sess = session.lock().unwrap_or_else(|e| e.into_inner());
             let outputs = sess.run(ort::inputs![t_input])?;
             let arr = outputs[0].try_extract_array::<f32>()?.to_owned();
             arr.into_dimensionality::<ndarray::Ix4>()
@@ -945,7 +945,7 @@ pub fn run_lama_inpainting(
     let t_msk = Tensor::from_array(msk_tensor.into_dyn().as_standard_layout().into_owned())?;
 
     let output_tensor = {
-        let mut session = lama_session.lock().unwrap();
+        let mut session = lama_session.lock().unwrap_or_else(|e| e.into_inner());
         let outputs = session.run(ort::inputs!["image" => t_img, "mask" => t_msk])?;
         outputs[0].try_extract_array::<f32>()?.to_owned()
     };
@@ -1022,7 +1022,7 @@ pub fn generate_image_embeddings(
     let input_tensor_dyn = input_tensor.into_dyn();
     let input_values = input_tensor_dyn.as_standard_layout();
     let input_tensor_ort = Tensor::from_array(input_values.into_owned())?;
-    let mut session = encoder.lock().unwrap();
+    let mut session = encoder.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = session.run(ort::inputs![input_tensor_ort])?;
 
     let embeddings = outputs[0].try_extract_array::<f32>()?.to_owned();
@@ -1107,7 +1107,7 @@ pub fn run_sam_decoder(
             Tensor::from_array(orig_im_size.clone().as_standard_layout().into_owned())?;
 
         let mask_tensor = {
-            let mut session = decoder.lock().unwrap();
+            let mut session = decoder.lock().unwrap_or_else(|e| e.into_inner());
             let outputs = session.run(ort::inputs![
                 t_embeddings,
                 t_point_coords,
@@ -1306,7 +1306,7 @@ pub fn run_sky_seg_model(
     let input_tensor_dyn = input_tensor.into_dyn();
     let t_input = Tensor::from_array(input_tensor_dyn.as_standard_layout().into_owned())?;
 
-    let mut session = sky_seg_session.lock().unwrap();
+    let mut session = sky_seg_session.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = session.run(ort::inputs![t_input])?;
     let output_tensor = outputs[0].try_extract_array::<f32>()?.to_owned();
     let out_slice = output_tensor.as_slice().unwrap();
@@ -1387,7 +1387,7 @@ pub fn run_u2netp_model(
     let input_tensor_dyn = input_tensor.into_dyn();
     let t_input = Tensor::from_array(input_tensor_dyn.as_standard_layout().into_owned())?;
 
-    let mut session = u2netp_session.lock().unwrap();
+    let mut session = u2netp_session.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = session.run(ort::inputs![t_input])?;
     let output_tensor = outputs[0].try_extract_array::<f32>()?.to_owned();
     let out_slice = output_tensor.as_slice().unwrap();
@@ -1466,7 +1466,7 @@ pub fn run_depth_anything_model(
     let input_tensor_dyn = input_tensor.into_dyn();
     let t_input = Tensor::from_array(input_tensor_dyn.as_standard_layout().into_owned())?;
 
-    let mut session = depth_session.lock().unwrap();
+    let mut session = depth_session.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = session.run(ort::inputs![t_input])?;
     let output_tensor = outputs[0].try_extract_array::<f32>()?.to_owned();
     let out_slice = output_tensor.as_slice().unwrap();

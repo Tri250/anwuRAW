@@ -332,7 +332,7 @@ impl ExportTaskGuard {
 fn register_export_task(
     task_token: &Mutex<Option<Arc<AtomicBool>>>,
 ) -> Result<Arc<AtomicBool>, String> {
-    let mut active_token = task_token.lock().unwrap();
+    let mut active_token = task_token.lock().unwrap_or_else(|e| e.into_inner());
     if active_token.is_some() {
         return Err("An export is already in progress.".to_string());
     }
@@ -349,7 +349,7 @@ fn request_export_cancellation<F>(
 where
     F: FnOnce(),
 {
-    let active_token = task_token.lock().unwrap();
+    let active_token = task_token.lock().unwrap_or_else(|e| e.into_inner());
     let Some(cancellation_token) = active_token.as_ref() else {
         return ExportCancellationRequest::NoActiveTask;
     };
@@ -370,7 +370,7 @@ fn finish_export_task<F>(
 where
     F: FnOnce(bool),
 {
-    let mut active_token = task_token.lock().unwrap();
+    let mut active_token = task_token.lock().unwrap_or_else(|e| e.into_inner());
     let Some(current_token) = active_token.as_ref() else {
         return false;
     };
@@ -1445,7 +1445,7 @@ pub async fn estimate_export_sizes(
         hydrate_adjustments(&state, &mut adjustments_clone);
 
         let new_transform_hash = calculate_transform_hash(&adjustments_clone);
-        let cached_preview_lock = state.cached_preview.lock().unwrap();
+        let cached_preview_lock = state.cached_preview.lock().unwrap_or_else(|e| e.into_inner());
         let preview_dim = settings.editor_preview_resolution.unwrap_or(1920);
 
         let (preview_image, scale, unscaled_crop_offset) = if let Some(cached) =

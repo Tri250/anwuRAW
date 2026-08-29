@@ -473,7 +473,7 @@ pub fn convert_image_to_cube_lut(image: &DynamicImage, size: u32) -> Result<Vec<
 }
 
 pub fn get_or_load_lut(state: &State<AppState>, path: &str) -> Result<Arc<Lut>, String> {
-    let mut cache = state.lut_cache.lock().unwrap();
+    let mut cache = state.lut_cache.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(lut) = cache.get(path) {
         return Ok(lut.clone());
     }
@@ -716,7 +716,7 @@ pub fn load_and_parse_lut(path: String, state: State<AppState>) -> Result<LutPar
     let lut = parse_lut_file(&path).map_err(|e| e.to_string())?;
     let lut_size = lut.size;
 
-    let mut cache = state.lut_cache.lock().unwrap();
+    let mut cache = state.lut_cache.lock().unwrap_or_else(|e| e.into_inner());
     cache.insert(path, Arc::new(lut));
 
     Ok(LutParseResult { size: lut_size })

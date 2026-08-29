@@ -30,20 +30,9 @@ interface UseAppInitializationProps {
   setLibraryViewMode: (mode: LibraryViewMode) => void;
 }
 
-const getDefaultLanguage = (i18nInstance: any): string => {
-  const browserLang = navigator.language || (navigator as any).userLanguage || 'en';
-  const shortLang = browserLang.split('-')[0].toLowerCase();
-  const supportedLanguages = Object.keys(i18nInstance.options.resources || {});
-  const fallbackLang =
-    typeof i18nInstance.options.fallbackLng === 'string'
-      ? i18nInstance.options.fallbackLng
-      : i18nInstance.options.fallbackLng?.[0] || 'en';
-
-  return supportedLanguages.includes(browserLang)
-    ? browserLang
-    : supportedLanguages.includes(shortLang)
-      ? shortLang
-      : fallbackLang;
+const getDefaultLanguage = (_i18nInstance: any): string => {
+  // 首次安装默认选择简体中文，不再根据系统语言自动推断
+  return 'zh-CN';
 };
 
 export const useAppInitialization = ({
