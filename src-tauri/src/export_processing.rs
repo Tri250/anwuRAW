@@ -703,7 +703,8 @@ fn apply_color_space_transform(
     }
 
     let out: image::ImageBuffer<image::Rgba<u16>, Vec<u16>> =
-        image::ImageBuffer::from_raw(w, h, out_buf).unwrap();
+        image::ImageBuffer::from_raw(w, h, out_buf)
+            .unwrap_or_else(|| image::ImageBuffer::new(w, h));
     DynamicImage::ImageRgba16(out)
 }
 
@@ -1085,7 +1086,10 @@ pub(crate) async fn export_images_impl(
             if cancellation_token.load(Ordering::SeqCst) {
                 break;
             }
-            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            let permit = match semaphore.clone().acquire_owned().await {
+                Ok(p) => p,
+                Err(_) => break, // semaphore closed — abort remaining work
+            };
             if cancellation_token.load(Ordering::SeqCst) {
                 drop(permit);
                 break;
@@ -1576,10 +1580,12 @@ pub async fn estimate_export_sizes(
         let loaded_image = state
             .original_image
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .clone()
             .ok_or("No original image loaded")?;
-        let mut adjustments_clone = current_edit_adjustments.clone().unwrap();
+        let mut adjustments_clone = current_edit_adjustments
+            .clone()
+            .unwrap_or_else(|| serde_json::Value::Object(serde_json::Map::new()));
         hydrate_adjustments(&state, &mut adjustments_clone);
 
         let new_transform_hash = calculate_transform_hash(&adjustments_clone);
@@ -1700,8 +1706,9 @@ pub async fn estimate_export_sizes(
         let mmap_guard;
         let file_data: &[u8] = match read_file_mapped(Path::new(&source_path_str)) {
             Ok(mmap) => {
+                let r: &[u8] = &mmap;
                 mmap_guard = Some(mmap);
-                mmap_guard.as_ref().unwrap()
+                r
             }
             Err(_) => {
                 file_slice = fs::read(&source_path_str).map_err(|io_err| io_err.to_string())?;

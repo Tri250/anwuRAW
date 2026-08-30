@@ -10,8 +10,13 @@
   --color-text-primary: var(--app-text-primary);
   --color-text-secondary: var(--app-text-secondary);
   --color-accent: var(--app-accent);
+  --color-accent-hover: var(--app-accent-hover);
+  --color-accent-subtle: var(--app-accent-subtle);
   --color-border-color: var(--app-border-color);
   --color-hover-color: var(--app-hover-color);
+  --color-success: var(--app-success);
+  --color-warning: var(--app-warning);
+  --color-error: var(--app-error);
 
   --font-sans: var(--font-family);
 
@@ -114,6 +119,10 @@
   body {
     background-color: transparent;
     @apply text-text-primary font-sans;
+    line-height: var(--line-height-normal, 1.5);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   *:focus {

@@ -464,10 +464,24 @@ export const useAppInitialization = ({
     });
 
     const fontFamily = appSettings?.fontFamily || 'poppins';
+    const cjkFallbacks =
+      "'HarmonyOS Sans SC', 'OPPOSans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC', 'WenQuanYi Micro Hei";
     const fontStack =
       fontFamily === 'system'
-        ? '-apple-system, BlinkMacSystemFont, system-ui, sans-serif'
-        : "'Poppins', system-ui, sans-serif";
+        ? `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', ${cjkFallbacks}, system-ui, sans-serif`
+        : `'Poppins', ${cjkFallbacks}, system-ui, sans-serif`;
     root.style.setProperty('--font-family', fontStack);
+
+    // 排版变量（统一字号、行高、字重）
+    root.style.setProperty('--line-height-tight', '1.25');
+    root.style.setProperty('--line-height-normal', '1.5');
+    root.style.setProperty('--line-height-relaxed', '1.75');
+    root.style.setProperty('--font-size-xs', '0.75rem');
+    root.style.setProperty('--font-size-sm', '0.875rem');
+    root.style.setProperty('--font-size-base', '1rem');
+    root.style.setProperty('--font-size-lg', '1.125rem');
+    root.style.setProperty('--font-weight-normal', '400');
+    root.style.setProperty('--font-weight-medium', '500');
+    root.style.setProperty('--font-weight-semibold', '600');
   }, [theme, appSettings?.fontFamily]);
 };

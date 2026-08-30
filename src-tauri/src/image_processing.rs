@@ -812,7 +812,8 @@ pub fn warp_image_geometry(image: &DynamicImage, params: GeometryParams) -> Dyna
             }
         });
 
-    let out_img = Rgb32FImage::from_vec(width, height, out_buffer).unwrap();
+    let out_img = Rgb32FImage::from_vec(width, height, out_buffer)
+        .unwrap_or_else(|| Rgb32FImage::new(width, height));
     DynamicImage::ImageRgb32F(out_img)
 }
 
@@ -947,7 +948,8 @@ pub fn unwarp_image_geometry(warped_image: &DynamicImage, params: GeometryParams
             }
         });
 
-    let out_img = Rgb32FImage::from_vec(width, height, out_buffer).unwrap();
+    let out_img = Rgb32FImage::from_vec(width, height, out_buffer)
+        .unwrap_or_else(|| Rgb32FImage::new(width, height));
     DynamicImage::ImageRgb32F(out_img)
 }
 
@@ -3466,7 +3468,7 @@ pub fn calculate_auto_adjustments(
     let original_image = state
         .original_image
         .lock()
-        .unwrap()
+        .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .ok_or("No image loaded for auto adjustments")?
         .image
