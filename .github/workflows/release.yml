@@ -27,13 +27,13 @@ jobs:
             args: '--features tethering'
             asset-prefix: '02_macos-arm64_tethering'
 
-          # --- macOS Intel (x86_64, last official runner = macos-13) ---
-          - platform: 'macos-13'
+          # --- macOS Intel (x86_64, macOS 15 Sequoia Intel runner) ---
+          - platform: 'macos-15-intel'
             target: x86_64-apple-darwin
             asset-prefix: '02_macos-intel'
 
           # --- macOS Intel + Tethering feature ---
-          - platform: 'macos-13'
+          - platform: 'macos-15-intel'
             target: x86_64-apple-darwin
             args: '--features tethering'
             asset-prefix: '02_macos-intel_tethering'
