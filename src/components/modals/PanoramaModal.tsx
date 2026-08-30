@@ -41,6 +41,11 @@ export default function PanoramaModal({
 
   const mouseDownTarget = useRef<EventTarget | null>(null);
 
+  const handleClose = useCallback(() => {
+    if (isSaving || isProcessing) return;
+    onClose();
+  }, [onClose, isSaving, isProcessing]);
+
   useEffect(() => {
     if (isOpen) {
       setIsMounted(true);
@@ -66,11 +71,6 @@ export default function PanoramaModal({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, isSaving, isProcessing, handleClose]);
-
-  const handleClose = useCallback(() => {
-    if (isSaving || isProcessing) return;
-    onClose();
-  }, [onClose, isSaving, isProcessing]);
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
     mouseDownTarget.current = e.target;

@@ -57,6 +57,11 @@ export default function HdrModal({
     }
   }, [isOpen]);
 
+  const handleClose = useCallback(() => {
+    if (isSaving || isProcessing) return;
+    onClose();
+  }, [onClose, isSaving, isProcessing]);
+
   // Esc 关闭模态（合成中 / 保存中不可关闭）
   useEffect(() => {
     if (!isOpen) return;
@@ -66,11 +71,6 @@ export default function HdrModal({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, isSaving, isProcessing, handleClose]);
-
-  const handleClose = useCallback(() => {
-    if (isSaving || isProcessing) return;
-    onClose();
-  }, [onClose, isSaving, isProcessing]);
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
     mouseDownTarget.current = e.target;
