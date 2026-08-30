@@ -222,7 +222,7 @@ const BrushTools = ({
         fillOrigin="min"
         onDragStateChange={onDragStateChange}
       />
-      <div className="grid grid-cols-2 gap-2 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
         <button
           className={`p-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${settings.tool === ToolType.Brush ? 'text-primary bg-surface' : 'bg-surface text-text-secondary hover:bg-card-active'}`}
           onClick={() => onSettingsChange((s: any) => ({ ...s, tool: ToolType.Brush }))}

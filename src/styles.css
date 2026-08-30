@@ -128,7 +128,9 @@
     line-height: var(--line-height-normal, 1.5);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
+    /* Android WebView + CJK 下 optimizeLegibility 会导致部分中文竖画错位 */
+    /* 桌面端 Chrome/Safari 保留 optimizeLegibility */
+    text-rendering: optimizeSpeed;
     overscroll-behavior: none;
     /* Android 沉浸式导航/状态栏安全区 */
     padding-top: env(safe-area-inset-top, 0px);
@@ -370,6 +372,33 @@
       hsl(var(--hsl-mixer-hue-magentas, 340), var(--hsl-mixer-sat-magentas, 0%), 50%),
       hsl(var(--hsl-mixer-hue-magentas, 340), var(--hsl-mixer-sat-magentas, 0%), 100%)
     ) !important;
+  }
+}
+
+/* ==========================================================================
+   CJK 中文渲染修正（解决 "字体错位" 根因）
+   --------------------------------------------------------------------------
+   1) letter-spacing / tracking-* 对 CJK 无意义且会"拉开字距"造成视觉错位，
+      在 html[lang="zh*"] 下把所有 Tailwind tracking-* 类覆盖为 normal
+   2) uppercase 对中文无效果，保留即可
+   3) 此规则覆盖全站所有区段标题、badge、卡片标签里的 tracking 问题
+   ========================================================================== */
+html[lang^='zh'] .tracking-tighter,
+html[lang^='zh'] .tracking-tight,
+html[lang^='zh'] .tracking-normal,
+html[lang^='zh'] .tracking-wide,
+html[lang^='zh'] .tracking-wider,
+html[lang^='zh'] .tracking-widest {
+  letter-spacing: normal;
+}
+
+/* Android WebView 特殊优化：更激进地保持 CJK 紧凑 */
+@supports (-webkit-touch-callout: none) {
+  html[lang^='zh'] .text-\[10px\],
+  html[lang^='zh'] .text-\[9px\] {
+    /* Android WebView 上极小字号 (9-10px) 的中文会被渲染错位，
+       把它提到 text-xs (12px) */
+    font-size: 0.75rem !important;
   }
 }
 

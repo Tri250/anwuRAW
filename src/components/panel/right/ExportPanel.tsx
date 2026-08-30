@@ -707,7 +707,7 @@ export default function ExportPanel({
                     <label className="flex items-center justify-between text-[13px] text-text-secondary">
                       <span>{t('export.color.colorSpace')}</span>
                     </label>
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       {(['srgb', 'displayP3', 'adobeRgb', 'proPhoto'] as const).map((cs) => {
                         const labels: Record<string, string> = {
                           srgb: 'sRGB',
@@ -756,7 +756,7 @@ export default function ExportPanel({
                           {bitDepth === 16 ? t('export.color.bitDepth16Desc') : t('export.color.bitDepth8Desc')}
                         </span>
                       </label>
-                      <div className="grid grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                         {[8, 16].map((b) => {
                           const active = bitDepth === (b as 8 | 16);
                           return (

@@ -229,7 +229,7 @@ function MetadataItem({ label, value }: MetaDataItemProps) {
         variant={TextVariants.body}
         color={TextColors.secondary}
         weight={TextWeights.medium}
-        className="shrink-0 mt-0.5 max-w-[45%] break-words"
+        className="shrink-0 mt-0.5 max-w-none min-w-0 break-all sm:break-words"
       >
         {label}
       </Text>
@@ -597,7 +597,7 @@ export default function MetadataPanel() {
                 {t('editor.metadata.camera.title')}
               </Text>
               <div className="flex flex-col gap-2">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {cameraGridSettings.map((item: any) => {
                     const Icon = CAMERA_ICONS[item.key];
                     return (
