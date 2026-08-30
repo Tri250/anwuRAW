@@ -341,6 +341,22 @@ export const useAppInitialization = ({
     }
   }, [filterCriteria, appSettings, handleSettingsChange]);
 
+  // 同步 i18n 语言 → html[lang]，供 CSS 选择器 (html[lang^='zh']) 使用
+  useEffect(() => {
+    const syncHtmlLang = () => {
+      const lng = i18n.language || 'zh-CN';
+      if (document.documentElement.lang !== lng) {
+        document.documentElement.lang = lng;
+      }
+    };
+    // 初始化时和每次语言切换时都同步
+    syncHtmlLang();
+    const off = i18n.on('languageChanged', syncHtmlLang);
+    return () => {
+      if (typeof off === 'function') off();
+    };
+  }, [i18n]);
+
   useEffect(() => {
     if (isInitialMount.current || !appSettings) return;
     if (appSettings.language && appSettings.language !== i18n.language) {
@@ -464,13 +480,35 @@ export const useAppInitialization = ({
     });
 
     const fontFamily = appSettings?.fontFamily || 'poppins';
-    const cjkFallbacks =
-      "'HarmonyOS Sans SC', 'OPPOSans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC', 'WenQuanYi Micro Hei";
+    // CJK 字体 fallback：按平台偏好排序
+    // 中文：HarmonyOS Sans SC (华为) > OPPOSans (OPPO) > PingFang SC (苹果) > Microsoft YaHei (Windows) > Noto Sans CJK SC (通用)
+    // 日文：Hiragino Sans (苹果) > Noto Sans CJK JP > Yu Gothic (Windows)
+    // 韩文：Noto Sans CJK KR > Malgun Gothic (Windows)
+    const cjkFallbacks = [
+      "'HarmonyOS Sans SC'",
+      "'OPPOSans'",
+      "'PingFang SC'",
+      "'Hiragino Sans GB'",
+      "'Microsoft YaHei'",
+      "'Noto Sans CJK SC'",
+      "'Source Han Sans SC'",
+      "'WenQuanYi Micro Hei'",
+      "'Hiragino Sans'",
+      "'Noto Sans CJK JP'",
+      "'Yu Gothic'",
+      "'Meiryo'",
+      "'Noto Sans JP'",
+      "'Noto Sans CJK KR'",
+      "'Malgun Gothic'",
+      "'Noto Sans KR'",
+    ].join(', ');
     const fontStack =
       fontFamily === 'system'
         ? `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', ${cjkFallbacks}, system-ui, sans-serif`
         : `'Poppins', ${cjkFallbacks}, system-ui, sans-serif`;
     root.style.setProperty('--font-family', fontStack);
+    // 额外声明 --font-stack-cjk 用于 CJK 语言单独使用
+    root.style.setProperty('--font-stack-cjk', cjkFallbacks);
 
     // 排版变量（统一字号、行高、字重）
     root.style.setProperty('--line-height-tight', '1.25');
