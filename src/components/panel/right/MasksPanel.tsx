@@ -1102,7 +1102,7 @@ export default function MasksPanel() {
                     <Text variant={TextVariants.heading} className="mb-2">
                       {t('editor.masks.aiTitle', 'AI Selections')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
                       {MASK_AI_TYPES.map((maskType) => (
                         <DraggableGridItem
                           key={maskType.type}
@@ -1116,7 +1116,7 @@ export default function MasksPanel() {
                     <Text variant={TextVariants.heading} className="mb-2">
                       {t('editor.masks.basicTitle', 'Basic Tools')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
                       {MASK_BASIC_TYPES.map((maskType) => (
                         <DraggableGridItem
                           key={maskType.type}
@@ -1130,7 +1130,7 @@ export default function MasksPanel() {
                     <Text variant={TextVariants.heading} className="mb-2">
                       {t('editor.masks.rangeTitle', 'Ranges & Global')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
                       {MASK_RANGE_TYPES.map((maskType) => (
                         <DraggableGridItem
                           key={maskType.type}

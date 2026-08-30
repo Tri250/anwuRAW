@@ -1143,7 +1143,7 @@ export default function AIPanel() {
                     <Text variant={TextVariants.heading} className="mb-2 mt-6">
                       {t('editor.ai.manualCleanupTitle')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
                       {AI_DIRECT_PATCH_TYPES.map((maskType: MaskType) => (
                         <DraggableGridItem
                           key={maskType.type}
@@ -1157,7 +1157,7 @@ export default function AIPanel() {
                     <Text variant={TextVariants.heading} className="mb-2">
                       {t('editor.ai.touchUpTitle')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
                       {AI_TOUCH_UP_TYPES.map((maskType: MaskType) => (
                         <DraggableGridItem
                           key={maskType.type}
@@ -1171,7 +1171,7 @@ export default function AIPanel() {
                     <Text variant={TextVariants.heading} className="mb-2">
                       {t('editor.ai.generativeEditTitle')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
                       {AI_GENERATIVE_CREATION_TYPES.map((maskType: MaskType) => (
                         <DraggableGridItem
                           key={maskType.type}

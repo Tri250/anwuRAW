@@ -901,7 +901,7 @@ function App() {
             }}
           >
             <div className="flex flex-row grow h-full min-h-0">
-              {!shouldHideFolderTree && hasMainContent && (
+              {!isCompactPortrait && !shouldHideFolderTree && hasMainContent && (
                 <SidePanelArea
                   side="left"
                   width={effectiveLeftWidth}
@@ -1003,7 +1003,7 @@ function App() {
                   </div>
                 )}
               </div>
-              {!useCompactAndroidPanels && hasMainContent && (
+              {!isCompactPortrait && hasMainContent && (
                 <SidePanelArea
                   side="right"
                   width={effectiveRightWidth}
