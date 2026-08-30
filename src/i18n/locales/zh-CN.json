@@ -603,7 +603,12 @@
         "feather": "羽化",
         "globalFeather": "全局羽化",
         "grow": "扩展",
-        "tolerance": "容差"
+        "tolerance": "容差",
+        "decontaminate": "去污染",
+        "strength": "强度",
+        "sampleRadius": "采样半径",
+        "structure": "结构",
+        "smooth": "平滑"
       },
       "patches": {
         "copyName": "{{name}} 副本",

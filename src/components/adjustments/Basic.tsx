@@ -183,10 +183,16 @@ export default function BasicAdjustments({
     setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, [key]: numericValue }));
   };
 
+  const VALID_TONE_MAPPERS = ['basic', 'reinhard', 'filmic', 'agx', 'gamma', 'none'] as const;
+  type ToneMapperId = (typeof VALID_TONE_MAPPERS)[number];
+
   const handleToneMapperChange = (mapper: string) => {
+    const safeMapper: ToneMapperId = (VALID_TONE_MAPPERS.includes(mapper as ToneMapperId)
+      ? mapper
+      : 'basic') as ToneMapperId;
     setAdjustments((prev: Partial<Adjustments>) => ({
       ...prev,
-      toneMapper: mapper as 'basic' | 'agx',
+      toneMapper: safeMapper,
     }));
   };
 

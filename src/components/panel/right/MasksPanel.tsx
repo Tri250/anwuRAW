@@ -151,6 +151,40 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
     ],
   },
   [Mask.QuickEraser]: { parameters: [] },
+  // ---- AI 直接修复工具 ----
+  [Mask.Clone]: {
+    parameters: [
+      { key: 'strength', min: 1, max: 100, step: 1, defaultValue: 80 },
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 30 },
+      { key: 'sampleRadius', min: 1, max: 50, step: 1, defaultValue: 10 },
+    ],
+    showBrushTools: true,
+  },
+  [Mask.Heal]: {
+    parameters: [
+      { key: 'strength', min: 1, max: 100, step: 1, defaultValue: 90 },
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 35 },
+      { key: 'sampleRadius', min: 1, max: 50, step: 1, defaultValue: 15 },
+      { key: 'structure', min: 0, max: 100, step: 1, defaultValue: 50 },
+    ],
+    showBrushTools: true,
+  },
+  // ---- AI 修饰工具 ----
+  [Mask.Liquify]: {
+    parameters: [
+      { key: 'strength', min: 1, max: 100, step: 1, defaultValue: 50 },
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 25 },
+    ],
+    showBrushTools: true,
+  },
+  [Mask.Retouch]: {
+    parameters: [
+      { key: 'strength', min: 1, max: 100, step: 1, defaultValue: 70 },
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 30 },
+      { key: 'smooth', min: 0, max: 100, step: 1, defaultValue: 40 },
+    ],
+    showBrushTools: true,
+  },
 };
 
 const BrushTools = ({
