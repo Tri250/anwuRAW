@@ -55,6 +55,7 @@ import { useAppNavigation } from './hooks/useAppNavigation';
 import { useExternalEditSession } from './hooks/useExternalEditSession';
 import ExternalEditBar from './components/ui/ExternalEditBar';
 import { Status } from './components/ui/ExportImportProperties';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 import { useEditorActions } from './hooks/useEditorActions';
 import { useLibraryActions } from './hooks/useLibraryActions';
@@ -1051,12 +1052,14 @@ function App() {
 }
 
 const AppWrapper = () => (
-  <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} routerPush={(to) => {}} routerReplace={(to) => {}}>
-    <ContextMenuProvider>
-      <App />
-      <GlobalTooltip />
-    </ContextMenuProvider>
-  </ClerkProvider>
+  <ErrorBoundary>
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} routerPush={(to) => {}} routerReplace={(to) => {}}>
+      <ContextMenuProvider>
+        <App />
+        <GlobalTooltip />
+      </ContextMenuProvider>
+    </ClerkProvider>
+  </ErrorBoundary>
 );
 
 export default AppWrapper;

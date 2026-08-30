@@ -6,6 +6,10 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
+  // Tauri 使用 custom protocol (tauri://localhost/)，必须用相对路径
+  // 否则 dist/index.html 中 /assets/xxx.js 的绝对路径在 custom protocol 下找不到
+  base: './',
+
   plugins: [tailwindcss(), react()],
 
   clearScreen: false,
