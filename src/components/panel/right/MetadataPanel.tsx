@@ -226,10 +226,10 @@ function MetadataItem({ label, value }: MetaDataItemProps) {
   return (
     <div className="flex justify-between items-start gap-4 py-1.5 px-2 rounded-md hover:bg-card-active transition-colors cursor-default">
       <Text
-        variant={TextVariants.small}
+        variant={TextVariants.body}
         color={TextColors.secondary}
         weight={TextWeights.medium}
-        className="shrink-0 mt-0.5"
+        className="shrink-0 mt-0.5 max-w-[45%] break-words"
       >
         {label}
       </Text>
@@ -244,10 +244,10 @@ function MetadataItem({ label, value }: MetaDataItemProps) {
         data-tooltip={strValue.length > 500 ? strValue.slice(0, 500) + '...' : strValue}
       >
         <Text
-          variant={TextVariants.small}
+          variant={TextVariants.body}
           color={TextColors.primary}
           className={clsx(
-            'col-start-1 row-start-1 break-words min-w-0 text-right line-clamp-3 transition-opacity duration-200 ease-in-out select-none',
+            'col-start-1 row-start-1 break-words min-w-0 text-right text-[13px] leading-snug line-clamp-3 transition-opacity duration-200 ease-in-out select-none',
             isHovered ? 'opacity-0' : 'opacity-100',
           )}
         >
