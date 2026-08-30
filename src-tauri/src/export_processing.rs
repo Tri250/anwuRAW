@@ -522,7 +522,7 @@ fn save_image_with_metadata(
         .unwrap_or("")
         .to_lowercase();
 
-    let mut cs_image = apply_color_space_transform(image, &export_settings.color_space);
+    let cs_image = apply_color_space_transform(image, &export_settings.color_space);
 
     let mut image_bytes = encode_image_to_bytes(
         &cs_image,
