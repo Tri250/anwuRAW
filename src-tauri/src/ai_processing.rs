@@ -1355,9 +1355,9 @@ pub fn run_sam_decoder(
             .collect();
 
         let img_mask_f32 =
-            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, mask_f32_vec).unwrap_or_else(|_| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
+            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, mask_f32_vec).unwrap_or_else(|| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
         let img_gaus_f32 =
-            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, gaus_dt).unwrap_or_else(|_| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
+            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, gaus_dt).unwrap_or_else(|| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
 
         let resized_mask = imageops::resize(&img_mask_f32, 256, 256, FilterType::Triangle);
         let resized_gaus = imageops::resize(&img_gaus_f32, 256, 256, FilterType::Triangle);

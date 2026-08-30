@@ -271,7 +271,7 @@ fn grayscale_dilate(image: &GrayImage, k: u8) -> GrayImage {
         }
     }
 
-    GrayImage::from_raw(width, height, out).unwrap_or_else(|_| GrayImage::new(width, height))
+    GrayImage::from_raw(width, height, out).unwrap_or_else(|| GrayImage::new(width, height))
 }
 
 fn grayscale_erode(image: &GrayImage, k: u8) -> GrayImage {
@@ -312,7 +312,7 @@ fn grayscale_erode(image: &GrayImage, k: u8) -> GrayImage {
         }
     }
 
-    GrayImage::from_raw(width, height, out).unwrap_or_else(|_| GrayImage::new(width, height))
+    GrayImage::from_raw(width, height, out).unwrap_or_else(|| GrayImage::new(width, height))
 }
 
 fn apply_grow_and_feather(
@@ -429,7 +429,7 @@ fn render_stroke_layer_parallel(
 ) -> GrayImage {
     let mut out_pixels = vec![0u8; (bb_w * bb_h) as usize];
     if points.is_empty() || radius <= 0.0 {
-        return GrayImage::from_raw(bb_w, bb_h, out_pixels).unwrap_or_else(|_| GrayImage::new(bb_w, bb_h));
+        return GrayImage::from_raw(bb_w, bb_h, out_pixels).unwrap_or_else(|| GrayImage::new(bb_w, bb_h));
     }
 
     struct Segment {
@@ -567,7 +567,7 @@ fn render_stroke_layer_parallel(
             }
         });
 
-    GrayImage::from_raw(bb_w, bb_h, out_pixels).unwrap_or_else(|_| GrayImage::new(bb_w, bb_h))
+    GrayImage::from_raw(bb_w, bb_h, out_pixels).unwrap_or_else(|| GrayImage::new(bb_w, bb_h))
 }
 
 fn generate_radial_bitmap(

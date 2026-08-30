@@ -217,7 +217,7 @@ pub fn progressive_seam_stitcher(
                                 if dist_to_seam.abs() < dynamic_feather_width / 2.0 {
                                     let color_on_pano = Rgb(row_slice
                                         [x as usize * 3..x as usize * 3 + 3]
-                                        .try_into().unwrap_or([0, 0, 0]));
+                                        .try_into().unwrap_or([0u8, 0u8, 0u8]));
                                     let color_to_add = get_interpolated_pixel(img_to_add, sx, sy);
 
                                     let alpha = if new_image_is_dominant_side {
@@ -308,7 +308,7 @@ pub fn progressive_seam_stitcher(
                                 if dist_to_seam.abs() < dynamic_feather_width / 2.0 {
                                     let color_on_pano = Rgb(row_slice
                                         [x as usize * 3..x as usize * 3 + 3]
-                                        .try_into().unwrap_or([0, 0, 0]));
+                                        .try_into().unwrap_or([0u8, 0u8, 0u8]));
                                     let color_to_add = get_interpolated_pixel(img_to_add, sx, sy);
 
                                     let alpha = if new_image_is_dominant_side {

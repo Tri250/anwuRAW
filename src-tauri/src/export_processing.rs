@@ -1706,9 +1706,8 @@ pub async fn estimate_export_sizes(
         let mmap_guard;
         let file_data: &[u8] = match read_file_mapped(Path::new(&source_path_str)) {
             Ok(mmap) => {
-                let r: &[u8] = &mmap;
                 mmap_guard = Some(mmap);
-                r
+                mmap_guard.as_ref().unwrap()
             }
             Err(_) => {
                 file_slice = fs::read(&source_path_str).map_err(|io_err| io_err.to_string())?;
