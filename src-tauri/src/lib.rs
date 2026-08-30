@@ -493,7 +493,7 @@ fn process_preview_job(
         state
             .analytics_worker_tx
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .clone()
             .map(|tx| crate::AnalyticsConfig {
                 path: loaded_image.path.clone(),
@@ -735,7 +735,7 @@ fn generate_uncropped_preview(
     let loaded_image = state
         .original_image
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .clone()
         .ok_or("No original image loaded")?;
 
@@ -874,7 +874,7 @@ async fn preview_geometry_transform(
         let maybe_cached_image = state
             .geometry_cache
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .get(&visual_hash)
             .cloned();
 
@@ -1077,7 +1077,7 @@ fn generate_preset_preview(
     let loaded_image = state
         .original_image
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .clone()
         .ok_or("No original image loaded for preset preview")?;
     let is_raw = loaded_image.is_raw;

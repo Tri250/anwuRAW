@@ -169,7 +169,7 @@ pub fn start_metadata_workers(app_handle: tauri::AppHandle) {
                 let item = {
                     let mut queue = manager_clone.queue.lock().unwrap_or_else(|e| e.into_inner());
                     while queue.is_empty() {
-                        queue = manager_clone.cvar.wait(queue).unwrap();
+                        queue = manager_clone.cvar.wait(queue).unwrap_or_else(|e| e.into_inner());
                     }
                     queue.pop_front().unwrap()
                 };
@@ -195,7 +195,7 @@ pub fn start_metadata_workers(app_handle: tauri::AppHandle) {
                 manager_clone
                     .pending
                     .lock()
-                    .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
                     .remove(&item.sidecar_path);
             }
         });
@@ -1550,7 +1550,7 @@ pub fn generate_thumbnail_data(
                 let file_slice: &[u8] = match read_file_mapped(&source_path) {
                     Ok(mmap) => {
                         mmap_guard = Some(mmap);
-                        mmap_guard.as_ref().unwrap()
+                        mmap_guard.as_ref().expect("mmap just stored above")
                     }
                     Err(e) => {
                         if preloaded_image.is_none() {
@@ -1564,7 +1564,7 @@ pub fn generate_thumbnail_data(
                             )
                         })?;
                         vec_guard = Some(bytes);
-                        vec_guard.as_ref().unwrap()
+                        vec_guard.as_ref().expect("vec guard just stored above")
                     }
                 };
 
@@ -1895,7 +1895,7 @@ pub fn start_thumbnail_workers(app_handle: tauri::AppHandle) {
                 let path_to_process: String = {
                     let mut queue = manager_clone.queue.lock().unwrap_or_else(|e| e.into_inner());
                     while queue.is_empty() {
-                        queue = manager_clone.cvar.wait(queue).unwrap();
+                        queue = manager_clone.cvar.wait(queue).unwrap_or_else(|e| e.into_inner());
                     }
                     let path = queue.pop_back().unwrap();
 
@@ -1946,7 +1946,7 @@ pub fn start_thumbnail_workers(app_handle: tauri::AppHandle) {
                 manager_clone
                     .processing_now
                     .lock()
-                    .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
                     .remove(&path_to_process);
             }
         });
@@ -2104,11 +2104,11 @@ pub fn resolve_lens_params_in_adjustments(
                     {
                         map.insert(
                             "lensMaker".to_string(),
-                            serde_json::to_value(&detected_maker).unwrap(),
+                            serde_json::to_value(&detected_maker).unwrap_or_default(),
                         );
                         map.insert(
                             "lensModel".to_string(),
-                            serde_json::to_value(&detected_model).unwrap(),
+                            serde_json::to_value(&detected_model).unwrap_or_default(),
                         );
                     } else {
                         map.remove("lensMaker");
@@ -2161,7 +2161,7 @@ pub fn resolve_lens_params_in_adjustments(
                     ) {
                         map.insert(
                             "lensDistortionParams".to_string(),
-                            serde_json::to_value(params).unwrap(),
+                            serde_json::to_value(params).unwrap_or_default(),
                         );
                         true
                     } else {
@@ -2310,12 +2310,12 @@ pub fn duplicate_file(
         fs::copy(&source_sidecar_path, &dest_sidecar_path).map_err(|e| e.to_string())?;
     }
 
-    let mut source_rrexif_name = source_path.file_name().unwrap().to_os_string();
+    let mut source_rrexif_name = source_path.file_name().unwrap_or_default().to_os_string();
     source_rrexif_name.push(".rrexif");
     let source_rrexif = source_path.with_file_name(source_rrexif_name);
 
     if source_rrexif.exists() {
-        let mut dest_rrexif_name = dest_path.file_name().unwrap().to_os_string();
+        let mut dest_rrexif_name = dest_path.file_name().unwrap_or_default().to_os_string();
         dest_rrexif_name.push(".rrexif");
         let dest_rrexif = dest_path.with_file_name(dest_rrexif_name);
         let _ = fs::copy(&source_rrexif, &dest_rrexif);
@@ -2420,11 +2420,11 @@ pub fn copy_files(source_paths: Vec<String>, destination_folder: String) -> Resu
                 }
                 counter += 1;
             };
-            let new_filename = new_base_path.file_name().unwrap().to_string_lossy();
+            let new_filename = new_base_path.file_name().unwrap_or_default().to_string_lossy();
 
             for original_file in all_files_to_copy {
-                let original_full_filename = original_file.file_name().unwrap().to_string_lossy();
-                let source_base_filename = source_image_path.file_name().unwrap().to_string_lossy();
+                let original_full_filename = original_file.file_name().unwrap_or_default().to_string_lossy();
+                let source_base_filename = source_image_path.file_name().unwrap_or_default().to_string_lossy();
                 let new_dest_filename =
                     original_full_filename.replacen(&*source_base_filename, &new_filename, 1);
 
@@ -2505,7 +2505,7 @@ pub fn move_files(
             }
         }
 
-        let dest_image_path = dest_path.join(source_image_path.file_name().unwrap());
+        let dest_image_path = dest_path.join(source_image_path.file_name().unwrap_or_default());
         renames.insert(
             source_image_path.to_string_lossy().into_owned(),
             dest_image_path.to_string_lossy().into_owned(),
@@ -3769,12 +3769,12 @@ pub async fn import_files(
                     fs::copy(&source_sidecar, &dest_sidecar).map_err(|e| e.to_string())?;
                 }
 
-                let mut source_rrexif_name = source_path.file_name().unwrap().to_os_string();
+                let mut source_rrexif_name = source_path.file_name().unwrap_or_default().to_os_string();
                 source_rrexif_name.push(".rrexif");
                 let source_rrexif = source_path.with_file_name(source_rrexif_name);
 
                 if source_rrexif.exists() {
-                    let mut dest_rrexif_name = dest_file_path.file_name().unwrap().to_os_string();
+                    let mut dest_rrexif_name = dest_file_path.file_name().unwrap_or_default().to_os_string();
                     dest_rrexif_name.push(".rrexif");
                     let dest_rrexif = dest_file_path.with_file_name(dest_rrexif_name);
                     let _ = fs::copy(&source_rrexif, &dest_rrexif);
@@ -3926,8 +3926,8 @@ pub fn rename_files(
         let parent = original_path
             .parent()
             .ok_or("Could not get parent directory")?;
-        let original_filename_str = original_path.file_name().unwrap().to_string_lossy();
-        let new_filename_str = new_path.file_name().unwrap().to_string_lossy();
+        let original_filename_str = original_path.file_name().unwrap_or_default().to_string_lossy();
+        let new_filename_str = new_path.file_name().unwrap_or_default().to_string_lossy();
 
         if let Ok(entries) = fs::read_dir(parent) {
             for entry in entries.filter_map(Result::ok) {
@@ -3943,7 +3943,7 @@ pub fn rename_files(
                     let new_sidecar_path = parent.join(new_sidecar_filename);
                     sidecar_operations.push((entry_path, new_sidecar_path));
                 } else if entry_filename == format!("{}.rrdata", original_filename_str) {
-                    let mut new_sidecar_name = new_path.file_name().unwrap().to_os_string();
+                    let mut new_sidecar_name = new_path.file_name().unwrap_or_default().to_os_string();
                     new_sidecar_name.push(".rrdata");
                     let new_sidecar_path = new_path.with_file_name(new_sidecar_name);
 
@@ -3952,12 +3952,12 @@ pub fn rename_files(
             }
         }
 
-        let mut old_rrexif_name = original_path.file_name().unwrap().to_os_string();
+        let mut old_rrexif_name = original_path.file_name().unwrap_or_default().to_os_string();
         old_rrexif_name.push(".rrexif");
         let old_rrexif = original_path.with_file_name(old_rrexif_name);
 
         if old_rrexif.exists() {
-            let mut new_rrexif_name = new_path.file_name().unwrap().to_os_string();
+            let mut new_rrexif_name = new_path.file_name().unwrap_or_default().to_os_string();
             new_rrexif_name.push(".rrexif");
             let new_rrexif = new_path.with_file_name(new_rrexif_name);
             sidecar_operations.push((old_rrexif, new_rrexif));

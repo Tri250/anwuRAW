@@ -426,7 +426,7 @@ pub async fn get_or_init_ai_models(
 ) -> Result<Arc<AiModels>> {
     if let Some(models) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.models.clone())
     {
@@ -437,7 +437,7 @@ pub async fn get_or_init_ai_models(
 
     if let Some(models) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.models.clone())
     {
@@ -541,7 +541,7 @@ pub async fn get_or_init_denoise_model(
 ) -> Result<Arc<Mutex<Session>>> {
     if let Some(denoise_model) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.denoise_model.clone())
     {
@@ -552,7 +552,7 @@ pub async fn get_or_init_denoise_model(
 
     if let Some(denoise_model) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.denoise_model.clone())
     {
@@ -602,7 +602,7 @@ pub async fn get_or_init_clip_models(
 ) -> Result<Arc<ClipModels>> {
     if let Some(clip_models) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.clip_models.clone())
     {
@@ -613,7 +613,7 @@ pub async fn get_or_init_clip_models(
 
     if let Some(clip_models) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.clip_models.clone())
     {
@@ -677,7 +677,7 @@ pub async fn get_or_init_lama_model(
 ) -> Result<Arc<Mutex<Session>>> {
     if let Some(lama_model) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.lama_model.clone())
     {
@@ -688,7 +688,7 @@ pub async fn get_or_init_lama_model(
 
     if let Some(lama_model) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.lama_model.clone())
     {
@@ -1248,7 +1248,7 @@ pub fn run_sam_decoder(
         let w = mask_dims[3];
         let area = h * w;
 
-        let mask_slice = mask_tensor.as_slice().unwrap();
+        let mask_slice = mask_tensor.as_slice().unwrap_or(&[]);
         let first_mask_slice = &mask_slice[0..area];
 
         if i == iters - 1 {
@@ -1355,9 +1355,9 @@ pub fn run_sam_decoder(
             .collect();
 
         let img_mask_f32 =
-            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, mask_f32_vec).unwrap();
+            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, mask_f32_vec).unwrap_or_else(|_| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
         let img_gaus_f32 =
-            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, gaus_dt).unwrap();
+            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, gaus_dt).unwrap_or_else(|_| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
 
         let resized_mask = imageops::resize(&img_mask_f32, 256, 256, FilterType::Triangle);
         let resized_gaus = imageops::resize(&img_gaus_f32, 256, 256, FilterType::Triangle);
@@ -1433,7 +1433,7 @@ pub fn run_sky_seg_model(
     let mut session = sky_seg_session.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = session.run(ort::inputs![t_input])?;
     let output_tensor = outputs[0].try_extract_array::<f32>()?.to_owned();
-    let out_slice = output_tensor.as_slice().unwrap();
+    let out_slice = output_tensor.as_slice().unwrap_or(&[]);
 
     let mut min_val = f32::MAX;
     let mut max_val = f32::MIN;
@@ -1514,7 +1514,7 @@ pub fn run_u2netp_model(
     let mut session = u2netp_session.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = session.run(ort::inputs![t_input])?;
     let output_tensor = outputs[0].try_extract_array::<f32>()?.to_owned();
-    let out_slice = output_tensor.as_slice().unwrap();
+    let out_slice = output_tensor.as_slice().unwrap_or(&[]);
 
     let mut min_val = f32::MAX;
     let mut max_val = f32::MIN;
@@ -1593,7 +1593,7 @@ pub fn run_depth_anything_model(
     let mut session = depth_session.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = session.run(ort::inputs![t_input])?;
     let output_tensor = outputs[0].try_extract_array::<f32>()?.to_owned();
-    let out_slice = output_tensor.as_slice().unwrap();
+    let out_slice = output_tensor.as_slice().unwrap_or(&[]);
 
     let usize_size = DEPTH_INPUT_SIZE as usize;
 

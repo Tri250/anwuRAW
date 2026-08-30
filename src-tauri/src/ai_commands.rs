@@ -120,7 +120,7 @@ pub async fn generate_ai_depth_mask(
 
     let cached_depth = {
         let mut ai_state_lock = state.ai_state.lock().unwrap_or_else(|e| e.into_inner());
-        let ai_state = ai_state_lock.as_mut().unwrap();
+        let ai_state = ai_state_lock.as_mut().unwrap_or_else(|| panic!("ai_state is None — AI engine not initialized"));
 
         if let Some(cached) = &ai_state.depth_map {
             if cached.path_hash == path_hash {
@@ -240,7 +240,7 @@ pub async fn generate_ai_subject_mask(
 
     let embeddings = {
         let mut ai_state_lock = state.ai_state.lock().unwrap_or_else(|e| e.into_inner());
-        let ai_state = ai_state_lock.as_mut().unwrap();
+        let ai_state = ai_state_lock.as_mut().unwrap_or_else(|| panic!("ai_state is None — AI engine not initialized"));
 
         if let Some(cached_embeddings) = &ai_state.embeddings {
             if cached_embeddings.path_hash == path_hash {
@@ -385,7 +385,7 @@ pub async fn precompute_ai_subject_mask(
     };
 
     let mut ai_state_lock = state.ai_state.lock().unwrap_or_else(|e| e.into_inner());
-    let ai_state = ai_state_lock.as_mut().unwrap();
+    let ai_state = ai_state_lock.as_mut().unwrap_or_else(|| panic!("ai_state is None — AI engine not initialized"));
 
     if let Some(cached_embeddings) = &ai_state.embeddings
         && cached_embeddings.path_hash == path_hash
