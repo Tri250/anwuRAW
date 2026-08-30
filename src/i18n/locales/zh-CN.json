@@ -7,15 +7,15 @@
       "exposure": "曝光",
       "highlights": "高光",
       "mappers": {
-        "agx": "AgX",
-        "agxDesc": "电影感色调映射",
+        "agx": "AgX（电影感）",
+        "agxDesc": "电影感色调映射 — 浓郁色彩，平滑高光",
         "basic": "基础",
         "basicDesc": "标准色调映射",
-        "reinhard": "Reinhard",
+        "reinhard": "Reinhard（赖因哈特）",
         "reinhardDesc": "简单可靠 — 低端设备首选",
-        "filmic": "Filmic Pro",
+        "filmic": "Filmic Pro（电影模式）",
         "filmicDesc": "Uncharted 2 — 保留高光细节，电影质感",
-        "gamma": "Gamma 2.2",
+        "gamma": "伽马 2.2",
         "gammaDesc": "纯 sRGB 伽马 — 最小处理，最准确的基准"
       },
       "reset": "重置",
@@ -1749,11 +1749,11 @@
         "sharpeningDesc": "在管线早期应用柔和的细节增强。值越高 = 锐化越强。",
         "title": "图像预处理",
         "tonemapperOptions": {
-          "agx": "AgX",
+          "agx": "AgX（电影感）",
           "basic": "基础",
-          "filmic": "Filmic Pro",
-          "gamma": "Gamma 2.2",
-          "reinhard": "Reinhard"
+          "filmic": "Filmic Pro（电影模式）",
+          "gamma": "伽马 2.2",
+          "reinhard": "Reinhard（赖因哈特）"
         },
         "tonemapperOverride": "全局色调映射覆盖",
         "tonemapperOverrideDesc": "为所有图像全局强制使用特定的色调映射器，从调整面板中隐藏色调映射器开关。"
