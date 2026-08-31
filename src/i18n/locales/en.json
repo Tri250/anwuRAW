@@ -659,6 +659,14 @@
         "addToCurrent": "Add {{name}} to Current Mask or Create New (Right-click)",
         "createNew": "Create New {{name}} Mask",
         "selectNewSourcePoint": "{{modifier}} + Click to select a new source point"
+      },
+      "toolbar": {
+        "title": "Mask Editing",
+        "invert": "Invert",
+        "clearMask": "Clear Mask",
+        "overlayOn": "Show mask overlay",
+        "overlayOff": "Hide mask overlay",
+        "done": "Done"
       }
     },
     "metadata": {

@@ -16,7 +16,8 @@ import {
 } from '../../utils/cropUtils';
 import EditorToolbar from './editor/EditorToolbar';
 import ImageCanvas from './editor/ImageCanvas';
-import { Mask, SubMask } from './right/Masks';
+import { Mask, SubMask, ToolType } from './right/Masks';
+import MaskEditingToolbar, { showMaskEditingToolbar } from './editor/MaskEditingToolbar';
 import { Panel, TransformState, Invokes } from '../ui/AppProperties';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -677,6 +678,62 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     }
     return null;
   }, [adjustments.masks, adjustments.aiPatches, activeMaskId, activeAiSubMaskId, isMasking, isAiEditing]);
+
+  const maskOverlayVisible = useEditorStore((s) => s.maskOverlayVisible);
+
+  const toolbarSubMask = useMemo(
+    () => (showMaskEditingToolbar(activeSubMask) ? activeSubMask : null),
+    [activeSubMask],
+  );
+
+  const handleMaskToolbarBrushToolChange = useCallback(
+    (tool: ToolType) => {
+      setEditor({
+        brushSettings: {
+          ...(brushSettings ?? { size: 50, feather: 50, opacity: 100 }),
+          tool,
+        },
+      });
+    },
+    [brushSettings, setEditor],
+  );
+
+  const handleMaskToolbarToggleOverlay = useCallback(() => {
+    setEditor({ maskOverlayVisible: !maskOverlayVisible });
+  }, [maskOverlayVisible, setEditor]);
+
+  const handleMaskToolbarInvert = useCallback(() => {
+    if (!toolbarSubMask) return;
+    const activeId = isMasking ? activeMaskId : activeAiSubMaskId;
+    if (!activeId) return;
+    updateSubMaskLocal(activeId, { invert: !toolbarSubMask.invert });
+  }, [toolbarSubMask, isMasking, activeMaskId, activeAiSubMaskId, updateSubMaskLocal]);
+
+  const handleMaskToolbarClear = useCallback(() => {
+    if (!toolbarSubMask) return;
+    const activeId = isMasking ? activeMaskId : activeAiSubMaskId;
+    if (!activeId) return;
+    const type = toolbarSubMask.type;
+    if (type === Mask.Brush) {
+      updateSubMaskLocal(activeId, { parameters: { ...toolbarSubMask.parameters, lines: [] } });
+    } else if (type === Mask.Flow) {
+      updateSubMaskLocal(activeId, { parameters: { lines: [], flow: toolbarSubMask.parameters?.flow ?? 10 } });
+    } else if (type === Mask.QuickEraser || type === Mask.AiSubject || type === Mask.AiForeground) {
+      updateSubMaskLocal(activeId, {
+        parameters: { maskDataBase64: null, grow: toolbarSubMask.parameters?.grow, feather: toolbarSubMask.parameters?.feather },
+      });
+    } else if (type === Mask.Color || type === Mask.Luminance) {
+      updateSubMaskLocal(activeId, { parameters: {} });
+    }
+  }, [toolbarSubMask, isMasking, activeMaskId, activeAiSubMaskId, updateSubMaskLocal]);
+
+  const handleMaskToolbarDone = useCallback(() => {
+    if (isMasking) {
+      setEditor({ activeMaskId: null });
+    } else if (isAiEditing) {
+      setEditor({ activeAiSubMaskId: null });
+    }
+  }, [isMasking, isAiEditing, setEditor]);
 
   const isPanningDisabled =
     isMaskHovered ||
@@ -2162,6 +2219,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
             isRotationActive={isRotationActive}
             isSliderDragging={isSliderDragging}
             maskOverlayUrl={maskOverlayUrl}
+            maskOverlayVisible={maskOverlayVisible}
             onGenerateAiMask={handleGenerateAiMask}
             onSelectAiPatchContainer={(id) => setEditor({ activeAiPatchContainerId: id })}
             onSelectMaskContainer={(id) => setEditor({ activeMaskContainerId: id })}
@@ -2204,6 +2262,24 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
               strokeDasharray="4 4"
             />
           </svg>
+        )}
+        {toolbarSubMask && (
+          <div
+            className="pointer-events-none absolute bottom-4 left-1/2 z-[110] -translate-x-1/2"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MaskEditingToolbar
+              subMask={toolbarSubMask}
+              brushSettings={brushSettings}
+              maskOverlayVisible={maskOverlayVisible}
+              onBrushToolChange={handleMaskToolbarBrushToolChange}
+              onToggleOverlay={handleMaskToolbarToggleOverlay}
+              onInvert={handleMaskToolbarInvert}
+              onClear={handleMaskToolbarClear}
+              onDone={handleMaskToolbarDone}
+            />
+          </div>
         )}
       </div>
     </div>

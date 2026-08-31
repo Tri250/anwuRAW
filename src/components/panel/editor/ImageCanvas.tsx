@@ -50,6 +50,7 @@ interface ImageCanvasProps {
   isStraightenActive: boolean;
   isRotationActive?: boolean;
   maskOverlayUrl: string | null;
+  maskOverlayVisible?: boolean;
   onGenerateAiMask(id: string | null, start: Coord, end: Coord): void;
   onLiveMaskPreview?: (previewMaskDef: any) => void;
   onDirectPatch?(subMaskId: string, sourceX: number, sourceY: number): Promise<void> | void;
@@ -1308,6 +1309,7 @@ const ImageCanvas = memo(
     isStraightenActive,
     isRotationActive,
     maskOverlayUrl,
+    maskOverlayVisible = true,
     onGenerateAiMask,
     onLiveMaskPreview,
     onDirectPatch,
@@ -2939,7 +2941,7 @@ const ImageCanvas = memo(
                 )}
               </svg>
 
-              {displayedMaskUrl && (
+              {displayedMaskUrl && maskOverlayVisible && (
                 <img
                   alt="Mask Overlay"
                   className="absolute object-contain pointer-events-none"
@@ -3086,7 +3088,7 @@ const ImageCanvas = memo(
                           const isActivelyDrawingThis = isThisSubMaskActive && isDrawing.current;
                           const isHoveringThisMarker = hoveredMarkerId === renderSubMask.id;
 
-                          let showBrushStrokes = true;
+                          let showBrushStrokes = maskOverlayVisible;
                           if (isDirectPatch) {
                             showBrushStrokes =
                               isActivelyDrawingThis ||

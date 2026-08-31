@@ -657,6 +657,14 @@
         "addToCurrent": "将 {{name}} 添加到当前蒙版或创建新蒙版（右键单击）",
         "createNew": "创建新 {{name}} 蒙版",
         "selectNewSourcePoint": "{{modifier}} + 点击选择新的源点"
+      },
+      "toolbar": {
+        "title": "蒙版编辑",
+        "invert": "反选",
+        "clearMask": "清除蒙版",
+        "overlayOn": "显示蒙版叠加",
+        "overlayOff": "隐藏蒙版叠加",
+        "done": "完成"
       }
     },
     "metadata": {
