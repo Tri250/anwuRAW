@@ -143,11 +143,15 @@ fn enqueue_metadata(
     }
     drop(pending);
 
-    manager.queue.lock().unwrap_or_else(|e| e.into_inner()).push_back(PendingMetadata {
-        virtual_path,
-        image_path,
-        sidecar_path,
-    });
+    manager
+        .queue
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push_back(PendingMetadata {
+            virtual_path,
+            image_path,
+            sidecar_path,
+        });
     manager.cvar.notify_one();
 }
 
@@ -167,9 +171,15 @@ pub fn start_metadata_workers(app_handle: tauri::AppHandle) {
         std::thread::spawn(move || {
             loop {
                 let item = {
-                    let mut queue = manager_clone.queue.lock().unwrap_or_else(|e| e.into_inner());
+                    let mut queue = manager_clone
+                        .queue
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
                     while queue.is_empty() {
-                        queue = manager_clone.cvar.wait(queue).unwrap_or_else(|e| e.into_inner());
+                        queue = manager_clone
+                            .cvar
+                            .wait(queue)
+                            .unwrap_or_else(|e| e.into_inner());
                     }
                     queue.pop_front().unwrap()
                 };
@@ -195,7 +205,7 @@ pub fn start_metadata_workers(app_handle: tauri::AppHandle) {
                 manager_clone
                     .pending
                     .lock()
-            .unwrap_or_else(|e| e.into_inner())
+                    .unwrap_or_else(|e| e.into_inner())
                     .remove(&item.sidecar_path);
             }
         });
@@ -481,7 +491,9 @@ pub async fn update_exif_fields(
                 let temp_metadata = crate::exif_processing::load_sidecar(&primary_path);
 
                 let mut exif_data = temp_metadata.exif.unwrap_or_else(|| {
-                    if let Some(existing) = crate::exif_processing::read_rrexif_sidecar(original_path) {
+                    if let Some(existing) =
+                        crate::exif_processing::read_rrexif_sidecar(original_path)
+                    {
                         existing
                     } else if let Ok(mmap) = read_file_mapped(original_path) {
                         crate::exif_processing::read_exif_data_from_bytes(path, &mmap)
@@ -1512,7 +1524,10 @@ pub fn generate_thumbnail_data(
         let crop_data: Option<Crop> = serde_json::from_value(meta.adjustments["crop"].clone()).ok();
 
         let cached_base: Option<(Arc<DynamicImage>, f32)> = {
-            let cache = state.thumbnail_geometry_cache.lock().unwrap_or_else(|e| e.into_inner());
+            let cache = state
+                .thumbnail_geometry_cache
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             if let Some((cached_hash, img, scale)) = cache.get(path_str) {
                 let mut sufficient_resolution = true;
                 if let Some(c) = &crop_data
@@ -1630,7 +1645,10 @@ pub fn generate_thumbnail_data(
 
             let total_scale = gpu_scale * raw_scale_factor;
 
-            let mut cache = state.thumbnail_geometry_cache.lock().unwrap_or_else(|e| e.into_inner());
+            let mut cache = state
+                .thumbnail_geometry_cache
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             if cache.len() >= 8 {
                 let key_to_remove = cache.keys().next().cloned();
                 if let Some(key) = key_to_remove {
@@ -1893,13 +1911,22 @@ pub fn start_thumbnail_workers(app_handle: tauri::AppHandle) {
         std::thread::spawn(move || {
             loop {
                 let path_to_process: String = {
-                    let mut queue = manager_clone.queue.lock().unwrap_or_else(|e| e.into_inner());
+                    let mut queue = manager_clone
+                        .queue
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
                     while queue.is_empty() {
-                        queue = manager_clone.cvar.wait(queue).unwrap_or_else(|e| e.into_inner());
+                        queue = manager_clone
+                            .cvar
+                            .wait(queue)
+                            .unwrap_or_else(|e| e.into_inner());
                     }
                     let path = queue.pop_back().unwrap();
 
-                    let mut processing = manager_clone.processing_now.lock().unwrap_or_else(|e| e.into_inner());
+                    let mut processing = manager_clone
+                        .processing_now
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
                     if processing.contains(&path) {
                         let state = app_clone.state::<crate::AppState>();
                         increment_thumbnail_progress(&state, &app_clone);
@@ -1917,7 +1944,10 @@ pub fn start_thumbnail_workers(app_handle: tauri::AppHandle) {
 
                 if let Ok(cache_dir) = get_thumb_cache_dir(&app_clone) {
                     if manager_clone.rotational_disk.load(Ordering::Relaxed) {
-                        let _io_permit = manager_clone.io_gate.lock().unwrap_or_else(|e| e.into_inner());
+                        let _io_permit = manager_clone
+                            .io_gate
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner());
                         prefetch_source_file(&path_to_process);
                     }
 
@@ -1946,7 +1976,7 @@ pub fn start_thumbnail_workers(app_handle: tauri::AppHandle) {
                 manager_clone
                     .processing_now
                     .lock()
-            .unwrap_or_else(|e| e.into_inner())
+                    .unwrap_or_else(|e| e.into_inner())
                     .remove(&path_to_process);
             }
         });
@@ -1960,11 +1990,18 @@ pub fn update_thumbnail_queue(
 ) -> Result<(), String> {
     let state = app_handle.state::<crate::AppState>();
 
-    let mut queue = state.thumbnail_manager.queue.lock().unwrap_or_else(|e| e.into_inner());
+    let mut queue = state
+        .thumbnail_manager
+        .queue
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
 
     if paths.is_empty() {
         queue.clear();
-        let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
+        let mut tracker = state
+            .thumbnail_progress
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         tracker.total = 0;
         tracker.completed = 0;
         drop(tracker);
@@ -2009,7 +2046,10 @@ pub fn update_thumbnail_queue(
     let queue_len = queue.len();
     drop(queue);
 
-    let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
+    let mut tracker = state
+        .thumbnail_progress
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     tracker.total = tracker.completed + queue_len;
 
     let current = tracker.completed;
@@ -2026,7 +2066,10 @@ pub fn update_thumbnail_queue(
 }
 
 pub fn add_to_thumbnail_queue(state: &AppState, count: usize, app_handle: &AppHandle) {
-    let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
+    let mut tracker = state
+        .thumbnail_progress
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     tracker.total += count;
     let current = tracker.completed;
     let total = tracker.total;
@@ -2039,7 +2082,10 @@ pub fn add_to_thumbnail_queue(state: &AppState, count: usize, app_handle: &AppHa
 }
 
 pub fn increment_thumbnail_progress(state: &AppState, app_handle: &AppHandle) {
-    let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
+    let mut tracker = state
+        .thumbnail_progress
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     tracker.completed += 1;
     let current = tracker.completed;
     let total = tracker.total;
@@ -2420,11 +2466,20 @@ pub fn copy_files(source_paths: Vec<String>, destination_folder: String) -> Resu
                 }
                 counter += 1;
             };
-            let new_filename = new_base_path.file_name().unwrap_or_default().to_string_lossy();
+            let new_filename = new_base_path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
 
             for original_file in all_files_to_copy {
-                let original_full_filename = original_file.file_name().unwrap_or_default().to_string_lossy();
-                let source_base_filename = source_image_path.file_name().unwrap_or_default().to_string_lossy();
+                let original_full_filename = original_file
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy();
+                let source_base_filename = source_image_path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy();
                 let new_dest_filename =
                     original_full_filename.replacen(&*source_base_filename, &new_filename, 1);
 
@@ -2565,7 +2620,10 @@ pub fn save_metadata_and_update_thumbnail(
         sync_metadata_to_xmp(&source_path, &metadata, create_if_missing);
     }
 
-    let loaded_image_lock = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+    let loaded_image_lock = state
+        .original_image
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let preloaded_image_option = if let Some(loaded_image) = loaded_image_lock.as_ref() {
         if loaded_image.path == path {
             Some(loaded_image.image.clone())
@@ -2682,7 +2740,11 @@ pub async fn apply_adjustments_to_paths(
                         Ok(_) => {
                             if enable_xmp_sync {
                                 let source_path = parse_virtual_path(path).0;
-                                sync_metadata_to_xmp(&source_path, &existing_metadata, create_xmp_if_missing);
+                                sync_metadata_to_xmp(
+                                    &source_path,
+                                    &existing_metadata,
+                                    create_xmp_if_missing,
+                                );
                             }
                             None
                         }
@@ -2694,7 +2756,10 @@ pub async fn apply_adjustments_to_paths(
             .collect();
 
         if !errors.is_empty() {
-            eprintln!("apply_adjustments_to_paths partial errors:\n{}", errors.join("\n"));
+            eprintln!(
+                "apply_adjustments_to_paths partial errors:\n{}",
+                errors.join("\n")
+            );
         }
 
         let state = app_handle.state::<AppState>();
@@ -2768,7 +2833,11 @@ pub async fn reset_adjustments_for_paths(
                         Ok(_) => {
                             if enable_xmp_sync {
                                 let source_path = parse_virtual_path(path).0;
-                                sync_metadata_to_xmp(&source_path, &existing_metadata, create_xmp_if_missing);
+                                sync_metadata_to_xmp(
+                                    &source_path,
+                                    &existing_metadata,
+                                    create_xmp_if_missing,
+                                );
                             }
                             None
                         }
@@ -2780,7 +2849,10 @@ pub async fn reset_adjustments_for_paths(
             .collect();
 
         if !errors.is_empty() {
-            eprintln!("reset_adjustments_for_paths partial errors:\n{}", errors.join("\n"));
+            eprintln!(
+                "reset_adjustments_for_paths partial errors:\n{}",
+                errors.join("\n")
+            );
         }
 
         let state = app_handle.state::<AppState>();
@@ -3769,12 +3841,16 @@ pub async fn import_files(
                     fs::copy(&source_sidecar, &dest_sidecar).map_err(|e| e.to_string())?;
                 }
 
-                let mut source_rrexif_name = source_path.file_name().unwrap_or_default().to_os_string();
+                let mut source_rrexif_name =
+                    source_path.file_name().unwrap_or_default().to_os_string();
                 source_rrexif_name.push(".rrexif");
                 let source_rrexif = source_path.with_file_name(source_rrexif_name);
 
                 if source_rrexif.exists() {
-                    let mut dest_rrexif_name = dest_file_path.file_name().unwrap_or_default().to_os_string();
+                    let mut dest_rrexif_name = dest_file_path
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_os_string();
                     dest_rrexif_name.push(".rrexif");
                     let dest_rrexif = dest_file_path.with_file_name(dest_rrexif_name);
                     let _ = fs::copy(&source_rrexif, &dest_rrexif);
@@ -3858,7 +3934,10 @@ pub fn generate_filename_from_template(
     let local_date = file_date.with_timezone(&chrono::Local);
 
     // 路径安全：过滤用户可控模板里的路径分隔符，防止 ../ 和 \\ 穿越
-    let template: String = template.chars().map(|c| if c == '/' || c == '\\' { '_' } else { c }).collect();
+    let template: String = template
+        .chars()
+        .map(|c| if c == '/' || c == '\\' { '_' } else { c })
+        .collect();
     let mut result = template;
     result = result.replace("{original_filename}", stem);
     result = result.replace("{sequence}", &sequence_str);
@@ -3926,7 +4005,10 @@ pub fn rename_files(
         let parent = original_path
             .parent()
             .ok_or("Could not get parent directory")?;
-        let original_filename_str = original_path.file_name().unwrap_or_default().to_string_lossy();
+        let original_filename_str = original_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy();
         let new_filename_str = new_path.file_name().unwrap_or_default().to_string_lossy();
 
         if let Ok(entries) = fs::read_dir(parent) {
@@ -3943,7 +4025,8 @@ pub fn rename_files(
                     let new_sidecar_path = parent.join(new_sidecar_filename);
                     sidecar_operations.push((entry_path, new_sidecar_path));
                 } else if entry_filename == format!("{}.rrdata", original_filename_str) {
-                    let mut new_sidecar_name = new_path.file_name().unwrap_or_default().to_os_string();
+                    let mut new_sidecar_name =
+                        new_path.file_name().unwrap_or_default().to_os_string();
                     new_sidecar_name.push(".rrdata");
                     let new_sidecar_path = new_path.with_file_name(new_sidecar_name);
 

@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use image::imageops::{self, FilterType};
 use image::{
     DynamicImage, GenericImageView, GrayImage, ImageBuffer, Luma, Rgb, Rgb32FImage, Rgba, RgbaImage,
@@ -59,7 +59,10 @@ fn resolve_model_endpoints(user_setting: Option<&str>) -> Vec<String> {
         Some("hf-mirror") | Some("mirror") => vec![HF_MIRROR_ENDPOINT.to_string()],
         Some("huggingface") | Some("official") => vec![HF_OFFICIAL_ENDPOINT.to_string()],
         Some(custom) if custom != "auto" && custom != "default" => vec![custom.to_string()],
-        _ => vec![HF_MIRROR_ENDPOINT.to_string(), HF_OFFICIAL_ENDPOINT.to_string()],
+        _ => vec![
+            HF_MIRROR_ENDPOINT.to_string(),
+            HF_OFFICIAL_ENDPOINT.to_string(),
+        ],
     }
 }
 
@@ -455,7 +458,7 @@ pub async fn get_or_init_ai_models(
 ) -> Result<Arc<AiModels>> {
     if let Some(models) = ai_state_mutex
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.models.clone())
     {
@@ -466,7 +469,7 @@ pub async fn get_or_init_ai_models(
 
     if let Some(models) = ai_state_mutex
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.models.clone())
     {
@@ -570,7 +573,7 @@ pub async fn get_or_init_denoise_model(
 ) -> Result<Arc<Mutex<Session>>> {
     if let Some(denoise_model) = ai_state_mutex
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.denoise_model.clone())
     {
@@ -581,7 +584,7 @@ pub async fn get_or_init_denoise_model(
 
     if let Some(denoise_model) = ai_state_mutex
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.denoise_model.clone())
     {
@@ -631,7 +634,7 @@ pub async fn get_or_init_clip_models(
 ) -> Result<Arc<ClipModels>> {
     if let Some(clip_models) = ai_state_mutex
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.clip_models.clone())
     {
@@ -642,7 +645,7 @@ pub async fn get_or_init_clip_models(
 
     if let Some(clip_models) = ai_state_mutex
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.clip_models.clone())
     {
@@ -670,9 +673,13 @@ pub async fn get_or_init_clip_models(
             None => &[MODEL_REPO],
         };
         let _ = app_handle.emit("ai-model-download-start", "CLIP Tokenizer");
-        let download_result =
-            download_model_with_endpoints(&endpoints, repos, CLIP_TOKENIZER_FILENAME, &clip_tokenizer_path)
-                .await;
+        let download_result = download_model_with_endpoints(
+            &endpoints,
+            repos,
+            CLIP_TOKENIZER_FILENAME,
+            &clip_tokenizer_path,
+        )
+        .await;
         let _ = app_handle.emit("ai-model-download-finish", "CLIP Tokenizer");
         download_result?;
     }
@@ -711,7 +718,7 @@ pub async fn get_or_init_lama_model(
 ) -> Result<Arc<Mutex<Session>>> {
     if let Some(lama_model) = ai_state_mutex
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.lama_model.clone())
     {
@@ -722,7 +729,7 @@ pub async fn get_or_init_lama_model(
 
     if let Some(lama_model) = ai_state_mutex
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.lama_model.clone())
     {
@@ -1389,9 +1396,11 @@ pub fn run_sam_decoder(
             .collect();
 
         let img_mask_f32 =
-            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, mask_f32_vec).unwrap_or_else(|| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
+            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, mask_f32_vec)
+                .unwrap_or_else(|| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
         let img_gaus_f32 =
-            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, gaus_dt).unwrap_or_else(|| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
+            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, gaus_dt)
+                .unwrap_or_else(|| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
 
         let resized_mask = imageops::resize(&img_mask_f32, 256, 256, FilterType::Triangle);
         let resized_gaus = imageops::resize(&img_gaus_f32, 256, 256, FilterType::Triangle);

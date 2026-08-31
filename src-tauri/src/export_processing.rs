@@ -634,25 +634,25 @@ const SRGB_TO_XYZ: [[f32; 3]; 3] = [
 
 // XYZ(D65) → Display P3 (Apple)
 const XYZ_TO_DISPLAY_P3: [[f32; 3]; 3] = [
-    [ 2.4934969, -0.9313836, -0.4027108],
-    [-0.8294890,  1.7626641,  0.0236247],
-    [ 0.0358458, -0.0761724,  0.9568845],
+    [2.4934969, -0.9313836, -0.4027108],
+    [-0.8294890, 1.7626641, 0.0236247],
+    [0.0358458, -0.0761724, 0.9568845],
 ];
 
 // XYZ(D65) → Adobe RGB (1998)
 const XYZ_TO_ADOBE_RGB: [[f32; 3]; 3] = [
-    [ 2.0415879, -0.5650070, -0.3473250],
-    [-0.9692436,  1.8759675,  0.0415551],
-    [ 0.0134443, -0.1183624,  1.0151749],
+    [2.0415879, -0.5650070, -0.3473250],
+    [-0.9692436, 1.8759675, 0.0415551],
+    [0.0134443, -0.1183624, 1.0151749],
 ];
 
 // XYZ(D65) → ProPhoto RGB (ROMM-RGB)
 // primaries: R=(0.7347,0.2653), G=(0.1596,0.8404), B=(0.0366,0.0001), WP=D65
 // 由 primaries + wp 精确推导：XYZ→primary 逆矩阵
 const XYZ_TO_PRO_PHOTO: [[f32; 3]; 3] = [
-    [ 1.3904536, -0.2640605, -0.0528020],
-    [-0.5376556,  1.4889391,  0.0202733],
-    [ 0.0000000,  0.0000000,  0.9182250],
+    [1.3904536, -0.2640605, -0.0528020],
+    [-0.5376556, 1.4889391, 0.0202733],
+    [0.0000000, 0.0000000, 0.9182250],
 ];
 
 fn mat_mul_3x3(a: [[f32; 3]; 3], b: [[f32; 3]; 3]) -> [[f32; 3]; 3] {
@@ -665,10 +665,7 @@ fn mat_mul_3x3(a: [[f32; 3]; 3], b: [[f32; 3]; 3]) -> [[f32; 3]; 3] {
     out
 }
 
-fn apply_color_space_transform(
-    image: &DynamicImage,
-    target: &ExportColorSpace,
-) -> DynamicImage {
+fn apply_color_space_transform(image: &DynamicImage, target: &ExportColorSpace) -> DynamicImage {
     if matches!(target, ExportColorSpace::Srgb) {
         return image.clone();
     }
@@ -1589,7 +1586,10 @@ pub async fn estimate_export_sizes(
         hydrate_adjustments(&state, &mut adjustments_clone);
 
         let new_transform_hash = calculate_transform_hash(&adjustments_clone);
-        let cached_preview_lock = state.cached_preview.lock().unwrap_or_else(|e| e.into_inner());
+        let cached_preview_lock = state
+            .cached_preview
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let preview_dim = settings.editor_preview_resolution.unwrap_or(1920);
 
         let (preview_image, scale, unscaled_crop_offset) = if let Some(cached) =
@@ -1667,7 +1667,8 @@ pub async fn estimate_export_sizes(
             "estimate_export_size",
         )?;
 
-        let cs_preview = apply_color_space_transform(&processed_preview, &export_settings.color_space);
+        let cs_preview =
+            apply_color_space_transform(&processed_preview, &export_settings.color_space);
         let preview_bytes = encode_image_to_bytes(
             &cs_preview,
             &output_format,
@@ -1808,7 +1809,8 @@ pub async fn estimate_export_sizes(
             "estimate_batch_export_size",
         )?;
 
-        let cs_preview = apply_color_space_transform(&processed_preview, &export_settings.color_space);
+        let cs_preview =
+            apply_color_space_transform(&processed_preview, &export_settings.color_space);
         let preview_bytes = encode_image_to_bytes(
             &cs_preview,
             &output_format,

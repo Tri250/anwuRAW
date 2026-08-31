@@ -368,6 +368,16 @@ export function useTauriListeners({
           }));
         }
       }),
+      listen('focus-stack-report', (event: any) => {
+        if (isEffectActive && Array.isArray(event.payload?.frames)) {
+          useUIStore.getState().setUI((state) => ({
+            focusStackModalState: {
+              ...state.focusStackModalState,
+              report: event.payload.frames,
+            },
+          }));
+        }
+      }),
       listen('focus-stack-error', (event: any) => {
         if (isEffectActive) {
           useUIStore.getState().setUI((state) => ({

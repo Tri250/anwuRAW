@@ -1961,7 +1961,9 @@ pub async fn stitch_focus_stack(
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
     if paths.len() < 2 {
-        return Err("Please select at least two images to stack.".to_string());
+        let err = "Please select at least two images to stack.".to_string();
+        let _ = app_handle.emit("focus-stack-error", &err);
+        return Err(err);
     }
 
     let source_paths: Vec<String> = paths
@@ -1970,6 +1972,7 @@ pub async fn stitch_focus_stack(
         .collect();
 
     let focus_result_handle = state.focus_stack_result.clone();
+    let app_for_join_err = app_handle.clone();
 
     let task = tokio::task::spawn_blocking(move || -> Result<(), String> {
         let progress = {
@@ -2014,7 +2017,9 @@ pub async fn stitch_focus_stack(
             serde_json::json!({ "frames": report }),
         );
 
-        *focus_result_handle.lock().unwrap_or_else(|e| e.into_inner()) = Some(DynamicImage::ImageRgb32F(final_image));
+        *focus_result_handle
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = Some(DynamicImage::ImageRgb32F(final_image));
 
         let _ = app_handle.emit(
             "focus-stack-complete",
@@ -2025,8 +2030,15 @@ pub async fn stitch_focus_stack(
 
     match task.await {
         Ok(Ok(())) => Ok(()),
-        Ok(Err(e)) => Err(e),
-        Err(e) => Err(format!("Task failed: {}", e)),
+        Ok(Err(e)) => {
+            let _ = app_for_join_err.emit("focus-stack-error", &e);
+            Err(e)
+        }
+        Err(e) => {
+            let err = format!("Task failed: {}", e);
+            let _ = app_for_join_err.emit("focus-stack-error", &err);
+            Err(err)
+        }
     }
 }
 
@@ -2142,7 +2154,7 @@ pub async fn save_focus_stack(
     let focus_image = state
         .focus_stack_result
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .take()
         .ok_or_else(|| "No focus stack image found in memory.".to_string())?;
 

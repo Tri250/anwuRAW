@@ -49,6 +49,8 @@ interface FocusStackModalState {
   isProcessing: boolean;
   progressMessage: string | null;
   sourcePaths: Array<string>;
+  /** Diagnostic quality report emitted alongside focus-stack-complete */
+  report: Array<Record<string, unknown>> | null;
 }
 
 interface HdrModalState {
@@ -347,6 +349,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     isProcessing: false,
     progressMessage: '',
     sourcePaths: [],
+    report: null,
   },
   hdrModalState: {
     error: null,

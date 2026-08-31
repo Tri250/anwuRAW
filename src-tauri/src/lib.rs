@@ -165,7 +165,10 @@ pub fn generate_transformed_preview(
     let transform_hash = calculate_transform_hash(adjustments);
 
     let (transformed_full_res, unscaled_crop_offset) = {
-        let mut cache_lock = state.full_transformed_cache.lock().unwrap_or_else(|e| e.into_inner());
+        let mut cache_lock = state
+            .full_transformed_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some((hash, img, offset)) = cache_lock.as_ref() {
             if *hash == transform_hash {
                 (Arc::clone(img), *offset)
@@ -236,7 +239,10 @@ fn cancel_thumbnail_generation(
         .thumbnail_cancellation_token
         .store(true, Ordering::SeqCst);
 
-    let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
+    let mut tracker = state
+        .thumbnail_progress
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     tracker.total = 0;
     tracker.completed = 0;
     drop(tracker);
@@ -255,7 +261,10 @@ pub fn get_cached_full_warped_image(
     let geo_hash = calculate_geometry_hash(js_adjustments);
 
     {
-        let cache_lock = state.full_warped_cache.lock().unwrap_or_else(|e| e.into_inner());
+        let cache_lock = state
+            .full_warped_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some((hash, img)) = cache_lock.as_ref()
             && *hash == geo_hash
         {
@@ -274,7 +283,10 @@ pub fn get_cached_full_warped_image(
     let warped_arc = Arc::new(warped_image);
 
     {
-        let mut cache_lock = state.full_warped_cache.lock().unwrap_or_else(|e| e.into_inner());
+        let mut cache_lock = state
+            .full_warped_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         *cache_lock = Some((geo_hash, Arc::clone(&warped_arc)));
     }
 
@@ -286,7 +298,12 @@ async fn update_wgpu_transform(
     payload: WgpuTransformPayload,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
-    let context = match state.gpu_context.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
+    let context = match state
+        .gpu_context
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+    {
         Some(c) => c.clone(),
         None => return Ok(()),
     };
@@ -337,7 +354,10 @@ fn process_preview_job(
     hydrate_adjustments(&state, &mut adjustments_json);
     let adjustments_clone = adjustments_json;
 
-    let loaded_image_guard = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+    let loaded_image_guard = state
+        .original_image
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let loaded_image = loaded_image_guard
         .as_ref()
         .ok_or("No original image loaded")?
@@ -362,7 +382,10 @@ fn process_preview_job(
         _ => (if has_roi { 1.4_f32 } else { 1.0_f32 }, 75_u8),
     };
 
-    let mut cached_preview_lock = state.cached_preview.lock().unwrap_or_else(|e| e.into_inner());
+    let mut cached_preview_lock = state
+        .cached_preview
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
 
     let base_valid = cached_preview_lock
         .as_ref()
@@ -380,7 +403,10 @@ fn process_preview_job(
             cached.unscaled_crop_offset,
         )
     } else {
-        *state.gpu_image_cache.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        *state
+            .gpu_image_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = None;
 
         let (base, scale, offset) =
             generate_transformed_preview(&state, &loaded_image, &adjustments_clone, preview_dim)?;
@@ -410,7 +436,10 @@ fn process_preview_job(
         };
 
         if is_interactive && base_valid {
-            *state.gpu_image_cache.lock().unwrap_or_else(|e| e.into_inner()) = None;
+            *state
+                .gpu_image_cache
+                .lock()
+                .unwrap_or_else(|e| e.into_inner()) = None;
         }
 
         small
@@ -611,7 +640,10 @@ fn process_preview_job(
 fn start_analytics_worker(app_handle: tauri::AppHandle) {
     let state = app_handle.state::<AppState>();
     let (tx, rx): (Sender<AnalyticsJob>, Receiver<AnalyticsJob>) = mpsc::channel();
-    *state.analytics_worker_tx.lock().unwrap_or_else(|e| e.into_inner()) = Some(tx);
+    *state
+        .analytics_worker_tx
+        .lock()
+        .unwrap_or_else(|e| e.into_inner()) = Some(tx);
 
     std::thread::spawn(move || {
         while let Ok(mut job) = rx.recv() {
@@ -649,7 +681,10 @@ fn start_preview_worker(app_handle: tauri::AppHandle) {
     let state = app_handle.state::<AppState>();
     let (tx, rx): (Sender<PreviewJob>, Receiver<PreviewJob>) = mpsc::channel();
 
-    *state.preview_worker_tx.lock().unwrap_or_else(|e| e.into_inner()) = Some(tx);
+    *state
+        .preview_worker_tx
+        .lock()
+        .unwrap_or_else(|e| e.into_inner()) = Some(tx);
 
     std::thread::spawn(move || {
         while let Ok(mut job) = rx.recv() {
@@ -696,7 +731,10 @@ async fn apply_adjustments(
     let (tx, rx) = tokio::sync::oneshot::channel();
 
     {
-        let tx_guard = state.preview_worker_tx.lock().unwrap_or_else(|e| e.into_inner());
+        let tx_guard = state
+            .preview_worker_tx
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some(worker_tx) = tx_guard.as_ref() {
             let job = PreviewJob {
                 adjustments: js_adjustments,
@@ -735,7 +773,7 @@ fn generate_uncropped_preview(
     let loaded_image = state
         .original_image
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .clone()
         .ok_or("No original image loaded")?;
 
@@ -863,7 +901,10 @@ async fn preview_geometry_transform(
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
     let (loaded_image_path, is_raw) = {
-        let guard = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+        let guard = state
+            .original_image
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let loaded = guard.as_ref().ok_or("No image loaded")?;
         (loaded.path.clone(), loaded.is_raw)
     };
@@ -884,7 +925,10 @@ async fn preview_geometry_transform(
             let context = get_or_init_gpu_context(&state, &app_handle)?;
 
             let original_image = {
-                let guard = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+                let guard = state
+                    .original_image
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 let loaded = guard.as_ref().ok_or("No image loaded")?;
                 loaded.image.clone()
             };
@@ -952,7 +996,10 @@ async fn preview_geometry_transform(
                 "preview_geometry_transform_base_gen",
             )?;
 
-            let mut cache = state.geometry_cache.lock().unwrap_or_else(|e| e.into_inner());
+            let mut cache = state
+                .geometry_cache
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             if cache.len() > 5 {
                 cache.clear();
             }
@@ -1056,7 +1103,10 @@ async fn preview_geometry_transform(
 pub fn get_original_image(
     state: &tauri::State<AppState>,
 ) -> Result<(std::sync::Arc<image::DynamicImage>, bool), String> {
-    let original_image_lock = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+    let original_image_lock = state
+        .original_image
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let loaded_image = original_image_lock
         .as_ref()
         .ok_or("No original image loaded")?;
@@ -1077,7 +1127,7 @@ fn generate_preset_preview(
     let loaded_image = state
         .original_image
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .clone()
         .ok_or("No original image loaded for preset preview")?;
     let is_raw = loaded_image.is_raw;
@@ -1379,51 +1429,63 @@ async fn merge_hdr(
     app_handle: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
-    if paths.len() < 2 {
-        return Err("Please select at least two images to merge.".to_string());
-    }
-
     let hdr_result_handle = state.hdr_result.clone();
-    let settings = load_settings(app_handle.clone()).unwrap_or_default();
+    let app_clone = app_handle.clone();
 
-    let mut frames = load_hdr_frames(&paths, &app_handle, &settings)?;
-    assert_uniform_dimensions(&frames)?;
-    align_hdr_frames(&mut frames, &app_handle);
+    let result = (|| -> Result<(), String> {
+        if paths.len() < 2 {
+            return Err("Please select at least two images to merge.".to_string());
+        }
 
-    let images: Vec<HDRInput> = frames
-        .iter()
-        .map(|(path, img, exposure, gains)| {
-            HDRInput::with_image(img, *exposure, *gains)
-                .map_err(|e| format!("Failed to prepare HDR input for {}: {}", path, e))
-        })
-        .collect::<Result<Vec<HDRInput>, String>>()?;
+        let settings = load_settings(app_handle.clone()).unwrap_or_default();
 
-    log::info!("Starting HDR merge of {} images", images.len());
-    let mut hdr_merged = hdr_merge_images(&mut images.into()).map_err(|e| e.to_string())?;
-    hdr_merged =
-        image_hdr::stretch::apply_histogram_stretch(&hdr_merged).map_err(|e| e.to_string())?;
-    hdr_merged = apply_linear_to_srgb(hdr_merged);
-    log::info!("HDR merge completed");
+        let mut frames = load_hdr_frames(&paths, &app_handle, &settings)?;
+        assert_uniform_dimensions(&frames)?;
+        align_hdr_frames(&mut frames, &app_handle);
 
-    let mut buf = Cursor::new(Vec::new());
-    if let Err(e) = hdr_merged.to_rgb8().write_to(&mut buf, ImageFormat::Png) {
-        return Err(format!("Failed to encode hdr preview: {}", e));
+        let images: Vec<HDRInput> = frames
+            .iter()
+            .map(|(path, img, exposure, gains)| {
+                HDRInput::with_image(img, *exposure, *gains)
+                    .map_err(|e| format!("Failed to prepare HDR input for {}: {}", path, e))
+            })
+            .collect::<Result<Vec<HDRInput>, String>>()?;
+
+        log::info!("Starting HDR merge of {} images", images.len());
+        let mut hdr_merged = hdr_merge_images(&mut images.into()).map_err(|e| e.to_string())?;
+        hdr_merged =
+            image_hdr::stretch::apply_histogram_stretch(&hdr_merged).map_err(|e| e.to_string())?;
+        hdr_merged = apply_linear_to_srgb(hdr_merged);
+        log::info!("HDR merge completed");
+
+        let mut buf = Cursor::new(Vec::new());
+        if let Err(e) = hdr_merged.to_rgb8().write_to(&mut buf, ImageFormat::Png) {
+            return Err(format!("Failed to encode hdr preview: {}", e));
+        }
+
+        let base64_str = general_purpose::STANDARD.encode(buf.get_ref());
+        let final_base64 = format!("data:image/png;base64,{}", base64_str);
+
+        let _ = app_handle.emit("hdr-progress", "Creating preview...");
+
+        *hdr_result_handle.lock().unwrap_or_else(|e| e.into_inner()) = Some(hdr_merged);
+
+        let _ = app_handle.emit(
+            "hdr-complete",
+            serde_json::json!({
+                "base64": final_base64,
+            }),
+        );
+        Ok(())
+    })();
+
+    match result {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            let _ = app_clone.emit("hdr-error", &e);
+            Err(e)
+        }
     }
-
-    let base64_str = general_purpose::STANDARD.encode(buf.get_ref());
-    let final_base64 = format!("data:image/png;base64,{}", base64_str);
-
-    let _ = app_handle.emit("hdr-progress", "Creating preview...");
-
-    *hdr_result_handle.lock().unwrap_or_else(|e| e.into_inner()) = Some(hdr_merged);
-
-    let _ = app_handle.emit(
-        "hdr-complete",
-        serde_json::json!({
-            "base64": final_base64,
-        }),
-    );
-    Ok(())
 }
 
 #[tauri::command]
@@ -1431,9 +1493,14 @@ async fn save_hdr(
     first_path_str: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
-    let hdr_image = state.hdr_result.lock().unwrap_or_else(|e| e.into_inner()).take().ok_or_else(|| {
-        "No hdr image found in memory to save. It might have already been saved.".to_string()
-    })?;
+    let hdr_image = state
+        .hdr_result
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take()
+        .ok_or_else(|| {
+            "No hdr image found in memory to save. It might have already been saved.".to_string()
+        })?;
 
     let (first_path, _) = parse_virtual_path(&first_path_str);
     let parent_dir = first_path
@@ -1850,8 +1917,16 @@ fn frontend_ready(
         }
     }
 
-    let open_with_file = state.initial_file_path.lock().unwrap_or_else(|e| e.into_inner()).take();
-    let edit_session = state.pending_edit_session.lock().unwrap_or_else(|e| e.into_inner()).take();
+    let open_with_file = state
+        .initial_file_path
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take();
+    let edit_session = state
+        .pending_edit_session
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take();
     if let Some(path) = &open_with_file {
         log::info!("Frontend is ready, returning initial path: {}", path);
     }

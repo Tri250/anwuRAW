@@ -232,6 +232,7 @@ export default function AppModals(props: AppModalsProps) {
               depthMapBase64: null,
               error: null,
               sourcePaths: [],
+              report: null,
             },
           })
         }

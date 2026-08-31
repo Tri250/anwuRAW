@@ -661,6 +661,7 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
                     isProcessing: false,
                     progressMessage: null,
                     sourcePaths: finalSelection,
+                    report: null,
                   },
                 });
               },

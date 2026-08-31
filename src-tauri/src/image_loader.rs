@@ -1,4 +1,3 @@
-use std::io::Cursor;
 use crate::app_settings::{AppSettings, load_settings};
 use crate::app_state::{AppState, LoadedImage};
 use crate::exif_processing;
@@ -19,6 +18,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
+use std::io::Cursor;
 use std::panic;
 use std::path::Path;
 use std::sync::OnceLock;
@@ -843,19 +843,52 @@ pub async fn load_image(
     let cancel_token = Some((generation_tracker.clone(), my_generation));
 
     {
-        *state.original_image.lock().unwrap_or_else(|e| e.into_inner()) = None;
-        *state.cached_preview.lock().unwrap_or_else(|e| e.into_inner()) = None;
-        *state.gpu_image_cache.lock().unwrap_or_else(|e| e.into_inner()) = None;
-        *state.full_warped_cache.lock().unwrap_or_else(|e| e.into_inner()) = None;
-        *state.full_transformed_cache.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        *state
+            .original_image
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = None;
+        *state
+            .cached_preview
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = None;
+        *state
+            .gpu_image_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = None;
+        *state
+            .full_warped_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = None;
+        *state
+            .full_transformed_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = None;
 
-        state.mask_cache.lock().unwrap_or_else(|e| e.into_inner()).clear();
-        state.patch_cache.lock().unwrap_or_else(|e| e.into_inner()).clear();
-        state.geometry_cache.lock().unwrap_or_else(|e| e.into_inner()).clear();
+        state
+            .mask_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
+        state
+            .patch_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
+        state
+            .geometry_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
 
-        *state.denoise_result.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        *state
+            .denoise_result
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = None;
         *state.hdr_result.lock().unwrap_or_else(|e| e.into_inner()) = None;
-        *state.panorama_result.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        *state
+            .panorama_result
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = None;
     }
 
     let (source_path, sidecar_path) = parse_virtual_path(&path);
@@ -939,11 +972,15 @@ pub async fn load_image(
 
         let arc_img = Arc::new(pristine_img);
 
-        state.decoded_image_cache.lock().unwrap_or_else(|e| e.into_inner()).insert(
-            source_path_str.clone(),
-            arc_img.clone(),
-            exif_data_loaded.clone(),
-        );
+        state
+            .decoded_image_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(
+                source_path_str.clone(),
+                arc_img.clone(),
+                exif_data_loaded.clone(),
+            );
 
         (arc_img, exif_data_loaded)
     };
@@ -960,7 +997,10 @@ pub async fn load_image(
 
     let (orig_width, orig_height) = pristine_arc.dimensions();
 
-    *state.original_image.lock().unwrap_or_else(|e| e.into_inner()) = Some(LoadedImage {
+    *state
+        .original_image
+        .lock()
+        .unwrap_or_else(|e| e.into_inner()) = Some(LoadedImage {
         path,
         image: pristine_arc,
         is_raw,

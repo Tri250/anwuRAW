@@ -175,7 +175,8 @@ fn run_pipeline(
             out_pixel[2] = b.clamp(0.0, 1.0).powf(gamma_inv);
         });
 
-    let out_img = Rgb32FImage::from_vec(width, height, out_buffer).unwrap_or_else(|| Rgb32FImage::new(width, height));
+    let out_img = Rgb32FImage::from_vec(width, height, out_buffer)
+        .unwrap_or_else(|| Rgb32FImage::new(width, height));
     DynamicImage::ImageRgb32F(out_img)
 }
 
@@ -195,13 +196,19 @@ pub async fn preview_negative_conversion(
     let cache_key = hasher.finish();
 
     let base_image_for_processing = {
-        let mut cache = state.geometry_cache.lock().unwrap_or_else(|e| e.into_inner());
+        let mut cache = state
+            .geometry_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
 
         if let Some(cached_img) = cache.get(&cache_key) {
             cached_img.clone()
         } else {
             let image_to_downscale = {
-                let original_lock = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+                let original_lock = state
+                    .original_image
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 if let Some(loaded) = original_lock.as_ref() {
                     if loaded.path == source_path_str {
                         loaded.image.clone().as_ref().clone()

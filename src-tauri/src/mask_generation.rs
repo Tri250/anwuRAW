@@ -429,7 +429,8 @@ fn render_stroke_layer_parallel(
 ) -> GrayImage {
     let mut out_pixels = vec![0u8; (bb_w * bb_h) as usize];
     if points.is_empty() || radius <= 0.0 {
-        return GrayImage::from_raw(bb_w, bb_h, out_pixels).unwrap_or_else(|| GrayImage::new(bb_w, bb_h));
+        return GrayImage::from_raw(bb_w, bb_h, out_pixels)
+            .unwrap_or_else(|| GrayImage::new(bb_w, bb_h));
     }
 
     struct Segment {
@@ -1172,7 +1173,14 @@ fn generate_color_bitmap(
         }
     }
 
-    apply_grow_and_feather(&mut mask, params.grow, params.feather, params.decontaminate, width, height);
+    apply_grow_and_feather(
+        &mut mask,
+        params.grow,
+        params.feather,
+        params.decontaminate,
+        width,
+        height,
+    );
     Some(mask)
 }
 
@@ -1272,7 +1280,14 @@ fn generate_luminance_bitmap(
         }
     }
 
-    apply_grow_and_feather(&mut mask, params.grow, params.feather, params.decontaminate, width, height);
+    apply_grow_and_feather(
+        &mut mask,
+        params.grow,
+        params.feather,
+        params.decontaminate,
+        width,
+        height,
+    );
     Some(mask)
 }
 

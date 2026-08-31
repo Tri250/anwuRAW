@@ -59,7 +59,9 @@ pub async fn stitch_panorama(
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
     if paths.len() < 2 {
-        return Err("Please select at least two images to stitch.".to_string());
+        let err = "Please select at least two images to stitch.".to_string();
+        let _ = app_handle.emit("panorama-error", &err);
+        return Err(err);
     }
 
     let source_paths: Vec<String> = paths
@@ -68,6 +70,7 @@ pub async fn stitch_panorama(
         .collect();
 
     let panorama_result_handle = state.panorama_result.clone();
+    let app_for_join_err = app_handle.clone();
 
     let task = tokio::task::spawn_blocking(move || {
         let panorama_result = stitch_images(source_paths, app_handle.clone());
@@ -91,13 +94,17 @@ pub async fn stitch_panorama(
                 let mut buf = Cursor::new(Vec::new());
 
                 if let Err(e) = preview_u8.write_to(&mut buf, ImageFormat::Png) {
-                    return Err(format!("Failed to encode panorama preview: {}", e));
+                    let err = format!("Failed to encode panorama preview: {}", e);
+                    let _ = app_handle.emit("panorama-error", &err);
+                    return Err(err);
                 }
 
                 let base64_str = general_purpose::STANDARD.encode(buf.get_ref());
                 let final_base64 = format!("data:image/png;base64,{}", base64_str);
 
-                *panorama_result_handle.lock().unwrap_or_else(|e| e.into_inner()) = Some(panorama_image);
+                *panorama_result_handle
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner()) = Some(panorama_image);
 
                 let _ = app_handle.emit(
                     "panorama-complete",
@@ -117,7 +124,11 @@ pub async fn stitch_panorama(
     match task.await {
         Ok(Ok(_)) => Ok(()),
         Ok(Err(e)) => Err(e),
-        Err(join_err) => Err(format!("Panorama task failed: {}", join_err)),
+        Err(join_err) => {
+            let err = format!("Panorama task failed: {}", join_err);
+            let _ = app_for_join_err.emit("panorama-error", &err);
+            Err(err)
+        }
     }
 }
 
@@ -129,7 +140,7 @@ pub async fn save_panorama(
     let panorama_image = state
         .panorama_result
         .lock()
-            .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(|e| e.into_inner())
         .take()
         .ok_or_else(|| {
             "No panorama image found in memory to save. It might have already been saved."

@@ -60,12 +60,7 @@ fn download_and_verify(
         };
 
         if !response.status().is_success() {
-            last_err = Some(format!(
-                "{} returned status {}",
-                url,
-                response.status()
-            )
-            .into());
+            last_err = Some(format!("{} returned status {}", url, response.status()).into());
             continue;
         }
 
@@ -210,14 +205,8 @@ fn main() {
             };
             let mut ort_downloaded = false;
             for repo in repos {
-                if download_and_verify(
-                    endpoints,
-                    repo,
-                    &filename,
-                    &dest_path,
-                    expected_hash,
-                )
-                .is_ok()
+                if download_and_verify(endpoints, repo, &filename, &dest_path, expected_hash)
+                    .is_ok()
                 {
                     ort_downloaded = true;
                     break;
