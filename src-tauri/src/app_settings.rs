@@ -616,7 +616,7 @@ impl Default for AppSettings {
             raw_preprocessing_sharpening: Some(0.35),
             apply_preprocessing_to_non_raws: Some(false),
             exif_overlay: Some("off".to_string()),
-            language: Some("en".to_string()),
+            language: Some("zh-CN".to_string()),
             folder_tree_sort: Some(FolderTreeSort::default()),
             library_display_mode: Some("grid".to_string()),
             grouping: Some("off".to_string()),
