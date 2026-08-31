@@ -1107,7 +1107,11 @@ impl GpuProcessor {
         });
         let out_width = bounds.width;
         let out_height = bounds.height;
-        let mask_layer_count = request.mask_bitmaps.len().clamp(2, MAX_MASKS) as u32;
+        let raw_count = request.mask_bitmaps.len();
+        if raw_count > MAX_MASKS {
+            log::warn!("Mask count {} exceeds MAX_MASKS={}; truncating silently.", raw_count, MAX_MASKS);
+        }
+        let mask_layer_count = raw_count.min(MAX_MASKS).max(1) as u32;
         let full_texture_size = wgpu::Extent3d {
             width,
             height,
@@ -1118,7 +1122,7 @@ impl GpuProcessor {
         if request.mask_bitmaps.is_empty() {
             mask_texture_data.resize(buffer_size, 0);
         } else {
-            for mask_bitmap in request.mask_bitmaps.iter().take(MAX_MASKS) {
+            for mask_bitmap in request.mask_bitmaps.iter().take(mask_layer_count as usize) {
                 mask_texture_data.extend_from_slice(mask_bitmap.as_raw());
             }
             if mask_texture_data.len() < buffer_size {
@@ -1987,4 +1991,68 @@ fn process_and_get_dynamic_image_inner(
     let img_buf = ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(out_w, out_h, processed_pixels)
         .ok_or("Failed to create image buffer from GPU data")?;
     Ok(DynamicImage::ImageRgba8(img_buf))
+}
+
+// =============================================================================
+// CPU fallback 路径 —— 当 GPU 初始化失败 / 渲染中途失败时使用
+// -----------------------------------------------------------------------------
+// 入口函数：process_with_cpu_fallback
+// 策略：尽可能走"高质量默认 tonemapping"（agx 或 basic），输出为 DynamicImage。
+// 注意：CPU fallback 只做全局 tone mapping，**不应用 mask / LUT / 精细局部调整**，
+//       因为那些在 shader 里是组合执行的，单独 CPU 重写工程量巨大。
+//       这保证了"GPU 挂了导出不 abort，只是效果下降"。
+// =============================================================================
+
+pub fn process_with_cpu_fallback(
+    mut base_image: DynamicImage,
+    is_raw: bool,
+    default_tm: &str,
+    caller_id: &str,
+) -> DynamicImage {
+    log::warn!(
+        "[{}] CPU fallback (GPU unavailable). Applying default tonemap '{}' on {} image.",
+        caller_id, default_tm, if is_raw { "RAW" } else { "non-RAW" }
+    );
+
+    if default_tm == "agx" {
+        if !is_raw {
+            base_image = crate::image_processing::apply_srgb_to_linear(base_image);
+        }
+        crate::image_processing::apply_cpu_agx_tonemap(&mut base_image);
+    } else if is_raw {
+        crate::image_processing::apply_cpu_default_raw_processing(&mut base_image);
+    }
+    // 非 RAW + "basic" / 其他 → 直接返回 base_image（已有 sRGB 色空间）
+    base_image
+}
+
+/// 尝试 GPU 处理，失败时回退到 CPU 默认 tonemap。
+/// 返回 `(image, used_cpu_fallback)` 供上层日志/通知。
+pub fn process_gpu_with_cpu_fallback(
+    gpu_context: Option<&GpuContext>,
+    state: &tauri::State<AppState>,
+    base_image: &DynamicImage,
+    transform_hash: u64,
+    request: RenderRequest,
+    caller_id: &str,
+    is_raw: bool,
+    default_tm: &str,
+) -> (DynamicImage, bool) {
+    if let Some(ctx) = gpu_context {
+        match process_and_get_dynamic_image(
+            ctx, state, base_image, transform_hash, request, caller_id,
+        ) {
+            Ok(img) => return (img, false),
+            Err(e) => {
+                log::warn!(
+                    "[{}] GPU processing failed: {}. Falling back to CPU.",
+                    caller_id, e
+                );
+            }
+        }
+    } else {
+        log::warn!("[{}] GPU context unavailable; using CPU fallback.", caller_id);
+    }
+    let cpu_image = process_with_cpu_fallback(base_image.clone(), is_raw, default_tm, caller_id);
+    (cpu_image, true)
 }

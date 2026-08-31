@@ -493,7 +493,7 @@ fn process_preview_job(
         state
             .analytics_worker_tx
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .clone()
             .map(|tx| crate::AnalyticsConfig {
                 path: loaded_image.path.clone(),
@@ -735,7 +735,7 @@ fn generate_uncropped_preview(
     let loaded_image = state
         .original_image
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .clone()
         .ok_or("No original image loaded")?;
 
@@ -874,7 +874,7 @@ async fn preview_geometry_transform(
         let maybe_cached_image = state
             .geometry_cache
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .get(&visual_hash)
             .cloned();
 
@@ -1077,7 +1077,7 @@ fn generate_preset_preview(
     let loaded_image = state
         .original_image
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .clone()
         .ok_or("No original image loaded for preset preview")?;
     let is_raw = loaded_image.is_raw;
@@ -1379,11 +1379,23 @@ async fn merge_hdr(
     app_handle: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
+    let hdr_result_handle = state.hdr_result.clone();
+    let result = merge_hdr_impl(paths, app_handle.clone(), hdr_result_handle).await;
+    if let Err(ref e) = result {
+        let _ = app_handle.emit("hdr-error", e.clone());
+    }
+    result
+}
+
+async fn merge_hdr_impl(
+    paths: Vec<String>,
+    app_handle: tauri::AppHandle,
+    hdr_result_handle: Arc<Mutex<Option<DynamicImage>>>,
+) -> Result<(), String> {
     if paths.len() < 2 {
         return Err("Please select at least two images to merge.".to_string());
     }
 
-    let hdr_result_handle = state.hdr_result.clone();
     let settings = load_settings(app_handle.clone()).unwrap_or_default();
 
     let mut frames = load_hdr_frames(&paths, &app_handle, &settings)?;
@@ -2291,8 +2303,6 @@ pub fn run() {
             lut_processing::import_luts,
             lut_processing::remove_lut,
             lut_processing::generate_lut_previews,
-            fetch_community_presets,
-            generate_all_community_previews,
             save_temp_file,
             get_image_dimensions,
             frontend_ready,
@@ -2361,7 +2371,6 @@ pub fn run() {
             file_management::handle_import_legacy_presets_from_file,
             file_management::handle_import_presets_from_files,
             file_management::handle_export_presets_to_file,
-            file_management::save_community_preset,
             file_management::clear_all_sidecars,
             file_management::clear_thumbnail_cache,
             file_management::set_color_label_for_paths,

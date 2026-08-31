@@ -43,3 +43,6 @@ src-tauri/libs/
 bench/out/
 # Trae 环境临时包
 .trae-html-share-packages/
+
+# AI 模型二进制（由 scripts/prepare-ai-assets.sh 离线准备，不进 Git）
+src-tauri/resources/ai_models/

@@ -362,9 +362,6 @@ pub fn default_linear_raw_mode() -> String {
     "auto".to_string()
 }
 
-pub fn default_model_endpoint() -> String {
-    "auto".to_string()
-}
 
 pub fn default_tagging_shortcuts_option() -> Option<Vec<String>> {
     Some(vec![
@@ -440,10 +437,6 @@ pub struct AppSettings {
     pub thumbnail_size: Option<String>,
     pub thumbnail_aspect_ratio: Option<String>,
     pub ai_provider: Option<String>,
-    /// AI 模型下载端点：auto（默认，国内优先 hf-mirror + huggingface 降级）
-    /// 可选值：auto | hf-mirror | huggingface | 自定义 URL
-    #[serde(default = "default_model_endpoint")]
-    pub model_endpoint: String,
     #[serde(default = "default_adjustment_visibility")]
     pub adjustment_visibility: HashMap<String, bool>,
     #[serde(default = "default_open_tree_sections")]
@@ -569,7 +562,6 @@ impl Default for AppSettings {
             thumbnail_size: Some("medium".to_string()),
             thumbnail_aspect_ratio: Some("cover".to_string()),
             ai_provider: Some("cpu".to_string()),
-            model_endpoint: default_model_endpoint(),
             adjustment_visibility: default_adjustment_visibility(),
             open_tree_sections: default_open_tree_sections(),
             copy_paste_settings: CopyPasteSettings::default(),
@@ -726,7 +718,7 @@ pub fn save_settings(settings: AppSettings, app_handle: AppHandle) -> Result<(),
     state
         .decoded_image_cache
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .set_capacity(cache_size);
     Ok(())
 }

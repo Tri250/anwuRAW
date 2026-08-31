@@ -16,6 +16,7 @@ use std::sync::Arc;
 pub use crate::gpu_processing::{
     RenderRequest, get_or_init_gpu_context, process_and_get_dynamic_image,
     process_and_get_dynamic_image_with_analytics,
+    process_gpu_with_cpu_fallback, process_with_cpu_fallback,
 };
 use crate::{AppState, mask_generation::MaskDefinition};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
@@ -812,7 +813,8 @@ pub fn warp_image_geometry(image: &DynamicImage, params: GeometryParams) -> Dyna
             }
         });
 
-    let out_img = Rgb32FImage::from_vec(width, height, out_buffer).unwrap();
+    let out_img = Rgb32FImage::from_vec(width, height, out_buffer)
+        .unwrap_or_else(|| Rgb32FImage::new(width, height));
     DynamicImage::ImageRgb32F(out_img)
 }
 
@@ -947,7 +949,8 @@ pub fn unwarp_image_geometry(warped_image: &DynamicImage, params: GeometryParams
             }
         });
 
-    let out_img = Rgb32FImage::from_vec(width, height, out_buffer).unwrap();
+    let out_img = Rgb32FImage::from_vec(width, height, out_buffer)
+        .unwrap_or_else(|| Rgb32FImage::new(width, height));
     DynamicImage::ImageRgb32F(out_img)
 }
 
@@ -2516,6 +2519,10 @@ pub fn get_all_adjustments_from_json(
         .and_then(|m| serde_json::from_value(m.clone()).ok())
         .unwrap_or_default();
 
+    let visible_mask_count = mask_definitions.iter().filter(|m| m.visible).count();
+    if visible_mask_count > MAX_MASKS {
+        log::warn!("{} visible masks exceed MAX_MASKS={}; truncating visible masks.", visible_mask_count, MAX_MASKS);
+    }
     for (i, mask_def) in mask_definitions
         .iter()
         .filter(|m| m.visible)
@@ -3466,7 +3473,7 @@ pub fn calculate_auto_adjustments(
     let original_image = state
         .original_image
         .lock()
-        .unwrap()
+        .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .ok_or("No image loaded for auto adjustments")?
         .image

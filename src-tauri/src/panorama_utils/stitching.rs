@@ -76,7 +76,7 @@ pub fn progressive_seam_stitcher(
 
     let base_img_info = images[0];
     let h_base = &global_homographies[&base_img_info.id];
-    let h_base_inv = h_base.try_inverse().unwrap();
+    let h_base_inv = h_base.try_inverse().unwrap_or_else(|| Matrix3::identity());
     println!("  - Placing base image: '{}'", base_img_info.filename);
 
     let num_pixels_per_row = out_width as usize * 3;
@@ -118,7 +118,7 @@ pub fn progressive_seam_stitcher(
         println!("  - Progressively stitching '{}'", img_to_add_info.filename);
 
         let h_add = &global_homographies[&img_to_add_info.id];
-        let h_add_inv = h_add.try_inverse().unwrap();
+        let h_add_inv = h_add.try_inverse().unwrap_or_else(|| Matrix3::identity());
         let img_to_add = &img_to_add_info.image;
 
         let ctx = SeamContext {
@@ -217,8 +217,7 @@ pub fn progressive_seam_stitcher(
                                 if dist_to_seam.abs() < dynamic_feather_width / 2.0 {
                                     let color_on_pano = Rgb(row_slice
                                         [x as usize * 3..x as usize * 3 + 3]
-                                        .try_into()
-                                        .unwrap());
+                                        .try_into().unwrap_or([0f32, 0f32, 0f32]));
                                     let color_to_add = get_interpolated_pixel(img_to_add, sx, sy);
 
                                     let alpha = if new_image_is_dominant_side {
@@ -309,8 +308,7 @@ pub fn progressive_seam_stitcher(
                                 if dist_to_seam.abs() < dynamic_feather_width / 2.0 {
                                     let color_on_pano = Rgb(row_slice
                                         [x as usize * 3..x as usize * 3 + 3]
-                                        .try_into()
-                                        .unwrap());
+                                        .try_into().unwrap_or([0f32, 0f32, 0f32]));
                                     let color_to_add = get_interpolated_pixel(img_to_add, sx, sy);
 
                                     let alpha = if new_image_is_dominant_side {
@@ -365,7 +363,7 @@ pub fn progressive_seam_stitcher(
 }
 
 fn find_adaptive_seam(ctx: &SeamContext) -> Option<SeamInfo> {
-    let h_add_inv = ctx.h_add.try_inverse().unwrap();
+    let h_add_inv = ctx.h_add.try_inverse().unwrap_or_else(|| Matrix3::identity());
     let (w_add, h_add_img) = ctx.img_to_add.dimensions();
 
     let mut min_ox = u32::MAX;
@@ -429,7 +427,7 @@ fn find_adaptive_seam(ctx: &SeamContext) -> Option<SeamInfo> {
 }
 
 fn find_pairwise_seam_dp_vertical(ctx: &SeamContext) -> Vec<i32> {
-    let h_add_inv = ctx.h_add.try_inverse().unwrap();
+    let h_add_inv = ctx.h_add.try_inverse().unwrap_or_else(|| Matrix3::identity());
     let (w_add, h_add_img) = ctx.img_to_add.dimensions();
     let out_width = ctx.out_width;
     let out_height = ctx.out_height;
@@ -532,7 +530,7 @@ fn find_pairwise_seam_dp_vertical(ctx: &SeamContext) -> Vec<i32> {
 }
 
 fn find_pairwise_seam_dp_horizontal(ctx: &SeamContext) -> Vec<i32> {
-    let h_add_inv = ctx.h_add.try_inverse().unwrap();
+    let h_add_inv = ctx.h_add.try_inverse().unwrap_or_else(|| Matrix3::identity());
     let (w_add, h_add_img) = ctx.img_to_add.dimensions();
     let out_width = ctx.out_width;
     let out_height = ctx.out_height;

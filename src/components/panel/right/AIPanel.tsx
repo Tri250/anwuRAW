@@ -61,7 +61,6 @@ import { OPTION_SEPARATOR } from '../../ui/AppProperties';
 import { createSubMask } from '../../../utils/maskUtils';
 import Text from '../../ui/Text';
 import { TEXT_COLOR_KEYS, TextColors, TextVariants, TextWeights } from '../../../types/typography';
-import { useUser, useAuth } from '@clerk/react';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { useProcessStore } from '../../../store/useProcessStore';
@@ -161,7 +160,7 @@ const BrushTools = ({ settings, onSettingsChange }: { settings: any; onSettingsC
         value={settings.feather}
         fillOrigin="min"
       />
-      <div className="grid grid-cols-2 gap-2 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
         <button
           className={`p-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
             settings.tool === ToolType.Brush
@@ -210,42 +209,8 @@ const ConnectionStatus = ({
   let titleText = t('editor.ai.connection.backendLabel');
   let hoverContent: React.ReactNode = null;
 
-  if (aiProvider === 'cloud') {
-    titleText = t('editor.ai.connection.cloudLabel');
-    if (isSignedIn && isPro) {
-      statusColor = 'bg-green-500';
-      statusText = t('editor.ai.connection.ready');
-
-      const reqs = cloudUsage?.requests ?? 0;
-      const limit = cloudUsage?.limit ?? 500;
-      const percent = Math.min(100, (reqs / limit) * 100);
-
-      hoverContent = (
-        <div className="w-full mt-1">
-          <div className="flex justify-between items-center mb-1.5">
-            <Text variant={TextVariants.small}>{t('editor.ai.connection.monthlyUsage')}</Text>
-            <Text variant={TextVariants.small}>
-              {t('settings.processing.ai.cloud.signedIn.usageStats', { requests: reqs, limit: limit })}
-            </Text>
-          </div>
-          <div className="w-full bg-bg-tertiary rounded-full h-1.5 border border-border-color">
-            <div
-              className="bg-accent h-1.5 rounded-full transition-all duration-500"
-              style={{ width: `${percent}%` }}
-            />
-          </div>
-        </div>
-      );
-    } else if (isSignedIn && !isPro) {
-      statusColor = 'bg-red-500';
-      statusText = t('editor.ai.connection.upgradeRequired');
-      hoverContent = <Text variant={TextVariants.small}>{t('editor.ai.connection.proRequiredDesc')}</Text>;
-    } else {
-      statusColor = 'bg-red-500';
-      statusText = t('editor.ai.connection.notLoggedIn');
-      hoverContent = <Text variant={TextVariants.small}>{t('editor.ai.connection.loginRequiredDesc')}</Text>;
-    }
-  } else if (aiProvider === 'ai-connector') {
+  // Cloud AI provider removed: local ONNX + optional self-host ai-connector.
+  if (aiProvider === 'ai-connector') {
     titleText = t('editor.ai.connection.connectorLabel');
     if (isAIConnectorConnected) {
       statusColor = 'bg-green-500';
@@ -351,23 +316,21 @@ export default function AIPanel() {
   const appSettings = useSettingsStore((s) => s.appSettings);
   const aiProvider = appSettings?.aiProvider || 'cpu';
 
-  const { user, isSignedIn } = useUser();
-  const { getToken } = useAuth();
   const isPro = user?.publicMetadata?.plan === 'pro';
   const [cloudUsage, setCloudUsage] = useState<{ requests: number; limit: number; month: string } | null>(null);
 
-  const isGenerativeAvailable =
-    (aiProvider === 'cloud' && !!isSignedIn && !!isPro) || (aiProvider === 'ai-connector' && isAIConnectorConnected);
+  // Generative fill: local LaMa always available via fast inpaint; ComfyUI self-host via ai-connector
+  const isGenerativeAvailable = (aiProvider === 'ai-connector' && isAIConnectorConnected);
 
   useEffect(() => {
     if (aiProvider !== 'cloud' || !isSignedIn || !isPro) return;
 
     const fetchUsage = async () => {
       try {
-        const token = await getToken();
+        const token = null;
         if (!token) return;
 
-        const res = await fetch('http://127.0.0.1:5000/usage', {
+        const res = await fetch('', {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -1143,7 +1106,7 @@ export default function AIPanel() {
                     <Text variant={TextVariants.heading} className="mb-2 mt-6">
                       {t('editor.ai.manualCleanupTitle')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
                       {AI_DIRECT_PATCH_TYPES.map((maskType: MaskType) => (
                         <DraggableGridItem
                           key={maskType.type}
@@ -1157,7 +1120,7 @@ export default function AIPanel() {
                     <Text variant={TextVariants.heading} className="mb-2">
                       {t('editor.ai.touchUpTitle')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
                       {AI_TOUCH_UP_TYPES.map((maskType: MaskType) => (
                         <DraggableGridItem
                           key={maskType.type}
@@ -1171,7 +1134,7 @@ export default function AIPanel() {
                     <Text variant={TextVariants.heading} className="mb-2">
                       {t('editor.ai.generativeEditTitle')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
                       {AI_GENERATIVE_CREATION_TYPES.map((maskType: MaskType) => (
                         <DraggableGridItem
                           key={maskType.type}

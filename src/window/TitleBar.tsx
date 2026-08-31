@@ -1,6 +1,6 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { platform } from '@tauri-apps/plugin-os';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWindow, type Window } from '@tauri-apps/api/window';
 import { Minus, Square, X } from 'lucide-react';
 
 const RestoreDownIcon = ({ size = 14, className = '' }) => (
@@ -20,11 +20,25 @@ const RestoreDownIcon = ({ size = 14, className = '' }) => (
   </svg>
 );
 
+function isTauriAvailable(): boolean {
+  return typeof window !== 'undefined' && '__TAURI__' in window;
+}
+
 export default function TitleBar() {
   const [osPlatform, setOsPlatform] = useState('');
   const [isMaximized, setIsMaximized] = useState(false);
+  const appWindowRef = useRef<Window | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
-  const appWindow = getCurrentWindow();
+  useEffect(() => {
+    if (!isTauriAvailable()) return;
+    try {
+      appWindowRef.current = getCurrentWindow();
+      setIsReady(true);
+    } catch (err) {
+      console.error('TitleBar: getCurrentWindow() failed:', err);
+    }
+  }, []);
 
   useEffect(() => {
     const getPlatform = async () => {
@@ -40,6 +54,9 @@ export default function TitleBar() {
   }, []);
 
   useEffect(() => {
+    if (!isReady || !appWindowRef.current) return;
+
+    const appWindow = appWindowRef.current;
     const updateMaximizedState = async () => {
       try {
         const max = await appWindow.isMaximized();
@@ -56,17 +73,19 @@ export default function TitleBar() {
       .onResized(() => {
         updateMaximizedState();
       })
-      .then((u) => (unlisten = u));
+      .then((u: () => void) => (unlisten = u));
 
     return () => {
       if (unlisten) unlisten();
     };
-  }, [appWindow]);
+  }, [isReady]);
 
-  const handleMinimize = () => appWindow.minimize();
-  const handleClose = () => appWindow.close();
+  const handleMinimize = () => appWindowRef.current?.minimize();
+  const handleClose = () => appWindowRef.current?.close();
 
   const handleMaximize = useCallback(async () => {
+    const appWindow = appWindowRef.current;
+    if (!appWindow) return;
     try {
       if (osPlatform === 'macos') {
         const isFullscreen = await appWindow.isFullscreen();
@@ -77,13 +96,13 @@ export default function TitleBar() {
     } catch (error) {
       console.error('Failed to toggle maximize:', error);
     }
-  }, [osPlatform, appWindow]);
+  }, [osPlatform]);
 
   const isMac = osPlatform === 'macos';
   const isLinux = osPlatform === 'linux';
   const isWindows = osPlatform === 'windows';
   const isMobile = osPlatform === 'android';
-  if (!osPlatform || isMobile) {
+  if (!osPlatform || isMobile || !isReady) {
     return null;
   }
   const outerDragProps = isLinux ? {} : { 'data-tauri-drag-region': 'true' };

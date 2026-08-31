@@ -520,7 +520,7 @@ export default function CropPanel() {
                   </button>
                 </div>
               </Text>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {PRESETS.map((preset: CropPreset) => (
                   <motion.div
                     className={clsx(
@@ -668,7 +668,7 @@ export default function CropPanel() {
               <Text variant={TextVariants.heading} className="mb-2">
                 {t('editor.crop.orientationHeading')}
               </Text>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <motion.div
                   className="flex flex-col items-center justify-center p-3 cursor-pointer rounded-lg transition-colors bg-surface text-text-secondary hover:bg-card-active hover:text-text-primary"
                   onClick={() => handleRotate(-90)}
@@ -731,7 +731,7 @@ export default function CropPanel() {
               <Text variant={TextVariants.heading} className="mb-2">
                 {t('editor.crop.geometryHeading')}
               </Text>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <motion.div
                   className="flex flex-col items-center justify-center p-3 cursor-pointer rounded-lg transition-colors bg-surface text-text-secondary hover:bg-card-active hover:text-text-primary group"
                   onClick={() => setIsTransformModalOpen(true)}

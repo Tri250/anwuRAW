@@ -140,7 +140,7 @@ const ToneMapperSwitch = ({
               data-tooltip={mapper.title}
               onClick={() => onMapperChange(mapper.id)}
               className={clsx(
-                'relative flex-1 flex items-center justify-center gap-2 px-3 p-1.5 text-sm font-medium rounded-md transition-colors',
+                'relative flex-1 flex items-center justify-center gap-2 px-2 p-1.5 text-sm font-medium whitespace-nowrap rounded-md transition-colors',
                 {
                   'text-text-primary hover:bg-surface': selectedMapper !== mapper.id,
                   'text-button-text': selectedMapper === mapper.id,
@@ -183,10 +183,16 @@ export default function BasicAdjustments({
     setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, [key]: numericValue }));
   };
 
+  const VALID_TONE_MAPPERS = ['basic', 'reinhard', 'filmic', 'agx', 'gamma', 'none'] as const;
+  type ToneMapperId = (typeof VALID_TONE_MAPPERS)[number];
+
   const handleToneMapperChange = (mapper: string) => {
+    const safeMapper: ToneMapperId = (VALID_TONE_MAPPERS.includes(mapper as ToneMapperId)
+      ? mapper
+      : 'basic') as ToneMapperId;
     setAdjustments((prev: Partial<Adjustments>) => ({
       ...prev,
-      toneMapper: mapper as 'basic' | 'agx',
+      toneMapper: safeMapper,
     }));
   };
 

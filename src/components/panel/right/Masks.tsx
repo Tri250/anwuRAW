@@ -96,9 +96,6 @@ export function formatMaskTypeName(type: string) {
 
 export function getMaskTypeName(mask: MaskType) {
   if (mask.id === 'others') return i18n.t('masks.types.others');
-  if (mask.type === Mask.QuickEraser && mask.name === 'Quick Erase') {
-    return i18n.t('masks.types.quickErase');
-  }
   return formatMaskTypeName(mask.type);
 }
 
@@ -145,8 +142,6 @@ export const MASK_RANGE_TYPES: Array<MaskType> = [
   { disabled: false, icon: RectangleHorizontal, name: 'Whole Image', type: Mask.All },
 ];
 
-export const ALL_MASK_TYPES = [...MASK_AI_TYPES, ...MASK_BASIC_TYPES, ...MASK_RANGE_TYPES];
-
 export const AI_DIRECT_PATCH_TYPES: Array<MaskType> = [
   {
     disabled: false,
@@ -175,6 +170,14 @@ export const AI_TOUCH_UP_TYPES: Array<MaskType> = [
     name: 'Retouch',
     type: Mask.Retouch,
   },
+];
+
+export const ALL_MASK_TYPES = [
+  ...MASK_AI_TYPES,
+  ...MASK_BASIC_TYPES,
+  ...MASK_RANGE_TYPES,
+  ...AI_DIRECT_PATCH_TYPES,
+  ...AI_TOUCH_UP_TYPES,
 ];
 
 export const AI_GENERATIVE_CREATION_TYPES: Array<MaskType> = [

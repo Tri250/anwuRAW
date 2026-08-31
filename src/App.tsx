@@ -2,7 +2,6 @@ import { type PointerEvent as ReactPointerEvent, useState, useEffect, useCallbac
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { ClerkProvider } from '@clerk/react';
 import { ToastContainer, toast, Slide } from 'react-toastify';
 import {
   DndContext,
@@ -79,7 +78,6 @@ import {
 import ImageProcessingManager from './components/managers/ImageProcessingManager';
 import ImageLoaderManager from './components/managers/ImageLoaderManager';
 
-const CLERK_PUBLISHABLE_KEY = 'pk_test_YnJpZWYtc2Vhc25haWwtMTIuY2xlcmsuYWNjb3VudHMuZGV2JA'; // local dev key
 
 const insertChildrenIntoTree = (node: any, targetPath: string, newChildren: any[]): any => {
   if (!node) return null;
@@ -525,11 +523,11 @@ function App() {
     const unlisten = listen('ai-connector-status-update', (event: any) => {
       setEditor({ isAIConnectorConnected: event.payload.connected });
     });
-    invoke(Invokes.CheckAIConnectorStatus);
-    const interval = setInterval(() => invoke(Invokes.CheckAIConnectorStatus), 10000);
+    invoke(Invokes.CheckAIConnectorStatus).catch(() => {});
+    const interval = setInterval(() => invoke(Invokes.CheckAIConnectorStatus).catch(() => {}), 10000);
     return () => {
       clearInterval(interval);
-      unlisten.then((f) => f());
+      unlisten.then((f) => f()).catch(() => {});
     };
   }, [setEditor]);
 
@@ -645,14 +643,36 @@ function App() {
   };
 
   useEffect(() => {
-    const appWindow = getCurrentWindow();
+    if (typeof window === 'undefined' || !('__TAURI__' in window)) return;
+    let appWindow;
+    try {
+      appWindow = getCurrentWindow();
+    } catch (err) {
+      console.warn('Tauri API not available yet, skipping window hooks:', err);
+      return;
+    }
     const checkFullscreen = async () => {
-      setUI({ isWindowFullScreen: await appWindow.isFullscreen() });
+      try {
+        setUI({ isWindowFullScreen: await appWindow.isFullscreen() });
+      } catch (err) {
+        // Window might be destroyed during teardown
+      }
     };
     checkFullscreen();
-    const unlistenPromise = appWindow.onResized(checkFullscreen);
+    let unlistenPromise;
+    try {
+      unlistenPromise = appWindow.onResized(checkFullscreen);
+    } catch (err) {
+      return;
+    }
     return () => {
-      unlistenPromise.then((unlisten: any) => unlisten());
+      if (unlistenPromise) {
+        unlistenPromise.then((unlisten: any) => {
+          try {
+            unlisten();
+          } catch (_) {}
+        });
+      }
     };
   }, [setUI]);
 
@@ -879,7 +899,7 @@ function App() {
             }}
           >
             <div className="flex flex-row grow h-full min-h-0">
-              {!shouldHideFolderTree && hasMainContent && (
+              {!isCompactPortrait && !shouldHideFolderTree && hasMainContent && (
                 <SidePanelArea
                   side="left"
                   width={effectiveLeftWidth}
@@ -981,7 +1001,7 @@ function App() {
                   </div>
                 )}
               </div>
-              {!useCompactAndroidPanels && hasMainContent && (
+              {!isCompactPortrait && hasMainContent && (
                 <SidePanelArea
                   side="right"
                   width={effectiveRightWidth}
@@ -1053,12 +1073,10 @@ function App() {
 
 const AppWrapper = () => (
   <ErrorBoundary>
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} routerPush={(to) => {}} routerReplace={(to) => {}}>
       <ContextMenuProvider>
         <App />
         <GlobalTooltip />
       </ContextMenuProvider>
-    </ClerkProvider>
   </ErrorBoundary>
 );
 

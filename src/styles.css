@@ -10,8 +10,13 @@
   --color-text-primary: var(--app-text-primary);
   --color-text-secondary: var(--app-text-secondary);
   --color-accent: var(--app-accent);
+  --color-accent-hover: var(--app-accent-hover);
+  --color-accent-subtle: var(--app-accent-subtle);
   --color-border-color: var(--app-border-color);
   --color-hover-color: var(--app-hover-color);
+  --color-success: var(--app-success);
+  --color-warning: var(--app-warning);
+  --color-error: var(--app-error);
 
   --font-sans: var(--font-family);
 
@@ -103,17 +108,44 @@
 
   html {
     background-color: transparent;
+    height: 100%;
+    height: 100dvh;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   html,
   body,
   #root {
     height: 100%;
+    min-height: 100dvh;
   }
 
   body {
     background-color: transparent;
     @apply text-text-primary font-sans;
+    line-height: var(--line-height-normal, 1.5);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* 禁止 CJK 连字，避免中英混排时的异常字符绑定 */
+    font-variant-ligatures: none;
+    font-feature-settings: 'liga' 0, 'calt' 0;
+    /* Android WebView + CJK 下 optimizeLegibility 会导致中文竖画错位 */
+    text-rendering: optimizeSpeed;
+    overscroll-behavior: none;
+    /* Android 沉浸式导航/状态栏安全区 */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* 拉丁系语言（英/法/德等）：启用 optimizeLegibility + 连字 */
+  html:not([lang^='zh']):not([lang^='ja']):not([lang^='ko']) body {
+    text-rendering: optimizeLegibility;
+    font-variant-ligatures: normal;
+    font-feature-settings: normal;
   }
 
   *:focus {
@@ -349,6 +381,64 @@
       hsl(var(--hsl-mixer-hue-magentas, 340), var(--hsl-mixer-sat-magentas, 0%), 50%),
       hsl(var(--hsl-mixer-hue-magentas, 340), var(--hsl-mixer-sat-magentas, 0%), 100%)
     ) !important;
+  }
+}
+
+/* ==========================================================================
+   CJK（中日韩）文字渲染修正 — 解决"字体错位"根因
+   --------------------------------------------------------------------------
+   根因：Tailwind tracking-* 类本质是 letter-spacing，对 CJK 表意文字无意义
+         且会"拉开字距"导致竖画错位 / 中文词被拆散。
+   做法：在 html lang 为 zh/ja/ko 时把所有 Tailwind tracking-* 覆盖回 normal
+   ========================================================================== */
+html[lang^='zh'] .tracking-tighter,
+html[lang^='zh'] .tracking-tight,
+html[lang^='zh'] .tracking-normal,
+html[lang^='zh'] .tracking-wide,
+html[lang^='zh'] .tracking-wider,
+html[lang^='zh'] .tracking-widest,
+html[lang^='ja'] .tracking-tighter,
+html[lang^='ja'] .tracking-tight,
+html[lang^='ja'] .tracking-normal,
+html[lang^='ja'] .tracking-wide,
+html[lang^='ja'] .tracking-wider,
+html[lang^='ja'] .tracking-widest,
+html[lang^='ko'] .tracking-tighter,
+html[lang^='ko'] .tracking-tight,
+html[lang^='ko'] .tracking-normal,
+html[lang^='ko'] .tracking-wide,
+html[lang^='ko'] .tracking-wider,
+html[lang^='ko'] .tracking-widest {
+  letter-spacing: normal;
+}
+
+/* CJK 语言统一使用 CJK 优化字体栈（Poppins 没有 CJK 字形，需要 fallback） */
+html[lang^='zh'],
+html[lang^='ja'],
+html[lang^='ko'] {
+  font-family: var(--font-family), var(--font-stack-cjk), system-ui, sans-serif;
+}
+
+/* Android WebView + CJK：极小字号中文会渲染错位/模糊，统一提升到 text-xs */
+@supports (-webkit-touch-callout: none) {
+  html[lang^='zh'] .text-\[8px\],
+  html[lang^='zh'] .text-\[9px\],
+  html[lang^='zh'] .text-\[10px\],
+  html[lang^='ja'] .text-\[8px\],
+  html[lang^='ja'] .text-\[9px\],
+  html[lang^='ja'] .text-\[10px\],
+  html[lang^='ko'] .text-\[8px\],
+  html[lang^='ko'] .text-\[9px\],
+  html[lang^='ko'] .text-\[10px\] {
+    font-size: 0.75rem !important; /* 12px — Android WebView CJK 最小可用字号 */
+    line-height: 1.35 !important;  /* 补偿因字号提升导致的视觉拥挤 */
+  }
+
+  /* Android WebView：中英混排行高修正（CJK 方块字需要更大行高避免视觉拥挤） */
+  html[lang^='zh'],
+  html[lang^='ja'],
+  html[lang^='ko'] {
+    line-height: 1.55;
   }
 }
 

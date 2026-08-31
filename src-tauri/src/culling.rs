@@ -185,8 +185,22 @@ pub async fn cull_images(
     settings: CullingSettings,
     app_handle: AppHandle,
 ) -> Result<CullingSuggestions, String> {
+    let result = cull_images_impl(paths, settings, app_handle.clone()).await;
+    if let Err(ref e) = result {
+        let _ = app_handle.emit("culling-error", e.clone());
+    }
+    result
+}
+
+async fn cull_images_impl(
+    paths: Vec<String>,
+    settings: CullingSettings,
+    app_handle: AppHandle,
+) -> Result<CullingSuggestions, String> {
     if paths.is_empty() {
-        return Ok(CullingSuggestions::default());
+        let empty = CullingSuggestions::default();
+        let _ = app_handle.emit("culling-complete", &empty);
+        return Ok(empty);
     }
 
     let app_settings = load_settings(app_handle.clone()).unwrap_or_default();

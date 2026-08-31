@@ -26,18 +26,9 @@ struct MiddlewareResponse {
     color: String,
 }
 
-#[derive(Serialize)]
-struct CloudInpaintRequest {
-    image_base64: String,
-    mask_image_base64: String,
-    prompt: String,
-    seed: i64,
-}
-
-#[derive(Deserialize)]
-struct CloudInpaintResponse {
-    color: String,
-}
+// ⛔ Cloud inpainting 已移除 —— 纯端侧，不做任何云端 AI 服务
+//   保留 ComfyUI self-host 接口（process_inpainting / upload_source_image / check_status）
+//   供用户自托管的本地 ComfyUI 服务使用。
 
 pub fn generate_source_id(path_str: &str) -> Result<String> {
     let path = Path::new(path_str);
@@ -190,35 +181,5 @@ pub async fn process_inpainting(
     composite_full_res(middleware_data, w, h)
 }
 
-pub async fn process_cloud_inpainting(
-    base_url: &str,
-    source_crop: &DynamicImage,
-    mask_crop: &DynamicImage,
-    prompt: String,
-    token: &str,
-) -> Result<DynamicImage> {
-    let client = Client::new();
-
-    let req_payload = CloudInpaintRequest {
-        image_base64: image_to_base64_jpeg(source_crop, 95)?,
-        mask_image_base64: image_to_base64(mask_crop)?,
-        prompt,
-        seed: 0,
-    };
-
-    let res = client
-        .post(format!("{}/inpaint", base_url))
-        .bearer_auth(token)
-        .json(&req_payload)
-        .send()
-        .await?;
-
-    if !res.status().is_success() {
-        return Err(anyhow!("Cloud generation failed: {}", res.text().await?));
-    }
-
-    let response: CloudInpaintResponse = res.json().await?;
-    let decoded = general_purpose::STANDARD.decode(&response.color)?;
-
-    Ok(image::load_from_memory(&decoded)?)
-}
+// ⛔ process_cloud_inpainting 已移除 —— 不再支持任何云端 AI inpainting。
+//   用户如需 AI 生成式 inpainting，请自行部署 ComfyUI 并在设置里接入。

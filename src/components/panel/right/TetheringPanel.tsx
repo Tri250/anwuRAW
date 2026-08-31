@@ -807,7 +807,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
               <Text variant={TextVariants.heading} className="flex items-center gap-2">
                 {t('tethering.exposureSettings')}
               </Text>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {renderDropdown(
                   'meteringmode',
                   t('tethering.metering'),

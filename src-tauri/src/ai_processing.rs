@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -13,51 +13,50 @@ use ort::session::Session;
 use ort::value::Tensor;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tauri::Emitter;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tokenizers::Tokenizer;
 use tokio::sync::Mutex as TokioMutex;
 
-// --- 模型仓库端点（按「国内优先」排序） ---
-// hf-mirror.com 是官方 HuggingFace Hub API 兼容镜像，国内访问速度快
-// huggingface.co 是官方主站，作为降级后备
-const MODEL_REPO: &str = "CyberTimon/RapidRAW-Models";
-const HF_MIRROR_ENDPOINT: &str = "https://hf-mirror.com";
-const HF_OFFICIAL_ENDPOINT: &str = "https://huggingface.co";
+// =========================================================================
+// 本地 AI 资产定位 —— 全部走 bundled resources，零网络下载
+// =========================================================================
 
-fn build_hf_url(endpoint: &str, filename: &str) -> String {
-    format!(
-        "{}/{}/resolve/main/{}?download=true",
-        endpoint.trim_end_matches('/'),
-        MODEL_REPO,
-        filename
-    )
+/// 从 Tauri bundled resources 目录解析 AI 模型文件的绝对路径。
+/// 运行时路径由 prepare-ai-assets.sh + tauri.conf.json 的
+/// bundle.resources 配置保证（整个 resources/ 目录被打包）。
+pub fn resolve_bundled_model_path(
+    app_handle: &tauri::AppHandle,
+    filename: &str,
+) -> Result<PathBuf> {
+    app_handle
+        .path()
+        .resolve(
+            Path::new("ai_models").join(filename),
+            tauri::path::BaseDirectory::Resource,
+        )
+        .map_err(|e| {
+            anyhow!(
+                "Failed to resolve bundled AI model '{}': {}. \
+                 Make sure src-tauri/resources/ai_models/ is populated \
+                 (run bash scripts/prepare-ai-assets.sh at build time).",
+                filename,
+                e
+            )
+        })
 }
 
-// --- 从 AppHandle 读取用户配置的模型下载端点并解析 ---
-fn endpoints_from_handle(app_handle: &tauri::AppHandle) -> Vec<String> {
-    let user_setting = crate::app_settings::load_settings(app_handle.clone())
-        .ok()
-        .and_then(|s| {
-            let v = s.model_endpoint.trim();
-            if v.is_empty() || v == "auto" || v == "default" {
-                None
-            } else {
-                Some(v.to_string())
-            }
-        });
-    resolve_model_endpoints(user_setting.as_deref())
-}
-
-// --- 端点解析：支持 "auto" / "hf-mirror" / "huggingface" / 自定义 URL ---
-fn resolve_model_endpoints(user_setting: Option<&str>) -> Vec<String> {
-    let user = user_setting.map(|s| s.trim()).filter(|s| !s.is_empty());
-    match user {
-        Some("hf-mirror") | Some("mirror") => vec![HF_MIRROR_ENDPOINT.to_string()],
-        Some("huggingface") | Some("official") => vec![HF_OFFICIAL_ENDPOINT.to_string()],
-        Some(custom) if custom != "auto" && custom != "default" => vec![custom.to_string()],
-        _ => vec![HF_MIRROR_ENDPOINT.to_string(), HF_OFFICIAL_ENDPOINT.to_string()],
+/// 运行时 SHA256 校验（双重保险：build.rs 已经做过一次）
+fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool> {
+    let mut file = fs::File::open(path)?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0; 8192];
+    loop {
+        let n = file.read(&mut buffer)?;
+        if n == 0 { break; }
+        hasher.update(&buffer[..n]);
     }
+    let calculated = hex::encode(hasher.finalize());
+    Ok(calculated == expected_hash)
 }
 
 // --- 模型文件元数据 ---
@@ -71,8 +70,7 @@ const U2NETP_FILENAME: &str = "u2net.onnx";
 const U2NETP_INPUT_SIZE: u32 = 320;
 const U2NETP_SHA256: &str = "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491";
 
-const SKYSEG_FILENAME: &str = "skyseg_u2net.onnx";
-const SKYSEG_LEGACY_FILENAME: &str = "skyseg-u2net.onnx";
+const SKYSEG_FILENAME: &str = "skyseg-u2net.onnx";
 const SKYSEG_INPUT_SIZE: u32 = 320;
 const SKYSEG_SHA256: &str = "ab9c34c64c3d821220a2886a4a06da4642ffa14d5b30e8d5339056a089aa1d39";
 
@@ -194,230 +192,16 @@ fn edt_2d(grid: &[bool], width: usize, height: usize) -> Vec<f32> {
     f.into_iter().map(|v| v.sqrt()).collect()
 }
 
-fn get_models_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
-    let models_dir = app_handle.path().app_data_dir()?.join("models");
-    if !models_dir.exists() {
-        fs::create_dir_all(&models_dir)?;
-    }
-    Ok(models_dir)
-}
-
-fn persist_downloaded_asset(dest: &Path, bytes: &[u8]) -> Result<()> {
-    if bytes.is_empty() {
-        return Err(anyhow::anyhow!(
-            "Downloaded asset for {} was empty",
-            dest.display()
-        ));
-    }
-
-    let parent = dest.parent().ok_or_else(|| {
-        anyhow::anyhow!(
-            "Cannot determine parent directory for downloaded asset {}",
-            dest.display()
-        )
-    })?;
-    fs::create_dir_all(parent)?;
-
-    let file_name = dest
-        .file_name()
-        .and_then(|name| name.to_str())
-        .ok_or_else(|| anyhow::anyhow!("Invalid downloaded asset path {}", dest.display()))?;
-    let tmp_path = dest.with_file_name(format!(".{}.download", file_name));
-
-    {
-        let mut file = fs::File::create(&tmp_path)?;
-        file.write_all(bytes)?;
-        file.sync_all()?;
-    }
-
-    fs::rename(&tmp_path, dest).or_else(|rename_error| -> std::io::Result<()> {
-        if dest.exists() {
-            fs::remove_file(dest)?;
-            fs::rename(&tmp_path, dest)?;
-            Ok(())
-        } else {
-            Err(rename_error)
-        }
-    })?;
-    Ok(())
-}
-
-async fn download_model_with_endpoints(
-    endpoints: &[String],
-    filename: &str,
-    dest: &Path,
-) -> Result<()> {
-    const MAX_RETRIES_PER_ENDPOINT: u32 = 3;
-    const RETRY_BACKOFF_MS: u64 = 1500;
-
-    let mut last_error: Option<anyhow::Error> = None;
-
-    for endpoint in endpoints {
-        let url = build_hf_url(endpoint, filename);
-        for attempt in 1..=MAX_RETRIES_PER_ENDPOINT {
-            println!(
-                "[AI] Downloading {} from {} (attempt {}/{})",
-                filename, endpoint, attempt, MAX_RETRIES_PER_ENDPOINT
-            );
-            match download_single(&url, dest).await {
-                Ok(_) => {
-                    // 成功后把 last_error 清掉，不再尝试其它端点
-                    return Ok(());
-                }
-                Err(e) => {
-                    last_error = Some(anyhow::anyhow!(
-                        "Endpoint {} attempt {} failed: {}",
-                        endpoint,
-                        attempt,
-                        e
-                    ));
-                    // 最后一次尝试失败就换端点
-                    if attempt < MAX_RETRIES_PER_ENDPOINT {
-                        tokio::time::sleep(tokio::time::Duration::from_millis(
-                            RETRY_BACKOFF_MS * attempt as u64,
-                        ))
-                        .await;
-                    }
-                }
-            }
-        }
-    }
-
-    Err(last_error.unwrap_or_else(|| anyhow!("All model download endpoints failed")))
-}
-
-async fn download_single(url: &str, dest: &Path) -> Result<()> {
-    let client = reqwest::Client::builder()
-        .timeout(tokio::time::Duration::from_secs(120))
-        .connect_timeout(tokio::time::Duration::from_secs(20))
-        .build()?;
-
-    // 支持断点续传：检查已下载的部分
-    let existing_size = if dest.exists() {
-        fs::metadata(dest)?.len()
-    } else {
-        0
-    };
-
-    let mut request = client.get(url);
-    if existing_size > 0 {
-        request = request.header(reqwest::header::RANGE, format!("bytes={}-", existing_size));
-    }
-
-    let response = request.send().await?;
-    let status = response.status();
-
-    let bytes = if status == reqwest::StatusCode::PARTIAL_CONTENT {
-        // 断点续传：读取新的 bytes 追加到已有文件
-        let new_bytes = response.bytes().await?;
-        let mut file = fs::OpenOptions::new().append(true).open(dest)?;
-        file.write_all(&new_bytes)?;
-        // 返回整个文件用于后续 persist
-        fs::read(dest)?.into()
-    } else {
-        // 全新下载（或服务器不支持 Range）
-        if dest.exists() {
-            let _ = fs::remove_file(dest);
-        }
-        if !status.is_success() {
-            let body = response.text().await.unwrap_or_default();
-            return Err(anyhow::anyhow!(
-                "HTTP {} for {}: {}",
-                status,
-                url,
-                &body[..body.len().min(200)]
-            ));
-        }
-        response.bytes().await?
-    };
-
-    persist_downloaded_asset(dest, &bytes)
-}
-
-fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool> {
-    if !path.exists() {
-        return Ok(false);
-    }
-    let mut file = fs::File::open(path)?;
-    let mut hasher = Sha256::new();
-    let mut buffer = [0; 8192];
-    loop {
-        let n = file.read(&mut buffer)?;
-        if n == 0 {
-            break;
-        }
-        hasher.update(&buffer[..n]);
-    }
-    let hash = hasher.finalize();
-    let hex_hash = hex::encode(hash);
-    Ok(hex_hash == expected_hash)
-}
-
-fn promote_legacy_model_filename(
-    models_dir: &Path,
-    expected_filename: &str,
-    legacy_filename: &str,
-    expected_hash: &str,
-) -> Result<()> {
-    let expected_path = models_dir.join(expected_filename);
-    if expected_path.exists() {
-        return Ok(());
-    }
-
-    let legacy_path = models_dir.join(legacy_filename);
-    if !legacy_path.exists() || !verify_sha256(&legacy_path, expected_hash)? {
-        return Ok(());
-    }
-
-    fs::rename(&legacy_path, &expected_path).or_else(|rename_error| -> std::io::Result<()> {
-        if expected_path.exists() {
-            Ok(())
-        } else {
-            Err(rename_error)
-        }
-    })?;
-    Ok(())
-}
-
-async fn download_and_verify_model(
-    app_handle: &tauri::AppHandle,
-    models_dir: &Path,
-    filename: &str,
-    endpoints: &[String],
-    expected_hash: &str,
-    model_name: &str,
-) -> Result<()> {
-    let dest_path = models_dir.join(filename);
-    if filename == SKYSEG_FILENAME {
-        promote_legacy_model_filename(
-            models_dir,
-            SKYSEG_FILENAME,
-            SKYSEG_LEGACY_FILENAME,
-            SKYSEG_SHA256,
-        )?;
-    }
-    let is_valid = verify_sha256(&dest_path, expected_hash)?;
-
-    if !is_valid {
-        if dest_path.exists() {
-            println!("Model {} has incorrect hash. Re-downloading.", model_name);
-            fs::remove_file(&dest_path)?;
-        }
-        let _ = app_handle.emit("ai-model-download-start", model_name);
-        let download_result =
-            download_model_with_endpoints(endpoints, filename, &dest_path).await;
-        let _ = app_handle.emit("ai-model-download-finish", model_name);
-        download_result?;
-
-        if !verify_sha256(&dest_path, expected_hash)? {
-            return Err(anyhow::anyhow!(
-                "Failed to verify model {} after download. Hash mismatch.",
-                model_name
-            ));
-        }
-    }
-    Ok(())
-}
+// ─────────────────────────────────────────────────────────────────────────
+// ⛔ 旧的 runtime 下载链已全部移除
+//   get_models_dir / persist_downloaded_asset / download_single /
+//   download_model_with_endpoints / promote_legacy_model_filename /
+//   download_and_verify_model
+//
+//   所有 AI 资产改为构建时打包到 src-tauri/resources/ai_models/ 下
+//   （由 scripts/prepare-ai-assets.sh 准备 + build.rs 校验）
+//   运行时通过 resolve_bundled_model_path() 直接读取，零网络请求。
+// ─────────────────────────────────────────────────────────────────────────
 
 pub async fn get_or_init_ai_models(
     app_handle: &tauri::AppHandle,
@@ -426,7 +210,7 @@ pub async fn get_or_init_ai_models(
 ) -> Result<Arc<AiModels>> {
     if let Some(models) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.models.clone())
     {
@@ -437,75 +221,44 @@ pub async fn get_or_init_ai_models(
 
     if let Some(models) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.models.clone())
     {
         return Ok(models);
     }
 
-    let models_dir = get_models_dir(app_handle)?;
-    let endpoints = endpoints_from_handle(app_handle);
+    // ── 全部模型来自 bundled resources，零下载 ─────────────────────────
+    let encoder_path = resolve_bundled_model_path(app_handle, ENCODER_FILENAME)?;
+    let decoder_path = resolve_bundled_model_path(app_handle, DECODER_FILENAME)?;
+    let u2netp_path   = resolve_bundled_model_path(app_handle, U2NETP_FILENAME)?;
+    let sky_seg_path  = resolve_bundled_model_path(app_handle, SKYSEG_FILENAME)?;
+    let depth_path    = resolve_bundled_model_path(app_handle, DEPTH_FILENAME)?;
 
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        ENCODER_FILENAME,
-        &endpoints,
-        ENCODER_SHA256,
-        "SAM Encoder",
-    )
-    .await?;
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        DECODER_FILENAME,
-        &endpoints,
-        DECODER_SHA256,
-        "SAM Decoder",
-    )
-    .await?;
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        U2NETP_FILENAME,
-        &endpoints,
-        U2NETP_SHA256,
-        "Foreground Model",
-    )
-    .await?;
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        SKYSEG_FILENAME,
-        &endpoints,
-        SKYSEG_SHA256,
-        "Sky Model",
-    )
-    .await?;
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        DEPTH_FILENAME,
-        &endpoints,
-        DEPTH_SHA256,
-        "Depth Model",
-    )
-    .await?;
+    // 运行时 SHA256 双重校验（build.rs 已校验过一次）
+    if !verify_sha256(&encoder_path, ENCODER_SHA256)? {
+        return Err(anyhow!("Bundled model SAM Encoder hash mismatch"));
+    }
+    if !verify_sha256(&decoder_path, DECODER_SHA256)? {
+        return Err(anyhow!("Bundled model SAM Decoder hash mismatch"));
+    }
+    if !verify_sha256(&u2netp_path, U2NETP_SHA256)? {
+        return Err(anyhow!("Bundled model Foreground U2Net hash mismatch"));
+    }
+    if !verify_sha256(&sky_seg_path, SKYSEG_SHA256)? {
+        return Err(anyhow!("Bundled model Sky U2Net hash mismatch"));
+    }
+    if !verify_sha256(&depth_path, DEPTH_SHA256)? {
+        return Err(anyhow!("Bundled model Depth Anything hash mismatch"));
+    }
 
     let _ = ort::init().with_name("AI").commit();
 
-    let encoder_path = models_dir.join(ENCODER_FILENAME);
-    let decoder_path = models_dir.join(DECODER_FILENAME);
-    let u2netp_path = models_dir.join(U2NETP_FILENAME);
-    let sky_seg_path = models_dir.join(SKYSEG_FILENAME);
-    let depth_path = models_dir.join(DEPTH_FILENAME);
-
-    let sam_encoder = Session::builder()?.commit_from_file(encoder_path)?;
-    let sam_decoder = Session::builder()?.commit_from_file(decoder_path)?;
-    let u2netp = Session::builder()?.commit_from_file(u2netp_path)?;
-    let sky_seg = Session::builder()?.commit_from_file(sky_seg_path)?;
-    let depth_anything = Session::builder()?.commit_from_file(depth_path)?;
+    let sam_encoder = Session::builder()?.commit_from_file(&encoder_path)?;
+    let sam_decoder = Session::builder()?.commit_from_file(&decoder_path)?;
+    let u2netp = Session::builder()?.commit_from_file(&u2netp_path)?;
+    let sky_seg = Session::builder()?.commit_from_file(&sky_seg_path)?;
+    let depth_anything = Session::builder()?.commit_from_file(&depth_path)?;
 
     crate::register_exit_handler();
 
@@ -541,7 +294,7 @@ pub async fn get_or_init_denoise_model(
 ) -> Result<Arc<Mutex<Session>>> {
     if let Some(denoise_model) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.denoise_model.clone())
     {
@@ -552,28 +305,21 @@ pub async fn get_or_init_denoise_model(
 
     if let Some(denoise_model) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.denoise_model.clone())
     {
         return Ok(denoise_model);
     }
 
-    let models_dir = get_models_dir(app_handle)?;
-    let endpoints = endpoints_from_handle(app_handle);
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        DENOISE_FILENAME,
-        &endpoints,
-        DENOISE_SHA256,
-        "NIND Denoise Model",
-    )
-    .await?;
+    // ── 全部模型来自 bundled resources，零下载 ─────────────────────────
+    let model_path = resolve_bundled_model_path(app_handle, DENOISE_FILENAME)?;
+    if !verify_sha256(&model_path, DENOISE_SHA256)? {
+        return Err(anyhow!("Bundled model NIND Denoise hash mismatch"));
+    }
 
     let _ = ort::init().with_name("AI-Denoise").commit();
-    let model_path = models_dir.join(DENOISE_FILENAME);
-    let session = Session::builder()?.commit_from_file(model_path)?;
+    let session = Session::builder()?.commit_from_file(&model_path)?;
     let denoise_model = Arc::new(Mutex::new(session));
 
     crate::register_exit_handler();
@@ -602,7 +348,7 @@ pub async fn get_or_init_clip_models(
 ) -> Result<Arc<ClipModels>> {
     if let Some(clip_models) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.clip_models.clone())
     {
@@ -613,41 +359,32 @@ pub async fn get_or_init_clip_models(
 
     if let Some(clip_models) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.clip_models.clone())
     {
         return Ok(clip_models);
     }
 
-    let models_dir = get_models_dir(app_handle)?;
-    let endpoints = endpoints_from_handle(app_handle);
+    // ── 全部资产来自 bundled resources，零下载 ─────────────────────────
+    let clip_model_path = resolve_bundled_model_path(app_handle, CLIP_MODEL_FILENAME)?;
+    let clip_tokenizer_path = resolve_bundled_model_path(app_handle, CLIP_TOKENIZER_FILENAME)?;
 
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        CLIP_MODEL_FILENAME,
-        &endpoints,
-        CLIP_MODEL_SHA256,
-        "CLIP Model",
-    )
-    .await?;
-
-    let clip_tokenizer_path = models_dir.join(CLIP_TOKENIZER_FILENAME);
+    if !verify_sha256(&clip_model_path, CLIP_MODEL_SHA256)? {
+        return Err(anyhow!("Bundled model CLIP hash mismatch"));
+    }
     if !clip_tokenizer_path.exists() {
-        let _ = app_handle.emit("ai-model-download-start", "CLIP Tokenizer");
-        let download_result =
-            download_model_with_endpoints(&endpoints, CLIP_TOKENIZER_FILENAME, &clip_tokenizer_path)
-                .await;
-        let _ = app_handle.emit("ai-model-download-finish", "CLIP Tokenizer");
-        download_result?;
+        return Err(anyhow!(
+            "Bundled CLIP tokenizer missing at {:?}. \
+             Run bash scripts/prepare-ai-assets.sh.",
+            clip_tokenizer_path
+        ));
     }
 
     let _ = ort::init().with_name("AI-Tagging").commit();
-    let clip_model_path = models_dir.join(CLIP_MODEL_FILENAME);
-    let model = Mutex::new(Session::builder()?.commit_from_file(clip_model_path)?);
+    let model = Mutex::new(Session::builder()?.commit_from_file(&clip_model_path)?);
     let tokenizer =
-        Tokenizer::from_file(clip_tokenizer_path).map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        Tokenizer::from_file(&clip_tokenizer_path).map_err(|e| anyhow::anyhow!(e.to_string()))?;
 
     crate::register_exit_handler();
 
@@ -677,7 +414,7 @@ pub async fn get_or_init_lama_model(
 ) -> Result<Arc<Mutex<Session>>> {
     if let Some(lama_model) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.lama_model.clone())
     {
@@ -688,28 +425,21 @@ pub async fn get_or_init_lama_model(
 
     if let Some(lama_model) = ai_state_mutex
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .as_ref()
         .and_then(|state| state.lama_model.clone())
     {
         return Ok(lama_model);
     }
 
-    let models_dir = get_models_dir(app_handle)?;
-    let endpoints = endpoints_from_handle(app_handle);
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        LAMA_FILENAME,
-        &endpoints,
-        LAMA_SHA256,
-        "Inpainting Model",
-    )
-    .await?;
+    // ── 全部模型来自 bundled resources，零下载 ─────────────────────────
+    let model_path = resolve_bundled_model_path(app_handle, LAMA_FILENAME)?;
+    if !verify_sha256(&model_path, LAMA_SHA256)? {
+        return Err(anyhow!("Bundled model LaMa FP16 inpainting hash mismatch"));
+    }
 
     let _ = ort::init().with_name("AI-Inpainting").commit();
-    let model_path = models_dir.join(LAMA_FILENAME);
-    let session = Session::builder()?.commit_from_file(model_path)?;
+    let session = Session::builder()?.commit_from_file(&model_path)?;
     let lama_model = Arc::new(Mutex::new(session));
 
     crate::register_exit_handler();
@@ -1248,7 +978,7 @@ pub fn run_sam_decoder(
         let w = mask_dims[3];
         let area = h * w;
 
-        let mask_slice = mask_tensor.as_slice().unwrap();
+        let mask_slice = mask_tensor.as_slice().unwrap_or(&[]);
         let first_mask_slice = &mask_slice[0..area];
 
         if i == iters - 1 {
@@ -1355,9 +1085,9 @@ pub fn run_sam_decoder(
             .collect();
 
         let img_mask_f32 =
-            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, mask_f32_vec).unwrap();
+            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, mask_f32_vec).unwrap_or_else(|| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
         let img_gaus_f32 =
-            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, gaus_dt).unwrap();
+            ImageBuffer::<Luma<f32>, Vec<f32>>::from_raw(w as u32, h as u32, gaus_dt).unwrap_or_else(|| ImageBuffer::<Luma<f32>, Vec<f32>>::new(w as u32, h as u32));
 
         let resized_mask = imageops::resize(&img_mask_f32, 256, 256, FilterType::Triangle);
         let resized_gaus = imageops::resize(&img_gaus_f32, 256, 256, FilterType::Triangle);
@@ -1433,7 +1163,7 @@ pub fn run_sky_seg_model(
     let mut session = sky_seg_session.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = session.run(ort::inputs![t_input])?;
     let output_tensor = outputs[0].try_extract_array::<f32>()?.to_owned();
-    let out_slice = output_tensor.as_slice().unwrap();
+    let out_slice = output_tensor.as_slice().unwrap_or(&[]);
 
     let mut min_val = f32::MAX;
     let mut max_val = f32::MIN;
@@ -1514,7 +1244,7 @@ pub fn run_u2netp_model(
     let mut session = u2netp_session.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = session.run(ort::inputs![t_input])?;
     let output_tensor = outputs[0].try_extract_array::<f32>()?.to_owned();
-    let out_slice = output_tensor.as_slice().unwrap();
+    let out_slice = output_tensor.as_slice().unwrap_or(&[]);
 
     let mut min_val = f32::MAX;
     let mut max_val = f32::MIN;
@@ -1593,7 +1323,7 @@ pub fn run_depth_anything_model(
     let mut session = depth_session.lock().unwrap_or_else(|e| e.into_inner());
     let outputs = session.run(ort::inputs![t_input])?;
     let output_tensor = outputs[0].try_extract_array::<f32>()?.to_owned();
-    let out_slice = output_tensor.as_slice().unwrap();
+    let out_slice = output_tensor.as_slice().unwrap_or(&[]);
 
     let usize_size = DEPTH_INPUT_SIZE as usize;
 
