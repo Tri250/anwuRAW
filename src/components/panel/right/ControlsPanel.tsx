@@ -9,7 +9,7 @@ import ColorPanel from '../../adjustments/Color';
 import DetailsPanel from '../../adjustments/Details';
 import EffectsPanel from '../../adjustments/Effects';
 import CollapsibleSection from '../../ui/CollapsibleSection';
-import Waveform from '../editor/Waveform';
+import Waveform, { HISTOGRAM_ZONES, type HistogramZone } from '../editor/Waveform';
 import Resizer from '../../ui/Resizer';
 import { Adjustments, SectionVisibility, INITIAL_ADJUSTMENTS, ADJUSTMENT_SECTIONS } from '../../../utils/adjustments';
 import { useContextMenu } from '../../../context/ContextMenuContext';
@@ -22,6 +22,14 @@ import { useSettingsStore } from '../../../store/useSettingsStore';
 import { useUIStore } from '../../../store/useUIStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
 import { useWaveformControls } from '../../../hooks/useWaveformControls';
+
+const HISTOGRAM_ZONE_CONFIG: Record<HistogramZone, { key: string; min: number; max: number; scale: number; round: number }> = {
+  blacks: { key: 'blacks', min: -100, max: 100, scale: 200, round: 0 },
+  shadows: { key: 'shadows', min: -100, max: 100, scale: 200, round: 0 },
+  exposure: { key: 'exposure', min: -5, max: 5, scale: 2.5, round: 2 },
+  highlights: { key: 'highlights', min: -100, max: 100, scale: 200, round: 0 },
+  whites: { key: 'whites', min: -100, max: 100, scale: 200, round: 0 },
+};
 
 export default function Controls() {
   const { t } = useTranslation();
@@ -83,6 +91,35 @@ export default function Controls() {
   const onDragStateChange = useCallback(
     (isDragging: boolean) => setEditor({ isSliderDragging: isDragging }),
     [setEditor],
+  );
+
+  const handleHistogramZoneAdjust = useCallback(
+    (zone: HistogramZone, deltaX: number, containerWidth: number) => {
+      const config = HISTOGRAM_ZONE_CONFIG[zone];
+      if (!config || containerWidth <= 0) return;
+
+      setAdjustments((prev: Adjustments) => {
+        const currentValue = Number(prev[config.key] ?? 0);
+        const delta = (deltaX / containerWidth) * config.scale;
+        const nextValue = Math.max(
+          config.min,
+          Math.min(config.max, parseFloat((currentValue + delta).toFixed(config.round))),
+        );
+
+        if (nextValue === currentValue) return prev;
+        return { ...prev, [config.key]: nextValue };
+      });
+    },
+    [setAdjustments],
+  );
+
+  const handleHistogramZoneReset = useCallback(
+    (zone: HistogramZone) => {
+      const config = HISTOGRAM_ZONE_CONFIG[zone];
+      if (!config) return;
+      setAdjustments((prev: Adjustments) => ({ ...prev, [config.key]: 0 }));
+    },
+    [setAdjustments],
   );
 
   const setCollapsibleState = useCallback(
@@ -263,6 +300,9 @@ export default function Controls() {
                     showClipping: !prev.showClipping,
                   }));
                 }}
+                onHistogramZoneAdjust={handleHistogramZoneAdjust}
+                onHistogramZoneReset={handleHistogramZoneReset}
+                onHistogramZoneDragStateChange={onDragStateChange}
                 theme={theme}
               />
             </div>

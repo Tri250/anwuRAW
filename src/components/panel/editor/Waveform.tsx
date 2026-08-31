@@ -5,6 +5,16 @@ import { useTranslation } from 'react-i18next';
 import { WaveformData } from '../../ui/AppProperties';
 import { DisplayMode } from '../../../utils/adjustments';
 
+export type HistogramZone = 'blacks' | 'shadows' | 'exposure' | 'highlights' | 'whites';
+
+export const HISTOGRAM_ZONES: Array<{ key: HistogramZone; labelKey: string }> = [
+  { key: 'blacks', labelKey: 'adjustments.basic.blacks' },
+  { key: 'shadows', labelKey: 'adjustments.basic.shadows' },
+  { key: 'exposure', labelKey: 'adjustments.basic.evShift' },
+  { key: 'highlights', labelKey: 'adjustments.basic.highlights' },
+  { key: 'whites', labelKey: 'adjustments.basic.whites' },
+];
+
 interface WaveformProps {
   waveformData: WaveformData | null;
   histogram?: any;
@@ -12,6 +22,9 @@ interface WaveformProps {
   setDisplayMode: (mode: string) => void;
   showClipping?: boolean;
   onToggleClipping?: () => void;
+  onHistogramZoneAdjust?: (zone: HistogramZone, deltaX: number, containerWidth: number) => void;
+  onHistogramZoneReset?: (zone: HistogramZone) => void;
+  onHistogramZoneDragStateChange?: (isDragging: boolean) => void;
   theme?: string;
 }
 
@@ -455,10 +468,18 @@ export default function Waveform({
   setDisplayMode,
   showClipping,
   onToggleClipping,
+  onHistogramZoneAdjust,
+  onHistogramZoneReset,
+  onHistogramZoneDragStateChange,
   theme,
 }: WaveformProps) {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
+  const [activeZone, setActiveZone] = useState<HistogramZone | null>(null);
+  const [draggingZone, setDraggingZone] = useState<HistogramZone | null>(null);
+  const zoneContainerRef = useRef<HTMLDivElement | null>(null);
+  const dragStartXRef = useRef(0);
+  const dragLastXRef = useRef(0);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isLightTheme = theme ? ['light', 'snow', 'arctic'].includes(theme) : false;
@@ -491,7 +512,65 @@ export default function Waveform({
       hoverTimeoutRef.current = null;
     }
     setIsHovered(false);
+    setActiveZone(null);
   };
+
+  const handleZonePointerDown = (zone: HistogramZone, clientX: number) => {
+    if (!onHistogramZoneAdjust) return;
+    dragStartXRef.current = clientX;
+    dragLastXRef.current = clientX;
+    setDraggingZone(zone);
+    setActiveZone(zone);
+    onHistogramZoneDragStateChange?.(true);
+  };
+
+  useEffect(() => {
+    if (!draggingZone) return;
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      let clientX: number;
+      if ('touches' in e) {
+        if (e.touches.length === 0) return;
+        clientX = e.touches[0].clientX;
+      } else {
+        clientX = e.clientX;
+      }
+
+      const container = zoneContainerRef.current;
+      if (!container) return;
+
+      const deltaX = clientX - dragLastXRef.current;
+      dragLastXRef.current = clientX;
+      const width = container.getBoundingClientRect().width || 1;
+
+      if (deltaX !== 0) {
+        onHistogramZoneAdjust?.(draggingZone, deltaX, width);
+        if (e.cancelable) e.preventDefault();
+      }
+    };
+
+    const handleUp = () => {
+      setDraggingZone(null);
+      onHistogramZoneDragStateChange?.(false);
+    };
+
+    window.addEventListener('mousemove', handleMove, { passive: false });
+    window.addEventListener('mouseup', handleUp);
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleUp);
+    window.addEventListener('touchcancel', handleUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleUp);
+      window.removeEventListener('touchcancel', handleUp);
+    };
+  }, [draggingZone, onHistogramZoneAdjust]);
+
+  const showZoneInteraction = isHistogram && isReady && !!onHistogramZoneAdjust;
+  const indicatorZone = draggingZone ?? (isHovered ? activeZone : null);
 
   useEffect(() => {
     return () => {
@@ -586,6 +665,48 @@ export default function Waveform({
           ) : null}
         </AnimatePresence>
       </div>
+
+      {showZoneInteraction && (
+        <div className="absolute inset-0 z-[15] flex" ref={zoneContainerRef}>
+          {HISTOGRAM_ZONES.map(({ key, labelKey }) => (
+            <div
+              key={key}
+              className={`flex-1 cursor-ew-resize transition-colors duration-100 ${
+                indicatorZone === key ? 'bg-white/10' : 'hover:bg-white/5'
+              }`}
+              data-tooltip={t(labelKey)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleZonePointerDown(key, e.clientX);
+              }}
+              onTouchStart={(e) => {
+                handleZonePointerDown(key, e.touches[0]?.clientX ?? 0);
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                onHistogramZoneReset?.(key);
+              }}
+              onMouseEnter={() => setActiveZone(key)}
+            />
+          ))}
+        </div>
+      )}
+
+      <AnimatePresence>
+        {indicatorZone && showZoneInteraction && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.12, ease: 'easeOut' }}
+            className="absolute top-1.5 left-1/2 -translate-x-1/2 z-[25] px-2.5 py-1 rounded-md bg-surface/90 backdrop-blur-md border border-white/10 shadow-lg pointer-events-none"
+          >
+            <span className="text-xs font-medium text-text-primary select-none">
+              {t(HISTOGRAM_ZONES.find((z) => z.key === indicatorZone)?.labelKey || '')}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isHovered && (
