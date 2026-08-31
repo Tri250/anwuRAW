@@ -99,7 +99,6 @@ webkit2gtk-nvidia-quirk = "1.4"
 [build-dependencies]
 tauri-build = { version = "2.6", features = [] }
 sha2 = "0.11"
-reqwest = { version = "0.13", default-features = false, features = ["blocking", "rustls"] }
 hex = "0.4"
 
 [profile.dev]

@@ -61,7 +61,6 @@ import { OPTION_SEPARATOR } from '../../ui/AppProperties';
 import { createSubMask } from '../../../utils/maskUtils';
 import Text from '../../ui/Text';
 import { TEXT_COLOR_KEYS, TextColors, TextVariants, TextWeights } from '../../../types/typography';
-import { useUser, useAuth } from '@clerk/react';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { useProcessStore } from '../../../store/useProcessStore';
@@ -351,8 +350,6 @@ export default function AIPanel() {
   const appSettings = useSettingsStore((s) => s.appSettings);
   const aiProvider = appSettings?.aiProvider || 'cpu';
 
-  const { user, isSignedIn } = useUser();
-  const { getToken } = useAuth();
   const isPro = user?.publicMetadata?.plan === 'pro';
   const [cloudUsage, setCloudUsage] = useState<{ requests: number; limit: number; month: string } | null>(null);
 
@@ -364,7 +361,7 @@ export default function AIPanel() {
 
     const fetchUsage = async () => {
       try {
-        const token = await getToken();
+        const token = null;
         if (!token) return;
 
         const res = await fetch('http://127.0.0.1:5000/usage', {
