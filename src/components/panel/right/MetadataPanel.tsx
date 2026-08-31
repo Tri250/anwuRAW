@@ -795,7 +795,9 @@ export default function MetadataPanel() {
                                     : 'hover:ring-2 hover:ring-white/20',
                                 )}
                                 style={{ backgroundColor: color.color }}
-                                data-tooltip={color.name}
+                                data-tooltip={t(
+                                  'library.labels.color' + color.name.charAt(0).toUpperCase() + color.name.slice(1),
+                                )}
                               >
                                 {currentColor === color.name && <Check size={12} className="text-black/50 mx-auto" />}
                               </button>
