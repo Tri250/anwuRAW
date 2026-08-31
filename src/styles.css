@@ -2,6 +2,7 @@
 @source not "../src-tauri";
 
 @theme {
+  /* ===== 主题色 (CSS 变量驱动, 3 套主题共用) ===== */
   --color-bg-primary: var(--app-bg-primary);
   --color-bg-secondary: var(--app-bg-secondary);
   --color-surface: var(--app-surface);
@@ -18,12 +19,49 @@
   --color-warning: var(--app-warning);
   --color-error: var(--app-error);
 
+  /* ===== 字体 ===== */
   --font-sans: var(--font-family);
+  --font-cjk: var(--font-stack-cjk);
 
+  /* ===== 圆角 4 档 ===== */
+  --radius-xs: 4px;    /* 小标签/Chip */
+  --radius-sm: 6px;    /* 按钮小/输入框 */
+  --radius-md: 8px;    /* 卡片/标准按钮 (原有) */
+  --radius-lg: 12px;   /* 大卡片/面板 */
+  --radius-xl: 16px;   /* 弹窗/大面板 */
+  --radius-2xl: 24px;  /* 底部弹窗/FAB */
+
+  /* ===== 间距 4px 基准 ===== */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+
+  /* ===== 阴影 (Android Material Elevation 对齐) ===== */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.25);
+  --shadow-md: 0 4px 8px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 16px rgba(0,0,0,0.35);
+  --shadow-xl: 0 12px 24px rgba(0,0,0,0.4);
   --shadow-shiny: 0 0 24px rgba(255, 255, 255, 0.12);
 
-  --radius-md: 8px;
-  --radius-lg: 15px;
+  /* ===== 字号 7 档 ===== */
+  --size-text-2xs: 10px;   /* 极小标注 */
+  --size-text-xs: 12px;    /* 辅助信息 */
+  --size-text-sm: 14px;    /* 次要文本 */
+  --size-text-base: 16px;  /* 正文 */
+  --size-text-md: 18px;    /* 小标题 */
+  --size-text-lg: 20px;    /* 标题 */
+  --size-text-xl: 24px;    /* 大标题 */
+
+  /* ===== Android 触摸目标最小尺寸 ===== */
+  --touch-target: 48px;    /* Material Design 标准 48x48dp */
 }
 
 @layer base {
@@ -139,6 +177,55 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* ===== Android Material Design 全局优化 ===== */
+  /* 1. 点击反馈: 统一 active 缩放 */
+  @supports (-webkit-touch-callout: none) {
+    button:active, [role='button']:active,
+    a:active, .android-tap {
+      transform: scale(0.97);
+      transition: transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* 2. 触摸目标最小 48x48dp (Android 标准) */
+    button, [role='button'] {
+      min-width: 48px;
+      min-height: 48px;
+    }
+
+    /* 3. 禁用文本选择 (防止长按菜单干扰编辑) */
+    .editor-root, .panel-content {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* 4. 优化滚动体验 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(158, 158, 158, 0.3);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    /* 5. 禁用双指缩放 / 长按选择 */
+    .no-touch-zoom {
+      touch-action: manipulation;
+    }
+
+    /* 6. Slider 触摸区域放大 */
+    input[type='range'].slider-input {
+      height: 36px;  /* 触摸友好 */
+    }
+    input[type='range'].slider-input::-webkit-slider-thumb {
+      width: 20px;
+      height: 20px;
+    }
   }
 
   /* 拉丁系语言（英/法/德等）：启用 optimizeLegibility + 连字 */

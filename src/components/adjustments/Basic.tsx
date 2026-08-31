@@ -40,11 +40,7 @@ const ToneMapperSwitch = ({
         label: t('adjustments.basic.mappers.basic'),
         title: t('adjustments.basic.mappers.basicDesc'),
       },
-      {
-        id: 'agx',
-        label: t('adjustments.basic.mappers.agx'),
-        title: t('adjustments.basic.mappers.agxDesc'),
-      },
+
     ],
     [t],
   );
@@ -168,7 +164,7 @@ export default function BasicAdjustments({
     setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, [key]: numericValue }));
   };
 
-  const VALID_TONE_MAPPERS = ['basic', 'agx', 'none'] as const;
+  const VALID_TONE_MAPPERS = ['basic', 'none'] as const;
   type ToneMapperId = (typeof VALID_TONE_MAPPERS)[number];
 
   const handleToneMapperChange = (mapper: string) => {

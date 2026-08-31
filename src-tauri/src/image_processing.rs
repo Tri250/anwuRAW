@@ -1857,9 +1857,8 @@ pub fn resolve_tonemapper_override(settings: &crate::AppSettings, is_raw: bool) 
             .unwrap_or("basic")
     };
     Some(match tm {
-        "agx" => 1,
         "none" => 5,
-        _ => 0, // basic / 已废弃的 reinhard/filmic/gamma → 走 basic
+        _ => 0, // basic + 已废弃的 agx/reinhard/filmic/gamma → 统一 basic
     })
 }
 
@@ -2283,9 +2282,8 @@ fn get_global_adjustments_from_json(
         lut_intensity,
 
         tonemapper_mode: tonemapper_override.unwrap_or_else(|| match tone_mapper {
-            "agx" => 1,
             "none" => 5,
-            _ => 0, // basic / reinhard / filmic / gamma → 统一走 basic (CPU fallback: reinhard)
+            _ => 0, // basic + 已废弃的 agx/reinhard/filmic/gamma → 统一 basic
         }),
         lut_is_scene_referred,
         _pad_lut3: 0.0,
