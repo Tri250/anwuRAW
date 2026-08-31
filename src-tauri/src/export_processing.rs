@@ -74,19 +74,6 @@ impl Default for ExportColorSpace {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub enum ExportBitDepth {
-    Bit8,
-    Bit16,
-}
-
-impl Default for ExportBitDepth {
-    fn default() -> Self {
-        Self::Bit8
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExportSettings {
@@ -522,7 +509,7 @@ fn save_image_with_metadata(
         .unwrap_or("")
         .to_lowercase();
 
-    let mut cs_image = apply_color_space_transform(image, &export_settings.color_space);
+    let cs_image = apply_color_space_transform(image, &export_settings.color_space);
 
     let mut image_bytes = encode_image_to_bytes(
         &cs_image,
