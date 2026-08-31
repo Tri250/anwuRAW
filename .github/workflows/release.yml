@@ -17,7 +17,7 @@ jobs:
             target: ''
             asset-prefix: '01_win-x64'
 
-          # --- macOS Apple Silicon (M1/M2/M3) ---
+          # --- macOS Apple Silicon (M1/M2/M3/M4) ---
           - platform: 'macos-14'
             target: aarch64-apple-darwin
             asset-prefix: '02_macos-arm64'
@@ -28,35 +28,24 @@ jobs:
             args: '--features tethering'
             asset-prefix: '02_macos-arm64_tethering'
 
-          # --- macOS Intel (x86_64, macOS 15 Sequoia Intel runner) ---
-          - platform: 'macos-15-intel'
+          # --- macOS Intel (x86_64, macOS 13 Ventura — last Intel runner) ---
+          - platform: 'macos-13'
             target: x86_64-apple-darwin
             asset-prefix: '02_macos-intel'
 
           # --- macOS Intel + Tethering feature ---
-          - platform: 'macos-15-intel'
+          - platform: 'macos-13'
             target: x86_64-apple-darwin
             args: '--features tethering'
             asset-prefix: '02_macos-intel_tethering'
 
-          # --- Linux x86_64 (Ubuntu 22.04 LTS) ---
+          # --- Linux x86_64 (Ubuntu 22.04 LTS — baseline for glibc compat) ---
           - platform: 'ubuntu-22.04'
-            target: ''
-            asset-prefix: '03_linux-x64'
-
-          # --- Linux x86_64 (Ubuntu 24.04 LTS) ---
-          - platform: 'ubuntu-24.04'
             target: ''
             asset-prefix: '03_linux-x64'
 
           # --- Linux + Tethering (Ubuntu 22.04) ---
           - platform: 'ubuntu-22.04'
-            target: ''
-            args: '--features tethering'
-            asset-prefix: '03_linux-x64_tethering'
-
-          # --- Linux + Tethering (Ubuntu 24.04) ---
-          - platform: 'ubuntu-24.04'
             target: ''
             args: '--features tethering'
             asset-prefix: '03_linux-x64_tethering'

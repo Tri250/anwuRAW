@@ -40,23 +40,13 @@ jobs:
             build-args: '--features tethering'
             asset-prefix: '02_macos-intel_tethering'
 
-          # --- Linux x86_64 (Ubuntu 22.04) ---
+          # --- Linux x86_64 (Ubuntu 22.04 — baseline for glibc compat) ---
           - platform: 'ubuntu-22.04'
-            target: ''
-            asset-prefix: '03_linux-x64'
-
-          # --- Linux x86_64 (Ubuntu 24.04) ---
-          - platform: 'ubuntu-24.04'
             target: ''
             asset-prefix: '03_linux-x64'
 
           # --- Linux + Tethering ---
           - platform: 'ubuntu-22.04'
-            target: ''
-            build-args: '--features tethering'
-            asset-prefix: '03_linux-x64_tethering'
-
-          - platform: 'ubuntu-24.04'
             target: ''
             build-args: '--features tethering'
             asset-prefix: '03_linux-x64_tethering'
