@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Adjustments, INITIAL_ADJUSTMENTS } from '../../../utils/adjustments';
+import { calculateAutoCropForRotation } from '../../../utils/cropUtils';
 import clsx from 'clsx';
 import { Orientation } from '../../ui/AppProperties';
 import TransformModal from '../../modals/TransformModal';

@@ -278,6 +278,11 @@ export default function DenoiseModal({
     }
   }, [isOpen, isRaw]);
 
+  const handleClose = useCallback(() => {
+    if (isSaving) return;
+    onClose();
+  }, [onClose, isSaving]);
+
   // Esc 关闭模态（处理中 / 保存中 / 批量处理中不可关闭）
   useEffect(() => {
     if (!isOpen) return;
@@ -287,11 +292,6 @@ export default function DenoiseModal({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, isSaving, isProcessing, handleClose]);
-
-  const handleClose = useCallback(() => {
-    if (isSaving) return;
-    onClose();
-  }, [onClose, isSaving]);
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
     mouseDownTarget.current = e.target;

@@ -151,6 +151,10 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
     ],
   },
   [Mask.QuickEraser]: { parameters: [] },
+  [Mask.Clone]: { showBrushTools: true },
+  [Mask.Heal]: { showBrushTools: true },
+  [Mask.Liquify]: { parameters: [] },
+  [Mask.Retouch]: { parameters: [] },
 };
 
 const BrushTools = ({
@@ -482,37 +486,39 @@ export default function MasksPanel() {
     const imgW = isRotated ? selectedImage.height || 1000 : selectedImage.width || 1000;
     const imgH = isRotated ? selectedImage.width || 1000 : selectedImage.height || 1000;
 
-    if (type === Mask.Linear && subMask.parameters) {
-      subMask.parameters.range = Math.min(imgW, imgH) * 0.1;
+    const params = subMask.parameters as Record<string, number>;
+
+    if (type === Mask.Linear && params) {
+      params.range = Math.min(imgW, imgH) * 0.1;
     }
 
     if (type === Mask.Linear || type === Mask.Radial || type === Mask.Color || type === Mask.Luminance) {
-      if (!subMask.parameters) subMask.parameters = {};
-      subMask.parameters.isInitialDraw = true;
+      if (!params) subMask.parameters = {};
+      (subMask.parameters as Record<string, number | boolean>).isInitialDraw = true;
       if (type === Mask.Linear || type === Mask.Radial) {
-        subMask.parameters.startX = -10000;
-        subMask.parameters.startY = -10000;
-        subMask.parameters.endX = -10000;
-        subMask.parameters.endY = -10000;
-        subMask.parameters.centerX = -10000;
-        subMask.parameters.centerY = -10000;
-        subMask.parameters.radiusX = 0;
-        subMask.parameters.radiusY = 0;
+        (subMask.parameters as Record<string, number>).startX = -10000;
+        (subMask.parameters as Record<string, number>).startY = -10000;
+        (subMask.parameters as Record<string, number>).endX = -10000;
+        (subMask.parameters as Record<string, number>).endY = -10000;
+        (subMask.parameters as Record<string, number>).centerX = -10000;
+        (subMask.parameters as Record<string, number>).centerY = -10000;
+        (subMask.parameters as Record<string, number>).radiusX = 0;
+        (subMask.parameters as Record<string, number>).radiusY = 0;
       } else {
-        subMask.parameters.targetX = -10000;
-        subMask.parameters.targetY = -10000;
-        subMask.parameters.tolerance = 20;
-        subMask.parameters.feather = 35;
+        (subMask.parameters as Record<string, number>).targetX = -10000;
+        (subMask.parameters as Record<string, number>).targetY = -10000;
+        (subMask.parameters as Record<string, number>).tolerance = 20;
+        (subMask.parameters as Record<string, number>).feather = 35;
       }
     }
 
     if (type === Mask.AiDepth) {
-      if (!subMask.parameters) subMask.parameters = {};
-      subMask.parameters.minDepth = 20;
-      subMask.parameters.maxDepth = 80;
-      subMask.parameters.minFade = 15;
-      subMask.parameters.maxFade = 15;
-      subMask.parameters.feather = 10;
+      if (!params) subMask.parameters = {};
+      (subMask.parameters as Record<string, number>).minDepth = 20;
+      (subMask.parameters as Record<string, number>).maxDepth = 80;
+      (subMask.parameters as Record<string, number>).minFade = 15;
+      (subMask.parameters as Record<string, number>).maxFade = 15;
+      (subMask.parameters as Record<string, number>).feather = 10;
     }
     return subMask;
   };
@@ -830,9 +836,9 @@ export default function MasksPanel() {
           handleAddSubMask(overData.item!.id, dragData.maskType!);
         } else if (overData?.type === 'SubMask') {
           const container = adjustments.masks.find((m) => m.id === overData.parentId);
-          if (container) {
+          if (container && over) {
             const targetIndex = container.subMasks.findIndex((sm) => sm.id === over.id);
-            handleAddSubMask(overData.parentId!, dragData.maskType!, targetIndex);
+            handleAddSubMask(overData.parentId!, dragData.maskType!, SubMaskMode.Additive, targetIndex);
           }
         } else {
           handleAddMaskContainer(dragData.maskType!);
@@ -1683,6 +1689,7 @@ function SubMaskRow({
   setTempName,
   setIsMaskControlHovered,
 }: any) {
+  const typedSubMask = subMask as SubMask;
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: subMask.id,
@@ -1696,7 +1703,7 @@ function SubMaskRow({
     setNodeRef(node);
     setDroppableRef(node);
   };
-  const MaskIcon = MASK_ICON_MAP[subMask.type] || Circle;
+  const MaskIcon = MASK_ICON_MAP[typedSubMask.type] || Circle;
   const { showContextMenu } = useContextMenu();
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1928,6 +1935,7 @@ function SettingsPanel({
   presets,
   handleGenerateAiDepthMask,
 }: any) {
+  const typedActiveSubMask = activeSubMask as SubMask | null;
   const { t } = useTranslation();
   const { showContextMenu } = useContextMenu();
   const isActive = !!container;
@@ -2010,7 +2018,7 @@ function SettingsPanel({
     updateSubMask(activeSubMask.id, { parameters: newParams });
   };
 
-  const subMaskConfig = activeSubMask ? SUB_MASK_CONFIG[activeSubMask.type] || {} : {};
+  const subMaskConfig = typedActiveSubMask ? SUB_MASK_CONFIG[typedActiveSubMask.type] || {} : {};
   const isAiMask =
     activeSubMask && [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.AiDepth].includes(activeSubMask.type);
   const isComponentMode = !!activeSubMask;

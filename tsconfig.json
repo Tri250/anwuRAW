@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "types": ["vite/client"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
