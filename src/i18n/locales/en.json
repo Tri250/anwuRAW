@@ -345,6 +345,7 @@
         "add": "Add",
         "erase": "Erase",
         "feather": "Brush Feather",
+        "opacity": "Brush Opacity",
         "size": "Brush Size"
       },
       "comingSoon": "Coming Soon",

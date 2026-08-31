@@ -339,6 +339,7 @@
         "add": "Afegir",
         "erase": "Esborrar",
         "feather": "Esvaïment del pinzell",
+        "opacity": "Opacitat del pinzell",
         "size": "Mida del pinzell"
       },
       "comingSoon": "Aviat disponible",

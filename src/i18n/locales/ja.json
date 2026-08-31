@@ -339,6 +339,7 @@
         "add": "追加",
         "erase": "消去",
         "feather": "ブラシのぼかし",
+        "opacity": "ブラシ不透明度",
         "size": "ブラシサイズ"
       },
       "comingSoon": "近日公開",

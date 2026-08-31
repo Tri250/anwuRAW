@@ -355,6 +355,7 @@
         "add": "Añadir",
         "erase": "Borrar",
         "feather": "Desvanecimiento de pincel",
+        "opacity": "Opacidad del pincel",
         "size": "Tamaño de pincel"
       },
       "comingSoon": "Próximamente",

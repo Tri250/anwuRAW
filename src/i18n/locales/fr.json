@@ -355,6 +355,7 @@
         "add": "Ajouter",
         "erase": "Gommer",
         "feather": "Contour progressif du pinceau",
+        "opacity": "Opacité du pinceau",
         "size": "Taille du pinceau"
       },
       "comingSoon": "Bientôt disponible",

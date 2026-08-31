@@ -339,6 +339,7 @@
         "add": "添加",
         "erase": "擦除",
         "feather": "画笔羽化",
+        "opacity": "画笔不透明度",
         "size": "画笔大小"
       },
       "comingSoon": "即将推出",

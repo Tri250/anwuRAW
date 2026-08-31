@@ -162,6 +162,16 @@ const BrushTools = ({ settings, onSettingsChange }: { settings: any; onSettingsC
         value={settings.feather}
         fillOrigin="min"
       />
+      <Slider
+        defaultValue={100}
+        label={t('editor.ai.brush.opacity')}
+        max={100}
+        min={1}
+        onChange={(e: any) => onSettingsChange((s: any) => ({ ...s, opacity: Number(e.target.value) }))}
+        step={1}
+        value={settings.opacity}
+        fillOrigin="min"
+      />
       <div className="grid grid-cols-2 gap-2 pt-2">
         <button
           className={`p-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${

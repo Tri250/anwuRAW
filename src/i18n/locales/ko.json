@@ -339,6 +339,7 @@
         "add": "추가",
         "erase": "지우기",
         "feather": "브러시 페더",
+        "opacity": "브러시 불투명도",
         "size": "브러시 크기"
       },
       "comingSoon": "출시 예정",
