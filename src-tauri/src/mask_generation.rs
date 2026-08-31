@@ -121,10 +121,16 @@ struct LinearMaskParameters {
     end_y: f64,
     #[serde(default = "default_range")]
     range: f32,
+    #[serde(default = "default_linear_feather")]
+    feather: f32,
 }
 
 fn default_range() -> f32 {
     50.0
+}
+
+fn default_linear_feather() -> f32 {
+    0.5
 }
 
 impl Default for LinearMaskParameters {
@@ -135,6 +141,7 @@ impl Default for LinearMaskParameters {
             end_x: 0.0,
             end_y: 0.0,
             range: default_range(),
+            feather: default_linear_feather(),
         }
     }
 }
@@ -153,10 +160,16 @@ struct BrushLine {
     points: Vec<Point>,
     #[serde(default = "default_brush_feather")]
     feather: f32,
+    #[serde(default = "default_brush_opacity")]
+    opacity: f32,
 }
 
 fn default_brush_feather() -> f32 {
     0.5
+}
+
+fn default_brush_opacity() -> f32 {
+    1.0
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -176,6 +189,8 @@ struct FlowLine {
     feather: f32,
     #[serde(default = "default_line_flow")]
     flow: f32,
+    #[serde(default = "default_brush_opacity")]
+    opacity: f32,
 }
 
 fn default_line_flow() -> f32 {
@@ -660,8 +675,11 @@ fn generate_linear_bitmap(
             let intensity = 0.5 - t * 0.5;
 
             let clamped_intensity = intensity.clamp(0.0, 1.0);
+            let feather = params.feather.clamp(0.0, 1.0);
+            let smooth_intensity = clamped_intensity * clamped_intensity * (3.0 - 2.0 * clamped_intensity);
+            let final_intensity = clamped_intensity * (1.0 - feather) + smooth_intensity * feather;
 
-            mask.put_pixel(x_u, y_u, Luma([(clamped_intensity * 255.0) as u8]));
+            mask.put_pixel(x_u, y_u, Luma([(final_intensity * 255.0) as u8]));
         }
     }
 
@@ -721,10 +739,12 @@ fn generate_brush_bitmap(
                 let dst_pixel = final_mask.get_pixel_mut(abs_x, abs_y);
                 let dst_val = dst_pixel[0] as f32 / 255.0;
 
+                let opacity = line.opacity.clamp(0.0, 1.0);
                 let blended = if is_eraser {
-                    dst_val * (1.0 - src_val)
+                    dst_val * (1.0 - src_val * opacity)
                 } else {
-                    dst_val + src_val - dst_val * src_val
+                    let src = src_val * opacity;
+                    dst_val + src - dst_val * src
                 };
 
                 dst_pixel[0] = (blended.clamp(0.0, 1.0) * 255.0).round() as u8;
@@ -792,10 +812,12 @@ fn generate_flow_bitmap(
                 let delta = ((stroke_pixel / 255.0) * flow_per_stroke).round();
                 let d_norm = (delta / 255.0).clamp(0.0, 1.0);
 
+                let opacity = line.opacity.clamp(0.0, 1.0);
                 let next = if is_eraser {
-                    c_norm * (1.0 - d_norm)
+                    c_norm * (1.0 - d_norm * opacity)
                 } else {
-                    c_norm + d_norm - c_norm * d_norm
+                    let d = d_norm * opacity;
+                    c_norm + d - c_norm * d
                 };
 
                 pixel[0] = (next.clamp(0.0, 1.0) * 255.0).round() as u8;

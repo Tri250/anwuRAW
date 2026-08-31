@@ -598,6 +598,7 @@
         "eraser": "Borracha",
         "feather": "Difusão do Pincel",
         "flow": "Fluxo",
+        "opacity": "Opacidade do pincel",
         "size": "Tamanho do Pincel"
       },
       "comingSoon": "Em Breve",

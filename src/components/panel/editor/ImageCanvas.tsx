@@ -24,6 +24,7 @@ interface DrawnLine {
   brushSize: number;
   feather?: number;
   flow?: number;
+  opacity?: number;
   points: Array<Coord>;
   tool: ToolType;
 }
@@ -1624,7 +1625,8 @@ const ImageCanvas = memo(
           : 1;
       const flowOpacity =
         activeSubMask?.type === Mask.Flow ? Math.max(0, Math.min(1, (activeSubMask.parameters?.flow ?? 10) / 100)) : 1;
-      const alpha = Math.max(0, Math.min(0.5, 0.5 * subMaskOpacity * containerOpacity * flowOpacity));
+      const brushOpacity = Math.max(0, Math.min(1, (brushSettings?.opacity ?? 100) / 100));
+      const alpha = Math.max(0, Math.min(0.5, 0.5 * brushOpacity * subMaskOpacity * containerOpacity * flowOpacity));
 
       const isEraser = isAltPressed ? baseTool !== ToolType.Eraser : baseTool === ToolType.Eraser;
 
@@ -1662,6 +1664,7 @@ const ImageCanvas = memo(
       activeSubMask?.parameters?.flow,
       activeSubMask?.type,
       brushSettings?.feather,
+      brushSettings?.opacity,
       brushStageSize,
       baseTool,
       isAltPressed,
@@ -2055,6 +2058,7 @@ const ImageCanvas = memo(
               brushSize: brushImageSpaceSize,
               feather: brushSettings?.feather ? brushSettings?.feather / 100 : 0,
               flow: activeLineFlow,
+              opacity: brushSettings?.opacity ? brushSettings?.opacity / 100 : 1,
               points: interpolatedPoints,
               tool: effectiveTool,
             };
@@ -2264,6 +2268,7 @@ const ImageCanvas = memo(
               brushSize: brushImageSpaceSize,
               feather: brushSettings?.feather ? brushSettings?.feather / 100 : 0,
               flow: activeLineFlow,
+              opacity: brushSettings?.opacity ? brushSettings?.opacity / 100 : 1,
               points: updatedLine.points.map((p: Coord) => ({
                 x: p.x / scale + cropX,
                 y: p.y / scale + cropY,
@@ -2303,6 +2308,7 @@ const ImageCanvas = memo(
               brushSize: brushImageSpaceSize,
               feather: brushSettings?.feather ? brushSettings?.feather / 100 : 0,
               flow: activeLineFlow,
+              opacity: brushSettings?.opacity ? brushSettings?.opacity / 100 : 1,
               points: updatedLine.points.map((p: Coord) => ({
                 x: p.x / scale + cropX,
                 y: p.y / scale + cropY,
@@ -2461,6 +2467,7 @@ const ImageCanvas = memo(
           brushSize: brushImageSpaceSize,
           feather: brushSettings?.feather ? brushSettings?.feather / 100 : 0,
           flow: activeLineFlow,
+          opacity: brushSettings?.opacity ? brushSettings?.opacity / 100 : 1,
           points: line.points.map((p: Coord) => ({
             x: p.x / scale + cropX,
             y: p.y / scale + cropY,

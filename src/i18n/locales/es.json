@@ -598,6 +598,7 @@
         "eraser": "Borrador",
         "feather": "Desvanecimiento de pincel",
         "flow": "Flujo",
+        "opacity": "Opacidad del pincel",
         "size": "Tamaño de pincel"
       },
       "comingSoon": "Próximamente",

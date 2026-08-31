@@ -251,6 +251,7 @@ export interface AppSettings {
 
 export interface BrushSettings {
   feather: number;
+  opacity: number;
   size: number;
   tool: ToolType;
 }

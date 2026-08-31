@@ -576,6 +576,7 @@
         "eraser": "消しゴム",
         "feather": "ブラシのぼかし",
         "flow": "流量",
+        "opacity": "ブラシ不透明度",
         "size": "ブラシサイズ"
       },
       "comingSoon": "近日公開",

@@ -587,6 +587,7 @@
         "eraser": "Eraser",
         "feather": "Brush Feather",
         "flow": "Flow",
+        "opacity": "Brush Opacity",
         "size": "Brush Size"
       },
       "comingSoon": "Coming Soon",

@@ -392,7 +392,7 @@ export default function AIPanel() {
     (forcedSize: number = 100) => {
       setEditor((state) => ({
         brushSettings: {
-          ...(state.brushSettings ?? { size: 100, feather: 50, tool: ToolType.Brush }),
+          ...(state.brushSettings ?? { size: 100, feather: 50, opacity: 100, tool: ToolType.Brush }),
           size: forcedSize,
           tool: ToolType.Brush,
         },

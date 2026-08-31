@@ -576,6 +576,7 @@
         "eraser": "지우개",
         "feather": "브러시 페더",
         "flow": "플로우",
+        "opacity": "브러시 불투명도",
         "size": "브러시 크기"
       },
       "comingSoon": "출시 예정",

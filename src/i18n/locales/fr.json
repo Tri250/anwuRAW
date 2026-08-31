@@ -598,6 +598,7 @@
         "eraser": "Gomme",
         "feather": "Contour progressif du pinceau",
         "flow": "Flux",
+        "opacity": "Opacité du pinceau",
         "size": "Taille du pinceau"
       },
       "comingSoon": "Bientôt disponible",

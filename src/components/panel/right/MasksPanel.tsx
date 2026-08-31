@@ -105,7 +105,9 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
   },
   [Mask.Brush]: { showBrushTools: true },
   [Mask.Flow]: { showBrushTools: true, showFlowControl: true },
-  [Mask.Linear]: { parameters: [] },
+  [Mask.Linear]: {
+    parameters: [{ key: 'feather', min: 0, max: 100, step: 1, multiplier: 100, defaultValue: 50 }],
+  },
   [Mask.Color]: {
     parameters: [
       { key: 'tolerance', min: 1, max: 100, step: 1, defaultValue: 20 },
@@ -150,11 +152,11 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
       { key: 'decontaminate', min: 0, max: 100, step: 1, defaultValue: 15 },
     ],
   },
-  [Mask.QuickEraser]: { parameters: [] },
+  [Mask.QuickEraser]: { showBrushTools: true },
   [Mask.Clone]: { showBrushTools: true },
   [Mask.Heal]: { showBrushTools: true },
-  [Mask.Liquify]: { parameters: [] },
-  [Mask.Retouch]: { parameters: [] },
+  [Mask.Liquify]: { showBrushTools: true },
+  [Mask.Retouch]: { showBrushTools: true },
 };
 
 const BrushTools = ({
@@ -189,6 +191,17 @@ const BrushTools = ({
         onChange={(e: any) => onSettingsChange((s: any) => ({ ...s, feather: Number(e.target.value) }))}
         step={1}
         value={settings.feather}
+        fillOrigin="min"
+        onDragStateChange={onDragStateChange}
+      />
+      <Slider
+        defaultValue={100}
+        label={t('editor.masks.brush.opacity')}
+        max={100}
+        min={1}
+        onChange={(e: any) => onSettingsChange((s: any) => ({ ...s, opacity: Number(e.target.value) }))}
+        step={1}
+        value={settings.opacity}
         fillOrigin="min"
         onDragStateChange={onDragStateChange}
       />
@@ -339,7 +352,7 @@ export default function MasksPanel() {
   const selectBrushToolForNewMask = useCallback(() => {
     setEditor((state) => ({
       brushSettings: {
-        ...(state.brushSettings ?? { size: 50, feather: 50, tool: ToolType.Brush }),
+        ...(state.brushSettings ?? { size: 50, feather: 50, opacity: 100, tool: ToolType.Brush }),
         tool: ToolType.Brush,
       },
     }));
