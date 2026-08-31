@@ -16,6 +16,7 @@ use std::sync::Arc;
 pub use crate::gpu_processing::{
     RenderRequest, get_or_init_gpu_context, process_and_get_dynamic_image,
     process_and_get_dynamic_image_with_analytics,
+    process_gpu_with_cpu_fallback, process_with_cpu_fallback,
 };
 use crate::{AppState, mask_generation::MaskDefinition};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};

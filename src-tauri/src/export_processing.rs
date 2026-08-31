@@ -28,8 +28,9 @@ use crate::image_loader::{
 };
 use crate::image_processing::{
     AllAdjustments, Crop, GpuContext, RenderRequest, downscale_f32_image,
-    get_all_adjustments_from_json, get_or_init_gpu_context, process_and_get_dynamic_image,
-    resolve_tonemapper_override_from_handle,
+    get_all_adjustments_from_json, get_or_init_gpu_context,
+    process_and_get_dynamic_image, process_gpu_with_cpu_fallback,
+    resolve_tonemapper_override, resolve_tonemapper_override_from_handle,
 };
 use crate::lut_processing::{
     convert_image_to_cube_lut, generate_identity_lut_image, get_or_load_lut,
@@ -445,7 +446,7 @@ fn process_image_for_export_pipeline(
     path: &str,
     base_image: &DynamicImage,
     js_adjustments: &Value,
-    context: &GpuContext,
+    context: Option<&Arc<GpuContext>>,
     state: &tauri::State<AppState>,
     is_raw: bool,
     debug_tag: &str,
@@ -484,8 +485,9 @@ fn process_image_for_export_pipeline(
 
     let unique_hash = calculate_full_job_hash(path, js_adjustments);
 
-    process_and_get_dynamic_image(
-        context,
+    let default_tm = js_adjustments.get("toneMapper").and_then(|v| v.as_str()).unwrap_or(if is_raw { "agx" } else { "basic" });
+    let (img, _used_cpu) = process_gpu_with_cpu_fallback(
+        context.and_then(|c| Some(c.as_ref())),
         state,
         transformed_image.as_ref(),
         unique_hash,
@@ -496,7 +498,10 @@ fn process_image_for_export_pipeline(
             roi: None,
         },
         debug_tag,
-    )
+        is_raw,
+        default_tm,
+    );
+    Ok(img)
 }
 
 fn set_timestamps_from_exif(src: &Path, dst: &Path) {
@@ -579,7 +584,7 @@ fn process_image_for_export(
     base_image: &DynamicImage,
     js_adjustments: &Value,
     export_settings: &ExportSettings,
-    context: &GpuContext,
+    context: Option<&Arc<GpuContext>>,
     state: &tauri::State<AppState>,
     is_raw: bool,
     app_handle: &tauri::AppHandle,
@@ -806,7 +811,7 @@ fn export_masks_for_image(
     export_settings: &ExportSettings,
     output_path_obj: &std::path::Path,
     source_path_str: &str,
-    context: &Arc<GpuContext>,
+    context: Option<&Arc<GpuContext>>,
     state: &tauri::State<AppState>,
     is_raw: bool,
     app_handle: &tauri::AppHandle,
@@ -861,8 +866,8 @@ fn export_masks_for_image(
             let full_white_mask = ImageBuffer::from_fn(img_w, img_h, |_, _| Luma([255u8]));
             let single_bitmaps: Vec<ImageBuffer<Luma<u8>, Vec<u8>>> = vec![full_white_mask];
 
-            let processed = process_and_get_dynamic_image(
-                context,
+            let (processed, _mask_cpu) = process_gpu_with_cpu_fallback(
+                context.and_then(|c| Some(c.as_ref())),
                 state,
                 transformed_image.as_ref(),
                 unique_hash,
@@ -872,8 +877,10 @@ fn export_masks_for_image(
                     lut: lut.clone(),
                     roi: None,
                 },
-                "export_mask_image",
-            )?;
+                "export_masks",
+                is_raw,
+                "basic",
+            );
             ensure_export_not_cancelled(cancellation_token)?;
 
             let with_options = apply_export_resize_and_watermark(processed, export_settings)?;
@@ -929,7 +936,7 @@ fn export_masks_for_image(
 fn export_adjustments_as_lut(
     js_adjustments: &Value,
     source_path_str: &str,
-    context: &Arc<GpuContext>,
+    context: Option<&Arc<GpuContext>>,
     state: &tauri::State<AppState>,
     app_handle: &tauri::AppHandle,
     cancellation_token: &AtomicBool,
@@ -961,8 +968,8 @@ fn export_adjustments_as_lut(
     let lut = lut_path.and_then(|p| get_or_load_lut(state, p).ok());
     let unique_hash = calculate_full_job_hash(source_path_str, js_adjustments);
 
-    let processed_lut = process_and_get_dynamic_image(
-        context,
+    let (processed_lut, _lut_cpu) = process_gpu_with_cpu_fallback(
+        context.and_then(|c| Some(c.as_ref())),
         state,
         &identity_image,
         unique_hash,
@@ -973,7 +980,9 @@ fn export_adjustments_as_lut(
             roi: None,
         },
         "export_lut",
-    )?;
+        false,
+        "basic",
+    );
     ensure_export_not_cancelled(cancellation_token)?;
 
     let cube_lut = convert_image_to_cube_lut(&processed_lut, lut_size)?;
@@ -1006,17 +1015,27 @@ pub(crate) async fn export_images_impl(
         return Ok(());
     }
 
-    let context = match get_or_init_gpu_context(&state, &app_handle) {
-        Ok(context) => context,
-        Err(_) if cancellation_token.load(Ordering::SeqCst) => return Ok(()),
-        Err(error) => return Err(error),
-    };
+    // GPU init soft-fail: when wgpu adapter/device is unavailable (headless CI,
+    // remote container, driver issue, etc.) we degrade to a pure-CPU pipeline
+    // instead of aborting the whole export batch.
+    let (context_arc, used_cpu_only) =
+        match get_or_init_gpu_context(&state, &app_handle) {
+            Ok(ctx) => (Some(Arc::new(ctx)), false),
+            Err(_) if cancellation_token.load(Ordering::SeqCst) => return Ok(()),
+            Err(err) => {
+                log::warn!(
+                    "GPU unavailable for export ({}). Switching to CPU-only fallback.",
+                    err
+                );
+                (None, true)
+            }
+        };
 
     if cancellation_token.load(Ordering::SeqCst) {
         return Ok(());
     }
 
-    let context = Arc::new(context);
+    let context = context_arc.clone(); // Option<Arc<GpuContext>> — cloneable per task
     let progress_counter = Arc::new(AtomicUsize::new(0));
 
     let available_cores = std::thread::available_parallelism()
@@ -1031,6 +1050,9 @@ pub(crate) async fn export_images_impl(
 
     let num_threads = if paths.len() == 1 {
         1
+    } else if used_cpu_only {
+        // CPU fallback is already heavy — keep thread count tight to avoid OOM.
+        available_cores.min(ram_based_limit).clamp(1, 2)
     } else {
         available_cores.min(ram_based_limit).clamp(1, 4)
     };
@@ -1096,7 +1118,7 @@ pub(crate) async fn export_images_impl(
             }
 
             let app_handle_clone = app_handle.clone();
-            let context_clone = Arc::clone(&context);
+            let context_clone = context.clone(); // Option<Arc<GpuContext>> — Arc::clone is cheap
             let progress_counter_clone = Arc::clone(&progress_counter);
             let output_folder_path = output_folder_path.to_path_buf();
             let base_origin_folders = base_origin_folders.clone();
@@ -1188,7 +1210,7 @@ pub(crate) async fn export_images_impl(
                         let cube_bytes = export_adjustments_as_lut(
                             &js_adjustments,
                             &source_path_str,
-                            &context_clone,
+                            context_clone.as_ref(),
                             &state,
                             &app_handle_clone,
                             &cancellation_token_clone,
@@ -1272,7 +1294,7 @@ pub(crate) async fn export_images_impl(
                         &base_image,
                         &main_export_adjustments,
                         &export_settings,
-                        &context_clone,
+                        context_clone.as_ref(),
                         &state,
                         is_raw,
                         &app_handle_clone,
@@ -1298,7 +1320,7 @@ pub(crate) async fn export_images_impl(
                             &export_settings,
                             &output_path,
                             &source_path_str,
-                            &context_clone,
+                            context_clone.as_ref(),
                             &state,
                             is_raw,
                             &app_handle_clone,
@@ -1569,7 +1591,9 @@ pub async fn estimate_export_sizes(
     let (source_path, sidecar_path) = parse_virtual_path(first_path);
     let source_path_str = source_path.to_string_lossy().to_string();
 
-    let context = get_or_init_gpu_context(&state, &app_handle)?;
+    // GPU soft-fail for size estimation too — the estimate is advisory only;
+    // actual per-image export already handles CPU fallback.
+    let _context_opt = get_or_init_gpu_context(&state, &app_handle).ok();
     let is_current_edit = Some(&source_path_str) == current_edit_path.as_ref();
     let is_raw = is_raw_file(&source_path_str);
     let settings = load_settings(app_handle.clone()).unwrap_or_default();
@@ -1653,8 +1677,9 @@ pub async fn estimate_export_sizes(
         let unique_hash =
             calculate_full_job_hash(&loaded_image.path, &adjustments_clone).wrapping_add(1);
 
-        let processed_preview = process_and_get_dynamic_image(
-            &context,
+        let default_tm = if is_raw { "agx" } else { "basic" };
+        let (processed_preview, _p1) = process_gpu_with_cpu_fallback(
+            _context_opt.as_ref(),
             &state,
             &preview_image,
             unique_hash,
@@ -1665,7 +1690,9 @@ pub async fn estimate_export_sizes(
                 roi: None,
             },
             "estimate_export_size",
-        )?;
+            is_raw,
+            default_tm,
+        );
 
         let cs_preview = apply_color_space_transform(&processed_preview, &export_settings.color_space);
         let preview_bytes = encode_image_to_bytes(
@@ -1794,8 +1821,9 @@ pub async fn estimate_export_sizes(
         let unique_hash =
             calculate_full_job_hash(&source_path_str, &js_adjustments).wrapping_add(1);
 
-        let processed_preview = process_and_get_dynamic_image(
-            &context,
+        let default_tm2 = if is_raw { "agx" } else { "basic" };
+        let (processed_preview, _p2) = process_gpu_with_cpu_fallback(
+            _context_opt.as_ref(),
             &state,
             &preview_base,
             unique_hash,
@@ -1806,7 +1834,9 @@ pub async fn estimate_export_sizes(
                 roi: None,
             },
             "estimate_batch_export_size",
-        )?;
+            is_raw,
+            default_tm2,
+        );
 
         let cs_preview = apply_color_space_transform(&processed_preview, &export_settings.color_space);
         let preview_bytes = encode_image_to_bytes(
