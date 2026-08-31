@@ -380,6 +380,15 @@ export const COLOR_LABELS: Array<Color> = [
   { name: 'purple', color: '#a78bfa' },
 ];
 
+/** Default keyboard shortcut per color label, aligned with Lightroom's 6-9-0 convention. */
+export const COLOR_LABEL_SHORTCUT: Record<string, string> = {
+  red: '6',
+  yellow: '7',
+  green: '8',
+  blue: '9',
+  purple: '⇧0',
+};
+
 const INITIAL_COLOR_GRADING: ColorGradingProps = {
   balance: 0,
   blending: 50,

@@ -27,7 +27,7 @@ import { useProcessStore } from '../../../store/useProcessStore';
 import { useLibraryStore } from '../../../store/useLibraryStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { useLibraryActions } from '../../../hooks/useLibraryActions';
-import { COLOR_LABELS, Color } from '../../../utils/adjustments';
+import { COLOR_LABELS, COLOR_LABEL_SHORTCUT, Color } from '../../../utils/adjustments';
 import { expandGroupedPaths } from '../../../utils/imageGrouping';
 import { IconAperture, IconFocalLength, IconIso, IconShutter } from '../editor/ExifIcons';
 
@@ -715,7 +715,7 @@ function CullingPreview({
                         : 'hover:ring-2 hover:ring-white/30',
                     )}
                     style={{ backgroundColor: color.color }}
-                    data-tooltip={t('library.labels.color' + color.name.charAt(0).toUpperCase() + color.name.slice(1))}
+                    data-tooltip={`${t('library.labels.color' + color.name.charAt(0).toUpperCase() + color.name.slice(1))}${COLOR_LABEL_SHORTCUT[color.name] ? ` (${COLOR_LABEL_SHORTCUT[color.name]})` : ''}`}
                   >
                     {currentColor === color.name && <Check size={12} className="text-black/50 mx-auto" />}
                   </button>

@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { Invokes } from '../../ui/AppProperties';
-import { COLOR_LABELS, Color } from '../../../utils/adjustments';
+import { COLOR_LABELS, COLOR_LABEL_SHORTCUT, Color } from '../../../utils/adjustments';
 import Text from '../../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { IconAperture, IconShutter, IconIso, IconFocalLength, IconLens } from '../editor/ExifIcons';
@@ -795,9 +795,7 @@ export default function MetadataPanel() {
                                     : 'hover:ring-2 hover:ring-white/20',
                                 )}
                                 style={{ backgroundColor: color.color }}
-                                data-tooltip={t(
-                                  'library.labels.color' + color.name.charAt(0).toUpperCase() + color.name.slice(1),
-                                )}
+                                data-tooltip={`${t('library.labels.color' + color.name.charAt(0).toUpperCase() + color.name.slice(1))}${COLOR_LABEL_SHORTCUT[color.name] ? ` (${COLOR_LABEL_SHORTCUT[color.name]})` : ''}`}
                               >
                                 {currentColor === color.name && <Check size={12} className="text-black/50 mx-auto" />}
                               </button>

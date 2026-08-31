@@ -130,37 +130,37 @@ export const KEYBIND_DEFINITIONS: KeybindDefinition[] = [
   {
     action: 'color_label_none',
     description: 'settings.keybinds.actions.color_label_none',
-    defaultCombo: ['shift', 'Digit0'],
+    defaultCombo: ['shift', 'KeyN'],
     section: 'rating',
   },
   {
     action: 'color_label_red',
     description: 'settings.keybinds.actions.color_label_red',
-    defaultCombo: ['shift', 'Digit1'],
+    defaultCombo: ['Digit6'],
     section: 'rating',
   },
   {
     action: 'color_label_yellow',
     description: 'settings.keybinds.actions.color_label_yellow',
-    defaultCombo: ['shift', 'Digit2'],
+    defaultCombo: ['Digit7'],
     section: 'rating',
   },
   {
     action: 'color_label_green',
     description: 'settings.keybinds.actions.color_label_green',
-    defaultCombo: ['shift', 'Digit3'],
+    defaultCombo: ['Digit8'],
     section: 'rating',
   },
   {
     action: 'color_label_blue',
     description: 'settings.keybinds.actions.color_label_blue',
-    defaultCombo: ['shift', 'Digit4'],
+    defaultCombo: ['Digit9'],
     section: 'rating',
   },
   {
     action: 'color_label_purple',
     description: 'settings.keybinds.actions.color_label_purple',
-    defaultCombo: ['shift', 'Digit5'],
+    defaultCombo: ['shift', 'Digit0'],
     section: 'rating',
   },
   {
