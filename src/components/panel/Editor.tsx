@@ -104,6 +104,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   const overlayRotation = useEditorStore((s) => s.overlayRotation);
   const isStraightenActive = useEditorStore((s) => s.isStraightenActive);
   const isWbPickerActive = useEditorStore((s) => s.isWbPickerActive);
+  const isHslPickerActive = useEditorStore((s) => s.isHslPickerActive);
   const liveRotation = useEditorStore((s) => s.liveRotation);
   const brushSettings = useEditorStore((s) => s.brushSettings);
   const activeMaskContainerId = useEditorStore((s) => s.activeMaskContainerId);
@@ -339,6 +340,13 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   );
 
   const handleWbPicked = useCallback(() => {}, []);
+
+  const handleHslPicked = useCallback((colorKey: string) => {
+    setEditor(() => ({
+      isHslPickerActive: false,
+      hslTargetColor: colorKey,
+    }));
+  }, [setEditor]);
 
   useEffect(() => {
     if (isFullScreen) {
@@ -2172,6 +2180,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
             updateSubMask={updateSubMaskLocal}
             isWbPickerActive={isWbPickerActive}
             onWbPicked={handleWbPicked}
+            isHslPickerActive={isHslPickerActive}
+            onHslPicked={handleHslPicked}
             setAdjustments={setAdjustments}
             overlayRotation={overlayRotation}
             overlayMode={overlayMode}

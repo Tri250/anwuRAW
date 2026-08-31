@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import type { OverlayMode } from '../right/CropPanel';
 import CompositionOverlays from './overlays/CompositionOverlays';
 import { calculateStraightenAngle } from '../../../utils/cropUtils';
+import { rgbToHsl, hueToColorKey, median, srgbToLinear } from '../../../utils/colorUtils';
 
 interface CursorPreview {
   visible: boolean;
@@ -68,6 +69,8 @@ interface ImageCanvasProps {
   interactivePatch?: { url: string; normX: number; normY: number; normW: number; normH: number } | null;
   isWbPickerActive?: boolean;
   onWbPicked?: () => void;
+  isHslPickerActive?: boolean;
+  onHslPicked?: (colorKey: string) => void;
   setAdjustments(fn: (prev: Adjustments) => Adjustments): void;
   overlayMode?: OverlayMode;
   overlayRotation?: number;
@@ -1323,6 +1326,8 @@ const ImageCanvas = memo(
     updateSubMask,
     isWbPickerActive = false,
     onWbPicked,
+    isHslPickerActive = false,
+    onHslPicked,
     setAdjustments,
     overlayRotation,
     overlayMode,
@@ -1851,34 +1856,58 @@ const ImageCanvas = memo(
           const imageData = ctx.getImageData(0, 0, sw, sh);
           const data = imageData.data;
 
-          let rTotal = 0,
-            gTotal = 0,
-            bTotal = 0;
-          let count = 0;
+          const clampByte = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : v);
+
+          // 逐像素白平衡信号。仅保留亮度适中、未过曝/纯黑、饱和度不极端(偏中性)的像素，
+          // 这些像素才携带可靠的色温/色调信息，避免鲜艳彩色物体干扰白平衡判断。
+          const tempSignals: number[] = [];
+          const tintSignals: number[] = [];
 
           for (let i = 0; i < data.length; i += 4) {
-            rTotal += data[i];
-            gTotal += data[i + 1];
-            bTotal += data[i + 2];
-            count++;
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            if (a === 0) continue;
+
+            const maxC = Math.max(r, g, b);
+            const minC = Math.min(r, g, b);
+            // 跳过高光裁切与纯黑区域，其通道值已达极限，无法反映真实色偏
+            if (maxC >= 252 || minC <= 4) continue;
+
+            const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            if (lum < 14 || lum > 240) continue;
+
+            // 跳过高度饱和的像素（如红苹果、蓝天），这类像素不接近中性灰
+            if (maxC - minC > 40) continue;
+
+            const linR = Math.pow(clampByte(r) / 255.0, 2.2);
+            const linG = Math.pow(clampByte(g) / 255.0, 2.2);
+            const linB = Math.pow(clampByte(b) / 255.0, 2.2);
+
+            const sumRB = linR + linB;
+            if (sumRB < 0.0001) continue;
+            tempSignals.push((linB - linR) / sumRB);
+
+            const linM = sumRB / 2.0;
+            const sumGM = linG + linM;
+            if (sumGM > 0.0001) tintSignals.push((linG - linM) / sumGM);
           }
 
-          if (count === 0) return;
+          if (tempSignals.length === 0) return;
 
-          const avgR = rTotal / count;
-          const avgG = gTotal / count;
-          const avgB = bTotal / count;
+          // 使用中位数而非均值，对少量异常像素(残留强色块/边缘)更稳健
+          const median = (arr: number[]) => {
+            if (arr.length === 0) return 0;
+            const sorted = arr.slice().sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            return sorted.length % 2 === 0
+              ? (sorted[mid - 1] + sorted[mid]) / 2
+              : sorted[mid];
+          };
 
-          const linR = Math.pow(avgR / 255.0, 2.2);
-          const linG = Math.pow(avgG / 255.0, 2.2);
-          const linB = Math.pow(avgB / 255.0, 2.2);
-
-          const sumRB = linR + linB;
-          const deltaTemp = sumRB > 0.0001 ? ((linB - linR) / sumRB) * 125.0 : 0;
-
-          const linM = sumRB / 2.0;
-          const sumGM = linG + linM;
-          const deltaTint = sumGM > 0.0001 ? ((linG - linM) / sumGM) * 400.0 : 0;
+          const deltaTemp = median(tempSignals) * 125.0;
+          const deltaTint = tintSignals.length > 0 ? median(tintSignals) * 400.0 : 0;
 
           setAdjustments((prev: Adjustments) => ({
             ...prev,
@@ -1900,6 +1929,78 @@ const ImageCanvas = memo(
       ],
     );
 
+    const handleHslClick = useCallback(
+      (e: any) => {
+        const sampleUrl = selectedImage?.thumbnailUrl || finalPreviewUrl;
+        if (!isHslPickerActive || !sampleUrl || !onHslPicked) return;
+
+        const stage = e.target.getStage();
+        const pointerPos = getCanvasPointer(stage);
+        if (!pointerPos) return;
+
+        const x = pointerPos.x / imageRenderSize.scale;
+        const y = pointerPos.y / imageRenderSize.scale;
+
+        const imgLogicalWidth = imageRenderSize.width / imageRenderSize.scale;
+        const imgLogicalHeight = imageRenderSize.height / imageRenderSize.scale;
+
+        if (x < 0 || x > imgLogicalWidth || y < 0 || y > imgLogicalHeight) return;
+
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = sampleUrl;
+
+        img.onload = () => {
+          const radius = 3;
+          const side = radius * 2 + 1;
+
+          const canvas = document.createElement('canvas');
+          canvas.width = side;
+          canvas.height = side;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          if (!ctx) return;
+
+          const scaleX = img.width / imgLogicalWidth;
+          const scaleY = img.height / imgLogicalHeight;
+          const srcX = Math.floor(x * scaleX);
+          const srcY = Math.floor(y * scaleY);
+
+          const startX = Math.max(0, srcX - radius);
+          const startY = Math.max(0, srcY - radius);
+          const endX = Math.min(img.width, srcX + radius + 1);
+          const endY = Math.min(img.height, srcY + radius + 1);
+          const sw = endX - startX;
+          const sh = endY - startY;
+
+          if (sw <= 0 || sh <= 0) return;
+
+          ctx.drawImage(img, startX, startY, sw, sh, 0, 0, sw, sh);
+          const imageData = ctx.getImageData(0, 0, sw, sh);
+          const data = imageData.data;
+
+          let rTotal = 0,
+            gTotal = 0,
+            bTotal = 0;
+          let count = 0;
+          for (let i = 0; i < data.length; i += 4) {
+            rTotal += data[i];
+            gTotal += data[i + 1];
+            bTotal += data[i + 2];
+            count++;
+          }
+          if (count === 0) return;
+
+          const avgR = rTotal / count;
+          const avgG = gTotal / count;
+          const avgB = bTotal / count;
+
+          const { h } = rgbToHsl(avgR, avgG, avgB);
+          onHslPicked(hueToColorKey(h));
+        };
+      },
+      [isHslPickerActive, selectedImage?.thumbnailUrl, finalPreviewUrl, imageRenderSize, onHslPicked, getCanvasPointer],
+    );
+
     const handleStart = useCallback(
       (e: any) => {
         if (e.evt && typeof e.evt.button === 'number' && e.evt.button !== 0) {
@@ -1907,6 +2008,11 @@ const ImageCanvas = memo(
         }
 
         if (e.evt && e.evt.cancelable) e.evt.preventDefault();
+
+        if (isHslPickerActive) {
+          handleHslClick(e);
+          return;
+        }
 
         if (isWbPickerActive) {
           handleWbClick(e);

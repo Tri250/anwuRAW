@@ -9,6 +9,7 @@ import { Adjustments, ColorGrading } from '../../utils/adjustments';
 import { AppSettings } from '../ui/AppProperties';
 import Text from '../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../types/typography';
+import { useEditorStore } from '../../store/useEditorStore';
 
 interface ColorProps {
   color: string;
@@ -407,6 +408,18 @@ export default function ColorPanel({
   const adjustmentVisibility = appSettings?.adjustmentVisibility || {};
   const isWgpuEnabled = appSettings?.useWgpuRenderer !== false;
 
+  const setEditor = useEditorStore((s) => s.setEditor);
+  const isHslPickerActive = useEditorStore((s) => s.isHslPickerActive);
+  const hslTargetColor = useEditorStore((s) => s.hslTargetColor);
+
+  const toggleHslPicker = () => setEditor((state) => ({ isHslPickerActive: !state.isHslPickerActive }));
+
+  useEffect(() => {
+    if (!hslTargetColor) return;
+    setActiveColor(hslTargetColor);
+    setEditor({ hslTargetColor: null });
+  }, [hslTargetColor, setEditor]);
+
   const HSL_COLORS = useMemo<Array<ColorProps>>(
     () => [
       { name: 'reds', color: '#f87171', label: t('adjustments.color.mixerColors.reds') },
@@ -562,9 +575,20 @@ export default function ColorPanel({
       </div>
 
       <div className="p-2 bg-bg-tertiary rounded-md">
-        <Text variant={TextVariants.heading} className="mb-3">
-          {t('adjustments.color.colorMixer')}
-        </Text>
+        <div className="flex justify-between items-center mb-3">
+          <Text variant={TextVariants.heading}>
+            {t('adjustments.color.colorMixer')}
+          </Text>
+          <button
+            onClick={toggleHslPicker}
+            className={`p-1.5 rounded-md transition-colors ${
+              isHslPickerActive ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
+            }`}
+            data-tooltip={t(isHslPickerActive ? 'adjustments.color.hslPickActive' : 'adjustments.color.hslPickTooltip')}
+          >
+            <Pipette size={16} />
+          </button>
+        </div>
         <div className="flex justify-between mb-4 px-1">
           {HSL_COLORS.map(({ name, color, label }) => (
             <ColorSwatch

@@ -145,6 +145,14 @@
     background-color: theme('colors.hover-color');
   }
 
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .macos-window-shell {
     border-radius: 14px;
     overflow: hidden;

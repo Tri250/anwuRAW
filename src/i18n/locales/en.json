@@ -19,6 +19,14 @@
         "gammaDesc": "Pure sRGB gamma — minimal processing, most accurate baseline"
       },
       "reset": "Reset",
+      "scene": {
+        "title": "Scene Enhance",
+        "desc": "One-tap professional color grading",
+        "prototypePortrait": "Portrait",
+        "prototypeLandscape": "Landscape",
+        "prototypeNight": "Night",
+        "prototypeWarmSunset": "Warm Sunset"
+      },
       "shadows": "Shadows",
       "toneMapper": "Tone Mapper",
       "whites": "Whites"
@@ -95,6 +103,18 @@
       "pasteParametric": "Paste Parametric Curve",
       "pastePoint": "Paste Point Curve",
       "pointCurve": "Point Curve",
+      "presets": {
+        "brighten": "Brighten",
+        "cool": "Cool",
+        "darken": "Darken",
+        "fade": "Fade",
+        "film": "Film",
+        "lowContrast": "Low Contrast",
+        "original": "Original",
+        "portrait": "Portrait",
+        "sCurve": "S-Curve",
+        "warm": "Warm"
+      },
       "resetAllParametric": "Reset All Parametric Curves",
       "resetAllPoint": "Reset All Point Curves",
       "resetParametric": "Reset {{channel}} Parametric Curve",

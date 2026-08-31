@@ -16,6 +16,7 @@ import { useContextMenu } from '../../context/ContextMenuContext';
 import Text from '../ui/Text';
 import Slider from '../ui/Slider';
 import { TextColors, TextVariants, TextWeights } from '../../types/typography';
+import { CURVE_TONE_PRESETS, DIAGONAL } from './curvePresets';
 
 let curveClipboard: Array<Coord> | null = null;
 let parametricClipboard: any = null;
@@ -321,6 +322,37 @@ export default function CurveGraph({
         },
       };
     });
+  };
+
+  const handleApplyTonePreset = (id: string) => {
+    const preset = CURVE_TONE_PRESETS.find((p) => p.id === id);
+    if (!preset) return;
+
+    const fullCurves = {
+      luma: preset.curves.luma ?? DIAGONAL,
+      red: preset.curves.red ?? DIAGONAL,
+      green: preset.curves.green ?? DIAGONAL,
+      blue: preset.curves.blue ?? DIAGONAL,
+    };
+
+    setCurveMode('point');
+
+    const currentChannel = activeChannelRef.current;
+    const channelPoints = fullCurves[currentChannel] ?? DIAGONAL;
+    setLocalPoints(channelPoints.map((p) => ({ ...p })));
+    localPointsRef.current = channelPoints.map((p) => ({ ...p }));
+
+    setAdjustments((prev: any) => ({
+      ...prev,
+      ...(preset.tone || {}),
+      curveMode: 'point',
+      pointCurves: { ...prev.pointCurves, ...fullCurves },
+      curves: { ...prev.curves, ...fullCurves },
+      sectionVisibility: {
+        ...(prev.sectionVisibility || {}),
+        curves: true,
+      },
+    }));
   };
 
   useEffect(() => {
@@ -801,6 +833,25 @@ export default function CurveGraph({
               </button>
             );
           })}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 mb-2">
+        <Text variant={TextVariants.small} color={TextColors.secondary} weight={TextWeights.medium} className="shrink-0">
+          {t('adjustments.curves.presets.title')}
+        </Text>
+        <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto py-0.5 no-scrollbar">
+          {CURVE_TONE_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => handleApplyTonePreset(preset.id)}
+              data-tooltip={preset.id === 'original' ? t('adjustments.curves.presets.originalDesc') : undefined}
+              className="shrink-0 px-2 py-1 text-xs rounded-md bg-surface-secondary text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
+            >
+              {t(preset.labelKey)}
+            </button>
+          ))}
         </div>
       </div>
 

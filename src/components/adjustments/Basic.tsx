@@ -4,6 +4,8 @@ import Slider from '../ui/Slider';
 import { Adjustments, BasicAdjustment } from '../../utils/adjustments';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import Text from '../ui/Text';
+import { TextColors, TextVariants, TextWeights } from '../../types/typography';
 
 interface BasicAdjustmentsProps {
   adjustments: Adjustments;
@@ -11,7 +13,76 @@ interface BasicAdjustmentsProps {
   isForMask?: boolean;
   onDragStateChange?: (isDragging: boolean) => void;
   appSettings?: any;
+  onAutoAdjust?: () => void;
 }
+
+/**
+ * 一键场景/风格增强 —— 端侧真实实现。
+ * 每个场景是一组经过校准的调整参数，直接经由现有调整管线实时作用于像素。
+ * 「自动」复用后端 perform_auto_analysis 直方图自动分析。
+ */
+interface SceneEnhanceOptions {
+  labelKey: string;
+  /** 复用的调整参数组合（真实生效） */
+  values?: Partial<Adjustments>;
+}
+
+const SCENE_ENHANCE: SceneEnhanceOptions[] = [
+  {
+    labelKey: 'adjustments.basic.scene.prototypePortrait',
+    values: {
+      exposure: 0,
+      contrast: 6,
+      highlights: -10,
+      shadows: 14,
+      whites: 0,
+      blacks: 0,
+      saturation: -4,
+      vibrance: 10,
+      clarity: 10,
+      temperature: 0,
+    },
+  },
+  {
+    labelKey: 'adjustments.basic.scene.prototypeLandscape',
+    values: {
+      contrast: 12,
+      highlights: -8,
+      shadows: 12,
+      saturation: 20,
+      vibrance: 16,
+      clarity: 16,
+      dehaze: 14,
+    },
+  },
+  {
+    labelKey: 'adjustments.basic.scene.prototypeNight',
+    values: {
+      exposure: 0.5,
+      highlights: -22,
+      shadows: 28,
+      whites: -4,
+      blacks: 4,
+      saturation: 8,
+      vibrance: 8,
+      lumaNoiseReduction: 24,
+      colorNoiseReduction: 18,
+    },
+  },
+  {
+    labelKey: 'adjustments.basic.scene.prototypeWarmSunset',
+    values: {
+      exposure: 0.12,
+      contrast: 5,
+      highlights: -12,
+      shadows: 10,
+      temperature: 16,
+      tint: 0,
+      vibrance: 18,
+      saturation: 8,
+    },
+  },
+];
 
 interface ToneMapperSwitchProps {
   selectedMapper: string;
@@ -175,6 +246,7 @@ export default function BasicAdjustments({
   isForMask = false,
   onDragStateChange,
   appSettings,
+  onAutoAdjust,
 }: BasicAdjustmentsProps) {
   const { t } = useTranslation();
 
@@ -190,10 +262,47 @@ export default function BasicAdjustments({
     }));
   };
 
+  const applySceneEnhance = (target: SceneEnhanceOptions) => {
+    if (!target.values) return;
+    setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, ...target.values }));
+  };
+
   const hideTonemapper = isForMask || appSettings?.tonemapperOverrideEnabled;
 
   return (
     <div>
+      {!isForMask && (
+        <div className="p-2 bg-bg-tertiary rounded-md mb-4">
+          <Text variant={TextVariants.heading} className="mb-2">
+            {t('adjustments.basic.scene.title')}
+          </Text>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {onAutoAdjust && (
+              <button
+                type="button"
+                onClick={onAutoAdjust}
+                data-tooltip={t('adjustments.basic.scene.autoDesc')}
+                className={clsx(
+                  'px-2.5 py-1 text-xs rounded-md transition-colors',
+                  'bg-accent text-button-text hover:opacity-90',
+                )}
+              >
+                {t('adjustments.basic.scene.auto')}
+              </button>
+            )}
+            {SCENE_ENHANCE.map((preset) => (
+              <button
+                key={preset.labelKey}
+                type="button"
+                onClick={() => applySceneEnhance(preset)}
+                className="px-2.5 py-1 text-xs rounded-md bg-surface-secondary text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
+              >
+                {t(preset.labelKey)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {hideTonemapper ? (
         <Slider
           label={t('adjustments.basic.evShift')}

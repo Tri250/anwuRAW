@@ -346,6 +346,7 @@ export default function Controls() {
                     isWbPickerActive={isWbPickerActive}
                     toggleWbPicker={toggleWbPicker}
                     onDragStateChange={onDragStateChange}
+                    onAutoAdjust={handleAutoAdjustments}
                   />
                 </CollapsibleSection>
               </div>
