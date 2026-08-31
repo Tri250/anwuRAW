@@ -450,6 +450,10 @@ export const useAppInitialization = ({
 
   useEffect(() => {
     const root = document.documentElement;
+
+    // 标记运行平台，便于 CSS 针对 Android / 触屏做细分适配
+    root.setAttribute('data-platform', osPlatform || 'desktop');
+
     const currentThemeId = theme || DEFAULT_THEME_ID;
 
     const baseTheme =
@@ -457,17 +461,37 @@ export const useAppInitialization = ({
       THEMES.find((t: ThemeProps) => t.id === DEFAULT_THEME_ID);
     if (!baseTheme) return;
 
-    const finalCssVariables: any = { ...baseTheme.cssVariables };
+    const finalCssVariables: Record<string, string> = { ...(baseTheme.cssVariables as any) };
+
+    // Android 深色主题 OLED 适配：使用更接近纯黑的背景，降低功耗并提升观感
+    if (osPlatform === 'android' && currentThemeId === Theme.Dark) {
+      finalCssVariables['--app-bg-primary'] = 'rgb(12, 12, 12)';
+      finalCssVariables['--app-surface'] = 'rgb(15, 15, 15)';
+      finalCssVariables['--app-bg-secondary'] = 'rgb(18, 18, 18)';
+      finalCssVariables['--app-card-active'] = 'rgb(28, 28, 28)';
+      finalCssVariables['--app-border-color'] = 'rgb(36, 36, 36)';
+    }
 
     Object.entries(finalCssVariables).forEach(([key, value]) => {
-      root.style.setProperty(key, value as string);
+      root.style.setProperty(key, value);
     });
 
-    const fontFamily = appSettings?.fontFamily || 'poppins';
-    const fontStack =
-      fontFamily === 'system'
-        ? '-apple-system, BlinkMacSystemFont, system-ui, sans-serif'
-        : "'Poppins', system-ui, sans-serif";
-    root.style.setProperty('--font-family', fontStack);
-  }, [theme, appSettings?.fontFamily]);
+    // 字体适配：
+    //  - Android / OPPO 等机型优先使用系统字体栈，避免依赖 Google Fonts 的 Poppins
+    //    在国内网络环境下加载失败导致缺字、闪烁或回退到不可读字体；
+    //  - 桌面端保持原有行为不变。
+    if (osPlatform === 'android') {
+      root.style.setProperty(
+        '--font-family',
+        "'HarmonyOS Sans SC', 'OPPO Sans', 'MiSans', 'Roboto', 'system-ui', sans-serif",
+      );
+    } else {
+      const fontFamily = appSettings?.fontFamily || 'poppins';
+      const fontStack =
+        fontFamily === 'system'
+          ? "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'system-ui', sans-serif"
+          : "'Poppins', system-ui, sans-serif";
+      root.style.setProperty('--font-family', fontStack);
+    }
+  }, [theme, appSettings?.fontFamily, osPlatform]);
 };

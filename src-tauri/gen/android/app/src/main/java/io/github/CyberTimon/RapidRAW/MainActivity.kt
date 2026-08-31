@@ -1,5 +1,6 @@
 package io.github.CyberTimon.RapidRAW
 
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -10,12 +11,19 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : TauriActivity() {
-  private val safeMarginBackgroundColor = Color.rgb(24, 24, 24)
+  // 深色主题与浅色主题下状态栏/导航栏区域的安全边缘背景色，
+  // 跟随系统深色模式，避免浅色模式下出现深色系统栏。
+  private var safeMarginBackgroundColor = Color.rgb(24, 24, 24)
   private var webView: WebView? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
+
+    val nightMode =
+      resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+    safeMarginBackgroundColor =
+      if (nightMode) Color.rgb(24, 24, 24) else Color.rgb(245, 245, 245)
 
     val rootView: View = findViewById(android.R.id.content)
     rootView.setBackgroundColor(safeMarginBackgroundColor)

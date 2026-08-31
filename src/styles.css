@@ -437,3 +437,40 @@
     text-shadow: 0 0 18px rgba(255, 255, 255, 0.3);
   }
 }
+
+/* ===== Android / 触屏 显示与排版适配 ===== */
+/* 由 useAppInitialization 根据运行平台在 <html> 上设置 data-platform */
+html[data-platform='android'] {
+  /* 温和放大基础字号（所有 rem 单位随之缩放），提升高密度屏幕上可读性 */
+  font-size: 106.25%;
+
+  /* 禁止 WebView 自动调整字号，避免破坏固定布局 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+
+  /* OPPO / 部分厂商字距偏窄，微调字母间距提升辨识度 */
+  letter-spacing: 0.012em;
+
+  /* 去掉触屏点击时灰色高亮 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+html[data-platform='android'] body {
+  /* 更舒适的行距 */
+  line-height: 1.55;
+
+  /* 更清晰的字体渲染 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* 触屏下避免长按误选中（输入区域除外） */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html[data-platform='android'] input,
+html[data-platform='android'] textarea,
+html[data-platform='android'] [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
