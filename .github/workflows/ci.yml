@@ -30,12 +30,12 @@ jobs:
             asset-prefix: '02_macos-arm64_tethering'
 
           # --- macOS Intel (last official runner) ---
-          - platform: 'macos-13'
+          - platform: 'macos-15-intel'
             target: x86_64-apple-darwin
             asset-prefix: '02_macos-intel'
 
           # --- macOS Intel + Tethering ---
-          - platform: 'macos-13'
+          - platform: 'macos-15-intel'
             target: x86_64-apple-darwin
             build-args: '--features tethering'
             asset-prefix: '02_macos-intel_tethering'

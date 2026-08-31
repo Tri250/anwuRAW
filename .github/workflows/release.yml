@@ -41,24 +41,24 @@ jobs:
           # --- Linux x86_64 (Ubuntu 22.04 LTS) ---
           - platform: 'ubuntu-22.04'
             target: ''
-            asset-prefix: '03_linux-x64'
+            asset-prefix: '03_linux-x64_22.04'
 
           # --- Linux x86_64 (Ubuntu 24.04 LTS) ---
           - platform: 'ubuntu-24.04'
             target: ''
-            asset-prefix: '03_linux-x64'
+            asset-prefix: '03_linux-x64_24.04'
 
           # --- Linux + Tethering (Ubuntu 22.04) ---
           - platform: 'ubuntu-22.04'
             target: ''
             args: '--features tethering'
-            asset-prefix: '03_linux-x64_tethering'
+            asset-prefix: '03_linux-x64_22.04_tethering'
 
           # --- Linux + Tethering (Ubuntu 24.04) ---
           - platform: 'ubuntu-24.04'
             target: ''
             args: '--features tethering'
-            asset-prefix: '03_linux-x64_tethering'
+            asset-prefix: '03_linux-x64_24.04_tethering'
 
           # --- Android ARM64-v8a (Ubuntu runner 交叉编译) ---
           - platform: 'ubuntu-latest'
