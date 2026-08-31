@@ -899,9 +899,15 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     setActivePresetId(preset.id);
     setPresetIntensity(100);
 
+    // 防御性过滤：如果预设未标记 includeMasks，移除 masks 和 aiPatches
+    // 防止预设意外覆盖用户当前工作区的蒙版/AI patch（数据保护）
+    const safePresetAdj = preset.includeMasks
+      ? preset.adjustments
+      : { ...preset.adjustments, masks: undefined, aiPatches: undefined };
+
     setAdjustments((prevAdjustments: Adjustments) => ({
       ...prevAdjustments,
-      ...preset.adjustments,
+      ...safePresetAdj,
     }));
   };
 
