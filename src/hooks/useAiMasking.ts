@@ -131,7 +131,7 @@ export function useAiMasking() {
       setEditor({ isGeneratingAi: true });
 
       try {
-        const newPatchDataJson: any = await invoke(Invokes.InvokeGenerativeReplaseWithMaskDef, {
+        const newPatchDataJson: any = await invoke(Invokes.InvokeGenerativeReplaceWithMaskDef, {
           currentAdjustments: adjustments,
           patchDefinition: patchDefinition,
           path: selectedImage.path,
@@ -223,7 +223,7 @@ export function useAiMasking() {
         };
 
         const patchDefinitionForBackend = updatedAdjustmentsForBackend.aiPatches.find((p: AiPatch) => p.id === patchId);
-        const newPatchDataJson: any = await invoke(Invokes.InvokeGenerativeReplaseWithMaskDef, {
+        const newPatchDataJson: any = await invoke(Invokes.InvokeGenerativeReplaceWithMaskDef, {
           currentAdjustments: updatedAdjustmentsForBackend,
           patchDefinition: { ...patchDefinitionForBackend, prompt: '' },
           path: selectedImage.path,

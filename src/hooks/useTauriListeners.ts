@@ -155,6 +155,13 @@ export function useTauriListeners({
       listen('indexing-progress', (event: any) => {
         if (isEffectActive) useProcessStore.getState().setProcess({ indexingProgress: event.payload });
       }),
+      listen('indexing-error', (event: any) => {
+        if (isEffectActive) {
+          useProcessStore.getState().setProcess({ isIndexing: false, indexingProgress: { current: 0, total: 0 } });
+          const msg = typeof event.payload === 'string' ? event.payload : String(event.payload ?? '');
+          toast.error(`索引失败：${msg}`);
+        }
+      }),
       listen('indexing-finished', () => {
         if (isEffectActive) {
           useProcessStore.getState().setProcess({ isIndexing: false, indexingProgress: { current: 0, total: 0 } });
@@ -271,6 +278,18 @@ export function useTauriListeners({
               finalImageBase64: event.payload.base64,
               isProcessing: false,
               progressMessage: null,
+            },
+          }));
+        }
+      }),
+      listen('panorama-warning', (event: any) => {
+        if (isEffectActive) {
+          const msg = typeof event.payload === 'string' ? event.payload : String(event.payload ?? '');
+          toast.warn(`全景拼接警告：${msg}`);
+          useUIStore.getState().setUI((state) => ({
+            panoramaModalState: {
+              ...state.panoramaModalState,
+              progressMessage: msg,
             },
           }));
         }
