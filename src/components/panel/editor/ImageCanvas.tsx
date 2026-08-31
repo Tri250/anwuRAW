@@ -12,6 +12,7 @@ import { useOsPlatform } from '../../../hooks/useOsPlatform';
 import { useTranslation } from 'react-i18next';
 import type { OverlayMode } from '../right/CropPanel';
 import CompositionOverlays from './overlays/CompositionOverlays';
+import CloneSourceHandle from './CloneSourceHandle';
 import { calculateStraightenAngle } from '../../../utils/cropUtils';
 import { rgbToHsl, hueToColorKey, median, srgbToLinear } from '../../../utils/colorUtils';
 
@@ -2657,6 +2658,21 @@ const ImageCanvas = memo(
       setCursorPreview((p: CursorPreview) => ({ ...p, visible: false }));
     }, []);
 
+    const handleCloneSourceMove = useCallback(
+      (sx: number, sy: number) => {
+        const activeId = isMasking ? activeMaskId : activeAiSubMaskId;
+        if (!activeId || !activeSubMask) return;
+        updateSubMask(activeId, {
+          parameters: { ...activeSubMask.parameters, sourceX: sx, sourceY: sy },
+        });
+      },
+      [activeSubMask, isMasking, activeMaskId, activeAiSubMaskId, updateSubMask],
+    );
+
+    const handleCloneSourceCommit = useCallback(() => {
+      // 源点坐标已通过 onMove 实时写回，提交阶段无需额外动作
+    }, []);
+
     useEffect(() => {
       if (!isToolActive) return;
 
@@ -3019,19 +3035,31 @@ const ImageCanvas = memo(
                 activeSubMask.parameters?.sourceX !== undefined &&
                 activeSubMask.parameters?.sourceY !== undefined && (
                   <div
-                    className="absolute pointer-events-auto rounded-full"
+                    className="pointer-events-auto"
                     style={{
+                      position: 'absolute',
                       left:
-                        (activeSubMask.parameters.sourceX - cropX) * imageRenderSize.scale + imageRenderSize.offsetX,
-                      top: (activeSubMask.parameters.sourceY - cropY) * imageRenderSize.scale + imageRenderSize.offsetY,
-                      width: 32,
-                      height: 32,
+                        (activeSubMask.parameters.sourceX - cropX) * imageRenderSize.scale +
+                        imageRenderSize.offsetX,
+                      top:
+                        (activeSubMask.parameters.sourceY - cropY) * imageRenderSize.scale +
+                        imageRenderSize.offsetY,
                       transform: `translate(-50%, -50%) scale(${1 / maxSafeScale})`,
                       transformOrigin: 'center',
-                      cursor: 'crosshair',
+                      zIndex: 5,
                     }}
                     data-tooltip={t('editor.masks.tooltips.selectNewSourcePoint', { modifier: modifierKey })}
-                  />
+                  >
+                    <CloneSourceHandle
+                      sx={activeSubMask.parameters.sourceX}
+                      sy={activeSubMask.parameters.sourceY}
+                      imageScale={imageRenderSize.scale}
+                      imageWidth={effectiveImageDimensions.width}
+                      imageHeight={effectiveImageDimensions.height}
+                      onMove={handleCloneSourceMove}
+                      onCommit={handleCloneSourceCommit}
+                    />
+                  </div>
                 )}
             </div>
           </div>
