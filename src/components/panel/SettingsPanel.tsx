@@ -321,7 +321,7 @@ const CloudDashboard = () => {
       try {
         const token = null;
         if (!token) return;
-        const res = await fetch(''' /* removed: cloud API endpoint */', {
+        const res = await fetch('', {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {

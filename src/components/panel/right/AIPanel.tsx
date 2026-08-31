@@ -210,7 +210,7 @@ const ConnectionStatus = ({
   let hoverContent: React.ReactNode = null;
 
   // Cloud AI provider removed: local ONNX + optional self-host ai-connector.
- else if (aiProvider === 'ai-connector') {
+  if (aiProvider === 'ai-connector') {
     titleText = t('editor.ai.connection.connectorLabel');
     if (isAIConnectorConnected) {
       statusColor = 'bg-green-500';
@@ -330,7 +330,7 @@ export default function AIPanel() {
         const token = null;
         if (!token) return;
 
-        const res = await fetch(''' /* removed: cloud API endpoint */', {
+        const res = await fetch('', {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
