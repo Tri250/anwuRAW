@@ -315,19 +315,53 @@ pub async fn generate_manual_cleanup_patch(
         }
 
         let omega = 1.6f32;
-        let iterations = 400;
+        // 自适应迭代：区域越小/越早收敛越快结束，端侧实时性更好。
+        // 仅对“尚未收敛”的像素继续迭代（连续两轮变化都很小则剔除）
+        let eps = 0.05f32;
+        let max_iterations = 400usize;
+        let mut active_coords = omega_coords.clone();
+        let mut stable_sweeps = vec![0u8; active_coords.len()];
 
-        for _ in 0..iterations {
-            for &(x, y) in &omega_coords {
+        for _ in 0..max_iterations {
+            let mut next_active = Vec::with_capacity(active_coords.len());
+            let mut max_delta = 0.0f32;
+
+            for (i, &(x, y)) in active_coords.iter().enumerate() {
                 let idx = y * bw + x;
                 let sum_r = v_r[idx - bw] + v_r[idx + bw] + v_r[idx - 1] + v_r[idx + 1];
                 let sum_g = v_g[idx - bw] + v_g[idx + bw] + v_g[idx - 1] + v_g[idx + 1];
                 let sum_b = v_b[idx - bw] + v_b[idx + bw] + v_b[idx - 1] + v_b[idx + 1];
 
-                v_r[idx] = (1.0 - omega) * v_r[idx] + omega * 0.25 * sum_r;
-                v_g[idx] = (1.0 - omega) * v_g[idx] + omega * 0.25 * sum_g;
-                v_b[idx] = (1.0 - omega) * v_b[idx] + omega * 0.25 * sum_b;
+                let nb_r = (1.0 - omega) * v_r[idx] + omega * 0.25 * sum_r;
+                let nb_g = (1.0 - omega) * v_g[idx] + omega * 0.25 * sum_g;
+                let nb_b = (1.0 - omega) * v_b[idx] + omega * 0.25 * sum_b;
+
+                let d_r = (nb_r - v_r[idx]).abs();
+                let d_g = (nb_g - v_g[idx]).abs();
+                let d_b = (nb_b - v_b[idx]).abs();
+                let d = d_r.max(d_g.max(d_b));
+                if d > max_delta {
+                    max_delta = d;
+                }
+
+                v_r[idx] = nb_r;
+                v_g[idx] = nb_g;
+                v_b[idx] = nb_b;
+
+                if d <= eps && stable_sweeps[i] < 2 {
+                    stable_sweeps[i] += 1;
+                    next_active.push((x, y));
+                } else if d > eps {
+                    stable_sweeps[i] = 0;
+                    next_active.push((x, y));
+                }
             }
+
+            // 所有像素已收敛（连续两轮残差很小）则提前结束，避免无效空转
+            if next_active.is_empty() || max_delta < eps {
+                break;
+            }
+            active_coords = next_active;
         }
         for &(x, y) in &omega_coords {
             let img_x = (min_x as i32 + x as i32 - 1) as u32;

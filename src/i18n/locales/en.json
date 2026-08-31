@@ -424,6 +424,7 @@
         "inpaintSelectionButton": "Inpaint Selection",
         "invertComponent": "Invert Component",
         "invertSelection": "Invert Selection",
+        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device.",
         "placeholder": "e.g., a field of flowers",
         "quickEraseDesc": "Fill selection to remove the object.",
         "selectionPropertiesTitle": "Selection Properties",

@@ -121,7 +121,16 @@ export function useAiMasking() {
       if (!patch) return;
 
       const patchDefinition = { ...patch, prompt };
-      const token = await getToken();
+      // 仅在走云端/远端生成（非端侧快速涂画）时才获取鉴权 token；
+      // 端侧 Lama 模型修复完全本地执行，无需登录，避免断网/未登录时阻断可用性。
+      let token: string | null = null;
+      if (!useFastInpaint) {
+        try {
+          token = await getToken();
+        } catch (_err) {
+          token = null;
+        }
+      }
 
       setAdjustments((prev: Adjustments) => ({
         ...prev,
@@ -176,13 +185,13 @@ export function useAiMasking() {
       const { selectedImage, adjustments, isGeneratingAi, patchesSentToBackend } = useEditorStore.getState();
       if (!selectedImage?.path || isGeneratingAi) return;
       const startPath = selectedImage.path;
-      const token = await getToken();
 
       const patchId = adjustments.aiPatches.find((p: AiPatch) =>
         p.subMasks.some((sm: SubMask) => sm.id === subMaskId),
       )?.id;
       if (!patchId) return;
 
+      // 快速涂画始终使用端侧 Lama 模型，完全本地执行，无需云 token。
       setEditor({ isGeneratingAi: true });
       setAdjustments((prev: Partial<Adjustments>) => ({
         ...prev,
@@ -228,7 +237,7 @@ export function useAiMasking() {
           patchDefinition: { ...patchDefinitionForBackend, prompt: '' },
           path: selectedImage.path,
           useFastInpaint: true,
-          token: token || null,
+          token: null,
         });
 
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;

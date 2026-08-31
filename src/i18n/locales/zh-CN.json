@@ -415,6 +415,7 @@
         "inpaintSelectionButton": "修复选区",
         "invertComponent": "反转组件",
         "invertSelection": "反转选区",
+        "onDeviceNotice": "端侧 AI 修复：离线可用，照片数据不离开本设备。",
         "placeholder": "例如，一片花海",
         "quickEraseDesc": "填充选区以移除对象。",
         "selectionPropertiesTitle": "选区属性",

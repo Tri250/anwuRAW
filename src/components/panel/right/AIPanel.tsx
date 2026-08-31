@@ -31,6 +31,7 @@ import {
   Send,
   FolderOpen,
   SquaresIntersect,
+  ShieldCheck,
 } from 'lucide-react';
 
 import CollapsibleSection from '../../ui/CollapsibleSection';
@@ -2023,17 +2024,26 @@ function SettingsPanel({
             </Text>
 
             <div>
-              <Switch
-                checked={useFastInpaint}
-                disabled={!isGenerativeAvailable}
-                label={t('editor.ai.settings.useBasicInpaint')}
-                onChange={setUseFastInpaint}
-                tooltip={
-                  !isGenerativeAvailable
-                    ? t('editor.ai.settings.basicInpaintTooltipDisabled')
-                    : t('editor.ai.settings.basicInpaintTooltipEnabled')
-                }
-              />
+              {isGenerativeAvailable ? (
+                <Switch
+                  checked={useFastInpaint}
+                  disabled={!isGenerativeAvailable}
+                  label={t('editor.ai.settings.useBasicInpaint')}
+                  onChange={setUseFastInpaint}
+                  tooltip={t('editor.ai.settings.basicInpaintTooltipEnabled')}
+                />
+              ) : (
+                <Text
+                  as="div"
+                  variant={TextVariants.small}
+                  color={TextColors.accent}
+                  weight={TextWeights.medium}
+                  className="p-3 bg-card-active rounded-md border border-surface flex items-center gap-2"
+                >
+                  <ShieldCheck size={16} className="shrink-0" />
+                  <span>{t('editor.ai.settings.onDeviceNotice')}</span>
+                </Text>
+              )}
 
               <AnimatePresence>
                 {!useFastInpaint && (
