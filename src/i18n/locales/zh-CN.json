@@ -10,7 +10,13 @@
         "agx": "AgX",
         "agxDesc": "电影感色调映射",
         "basic": "基础",
-        "basicDesc": "标准色调映射"
+        "basicDesc": "标准色调映射",
+        "filmic": "Filmic Pro 电影化",
+        "filmicDesc": "Uncharted 2 算法 — 保留高光细节，电影质感",
+        "gamma": "Gamma 2.2 标准",
+        "gammaDesc": "纯 sRGB Gamma 曲线 — 最少处理，色彩基线最准确",
+        "reinhard": "Reinhard 经典",
+        "reinhardDesc": "简单可靠 — 适合低端设备运行"
       },
       "reset": "重置",
       "shadows": "阴影",
@@ -382,7 +388,8 @@
         "feather": "羽化",
         "grow": "扩展",
         "intensity": "强度",
-        "pressure": "压力"
+        "pressure": "压力",
+        "decontaminate": "边缘净化"
       },
       "patches": {
         "aiEdit": "AI 编辑 {{count}}",
@@ -532,7 +539,8 @@
         "switchToLandscape": "切换为横向",
         "switchToPortrait": "切换为纵向",
         "transform": "透视和梯形校正"
-      }
+      },
+      "autoCropAfterRotate": "旋转后自动裁剪黑边"
     },
     "externalEdit": {
       "done": "完成",
@@ -669,7 +677,9 @@
         "clickToOpenTooltip": "点击在新标签页中打开地图",
         "latitude": "纬度",
         "longitude": "经度",
-        "title": "GPS 位置"
+        "title": "GPS 位置",
+        "offlineMapLabel": "离线世界地图，显示照片定位标记",
+        "openOnlineMap": "打开在线地图"
       },
       "organization": {
         "addTagPlaceholder": "添加标签...",
@@ -802,6 +812,17 @@
       "removeGps": "移除 GPS 数据",
       "saveWithMetadata": "保存时包含元数据"
     },
+    "color": {
+      "bitDepth": "位深",
+      "bitDepth16Desc": "文件更大，无色调断裂，适合继续编辑",
+      "bitDepth8Desc": "文件更小，标准屏幕显示",
+      "colorSpace": "色彩空间",
+      "colorSpaceDesc_adobeRgb": "广泛用于打印与摄影流程",
+      "colorSpaceDesc_displayP3": "广色域 — 适合苹果 / HDR 显示器",
+      "colorSpaceDesc_proPhoto": "最大色域 — 专业归档用途",
+      "colorSpaceDesc_srgb": "网页与绝大多数屏幕的标准",
+      "jpgIccWarning": "JPEG 非 sRGB 时会嵌入 ICC 配置文件；部分看图软件可能仍按 sRGB 显示。"
+    },
     "resize": {
       "dontEnlarge": "不放大",
       "modes": {
@@ -819,7 +840,8 @@
       "fileSettings": "文件设置",
       "imageSizing": "图像大小",
       "metadata": "元数据",
-      "watermark": "水印"
+      "watermark": "水印",
+      "color": "色彩输出"
     },
     "status": {
       "cancelExport": "取消导出",
@@ -1732,7 +1754,10 @@
         "title": "图像预处理",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "基础"
+          "basic": "基础",
+          "filmic": "Filmic Pro 电影化",
+          "gamma": "Gamma 2.2 标准",
+          "reinhard": "Reinhard 经典"
         },
         "tonemapperOverride": "全局色调映射覆盖",
         "tonemapperOverrideDesc": "为所有图像全局强制使用特定的色调映射器，从调整面板中隐藏色调映射器开关。"

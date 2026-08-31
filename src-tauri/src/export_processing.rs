@@ -61,18 +61,15 @@ pub struct ResizeOptions {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub enum ExportColorSpace {
+    #[default]
     Srgb,
     DisplayP3,
     AdobeRgb,
     ProPhoto,
 }
 
-impl Default for ExportColorSpace {
-    fn default() -> Self {
-        Self::Srgb
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -616,19 +613,19 @@ fn encode_grayscale_to_png(bitmap: &GrayImage) -> Result<Vec<u8>, String> {
 const SRGB_TO_XYZ: [[f32; 3]; 3] = [
     [0.4124564, 0.3575761, 0.1804375],
     [0.2126729, 0.7151522, 0.0721750],
-    [0.0193339, 0.1191920, 0.9503041],
+    [0.0193339, 0.119_192, 0.9503041],
 ];
 
 // XYZ(D65) → Display P3 (Apple)
 const XYZ_TO_DISPLAY_P3: [[f32; 3]; 3] = [
-    [ 2.4934969, -0.9313836, -0.4027108],
-    [-0.8294890,  1.7626641,  0.0236247],
+    [ 2.493_497, -0.9313836, -0.4027108],
+    [-0.829_489,  1.7626641,  0.0236247],
     [ 0.0358458, -0.0761724,  0.9568845],
 ];
 
 // XYZ(D65) → Adobe RGB (1998)
 const XYZ_TO_ADOBE_RGB: [[f32; 3]; 3] = [
-    [ 2.0415879, -0.5650070, -0.3473250],
+    [ 2.0415879, -0.565_007, -0.347_325],
     [-0.9692436,  1.8759675,  0.0415551],
     [ 0.0134443, -0.1183624,  1.0151749],
 ];
@@ -638,8 +635,8 @@ const XYZ_TO_ADOBE_RGB: [[f32; 3]; 3] = [
 // 由 primaries + wp 精确推导：XYZ→primary 逆矩阵
 const XYZ_TO_PRO_PHOTO: [[f32; 3]; 3] = [
     [ 1.3904536, -0.2640605, -0.0528020],
-    [-0.5376556,  1.4889391,  0.0202733],
-    [ 0.0000000,  0.0000000,  0.9182250],
+    [-0.5376556,  1.488_939,  0.0202733],
+    [ 0.0000000,  0.0000000,  0.918_225],
 ];
 
 fn mat_mul_3x3(a: [[f32; 3]; 3], b: [[f32; 3]; 3]) -> [[f32; 3]; 3] {

@@ -10,7 +10,13 @@
         "agx": "AgX",
         "agxDesc": "Mappage des tons type film",
         "basic": "Standard",
-        "basicDesc": "Mappage des tons standard"
+        "basicDesc": "Mappage des tons standard",
+        "filmic": "Filmic Pro",
+        "filmicDesc": "Uncharted 2 — preserves highlight detail, filmic look",
+        "gamma": "Gamma 2.2",
+        "gammaDesc": "Pure sRGB gamma — minimal processing, most accurate baseline",
+        "reinhard": "Reinhard",
+        "reinhardDesc": "Simple & reliable — best for low-end devices"
       },
       "reset": "Réinitialiser",
       "shadows": "Ombres",
@@ -398,7 +404,8 @@
         "feather": "Contour progressif",
         "grow": "Agrandir",
         "intensity": "Intensité",
-        "pressure": "Pression"
+        "pressure": "Pression",
+        "decontaminate": "Edge Cleanup"
       },
       "patches": {
         "aiEdit": "Retouche IA {{count}}",
@@ -441,7 +448,8 @@
         "placeholder": "ex. : un champ de fleurs",
         "quickEraseDesc": "Remplir la sélection pour supprimer l'objet.",
         "selectionPropertiesTitle": "Propriétés de sélection",
-        "useBasicInpaint": "Utiliser l'inpainting simple"
+        "useBasicInpaint": "Utiliser l'inpainting simple",
+        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
       "touchUpTitle": "Retouches"
     },
@@ -553,7 +561,8 @@
         "switchToLandscape": "Basculer en paysage",
         "switchToPortrait": "Basculer en portrait",
         "transform": "Correction de perspective et de trapèze"
-      }
+      },
+      "autoCropAfterRotate": "Auto-crop black borders after rotation"
     },
     "externalEdit": {
       "done": "Terminé",
@@ -691,7 +700,9 @@
         "clickToOpenTooltip": "Cliquer pour ouvrir la carte dans un nouvel onglet",
         "latitude": "Latitude",
         "longitude": "Longitude",
-        "title": "Localisation GPS"
+        "title": "Localisation GPS",
+        "offlineMapLabel": "Offline world map with photo location marker",
+        "openOnlineMap": "Open online map"
       },
       "organization": {
         "addTagPlaceholder": "Ajouter une étiquette...",
@@ -842,7 +853,8 @@
       "fileSettings": "Paramètres du fichier",
       "imageSizing": "Taille de l'image",
       "metadata": "Métadonnées",
-      "watermark": "Filigrane"
+      "watermark": "Filigrane",
+      "color": "Color Output"
     },
     "status": {
       "cancelExport": "Annuler l'exportation",
@@ -884,6 +896,17 @@
       "scale": "Échelle",
       "spacing": "Espacement",
       "watermarkImage": "Image en filigrane"
+    },
+    "color": {
+      "bitDepth": "Bit Depth",
+      "bitDepth16Desc": "Larger files, posterization-free editing",
+      "bitDepth8Desc": "Smaller files, standard display",
+      "colorSpace": "Color Space",
+      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
+      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
+      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
+      "colorSpaceDesc_srgb": "Standard for the web and most screens",
+      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
     }
   },
   "library": {
@@ -926,7 +949,8 @@
       "syncZoomAndPan": "Synchroniser le zoom et le panoramique",
       "tags": "Tags",
       "toggleFit": "Basculer 1:1 / Ajuster",
-      "vc": "CV"
+      "vc": "CV",
+      "shutterSpeed": "Shutter Speed"
     },
     "filters": {
       "edited": {
@@ -1071,7 +1095,6 @@
     "splash": {
       "addFolder": "Ajouter un dossier",
       "brand": "anwuRAW",
-
       "continueSession": "Poursuivre la session",
       "descriptionAndroid": "Un éditeur d'images RAW ultra-rapide, accéléré par GPU. Ouvrez la bibliothèque pour commencer.",
       "descriptionDesktop": "Un éditeur d'images RAW ultra-rapide, accéléré par GPU. Ouvrez un dossier pour commencer.",
@@ -1767,7 +1790,10 @@
         "title": "Prétraitement de l'image",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "Standard"
+          "basic": "Standard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2",
+          "reinhard": "Reinhard"
         },
         "tonemapperOverride": "Surcharge globale du mappeur de tons",
         "tonemapperOverrideDesc": "Forcer un mappeur de tons spécifique de manière globale pour toutes les images, masquant le sélecteur de mappeur de tons dans le panneau des ajustements."
