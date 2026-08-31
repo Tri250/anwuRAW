@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { toast } from 'react-toastify';
 import { Status } from '../components/ui/ExportImportProperties';
 import { useProcessStore } from '../store/useProcessStore';
 import { useEditorStore } from '../store/useEditorStore';
@@ -140,6 +141,12 @@ export function useTauriListeners({
       }),
       listen('ai-model-download-finish', () => {
         if (isEffectActive) useProcessStore.getState().setProcess({ aiModelDownloadStatus: null });
+      }),
+      listen('ai-model-download-error', (event: any) => {
+        if (isEffectActive) {
+          useProcessStore.getState().setProcess({ aiModelDownloadStatus: null });
+          toast.error(`模型 ${event.payload ?? ''} 下载失败，请检查网络或模型源后重试`);
+        }
       }),
       listen('indexing-started', () => {
         if (isEffectActive)

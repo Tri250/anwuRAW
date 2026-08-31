@@ -367,7 +367,10 @@ export default function AIPanel() {
         const token = await getToken();
         if (!token) return;
 
-        const res = await fetch('http://127.0.0.1:5000/usage', {
+        const base = appSettings?.aiConnectorAddress
+          ? `http://${appSettings.aiConnectorAddress}`
+          : 'http://127.0.0.1:5000';
+        const res = await fetch(`${base}/usage`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {

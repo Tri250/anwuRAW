@@ -21,15 +21,18 @@ use tokio::sync::Mutex as TokioMutex;
 // --- 模型仓库端点（按「国内优先」排序） ---
 // hf-mirror.com 是官方 HuggingFace Hub API 兼容镜像，国内访问速度快
 // huggingface.co 是官方主站，作为降级后备
+// 兜底仓库（上游官方，保留以保证历史兼容）
 const MODEL_REPO: &str = "CyberTimon/RapidRAW-Models";
+// 自建仓库（优先）。改为你自己的 HF 仓库并推送 7 个 .onnx 后，即可完全脱离上游。
+const SELF_HOSTED_REPO: Option<&str> = Some("Tri250/anwuRAW-Models");
 const HF_MIRROR_ENDPOINT: &str = "https://hf-mirror.com";
 const HF_OFFICIAL_ENDPOINT: &str = "https://huggingface.co";
 
-fn build_hf_url(endpoint: &str, filename: &str) -> String {
+fn build_hf_url(endpoint: &str, repo: &str, filename: &str) -> String {
     format!(
         "{}/{}/resolve/main/{}?download=true",
         endpoint.trim_end_matches('/'),
-        MODEL_REPO,
+        repo,
         filename
     )
 }
@@ -244,6 +247,7 @@ fn persist_downloaded_asset(dest: &Path, bytes: &[u8]) -> Result<()> {
 
 async fn download_model_with_endpoints(
     endpoints: &[String],
+    repos: &[&str],
     filename: &str,
     dest: &Path,
 ) -> Result<()> {
@@ -252,31 +256,33 @@ async fn download_model_with_endpoints(
 
     let mut last_error: Option<anyhow::Error> = None;
 
-    for endpoint in endpoints {
-        let url = build_hf_url(endpoint, filename);
-        for attempt in 1..=MAX_RETRIES_PER_ENDPOINT {
-            println!(
-                "[AI] Downloading {} from {} (attempt {}/{})",
-                filename, endpoint, attempt, MAX_RETRIES_PER_ENDPOINT
-            );
-            match download_single(&url, dest).await {
-                Ok(_) => {
-                    // 成功后把 last_error 清掉，不再尝试其它端点
-                    return Ok(());
-                }
-                Err(e) => {
-                    last_error = Some(anyhow::anyhow!(
-                        "Endpoint {} attempt {} failed: {}",
-                        endpoint,
-                        attempt,
-                        e
-                    ));
-                    // 最后一次尝试失败就换端点
-                    if attempt < MAX_RETRIES_PER_ENDPOINT {
-                        tokio::time::sleep(tokio::time::Duration::from_millis(
-                            RETRY_BACKOFF_MS * attempt as u64,
-                        ))
-                        .await;
+    // 先遍历自建仓库（优先），再遍历兜底仓库
+    for repo in repos {
+        for endpoint in endpoints {
+            let url = build_hf_url(endpoint, repo, filename);
+            for attempt in 1..=MAX_RETRIES_PER_ENDPOINT {
+                println!(
+                    "[AI] Downloading {} from {}/{} (attempt {}/{})",
+                    filename, endpoint, repo, attempt, MAX_RETRIES_PER_ENDPOINT
+                );
+                match download_single(&url, dest).await {
+                    Ok(_) => {
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        last_error = Some(anyhow::anyhow!(
+                            "Repo {} endpoint {} attempt {} failed: {}",
+                            repo,
+                            endpoint,
+                            attempt,
+                            e
+                        ));
+                        if attempt < MAX_RETRIES_PER_ENDPOINT {
+                            tokio::time::sleep(tokio::time::Duration::from_millis(
+                                RETRY_BACKOFF_MS * attempt as u64,
+                            ))
+                            .await;
+                        }
                     }
                 }
             }
@@ -396,7 +402,25 @@ async fn download_and_verify_model(
             SKYSEG_SHA256,
         )?;
     }
+
+    // 离线兜底：若安装包已内置模型（resources/ 或 assets/），直接复制使用，零网络依赖
+    if let Ok(resource_dir) = app_handle.path().resource_dir() {
+        let bundled = resource_dir.join(filename);
+        if bundled.exists() && verify_sha256(&bundled, expected_hash).unwrap_or(false) {
+            println!("[AI] Using bundled model {} (offline).", model_name);
+            let _ = fs::copy(&bundled, &dest_path);
+            let _ = app_handle.emit("ai-model-download-finish", model_name);
+            return Ok(());
+        }
+    }
+
     let is_valid = verify_sha256(&dest_path, expected_hash)?;
+
+    // 自建仓库优先，上游仓库兜底
+    let repos: &[&str] = match SELF_HOSTED_REPO {
+        Some(r) => &[r, MODEL_REPO],
+        None => &[MODEL_REPO],
+    };
 
     if !is_valid {
         if dest_path.exists() {
@@ -404,10 +428,15 @@ async fn download_and_verify_model(
             fs::remove_file(&dest_path)?;
         }
         let _ = app_handle.emit("ai-model-download-start", model_name);
-        let download_result =
-            download_model_with_endpoints(endpoints, filename, &dest_path).await;
-        let _ = app_handle.emit("ai-model-download-finish", model_name);
-        download_result?;
+        match download_model_with_endpoints(endpoints, repos, filename, &dest_path).await {
+            Ok(()) => {
+                let _ = app_handle.emit("ai-model-download-finish", model_name);
+            }
+            Err(e) => {
+                let _ = app_handle.emit("ai-model-download-error", model_name);
+                return Err(e);
+            }
+        }
 
         if !verify_sha256(&dest_path, expected_hash)? {
             return Err(anyhow::anyhow!(
@@ -635,9 +664,14 @@ pub async fn get_or_init_clip_models(
 
     let clip_tokenizer_path = models_dir.join(CLIP_TOKENIZER_FILENAME);
     if !clip_tokenizer_path.exists() {
+        // 自建仓库优先，上游仓库兜底
+        let repos: &[&str] = match SELF_HOSTED_REPO {
+            Some(r) => &[r, MODEL_REPO],
+            None => &[MODEL_REPO],
+        };
         let _ = app_handle.emit("ai-model-download-start", "CLIP Tokenizer");
         let download_result =
-            download_model_with_endpoints(&endpoints, CLIP_TOKENIZER_FILENAME, &clip_tokenizer_path)
+            download_model_with_endpoints(&endpoints, repos, CLIP_TOKENIZER_FILENAME, &clip_tokenizer_path)
                 .await;
         let _ = app_handle.emit("ai-model-download-finish", "CLIP Tokenizer");
         download_result?;

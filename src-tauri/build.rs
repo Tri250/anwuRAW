@@ -198,19 +198,33 @@ fn main() {
             // 国内优先：hf-mirror 镜像 + HuggingFace 官方降级
             const HF_MIRROR: &str = "https://hf-mirror.com";
             const HF_OFFICIAL: &str = "https://huggingface.co";
+            // 自建仓库（优先），上游仓库兜底。改为你自己的仓库并推送 onnxruntime 后可脱离上游。
+            const ONNX_REPO_SELF: Option<&str> = Some("Tri250/anwuRAW-Assets");
             let endpoints: &[&str] = &[HF_MIRROR, HF_OFFICIAL];
-            let repo_path = "CyberTimon/RapidRAW-Models";
             let filename = format!("onnxruntimes-v1.22.0/{}", download_filename);
             println!("cargo:warning=Endpoints: {:?}", endpoints);
 
-            if let Err(e) = download_and_verify(
-                endpoints,
-                repo_path,
-                &filename,
-                &dest_path,
-                expected_hash,
-            ) {
-                panic!("Failed to download and verify ONNX Runtime library: {}", e);
+            let repos: &[&str] = match ONNX_REPO_SELF {
+                Some(r) => &[r, "CyberTimon/RapidRAW-Models"],
+                None => &["CyberTimon/RapidRAW-Models"],
+            };
+            let mut ort_downloaded = false;
+            for repo in repos {
+                if download_and_verify(
+                    endpoints,
+                    repo,
+                    &filename,
+                    &dest_path,
+                    expected_hash,
+                )
+                .is_ok()
+                {
+                    ort_downloaded = true;
+                    break;
+                }
+            }
+            if !ort_downloaded {
+                panic!("Failed to download and verify ONNX Runtime library: all sources exhausted");
             }
         }
     }
