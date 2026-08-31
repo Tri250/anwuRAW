@@ -205,10 +205,10 @@ const ConnectionStatus = ({
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
 
-  let statusColor = 'bg-green-500';
-  let statusText = t('editor.ai.connection.ready');
-  let titleText = t('editor.ai.connection.backendLabel');
-  let hoverContent: React.ReactNode = null;
+  let statusColor: string;
+  let statusText: string;
+  let titleText: string;
+  let hoverContent: React.ReactNode;
 
   if (aiProvider === 'cloud') {
     titleText = t('editor.ai.connection.cloudLabel');
@@ -492,7 +492,14 @@ export default function AIPanel() {
       hasPerformedInitialSelection.current = true;
       setIsSettingsPanelEverOpened(true);
     }
-  }, [activePatchContainerId, activeSubMaskId, adjustments.aiPatches, onSelectPatchContainer, onSelectSubMask, selectedImage?.path]);
+  }, [
+    activePatchContainerId,
+    activeSubMaskId,
+    adjustments.aiPatches,
+    onSelectPatchContainer,
+    onSelectSubMask,
+    selectedImage?.path,
+  ]);
 
   useEffect(() => {
     const handler = () => {
@@ -534,9 +541,9 @@ export default function AIPanel() {
     setAdjustments((prev: Adjustments) => ({ ...prev, aiPatches: [] }));
   };
 
-  const createMaskLogic = (type: Mask, mode: SubMaskMode = SubMaskMode.Additive) => {
-    if (!selectedImage) return createSubMask(type, {} as any, mode);
-    const subMask = createSubMask(type, selectedImage, mode);
+  const createMaskLogic = (type: Mask, mode: SubMaskMode = SubMaskMode.Additive): SubMask => {
+    if (!selectedImage) return createSubMask(type, {} as any, mode) as SubMask;
+    const subMask = createSubMask(type, selectedImage, mode) as SubMask;
 
     const steps = adjustments?.orientationSteps || 0;
     const isRotated = steps === 1 || steps === 3;
@@ -1570,7 +1577,7 @@ function ContainerRow({
         >
           {isStandalone ? (
             (() => {
-              const StandaloneIcon = MASK_ICON_MAP[firstSubMask.type] || Circle;
+              const StandaloneIcon = MASK_ICON_MAP[firstSubMask.type as Mask] || Circle;
               return <StandaloneIcon size={18} />;
             })()
           ) : isExpanded ? (
@@ -1739,7 +1746,7 @@ function SubMaskRow({
     setNodeRef(node);
     setDroppableRef(node);
   };
-  const MaskIcon = MASK_ICON_MAP[subMask.type] || Circle;
+  const MaskIcon = MASK_ICON_MAP[subMask.type as Mask] || Circle;
   const { showContextMenu } = useContextMenu();
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

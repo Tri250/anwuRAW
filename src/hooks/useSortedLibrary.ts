@@ -201,7 +201,7 @@ function computeGroupedLibrary(libraryState: any, settingsState: any): GroupedLi
 
   list.sort((a, b) => {
     const { key, order } = sortCriteria;
-    let comparison = 0;
+    let comparison: number;
 
     switch (key) {
       case 'date_taken': {

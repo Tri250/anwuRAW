@@ -24,7 +24,11 @@ import Slider from '../../ui/Slider';
 import { TEXT_COLOR_KEYS, TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
-import { calculateAreaPreservingCrop, calculateCenteredCrop } from '../../../utils/cropUtils';
+import {
+  calculateAreaPreservingCrop,
+  calculateCenteredCrop,
+  calculateAutoCropForRotation,
+} from '../../../utils/cropUtils';
 import { Crop } from 'react-image-crop';
 
 const BASE_RATIO = 1.618;
@@ -146,7 +150,7 @@ export default function CropPanel() {
 
     if (autoCropTimerRef.current) clearTimeout(autoCropTimerRef.current);
     autoCropTimerRef.current = setTimeout(() => {
-      const ratio = aspectRatio || (selectedImage.width / selectedImage.height);
+      const ratio = aspectRatio || selectedImage.width / selectedImage.height;
       const newCrop = calculateAutoCropForRotation(
         selectedImage.width,
         selectedImage.height,
@@ -163,7 +167,6 @@ export default function CropPanel() {
     return () => {
       if (autoCropTimerRef.current) clearTimeout(autoCropTimerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rotation, autoCropAfterRotate, orientationSteps, aspectRatio]);
 
   useEffect(() => {
@@ -644,9 +647,7 @@ export default function CropPanel() {
               </div>
               {/* Auto-crop after rotation toggle */}
               <label className="flex items-center justify-between px-4 py-2 rounded-lg bg-surface cursor-pointer select-none">
-                <span className="text-[12px] text-text-secondary">
-                  {t('editor.crop.autoCropAfterRotate')}
-                </span>
+                <span className="text-[12px] text-text-secondary">{t('editor.crop.autoCropAfterRotate')}</span>
                 <button
                   type="button"
                   onClick={() => setAutoCropAfterRotate((v) => !v)}

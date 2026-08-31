@@ -166,7 +166,7 @@ export default function PanelSwitcher({
         }
       }
 
-      let style: any = {};
+      let style: any;
       if (tabs.length === 0) {
         style = isVertical ? { top: 4, left: 4, right: 4, height: 2 } : { left: 4, top: 4, bottom: 4, width: 2 };
       } else if (insertIndex < tabs.length) {

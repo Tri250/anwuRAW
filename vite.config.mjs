@@ -33,5 +33,9 @@ export default defineConfig(async () => ({
   build: {
     minify: !process.env.TAURI_ENV_DEBUG ? 'esbuild' : false,
     sourcemap: !!process.env.TAURI_ENV_DEBUG,
+    // Desktop app — a single large chunk (2.8 MB, gzip 835 kB) is acceptable.
+    // Disables the >500 kB warning since code-splitting gains would be minimal
+    // for a Tauri application with no route-based lazy loading.
+    chunkSizeWarningLimit: 4000,
   },
 }));

@@ -24,12 +24,12 @@
   --font-cjk: var(--font-stack-cjk);
 
   /* ===== 圆角 4 档 ===== */
-  --radius-xs: 4px;    /* 小标签/Chip */
-  --radius-sm: 6px;    /* 按钮小/输入框 */
-  --radius-md: 8px;    /* 卡片/标准按钮 (原有) */
-  --radius-lg: 12px;   /* 大卡片/面板 */
-  --radius-xl: 16px;   /* 弹窗/大面板 */
-  --radius-2xl: 24px;  /* 底部弹窗/FAB */
+  --radius-xs: 4px; /* 小标签/Chip */
+  --radius-sm: 6px; /* 按钮小/输入框 */
+  --radius-md: 8px; /* 卡片/标准按钮 (原有) */
+  --radius-lg: 12px; /* 大卡片/面板 */
+  --radius-xl: 16px; /* 弹窗/大面板 */
+  --radius-2xl: 24px; /* 底部弹窗/FAB */
 
   /* ===== 间距 4px 基准 ===== */
   --spacing-1: 4px;
@@ -44,24 +44,24 @@
   --spacing-16: 64px;
 
   /* ===== 阴影 (Android Material Elevation 对齐) ===== */
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.25);
-  --shadow-md: 0 4px 8px rgba(0,0,0,0.3);
-  --shadow-lg: 0 8px 16px rgba(0,0,0,0.35);
-  --shadow-xl: 0 12px 24px rgba(0,0,0,0.4);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.4);
   --shadow-shiny: 0 0 24px rgba(255, 255, 255, 0.12);
 
   /* ===== 字号 7 档 ===== */
-  --size-text-2xs: 10px;   /* 极小标注 */
-  --size-text-xs: 12px;    /* 辅助信息 */
-  --size-text-sm: 14px;    /* 次要文本 */
-  --size-text-base: 16px;  /* 正文 */
-  --size-text-md: 18px;    /* 小标题 */
-  --size-text-lg: 20px;    /* 标题 */
-  --size-text-xl: 24px;    /* 大标题 */
+  --size-text-2xs: 10px; /* 极小标注 */
+  --size-text-xs: 12px; /* 辅助信息 */
+  --size-text-sm: 14px; /* 次要文本 */
+  --size-text-base: 16px; /* 正文 */
+  --size-text-md: 18px; /* 小标题 */
+  --size-text-lg: 20px; /* 标题 */
+  --size-text-xl: 24px; /* 大标题 */
 
   /* ===== Android 触摸目标最小尺寸 ===== */
-  --touch-target: 48px;    /* Material Design 标准 48x48dp */
+  --touch-target: 48px; /* Material Design 标准 48x48dp */
 }
 
 @layer base {
@@ -168,7 +168,9 @@
     -moz-osx-font-smoothing: grayscale;
     /* 禁止 CJK 连字，避免中英混排时的异常字符绑定 */
     font-variant-ligatures: none;
-    font-feature-settings: 'liga' 0, 'calt' 0;
+    font-feature-settings:
+      'liga' 0,
+      'calt' 0;
     /* Android WebView + CJK 下 optimizeLegibility 会导致中文竖画错位 */
     text-rendering: optimizeSpeed;
     overscroll-behavior: none;
@@ -182,20 +184,24 @@
   /* ===== Android Material Design 全局优化 ===== */
   /* 1. 点击反馈: 统一 active 缩放 */
   @supports (-webkit-touch-callout: none) {
-    button:active, [role='button']:active,
-    a:active, .android-tap {
+    button:active,
+    [role='button']:active,
+    a:active,
+    .android-tap {
       transform: scale(0.97);
       transition: transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
     /* 2. 触摸目标最小 48x48dp (Android 标准) */
-    button, [role='button'] {
+    button,
+    [role='button'] {
       min-width: 48px;
       min-height: 48px;
     }
 
     /* 3. 禁用文本选择 (防止长按菜单干扰编辑) */
-    .editor-root, .panel-content {
+    .editor-root,
+    .panel-content {
       -webkit-user-select: none;
       user-select: none;
     }
@@ -220,7 +226,7 @@
 
     /* 6. Slider 触摸区域放大 */
     input[type='range'].slider-input {
-      height: 36px;  /* 触摸友好 */
+      height: 36px; /* 触摸友好 */
     }
     input[type='range'].slider-input::-webkit-slider-thumb {
       width: 20px;
@@ -518,7 +524,7 @@ html[lang^='ko'] {
   html[lang^='ko'] .text-\[9px\],
   html[lang^='ko'] .text-\[10px\] {
     font-size: 0.75rem !important; /* 12px — Android WebView CJK 最小可用字号 */
-    line-height: 1.35 !important;  /* 补偿因字号提升导致的视觉拥挤 */
+    line-height: 1.35 !important; /* 补偿因字号提升导致的视觉拥挤 */
   }
 
   /* Android WebView：中英混排行高修正（CJK 方块字需要更大行高避免视觉拥挤） */

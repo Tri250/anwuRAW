@@ -375,13 +375,13 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   movePanel: (panel, toRegion) =>
     set((state) => {
-      const layout = {
+      const layout: Record<PanelRegion, Panel[]> = {
         leftTop: [...state.panelLayout.leftTop],
         leftBottom: [...state.panelLayout.leftBottom],
         rightTop: [...state.panelLayout.rightTop],
         rightBottom: [...state.panelLayout.rightBottom],
       };
-      const active = { ...state.activePanels };
+      const active: Record<PanelRegion, Panel | null> = { ...state.activePanels };
 
       let fromRegion: PanelRegion | null = null;
       (Object.keys(layout) as PanelRegion[]).forEach((r) => {
@@ -394,7 +394,8 @@ export const useUIStore = create<UIState>((set, get) => ({
       if (!layout[toRegion].includes(panel)) layout[toRegion].push(panel);
 
       if (fromRegion && active[fromRegion] === panel) {
-        active[fromRegion] = layout[fromRegion].length > 0 ? layout[fromRegion][0] : null;
+        const region = fromRegion as PanelRegion;
+        active[region] = layout[region].length > 0 ? layout[region][0] : null;
       }
 
       active[toRegion] = panel;
@@ -410,13 +411,13 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   movePanelToIndex: (panel, toRegion, index) =>
     set((state) => {
-      const layout = {
+      const layout: Record<PanelRegion, Panel[]> = {
         leftTop: [...state.panelLayout.leftTop],
         leftBottom: [...state.panelLayout.leftBottom],
         rightTop: [...state.panelLayout.rightTop],
         rightBottom: [...state.panelLayout.rightBottom],
       };
-      const active = { ...state.activePanels };
+      const active: Record<PanelRegion, Panel | null> = { ...state.activePanels };
 
       let fromRegion: PanelRegion | null = null;
       (Object.keys(layout) as PanelRegion[]).forEach((r) => {
@@ -430,7 +431,8 @@ export const useUIStore = create<UIState>((set, get) => ({
       layout[toRegion].splice(clampedIndex, 0, panel);
 
       if (fromRegion && active[fromRegion] === panel) {
-        active[fromRegion] = layout[fromRegion].length > 0 ? layout[fromRegion][0] : null;
+        const region = fromRegion as PanelRegion;
+        active[region] = layout[region].length > 0 ? layout[region][0] : null;
       }
       active[toRegion] = panel;
 

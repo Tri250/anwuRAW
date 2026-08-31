@@ -672,7 +672,9 @@ function App() {
         unlistenPromise.then((unlisten: any) => {
           try {
             unlisten();
-          } catch (_) {}
+          } catch (_) {
+            // intentionally empty
+          }
         });
       }
     };

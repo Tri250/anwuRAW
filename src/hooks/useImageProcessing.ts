@@ -226,8 +226,10 @@ export function useImageProcessing(
             const url = URL.createObjectURL(blob);
 
             setEditor((state) => {
-              if (state.interactivePatch && state.interactivePatch.url)
-                setTimeout(() => URL.revokeObjectURL(state.interactivePatch.url), 100);
+              if (state.interactivePatch?.url) {
+                const urlToRevoke = state.interactivePatch.url;
+                setTimeout(() => URL.revokeObjectURL(urlToRevoke), 100);
+              }
               return {
                 interactivePatch: {
                   url,
@@ -260,8 +262,9 @@ export function useImageProcessing(
             });
 
             setEditor((state) => {
-              if (state.interactivePatch && state.interactivePatch.url) {
-                setTimeout(() => URL.revokeObjectURL(state.interactivePatch.url), 500);
+              if (state.interactivePatch?.url) {
+                const urlToRevoke = state.interactivePatch.url;
+                setTimeout(() => URL.revokeObjectURL(urlToRevoke), 500);
               }
               return { interactivePatch: null };
             });
@@ -396,7 +399,6 @@ export function useImageProcessing(
     return () => {
       requestHiFiZoom.cancel();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeView,
     displaySize.width,
@@ -462,7 +464,6 @@ export function useImageProcessing(
     return () => {
       if (dragIdleTimer.current) clearTimeout(dragIdleTimer.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeView,
     adjustments,

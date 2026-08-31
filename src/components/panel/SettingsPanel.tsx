@@ -47,6 +47,7 @@ import { useOsPlatform } from '../../hooks/useOsPlatform';
 import { open } from '@tauri-apps/plugin-shell';
 import { RotateCcw } from 'lucide-react';
 import { useUIStore } from '../../store/useUIStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 interface ConfirmModalState {
   confirmText: string;
@@ -319,13 +320,16 @@ const CloudDashboard = () => {
   const { signOut } = useClerk();
   const [usage, setUsage] = useState<{ requests: number; limit: number; month: string } | null>(null);
   const { t } = useTranslation();
+  const appSettings = useSettingsStore((s) => s.appSettings);
 
   useEffect(() => {
     const fetchUsage = async () => {
       try {
         const token = await getToken();
         if (!token) return;
-        const base = aiConnectorAddress ? `http://${aiConnectorAddress}` : 'http://127.0.0.1:5000';
+        const base = appSettings?.aiConnectorAddress
+          ? `http://${appSettings.aiConnectorAddress}`
+          : 'http://127.0.0.1:5000';
         const res = await fetch(`${base}/usage`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -910,7 +914,7 @@ export default function SettingsPanel({
   };
 
   const shortcutTagVariants = {
-    visible: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } },
+    visible: { opacity: 1, scale: 1, transition: { type: 'spring' as const, stiffness: 500, damping: 30 } },
     exit: { opacity: 0, scale: 0.8, transition: { duration: 0.15 } },
   };
 

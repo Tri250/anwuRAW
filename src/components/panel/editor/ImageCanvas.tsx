@@ -1465,10 +1465,9 @@ const ImageCanvas = memo(
           setDisplayState((prev) => ({ base: prev.base, fade: newSrc }));
           setIsFadingIn(false);
 
-          let frame1: number;
           let frame2: number;
 
-          frame1 = requestAnimationFrame(() => {
+          const frame1 = requestAnimationFrame(() => {
             frame2 = requestAnimationFrame(() => {
               setIsFadingIn(true);
             });

@@ -206,7 +206,7 @@ export const useAppInitialization = ({
               expandedFolders: settings.lastFolderState?.expandedFolders || [],
               showImageCounts: settings.enableFolderImageCounts || settings.folderTreeSort?.key === 'imageCount',
             });
-            setLibrary({ pinnedFolderTrees: trees });
+            setLibrary({ pinnedFolderTrees: trees as any[] });
           } catch (err) {
             console.error('Failed to load pinned folder trees:', err);
           }
@@ -351,7 +351,7 @@ export const useAppInitialization = ({
     };
     // 初始化时和每次语言切换时都同步
     syncHtmlLang();
-    const off = i18n.on('languageChanged', syncHtmlLang);
+    const off = i18n.on('languageChanged', syncHtmlLang) as unknown as (() => void) | undefined;
     return () => {
       if (typeof off === 'function') off();
     };
@@ -461,7 +461,6 @@ export const useAppInitialization = ({
           setLibrary({ isTreeLoading: false });
         });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appSettings?.enableFolderImageCounts, appSettings?.folderTreeSort?.key]);
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 {
   "name": "rapidraw",
   "version": "1.6.6",
-  "author": "Timon K\u00e4ch",
+  "author": "Timon Käch",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -59,6 +59,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^10.9.0",
     "eslint-plugin-i18next": "^6.1.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "i18next-cli": "^1.71.0",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
