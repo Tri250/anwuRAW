@@ -15,6 +15,7 @@ import {
   Bandage,
   Spline,
   BrushCleaning,
+  Wand2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +40,7 @@ export enum Mask {
   Heal = 'heal',
   Liquify = 'liquify',
   Retouch = 'retouch',
+  AutoErase = 'auto-erase',
 }
 
 export enum SubMaskMode {
@@ -91,6 +93,7 @@ export function formatMaskTypeName(type: string) {
   if (type === Mask.Heal) return i18n.t('masks.types.heal');
   if (type === Mask.Liquify) return i18n.t('masks.types.liquify');
   if (type === Mask.Retouch) return i18n.t('masks.types.retouch');
+  if (type === Mask.AutoErase) return i18n.t('masks.types.autoErase');
   return type.charAt(0).toUpperCase() + type.slice(1);
 }
 
@@ -123,6 +126,7 @@ export const MASK_ICON_MAP: Record<Mask, any> = {
   [Mask.Heal]: Bandage,
   [Mask.Liquify]: Spline,
   [Mask.Retouch]: BrushCleaning,
+  [Mask.AutoErase]: Wand2,
 };
 
 export const MASK_AI_TYPES: Array<MaskType> = [
@@ -159,6 +163,12 @@ export const AI_DIRECT_PATCH_TYPES: Array<MaskType> = [
     icon: Bandage,
     name: 'Heal',
     type: Mask.Heal,
+  },
+  {
+    disabled: false,
+    icon: Wand2,
+    name: 'Auto Erase',
+    type: Mask.AutoErase,
   },
 ];
 

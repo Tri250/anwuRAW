@@ -1,3 +1,4 @@
+mod auto_erase;
 mod poisson;
 
 use std::io::Cursor;
@@ -285,6 +286,150 @@ pub async fn generate_manual_cleanup_patch(
         is_raw,
         100,
         false,
+    )
+}
+
+/// 端侧"自动消除"：点击对象上的一个种子点，自动切分整个连通对象并重绘移除。
+///
+/// 真实实现（非模拟）：
+/// - 区域生长：边缘/颜色感知的泛洪切分，从种子扩展出对象蒙版；
+/// - 重绘：优先端侧 Lama ONNX 模型；模型不可用时降级到本地泊松扩散填充。
+/// 全程端侧执行，不依赖云服务。
+#[tauri::command]
+pub async fn generate_auto_erase_patch(
+    patch_definition: AiPatchDefinition,
+    current_adjustments: Value,
+    source_point: (f64, f64),
+    app_handle: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
+    let (source_image, is_raw) =
+        prepare_source_image(&patch_definition.id, &current_adjustments, &state)?;
+    let (img_w, img_h) = source_image.dimensions();
+
+    // 变换感知：把显示坐标下的点击点还原到源图坐标，作为分割种子。
+    let orientation_steps = current_adjustments
+        .get("orientationSteps")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0) as u8;
+    let (trans_w, trans_h) = if orientation_steps % 2 == 1 {
+        (img_h, img_w)
+    } else {
+        (img_w, img_h)
+    };
+    let seed_p = crate::image_processing::inverse_transform_point(
+        source_point.0,
+        source_point.1,
+        trans_w as f64,
+        trans_h as f64,
+        &current_adjustments,
+    );
+    if seed_p.0 < 0.0 || seed_p.1 < 0.0 || seed_p.0 >= img_w as f64 || seed_p.1 >= img_h as f64 {
+        return Err("Auto erase seed point is outside the image.".to_string());
+    }
+    let seed = (seed_p.0 as u32, seed_p.1 as u32);
+
+    // 读取用户可调的灵敏度（0..100），默认 55（适中，偏严贴边）
+    let sensitivity = patch_definition
+        .sub_masks
+        .iter()
+        .find(|sm| sm.mask_type == "auto-erase")
+        .and_then(|sm| sm.parameters.get("sensitivity"))
+        .and_then(|v| v.as_f64())
+        .map(|v| v as f32)
+        .unwrap_or(55.0);
+
+    // 1) 区域生长切出对象蒙版
+    let mask_bitmap = auto_erase::region_grow_mask(&source_image, seed, img_w, img_h, sensitivity);
+
+    // 2) 边界与规模校验：拒绝过大的覆盖，避免误删整幅图像
+    let (min_x, max_x, min_y, max_y) = calculate_mask_bounds(&mask_bitmap)?;
+    let mut masked_pixels = 0u64;
+    for &p in mask_bitmap.as_raw() {
+        if p > 0 {
+            masked_pixels += 1;
+        }
+    }
+    if masked_pixels as f64 > (img_w as f64 * img_h as f64) * 0.6 {
+        return Err("Auto erase coverage is too large; adjust the seed or sensitivity.".to_string());
+    }
+    if masked_pixels < 2 {
+        return Err("Auto erase did not find a connectible object.".to_string());
+    }
+
+    let min_x_u32 = min_x as u32;
+    let min_y_u32 = min_y as u32;
+    let crop_w = (max_x - min_x + 1) as u32;
+    let crop_h = (max_y - min_y + 1) as u32;
+
+    // 3) 重绘：优先端侧 Lama，失败降级到泊松扩散
+    let lama_patch: Option<image::RgbaImage> = (|| async {
+        let lama_model = ai_processing::get_or_init_lama_model(
+            &app_handle,
+            &state.ai_state,
+            &state.ai_init_lock,
+        )
+        .await
+        .ok()?;
+        ai_processing::run_lama_inpainting(&source_image, &mask_bitmap, &lama_model).ok()
+    })()
+    .await;
+
+    if let Some(lama_patch) = lama_patch {
+        let (pw, ph) = lama_patch.dimensions();
+        let final_patch = if pw != img_w || ph != img_h {
+            image::imageops::resize(
+                &lama_patch,
+                img_w,
+                img_h,
+                image::imageops::FilterType::Lanczos3,
+            )
+        } else {
+            lama_patch
+        };
+
+        let mut color_image = RgbImage::new(crop_w, crop_h);
+        for y in min_y..=max_y {
+            for x in min_x..=max_x {
+                let (ox, oy) = ((x - min_x) as u32, (y - min_y) as u32);
+                let px = if mask_bitmap.get_pixel(x as u32, y as u32)[0] > 0 {
+                    final_patch.get_pixel(x as u32, y as u32)
+                } else {
+                    source_image.get_pixel(x as u32, y as u32)
+                };
+                color_image.put_pixel(ox, oy, Rgb([px[0], px[1], px[2]]));
+            }
+        }
+        let output_mask = image::imageops::crop_imm(
+            &mask_bitmap,
+            min_x_u32,
+            min_y_u32,
+            crop_w,
+            crop_h,
+        )
+        .to_image();
+        return encode_patch_result(
+            &color_image,
+            &output_mask,
+            min_x_u32,
+            min_y_u32,
+            crop_w,
+            crop_h,
+            is_raw,
+            95,
+            true,
+        );
+    }
+
+    // 泊松扩散（offset=0 走真实填充蒙版路径）
+    poisson::poisson_heal_fill(
+        &source_image,
+        &mask_bitmap,
+        (min_x, max_x, min_y, max_y),
+        0,
+        0,
+        is_raw,
+        95,
     )
 }
 

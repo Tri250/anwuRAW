@@ -70,7 +70,13 @@ import { useUIStore } from '../../../store/useUIStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
 import { useAiMasking } from '../../../hooks/useAiMasking';
 
-export const STANDALONE_MASK_TYPES: Mask[] = [Mask.Clone, Mask.Heal, Mask.Liquify, Mask.Retouch];
+export const STANDALONE_MASK_TYPES: Mask[] = [
+  Mask.Clone,
+  Mask.Heal,
+  Mask.AutoErase,
+  Mask.Liquify,
+  Mask.Retouch,
+];
 
 export const isStandaloneMask = (type?: Mask): boolean => Boolean(type && STANDALONE_MASK_TYPES.includes(type));
 
@@ -102,6 +108,10 @@ const SUB_MASK_CONFIG: any = {
   [Mask.Brush]: { showBrushTools: true },
   [Mask.Clone]: { showBrushTools: true },
   [Mask.Heal]: { showBrushTools: true },
+  [Mask.AutoErase]: {
+    showBrushTools: true,
+    parameters: [{ key: 'sensitivity', min: 1, max: 100, step: 1, defaultValue: 55 }],
+  },
   [Mask.Liquify]: {
     showBrushTools: true,
     parameters: [{ key: 'pressure', min: 1, max: 100, step: 1, defaultValue: 40 }],
@@ -609,6 +619,11 @@ export default function AIPanel() {
         (adjustments.aiPatches || []).filter((p: AiPatch) => p.subMasks.some((sm: SubMask) => sm.type === Mask.Retouch))
           .length + 1;
       name = t('editor.ai.patches.retouch', { count });
+    } else if (type === Mask.AutoErase) {
+      const count =
+        (adjustments.aiPatches || [])
+          .filter((p: AiPatch) => p.subMasks.some((sm: SubMask) => sm.type === Mask.AutoErase)).length + 1;
+      name = t('editor.ai.patches.autoErase', { count });
     } else {
       const count = (adjustments.aiPatches || []).length + 1;
       name = t('editor.ai.patches.aiEdit', { count });
@@ -2173,11 +2188,17 @@ function SettingsPanel({
                     })
                   }
                   onPointerUp={() => {
-                    const isDirectTool = activeSubMask.type === Mask.Liquify || activeSubMask.type === Mask.Retouch;
-
-                    if (isDirectTool && activeSubMask.parameters?.lines?.length > 0) {
+                    const isDirectTool =
+                      activeSubMask.type === Mask.Liquify ||
+                      activeSubMask.type === Mask.Retouch ||
+                      activeSubMask.type === Mask.AutoErase;
+                    const hasRun =
+                      activeSubMask.type === Mask.AutoErase || activeSubMask.parameters?.lines?.length > 0;
+                    if (isDirectTool && hasRun) {
                       setTimeout(() => {
-                        onManualCleanup(activeSubMask.id, 0, 0);
+                        const sx = activeSubMask.parameters?.sourceX ?? 0;
+                        const sy = activeSubMask.parameters?.sourceY ?? 0;
+                        onManualCleanup(activeSubMask.id, sx, sy);
                       }, 0);
                     }
                   }}

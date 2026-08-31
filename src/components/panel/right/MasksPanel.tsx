@@ -155,6 +155,7 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
   [Mask.QuickEraser]: { showBrushTools: true },
   [Mask.Clone]: { showBrushTools: true },
   [Mask.Heal]: { showBrushTools: true },
+  [Mask.AutoErase]: { showBrushTools: true },
   [Mask.Liquify]: { showBrushTools: true },
   [Mask.Retouch]: { showBrushTools: true },
 };

@@ -1605,7 +1605,10 @@ const ImageCanvas = memo(
     const brushImageSpaceSize = brushStageSize / (imageRenderSize.scale || 1);
 
     const isCloneOrHealActive =
-      isAiEditing && (activeSubMask?.type === Mask.Clone || activeSubMask?.type === Mask.Heal);
+      isAiEditing &&
+      (activeSubMask?.type === Mask.Clone ||
+        activeSubMask?.type === Mask.Heal ||
+        activeSubMask?.type === Mask.AutoErase);
 
     const isLiquifyActive = isAiEditing && activeSubMask?.type === Mask.Liquify;
     const isRetouchActive = isAiEditing && activeSubMask?.type === Mask.Retouch;
@@ -1614,6 +1617,7 @@ const ImageCanvas = memo(
       (isMasking || isAiEditing) &&
       (activeSubMask?.type === Mask.Clone ||
         activeSubMask?.type === Mask.Heal ||
+        activeSubMask?.type === Mask.AutoErase ||
         activeSubMask?.type === Mask.Liquify ||
         activeSubMask?.type === Mask.Retouch);
 
@@ -1746,7 +1750,13 @@ const ImageCanvas = memo(
       const processContainers = (containers: any[], isAi: boolean) => {
         containers.forEach((container) => {
           container.subMasks.forEach((sm: SubMask) => {
-            if (sm.type !== Mask.Clone && sm.type !== Mask.Heal && sm.type !== Mask.Liquify && sm.type !== Mask.Retouch)
+            if (
+              sm.type !== Mask.Clone &&
+              sm.type !== Mask.Heal &&
+              sm.type !== Mask.AutoErase &&
+              sm.type !== Mask.Liquify &&
+              sm.type !== Mask.Retouch
+            )
               return;
             const lines = sm.parameters?.lines || [];
             if (lines.length === 0) return;
@@ -2098,7 +2108,10 @@ const ImageCanvas = memo(
                 parameters: { ...activeSubMask.parameters, sourceX: x, sourceY: y },
               });
 
-              if (onDirectPatch && activeSubMask.parameters?.lines?.length > 0) {
+              // 自动消除：无需先涂画蒙版，点击对象即用该点作为分割种子并重建
+              const canAutoErase = activeSubMask.type === Mask.AutoErase;
+              const hasMask = (activeSubMask.parameters?.lines?.length || 0) > 0;
+              if (onDirectPatch && (hasMask || canAutoErase)) {
                 onDirectPatch(activeId, x, y);
               }
             }
@@ -2613,7 +2626,10 @@ const ImageCanvas = memo(
           const sourceX = activeSubMask?.parameters.sourceX;
           const sourceY = activeSubMask?.parameters.sourceY;
 
-          const requiresSource = activeSubMask?.type === Mask.Clone || activeSubMask?.type === Mask.Heal;
+          const requiresSource =
+            activeSubMask?.type === Mask.Clone ||
+            activeSubMask?.type === Mask.Heal ||
+            activeSubMask?.type === Mask.AutoErase;
 
           if (!requiresSource || (sourceX !== undefined && sourceY !== undefined)) {
             triggerDirectPatch(activeId, sourceX || 0, sourceY || 0);
@@ -3031,7 +3047,7 @@ const ImageCanvas = memo(
 
               {!isDrawing.current &&
                 activeSubMask &&
-                (activeSubMask.type === Mask.Clone || activeSubMask.type === Mask.Heal) &&
+                (activeSubMask.type === Mask.Clone || activeSubMask.type === Mask.Heal || activeSubMask.type === Mask.AutoErase) &&
                 activeSubMask.parameters?.sourceX !== undefined &&
                 activeSubMask.parameters?.sourceY !== undefined && (
                   <div
@@ -3107,10 +3123,11 @@ const ImageCanvas = memo(
                               : subMask;
 
                           const isDirectPatch =
-                            renderSubMask.type === Mask.Clone ||
-                            renderSubMask.type === Mask.Heal ||
-                            renderSubMask.type === Mask.Liquify ||
-                            renderSubMask.type === Mask.Retouch;
+                          renderSubMask.type === Mask.Clone ||
+                          renderSubMask.type === Mask.Heal ||
+                          renderSubMask.type === Mask.AutoErase ||
+                          renderSubMask.type === Mask.Liquify ||
+                          renderSubMask.type === Mask.Retouch;
 
                           const isThisSubMaskActive = renderSubMask.id === activeId;
                           const isActivelyDrawingThis = isThisSubMaskActive && isDrawing.current;

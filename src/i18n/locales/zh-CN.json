@@ -409,7 +409,8 @@
         "grow": "扩展",
         "intensity": "强度",
         "pressure": "压力",
-        "decontaminate": "边缘净化"
+        "decontaminate": "边缘净化",
+        "sensitivity": "灵敏度"
       },
       "patches": {
         "aiEdit": "AI 编辑 {{count}}",
@@ -426,7 +427,10 @@
         "quickErase": "快速擦除 {{count}}",
         "quickErase_one": "快速擦除 {{count}}",
         "quickErase_other": "快速擦除 {{count}}",
-        "retouch": "修饰 {{count}}"
+        "retouch": "修饰 {{count}}",
+        "autoErase": "自动消除 {{count}}",
+        "autoErase_one": "自动消除 {{count}}",
+        "autoErase_other": "自动消除 {{count}}"
       },
       "resetInpaintingTooltip": "重置图像修复",
       "settings": {
@@ -1153,7 +1157,8 @@
       "radial": "径向",
       "retouch": "修饰",
       "sky": "天空",
-      "subject": "主体"
+      "subject": "主体",
+      "autoErase": "自动消除"
     }
   },
   "menus": {

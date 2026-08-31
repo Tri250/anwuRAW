@@ -72,13 +72,16 @@ export function useAiMasking() {
 
       try {
         const patchDefinitionForBackend = adjustments.aiPatches.find((p: AiPatch) => p.id === patchId);
+        const isAutoErase = patchDefinitionForBackend?.subMasks.some((sm: SubMask) => sm.type === 'auto-erase');
         const isLiquify = patchDefinitionForBackend?.subMasks.some((sm: SubMask) => sm.type === 'liquify');
         const isRetouch = patchDefinitionForBackend?.subMasks.some((sm: SubMask) => sm.type === 'retouch');
-        const command = isLiquify
-          ? 'generate_liquify_patch'
-          : isRetouch
-            ? 'generate_retouch_patch'
-            : 'generate_manual_cleanup_patch';
+        const command = isAutoErase
+          ? 'generate_auto_erase_patch'
+          : isLiquify
+            ? 'generate_liquify_patch'
+            : isRetouch
+              ? 'generate_retouch_patch'
+              : 'generate_manual_cleanup_patch';
 
         const newPatchDataJson: any = await invoke(command, {
           currentAdjustments: adjustments,

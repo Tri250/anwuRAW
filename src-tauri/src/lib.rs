@@ -2316,6 +2316,7 @@ pub fn run() {
             inpainting::generate_manual_cleanup_patch,
             inpainting::generate_liquify_patch,
             inpainting::generate_retouch_patch,
+            inpainting::generate_auto_erase_patch,
             denoising::apply_denoising,
             denoising::batch_denoise_images,
             denoising::save_denoised_image,
