@@ -695,6 +695,11 @@
         "presetFile": "Vorgabendatei",
         "rapidRawPreset": "RapidRAW Vorgabe"
       },
+      "duplicateSuffix": "Kopie",
+      "filter": {
+        "favorites": "Favoriten anzeigen",
+        "showAll": "Alle anzeigen"
+      },
       "menu": {
         "configurePreset": "Vorgabe konfigurieren",
         "deleteFolder": "Ordner löschen",
@@ -702,6 +707,8 @@
         "duplicatePreset": "Vorgabe duplizieren",
         "exportFolder": "Ordner exportieren",
         "exportPreset": "Vorgabe exportieren",
+        "favorite": "Zu Favoriten hinzufügen",
+        "unfavorite": "Aus Favoriten entfernen",
         "newFolder": "Neuer Ordner",
         "newPreset": "Neue Vorgabe",
         "overwrite": "Überschreiben",
@@ -711,7 +718,8 @@
       "status": {
         "empty": "Noch keine Vorgaben gespeichert. Eigene erstellen, importieren oder Community-Vorgaben entdecken.",
         "getCommunity": "Community-Vorgaben holen",
-        "loading": "Vorgaben laden..."
+        "loading": "Vorgaben laden...",
+        "noFavorites": "Noch keine Favoriten. Klicken Sie auf den Stern, um hinzuzufügen."
       },
       "supports": {
         "cropTransform": "Zuschnitt & Form",

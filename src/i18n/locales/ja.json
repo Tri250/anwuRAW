@@ -693,6 +693,11 @@
         "presetFile": "プリセットファイル",
         "rapidRawPreset": "RapidRAWプリセット"
       },
+      "duplicateSuffix": "コピー",
+      "filter": {
+        "favorites": "お気に入りのみ表示",
+        "showAll": "すべて表示"
+      },
       "menu": {
         "configurePreset": "プリセットを構成",
         "deleteFolder": "フォルダを削除",
@@ -700,6 +705,8 @@
         "duplicatePreset": "プリセットを複製",
         "exportFolder": "フォルダを書き出し",
         "exportPreset": "プリセットを書き出し",
+        "favorite": "お気に入りに追加",
+        "unfavorite": "お気に入りから削除",
         "newFolder": "新規フォルダ",
         "newPreset": "新規プリセット",
         "overwrite": "上書き",
@@ -709,7 +716,8 @@
       "status": {
         "empty": "保存されたプリセットはまだありません。作成、インポート、またはコミュニティのプリセットを探してみましょう。",
         "getCommunity": "コミュニティプリセットを入手",
-        "loading": "プリセットを読み込み中..."
+        "loading": "プリセットを読み込み中...",
+        "noFavorites": "お気に入りのプリセットがありません。星マークをクリックして追加できます。"
       },
       "supports": {
         "cropTransform": "切り抜きと変形",

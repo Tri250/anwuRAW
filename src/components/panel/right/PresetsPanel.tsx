@@ -24,6 +24,7 @@ import {
   Loader2,
   Plus,
   SortAsc,
+  Star,
   Trash2,
   Users,
   Layers,
@@ -65,6 +66,7 @@ interface DraggablePresetItemProps {
   intensity?: number;
   onIntensityChange?: (val: number) => void;
   onDragStateChange?: (isDragging: boolean) => void;
+  onToggleFavorite?: (preset: any) => void;
 }
 
 interface FolderProps {
@@ -89,6 +91,7 @@ interface PresetItemDisplayProps {
   intensity?: number;
   onIntensityChange?: (val: number) => void;
   onDragStateChange?: (isDragging: boolean) => void;
+  onToggleFavorite?: (preset: Preset) => void;
 }
 
 interface PresetsPanelProps {
@@ -265,6 +268,7 @@ function PresetItemDisplay({
   intensity,
   onIntensityChange,
   onDragStateChange,
+  onToggleFavorite,
 }: PresetItemDisplayProps) {
   const { t } = useTranslation();
   const geometryKeys = ADJUSTMENT_GROUPS.geometry.flatMap((g) => g.keys);
@@ -304,6 +308,25 @@ function PresetItemDisplay({
                 {supportsGeometry && <Crop size={11} className="text-white" />}
               </div>
             </>
+          )}
+
+          {onToggleFavorite && (
+            <button
+              className="absolute bottom-1 left-1 z-20 p-1 rounded-full bg-black/30 backdrop-blur-xs transition-colors hover:bg-black/50"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(preset);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              data-tooltip={preset.favorite ? t('editor.presets.menu.unfavorite') : t('editor.presets.menu.favorite')}
+            >
+              <Star
+                size={12}
+                className={
+                  preset.favorite ? 'text-amber-400 fill-amber-400' : 'text-white/70 hover:text-white'
+                }
+              />
+            </button>
           )}
         </div>
 
@@ -384,6 +407,7 @@ function DraggablePresetItem({
   intensity,
   onIntensityChange,
   onDragStateChange,
+  onToggleFavorite,
 }: DraggablePresetItemProps) {
   const {
     attributes,
@@ -438,6 +462,7 @@ function DraggablePresetItem({
           intensity={intensity}
           onIntensityChange={onIntensityChange}
           onDragStateChange={onDragStateChange}
+          onToggleFavorite={onToggleFavorite}
         />
       </motion.div>
     </div>
@@ -568,6 +593,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     renameItem,
     reorderItems,
     sortAllPresetsAlphabetically,
+    toggleFavorite,
   } = usePresets(adjustments);
   const { showContextMenu } = useContextMenu();
   const [previews, setPreviews] = useState<Record<string, string | null>>({});
@@ -583,6 +609,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [presetIntensity, setPresetIntensity] = useState<number>(100);
   const [baseAdjustments, setBaseAdjustments] = useState<Adjustments | null>(null);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const previewsRef = useRef(previews);
   previewsRef.current = previews;
@@ -914,13 +941,22 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
   const handleIntensityChange = useCallback(
     (preset: Preset, intensity: number) => {
       setPresetIntensity(intensity);
-      const mixed = mixAdjustments(preset.adjustments, intensity);
+      // 以应用预设前的用户调整作为混色基准，而非 INITIAL_ADJUSTMENTS：
+      // 保证强度滑块仅回退预设效果，不会丢失用户先前的手动调整
+      const mixed = mixAdjustments(preset.adjustments, intensity, baseAdjustments ?? INITIAL_ADJUSTMENTS);
       setAdjustments((prev: Adjustments) => ({
         ...prev,
         ...mixed,
       }));
     },
-    [setAdjustments],
+    [setAdjustments, baseAdjustments],
+  );
+
+  const handleToggleFavorite = useCallback(
+    (preset: Preset) => {
+      toggleFavorite(preset?.id ?? null);
+    },
+    [toggleFavorite],
   );
 
   const handleSaveConfiguredPreset = async (
@@ -1143,6 +1179,13 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     } else {
       options = [
         {
+          icon: Star,
+          label: (data as Preset)?.favorite
+            ? t('editor.presets.menu.unfavorite')
+            : t('editor.presets.menu.favorite'),
+          onClick: () => toggleFavorite(data?.id ?? null),
+        },
+        {
           icon: Save,
           label: t('editor.presets.menu.overwrite'),
           onClick: async () => {
@@ -1213,8 +1256,31 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     showContextMenu(event.clientX, event.clientY, options);
   };
 
-  const folders = useMemo(() => presets.filter((item: UserPreset) => item.folder), [presets]);
-  const rootPresets = useMemo(() => presets.filter((item: UserPreset) => item.preset), [presets]);
+  const folders = useMemo(
+    () =>
+      showFavoritesOnly
+        ? presets
+            .filter((item: UserPreset) => item.folder?.children.some((p: Preset) => p.favorite))
+            .map((item: UserPreset) => ({
+              folder: { ...item.folder, children: item.folder?.children.filter((p: Preset) => p.favorite) },
+            }))
+        : presets.filter((item: UserPreset) => item.folder),
+    [presets, showFavoritesOnly],
+  );
+  const rootPresets = useMemo(
+    () =>
+      showFavoritesOnly
+        ? presets.filter((item: UserPreset) => item.preset?.favorite)
+        : presets.filter((item: UserPreset) => item.preset),
+    [presets, showFavoritesOnly],
+  );
+  const hasAnyFavorite = useMemo(
+    () =>
+      presets.some(
+        (item: UserPreset) => item.preset?.favorite || item.folder?.children.some((p: Preset) => p.favorite),
+      ),
+    [presets],
+  );
 
   return (
     <DndContext id="presets-panel-dnd" sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -1222,6 +1288,16 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
         <div className="p-3 flex justify-between items-center shrink-0 border-b border-surface">
           <Text variant={TextVariants.title}>{t('editor.presets.title')}</Text>
           <div className="flex items-center gap-1">
+            <button
+              className={`p-2 rounded-full transition-colors ${
+                showFavoritesOnly ? 'bg-surface-hover text-amber-400' : 'hover:bg-surface'
+              }`}
+              disabled={presets.length === 0 || (showFavoritesOnly && !hasAnyFavorite)}
+              onClick={() => setShowFavoritesOnly((prev) => !prev)}
+              data-tooltip={showFavoritesOnly ? t('editor.presets.filter.showAll') : t('editor.presets.filter.favorites')}
+            >
+              <Star size={18} className={showFavoritesOnly ? 'fill-amber-400' : ''} />
+            </button>
             <button
               className="p-2 rounded-full hover:bg-surface transition-colors"
               onClick={onNavigateToCommunity}
@@ -1286,6 +1362,11 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
                 {t('editor.presets.status.getCommunity')}
               </Button>
             </div>
+          ) : showFavoritesOnly && folders.length === 0 && rootPresets.length === 0 ? (
+            <div className="text-center text-text-secondary flex flex-col items-center gap-3 pt-4">
+              <Star size={28} className="opacity-40" />
+              <Text className="max-w-xs">{t('editor.presets.status.noFavorites')}</Text>
+            </div>
           ) : (
             <>
               <AnimatePresence>
@@ -1326,6 +1407,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
                                   intensity={preset.id === activePresetId ? presetIntensity : 100}
                                   onIntensityChange={(val) => handleIntensityChange(preset, val)}
                                   onDragStateChange={handleDragStateChange}
+                                  onToggleFavorite={handleToggleFavorite}
                                 />
                               </motion.div>
                             ))}
@@ -1356,6 +1438,8 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
                         isActive={item.preset?.id === activePresetId}
                         intensity={item.preset?.id === activePresetId ? presetIntensity : 100}
                         onIntensityChange={(val) => handleIntensityChange(item.preset as Preset, val)}
+                        onDragStateChange={handleDragStateChange}
+                        onToggleFavorite={handleToggleFavorite}
                       />
                     </motion.div>
                   ))}

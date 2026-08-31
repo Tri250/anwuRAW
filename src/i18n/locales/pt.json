@@ -716,6 +716,11 @@
         "presetFile": "Arquivo de Predefinição",
         "rapidRawPreset": "Predefinição RapidRAW"
       },
+      "duplicateSuffix": "Cópia",
+      "filter": {
+        "favorites": "Mostrar favoritos",
+        "showAll": "Mostrar tudo"
+      },
       "menu": {
         "configurePreset": "Configurar Predefinição",
         "deleteFolder": "Excluir Pasta",
@@ -723,6 +728,8 @@
         "duplicatePreset": "Duplicar Predefinição",
         "exportFolder": "Exportar Pasta",
         "exportPreset": "Exportar Predefinição",
+        "favorite": "Adicionar aos favoritos",
+        "unfavorite": "Remover dos favoritos",
         "newFolder": "Nova Pasta",
         "newPreset": "Nova Predefinição",
         "overwrite": "Substituir",
@@ -732,7 +739,8 @@
       "status": {
         "empty": "Nenhuma predefinição salva ainda. Crie a sua própria, importe de um arquivo ou explore as predefinições da comunidade.",
         "getCommunity": "Obter Predefinições da Comunidade",
-        "loading": "Carregando Predefinições..."
+        "loading": "Carregando Predefinições...",
+        "noFavorites": "Ainda não há predefinições favoritas. Clique na estrela para adicionar."
       },
       "supports": {
         "cropTransform": "Cortar e Transformar",

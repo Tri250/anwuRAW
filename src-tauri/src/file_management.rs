@@ -216,6 +216,8 @@ pub struct Preset {
     pub include_crop_transform: Option<bool>,
     #[serde(rename = "presetType", skip_serializing_if = "Option::is_none")]
     pub preset_type: Option<String>,
+    #[serde(rename = "favorite", default, skip_serializing_if = "Option::is_none")]
+    pub favorite: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -3322,6 +3324,7 @@ pub fn save_community_preset(
         include_masks,
         include_crop_transform,
         preset_type: preset_type.or(Some("style".to_string())),
+        favorite: None,
     };
 
     if let Some(PresetItem::Folder(folder)) = current_presets.iter_mut().find(|item| {

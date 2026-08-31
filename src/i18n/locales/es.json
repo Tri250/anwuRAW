@@ -716,6 +716,11 @@
         "presetFile": "Archivo de ajuste preestablecido",
         "rapidRawPreset": "Ajuste preestablecido de RapidRAW"
       },
+      "duplicateSuffix": "Copia",
+      "filter": {
+        "favorites": "Mostrar favoritos",
+        "showAll": "Mostrar todo"
+      },
       "menu": {
         "configurePreset": "Configurar ajuste preestablecido",
         "deleteFolder": "Eliminar carpeta",
@@ -723,6 +728,8 @@
         "duplicatePreset": "Duplicar ajuste preestablecido",
         "exportFolder": "Exportar carpeta",
         "exportPreset": "Exportar ajuste preestablecido",
+        "favorite": "Añadir a favoritos",
+        "unfavorite": "Quitar de favoritos",
         "newFolder": "Nueva carpeta",
         "newPreset": "Nuevo ajuste preestablecido",
         "overwrite": "Sobrescribir",
@@ -732,7 +739,8 @@
       "status": {
         "empty": "Aún no hay ajustes guardados. Crea el tuyo, impórtalo desde un archivo o explora los de la comunidad.",
         "getCommunity": "Obtener ajustes de la comunidad",
-        "loading": "Cargando ajustes preestablecidos..."
+        "loading": "Cargando ajustes preestablecidos...",
+        "noFavorites": "Aún no hay preajustes favoritos. Haz clic en la estrella para añadir."
       },
       "supports": {
         "cropTransform": "Recortar y transformar",

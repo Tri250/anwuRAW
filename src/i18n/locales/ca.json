@@ -695,6 +695,11 @@
         "presetFile": "Fitxer d'ajust preestablert",
         "rapidRawPreset": "Ajust preestablert de RapidRAW"
       },
+      "duplicateSuffix": "Còpia",
+      "filter": {
+        "favorites": "Mostra els preferits",
+        "showAll": "Mostra-ho tot"
+      },
       "menu": {
         "configurePreset": "Configurar ajust preestablert",
         "deleteFolder": "Eliminar carpeta",
@@ -702,6 +707,8 @@
         "duplicatePreset": "Duplicar ajust preestablert",
         "exportFolder": "Exportar carpeta",
         "exportPreset": "Exportar ajust preestablert",
+        "favorite": "Afegeix als preferits",
+        "unfavorite": "Treu dels preferits",
         "newFolder": "Nova carpeta",
         "newPreset": "Nou ajust preestablert",
         "overwrite": "Sobreescriure",
@@ -711,7 +718,8 @@
       "status": {
         "empty": "Encara no s'ha desat cap ajust preestablert. Creeu el vostre, importeu-ne des d'un fitxer o exploreu els de la comunitat.",
         "getCommunity": "Obtenir ajustos de la comunitat",
-        "loading": "S'estan carregant els ajustos preestablerts..."
+        "loading": "S'estan carregant els ajustos preestablerts...",
+        "noFavorites": "Encara no hi ha preajustaments preferits. Feu clic a l'estrella per afegir-ne."
       },
       "supports": {
         "cropTransform": "Retallar i Transformar",

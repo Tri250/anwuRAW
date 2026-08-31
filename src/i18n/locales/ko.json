@@ -693,6 +693,11 @@
         "presetFile": "프리셋 파일",
         "rapidRawPreset": "RapidRAW 프리셋"
       },
+      "duplicateSuffix": "사본",
+      "filter": {
+        "favorites": "즐겨찾기만 보기",
+        "showAll": "모두 보기"
+      },
       "menu": {
         "configurePreset": "프리셋 구성",
         "deleteFolder": "폴더 삭제",
@@ -700,6 +705,8 @@
         "duplicatePreset": "프리셋 복제",
         "exportFolder": "폴더 내보내기",
         "exportPreset": "프리셋 내보내기",
+        "favorite": "즐겨찾기에 추가",
+        "unfavorite": "즐겨찾기에서 제거",
         "newFolder": "새 폴더",
         "newPreset": "새 프리셋",
         "overwrite": "덮어쓰기",
@@ -709,7 +716,8 @@
       "status": {
         "empty": "아직 저장된 프리셋이 없습니다. 직접 만들거나, 파일에서 가져오거나, 커뮤니티 프리셋을 둘러보세요.",
         "getCommunity": "커뮤니티 프리셋 받기",
-        "loading": "프리셋 로딩 중..."
+        "loading": "프리셋 로딩 중...",
+        "noFavorites": "즐겨찾기한 프리셋이 없습니다. 별표를 클릭하여 추가하세요."
       },
       "supports": {
         "cropTransform": "자르기 및 변형",

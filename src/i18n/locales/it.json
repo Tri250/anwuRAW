@@ -716,6 +716,11 @@
         "presetFile": "File Predefinito",
         "rapidRawPreset": "Predefinito RapidRAW"
       },
+      "duplicateSuffix": "Copia",
+      "filter": {
+        "favorites": "Mostra preferiti",
+        "showAll": "Mostra tutto"
+      },
       "menu": {
         "configurePreset": "Configura Predefinito",
         "deleteFolder": "Elimina Cartella",
@@ -723,6 +728,8 @@
         "duplicatePreset": "Duplica Predefinito",
         "exportFolder": "Esporta Cartella",
         "exportPreset": "Esporta Predefinito",
+        "favorite": "Aggiungi ai preferiti",
+        "unfavorite": "Rimuovi dai preferiti",
         "newFolder": "Nuova Cartella",
         "newPreset": "Nuovo Predefinito",
         "overwrite": "Sovrascrivi",
@@ -732,7 +739,8 @@
       "status": {
         "empty": "Ancora nessun predefinito salvato. Creane uno, importalo da un file o esplora i predefiniti della community.",
         "getCommunity": "Ottieni Predefiniti della Community",
-        "loading": "Caricamento Predefiniti..."
+        "loading": "Caricamento Predefiniti...",
+        "noFavorites": "Nessun preset preferito. Fai clic sulla stella per aggiungerlo."
       },
       "supports": {
         "cropTransform": "Ritaglio e Trasformazione",

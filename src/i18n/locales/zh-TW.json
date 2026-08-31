@@ -693,6 +693,11 @@
         "presetFile": "預設檔案",
         "rapidRawPreset": "RapidRAW 預設"
       },
+      "duplicateSuffix": "副本",
+      "filter": {
+        "favorites": "僅顯示收藏",
+        "showAll": "顯示全部"
+      },
       "menu": {
         "configurePreset": "配置預設",
         "deleteFolder": "刪除資料夾",
@@ -700,6 +705,8 @@
         "duplicatePreset": "複製預設",
         "exportFolder": "匯出資料夾",
         "exportPreset": "匯出預設",
+        "favorite": "加入收藏",
+        "unfavorite": "取消收藏",
         "newFolder": "新建資料夾",
         "newPreset": "新建預設",
         "overwrite": "覆蓋",
@@ -709,7 +716,8 @@
       "status": {
         "empty": "尚未儲存預設。建立您自己的預設、從檔案匯入或探索社群預設。",
         "getCommunity": "取得社群預設",
-        "loading": "載入預設中..."
+        "loading": "載入預設中...",
+        "noFavorites": "還沒有收藏的預設。點擊預設上的星標即可收藏。"
       },
       "supports": {
         "cropTransform": "裁剪與變換",

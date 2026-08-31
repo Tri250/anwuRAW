@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import debounce from 'lodash.debounce';
+import i18n from 'i18next';
 import { Adjustments, COPYABLE_ADJUSTMENT_KEYS, ADJUSTMENT_GROUPS, INITIAL_ADJUSTMENTS } from '../utils/adjustments';
 import { Folder, Invokes, Preset } from '../components/ui/AppProperties';
 
@@ -404,10 +405,11 @@ export function usePresets(currentAdjustments: Adjustments) {
       const newPreset: Preset = {
         adjustments: JSON.parse(JSON.stringify(presetToDuplicate.adjustments)),
         id: crypto.randomUUID(),
-        name: `${presetToDuplicate.name} Copy`,
+        name: `${presetToDuplicate.name} ${i18n.t('editor.presets.duplicateSuffix')}`,
         includeMasks: presetToDuplicate.includeMasks,
         includeCropTransform: presetToDuplicate.includeCropTransform,
         presetType: presetToDuplicate.presetType || 'style',
+        favorite: false,
       };
 
       let updatedPresets;
@@ -553,6 +555,40 @@ export function usePresets(currentAdjustments: Adjustments) {
     [savePresetsToBackend],
   );
 
+  const toggleFavorite = useCallback(
+    (presetId: string | null) => {
+      if (!presetId) return;
+
+      let found = false;
+      const updatedPresets = presets.map((item: UserPreset) => {
+        if (item.preset?.id === presetId) {
+          found = true;
+          return { preset: { ...item.preset, favorite: !item.preset.favorite } };
+        }
+        if (item.folder) {
+          const child = item.folder.children.find((p: Preset) => p.id === presetId);
+          if (child) {
+            found = true;
+            return {
+              folder: {
+                ...item.folder,
+                children: item.folder.children.map((p: Preset) =>
+                  p.id === presetId ? { ...p, favorite: !p.favorite } : p,
+                ),
+              },
+            };
+          }
+        }
+        return item;
+      });
+
+      if (!found) return;
+      setPresets(updatedPresets);
+      savePresetsToBackend(updatedPresets);
+    },
+    [presets, savePresetsToBackend],
+  );
+
   const sortAllPresetsAlphabetically = useCallback(() => {
     setPresets((currentPresets) => {
       const newPresets: Array<UserPreset> = JSON.parse(JSON.stringify(currentPresets));
@@ -652,6 +688,7 @@ export function usePresets(currentAdjustments: Adjustments) {
     overwritePreset,
     presets,
     refreshPresets: loadPresets,
+    toggleFavorite,
     renameItem,
     reorderItems,
     sortAllPresetsAlphabetically,

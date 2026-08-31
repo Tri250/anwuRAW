@@ -716,6 +716,11 @@
         "presetFile": "Fichier de paramètre prédéfini",
         "rapidRawPreset": "Paramètre prédéfini RapidRAW"
       },
+      "duplicateSuffix": "Copie",
+      "filter": {
+        "favorites": "Afficher les favoris",
+        "showAll": "Tout afficher"
+      },
       "menu": {
         "configurePreset": "Configurer le paramètre prédéfini",
         "deleteFolder": "Supprimer le dossier",
@@ -723,6 +728,8 @@
         "duplicatePreset": "Dupliquer le paramètre prédéfini",
         "exportFolder": "Exporter le dossier",
         "exportPreset": "Exporter le paramètre prédéfini",
+        "favorite": "Ajouter aux favoris",
+        "unfavorite": "Retirer des favoris",
         "newFolder": "Nouveau dossier",
         "newPreset": "Nouveau paramètre prédéfini",
         "overwrite": "Écraser",
@@ -732,7 +739,8 @@
       "status": {
         "empty": "Aucun paramètre prédéfini enregistré pour le moment. Créez les vôtres, importez-en à partir d'un fichier ou explorez ceux de la communauté.",
         "getCommunity": "Obtenir les paramètres de la communauté",
-        "loading": "Chargement des paramètres prédéfinis..."
+        "loading": "Chargement des paramètres prédéfinis...",
+        "noFavorites": "Aucun préréglage favori pour le moment. Cliquez sur l'étoile pour l'ajouter."
       },
       "supports": {
         "cropTransform": "Recadrage & Transformation",

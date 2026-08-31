@@ -737,6 +737,11 @@
         "presetFile": "Plik presetu",
         "rapidRawPreset": "Preset RapidRAW"
       },
+      "duplicateSuffix": "Kopia",
+      "filter": {
+        "favorites": "Pokaż ulubione",
+        "showAll": "Pokaż wszystkie"
+      },
       "menu": {
         "configurePreset": "Konfiguruj preset",
         "deleteFolder": "Usuń folder",
@@ -744,6 +749,8 @@
         "duplicatePreset": "Duplikuj preset",
         "exportFolder": "Eksportuj folder",
         "exportPreset": "Eksportuj preset",
+        "favorite": "Dodaj do ulubionych",
+        "unfavorite": "Usuń z ulubionych",
         "newFolder": "Nowy folder",
         "newPreset": "Nowy preset",
         "overwrite": "Nadpisz",
@@ -753,7 +760,8 @@
       "status": {
         "empty": "Brak zapisanych presetów. Utwórz własne, zaimportuj z pliku lub odkryj presety społeczności.",
         "getCommunity": "Pobierz presety społeczności",
-        "loading": "Wczytywanie presetów..."
+        "loading": "Wczytywanie presetów...",
+        "noFavorites": "Brak ulubionych presetów. Kliknij gwiazdkę, aby dodać."
       },
       "supports": {
         "cropTransform": "Kadrowanie i przekształcanie",

@@ -706,6 +706,11 @@
         "presetFile": "Preset File",
         "rapidRawPreset": "RapidRAW Preset"
       },
+      "duplicateSuffix": "Copy",
+      "filter": {
+        "favorites": "Show Favorites",
+        "showAll": "Show All"
+      },
       "menu": {
         "configurePreset": "Configure Preset",
         "deleteFolder": "Delete Folder",
@@ -713,6 +718,8 @@
         "duplicatePreset": "Duplicate Preset",
         "exportFolder": "Export Folder",
         "exportPreset": "Export Preset",
+        "favorite": "Add to Favorites",
+        "unfavorite": "Remove from Favorites",
         "newFolder": "New Folder",
         "newPreset": "New Preset",
         "overwrite": "Overwrite",
@@ -722,7 +729,8 @@
       "status": {
         "empty": "No presets saved yet. Create your own, import from a file, or explore community presets.",
         "getCommunity": "Get Community Presets",
-        "loading": "Loading Presets..."
+        "loading": "Loading Presets...",
+        "noFavorites": "No favorite presets yet. Star a preset to add it here."
       },
       "supports": {
         "cropTransform": "Crop & Transform",
