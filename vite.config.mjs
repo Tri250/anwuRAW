@@ -33,9 +33,20 @@ export default defineConfig(async () => ({
   build: {
     minify: !process.env.TAURI_ENV_DEBUG ? 'esbuild' : false,
     sourcemap: !!process.env.TAURI_ENV_DEBUG,
-    // Desktop app — a single large chunk (2.8 MB, gzip 835 kB) is acceptable.
-    // Disables the >500 kB warning since code-splitting gains would be minimal
-    // for a Tauri application with no route-based lazy loading.
-    chunkSizeWarningLimit: 4000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('react-konva') || id.includes('/konva/')) return 'konva';
+          if (id.includes('@clerk')) return 'clerk';
+          if (id.includes('framer-motion')) return 'framer';
+          if (id.includes('react-window')) return 'virtual';
+          if (id.includes('simple-icons')) return 'icons';
+          if (id.includes('lucide-react')) return 'lucide';
+          if (id.includes('react-dom') || id.includes('/react/')) return 'react';
+          if (id.includes('@tauri-apps')) return 'tauri';
+        },
+      },
+    },
   },
 }));
