@@ -392,8 +392,9 @@ pub async fn generate_auto_erase_patch(
         for y in min_y..=max_y {
             for x in min_x..=max_x {
                 let (ox, oy) = ((x - min_x) as u32, (y - min_y) as u32);
-                let px = if mask_bitmap.get_pixel(x as u32, y as u32)[0] > 0 {
-                    final_patch.get_pixel(x as u32, y as u32)
+                // DynamicImage::get_pixel 返回像素值，ImageBuffer::get_pixel 返回引用，统一解引用成值
+                let px: image::Rgba<u8> = if mask_bitmap.get_pixel(x as u32, y as u32)[0] > 0 {
+                    *final_patch.get_pixel(x as u32, y as u32)
                 } else {
                     source_image.get_pixel(x as u32, y as u32)
                 };

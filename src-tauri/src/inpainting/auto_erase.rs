@@ -93,26 +93,21 @@ pub fn region_grow_mask(
     gray_from_bytes(&mask, w, h)
 }
 
-/// 4 邻接枚举（边界安全）
+/// 4 邻接枚举（边界安全，仅返回有效的邻居坐标）
 #[inline]
-fn neighbors(x: u32, y: u32, w: u32, h: u32) -> [(u32, u32); 4] {
-    let mut out = [(x, y); 4];
-    let mut n = 0;
+fn neighbors(x: u32, y: u32, w: u32, h: u32) -> Vec<(u32, u32)> {
+    let mut out = Vec::with_capacity(4);
     if x > 0 {
-        out[n] = (x - 1, y);
-        n += 1;
+        out.push((x - 1, y));
     }
     if x + 1 < w {
-        out[n] = (x + 1, y);
-        n += 1;
+        out.push((x + 1, y));
     }
     if y > 0 {
-        out[n] = (x, y - 1);
-        n += 1;
+        out.push((x, y - 1));
     }
     if y + 1 < h {
-        out[n] = (x, y + 1);
-        n += 1;
+        out.push((x, y + 1));
     }
     out
 }
