@@ -1107,7 +1107,11 @@ impl GpuProcessor {
         });
         let out_width = bounds.width;
         let out_height = bounds.height;
-        let mask_layer_count = request.mask_bitmaps.len().clamp(2, MAX_MASKS) as u32;
+        let raw_count = request.mask_bitmaps.len();
+        if raw_count > MAX_MASKS {
+            log::warn!("Mask count {} exceeds MAX_MASKS={}; truncating silently.", raw_count, MAX_MASKS);
+        }
+        let mask_layer_count = raw_count.min(MAX_MASKS).max(1) as u32;
         let full_texture_size = wgpu::Extent3d {
             width,
             height,
@@ -1118,7 +1122,7 @@ impl GpuProcessor {
         if request.mask_bitmaps.is_empty() {
             mask_texture_data.resize(buffer_size, 0);
         } else {
-            for mask_bitmap in request.mask_bitmaps.iter().take(MAX_MASKS) {
+            for mask_bitmap in request.mask_bitmaps.iter().take(mask_layer_count as usize) {
                 mask_texture_data.extend_from_slice(mask_bitmap.as_raw());
             }
             if mask_texture_data.len() < buffer_size {

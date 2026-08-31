@@ -2518,6 +2518,10 @@ pub fn get_all_adjustments_from_json(
         .and_then(|m| serde_json::from_value(m.clone()).ok())
         .unwrap_or_default();
 
+    let visible_mask_count = mask_definitions.iter().filter(|m| m.visible).count();
+    if visible_mask_count > MAX_MASKS {
+        log::warn!("{} visible masks exceed MAX_MASKS={}; truncating visible masks.", visible_mask_count, MAX_MASKS);
+    }
     for (i, mask_def) in mask_definitions
         .iter()
         .filter(|m| m.visible)
