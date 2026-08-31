@@ -1,11 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Brush, Check, Eraser, Eye, EyeOff, FlipHorizontal2, Trash2 } from 'lucide-react';
+import { Brush, Check, Eraser, Eye, EyeOff, FlipHorizontal2, Trash2, Wrench } from 'lucide-react';
 import clsx from 'clsx';
 import { Mask, SubMask, ToolType, getSubMaskName } from '../right/Masks';
 import { BrushSettings } from '../../ui/AppProperties';
 
-/** 哪些蒙版类型会在画布上进入"蒙版编辑工具条"会话 */
+/** 画布上进入"蒙版/修复编辑工具条"会话的类型 */
 const TOOLBAR_VISIBLE_TYPES: Mask[] = [
   Mask.Brush,
   Mask.Flow,
@@ -14,10 +14,29 @@ const TOOLBAR_VISIBLE_TYPES: Mask[] = [
   Mask.Radial,
   Mask.Color,
   Mask.Luminance,
+  Mask.Clone,
+  Mask.Heal,
+  Mask.Liquify,
+  Mask.Retouch,
 ];
 
 /** 这些类型支持画笔 / 橡皮切换 */
-const BRUSH_TOOL_TYPES: Mask[] = [Mask.Brush, Mask.Flow, Mask.QuickEraser];
+const BRUSH_TOOL_TYPES: Mask[] = [
+  Mask.Brush,
+  Mask.Flow,
+  Mask.QuickEraser,
+  Mask.Clone,
+  Mask.Heal,
+  Mask.Liquify,
+  Mask.Retouch,
+];
+
+/** 独立修复/修饰类型（无"反选/清除蒙版"语义，但可用强度滑杆） */
+const STANDALONE_REPAIR: Mask[] = [Mask.Clone, Mask.Heal, Mask.Liquify, Mask.Retouch];
+
+/** 有强度/压力滑杆的类型 → 参数键 */
+const STRENGTH_PARAM_KEY = (type: Mask) =>
+  type === Mask.Liquify ? 'pressure' : type === Mask.Retouch ? 'intensity' : null;
 
 /** 这些类型支持"清除蒙版"（会清空其可编辑内容） */
 const CLEAR_TYPES: Mask[] = [
@@ -35,6 +54,7 @@ interface MaskEditingToolbarProps {
   brushSettings: BrushSettings | null;
   maskOverlayVisible: boolean;
   onBrushToolChange: (tool: ToolType) => void;
+  onStrengthChange: (value: number) => void;
   onToggleOverlay: () => void;
   onInvert: () => void;
   onClear: () => void;
@@ -50,6 +70,7 @@ export default function MaskEditingToolbar({
   brushSettings,
   maskOverlayVisible,
   onBrushToolChange,
+  onStrengthChange,
   onToggleOverlay,
   onInvert,
   onClear,
@@ -57,7 +78,13 @@ export default function MaskEditingToolbar({
 }: MaskEditingToolbarProps) {
   const { t } = useTranslation();
   const showBrushTool = BRUSH_TOOL_TYPES.includes(subMask.type);
+  const isStandalone = STANDALONE_REPAIR.includes(subMask.type);
   const activeTool = brushSettings?.tool ?? ToolType.Brush;
+
+  const strengthKey = STRENGTH_PARAM_KEY(subMask.type);
+  const strengthValue = strengthKey
+    ? (Number((subMask.parameters as Record<string, unknown>)?.[strengthKey] ?? 40) || 0)
+    : null;
 
   const buttonBase =
     'flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors';
@@ -108,16 +135,37 @@ export default function MaskEditingToolbar({
           </>
         ) : null}
 
-        <button
-          className={iconButton(subMask.invert)}
-          onClick={onInvert}
-          title={t('editor.masks.toolbar.invert')}
-        >
-          <FlipHorizontal2 size={16} />
-          <span className="hidden sm:inline">{t('editor.masks.toolbar.invert')}</span>
-        </button>
+        {strengthKey !== null ? (
+          <label className="flex items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-text-secondary">
+            <span className="flex h-4 w-4 items-center justify-center">
+              <Wrench size={15} />
+            </span>
+            <input
+              className="h-1 w-24 accent-accent"
+              type="range"
+              min={1}
+              max={100}
+              step={1}
+              value={strengthValue ?? 40}
+              onChange={(e) => onStrengthChange(Number(e.target.value))}
+              title={t('editor.masks.toolbar.strength')}
+            />
+            <span className="w-6 text-right tabular-nums text-text-primary">{strengthValue}</span>
+          </label>
+        ) : null}
 
-        {CLEAR_TYPES.includes(subMask.type) ? (
+        {!isStandalone ? (
+          <button
+            className={iconButton(subMask.invert)}
+            onClick={onInvert}
+            title={t('editor.masks.toolbar.invert')}
+          >
+            <FlipHorizontal2 size={16} />
+            <span className="hidden sm:inline">{t('editor.masks.toolbar.invert')}</span>
+          </button>
+        ) : null}
+
+        {!isStandalone && CLEAR_TYPES.includes(subMask.type) ? (
           <button
             className={iconButton()}
             onClick={onClear}

@@ -702,6 +702,23 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     setEditor({ maskOverlayVisible: !maskOverlayVisible });
   }, [maskOverlayVisible, setEditor]);
 
+  const handleMaskToolbarStrengthChange = useCallback(
+    (value: number) => {
+      if (!toolbarSubMask) return;
+      const activeId = isMasking ? activeMaskId : activeAiSubMaskId;
+      if (!activeId) return;
+      const key =
+        toolbarSubMask.type === Mask.Liquify
+          ? 'pressure'
+          : toolbarSubMask.type === Mask.Retouch
+            ? 'intensity'
+            : null;
+      if (!key) return;
+      updateSubMaskLocal(activeId, { parameters: { ...toolbarSubMask.parameters, [key]: value } });
+    },
+    [toolbarSubMask, isMasking, activeMaskId, activeAiSubMaskId, updateSubMaskLocal],
+  );
+
   const handleMaskToolbarInvert = useCallback(() => {
     if (!toolbarSubMask) return;
     const activeId = isMasking ? activeMaskId : activeAiSubMaskId;
@@ -2274,6 +2291,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
               brushSettings={brushSettings}
               maskOverlayVisible={maskOverlayVisible}
               onBrushToolChange={handleMaskToolbarBrushToolChange}
+              onStrengthChange={handleMaskToolbarStrengthChange}
               onToggleOverlay={handleMaskToolbarToggleOverlay}
               onInvert={handleMaskToolbarInvert}
               onClear={handleMaskToolbarClear}

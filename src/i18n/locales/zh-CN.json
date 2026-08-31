@@ -664,7 +664,8 @@
         "clearMask": "清除蒙版",
         "overlayOn": "显示蒙版叠加",
         "overlayOff": "隐藏蒙版叠加",
-        "done": "完成"
+        "done": "完成",
+        "strength": "强度"
       }
     },
     "metadata": {

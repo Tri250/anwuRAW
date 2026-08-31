@@ -666,7 +666,8 @@
         "clearMask": "Clear Mask",
         "overlayOn": "Show mask overlay",
         "overlayOff": "Hide mask overlay",
-        "done": "Done"
+        "done": "Done",
+        "strength": "Strength"
       }
     },
     "metadata": {
