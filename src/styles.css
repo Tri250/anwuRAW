@@ -116,8 +116,16 @@
     @apply text-text-primary font-sans;
   }
 
+  /* 鼠标/触屏交互不显示默认焦点环（各控件自带 hover/active 态） */
   *:focus {
     outline: none !important;
+  }
+
+  /* 键盘导航（Tab）时保留清晰、一致的焦点可见性，符合无障碍与国内同类工具键盘体验 */
+  *:focus-visible {
+    outline: 2px solid var(--color-accent) !important;
+    outline-offset: 2px;
+    border-radius: var(--radius-md, 6px);
   }
 
   .enable-color-transitions *,

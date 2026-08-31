@@ -135,7 +135,7 @@ export default function MaskEditingToolbar({
     >
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">{icon}</span>
       <input
-        className="h-1 w-20 accent-accent"
+        className="h-1 w-20 accent-accent slider-input"
         type="range"
         min={1}
         max={max}
@@ -143,7 +143,7 @@ export default function MaskEditingToolbar({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />
-      <span className="w-6 shrink-0 text-right tabular-nums text-text-primary">{value}</span>
+      <span className="w-7 min-w-7 shrink-0 text-right tabular-nums text-text-primary">{value}</span>
     </label>
   );
 
@@ -154,7 +154,7 @@ export default function MaskEditingToolbar({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.96 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="pointer-events-auto flex items-center gap-1 rounded-xl border border-border-color bg-bg-secondary/90 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-md"
+        className="pointer-events-auto mx-auto flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-x-auto rounded-xl border border-border-color bg-bg-secondary/90 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-md no-scrollbar"
       >
         <span className="px-2 text-xs font-semibold uppercase tracking-wider text-text-secondary">
           {t('editor.masks.toolbar.title')}
@@ -211,7 +211,7 @@ export default function MaskEditingToolbar({
               <Wrench size={15} />
             </span>
             <input
-              className="h-1 w-24 accent-accent"
+              className="h-1 w-24 accent-accent slider-input"
               type="range"
               min={1}
               max={100}
@@ -220,7 +220,7 @@ export default function MaskEditingToolbar({
               onChange={(e) => onStrengthChange(Number(e.target.value))}
               title={t('editor.masks.toolbar.strength')}
             />
-            <span className="w-6 text-right tabular-nums text-text-primary">{strengthValue}</span>
+            <span className="w-7 min-w-7 text-right tabular-nums text-text-primary">{strengthValue}</span>
           </label>
         ) : null}
 
