@@ -17,6 +17,7 @@
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
+use std::io::Read;
 use std::path::PathBuf;
 
 fn verify_sha256(path: &PathBuf, expected_hash: &str) -> Result<bool, std::io::Error> {
@@ -141,7 +142,7 @@ fn main() {
         ("sam_vit_b_01ec64_encoder.onnx",    "16ab73d9c824886f0de2938c19df22fb9ec3deebfd0de58e65177e479213d7d1", "SAM subject mask encoder"),
         ("sam_vit_b_01ec64_decoder.onnx",    "85d0d672cf5b7fe763edcde429e5533e62f674af4b15c7d688b7673b0ef00bf7", "SAM subject mask decoder"),
         ("u2net.onnx",                       "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491", "Foreground U2Net mask"),
-        ("skyseg_u2net.onnx",                "ab9c34c64c3d821220a2886a4a06da4642ffa14d5b30e8d5339056a089aa1d39", "Sky U2Net mask"),
+        ("skyseg-u2net.onnx",                "ab9c34c64c3d821220a2886a4a06da4642ffa14d5b30e8d5339056a089aa1d39", "Sky U2Net mask"),
         ("depth_anything_v2_vits.onnx",      "d2b11a11c1d4a12b47608fa65a17ee9a4c605b55ee1730c8e3b526304f2562be", "Depth Anything V2 (vits)"),
         ("nind_denoise_utnet_684.onnx",      "ee3586279d514df557ff3f7dec6df37fafc51ba5d3a3435b2cc9ac2d9017e7fe", "NIND UTNet AI denoise"),
         ("clip_model.onnx",                  "57879bb1c23cdeb350d23569dd251ed4b740a96d747c529e94a2bb8040ac5d00", "CLIP image embedding (tagging)"),

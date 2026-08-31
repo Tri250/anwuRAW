@@ -13,7 +13,7 @@ use ort::session::Session;
 use ort::value::Tensor;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tokenizers::Tokenizer;
 use tokio::sync::Mutex as TokioMutex;
 
@@ -31,8 +31,7 @@ pub fn resolve_bundled_model_path(
     app_handle
         .path()
         .resolve(
-            "ai_models",
-            filename,
+            Path::new("ai_models").join(filename),
             tauri::path::BaseDirectory::Resource,
         )
         .map_err(|e| {
@@ -71,7 +70,7 @@ const U2NETP_FILENAME: &str = "u2net.onnx";
 const U2NETP_INPUT_SIZE: u32 = 320;
 const U2NETP_SHA256: &str = "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491";
 
-const SKYSEG_FILENAME: &str = "skyseg_u2net.onnx";
+const SKYSEG_FILENAME: &str = "skyseg-u2net.onnx";
 const SKYSEG_INPUT_SIZE: u32 = 320;
 const SKYSEG_SHA256: &str = "ab9c34c64c3d821220a2886a4a06da4642ffa14d5b30e8d5339056a089aa1d39";
 

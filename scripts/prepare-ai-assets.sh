@@ -15,7 +15,8 @@
 #   1. https://hf-mirror.com/CyberTimon/RapidRAW-Models
 #   2. https://huggingface.co/CyberTimon/RapidRAW-Models
 # ============================================================================
-set -euo pipefail
+set -uo pipefail
+FAILED=0   # 汇总下载失败个数（单个失败不中断，便于一次跑完再重试缺失项）
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 RESOURCES="$ROOT/src-tauri/resources"
@@ -65,7 +66,7 @@ mkdir -p "$AI_MODELS"
 mkdir -p "$ROOT/src-tauri/libs/arm64-v8a"   # Android ORT .so 额外拷贝目标
 
 # ── 下载器（自动端点降级 + 重试 + SHA256 校验） ────────────────────────
-download() {
+_download() {
     local remote_path="$1" dest="$2" sha256="${3:-}"
     local basename
     basename="$(basename "$dest")"
@@ -119,6 +120,13 @@ download() {
         return 1
     fi
     return 0
+}
+
+# 容错包装：单个资产失败只计数（FAILED +1），不中断整批下载
+download() {
+    if ! _download "$@"; then
+        FAILED=$((FAILED + 1))
+    fi
 }
 
 # ── ONNX Runtime native 库（每个平台 1 个） ────────────────────────────
@@ -188,8 +196,8 @@ download "u2net.onnx" \
          "$AI_MODELS/u2net.onnx" \
          "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491"
 
-download "skyseg_u2net.onnx" \
-         "$AI_MODELS/skyseg_u2net.onnx" \
+download "skyseg-u2net.onnx" \
+         "$AI_MODELS/skyseg-u2net.onnx" \
          "ab9c34c64c3d821220a2886a4a06da4642ffa14d5b30e8d5339056a089aa1d39"
 
 download "depth_anything_v2_vits.onnx" \
@@ -214,6 +222,16 @@ download "lama_fp16.onnx" \
 
 # ── 输出汇总 ───────────────────────────────────────────────────────────
 echo ""
+if [ "$FAILED" -gt 0 ]; then
+    echo "══════════════════════════════════════════════════════════════════"
+    echo "  ⚠  $FAILED asset(s) failed to download this run."
+    echo "     网络（尤其 HuggingFace 系端点）不通时属正常，请重新执行本脚本重试缺失项。"
+    echo "     可用: TARGET_OS=linux TARGET_ARCH=x86_64 bash scripts/prepare-ai-assets.sh"
+    echo "══════════════════════════════════════════════════════════════════"
+    echo ""
+    ls -lh --time-style=short "$AI_MODELS/" 2>/dev/null | sed 's/^/    /'
+    exit 1
+fi
 echo "══════════════════════════════════════════════════════════════════"
 echo "  ALL AI ASSETS READY"
 echo "══════════════════════════════════════════════════════════════════"
