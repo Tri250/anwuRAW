@@ -669,7 +669,9 @@
         "overlayOn": "显示蒙版叠加",
         "overlayOff": "隐藏蒙版叠加",
         "done": "完成",
-        "strength": "强度"
+        "strength": "强度",
+        "brushSize": "笔刷大小",
+        "brushFeather": "柔软度"
       }
     },
     "metadata": {

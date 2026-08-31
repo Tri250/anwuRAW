@@ -1,6 +1,17 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Brush, Check, Eraser, Eye, EyeOff, FlipHorizontal2, Trash2, Wrench } from 'lucide-react';
+import {
+  Brush,
+  CircleDotDashed,
+  Check,
+  Eraser,
+  Eye,
+  EyeOff,
+  FlipHorizontal2,
+  Feather,
+  Trash2,
+  Wrench,
+} from 'lucide-react';
 import clsx from 'clsx';
 import { Mask, SubMask, ToolType, getSubMaskName } from '../right/Masks';
 import { BrushSettings } from '../../ui/AppProperties';
@@ -16,6 +27,7 @@ const TOOLBAR_VISIBLE_TYPES: Mask[] = [
   Mask.Luminance,
   Mask.Clone,
   Mask.Heal,
+  Mask.AutoErase,
   Mask.Liquify,
   Mask.Retouch,
 ];
@@ -27,16 +39,23 @@ const BRUSH_TOOL_TYPES: Mask[] = [
   Mask.QuickEraser,
   Mask.Clone,
   Mask.Heal,
+  Mask.AutoErase,
   Mask.Liquify,
   Mask.Retouch,
 ];
 
 /** 独立修复/修饰类型（无"反选/清除蒙版"语义，但可用强度滑杆） */
-const STANDALONE_REPAIR: Mask[] = [Mask.Clone, Mask.Heal, Mask.Liquify, Mask.Retouch];
+const STANDALONE_REPAIR: Mask[] = [Mask.Clone, Mask.Heal, Mask.AutoErase, Mask.Liquify, Mask.Retouch];
 
-/** 有强度/压力滑杆的类型 → 参数键 */
+/** 有强度/压力/灵敏度滑杆的类型 → 参数键 */
 const STRENGTH_PARAM_KEY = (type: Mask) =>
-  type === Mask.Liquify ? 'pressure' : type === Mask.Retouch ? 'intensity' : null;
+  type === Mask.Liquify
+    ? 'pressure'
+    : type === Mask.Retouch
+      ? 'intensity'
+      : type === Mask.AutoErase
+        ? 'sensitivity'
+        : null;
 
 /** 这些类型支持"清除蒙版"（会清空其可编辑内容） */
 const CLEAR_TYPES: Mask[] = [
@@ -54,6 +73,7 @@ interface MaskEditingToolbarProps {
   brushSettings: BrushSettings | null;
   maskOverlayVisible: boolean;
   onBrushToolChange: (tool: ToolType) => void;
+  onBrushSettingsChange: (settings: Partial<BrushSettings>) => void;
   onStrengthChange: (value: number) => void;
   onToggleOverlay: () => void;
   onInvert: () => void;
@@ -70,6 +90,7 @@ export default function MaskEditingToolbar({
   brushSettings,
   maskOverlayVisible,
   onBrushToolChange,
+  onBrushSettingsChange,
   onStrengthChange,
   onToggleOverlay,
   onInvert,
@@ -80,6 +101,9 @@ export default function MaskEditingToolbar({
   const showBrushTool = BRUSH_TOOL_TYPES.includes(subMask.type);
   const isStandalone = STANDALONE_REPAIR.includes(subMask.type);
   const activeTool = brushSettings?.tool ?? ToolType.Brush;
+
+  const brushSize = brushSettings?.size ?? 50;
+  const brushFeather = brushSettings?.feather ?? 50;
 
   const strengthKey = STRENGTH_PARAM_KEY(subMask.type);
   const strengthValue = strengthKey
@@ -96,6 +120,32 @@ export default function MaskEditingToolbar({
         ? 'bg-accent text-white'
         : 'text-text-secondary hover:bg-card-active hover:text-text-primary',
     );
+
+  /** 紧凑的滑杆控件（笔刷大小 / 柔软度 / 强度） */
+  const rangeControl = (
+    icon: React.ReactNode,
+    label: string,
+    value: number,
+    onChange: (v: number) => void,
+    max = 100,
+  ) => (
+    <label
+      className="flex items-center gap-2 rounded-lg px-2 text-sm font-medium text-text-secondary"
+      title={label}
+    >
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center">{icon}</span>
+      <input
+        className="h-1 w-20 accent-accent"
+        type="range"
+        min={1}
+        max={max}
+        step={1}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+      <span className="w-6 shrink-0 text-right tabular-nums text-text-primary">{value}</span>
+    </label>
+  );
 
   return (
     <AnimatePresence>
@@ -131,6 +181,26 @@ export default function MaskEditingToolbar({
               <Eraser size={16} />
               <span className="hidden sm:inline">{t('editor.masks.brush.eraser')}</span>
             </button>
+            <div className="mx-1 h-5 w-px bg-border-color" />
+          </>
+        ) : null}
+
+        {showBrushTool ? (
+          <>
+            {rangeControl(
+              <CircleDotDashed size={15} />,
+              t('editor.masks.toolbar.brushSize'),
+              brushSize,
+              (v) => onBrushSettingsChange({ size: v }),
+              400,
+            )}
+            {rangeControl(
+              <Feather size={14} />,
+              t('editor.masks.toolbar.brushFeather'),
+              brushFeather,
+              (v) => onBrushSettingsChange({ feather: v }),
+              100,
+            )}
             <div className="mx-1 h-5 w-px bg-border-color" />
           </>
         ) : null}

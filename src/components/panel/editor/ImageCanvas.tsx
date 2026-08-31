@@ -58,6 +58,7 @@ interface ImageCanvasProps {
   onQuickErase(subMaskId: string | null, startPoint: Coord, endpoint: Coord): void;
   onSelectAiSubMask(id: string | null): void;
   onSelectMask(id: string | null): void;
+  onBrushSettingsChange?: (settings: Partial<BrushSettings>) => void;
   onSelectAiPatchContainer?: (id: string | null) => void;
   onSelectMaskContainer?: (id: string | null) => void;
   onStraighten(val: number): void;
@@ -1317,6 +1318,7 @@ const ImageCanvas = memo(
     onQuickErase,
     onSelectAiSubMask,
     onSelectMask,
+    onBrushSettingsChange,
     onSelectAiPatchContainer,
     onSelectMaskContainer,
     onStraighten,
@@ -1370,6 +1372,13 @@ const ImageCanvas = memo(
     const [isAltPressed, setIsAltPressed] = useState(false);
     const [isCtrlPressed, setIsCtrlPressed] = useState(false);
     const retainedPatchRef = useRef<typeof interactivePatch>(null);
+
+    // 键盘调整笔刷所需的实时引用（keydown 监听为一次性注册）
+    const brushToolActiveRef = useRef(false);
+    const brushSettingsRef = useRef(brushSettings);
+    brushSettingsRef.current = brushSettings;
+    const onBrushSettingsChangeRef = useRef(onBrushSettingsChange);
+    onBrushSettingsChangeRef.current = onBrushSettingsChange;
 
     const isWgpuActive = appSettings?.useWgpuRenderer !== false && selectedImage?.isReady && hasRenderedFirstFrame;
     const { t } = useTranslation();
@@ -1515,6 +1524,19 @@ const ImageCanvas = memo(
           (window as any).ctrlKeyDown = true;
           setIsCtrlPressed(true);
         }
+        // 笔刷大小快捷键 [ ]（Shift 加速），仅在正在编辑笔刷类蒙版时生效，且避免影响输入框
+        if (e.key === '[' || e.key === ']') {
+          const target = e.target as HTMLElement | null;
+          const isTyping =
+            !!target &&
+            (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+          if (isTyping || !brushToolActiveRef.current) return;
+          e.preventDefault();
+          const step = e.shiftKey ? 40 : 8;
+          const base = brushSettingsRef.current?.size ?? 50;
+          const next = Math.max(1, Math.min(400, base + (e.key === '[' ? -step : step)));
+          onBrushSettingsChangeRef.current?.({ size: next });
+        }
       };
       const handleKeyUp = (e: KeyboardEvent) => {
         if (e.key === 'Alt') {
@@ -1624,6 +1646,8 @@ const ImageCanvas = memo(
     const isBrushActive =
       (isMasking || isAiEditing) &&
       (activeSubMask?.type === Mask.Brush || activeSubMask?.type === Mask.Flow || isDirectPatchActive);
+
+    brushToolActiveRef.current = isBrushActive;
 
     const activeLineFlow = activeSubMask?.type === Mask.Flow ? (activeSubMask?.parameters?.flow ?? 10) : undefined;
 

@@ -18,7 +18,7 @@ import EditorToolbar from './editor/EditorToolbar';
 import ImageCanvas from './editor/ImageCanvas';
 import { Mask, SubMask, ToolType } from './right/Masks';
 import MaskEditingToolbar, { showMaskEditingToolbar } from './editor/MaskEditingToolbar';
-import { Panel, TransformState, Invokes } from '../ui/AppProperties';
+import { Panel, TransformState, Invokes, BrushSettings } from '../ui/AppProperties';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useUIStore } from '../../store/useUIStore';
@@ -698,6 +698,18 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     [brushSettings, setEditor],
   );
 
+  const handleMaskToolbarBrushSettingsChange = useCallback(
+    (settings: Partial<BrushSettings>) => {
+      setEditor({
+        brushSettings: {
+          ...(brushSettings ?? { size: 50, feather: 50, opacity: 100, tool: ToolType.Brush }),
+          ...settings,
+        },
+      });
+    },
+    [brushSettings, setEditor],
+  );
+
   const handleMaskToolbarToggleOverlay = useCallback(() => {
     setEditor({ maskOverlayVisible: !maskOverlayVisible });
   }, [maskOverlayVisible, setEditor]);
@@ -712,7 +724,9 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
           ? 'pressure'
           : toolbarSubMask.type === Mask.Retouch
             ? 'intensity'
-            : null;
+            : toolbarSubMask.type === Mask.AutoErase
+              ? 'sensitivity'
+              : null;
       if (!key) return;
       updateSubMaskLocal(activeId, { parameters: { ...toolbarSubMask.parameters, [key]: value } });
     },
@@ -2245,6 +2259,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
             onQuickErase={handleQuickErase}
             onSelectAiSubMask={(id) => setEditor({ activeAiSubMaskId: id })}
             onSelectMask={(id) => setEditor({ activeMaskId: id })}
+            onBrushSettingsChange={handleMaskToolbarBrushSettingsChange}
             onStraighten={handleStraighten}
             selectedImage={selectedImage}
             setCrop={handleCropChange}
@@ -2291,6 +2306,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
               brushSettings={brushSettings}
               maskOverlayVisible={maskOverlayVisible}
               onBrushToolChange={handleMaskToolbarBrushToolChange}
+              onBrushSettingsChange={handleMaskToolbarBrushSettingsChange}
               onStrengthChange={handleMaskToolbarStrengthChange}
               onToggleOverlay={handleMaskToolbarToggleOverlay}
               onInvert={handleMaskToolbarInvert}

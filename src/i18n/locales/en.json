@@ -671,7 +671,9 @@
         "overlayOn": "Show mask overlay",
         "overlayOff": "Hide mask overlay",
         "done": "Done",
-        "strength": "Strength"
+        "strength": "Strength",
+        "brushSize": "Brush Size",
+        "brushFeather": "Softness"
       }
     },
     "metadata": {
