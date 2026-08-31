@@ -580,7 +580,7 @@ function CullingPreview({
                   >
                     {t('library.culling.cameraSettings')}
                   </Text>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {exifData.shutter && (
                       <div
                         className="flex items-center gap-1.5 text-white/90"

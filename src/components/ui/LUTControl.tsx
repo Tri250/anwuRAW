@@ -305,7 +305,7 @@ export default function LUTControl({
                   <span className="text-sm font-medium text-text-secondary select-none block mb-2">
                     {t('ui.lut.filmEmulations')}
                   </span>
-                  <div className="grid grid-cols-3 gap-2">{builtInLuts.map(renderSwatch)}</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">{builtInLuts.map(renderSwatch)}</div>
                 </div>
               )}
 
@@ -333,7 +333,7 @@ export default function LUTControl({
                     {t('ui.lut.import')}
                   </button>
                 ) : (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {customLuts.map(renderSwatch)}
 
                     <button

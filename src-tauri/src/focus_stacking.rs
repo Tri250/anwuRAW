@@ -2142,7 +2142,7 @@ pub async fn save_focus_stack(
     let focus_image = state
         .focus_stack_result
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .take()
         .ok_or_else(|| "No focus stack image found in memory.".to_string())?;
 

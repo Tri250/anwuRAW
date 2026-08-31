@@ -616,7 +616,7 @@ export default function CollageModal({ isOpen, onClose, onSave, sourceImages }: 
               <Shuffle size={16} />
             </button>
           </Text>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {availableLayouts.length > 0
               ? availableLayouts.map((item, index) => (
                   <button
@@ -654,7 +654,7 @@ export default function CollageModal({ isOpen, onClose, onSave, sourceImages }: 
             )}
           </button>
         </Text>
-        <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
           {ASPECT_RATIO_PRESETS.map((preset) => (
             <button
               key={preset.id}

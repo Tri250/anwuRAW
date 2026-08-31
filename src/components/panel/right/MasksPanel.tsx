@@ -151,6 +151,40 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
     ],
   },
   [Mask.QuickEraser]: { parameters: [] },
+  // ---- AI 直接修复工具 ----
+  [Mask.Clone]: {
+    parameters: [
+      { key: 'strength', min: 1, max: 100, step: 1, defaultValue: 80 },
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 30 },
+      { key: 'sampleRadius', min: 1, max: 50, step: 1, defaultValue: 10 },
+    ],
+    showBrushTools: true,
+  },
+  [Mask.Heal]: {
+    parameters: [
+      { key: 'strength', min: 1, max: 100, step: 1, defaultValue: 90 },
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 35 },
+      { key: 'sampleRadius', min: 1, max: 50, step: 1, defaultValue: 15 },
+      { key: 'structure', min: 0, max: 100, step: 1, defaultValue: 50 },
+    ],
+    showBrushTools: true,
+  },
+  // ---- AI 修饰工具 ----
+  [Mask.Liquify]: {
+    parameters: [
+      { key: 'strength', min: 1, max: 100, step: 1, defaultValue: 50 },
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 25 },
+    ],
+    showBrushTools: true,
+  },
+  [Mask.Retouch]: {
+    parameters: [
+      { key: 'strength', min: 1, max: 100, step: 1, defaultValue: 70 },
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 30 },
+      { key: 'smooth', min: 0, max: 100, step: 1, defaultValue: 40 },
+    ],
+    showBrushTools: true,
+  },
 };
 
 const BrushTools = ({
@@ -188,7 +222,7 @@ const BrushTools = ({
         fillOrigin="min"
         onDragStateChange={onDragStateChange}
       />
-      <div className="grid grid-cols-2 gap-2 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
         <button
           className={`p-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${settings.tool === ToolType.Brush ? 'text-primary bg-surface' : 'bg-surface text-text-secondary hover:bg-card-active'}`}
           onClick={() => onSettingsChange((s: any) => ({ ...s, tool: ToolType.Brush }))}
@@ -530,7 +564,7 @@ export default function MasksPanel() {
     onSelectContainer(newContainer.id);
     onSelectMask(subMask.id);
     setExpandedContainers((prev) => new Set(prev).add(newContainer.id));
-    if (type === Mask.Brush || type === Mask.Flow) selectBrushToolForNewMask();
+    if (type === Mask.Brush || type === Mask.Flow || SUB_MASK_CONFIG[type]?.showBrushTools) selectBrushToolForNewMask();
     if (type === Mask.AiForeground) handleGenerateAiForegroundMask(subMask.id);
     else if (type === Mask.AiSky) handleGenerateAiSkyMask(subMask.id);
     else if (type === Mask.AiDepth) handleGenerateAiDepthMask(subMask.id, subMask.parameters);
@@ -561,7 +595,7 @@ export default function MasksPanel() {
     onSelectContainer(containerId);
     onSelectMask(subMask.id);
     setExpandedContainers((prev) => new Set(prev).add(containerId));
-    if (type === Mask.Brush || type === Mask.Flow) selectBrushToolForNewMask();
+    if (type === Mask.Brush || type === Mask.Flow || SUB_MASK_CONFIG[type]?.showBrushTools) selectBrushToolForNewMask();
     if (type === Mask.AiForeground) handleGenerateAiForegroundMask(subMask.id);
     else if (type === Mask.AiSky) handleGenerateAiSkyMask(subMask.id);
     else if (type === Mask.AiDepth) handleGenerateAiDepthMask(subMask.id, subMask.parameters);
@@ -1068,7 +1102,7 @@ export default function MasksPanel() {
                     <Text variant={TextVariants.heading} className="mb-2">
                       {t('editor.masks.aiTitle', 'AI Selections')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
                       {MASK_AI_TYPES.map((maskType) => (
                         <DraggableGridItem
                           key={maskType.type}
@@ -1082,7 +1116,7 @@ export default function MasksPanel() {
                     <Text variant={TextVariants.heading} className="mb-2">
                       {t('editor.masks.basicTitle', 'Basic Tools')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
                       {MASK_BASIC_TYPES.map((maskType) => (
                         <DraggableGridItem
                           key={maskType.type}
@@ -1096,7 +1130,7 @@ export default function MasksPanel() {
                     <Text variant={TextVariants.heading} className="mb-2">
                       {t('editor.masks.rangeTitle', 'Ranges & Global')}
                     </Text>
-                    <div className="grid grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
                       {MASK_RANGE_TYPES.map((maskType) => (
                         <DraggableGridItem
                           key={maskType.type}

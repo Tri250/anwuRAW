@@ -522,7 +522,7 @@ fn save_image_with_metadata(
         .unwrap_or("")
         .to_lowercase();
 
-    let mut cs_image = apply_color_space_transform(image, &export_settings.color_space);
+    let cs_image = apply_color_space_transform(image, &export_settings.color_space);
 
     let mut image_bytes = encode_image_to_bytes(
         &cs_image,
@@ -703,7 +703,8 @@ fn apply_color_space_transform(
     }
 
     let out: image::ImageBuffer<image::Rgba<u16>, Vec<u16>> =
-        image::ImageBuffer::from_raw(w, h, out_buf).unwrap();
+        image::ImageBuffer::from_raw(w, h, out_buf)
+            .unwrap_or_else(|| image::ImageBuffer::new(w, h));
     DynamicImage::ImageRgba16(out)
 }
 
@@ -1085,7 +1086,10 @@ pub(crate) async fn export_images_impl(
             if cancellation_token.load(Ordering::SeqCst) {
                 break;
             }
-            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            let permit = match semaphore.clone().acquire_owned().await {
+                Ok(p) => p,
+                Err(_) => break, // semaphore closed — abort remaining work
+            };
             if cancellation_token.load(Ordering::SeqCst) {
                 drop(permit);
                 break;
@@ -1576,10 +1580,12 @@ pub async fn estimate_export_sizes(
         let loaded_image = state
             .original_image
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .clone()
             .ok_or("No original image loaded")?;
-        let mut adjustments_clone = current_edit_adjustments.clone().unwrap();
+        let mut adjustments_clone = current_edit_adjustments
+            .clone()
+            .unwrap_or_else(|| serde_json::Value::Object(serde_json::Map::new()));
         hydrate_adjustments(&state, &mut adjustments_clone);
 
         let new_transform_hash = calculate_transform_hash(&adjustments_clone);

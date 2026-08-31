@@ -129,7 +129,7 @@ pub async fn save_panorama(
     let panorama_image = state
         .panorama_result
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .take()
         .ok_or_else(|| {
             "No panorama image found in memory to save. It might have already been saved."

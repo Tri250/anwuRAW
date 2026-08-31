@@ -7,10 +7,16 @@
       "exposure": "曝光",
       "highlights": "高光",
       "mappers": {
-        "agx": "AgX",
-        "agxDesc": "电影感色调映射",
+        "agx": "AgX（电影感）",
+        "agxDesc": "电影感色调映射 — 浓郁色彩，平滑高光",
         "basic": "基础",
-        "basicDesc": "标准色调映射"
+        "basicDesc": "标准色调映射",
+        "reinhard": "Reinhard（赖因哈特）",
+        "reinhardDesc": "简单可靠 — 低端设备首选",
+        "filmic": "Filmic Pro（电影模式）",
+        "filmicDesc": "Uncharted 2 — 保留高光细节，电影质感",
+        "gamma": "伽马 2.2",
+        "gammaDesc": "纯 sRGB 伽马 — 最小处理，最准确的基准"
       },
       "reset": "重置",
       "shadows": "阴影",
@@ -381,7 +387,8 @@
         "feather": "羽化",
         "grow": "扩展",
         "intensity": "强度",
-        "pressure": "压力"
+        "pressure": "压力",
+        "decontaminate": "边缘清理"
       },
       "patches": {
         "aiEdit": "AI 编辑 {{count}}",
@@ -398,7 +405,9 @@
         "quickErase": "快速擦除 {{count}}",
         "quickErase_one": "快速擦除 {{count}}",
         "quickErase_other": "快速擦除 {{count}}",
-        "retouch": "修饰 {{count}}"
+        "retouch": "修饰 {{count}}",
+        "clone_one": "仿制 {{count}}",
+        "heal_one": "修复 {{count}}"
       },
       "resetInpaintingTooltip": "重置图像修复",
       "settings": {
@@ -530,7 +539,8 @@
         "switchToLandscape": "切换为横向",
         "switchToPortrait": "切换为纵向",
         "transform": "透视和梯形校正"
-      }
+      },
+      "autoCropAfterRotate": "旋转后自动裁切黑边"
     },
     "externalEdit": {
       "done": "完成",
@@ -593,7 +603,12 @@
         "feather": "羽化",
         "globalFeather": "全局羽化",
         "grow": "扩展",
-        "tolerance": "容差"
+        "tolerance": "容差",
+        "decontaminate": "去污染",
+        "strength": "强度",
+        "sampleRadius": "采样半径",
+        "structure": "结构",
+        "smooth": "平滑"
       },
       "patches": {
         "copyName": "{{name}} 副本",
@@ -666,7 +681,9 @@
         "clickToOpenTooltip": "点击在新标签页中打开地图",
         "latitude": "纬度",
         "longitude": "经度",
-        "title": "GPS 位置"
+        "title": "GPS 位置",
+        "offlineMapLabel": "带照片位置标记的离线世界地图",
+        "openOnlineMap": "打开在线地图"
       },
       "organization": {
         "addTagPlaceholder": "添加标签...",
@@ -808,7 +825,8 @@
       "fileSettings": "文件设置",
       "imageSizing": "图像大小",
       "metadata": "元数据",
-      "watermark": "水印"
+      "watermark": "水印",
+      "color": "色彩输出"
     },
     "status": {
       "cancelExport": "取消导出",
@@ -849,6 +867,17 @@
       "scale": "缩放",
       "spacing": "间距",
       "watermarkImage": "水印图像"
+    },
+    "color": {
+      "bitDepth": "位深",
+      "bitDepth16Desc": "更大文件，编辑无色调分离",
+      "bitDepth8Desc": "更小文件，标准显示",
+      "colorSpace": "色彩空间",
+      "colorSpaceDesc_adobeRgb": "广泛用于印刷和摄影",
+      "colorSpaceDesc_displayP3": "广色域 — 适合 Apple/HDR 显示器",
+      "colorSpaceDesc_proPhoto": "最大色域 — 专业归档用途",
+      "colorSpaceDesc_srgb": "网页和大多数屏幕的标准",
+      "jpgIccWarning": "JPEG 为非 sRGB 空间嵌入 ICC 配置文件，部分查看器仍可能显示 sRGB"
     }
   },
   "library": {
@@ -1720,8 +1749,11 @@
         "sharpeningDesc": "在管线早期应用柔和的细节增强。值越高 = 锐化越强。",
         "title": "图像预处理",
         "tonemapperOptions": {
-          "agx": "AgX",
-          "basic": "基础"
+          "agx": "AgX（电影感）",
+          "basic": "基础",
+          "filmic": "Filmic Pro（电影模式）",
+          "gamma": "伽马 2.2",
+          "reinhard": "Reinhard（赖因哈特）"
         },
         "tonemapperOverride": "全局色调映射覆盖",
         "tonemapperOverrideDesc": "为所有图像全局强制使用特定的色调映射器，从调整面板中隐藏色调映射器开关。"

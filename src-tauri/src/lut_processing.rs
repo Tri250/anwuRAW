@@ -669,7 +669,7 @@ pub fn generate_lut_previews(
     let loaded_image = state
         .original_image
         .lock()
-        .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
         .clone()
         .ok_or("No original image loaded for LUT previews")?;
     let is_raw = loaded_image.is_raw;
