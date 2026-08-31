@@ -1379,11 +1379,23 @@ async fn merge_hdr(
     app_handle: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
+    let hdr_result_handle = state.hdr_result.clone();
+    let result = merge_hdr_impl(paths, app_handle.clone(), hdr_result_handle).await;
+    if let Err(ref e) = result {
+        let _ = app_handle.emit("hdr-error", e.clone());
+    }
+    result
+}
+
+async fn merge_hdr_impl(
+    paths: Vec<String>,
+    app_handle: tauri::AppHandle,
+    hdr_result_handle: Arc<Mutex<Option<DynamicImage>>>,
+) -> Result<(), String> {
     if paths.len() < 2 {
         return Err("Please select at least two images to merge.".to_string());
     }
 
-    let hdr_result_handle = state.hdr_result.clone();
     let settings = load_settings(app_handle.clone()).unwrap_or_default();
 
     let mut frames = load_hdr_frames(&paths, &app_handle, &settings)?;
