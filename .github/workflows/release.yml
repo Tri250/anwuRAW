@@ -28,17 +28,6 @@ jobs:
             args: '--features tethering'
             asset-prefix: '02_macos-arm64_tethering'
 
-          # --- macOS Intel (x86_64, macOS 13 Ventura — last Intel runner) ---
-          - platform: 'macos-13'
-            target: x86_64-apple-darwin
-            asset-prefix: '02_macos-intel'
-
-          # --- macOS Intel + Tethering feature ---
-          - platform: 'macos-13'
-            target: x86_64-apple-darwin
-            args: '--features tethering'
-            asset-prefix: '02_macos-intel_tethering'
-
           # --- Linux x86_64 (Ubuntu 22.04 LTS — baseline for glibc compat) ---
           - platform: 'ubuntu-22.04'
             target: ''
