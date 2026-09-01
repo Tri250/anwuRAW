@@ -434,6 +434,8 @@
         "quickErase_one": "Quick Erase {{count}}",
         "quickErase_other": "Quick Erase {{count}}",
         "retouch": "Retouch {{count}}",
+        "retouch_one": "Retouch {{count}}",
+        "retouch_other": "Retouch {{count}}",
         "autoErase": "Auto Erase {{count}}",
         "autoErase_one": "Auto Erase {{count}}",
         "autoErase_other": "Auto Erase {{count}}"

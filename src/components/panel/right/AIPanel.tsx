@@ -2193,7 +2193,9 @@ function SettingsPanel({
                       activeSubMask.type === Mask.Retouch ||
                       activeSubMask.type === Mask.AutoErase;
                     const hasRun =
-                      activeSubMask.type === Mask.AutoErase || activeSubMask.parameters?.lines?.length > 0;
+                      (activeSubMask.type === Mask.AutoErase &&
+                        activeSubMask.parameters?.sourceX !== undefined) ||
+                      activeSubMask.parameters?.lines?.length > 0;
                     if (isDirectTool && hasRun) {
                       setTimeout(() => {
                         const sx = activeSubMask.parameters?.sourceX ?? 0;
