@@ -11,11 +11,11 @@
         "agxDesc": "电影感色调映射",
         "basic": "基础",
         "basicDesc": "标准色调映射",
-        "filmic": "Filmic Pro 电影化",
+        "filmic": "电影化",
         "filmicDesc": "Uncharted 2 算法 — 保留高光细节，电影质感",
-        "gamma": "Gamma 2.2 标准",
+        "gamma": "标准",
         "gammaDesc": "纯 sRGB Gamma 曲线 — 最少处理，色彩基线最准确",
-        "reinhard": "Reinhard 经典",
+        "reinhard": "经典",
         "reinhardDesc": "简单可靠 — 适合低端设备运行"
       },
       "reset": "重置",
@@ -1809,9 +1809,9 @@
         "tonemapperOptions": {
           "agx": "AgX",
           "basic": "基础",
-          "filmic": "Filmic Pro 电影化",
-          "gamma": "Gamma 2.2 标准",
-          "reinhard": "Reinhard 经典"
+          "filmic": "电影化",
+          "gamma": "标准",
+          "reinhard": "经典"
         },
         "tonemapperOverride": "全局色调映射覆盖",
         "tonemapperOverrideDesc": "为所有图像全局强制使用特定的色调映射器，从调整面板中隐藏色调映射器开关。"
