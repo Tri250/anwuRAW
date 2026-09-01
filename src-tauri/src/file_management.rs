@@ -3274,6 +3274,7 @@ pub fn handle_import_presets_from_files(
 pub fn handle_export_presets_to_file(
     presets_to_export: Vec<PresetItem>,
     file_path: String,
+    app_handle: AppHandle,
 ) -> Result<(), String> {
     let preset_file = ExportPresetFile {
         creator: "Anonymous",
@@ -3282,7 +3283,20 @@ pub fn handle_export_presets_to_file(
 
     let json_string = serde_json::to_string_pretty(&preset_file)
         .map_err(|e| format!("Failed to serialize presets: {}", e))?;
-    fs::write(file_path, json_string).map_err(|e| format!("Failed to write preset file: {}", e))
+
+    // Android 端传入的可能只是文件名（无目录分隔符），需要解析到应用数据目录
+    let resolved_path = if std::path::Path::new(&file_path).parent().map(|p| p.as_os_str().is_empty()).unwrap_or(true) {
+        let data_dir = app_handle
+            .path()
+            .app_data_dir()
+            .map_err(|e| format!("Failed to resolve app data dir: {}", e))?;
+        std::fs::create_dir_all(&data_dir).map_err(|e| format!("Failed to create data dir: {}", e))?;
+        data_dir.join(&file_path)
+    } else {
+        std::path::PathBuf::from(&file_path)
+    };
+
+    fs::write(resolved_path, json_string).map_err(|e| format!("Failed to write preset file: {}", e))
 }
 
 #[tauri::command]

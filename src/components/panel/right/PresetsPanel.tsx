@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { toast } from 'react-toastify';
 import {
   DndContext,
   DragOverlay,
@@ -47,6 +48,7 @@ import { Invokes, OPTION_SEPARATOR, Panel, Preset, SelectedImage } from '../../u
 import { useEditorStore } from '../../../store/useEditorStore';
 import { useUIStore } from '../../../store/useUIStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
+import { useOsPlatform } from '../../../hooks/useOsPlatform';
 
 interface DroppableFolderItemProps {
   children: any;
@@ -573,6 +575,8 @@ function RootDroppableArea({
 
 export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProps) {
   const { t } = useTranslation();
+  const osPlatform = useOsPlatform();
+  const isAndroid = osPlatform === 'android';
   const selectedImage = useEditorStore((s) => s.selectedImage);
   const adjustments = useEditorStore((s) => s.adjustments);
   const setEditor = useEditorStore((s) => s.setEditor);
@@ -1082,12 +1086,16 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
 
   const handleImportPresets = async () => {
     try {
+      const presetExtensions = ['rrpreset', 'xmp', 'lrtemplate'];
       const selectedPaths = await openDialog({
-        filters: [
-          { name: t('editor.presets.dialog.allPresetFiles'), extensions: ['rrpreset', 'xmp', 'lrtemplate'] },
-          { name: t('editor.presets.dialog.rapidRawPreset'), extensions: ['rrpreset'] },
-          { name: t('editor.presets.dialog.legacyPreset'), extensions: ['xmp', 'lrtemplate'] },
-        ],
+        // Android 端不支持文件扩展名过滤器（content URI 机制），需要后续手动过滤
+        filters: isAndroid
+          ? []
+          : [
+              { name: t('editor.presets.dialog.allPresetFiles'), extensions: presetExtensions },
+              { name: t('editor.presets.dialog.rapidRawPreset'), extensions: ['rrpreset'] },
+              { name: t('editor.presets.dialog.legacyPreset'), extensions: ['xmp', 'lrtemplate'] },
+            ],
         multiple: true,
         title: t('editor.presets.dialog.importPresetsTitle'),
       });
@@ -1096,9 +1104,32 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
         return;
       }
 
-      const paths = Array.isArray(selectedPaths) ? selectedPaths : [selectedPaths];
+      let paths = Array.isArray(selectedPaths) ? selectedPaths : [selectedPaths];
       if (paths.length === 0) {
         return;
+      }
+
+      // Android 端 content URI 无法通过过滤器筛选扩展名，需手动过滤
+      if (isAndroid) {
+        const allowedExt = new Set(presetExtensions);
+        const resolvedNames = await Promise.all(
+          paths.map(async (path) => {
+            try {
+              return await invoke<string>('resolve_android_content_uri_name', { uriStr: path });
+            } catch {
+              return path;
+            }
+          }),
+        );
+        paths = paths.filter((_, index) => {
+          const ext = resolvedNames[index].split('.').pop()?.toLowerCase() || '';
+          if (!allowedExt.has(ext)) {
+            console.warn(`Skipping unsupported preset file: ${resolvedNames[index]}`);
+            return false;
+          }
+          return true;
+        });
+        if (paths.length === 0) return;
       }
 
       const { failures } = await importPresetsFromFiles(paths);
@@ -1120,16 +1151,25 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     const itemsToExport = [item];
 
     try {
-      const filePath = await saveDialog({
-        defaultPath: `${name}.rrpreset`.replace(/[<>:"/\\|?*]/g, '_'),
-        filters: [{ name: t('editor.presets.dialog.presetFile'), extensions: ['rrpreset'] }],
-        title: t('editor.presets.dialog.exportTitle', {
-          type: isFolder ? t('editor.presets.types.folder') : t('editor.presets.types.preset'),
-        }),
-      });
+      let filePath: string | null = null;
+      if (isAndroid) {
+        // Android 端无原生保存对话框，直接传文件名由后端写入应用默认目录
+        filePath = `${name}.rrpreset`.replace(/[<>:"/\\|?*]/g, '_');
+      } else {
+        filePath = (await saveDialog({
+          defaultPath: `${name}.rrpreset`.replace(/[<>:"/\\|?*]/g, '_'),
+          filters: [{ name: t('editor.presets.dialog.presetFile'), extensions: ['rrpreset'] }],
+          title: t('editor.presets.dialog.exportTitle', {
+            type: isFolder ? t('editor.presets.types.folder') : t('editor.presets.types.preset'),
+          }),
+        })) as string | null;
+      }
 
       if (filePath) {
         await exportPresetsToFile(itemsToExport, filePath);
+        if (isAndroid) {
+          toast.success(t('export.status.completed', { name: filePath }));
+        }
       }
     } catch (error) {
       console.error(`Failed to export ${isFolder ? PresetListType.Folder : PresetListType.Preset}:`, error);
@@ -1141,14 +1181,23 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
       return;
     }
     try {
-      const filePath = await saveDialog({
-        defaultPath: 'all_presets.rrpreset',
-        filters: [{ name: t('editor.presets.dialog.presetFile'), extensions: ['rrpreset'] }],
-        title: t('editor.presets.dialog.exportAllTitle'),
-      });
+      let filePath: string | null = null;
+      if (isAndroid) {
+        // Android 端无原生保存对话框，直接传文件名由后端写入应用默认目录
+        filePath = 'all_presets.rrpreset';
+      } else {
+        filePath = (await saveDialog({
+          defaultPath: 'all_presets.rrpreset',
+          filters: [{ name: t('editor.presets.dialog.presetFile'), extensions: ['rrpreset'] }],
+          title: t('editor.presets.dialog.exportAllTitle'),
+        })) as string | null;
+      }
 
       if (filePath) {
         await exportPresetsToFile(presets, filePath);
+        if (isAndroid) {
+          toast.success(t('export.status.completed', { name: filePath }));
+        }
       }
     } catch (error) {
       console.error('Failed to export all presets:', error);
