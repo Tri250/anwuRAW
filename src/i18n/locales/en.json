@@ -22,6 +22,8 @@
       "scene": {
         "title": "Scene Enhance",
         "desc": "One-tap professional color grading",
+        "auto": "Auto",
+        "autoDesc": "Smart scene enhancement",
         "prototypePortrait": "Portrait",
         "prototypeLandscape": "Landscape",
         "prototypeNight": "Night",

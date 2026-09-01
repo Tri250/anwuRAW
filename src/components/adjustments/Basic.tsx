@@ -198,7 +198,7 @@ const ToneMapperSwitch = ({
         </div>
       </div>
       <div className="w-full p-2 pb-1 bg-card-active rounded-md">
-        <div className="relative flex w-full">
+        <div className="relative flex w-full overflow-x-auto no-scrollbar">
           <motion.div
             className="absolute top-0 bottom-0 z-0 bg-accent"
             style={{ borderRadius: 6 }}
@@ -211,7 +211,7 @@ const ToneMapperSwitch = ({
               data-tooltip={mapper.title}
               onClick={() => onMapperChange(mapper.id)}
               className={clsx(
-                'relative flex-1 flex items-center justify-center gap-2 px-3 p-1.5 text-sm font-medium rounded-md transition-colors',
+                'relative flex-1 flex items-center justify-center gap-2 px-3 p-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap',
                 {
                   'text-text-primary hover:bg-surface': selectedMapper !== mapper.id,
                   'text-button-text': selectedMapper === mapper.id,

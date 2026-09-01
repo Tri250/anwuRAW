@@ -22,6 +22,8 @@
       "scene": {
         "title": "场景增强",
         "desc": "一键应用专业调色风格",
+        "auto": "智能",
+        "autoDesc": "智能场景增强",
         "prototypePortrait": "人像",
         "prototypeLandscape": "风景",
         "prototypeNight": "夜景",
