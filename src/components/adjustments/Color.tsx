@@ -488,13 +488,18 @@ export default function ColorPanel({
           <Text variant={TextVariants.heading}>{t('adjustments.color.whiteBalance')}</Text>
           {!isForMask && toggleWbPicker && (
             <button
-              onClick={toggleWbPicker}
+              onClick={isWgpuEnabled ? undefined : toggleWbPicker}
+              disabled={isWgpuEnabled}
               className={`p-1.5 rounded-md transition-colors ${
-                isWbPickerActive
-                  ? 'bg-accent text-button-text'
-                  : 'hover:bg-bg-secondary text-text-secondary'
+                isWgpuEnabled
+                  ? 'opacity-40 cursor-not-allowed text-text-secondary'
+                  : isWbPickerActive
+                    ? 'bg-accent text-button-text'
+                    : 'hover:bg-bg-secondary text-text-secondary'
               }`}
-              data-tooltip={t('adjustments.color.wbPickerTooltip')}
+              data-tooltip={t(
+                isWgpuEnabled ? 'adjustments.color.wbPickerWgpuDisabled' : 'adjustments.color.wbPickerTooltip',
+              )}
             >
               <Pipette size={16} />
             </button>

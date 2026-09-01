@@ -5,7 +5,7 @@ import { Adjustments, BasicAdjustment } from '../../utils/adjustments';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Text from '../ui/Text';
-import { TextColors, TextVariants, TextWeights } from '../../types/typography';
+import { TextVariants } from '../../types/typography';
 
 interface BasicAdjustmentsProps {
   adjustments: Adjustments;
@@ -258,7 +258,7 @@ export default function BasicAdjustments({
   const handleToneMapperChange = (mapper: string) => {
     setAdjustments((prev: Partial<Adjustments>) => ({
       ...prev,
-      toneMapper: mapper as 'basic' | 'agx',
+      toneMapper: mapper as Adjustments['toneMapper'],
     }));
   };
 
@@ -315,7 +315,7 @@ export default function BasicAdjustments({
         />
       ) : (
         <ToneMapperSwitch
-          selectedMapper={adjustments.toneMapper || 'agx'}
+          selectedMapper={adjustments.toneMapper || 'basic'}
           onMapperChange={handleToneMapperChange}
           evShiftValue={adjustments.exposure}
           onEvShiftChange={(value) => handleAdjustmentChange(BasicAdjustment.Exposure, value)}
