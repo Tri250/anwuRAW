@@ -785,9 +785,23 @@
         "showEdited": "Mostrar Editado (B)",
         "showOriginal": "Mostrar Original (B)",
         "shutterSpeed": "Velocidade do Obturador",
-        "undo": "Desfazer (Ctrl+Z) ou Histórico (Botão Direito)"
+        "undo": "Desfazer (Ctrl+Z) ou Histórico (Botão Direito)",
+        "compare": "Comparar antes/depois",
+        "closeCompare": "Fechar comparação"
       },
       "vc": "CV"
+    },
+    "compare": {
+      "title": "Antes / Depois",
+      "toggleSplit": "Alternar orientação da divisão",
+      "zoomIn": "Aproximar",
+      "zoomOut": "Afastar",
+      "reset": "Redefinir",
+      "close": "Fechar",
+      "before": "Antes",
+      "after": "Depois",
+      "dragHint": "Arraste o divisor para comparar",
+      "loading": "Carregando…"
     }
   },
   "export": {

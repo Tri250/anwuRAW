@@ -417,8 +417,10 @@
         "aiEdit_one": "AI 编辑 {{count}}",
         "aiEdit_other": "AI 编辑 {{count}}",
         "clone": "克隆 {{count}}",
+        "clone_one": "克隆 {{count}}",
         "clone_other": "克隆 {{count}}",
         "heal": "修复 {{count}}",
+        "heal_one": "修复 {{count}}",
         "heal_other": "修复 {{count}}",
         "invertedName": "{{name}} 反转",
         "liquify": "液化 {{count}}",
@@ -808,9 +810,23 @@
         "showEdited": "显示编辑后（B）",
         "showOriginal": "显示原始（B）",
         "shutterSpeed": "快门速度",
-        "undo": "撤销（Ctrl+Z）或历史记录（右键单击）"
+        "undo": "撤销（Ctrl+Z）或历史记录（右键单击）",
+        "compare": "修改前后对比",
+        "closeCompare": "关闭对比"
       },
       "vc": "VC"
+    },
+    "compare": {
+      "title": "修改前后对比",
+      "toggleSplit": "切换分割方向",
+      "zoomIn": "放大",
+      "zoomOut": "缩小",
+      "reset": "重置",
+      "close": "关闭",
+      "before": "原图",
+      "after": "调整后",
+      "dragHint": "拖动分隔线进行对比",
+      "loading": "加载中…"
     }
   },
   "export": {

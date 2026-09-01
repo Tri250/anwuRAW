@@ -764,9 +764,23 @@
         "showEdited": "Bearbeitet anzeigen (B)",
         "showOriginal": "Original anzeigen (B)",
         "shutterSpeed": "Verschlusszeit",
-        "undo": "Rückgängig (Strg+Z) oder Verlauf (Rechtsklick)"
+        "undo": "Rückgängig (Strg+Z) oder Verlauf (Rechtsklick)",
+        "compare": "Vorher/Nachher vergleichen",
+        "closeCompare": "Vergleich schließen"
       },
       "vc": "VK"
+    },
+    "compare": {
+      "title": "Vorher / Nachher",
+      "toggleSplit": "Teilungsrichtung umschalten",
+      "zoomIn": "Vergrößern",
+      "zoomOut": "Verkleinern",
+      "reset": "Zurücksetzen",
+      "close": "Schließen",
+      "before": "Vorher",
+      "after": "Nachher",
+      "dragHint": "Zum Vergleichen den Teiler ziehen",
+      "loading": "Wird geladen…"
     }
   },
   "export": {

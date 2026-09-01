@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useRef, useMemo } from 'react';
-import { Eye, EyeOff, ArrowLeft, Maximize, Loader2, Undo, Redo } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Maximize, Loader2, Undo, Redo, SplitSquareHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +21,8 @@ interface EditorToolbarProps {
   onRedo(): void;
   onToggleFullScreen(): void;
   onToggleShowOriginal(): void;
+  onToggleCompare(): void;
+  isComparing: boolean;
   onUndo(): void;
   selectedImage: SelectedImage;
   showOriginal: boolean;
@@ -42,6 +44,8 @@ const EditorToolbar = memo(
     onRedo,
     onToggleFullScreen,
     onToggleShowOriginal,
+    onToggleCompare,
+    isComparing,
     onUndo,
     selectedImage,
     showOriginal,
@@ -681,6 +685,19 @@ const EditorToolbar = memo(
             }
           >
             {showOriginal ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+          <button
+            className={clsx(
+              'relative p-2 rounded-full transition-colors',
+              isComparing
+                ? 'bg-accent text-button-text hover:bg-accent/90 hover:text-button-text'
+                : 'bg-surface hover:bg-card-active text-text-primary',
+            )}
+            onClick={onToggleCompare}
+            onKeyDown={handleButtonKeyDown}
+            data-tooltip={isComparing ? t('editor.toolbar.tooltips.closeCompare') : t('editor.toolbar.tooltips.compare')}
+          >
+            <SplitSquareHorizontal size={20} />
           </button>
           <button
             className="bg-surface text-text-primary p-2 rounded-full hover:bg-card-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"

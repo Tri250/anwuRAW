@@ -16,6 +16,7 @@ import {
 } from '../../utils/cropUtils';
 import EditorToolbar from './editor/EditorToolbar';
 import ImageCanvas from './editor/ImageCanvas';
+import BeforeAfterCompare from './editor/BeforeAfterCompare';
 import { Mask, SubMask, ToolType } from './right/Masks';
 import MaskEditingToolbar, { showMaskEditingToolbar } from './editor/MaskEditingToolbar';
 import { Panel, TransformState, Invokes, BrushSettings } from '../ui/AppProperties';
@@ -147,6 +148,11 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
 
   const [crop, setCrop] = useState<Crop | null>(null);
   const prevCropParams = useRef<any>(null);
+  // Before/After 滑块拆分对比：开/关状态
+  const [isComparing, setIsComparing] = useState(false);
+  // Before 侧原始预览 URL（以初始调整渲染，保留几何但不含外观调整）
+  const [beforeOriginalUrl, setBeforeOriginalUrl] = useState<string | null>(null);
+  const beforeOriginalUrlRef = useRef<string | null>(null);
   const lastValidCropRef = useRef<PercentCrop | null>(null);
 
   const [isMaskHovered, setIsMaskHovered] = useState(false);
@@ -252,6 +258,42 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
       window.removeEventListener('blur', handleBlur);
     };
   }, []);
+
+  const handleCompareToggle = useCallback(async () => {
+    if (isComparing) {
+      setIsComparing(false);
+      return;
+    }
+    // 进入对比：确保展示 After（调整后），并生成 Before（原始）预览
+    setEditor({ showOriginal: false, previewOverride: null });
+    if (selectedImage?.path && !beforeOriginalUrl) {
+      try {
+        const override = { ...INITIAL_ADJUSTMENTS };
+        const geometryKeys: Array<keyof Adjustments> = [
+          'crop', 'rotation', 'flipHorizontal', 'flipVertical', 'orientationSteps', 'aspectRatio',
+          'transformDistortion', 'transformVertical', 'transformHorizontal', 'transformRotate',
+          'transformAspect', 'transformScale', 'transformXOffset', 'transformYOffset',
+          'lensDistortionAmount', 'lensVignetteAmount', 'lensTcaAmount', 'lensDistortionParams',
+          'lensMaker', 'lensModel', 'lensDistortionEnabled', 'lensTcaEnabled', 'lensVignetteEnabled',
+        ];
+        geometryKeys.forEach((key) => {
+          const value = adjustments[key];
+          if (value !== undefined) override[key] = value as never;
+        });
+        const beforeBytes: Uint8Array<ArrayBuffer> = await invoke(Invokes.GeneratePreviewForPath, {
+          path: selectedImage.path,
+          jsAdjustments: override,
+        });
+        const url = URL.createObjectURL(new Blob([beforeBytes], { type: 'image/jpeg' }));
+        if (beforeOriginalUrlRef.current) URL.revokeObjectURL(beforeOriginalUrlRef.current);
+        beforeOriginalUrlRef.current = url;
+        setBeforeOriginalUrl(url);
+      } catch (err) {
+        console.error('Failed to generate before-original preview:', err);
+      }
+    }
+    setIsComparing(true);
+  }, [isComparing, selectedImage?.path, beforeOriginalUrl, adjustments, setEditor]);
 
   const handleToggleFullScreen = useCallback(() => {
     const currentlyZoomed = targetZoom > 1.01;
@@ -2184,6 +2226,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
           onRedo={redo}
           onToggleFullScreen={handleToggleFullScreen}
           onToggleShowOriginal={toggleShowOriginal}
+          onToggleCompare={handleCompareToggle}
+          isComparing={isComparing}
           onUndo={undo}
           selectedImage={selectedImage}
           showOriginal={showOriginal}
@@ -2282,6 +2326,13 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
             hasRenderedFirstFrame={hasRenderedFirstFrame}
           />
         </div>
+        {isComparing && (
+          <BeforeAfterCompare
+            beforeUrl={beforeOriginalUrl}
+            afterUrl={finalPreviewUrl}
+            onClose={() => setIsComparing(false)}
+          />
+        )}
         {straightenDragLine && (
           <svg className="absolute inset-0 pointer-events-none z-[100]" style={{ width: '100%', height: '100%' }}>
             <line

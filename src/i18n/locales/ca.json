@@ -764,9 +764,23 @@
         "showEdited": "Mostrar editat (B)",
         "showOriginal": "Mostrar original (B)",
         "shutterSpeed": "Velocitat d'obturació",
-        "undo": "Desfer (Ctrl+Z) o Historial (Clic dret)"
+        "undo": "Desfer (Ctrl+Z) o Historial (Clic dret)",
+        "compare": "Compara abans/després",
+        "closeCompare": "Tanca la comparació"
       },
       "vc": "CV"
+    },
+    "compare": {
+      "title": "Abans / Després",
+      "toggleSplit": "Canvia l'orientació de la divisió",
+      "zoomIn": "Apropa",
+      "zoomOut": "Allunya",
+      "reset": "Restableix",
+      "close": "Tanca",
+      "before": "Abans",
+      "after": "Després",
+      "dragHint": "Arrossega el divisor per comparar",
+      "loading": "S'està carregant…"
     }
   },
   "export": {

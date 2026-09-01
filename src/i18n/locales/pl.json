@@ -806,9 +806,23 @@
         "showEdited": "Pokaż po edycji (B)",
         "showOriginal": "Pokaż oryginał (B)",
         "shutterSpeed": "Czas otwarcia migawki",
-        "undo": "Cofnij (Ctrl+Z) lub Historia (Prawy przycisk)"
+        "undo": "Cofnij (Ctrl+Z) lub Historia (Prawy przycisk)",
+        "compare": "Porównaj przed/po",
+        "closeCompare": "Zamknij porównanie"
       },
       "vc": "VC"
+    },
+    "compare": {
+      "title": "Przed / Po",
+      "toggleSplit": "Przełącz orientację podziału",
+      "zoomIn": "Powiększ",
+      "zoomOut": "Pomniejsz",
+      "reset": "Resetuj",
+      "close": "Zamknij",
+      "before": "Przed",
+      "after": "Po",
+      "dragHint": "Przeciągnij separator, aby porównać",
+      "loading": "Ładowanie…"
     }
   },
   "export": {
