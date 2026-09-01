@@ -454,7 +454,7 @@ export default function AIPanel() {
   const activeContainer = (adjustments.aiPatches || []).find((p) => p.id === activePatchContainerId);
   const activeSubMaskData = activeContainer?.subMasks.find((sm) => sm.id === activeSubMaskId);
   const isAiMask =
-    activeSubMaskData && [Mask.AiSubject, Mask.AiForeground, Mask.AiSky].includes(activeSubMaskData.type);
+    activeSubMaskData && [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.QuickEraser].includes(activeSubMaskData.type);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -2000,7 +2000,8 @@ function SettingsPanel({
     activeSubMask &&
     (activeSubMask.type === Mask.AiSubject ||
       activeSubMask.type === Mask.AiForeground ||
-      activeSubMask.type === Mask.AiSky);
+      activeSubMask.type === Mask.AiSky ||
+      activeSubMask.type === Mask.QuickEraser);
 
   const handleGenerateClick = () => {
     if (!container) return;

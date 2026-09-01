@@ -442,6 +442,9 @@ fn render_stroke_layer_parallel(
     bb_w: u32,
     bb_h: u32,
 ) -> GrayImage {
+    if bb_w == 0 || bb_h == 0 {
+        return GrayImage::new(bb_w, bb_h);
+    }
     let mut out_pixels = vec![0u8; (bb_w * bb_h) as usize];
     if points.is_empty() || radius <= 0.0 {
         return GrayImage::from_raw(bb_w, bb_h, out_pixels).unwrap();
@@ -601,14 +604,13 @@ fn generate_radial_bitmap(
     let radius_x = params.radius_x as f32 * scale;
     let radius_y = params.radius_y as f32 * scale;
     let rotation_rad = params.rotation * PI / 180.0;
+    let cos_rot = rotation_rad.cos();
+    let sin_rot = rotation_rad.sin();
 
     for y in 0..height {
         for x in 0..width {
             let dx = x as f32 - center_x as f32;
             let dy = y as f32 - center_y as f32;
-
-            let cos_rot = rotation_rad.cos();
-            let sin_rot = rotation_rad.sin();
 
             let rot_dx = dx * cos_rot + dy * sin_rot;
             let rot_dy = -dx * sin_rot + dy * cos_rot;
@@ -844,6 +846,9 @@ fn generate_ai_bitmap_from_full_mask(
     tf: &TransformParams,
 ) -> GrayImage {
     let (full_mask_w, full_mask_h) = full_mask_image.dimensions();
+    if full_mask_w == 0 || full_mask_h == 0 || tf.width == 0 || tf.height == 0 {
+        return GrayImage::new(tf.width, tf.height);
+    }
     let mut final_mask = GrayImage::new(tf.width, tf.height);
 
     let angle_rad = tf.rotation.to_radians();
@@ -902,8 +907,27 @@ fn generate_ai_bitmap_from_full_mask(
                 && y_src >= 0.0
                 && y_src < full_mask_h as f32
             {
-                let pixel = full_mask_image.get_pixel(x_src as u32, y_src as u32);
-                final_mask.put_pixel(x_out, y_out, *pixel);
+                // 双线性插值，避免最近邻采样的锯齿伪影
+                let x0f = x_src.floor();
+                let y0f = y_src.floor();
+                let x0 = x0f as u32;
+                let y0 = y0f as u32;
+                let x1 = (x0f + 1.0).min(full_mask_w as f32 - 1.0) as u32;
+                let y1 = (y0f + 1.0).min(full_mask_h as f32 - 1.0) as u32;
+                let fx = x_src - x0f;
+                let fy = y_src - y0f;
+
+                let p00 = full_mask_image.get_pixel(x0, y0)[0] as f32;
+                let p10 = full_mask_image.get_pixel(x1, y0)[0] as f32;
+                let p01 = full_mask_image.get_pixel(x0, y1)[0] as f32;
+                let p11 = full_mask_image.get_pixel(x1, y1)[0] as f32;
+
+                let val = p00 * (1.0 - fx) * (1.0 - fy)
+                    + p10 * fx * (1.0 - fy)
+                    + p01 * (1.0 - fx) * fy
+                    + p11 * fx * fy;
+
+                final_mask.put_pixel(x_out, y_out, Luma([val.round() as u8]));
             }
         }
     }
@@ -912,6 +936,9 @@ fn generate_ai_bitmap_from_full_mask(
 }
 
 pub fn generate_ai_bitmap_from_base64(data_url: &str, tf: &TransformParams) -> Option<GrayImage> {
+    if tf.width == 0 || tf.height == 0 {
+        return Some(GrayImage::new(tf.width, tf.height));
+    }
     let b64_data = if let Some(idx) = data_url.find(',') {
         &data_url[idx + 1..]
     } else {
@@ -1176,8 +1203,8 @@ fn generate_color_bitmap(
             };
 
             if x_unrotated_coarse >= 0.0 && y_unrotated_coarse >= 0.0 {
-                let x_src = (x_unrotated_coarse * inv_scale) as u32;
-                let y_src = (y_unrotated_coarse * inv_scale) as u32;
+                let x_src = (x_unrotated_coarse * inv_scale).round().clamp(0.0, full_w as f32 - 1.0) as u32;
+                let y_src = (y_unrotated_coarse * inv_scale).round().clamp(0.0, full_h as f32 - 1.0) as u32;
 
                 if x_src < full_w && y_src < full_h {
                     let pixel = warped.get_pixel(x_src, y_src);
@@ -1276,8 +1303,8 @@ fn generate_luminance_bitmap(
             };
 
             if x_unrotated_coarse >= 0.0 && y_unrotated_coarse >= 0.0 {
-                let x_src = (x_unrotated_coarse * inv_scale) as u32;
-                let y_src = (y_unrotated_coarse * inv_scale) as u32;
+                let x_src = (x_unrotated_coarse * inv_scale).round().clamp(0.0, full_w as f32 - 1.0) as u32;
+                let y_src = (y_unrotated_coarse * inv_scale).round().clamp(0.0, full_h as f32 - 1.0) as u32;
 
                 if x_src < full_w && y_src < full_h {
                     let pixel = warped.get_pixel(x_src, y_src);
@@ -1310,6 +1337,9 @@ fn generate_sub_mask_bitmap(
     crop_offset: (f32, f32),
     warped_image: Option<&DynamicImage>,
 ) -> Option<GrayImage> {
+    if width == 0 || height == 0 {
+        return None;
+    }
     if !sub_mask.visible {
         return None;
     }
@@ -1385,6 +1415,9 @@ pub fn generate_mask_bitmap(
     crop_offset: (f32, f32),
     warped_image: Option<&DynamicImage>,
 ) -> Option<GrayImage> {
+    if width == 0 || height == 0 {
+        return None;
+    }
     if !mask_def.visible || mask_def.sub_masks.is_empty() {
         return None;
     }

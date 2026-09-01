@@ -132,15 +132,15 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
   },
   [Mask.AiSubject]: {
     parameters: [
-      { key: 'grow', min: -100, max: 100, step: 1, defaultValue: 0 },
-      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 0 },
+      { key: 'grow', min: -100, max: 100, step: 1, defaultValue: 50 },
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 25 },
       { key: 'decontaminate', min: 0, max: 100, step: 1, defaultValue: 20 },
     ],
   },
   [Mask.AiForeground]: {
     parameters: [
-      { key: 'grow', min: -100, max: 100, step: 1, defaultValue: 0 },
-      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 0 },
+      { key: 'grow', min: -100, max: 100, step: 1, defaultValue: 50 },
+      { key: 'feather', min: 0, max: 100, step: 1, defaultValue: 25 },
       { key: 'decontaminate', min: 0, max: 100, step: 1, defaultValue: 20 },
     ],
   },
@@ -396,7 +396,7 @@ export default function MasksPanel() {
   const activeContainer = adjustments.masks?.find((m) => m.id === activeMaskContainerId);
   const activeSubMaskData = activeContainer?.subMasks?.find((sm) => sm.id === activeMaskId);
   const isAiMask =
-    activeSubMaskData && [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.AiDepth].includes(activeSubMaskData.type);
+    activeSubMaskData && [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.AiDepth, Mask.QuickEraser].includes(activeSubMaskData.type);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -522,7 +522,9 @@ export default function MasksPanel() {
         (subMask.parameters as Record<string, number>).targetX = -10000;
         (subMask.parameters as Record<string, number>).targetY = -10000;
         (subMask.parameters as Record<string, number>).tolerance = 20;
+        (subMask.parameters as Record<string, number>).grow = 0;
         (subMask.parameters as Record<string, number>).feather = 35;
+        (subMask.parameters as Record<string, number>).decontaminate = 0;
       }
     }
 
@@ -532,7 +534,8 @@ export default function MasksPanel() {
       (subMask.parameters as Record<string, number>).maxDepth = 80;
       (subMask.parameters as Record<string, number>).minFade = 15;
       (subMask.parameters as Record<string, number>).maxFade = 15;
-      (subMask.parameters as Record<string, number>).feather = 10;
+      (subMask.parameters as Record<string, number>).feather = 15;
+      (subMask.parameters as Record<string, number>).decontaminate = 0;
     }
     return subMask;
   };
@@ -2034,7 +2037,7 @@ function SettingsPanel({
 
   const subMaskConfig = typedActiveSubMask ? SUB_MASK_CONFIG[typedActiveSubMask.type] || {} : {};
   const isAiMask =
-    activeSubMask && [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.AiDepth].includes(activeSubMask.type);
+    activeSubMask && [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.AiDepth, Mask.QuickEraser].includes(activeSubMask.type);
   const isComponentMode = !!activeSubMask;
 
   const setMaskContainerAdjustments = (updater: any) => {
