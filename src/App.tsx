@@ -15,6 +15,7 @@ import {
   pointerWithin,
 } from '@dnd-kit/core';
 import clsx from 'clsx';
+import { MotionConfig } from 'framer-motion';
 
 import TitleBar from './window/TitleBar';
 import FolderTree from './components/panel/right/FolderTree';
@@ -1055,8 +1056,11 @@ const AppWrapper = () => (
   <ErrorBoundary>
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} routerPush={(to) => {}} routerReplace={(to) => {}}>
       <ContextMenuProvider>
-        <App />
-        <GlobalTooltip />
+        {/* 全局动效降级：当系统开启"减少动态效果"时，自动禁用 framer-motion 的非必要动画 */}
+        <MotionConfig reducedMotion="user">
+          <App />
+          <GlobalTooltip />
+        </MotionConfig>
       </ContextMenuProvider>
     </ClerkProvider>
   </ErrorBoundary>

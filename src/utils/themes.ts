@@ -38,9 +38,11 @@ export const THEMES: Array<ThemeProps> = [
       '--app-text-primary': 'rgb(20, 20, 20)',
       // 文本辅助色：rgb(85,85,85) 相对 rgb(245,245,245) 对比度 ~5.7:1，满足 WCAG AA；原 rgb(108,108,108) 仅 ~3.55:1 不达标。
       '--app-text-secondary': 'rgb(85, 85, 85)',
-      '--app-accent': 'rgb(198, 142, 110)',
+      // accent 由 rgb(198,142,110) 加深为暖棕 rgb(138,99,77)：白字对比度由 2.80 提升至 ~5.29:1，
+      // 满足 WCAG AA（按钮填充色 + 浅色主题前景色均达标）。
+      '--app-accent': 'rgb(138, 99, 77)',
       '--app-border-color': 'rgb(216, 216, 216)',
-      '--app-hover-color': 'rgb(198, 142, 110)',
+      '--app-hover-color': 'rgb(138, 99, 77)',
     },
   },
   {
@@ -48,15 +50,18 @@ export const THEMES: Array<ThemeProps> = [
     name: 'settings.themes.grey',
     splashImage: '/splash-grey.jpg',
     cssVariables: {
-      '--app-bg-primary': 'rgb(112, 112, 112)',
-      '--app-bg-secondary': 'rgb(118, 118, 118)',
-      '--app-surface': 'rgb(108, 108, 108)',
-      '--app-card-active': 'rgb(133, 133, 133)',
-      '--app-button-text': 'rgb(45, 45, 45)',
-      '--app-text-primary': 'rgb(240, 240, 240)',
-      '--app-text-secondary': 'rgb(180, 180, 180)',
+      // GREY 调整为连贯深灰配色，保证 text-primary/text-secondary 在
+      // 所有背景（bg-primary/bg-secondary/surface/card-active）上均满足 WCAG AA（≥4.5:1）。
+      // 全对最小值为 text-secondary/card-active≈5.68:1。
+      '--app-bg-primary': 'rgb(60, 60, 60)',
+      '--app-bg-secondary': 'rgb(68, 68, 68)',
+      '--app-surface': 'rgb(54, 54, 54)',
+      '--app-card-active': 'rgb(76, 76, 76)',
+      '--app-button-text': 'rgb(40, 40, 40)',
+      '--app-text-primary': 'rgb(246, 246, 246)',
+      '--app-text-secondary': 'rgb(210, 210, 210)',
       '--app-accent': 'rgb(220, 220, 220)',
-      '--app-border-color': 'rgb(138, 138, 138)',
+      '--app-border-color': 'rgb(96, 96, 96)',
       '--app-hover-color': 'rgb(220, 220, 220)',
     },
   },

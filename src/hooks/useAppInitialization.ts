@@ -20,6 +20,34 @@ import {
 } from '../components/ui/AppProperties';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * 主题切换平滑过渡的定时器句柄（模块级单例，服务于 documentElement 的
+ * `.enable-color-transitions` 类切换）。过渡结束后移除该类，避免常驻的
+ * 0.4s 颜色过渡拖慢后续 hover 等交互，同时支持 prefers-reduced-motion 降级。
+ */
+let colorTransitionTimer: ReturnType<typeof setTimeout> | null = null;
+// 首次应用主题时不播放过渡动画，避免首屏颜色从默认值渐变造成闪烁
+let hasAppliedThemeOnce = false;
+
+function applyThemeColorTransition(root: HTMLElement) {
+  if (!hasAppliedThemeOnce) return;
+  if (colorTransitionTimer) {
+    clearTimeout(colorTransitionTimer);
+    colorTransitionTimer = null;
+  }
+  // 尊重系统"减少动态效果"偏好：优先不播放颜色过渡动画
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion) return;
+  root.classList.add('enable-color-transitions');
+  // 0.4s 过渡结束后立刻移除类，保证后续 hover/选中等交互不被常驻动画拖慢
+  colorTransitionTimer = setTimeout(() => {
+    root.classList.remove('enable-color-transitions');
+    colorTransitionTimer = null;
+  }, 520);
+}
+
 interface UseAppInitializationProps {
   preloadedDataRef: React.RefObject<any>;
   thumbnailSize: ThumbnailSize;
@@ -454,6 +482,10 @@ export const useAppInitialization = ({
     // 标记运行平台，便于 CSS 针对 Android / 触屏做细分适配
     root.setAttribute('data-platform', osPlatform || 'desktop');
 
+    // 主题切换平滑过渡：主题发生改变时启用 `.enable-color-transitions`，
+    // 让 CSS 变量驱动的颜色在 0.4s 内渐变（配合 prefers-reduced-motion 降级）
+    applyThemeColorTransition(root);
+
     const currentThemeId = theme || DEFAULT_THEME_ID;
 
     const baseTheme =
@@ -493,5 +525,8 @@ export const useAppInitialization = ({
           : "'Poppins', system-ui, sans-serif";
       root.style.setProperty('--font-family', fontStack);
     }
+
+    // 首帧主题已应用完成，标记后续切换可播放过渡动画
+    hasAppliedThemeOnce = true;
   }, [theme, appSettings?.fontFamily, osPlatform]);
 };

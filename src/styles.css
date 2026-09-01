@@ -492,3 +492,17 @@ html[data-platform='android'] [contenteditable] {
   -webkit-user-select: text;
   user-select: text;
 }
+
+/* 全局动效降级：当系统开启"减少动态效果"时，收敛所有 CSS 动画/过渡与平滑滚动。
+   framer-motion 方向的降级由 App.tsx 顶部 <MotionConfig reducedMotion="user"> 负责。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
