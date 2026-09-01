@@ -621,6 +621,17 @@
         "grow": "拡張",
         "tolerance": "Tolerance"
       },
+      "toolbar": {
+        "title": "マスク編集",
+        "invert": "反転",
+        "clearMask": "マスクをクリア",
+        "overlayOn": "マスクオーバーレイを表示",
+        "overlayOff": "マスクオーバーレイを非表示",
+        "done": "完了",
+        "strength": "強度",
+        "brushSize": "ブラシサイズ",
+        "brushFeather": "ソフト度"
+      },
       "patches": {
         "copyName": "{{name}} のコピー",
         "invertedName": "{{name}} 反転",
@@ -1123,6 +1134,7 @@
   "masks": {
     "types": {
       "all": "画像全体",
+      "autoErase": "自動消去",
       "brush": "ブラシ",
       "clone": "クローン",
       "color": "カラー",

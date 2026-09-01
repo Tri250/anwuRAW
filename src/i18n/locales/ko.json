@@ -621,6 +621,17 @@
         "grow": "확장",
         "tolerance": "허용 오차"
       },
+      "toolbar": {
+        "title": "마스크 편집",
+        "invert": "반전",
+        "clearMask": "마스크 지우기",
+        "overlayOn": "마스크 오버레이 표시",
+        "overlayOff": "마스크 오버레이 숨기기",
+        "done": "완료",
+        "strength": "강도",
+        "brushSize": "브러시 크기",
+        "brushFeather": "부드러움"
+      },
       "patches": {
         "copyName": "{{name}} 복사본",
         "invertedName": "{{name}} 반전됨",
@@ -1123,6 +1134,7 @@
   "masks": {
     "types": {
       "all": "전체 이미지",
+      "autoErase": "자동 지우기",
       "brush": "브러시",
       "clone": "복제",
       "color": "색상",

@@ -621,6 +621,17 @@
         "grow": "擴張",
         "tolerance": "容差"
       },
+      "toolbar": {
+        "title": "蒙版編輯",
+        "invert": "反轉",
+        "clearMask": "清除蒙版",
+        "overlayOn": "顯示蒙版疊加",
+        "overlayOff": "隱藏蒙版疊加",
+        "done": "完成",
+        "strength": "強度",
+        "brushSize": "筆刷大小",
+        "brushFeather": "柔軟度"
+      },
       "patches": {
         "copyName": "{{name}} 副本",
         "invertedName": "{{name}} 反轉",
@@ -1123,6 +1134,7 @@
   "masks": {
     "types": {
       "all": "整個影像",
+      "autoErase": "自動消除",
       "brush": "畫筆",
       "clone": "仿製",
       "color": "顏色",

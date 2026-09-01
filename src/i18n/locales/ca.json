@@ -623,6 +623,17 @@
         "grow": "Expandir",
         "tolerance": "Tolerància"
       },
+      "toolbar": {
+        "title": "Edició de màscara",
+        "invert": "Inverteix",
+        "clearMask": "Esborra màscara",
+        "overlayOn": "Mostra superposició de màscara",
+        "overlayOff": "Oculta superposició de màscara",
+        "done": "Fet",
+        "strength": "Intensitat",
+        "brushSize": "Mida del pinzell",
+        "brushFeather": "Suavitat"
+      },
       "patches": {
         "copyName": "Còpia de {{name}}",
         "invertedName": "{{name}} Invertida",
@@ -1125,6 +1136,7 @@
   "masks": {
     "types": {
       "all": "Tota la imatge",
+      "autoErase": "Esborrat automàtic",
       "brush": "Pinzell",
       "clone": "Clonar",
       "color": "Color",

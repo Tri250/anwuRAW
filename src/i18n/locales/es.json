@@ -643,6 +643,17 @@
         "grow": "Expandir",
         "tolerance": "Tolerancia"
       },
+      "toolbar": {
+        "title": "Edición de máscara",
+        "invert": "Invertir",
+        "clearMask": "Borrar máscara",
+        "overlayOn": "Mostrar superposición de máscara",
+        "overlayOff": "Ocultar superposición de máscara",
+        "done": "Listo",
+        "strength": "Intensidad",
+        "brushSize": "Tamaño del pincel",
+        "brushFeather": "Suavidad"
+      },
       "patches": {
         "copyName": "{{name}} Copia",
         "invertedName": "{{name}} Invertida",
@@ -1149,6 +1160,7 @@
   "masks": {
     "types": {
       "all": "Imagen entera",
+      "autoErase": "Borrado automático",
       "brush": "Pincel",
       "clone": "Clonar",
       "color": "Color",

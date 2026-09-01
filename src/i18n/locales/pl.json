@@ -663,6 +663,17 @@
         "grow": "Rozszerzanie",
         "tolerance": "Tolerancja"
       },
+      "toolbar": {
+        "title": "Edycja maski",
+        "invert": "Odwróć",
+        "clearMask": "Wyczyść maskę",
+        "overlayOn": "Pokaż nakładkę maski",
+        "overlayOff": "Ukryj nakładkę maski",
+        "done": "Gotowe",
+        "strength": "Siła",
+        "brushSize": "Rozmiar pędzla",
+        "brushFeather": "Miękkość"
+      },
       "patches": {
         "copyName": "{{name}} Kopia",
         "invertedName": "{{name}} Odwrócone",
@@ -1173,6 +1184,7 @@
   "masks": {
     "types": {
       "all": "Cały obraz",
+      "autoErase": "Automatyczne wymazywanie",
       "brush": "Pędzel",
       "clone": "Klonowanie",
       "color": "Kolor",

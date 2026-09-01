@@ -623,6 +623,17 @@
         "grow": "Erweitern",
         "tolerance": "Toleranz"
       },
+      "toolbar": {
+        "title": "Maskenbearbeitung",
+        "invert": "Invertieren",
+        "clearMask": "Maske löschen",
+        "overlayOn": "Maskenüberlagerung anzeigen",
+        "overlayOff": "Maskenüberlagerung ausblenden",
+        "done": "Fertig",
+        "strength": "Stärke",
+        "brushSize": "Pinselgröße",
+        "brushFeather": "Weichheit"
+      },
       "patches": {
         "copyName": "{{name}} Kopie",
         "invertedName": "{{name}} umgekehrt",
@@ -1125,6 +1136,7 @@
   "masks": {
     "types": {
       "all": "Ganzes Bild",
+      "autoErase": "Automatisches Löschen",
       "brush": "Pinsel",
       "clone": "Klonen",
       "color": "Farbe",

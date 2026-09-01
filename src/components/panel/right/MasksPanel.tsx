@@ -207,13 +207,13 @@ const BrushTools = ({
       />
       <div className="grid grid-cols-2 gap-2 pt-2">
         <button
-          className={`p-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${settings.tool === ToolType.Brush ? 'text-primary bg-surface' : 'bg-surface text-text-secondary hover:bg-card-active'}`}
+          className={`p-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${settings.tool === ToolType.Brush ? 'text-text-primary bg-surface' : 'bg-surface text-text-secondary hover:bg-card-active'}`}
           onClick={() => onSettingsChange((s: any) => ({ ...s, tool: ToolType.Brush }))}
         >
           {t('editor.masks.brush.brush')}
         </button>
         <button
-          className={`p-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${settings.tool === ToolType.Eraser ? 'text-primary bg-surface' : 'bg-surface text-text-secondary hover:bg-card-active'}`}
+          className={`p-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${settings.tool === ToolType.Eraser ? 'text-text-primary bg-surface' : 'bg-surface text-text-secondary hover:bg-card-active'}`}
           onClick={() => onSettingsChange((s: any) => ({ ...s, tool: ToolType.Eraser }))}
         >
           {t('editor.masks.brush.eraser')}
@@ -915,7 +915,7 @@ export default function MasksPanel() {
           const newContainer = {
             ...INITIAL_MASK_CONTAINER,
             id: uuidv4(),
-            name: `Mask ${newMasks.length + 1}`,
+            name: t('editor.masks.patches.maskName', { count: newMasks.length + 1 }),
             subMasks: [movedSubMask],
           };
           newMasks.push(newContainer);
