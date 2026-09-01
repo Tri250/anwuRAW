@@ -102,7 +102,21 @@
       "resetAllParametric": "Resetuj wszystkie krzywe parametryczne",
       "resetAllPoint": "Resetuj wszystkie krzywe punktowe",
       "resetParametric": "Resetuj krzywą parametryczną ({{channel}})",
-      "resetPoint": "Resetuj krzywą punktową ({{channel}})"
+      "resetPoint": "Resetuj krzywą punktową ({{channel}})",
+      "presets": {
+        "title": "Ustawienia wstępne",
+        "originalDesc": "Przywróć krzywą do stanu pierwotnego",
+        "brighten": "Rozjaśnij",
+        "cool": "Zimny",
+        "darken": "Przyciemnij",
+        "fade": "Zblaknij",
+        "film": "Film",
+        "lowContrast": "Niski kontrast",
+        "original": "Oryginał",
+        "portrait": "Portret",
+        "sCurve": "Krzywa S",
+        "warm": "Ciepły"
+      }
     },
     "details": {
       "blueYellow": "Niebieski/Żółty",
@@ -1119,7 +1133,6 @@
     "splash": {
       "addFolder": "Dodaj folder",
       "brand": "anwuRAW",
-
       "continueSession": "Kontynuuj sesję",
       "descriptionAndroid": "Niewiarygodnie szybki, akcelerowany przez GPU edytor obrazów RAW. Otwórz bibliotekę, aby rozpocząć.",
       "descriptionDesktop": "Niewiarygodnie szybki, akcelerowany przez GPU edytor obrazów RAW. Otwórz folder, aby rozpocząć.",

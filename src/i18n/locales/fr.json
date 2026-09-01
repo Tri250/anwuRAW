@@ -108,7 +108,21 @@
       "resetAllParametric": "Réinitialiser toutes les courbes paramétriques",
       "resetAllPoint": "Réinitialiser toutes les courbes à points",
       "resetParametric": "Réinitialiser la courbe paramétrique {{channel}}",
-      "resetPoint": "Réinitialiser la courbe à points {{channel}}"
+      "resetPoint": "Réinitialiser la courbe à points {{channel}}",
+      "presets": {
+        "title": "Préréglages",
+        "originalDesc": "Réinitialiser la courbe à son état d'origine",
+        "brighten": "Éclaircir",
+        "cool": "Froid",
+        "darken": "Assombrir",
+        "fade": "Désaturer",
+        "film": "Film",
+        "lowContrast": "Faible contraste",
+        "original": "Original",
+        "portrait": "Portrait",
+        "sCurve": "Courbe en S",
+        "warm": "Chaud"
+      }
     },
     "details": {
       "blueYellow": "Bleu/Jaune",

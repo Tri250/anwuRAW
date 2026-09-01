@@ -102,7 +102,21 @@
       "resetAllParametric": "Restablir totes les corbes paramètriques",
       "resetAllPoint": "Restablir totes les corbes de punts",
       "resetParametric": "Restablir corba paramètrica de {{channel}}",
-      "resetPoint": "Restablir corba de punts de {{channel}}"
+      "resetPoint": "Restablir corba de punts de {{channel}}",
+      "presets": {
+        "title": "Predefinits",
+        "originalDesc": "Restableix la corba a l'estat original",
+        "brighten": "Aclareix",
+        "cool": "Fred",
+        "darken": "Fosqueja",
+        "fade": "Difumina",
+        "film": "Pel·lícula",
+        "lowContrast": "Baix contrast",
+        "original": "Original",
+        "portrait": "Retrat",
+        "sCurve": "Corba en S",
+        "warm": "Càlid"
+      }
     },
     "details": {
       "blueYellow": "Blau/Groc",
@@ -1071,7 +1085,6 @@
     "splash": {
       "addFolder": "Afegir carpeta",
       "brand": "anwuRAW",
-
       "continueSession": "Continuar sessió",
       "descriptionAndroid": "Un editor d'imatges RAW increïblement ràpid i accelerat per GPU. Obriu la biblioteca per començar.",
       "descriptionDesktop": "Un editor d'imatges RAW increïblement ràpid i accelerat per GPU. Obriu una carpeta per començar.",

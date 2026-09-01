@@ -102,7 +102,21 @@
       "resetAllParametric": "Ripristina Tutte le Curve Parametriche",
       "resetAllPoint": "Ripristina Tutte le Curve per Punti",
       "resetParametric": "Ripristina Curva Parametrica {{channel}}",
-      "resetPoint": "Ripristina Curva per Punti {{channel}}"
+      "resetPoint": "Ripristina Curva per Punti {{channel}}",
+      "presets": {
+        "title": "Preimpostazioni",
+        "originalDesc": "Reimposta la curva allo stato originale",
+        "brighten": "Schiarire",
+        "cool": "Freddo",
+        "darken": "Scurire",
+        "fade": "Sbiadire",
+        "film": "Film",
+        "lowContrast": "Basso contrasto",
+        "original": "Originale",
+        "portrait": "Ritratto",
+        "sCurve": "Curva a S",
+        "warm": "Caldo"
+      }
     },
     "details": {
       "blueYellow": "Blu/Giallo",
@@ -1095,7 +1109,6 @@
     "splash": {
       "addFolder": "Aggiungi Cartella",
       "brand": "anwuRAW",
-
       "continueSession": "Continua Sessione",
       "descriptionAndroid": "Un editor di immagini RAW velocissimo e con accelerazione GPU. Apri la libreria per iniziare.",
       "descriptionDesktop": "Un editor di immagini RAW velocissimo e con accelerazione GPU. Apri una cartella per iniziare.",

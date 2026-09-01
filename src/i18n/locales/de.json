@@ -102,7 +102,21 @@
       "resetAllParametric": "Alle parametrischen Kurven zurücksetzen",
       "resetAllPoint": "Alle Punktkurven zurücksetzen",
       "resetParametric": "Parametrische {{channel}}-Kurve zurücksetzen",
-      "resetPoint": "Punktkurve ({{channel}}) zurücksetzen"
+      "resetPoint": "Punktkurve ({{channel}}) zurücksetzen",
+      "presets": {
+        "title": "Voreinstellungen",
+        "originalDesc": "Kurve auf den ursprünglichen Zustand zurücksetzen",
+        "brighten": "Aufhellen",
+        "cool": "Kühl",
+        "darken": "Abdunkeln",
+        "fade": "Verblassen",
+        "film": "Film",
+        "lowContrast": "Niedriger Kontrast",
+        "original": "Original",
+        "portrait": "Porträt",
+        "sCurve": "S-Kurve",
+        "warm": "Warm"
+      }
     },
     "details": {
       "blueYellow": "Blau/Gelb",
@@ -1071,7 +1085,6 @@
     "splash": {
       "addFolder": "Ordner hinzufügen",
       "brand": "anwuRAW",
-
       "continueSession": "Sitzung fortsetzen",
       "descriptionAndroid": "Ein blitzschneller, GPU-beschleunigter RAW-Bildeditor. Öffnen Sie die Bibliothek, um zu beginnen.",
       "descriptionDesktop": "Ein blitzschneller, GPU-beschleunigter RAW-Bildeditor. Öffnen Sie einen Ordner, um zu beginnen.",

@@ -106,6 +106,8 @@
       "pastePoint": "Paste Point Curve",
       "pointCurve": "Point Curve",
       "presets": {
+        "title": "Presets",
+        "originalDesc": "Reset curve to original state",
         "brighten": "Brighten",
         "cool": "Cool",
         "darken": "Darken",

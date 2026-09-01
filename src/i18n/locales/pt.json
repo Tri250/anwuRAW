@@ -102,7 +102,21 @@
       "resetAllParametric": "Redefinir Todas as Curvas Paramétricas",
       "resetAllPoint": "Redefinir Todas as Curvas de Pontos",
       "resetParametric": "Redefinir Curva Paramétrica {{channel}}",
-      "resetPoint": "Redefinir Curva de Pontos {{channel}}"
+      "resetPoint": "Redefinir Curva de Pontos {{channel}}",
+      "presets": {
+        "title": "Predefinições",
+        "originalDesc": "Redefinir a curva para o estado original",
+        "brighten": "Clarear",
+        "cool": "Frio",
+        "darken": "Escurecer",
+        "fade": "Desbotar",
+        "film": "Filme",
+        "lowContrast": "Baixo contraste",
+        "original": "Original",
+        "portrait": "Retrato",
+        "sCurve": "Curva em S",
+        "warm": "Quente"
+      }
     },
     "details": {
       "blueYellow": "Azul/Amarelo",
@@ -1095,7 +1109,6 @@
     "splash": {
       "addFolder": "Adicionar Pasta",
       "brand": "anwuRAW",
-
       "continueSession": "Continuar Sessão",
       "descriptionAndroid": "Um editor de imagens RAW ultrarrápido e acelerado por GPU. Abra a biblioteca para começar.",
       "descriptionDesktop": "Um editor de imagens RAW ultrarrápido e acelerado por GPU. Abra uma pasta para começar.",

@@ -102,7 +102,21 @@
       "resetAllParametric": "重置所有參數曲線",
       "resetAllPoint": "重置所有點曲線",
       "resetParametric": "重置 {{channel}} 參數曲線",
-      "resetPoint": "重置 {{channel}} 點曲線"
+      "resetPoint": "重置 {{channel}} 點曲線",
+      "presets": {
+        "title": "預設",
+        "originalDesc": "將曲線重置為原圖狀態",
+        "brighten": "提亮",
+        "cool": "冷調",
+        "darken": "壓暗",
+        "fade": "褪色",
+        "film": "膠片",
+        "lowContrast": "低對比",
+        "original": "原圖",
+        "portrait": "人像",
+        "sCurve": "S 曲線",
+        "warm": "暖調"
+      }
     },
     "details": {
       "blueYellow": "藍/黃",
@@ -1069,7 +1083,6 @@
     "splash": {
       "addFolder": "新增資料夾",
       "brand": "anwuRAW",
-
       "continueSession": "繼續會話",
       "descriptionAndroid": "一款極速、GPU 加速的 RAW 影像編輯器。開啟相簿以開始。",
       "descriptionDesktop": "一款極速、GPU 加速的 RAW 影像編輯器。開啟資料夾以開始。",

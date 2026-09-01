@@ -102,7 +102,21 @@
       "resetAllParametric": "すべてのパラメトリックカーブをリセット",
       "resetAllPoint": "すべてのポイントカーブをリセット",
       "resetParametric": "{{channel}} パラメトリックカーブをリセット",
-      "resetPoint": "{{channel}} ポイントカーブをリセット"
+      "resetPoint": "{{channel}} ポイントカーブをリセット",
+      "presets": {
+        "title": "プリセット",
+        "originalDesc": "曲線を元の状態にリセット",
+        "brighten": "明るく",
+        "cool": "クール",
+        "darken": "暗く",
+        "fade": "フェード",
+        "film": "フィルム",
+        "lowContrast": "低コントラスト",
+        "original": "元画像",
+        "portrait": "ポートレート",
+        "sCurve": "Sカーブ",
+        "warm": "ウォーム"
+      }
     },
     "details": {
       "blueYellow": "ブルー/イエロー",
@@ -1069,7 +1083,6 @@
     "splash": {
       "addFolder": "フォルダを追加",
       "brand": "anwuRAW",
-
       "continueSession": "セッションを続行",
       "descriptionAndroid": "圧倒的に高速な、GPUアクセラレーション対応RAW画像エディタ。ライブラリを開いて始めましょう。",
       "descriptionDesktop": "圧倒的に高速な、GPUアクセラレーション対応RAW画像エディタ。フォルダを開いて始めましょう。",

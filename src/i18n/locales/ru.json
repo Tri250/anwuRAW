@@ -102,7 +102,21 @@
       "resetAllParametric": "Сбросить все параметрические кривые",
       "resetAllPoint": "Сбросить все точечные кривые",
       "resetParametric": "Сбросить параметрическую кривую {{channel}}",
-      "resetPoint": "Сбросить точечную кривую {{channel}}"
+      "resetPoint": "Сбросить точечную кривую {{channel}}",
+      "presets": {
+        "title": "Пресеты",
+        "originalDesc": "Сбросить кривую в исходное состояние",
+        "brighten": "Осветлить",
+        "cool": "Холодный",
+        "darken": "Затемнить",
+        "fade": "Выцветание",
+        "film": "Пленка",
+        "lowContrast": "Низкий контраст",
+        "original": "Оригинал",
+        "portrait": "Портрет",
+        "sCurve": "S-кривая",
+        "warm": "Теплый"
+      }
     },
     "details": {
       "blueYellow": "Синий/Желтый",
@@ -1119,7 +1133,6 @@
     "splash": {
       "addFolder": "Добавить папку",
       "brand": "anwuRAW",
-
       "continueSession": "Продолжить сеанс",
       "descriptionAndroid": "Невероятно быстрый редактор RAW-файлов с GPU-ускорением. Откройте библиотеку, чтобы начать.",
       "descriptionDesktop": "Невероятно быстрый редактор RAW-файлов с GPU-ускорением. Откройте папку, чтобы начать.",
