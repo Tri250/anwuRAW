@@ -645,7 +645,7 @@ export default function CropPanel() {
               </div>
               {/* Auto-crop after rotation toggle */}
               <label className="flex items-center justify-between px-4 py-2 rounded-lg bg-surface cursor-pointer select-none">
-                <span className="text-[12px] text-text-secondary">
+                <span className="text-xs text-text-secondary">
                   {t('editor.crop.autoCropAfterRotate')}
                 </span>
                 <button

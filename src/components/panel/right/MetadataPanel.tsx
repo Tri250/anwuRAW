@@ -426,13 +426,13 @@ export default function MetadataPanel() {
                   <div className="flex items-center gap-1.5 shrink-0">
                     {isVirtualCopy && (
                       <div
-                        className="bg-bg-primary/80 backdrop-blur-md text-text-secondary font-bold text-[10px] rounded-md px-2 py-1 tracking-wider uppercase shadow-sm border border-surface/50"
+                        className="bg-bg-primary/80 backdrop-blur-md text-text-secondary font-bold text-xxs rounded-md px-2 py-1 tracking-wider uppercase shadow-sm border border-surface/50"
                         data-tooltip={t('editor.metadata.fileInfo.virtualCopy')}
                       >
                         VC
                       </div>
                     )}
-                    <div className="bg-bg-primary/80 backdrop-blur-md text-text-secondary font-bold text-[10px] rounded-md px-2 py-1 tracking-wider uppercase shadow-sm border border-surface/50">
+                    <div className="bg-bg-primary/80 backdrop-blur-md text-text-secondary font-bold text-xxs rounded-md px-2 py-1 tracking-wider uppercase shadow-sm border border-surface/50">
                       {fileExtension}
                     </div>
                   </div>
@@ -807,7 +807,7 @@ export default function MetadataPanel() {
                     </svg>
                     {/* 打开在线地图入口（显式动作，需用户点击才联网） */}
                     <a
-                      className="absolute bottom-1 right-1 bg-bg-primary/80 backdrop-blur-sm text-text-secondary text-[10px] rounded-md px-2 py-1 border border-surface/50 hover:text-accent transition-colors cursor-pointer flex items-center gap-1"
+                      className="absolute bottom-1 right-1 bg-bg-primary/80 backdrop-blur-sm text-text-secondary text-xxs rounded-md px-2 py-1 border border-surface/50 hover:text-accent transition-colors cursor-pointer flex items-center gap-1"
                       href={`https://www.openstreetmap.org/?mlat=${gpsData.lat}&mlon=${gpsData.lon}#map=15/${gpsData.lat}/${gpsData.lon}`}
                       rel="noopener noreferrer"
                       target="_blank"

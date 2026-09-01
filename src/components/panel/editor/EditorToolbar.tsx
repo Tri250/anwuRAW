@@ -448,7 +448,7 @@ const EditorToolbar = memo(
                         key={v.path}
                         disabled={isActive}
                         className={clsx(
-                          'px-2.5 py-1 text-[11px] font-medium transition-colors',
+                          'px-2.5 py-1 text-xs font-medium transition-colors',
                           isActive ? 'bg-surface text-text-primary' : 'text-text-secondary hover:bg-surface/50',
                         )}
                         data-tooltip={t('editor.toolbar.switchToVariant', { label: v.label })}

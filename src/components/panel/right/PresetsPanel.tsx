@@ -343,7 +343,7 @@ function PresetItemDisplay({
             <Text
               variant={TextVariants.small}
               color={TextColors.secondary}
-              className="text-[10px] uppercase tracking-wider"
+              className="text-xxs uppercase tracking-wider"
             >
               {isTool ? t('editor.presets.types.tool') : t('editor.presets.types.style')}
             </Text>
