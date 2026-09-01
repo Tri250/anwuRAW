@@ -353,6 +353,6 @@ pub fn poisson_heal_fill(
         crop_h,
         is_raw,
         quality,
-        false,
+        true,
     )
 }

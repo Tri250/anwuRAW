@@ -69,9 +69,9 @@ pub fn region_grow_mask(
 
             let p = rgb.get_pixel(nx, ny);
             // 与区域当前均值的欧氏颜色距离
-            let dr = (p[0] as f32 - sum_r / count as f32).max((p[0] as f32 - sum_r / count as f32) * -1.0);
-            let dg = (p[1] as f32 - sum_g / count as f32).max((p[1] as f32 - sum_g / count as f32) * -1.0);
-            let db = (p[2] as f32 - sum_b / count as f32).max((p[2] as f32 - sum_b / count as f32) * -1.0);
+            let dr = (p[0] as f32 - sum_r / count as f32).abs();
+            let dg = (p[1] as f32 - sum_g / count as f32).abs();
+            let db = (p[2] as f32 - sum_b / count as f32).abs();
             let dist = (dr * dr + dg * dg + db * db).sqrt();
 
             if dist <= tol_color {
@@ -116,8 +116,8 @@ fn sobel_magnitude(lum: &[f32], w: u32, h: u32) -> Vec<f32> {
     let wu = w as usize;
     let hu = h as usize;
     let mut g = vec![0.0f32; lum.len()];
-    for y in 1..hu - 1 {
-        for x in 1..wu - 1 {
+    for y in 1..hu.saturating_sub(1) {
+        for x in 1..wu.saturating_sub(1) {
             let i = y * wu + x;
             let gx = -lum[i - wu - 1] - 2.0 * lum[i - wu] - lum[i - wu + 1]
                 + lum[i + wu - 1]
@@ -128,6 +128,14 @@ fn sobel_magnitude(lum: &[f32], w: u32, h: u32) -> Vec<f32> {
                 + 2.0 * lum[i + 1]
                 + lum[i + wu + 1];
             g[i] = (gx * gx + gy * gy).sqrt();
+        }
+    }
+    // 将边界梯度复制为最近的有效梯度，避免边界对象因梯度为0而溢出
+    if wu > 2 && hu > 2 {
+        for y in 0..hu {
+            let edge_x = if y > 0 && y < hu - 1 { 1 } else { 0 };
+            g[y * wu] = g[y * wu + edge_x];
+            g[y * wu + wu - 1] = g[y * wu + wu - 1 - edge_x];
         }
     }
     g

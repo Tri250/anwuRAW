@@ -56,22 +56,40 @@ export function useAiMasking() {
 
   const handleDirectPatch = useCallback(
     async (subMaskId: string, sourceX: number, sourceY: number) => {
-      const { selectedImage, adjustments, patchesSentToBackend } = useEditorStore.getState();
+      const { selectedImage } = useEditorStore.getState();
       if (!selectedImage?.path) return;
       const startPath = selectedImage.path;
 
-      const patchId = adjustments.aiPatches.find((p: AiPatch) =>
+      // 预先设置加载状态（基于当前已知patchId）
+      const currentPatchId = useEditorStore.getState().adjustments.aiPatches.find((p: AiPatch) =>
         p.subMasks.some((sm: SubMask) => sm.id === subMaskId),
       )?.id;
-      if (!patchId) return;
+      if (!currentPatchId) return;
 
       setAdjustments((prev: Partial<Adjustments>) => ({
         ...prev,
-        aiPatches: prev.aiPatches?.map((p: AiPatch) => (p.id === patchId ? { ...p, isLoading: true } : p)),
+        aiPatches: prev.aiPatches?.map((p: AiPatch) => (p.id === currentPatchId ? { ...p, isLoading: true } : p)),
       }));
 
+      let patchId = currentPatchId;
       try {
-        const patchDefinitionForBackend = adjustments.aiPatches.find((p: AiPatch) => p.id === patchId);
+        // 重新获取最新状态，避免使用过期闭包
+        const latestState = useEditorStore.getState();
+        const latestAdjustments = latestState.adjustments;
+        const { patchesSentToBackend } = latestState;
+        const latestPatchId = latestAdjustments.aiPatches.find((p: AiPatch) =>
+          p.subMasks.some((sm: SubMask) => sm.id === subMaskId),
+        )?.id;
+        if (!latestPatchId) {
+          // patch已被删除，静默回滚加载状态
+          setAdjustments((prev: Partial<Adjustments>) => ({
+            ...prev,
+            aiPatches: prev.aiPatches?.map((p: AiPatch) => (p.id === currentPatchId ? { ...p, isLoading: false } : p)),
+          }));
+          return;
+        }
+        patchId = latestPatchId;
+        const patchDefinitionForBackend = latestAdjustments.aiPatches.find((p: AiPatch) => p.id === patchId);
         const isAutoErase = patchDefinitionForBackend?.subMasks.some((sm: SubMask) => sm.type === 'auto-erase');
         const isLiquify = patchDefinitionForBackend?.subMasks.some((sm: SubMask) => sm.type === 'liquify');
         const isRetouch = patchDefinitionForBackend?.subMasks.some((sm: SubMask) => sm.type === 'retouch');
@@ -84,7 +102,7 @@ export function useAiMasking() {
               : 'generate_manual_cleanup_patch';
 
         const newPatchDataJson: any = await invoke(command, {
-          currentAdjustments: adjustments,
+          currentAdjustments: latestAdjustments,
           patchDefinition: patchDefinitionForBackend,
           sourcePoint: [sourceX, sourceY],
         });

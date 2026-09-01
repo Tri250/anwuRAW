@@ -117,7 +117,9 @@ fn encode_patch_result(
     quality: u8,
     mask_as_png: bool,
 ) -> Result<String, String> {
-    let mut color_buf = Cursor::new(Vec::with_capacity(32768));
+    // 根据图像像素数动态估算buffer容量（RGB每像素3字节 + JPEG编码开销，蒙版1字节 + 编码开销）
+    let estimated_capacity = ((width * height * 4) as usize).max(32768);
+    let mut color_buf = Cursor::new(Vec::with_capacity(estimated_capacity));
     color_image
         .write_with_encoder(image::codecs::jpeg::JpegEncoder::new_with_quality(
             &mut color_buf,
@@ -126,7 +128,7 @@ fn encode_patch_result(
         .map_err(|e| e.to_string())?;
     let color_base64 = general_purpose::STANDARD.encode(color_buf.get_ref());
 
-    let mut mask_buf = Cursor::new(Vec::with_capacity(32768));
+    let mut mask_buf = Cursor::new(Vec::with_capacity(estimated_capacity));
     if mask_as_png {
         mask_image
             .write_to(&mut mask_buf, image::ImageFormat::Png)
@@ -780,6 +782,9 @@ pub async fn generate_liquify_patch(
     let (source_dynamic, is_raw) =
         prepare_source_image(&patch_definition.id, &current_adjustments, &state)?;
     let (img_w, img_h) = source_dynamic.dimensions();
+    if img_w == 0 || img_h == 0 {
+        return Err("Source image has zero dimensions.".to_string());
+    }
     let source_image = source_dynamic.to_rgb8();
 
     let mut all_points = Vec::new();
@@ -1173,6 +1178,9 @@ pub async fn generate_retouch_patch(
     let (source_dynamic, is_raw) =
         prepare_source_image(&patch_definition.id, &current_adjustments, &state)?;
     let (img_w, img_h) = source_dynamic.dimensions();
+    if img_w == 0 || img_h == 0 {
+        return Err("Source image has zero dimensions.".to_string());
+    }
     let source_image = source_dynamic.to_rgb8();
 
     let mut min_x = img_w as f32;

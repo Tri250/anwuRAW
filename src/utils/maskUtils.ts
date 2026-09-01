@@ -41,11 +41,11 @@ export const createSubMask = (
     case Mask.Flow:
       return { ...common, parameters: { lines: [], flow: 10 } };
     case Mask.AiSubject:
-      return { ...common, parameters: { maskDataBase64: null, grow: 0, feather: 0 } };
+      return { ...common, parameters: { maskDataBase64: null, grow: 50, feather: 25 } };
     case Mask.AiForeground:
-      return { ...common, parameters: { maskDataBase64: null, grow: 0, feather: 0 } };
+      return { ...common, parameters: { maskDataBase64: null, grow: 50, feather: 25 } };
     case Mask.QuickEraser:
-      return { ...common, parameters: { maskDataBase64: null, grow: 50, feather: 50 } };
+      return { ...common, parameters: { maskDataBase64: null, grow: 75, feather: 75 } };
     default:
       return { ...common, parameters: {} };
   }
