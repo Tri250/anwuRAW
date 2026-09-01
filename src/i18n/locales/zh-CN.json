@@ -107,7 +107,17 @@
       "pointCurve": "点曲线",
       "presets": {
         "title": "预设",
-        "originalDesc": "将曲线重置为原图状态"
+        "originalDesc": "将曲线重置为原图状态",
+        "brighten": "提亮",
+        "cool": "冷调",
+        "darken": "压暗",
+        "fade": "褪色",
+        "film": "胶片",
+        "lowContrast": "低对比",
+        "original": "原图",
+        "portrait": "人像",
+        "sCurve": "S 曲线",
+        "warm": "暖调"
       },
       "resetAllParametric": "重置所有参数曲线",
       "resetAllPoint": "重置所有点曲线",

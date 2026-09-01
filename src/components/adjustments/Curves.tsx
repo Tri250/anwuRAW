@@ -479,6 +479,10 @@ export default function CurveGraph({
 
   const isLightTheme = theme === Theme.Light || theme === Theme.Arctic;
   const histogramOpacity = isLightTheme ? 0.6 : 0.15;
+  const gridStroke = isLightTheme ? 'rgba(0, 0, 0, 0.10)' : 'rgba(255, 255, 255, 0.10)';
+  const diagonalStroke = isLightTheme ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.20)';
+  const splitStroke = isLightTheme ? 'rgba(0, 0, 0, 0.14)' : 'rgba(255, 255, 255, 0.12)';
+  const pointOutline = isLightTheme ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.90)';
 
   const channelConfig: ChannelConfig = useMemo(
     () => ({
@@ -870,7 +874,7 @@ export default function CurveGraph({
                   ? 'M 0,63.75 H 255 M 0,127.5 H 255 M 0,191.25 H 255'
                   : 'M 63.75,0 V 255 M 127.5,0 V 255 M 191.25,0 V 255 M 0,63.75 H 255 M 0,127.5 H 255 M 0,191.25 H 255'
               }
-              stroke="rgba(255,255,255,0.1)"
+              stroke={gridStroke}
               strokeWidth="0.5"
             />
             <AnimatePresence>
@@ -897,7 +901,7 @@ export default function CurveGraph({
               y1="255"
               x2="255"
               y2="0"
-              stroke="rgba(255,255,255,0.2)"
+              stroke={diagonalStroke}
               strokeWidth="1"
               strokeDasharray="2 2"
             />
@@ -905,7 +909,7 @@ export default function CurveGraph({
             {isParametricMode &&
               splitPositions.map(({ key, value }) => {
                 const x = (value / 100) * 255;
-                return <line key={key} x1={x} y1="0" x2={x} y2="255" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />;
+                return <line key={key} x1={x} y1="0" x2={x} y2="255" stroke={splitStroke} strokeWidth="1" />;
               })}
 
             <path d={getCurvePath(activePoints)} fill="none" stroke={color} strokeWidth="2.5" />
@@ -917,7 +921,7 @@ export default function CurveGraph({
                   cy={255 - (activePoints[0]?.y || 0)}
                   fill={color}
                   r="6"
-                  stroke="#1e1e1e"
+                  stroke={pointOutline}
                   strokeWidth="2"
                 />
                 <circle
@@ -925,7 +929,7 @@ export default function CurveGraph({
                   cy={255 - (activePoints[activePoints.length - 1]?.y || 255)}
                   fill={color}
                   r="6"
-                  stroke="#1e1e1e"
+                  stroke={pointOutline}
                   strokeWidth="2"
                 />
               </>
@@ -943,7 +947,7 @@ export default function CurveGraph({
                   onTouchStart={(e: any) => handlePointStart(e, i)}
                   onContextMenu={(e: React.MouseEvent) => handlePointContextMenu(e, i)}
                   r="6"
-                  stroke="#1e1e1e"
+                  stroke={pointOutline}
                   strokeWidth="2"
                 />
               ))}

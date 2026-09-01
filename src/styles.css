@@ -4,11 +4,14 @@
 @theme {
   --color-bg-primary: var(--app-bg-primary);
   --color-bg-secondary: var(--app-bg-secondary);
+  --color-bg-tertiary: var(--app-bg-tertiary);
   --color-surface: var(--app-surface);
+  --color-surface-secondary: var(--app-surface-secondary);
   --color-card-active: var(--app-card-active);
   --color-button-text: var(--app-button-text);
   --color-text-primary: var(--app-text-primary);
   --color-text-secondary: var(--app-text-secondary);
+  --color-text-tertiary: var(--app-text-tertiary);
   --color-accent: var(--app-accent);
   --color-border-color: var(--app-border-color);
   --color-hover-color: var(--app-hover-color);
