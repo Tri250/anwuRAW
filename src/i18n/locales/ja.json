@@ -10,7 +10,13 @@
         "agx": "AgX",
         "agxDesc": "フィルム調トーンマッピング",
         "basic": "標準",
-        "basicDesc": "標準トーンマッピング"
+        "basicDesc": "標準トーンマッピング",
+        "filmic": "Filmic Pro",
+        "filmicDesc": "Uncharted 2 — ハイライト詳細を保持、フィルム風ルック",
+        "gamma": "Gamma 2.2",
+        "gammaDesc": "純粋な sRGB ガンマ — 最小限の処理、最も正確なベースライン",
+        "reinhard": "Reinhard",
+        "reinhardDesc": "シンプルで信頼性 — 低スペック端末に最適"
       },
       "reset": "リセット",
       "scene": {

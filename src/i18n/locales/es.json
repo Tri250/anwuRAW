@@ -10,7 +10,13 @@
         "agx": "AgX",
         "agxDesc": "Mapeo de tonos estilo película",
         "basic": "Básico",
-        "basicDesc": "Mapeo de tonos estándar"
+        "basicDesc": "Mapeo de tonos estándar",
+        "filmic": "Filmic Pro",
+        "filmicDesc": "Uncharted 2 — preserva el detalle de altas luces, aspecto fílmico",
+        "gamma": "Gamma 2.2",
+        "gammaDesc": "Gamma sRGB pura — procesamiento mínimo, base más precisa",
+        "reinhard": "Reinhard",
+        "reinhardDesc": "Simple y fiable — ideal para dispositivos de gama baja"
       },
       "reset": "Restablecer",
       "scene": {

@@ -10,7 +10,13 @@
         "agx": "AgX",
         "agxDesc": "Mapeig de tons tipus pel·lícula",
         "basic": "Bàsic",
-        "basicDesc": "Mapeig de tons estàndard"
+        "basicDesc": "Mapeig de tons estàndard",
+        "filmic": "Filmic Pro",
+        "filmicDesc": "Uncharted 2 — preserva el detall d'altes llums, aspecte fílmic",
+        "gamma": "Gamma 2.2",
+        "gammaDesc": "Gamma sRGB pura — processament mínim, base més precisa",
+        "reinhard": "Reinhard",
+        "reinhardDesc": "Simple i fiable — ideal per a dispositius de gamma baixa"
       },
       "reset": "Restablir",
       "scene": {

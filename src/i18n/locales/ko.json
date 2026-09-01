@@ -10,7 +10,13 @@
         "agx": "AgX",
         "agxDesc": "필름 같은 톤 매핑",
         "basic": "기본",
-        "basicDesc": "표준 톤 매핑"
+        "basicDesc": "표준 톤 매핑",
+        "filmic": "Filmic Pro",
+        "filmicDesc": "Uncharted 2 — 하이라이트 디테일 보존, 필름 느낌",
+        "gamma": "Gamma 2.2",
+        "gammaDesc": "순수 sRGB 감마 — 최소 처리, 가장 정확한 기준선",
+        "reinhard": "Reinhard",
+        "reinhardDesc": "단순하고 신뢰성 — 저사양 기기에 적합"
       },
       "reset": "초기화",
       "scene": {

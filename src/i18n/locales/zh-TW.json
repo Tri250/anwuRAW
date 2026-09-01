@@ -10,7 +10,13 @@
         "agx": "AgX",
         "agxDesc": "電影感色調映射",
         "basic": "基礎",
-        "basicDesc": "標準色調映射"
+        "basicDesc": "標準色調映射",
+        "filmic": "Filmic Pro",
+        "filmicDesc": "Uncharted 2 — 保留亮部細節、電影感外觀",
+        "gamma": "Gamma 2.2",
+        "gammaDesc": "純 sRGB gamma — 最少處理、最準確的基準",
+        "reinhard": "Reinhard",
+        "reinhardDesc": "簡單可靠 — 最適合低階裝置"
       },
       "reset": "重置",
       "scene": {
