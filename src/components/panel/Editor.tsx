@@ -356,7 +356,20 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   const handleStraighten = useCallback(
     (angleCorrection: number) => {
       setAdjustments((prev: Adjustments) => {
-        const newRotation = (prev.rotation || 0) + angleCorrection;
+        // clamp rotation 到 Slider 允许范围 [-45, 45] 内，
+        // 防止 Straighten 工具画垂直线时 correction 可达 ±90° 导致 rotation 超界
+        // 视觉等价：±46° ≡ ∓44°，取绝对值更小的等价角度
+        let rawRotation = (prev.rotation || 0) + angleCorrection;
+        // 归一化到 (-180, 180]
+        rawRotation = ((rawRotation + 180) % 360 + 360) % 360 - 180;
+        // 再归一化到 [0, 360) 然后选 [-45, 45] 或 [135, 225]（视觉等价）中绝对值更小的
+        let clamped = Math.max(-45, Math.min(45, rawRotation));
+        if (Math.abs(rawRotation) > 45 && Math.abs(rawRotation) <= 135) {
+          // 等价旋转在反方向
+          const alt = rawRotation > 0 ? rawRotation - 180 : rawRotation + 180;
+          if (Math.abs(alt) < Math.abs(clamped)) clamped = alt;
+        }
+
         const newCrop =
           selectedImage?.width && selectedImage?.height
             ? calculateAutoCropForRotation(
@@ -364,7 +377,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
                 selectedImage.height,
                 prev.orientationSteps || 0,
                 prev.aspectRatio,
-                newRotation,
+                clamped,
                 prev.crop,
                 angleCorrection,
               )
@@ -372,7 +385,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
 
         return {
           ...prev,
-          rotation: newRotation,
+          rotation: clamped,
           crop: newCrop,
         };
       });

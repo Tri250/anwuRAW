@@ -3862,6 +3862,8 @@ pub fn generate_filename_from_template(
 
     // 路径安全：过滤用户可控模板里的路径分隔符，防止 ../ 和 \\ 穿越
     let template: String = template.chars().map(|c| if c == '/' || c == '\\' { '_' } else { c }).collect();
+    let template_has_sequence = template.contains("{sequence}");
+
     let mut result = template;
     result = result.replace("{original_filename}", stem);
     result = result.replace("{sequence}", &sequence_str);
@@ -3870,6 +3872,13 @@ pub fn generate_filename_from_template(
     result = result.replace("{DD}", &local_date.format("%d").to_string());
     result = result.replace("{hh}", &local_date.format("%H").to_string());
     result = result.replace("{mm}", &local_date.format("%M").to_string());
+
+    // 多图场景安全兜底：模板未显式包含 {sequence} 时自动追加序号，
+    // 防止不同目录同名文件导出到同一目标时静默覆盖。
+    // 单图场景 (total<=1) 保持用户原始意图不追加。
+    if total > 1 && !template_has_sequence {
+        result = format!("{}_{}", result, sequence_str);
+    }
 
     result
 }

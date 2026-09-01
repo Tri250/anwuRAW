@@ -926,11 +926,18 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     setActivePresetId(preset.id);
     setPresetIntensity(100);
 
-    // 防御性过滤：如果预设未标记 includeMasks，移除 masks 和 aiPatches
-    // 防止预设意外覆盖用户当前工作区的蒙版/AI patch（数据保护）
-    const safePresetAdj = preset.includeMasks
-      ? preset.adjustments
-      : { ...preset.adjustments, masks: undefined, aiPatches: undefined };
+    // 防御性过滤：根据预设的 includeMasks / includeCropTransform 标记，
+    // 用 delete 从 preset.adjustments 中移除对应分组的 key（切勿赋值 undefined，
+    // 因为 { ...prev, ...{ masks: undefined } } 会真正覆盖掉 prev.masks！）
+    const safePresetAdj = { ...preset.adjustments };
+    if (!preset.includeMasks) {
+      delete safePresetAdj.masks;
+      delete safePresetAdj.aiPatches;
+    }
+    if (!preset.includeCropTransform) {
+      const GEOMETRY_KEYS = ADJUSTMENT_GROUPS.geometry.flatMap((g) => g.keys);
+      for (const k of GEOMETRY_KEYS) delete (safePresetAdj as Record<string, unknown>)[k];
+    }
 
     setAdjustments((prevAdjustments: Adjustments) => ({
       ...prevAdjustments,
