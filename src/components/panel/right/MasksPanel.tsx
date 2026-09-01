@@ -1,6 +1,5 @@
 import {
   type ChangeEvent,
-  type PointerEvent as ReactPointerEvent,
   useState,
   useEffect,
   useRef,
@@ -341,7 +340,7 @@ export default function MasksPanel() {
     })),
   );
 
-  const { isResizingWaveform, onToggleWaveform, setActiveWaveformChannel, setWaveformHeight, handleWaveformResize } =
+  const { isResizingWaveform, onToggleWaveform, setActiveWaveformChannel, handleWaveformResize } =
     useWaveformControls();
 
   const setBrushSettings = useCallback(

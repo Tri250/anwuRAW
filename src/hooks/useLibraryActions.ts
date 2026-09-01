@@ -138,7 +138,7 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
         }
       });
     } catch (err) {
-      toast.error(`Failed to update metadata: ${err}`);
+      toast.error(`Failed to update metadata: ${err instanceof Error ? err.message : String(err)}`);
     }
   }, []);
 

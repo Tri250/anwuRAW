@@ -26,6 +26,7 @@ import { useUIStore } from '../../store/useUIStore';
 import { useLibraryStore } from '../../store/useLibraryStore';
 import { useAiMasking } from '../../hooks/useAiMasking';
 import { useEditorActions } from '../../hooks/useEditorActions';
+import { toast } from 'react-toastify';
 
 const parseRgb = (rgbStr: string): [number, number, number, number] => {
   const match = rgbStr.match(/[\d.]+/g);
@@ -202,9 +203,22 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         clearTimeout(zoomDebounceTimeoutRef.current);
         zoomDebounceTimeoutRef.current = null;
       }
+      if (beforeOriginalUrlRef.current) {
+        URL.revokeObjectURL(beforeOriginalUrlRef.current);
+        beforeOriginalUrlRef.current = null;
+      }
     };
   }, []);
 
+
+  useEffect(() => {
+    setIsComparing(false);
+    if (beforeOriginalUrlRef.current) {
+      URL.revokeObjectURL(beforeOriginalUrlRef.current);
+      beforeOriginalUrlRef.current = null;
+    }
+    setBeforeOriginalUrl(null);
+  }, [selectedImage?.path]);
 
   const pendingOverlayRequestRef = useRef<any>(null);
   const overlayVersionRef = useRef(0);
@@ -290,6 +304,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         setBeforeOriginalUrl(url);
       } catch (err) {
         console.error('Failed to generate before-original preview:', err);
+        toast.error(`Failed to generate comparison preview: ${err instanceof Error ? err.message : String(err)}`);
+        return;
       }
     }
     setIsComparing(true);
