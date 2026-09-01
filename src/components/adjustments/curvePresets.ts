@@ -34,6 +34,12 @@ function smooth(points: Coord[], subdivisions = 4): Coord[] {
   const n = points.length;
   if (n < 3) return points.map((p) => ({ ...p }));
 
+  // 后端 WGSL 曲线点数组容量固定为 16（array<Point,16>）。
+  // 生成点数 = (n-1)*subdivisions+1，必须裁剪到 <=16，
+  // 否则超出部分会被后端截断，曲线上限附近出现异常。
+  const maxSubdiv = Math.floor((16 - 1) / (n - 1));
+  subdivisions = Math.max(1, Math.min(subdivisions, maxSubdiv));
+
   const out: Coord[] = [];
   for (let i = 0; i < n - 1; i++) {
     const p0 = points[Math.max(0, i - 1)];

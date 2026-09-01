@@ -280,7 +280,7 @@ export default function EffectsPanel({
                         defaultValue={40}
                         onChange={(e: any) => handleAdjustmentChange(Effect.LensBlurAmount, e.target.value)}
                         step={1}
-                        value={adjustments.lensBlurAmount ?? 50}
+                        value={adjustments.lensBlurAmount ?? 40}
                         onDragStateChange={onDragStateChange}
                         fillOrigin="min"
                       />
