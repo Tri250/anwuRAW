@@ -610,7 +610,7 @@ export default function ExportPanel({
                     onClick={() => setFileFormat(format.id)}
                   >
                     <Text color={fileFormat === format.id ? TextColors.button : TextColors.secondary}>
-                      {format.name}
+                      <span className="block whitespace-nowrap overflow-hidden text-ellipsis">{format.name}</span>
                     </Text>
                   </button>
                 ))}

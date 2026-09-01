@@ -178,17 +178,30 @@ export default function BeforeAfterCompare({ beforeUrl, afterUrl, onClose }: Bef
         >
           {canCompare ? (
             <>
-              {/* After 层（底层） */}
-              <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
-                <div className="origin-center" style={imageStyle}>
-                  <img src={afterUrl} alt="After" draggable={false} className="max-w-none shadow-2xl" />
+              {/* After 层（底层）：w-full/h-full + object-contain 先适应容器，再通过 transform 缩放/平移 */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="w-full h-full origin-center" style={imageStyle}>
+                  <img
+                    src={afterUrl}
+                    alt="After"
+                    draggable={false}
+                    className="w-full h-full object-contain select-none"
+                  />
                 </div>
               </div>
 
               {/* Before 层（上层，被 clip 裁剪） */}
-              <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none" style={clip}>
-                <div className="origin-center" style={imageStyle}>
-                  <img src={beforeUrl} alt="Before" draggable={false} className="max-w-none shadow-2xl" />
+              <div
+                className="absolute inset-0 overflow-hidden pointer-events-none"
+                style={clip}
+              >
+                <div className="w-full h-full origin-center" style={imageStyle}>
+                  <img
+                    src={beforeUrl}
+                    alt="Before"
+                    draggable={false}
+                    className="w-full h-full object-contain select-none"
+                  />
                 </div>
               </div>
 
