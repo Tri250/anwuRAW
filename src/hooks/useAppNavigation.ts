@@ -145,7 +145,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         compactEditorPanelHeightOverride: null,
       });
 
-      if (isFrontendCached && cached) {
+      if (isFrontendCached && cached && cached.selectedImage) {
         setEditor({
           selectedImage: {
             ...cached.selectedImage,
