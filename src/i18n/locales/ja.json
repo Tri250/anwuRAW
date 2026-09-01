@@ -13,6 +13,16 @@
         "basicDesc": "標準トーンマッピング"
       },
       "reset": "リセット",
+      "scene": {
+        "title": "シーン強調",
+        "desc": "ワンタップでプロのカラーグレーディング",
+        "auto": "自動",
+        "autoDesc": "スマートなシーン強調",
+        "prototypePortrait": "ポートレート",
+        "prototypeLandscape": "風景",
+        "prototypeNight": "夜景",
+        "prototypeWarmSunset": "夕焼け"
+      },
       "shadows": "シャドウ",
       "toneMapper": "トーンマッパー",
       "whites": "白レベル"

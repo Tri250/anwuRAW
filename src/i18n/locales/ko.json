@@ -13,6 +13,16 @@
         "basicDesc": "표준 톤 매핑"
       },
       "reset": "초기화",
+      "scene": {
+        "title": "장면 강화",
+        "desc": "원터치 전문 컬러 그레이딩",
+        "auto": "자동",
+        "autoDesc": "스마트 장면 강화",
+        "prototypePortrait": "인물",
+        "prototypeLandscape": "풍경",
+        "prototypeNight": "야경",
+        "prototypeWarmSunset": "노을"
+      },
       "shadows": "섀도우",
       "toneMapper": "톤 매퍼",
       "whites": "화이트"

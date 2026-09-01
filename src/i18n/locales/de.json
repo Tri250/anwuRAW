@@ -13,6 +13,16 @@
         "basicDesc": "Standard-Tonemapping"
       },
       "reset": "Zurücksetzen",
+      "scene": {
+        "title": "Szene verbessern",
+        "desc": "Professionelle Farbkorrektur mit einem Klick",
+        "auto": "Auto",
+        "autoDesc": "Intelligente Szenenverbesserung",
+        "prototypePortrait": "Porträt",
+        "prototypeLandscape": "Landschaft",
+        "prototypeNight": "Nacht",
+        "prototypeWarmSunset": "Warmer Sonnenuntergang"
+      },
       "shadows": "Tiefen",
       "toneMapper": "Tonemapper",
       "whites": "Weiß"

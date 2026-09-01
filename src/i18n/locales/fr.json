@@ -19,6 +19,16 @@
         "reinhardDesc": "Simple & reliable — best for low-end devices"
       },
       "reset": "Réinitialiser",
+      "scene": {
+        "title": "Amélioration de scène",
+        "desc": "Étalonnage professionnel en un geste",
+        "auto": "Auto",
+        "autoDesc": "Amélioration intelligente de la scène",
+        "prototypePortrait": "Portrait",
+        "prototypeLandscape": "Paysage",
+        "prototypeNight": "Nuit",
+        "prototypeWarmSunset": "Coucher de soleil chaud"
+      },
       "shadows": "Ombres",
       "toneMapper": "Mappeur de tons",
       "whites": "Blancs"

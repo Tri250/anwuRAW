@@ -13,6 +13,16 @@
         "basicDesc": "Mapeo de tonos estándar"
       },
       "reset": "Restablecer",
+      "scene": {
+        "title": "Mejora de escena",
+        "desc": "Etalonaje profesional con un toque",
+        "auto": "Auto",
+        "autoDesc": "Mejora inteligente de escena",
+        "prototypePortrait": "Retrato",
+        "prototypeLandscape": "Paisaje",
+        "prototypeNight": "Noche",
+        "prototypeWarmSunset": "Atardecer cálido"
+      },
       "shadows": "Sombras",
       "toneMapper": "Mapeador de tonos",
       "whites": "Blancos"

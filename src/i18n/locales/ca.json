@@ -13,6 +13,16 @@
         "basicDesc": "Mapeig de tons estàndard"
       },
       "reset": "Restablir",
+      "scene": {
+        "title": "Millora d'escena",
+        "desc": "Gradació de color professional amb un toc",
+        "auto": "Auto",
+        "autoDesc": "Millora intel·ligent d'escena",
+        "prototypePortrait": "Retrat",
+        "prototypeLandscape": "Paisatge",
+        "prototypeNight": "Nit",
+        "prototypeWarmSunset": "Posta de sol càlida"
+      },
       "shadows": "Ombres",
       "toneMapper": "Mapejador de tons",
       "whites": "Blancs"

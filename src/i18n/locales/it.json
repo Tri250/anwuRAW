@@ -13,6 +13,16 @@
         "basicDesc": "Tonemapping Standard"
       },
       "reset": "Ripristina",
+      "scene": {
+        "title": "Miglioramento scena",
+        "desc": "Color grading professionale con un tocco",
+        "auto": "Auto",
+        "autoDesc": "Miglioramento intelligente della scena",
+        "prototypePortrait": "Ritratto",
+        "prototypeLandscape": "Paesaggio",
+        "prototypeNight": "Notte",
+        "prototypeWarmSunset": "Tramonto caldo"
+      },
       "shadows": "Ombre",
       "toneMapper": "Tone Mapper",
       "whites": "Bianchi"

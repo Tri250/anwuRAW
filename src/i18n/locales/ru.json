@@ -13,6 +13,16 @@
         "basicDesc": "Стандартное тональное отображение"
       },
       "reset": "Сбросить",
+      "scene": {
+        "title": "Улучшение сцены",
+        "desc": "Профессиональная цветокоррекция в одно касание",
+        "auto": "Авто",
+        "autoDesc": "Умное улучшение сцены",
+        "prototypePortrait": "Портрет",
+        "prototypeLandscape": "Пейзаж",
+        "prototypeNight": "Ночь",
+        "prototypeWarmSunset": "Тёплый закат"
+      },
       "shadows": "Тени",
       "toneMapper": "Тональное отображение",
       "whites": "Светлые тона"

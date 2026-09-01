@@ -13,6 +13,16 @@
         "basicDesc": "Mapeamento de Tons Padrão"
       },
       "reset": "Redefinir",
+      "scene": {
+        "title": "Aprimoramento de cena",
+        "desc": "Graduação de cor profissional em um toque",
+        "auto": "Auto",
+        "autoDesc": "Aprimoramento inteligente de cena",
+        "prototypePortrait": "Retrato",
+        "prototypeLandscape": "Paisagem",
+        "prototypeNight": "Noite",
+        "prototypeWarmSunset": "Pôr do sol quente"
+      },
       "shadows": "Sombras",
       "toneMapper": "Mapeador de Tons",
       "whites": "Brancos"
