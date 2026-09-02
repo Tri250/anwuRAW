@@ -552,7 +552,9 @@ impl Default for AppSettings {
             live_preview_quality: Some("high".to_string()),
             sort_criteria: None,
             filter_criteria: None,
-            theme: Some("dark".to_string()),
+            // 默认浅色主题：与前端 DEFAULT_THEME_ID(Light) 保持一致，
+            // 避免后端默认 dark 在加载设置时覆盖前端浅色默认。
+            theme: Some("light".to_string()),
             font_family: None,
             decorations: Some(false),
             ai_connector_address: None,

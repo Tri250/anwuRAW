@@ -258,7 +258,9 @@ export default function BasicAdjustments({
   const handleToneMapperChange = (mapper: string) => {
     setAdjustments((prev: Partial<Adjustments>) => ({
       ...prev,
-      toneMapper: mapper as 'basic' | 'agx',
+      // 完整映射真实支持的 5 种 tone mapper（basic/agx/reinhard/filmic/gamma），
+      // 与后端 tonemapper_mode 分支完全一致，避免类型收窄掩盖非法值。
+      toneMapper: mapper as Adjustments['toneMapper'],
     }));
   };
 
@@ -315,7 +317,7 @@ export default function BasicAdjustments({
         />
       ) : (
         <ToneMapperSwitch
-          selectedMapper={adjustments.toneMapper || 'agx'}
+          selectedMapper={adjustments.toneMapper || 'basic'}
           onMapperChange={handleToneMapperChange}
           evShiftValue={adjustments.exposure}
           onEvShiftChange={(value) => handleAdjustmentChange(BasicAdjustment.Exposure, value)}
