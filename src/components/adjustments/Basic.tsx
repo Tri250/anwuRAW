@@ -325,7 +325,7 @@ export default function BasicAdjustments({
         />
       )}
       <Slider
-        label={t('adjustments.basic.exposure')}
+        label={t('adjustments.basic.brightness')}
         max={5}
         min={-5}
         onChange={(e: any) => handleAdjustmentChange(BasicAdjustment.Brightness, e.target.value)}
