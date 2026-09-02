@@ -5,6 +5,7 @@
       "contrast": "대비",
       "evShift": "EV 시프트",
       "exposure": "노출",
+      "brightness": "밝기",
       "highlights": "하이라이트",
       "mappers": {
         "agx": "AgX",

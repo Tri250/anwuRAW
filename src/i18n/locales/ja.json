@@ -5,6 +5,7 @@
       "contrast": "コントラスト",
       "evShift": "露出補正",
       "exposure": "露光量",
+      "brightness": "明るさ",
       "highlights": "ハイライト",
       "mappers": {
         "agx": "AgX",

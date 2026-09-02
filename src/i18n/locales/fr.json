@@ -5,6 +5,7 @@
       "contrast": "Contraste",
       "evShift": "Décalage EV",
       "exposure": "Exposition",
+      "brightness": "Luminosité",
       "highlights": "Hautes lumières",
       "mappers": {
         "agx": "AgX",

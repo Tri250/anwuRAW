@@ -5,6 +5,7 @@
       "contrast": "Контрастность",
       "evShift": "Сдвиг экспозиции",
       "exposure": "Экспозиция",
+      "brightness": "Яркость",
       "highlights": "Света",
       "mappers": {
         "agx": "AgX",

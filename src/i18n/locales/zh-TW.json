@@ -5,6 +5,7 @@
       "contrast": "對比",
       "evShift": "EV 偏移",
       "exposure": "曝光",
+      "brightness": "亮度",
       "highlights": "亮部",
       "mappers": {
         "agx": "AgX",
