@@ -570,6 +570,9 @@ fn process_preview_job(
             return Ok(b"WGPU_RENDER".to_vec());
         }
 
+        // [POST-GPU] channel_mixer + split_toning
+        let final_processed_image =
+            crate::image_processing::apply_post_gpu_adjustments(final_processed_image, &adjustments_clone);
         let final_processed_image = Arc::new(final_processed_image);
         let final_rgba_image = match &*final_processed_image {
             DynamicImage::ImageRgba8(img) => img,
@@ -877,6 +880,9 @@ fn generate_uncropped_preview(
             },
             "generate_uncropped_preview",
         ) {
+            // [POST-GPU] channel_mixer + split_toning
+            let processed_image =
+                crate::image_processing::apply_post_gpu_adjustments(processed_image, &adjustments_clone);
             let (width, height) = processed_image.dimensions();
             let rgb_pixels = processed_image.to_rgb8().into_vec();
             match Encoder::new(Preset::BaselineFastest)
@@ -1001,6 +1007,10 @@ async fn preview_geometry_transform(
                 },
                 "preview_geometry_transform_base_gen",
             )?;
+
+            // [POST-GPU] channel_mixer + split_toning
+            let processed_base =
+                crate::image_processing::apply_post_gpu_adjustments(processed_base, &temp_adjustments);
 
             let mut cache = state
                 .geometry_cache
@@ -1190,6 +1200,10 @@ fn generate_preset_preview(
         "generate_preset_preview",
     )?;
 
+    // [POST-GPU] channel_mixer + split_toning
+    let processed_image =
+        crate::image_processing::apply_post_gpu_adjustments(processed_image, &js_adjustments);
+
     let mut buf = Cursor::new(Vec::new());
     processed_image
         .to_rgb8()
@@ -1362,6 +1376,10 @@ async fn generate_all_community_previews(
                 },
                 "generate_all_community_previews",
             )?;
+
+            // [POST-GPU] channel_mixer + split_toning
+            let processed_image_dynamic =
+                crate::image_processing::apply_post_gpu_adjustments(processed_image_dynamic, &js_adjustments);
 
             let processed_image = processed_image_dynamic.to_rgb8();
 
@@ -1649,6 +1667,10 @@ async fn generate_preview_for_path(
             },
             "generate_preview_for_path",
         )?;
+
+        // [POST-GPU] channel_mixer + split_toning
+        let final_image =
+            crate::image_processing::apply_post_gpu_adjustments(final_image, &js_adjustments);
 
         let (width, height) = final_image.dimensions();
         let rgb_pixels = final_image.to_rgb8().into_vec();

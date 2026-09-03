@@ -1,4 +1,6 @@
+use crate::channel_mixer::ChannelMixerSettings;
 use crate::gpu_processing::WgpuDisplay;
+use crate::split_toning::SplitToningSettings;
 use bytemuck::{Pod, Zeroable};
 use glam::{Mat3, Vec2, Vec3};
 use image::{DynamicImage, GenericImageView, Rgb32FImage, Rgba};
@@ -3477,4 +3479,34 @@ pub fn calculate_auto_adjustments(
     let results = perform_auto_analysis(&original_image);
 
     Ok(auto_results_to_json(&results))
+}
+
+/// GPU 主处理完成后的 CPU 后处理：通道混合器 + 分离色调。
+/// 这两个调整不适合放在 GPU uniform（GlobalAdjustments 是 repr(C)+Pod+Zeroable），
+/// 也不值得为此写 WGSL 新算子（它们是 CPU 上几毫秒级的并行像素变换）。
+///
+/// 调用约定：只在 `process_and_get_dynamic_image(_with_analytics)` 完成 GPU readback
+/// 拿到 DynamicImage 之后调用；WGPU 直通（emit "wgpu-frame-ready"）分支不要调用。
+pub fn apply_post_gpu_adjustments(
+    mut img: DynamicImage,
+    js_adjustments: &serde_json::Value,
+) -> DynamicImage {
+    // Channel Mixer
+    if let Some(cm_val) = js_adjustments.get("channelMixer") {
+        if let Ok(cm) = serde_json::from_value::<ChannelMixerSettings>(cm_val.clone()) {
+            // channel_mixer::ChannelMixerSettings 没有 enabled 字段，用 is_identity 判断
+            if !cm.is_identity() {
+                img = crate::channel_mixer::apply_to_dynamic(&img, &cm);
+            }
+        }
+    }
+    // Split Toning
+    if let Some(st_val) = js_adjustments.get("splitToning") {
+        if let Ok(st) = serde_json::from_value::<SplitToningSettings>(st_val.clone()) {
+            if st.enabled {
+                img = crate::split_toning::apply_to_dynamic(&img, &st);
+            }
+        }
+    }
+    img
 }

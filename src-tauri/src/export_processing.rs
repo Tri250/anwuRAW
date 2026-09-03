@@ -475,7 +475,8 @@ fn process_image_for_export_pipeline(
 
     let unique_hash = calculate_full_job_hash(path, js_adjustments);
 
-    process_and_get_dynamic_image(
+    // [POST-GPU] channel_mixer + split_toning
+    let result = process_and_get_dynamic_image(
         context,
         state,
         transformed_image.as_ref(),
@@ -487,7 +488,8 @@ fn process_image_for_export_pipeline(
             roi: None,
         },
         debug_tag,
-    )
+    )?;
+    Ok(crate::image_processing::apply_post_gpu_adjustments(result, js_adjustments))
 }
 
 fn set_timestamps_from_exif(src: &Path, dst: &Path) {
@@ -861,6 +863,9 @@ fn export_masks_for_image(
                 },
                 "export_mask_image",
             )?;
+            // [POST-GPU] channel_mixer + split_toning
+            let processed =
+                crate::image_processing::apply_post_gpu_adjustments(processed, js_adjustments);
             ensure_export_not_cancelled(cancellation_token)?;
 
             let with_options = apply_export_resize_and_watermark(processed, export_settings)?;
@@ -1652,6 +1657,10 @@ pub async fn estimate_export_sizes(
             "estimate_export_size",
         )?;
 
+        // [POST-GPU] channel_mixer + split_toning
+        let processed_preview =
+            crate::image_processing::apply_post_gpu_adjustments(processed_preview, &adjustments_clone);
+
         let cs_preview =
             apply_color_space_transform(&processed_preview, &export_settings.color_space);
         let preview_bytes = encode_image_to_bytes(
@@ -1793,6 +1802,10 @@ pub async fn estimate_export_sizes(
             },
             "estimate_batch_export_size",
         )?;
+
+        // [POST-GPU] channel_mixer + split_toning
+        let processed_preview =
+            crate::image_processing::apply_post_gpu_adjustments(processed_preview, &js_adjustments);
 
         let cs_preview =
             apply_color_space_transform(&processed_preview, &export_settings.color_space);
