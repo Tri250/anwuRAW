@@ -76,7 +76,9 @@ pub async fn apply_denoising(
     tokio::task::spawn_blocking(move || {
         match denoise_image(path_str, intensity, method, app_handle.clone(), ai_session) {
             Ok((image, _)) => {
-                *denoise_result_handle.lock().unwrap_or_else(|e| e.into_inner()) = Some(image);
+                *denoise_result_handle
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner()) = Some(image);
             }
             Err(e) => {
                 let _ = app_handle.emit("denoise-error", e);
@@ -194,10 +196,15 @@ pub async fn save_denoised_image(
     original_path_str: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
-    let denoised_image = state.denoise_result.lock().unwrap_or_else(|e| e.into_inner()).take().ok_or_else(|| {
-        "No denoised image found in memory. It might have already been saved or cleared."
-            .to_string()
-    })?;
+    let denoised_image = state
+        .denoise_result
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take()
+        .ok_or_else(|| {
+            "No denoised image found in memory. It might have already been saved or cleared."
+                .to_string()
+        })?;
 
     let is_raw = crate::formats::is_raw_file(&original_path_str);
 

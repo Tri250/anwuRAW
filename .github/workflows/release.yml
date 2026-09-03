@@ -1,11 +1,84 @@
 name: 'Release: Build & Package App'
 
 on:
+  # GitHub Release 页面创建新版本后自动触发（主路径）
   release:
     types: [created]
 
+  # 支持手动触发：在 GitHub Actions 页面点击 Run workflow 按钮
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要构建的 Git tag（留空则使用仓库最新 tag 或当前分支 HEAD）'
+        required: false
+        type: string
+
+  # 推送 tag (v*) 时自动触发
+  push:
+    tags:
+      - 'v*'
+
 jobs:
+  # ---------------------------------------------------------------------------
+  # 触发适配：workflow_dispatch / push tags 路径下先创建一个 GitHub Release，
+  # 让下游 matrix job 拿到 release-id；release.created 路径直接透传。
+  # ---------------------------------------------------------------------------
+  ensure-release:
+    if: github.event_name != 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Determine tag
+        id: tag
+        shell: bash
+        run: |
+          if [[ -n "${{ github.event.inputs.tag }}" ]]; then
+            tag="${{ github.event.inputs.tag }}"
+          elif [[ -n "${{ github.ref_name }}" && "${{ github.ref_name }}" == v* ]]; then
+            tag="${{ github.ref_name }}"
+          else
+            # 取仓库最新 tag
+            tag="$(git ls-remote --tags --sort=-v:refname "$GITHUB_REPO_URL" \
+                   | head -1 | awk '{print $2}' | sed 's|refs/tags/||')"
+            # 如果 ls-remote 不可用，尝试用 gh
+            if [[ -z "$tag" ]]; then
+              tag="$(gh release list --limit 1 --json tagName -q '.[0].tagName')"
+            fi
+          fi
+          echo "Resolved tag: $tag"
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release (if not exists)
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.tag.outputs.tag }}"
+          if [[ -z "$tag" ]]; then
+            echo "❌ No tag resolved. Aborting."
+            exit 1
+          fi
+          # 检查是否已存在
+          if gh release view "$tag" 2>/dev/null; then
+            echo "✅ Release for tag $tag already exists."
+            id="$(gh release view "$tag" --json id -q '.id')"
+          else
+            echo "📝 Creating draft release for $tag ..."
+            gh release create "$tag" \
+              --title "$tag" \
+              --notes "Automated release for $tag" \
+              --draft
+            id="$(gh release view "$tag" --json id -q '.id')"
+          fi
+          echo "release-id=$id" >> $GITHUB_OUTPUT
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+
   release:
+    needs: ensure-release
+    if: github.event_name != 'release' || always()
     strategy:
       fail-fast: false
       matrix:
@@ -16,24 +89,24 @@ jobs:
             target: ''
             asset-prefix: '01_win-x64'
 
-          # --- macOS Apple Silicon (M1/M2/M3) ---
-          - platform: 'macos-14'
+          # --- macOS Apple Silicon (M1/M2/M3/M4, ARM64) ---
+          - platform: 'macos-latest'
             target: aarch64-apple-darwin
             asset-prefix: '02_macos-arm64'
 
           # --- macOS Apple Silicon + Tethering feature ---
-          - platform: 'macos-14'
+          - platform: 'macos-latest'
             target: aarch64-apple-darwin
             args: '--features tethering'
             asset-prefix: '02_macos-arm64_tethering'
 
-          # --- macOS Intel (x86_64, macOS 15 Sequoia Intel runner) ---
-          - platform: 'macos-15-intel'
+          # --- macOS Intel (x86_64, last stable Intel runner) ---
+          - platform: 'macos-13'
             target: x86_64-apple-darwin
             asset-prefix: '02_macos-intel'
 
           # --- macOS Intel + Tethering feature ---
-          - platform: 'macos-15-intel'
+          - platform: 'macos-13'
             target: x86_64-apple-darwin
             args: '--features tethering'
             asset-prefix: '02_macos-intel_tethering'
@@ -66,9 +139,11 @@ jobs:
             target: 'aarch64-linux-android'
             args: '--target aarch64'
             asset-prefix: '04_android-arm64'
+
     uses: ./.github/workflows/build.yml
     with:
-      release-id: ${{ github.event.release.id }}
+      release-id: ${{ github.event.release.id || needs.ensure-release.outputs.release-id }}
+      ref: ${{ needs.ensure-release.outputs.tag || github.ref }}
       platform: ${{ matrix.platform }}
       target: ${{ matrix.target }}
       build-args: ${{ matrix.args }}

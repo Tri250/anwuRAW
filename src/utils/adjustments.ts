@@ -136,6 +136,46 @@ export interface ColorCalibration {
   blueSaturation: number;
 }
 
+export interface ChannelMixerSettings {
+  red_from_red: number;
+  red_from_green: number;
+  red_from_blue: number;
+  green_from_red: number;
+  green_from_green: number;
+  green_from_blue: number;
+  blue_from_red: number;
+  blue_from_green: number;
+  blue_from_blue: number;
+}
+
+export interface SplitToningSettings {
+  shadows_hue: number;
+  shadows_saturation: number;
+  highlights_hue: number;
+  highlights_saturation: number;
+  balance: number;
+  enabled: boolean;
+}
+
+export interface ColorRangeMaskSettings {
+  hue_center: number;
+  hue_tolerance: number;
+  min_saturation: number;
+  max_saturation: number;
+  min_value: number;
+  max_value: number;
+  feather: number;
+  invert: boolean;
+}
+
+export interface LuminanceRangeMaskSettings {
+  min_luminance: number;
+  max_luminance: number;
+  bandwidth: number;
+  feather: number;
+  invert: boolean;
+}
+
 export interface ParametricCurveSettings {
   darks: number;
   shadows: number;
@@ -251,6 +291,8 @@ export interface Adjustments {
   vignetteMidpoint: number;
   vignetteRoundness: number;
   whites: number;
+  channelMixer?: ChannelMixerSettings;
+  splitToning?: SplitToningSettings;
 }
 
 export interface AiPatch {
@@ -342,6 +384,8 @@ export interface MaskAdjustments {
   tint: number;
   vibrance: number;
   whites: number;
+  channelMixer?: ChannelMixerSettings;
+  splitToning?: SplitToningSettings;
 }
 
 export interface MaskContainer {
@@ -475,6 +519,8 @@ export const INITIAL_MASK_ADJUSTMENTS: MaskAdjustments = {
     color: true,
     details: true,
     effects: true,
+    channel_mixer: true,
+    split_toning: true,
   },
   shadows: 0,
   sharpness: 0,
@@ -484,6 +530,25 @@ export const INITIAL_MASK_ADJUSTMENTS: MaskAdjustments = {
   tint: 0,
   vibrance: 0,
   whites: 0,
+  channelMixer: {
+    red_from_red: 100,
+    red_from_green: 0,
+    red_from_blue: 0,
+    green_from_red: 0,
+    green_from_green: 100,
+    green_from_blue: 0,
+    blue_from_red: 0,
+    blue_from_green: 0,
+    blue_from_blue: 100,
+  },
+  splitToning: {
+    shadows_hue: 200,
+    shadows_saturation: 20,
+    highlights_hue: 40,
+    highlights_saturation: 15,
+    balance: 0,
+    enabled: false,
+  },
 };
 
 export const INITIAL_MASK_CONTAINER: MaskContainer = {
@@ -571,6 +636,8 @@ export const INITIAL_ADJUSTMENTS: Adjustments = {
     color: true,
     details: true,
     effects: true,
+    channel_mixer: true,
+    split_toning: true,
   },
   shadows: 0,
   sharpness: 0,
@@ -594,6 +661,16 @@ export const INITIAL_ADJUSTMENTS: Adjustments = {
   vignetteMidpoint: 50,
   vignetteRoundness: 0,
   whites: 0,
+  channelMixer: {
+    red_from_red: 100, red_from_green: 0, red_from_blue: 0,
+    green_from_red: 0, green_from_green: 100, green_from_blue: 0,
+    blue_from_red: 0, blue_from_green: 0, blue_from_blue: 100,
+  },
+  splitToning: {
+    shadows_hue: 200, shadows_saturation: 20,
+    highlights_hue: 40, highlights_saturation: 15,
+    balance: 0, enabled: false,
+  },
 };
 
 const deepCloneCurves = (curves: any): Curves => ({
@@ -914,5 +991,11 @@ export const ADJUSTMENT_SECTIONS: Sections = {
     Effect.LensBlurMaxDepth,
     Effect.LensBlurMinFade,
     Effect.LensBlurMaxFade,
+  ],
+  channel_mixer: [
+    'channelMixer',
+  ],
+  split_toning: [
+    'splitToning',
   ],
 };

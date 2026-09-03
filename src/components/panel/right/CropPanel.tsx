@@ -10,8 +10,10 @@ import {
   RotateCw,
   Ruler,
   Scan,
+  Wand2,
   X,
 } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { Adjustments, INITIAL_ADJUSTMENTS } from '../../../utils/adjustments';
 import { calculateAutoCropForRotation } from '../../../utils/cropUtils';
@@ -439,6 +441,21 @@ export default function CropPanel() {
     setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, rotation: 0 }));
   };
 
+  const handleAiStraighten = async () => {
+    if (!selectedImage?.path) return;
+    try {
+      const angle = await invoke<number>('detect_straighten_angle', { path: selectedImage.path });
+      // angle 是弧度，需要转角度
+      const degrees = angle * (180 / Math.PI);
+      // 合并当前 rotation
+      const newRotation = (adjustments.rotation || 0) + degrees;
+      updateLocalRotation(null);
+      setAdjustments((prev: Adjustments) => ({ ...prev, rotation: newRotation }));
+    } catch (err) {
+      console.error('AI straighten failed:', err);
+    }
+  };
+
   const handleOverlayCycle = () => {
     const currentIndex = OVERLAYS.findIndex((o) => o.id === activeOverlay);
     const nextIndex = (currentIndex + 1) % OVERLAYS.length;
@@ -630,6 +647,13 @@ export default function CropPanel() {
                         disabled={displayRotation === 0}
                       >
                         <RotateCcw size={14} />
+                      </button>
+                      <button
+                        className="p-1.5 rounded-md text-text-secondary transition-colors cursor-pointer hover:bg-card-active hover:text-text-primary"
+                        onClick={handleAiStraighten}
+                        data-tooltip={t('editor.crop.tooltips.aiStraighten')}
+                      >
+                        <Wand2 size={14} />
                       </button>
                     </div>
                   }

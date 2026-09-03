@@ -26,7 +26,8 @@ fn sor_solve(
             let idx = y * bw + x;
             let mut nb = [0.0f32; 3];
             for c in 0..3 {
-                let sum = field[idx - bw][c] + field[idx + bw][c] + field[idx - 1][c] + field[idx + 1][c];
+                let sum =
+                    field[idx - bw][c] + field[idx + bw][c] + field[idx - 1][c] + field[idx + 1][c];
                 nb[c] = (1.0 - omega) * field[idx][c] + omega * 0.25 * sum;
             }
 
@@ -104,7 +105,11 @@ pub fn poisson_heal_fill(
         for x in 1..(bw - 1) {
             let i = y * bw + x;
             if region[i] == 0 {
-                if region[i - bw] == 1 || region[i + bw] == 1 || region[i - 1] == 1 || region[i + 1] == 1 {
+                if region[i - bw] == 1
+                    || region[i + bw] == 1
+                    || region[i - 1] == 1
+                    || region[i + 1] == 1
+                {
                     region[i] = 2;
                 }
             } else if region[i] == 1 {

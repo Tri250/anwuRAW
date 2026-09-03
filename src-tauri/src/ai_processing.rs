@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use image::imageops::{self, FilterType};
 use image::{
     DynamicImage, GenericImageView, GrayImage, ImageBuffer, Luma, Rgb, Rgb32FImage, Rgba, RgbaImage,
@@ -56,7 +56,10 @@ fn resolve_model_endpoints(user_setting: Option<&str>) -> Vec<String> {
         Some("hf-mirror") | Some("mirror") => vec![HF_MIRROR_ENDPOINT.to_string()],
         Some("huggingface") | Some("official") => vec![HF_OFFICIAL_ENDPOINT.to_string()],
         Some(custom) if custom != "auto" && custom != "default" => vec![custom.to_string()],
-        _ => vec![HF_MIRROR_ENDPOINT.to_string(), HF_OFFICIAL_ENDPOINT.to_string()],
+        _ => vec![
+            HF_MIRROR_ENDPOINT.to_string(),
+            HF_OFFICIAL_ENDPOINT.to_string(),
+        ],
     }
 }
 
@@ -404,8 +407,7 @@ async fn download_and_verify_model(
             fs::remove_file(&dest_path)?;
         }
         let _ = app_handle.emit("ai-model-download-start", model_name);
-        let download_result =
-            download_model_with_endpoints(endpoints, filename, &dest_path).await;
+        let download_result = download_model_with_endpoints(endpoints, filename, &dest_path).await;
         let _ = app_handle.emit("ai-model-download-finish", model_name);
         download_result?;
 
@@ -636,9 +638,12 @@ pub async fn get_or_init_clip_models(
     let clip_tokenizer_path = models_dir.join(CLIP_TOKENIZER_FILENAME);
     if !clip_tokenizer_path.exists() {
         let _ = app_handle.emit("ai-model-download-start", "CLIP Tokenizer");
-        let download_result =
-            download_model_with_endpoints(&endpoints, CLIP_TOKENIZER_FILENAME, &clip_tokenizer_path)
-                .await;
+        let download_result = download_model_with_endpoints(
+            &endpoints,
+            CLIP_TOKENIZER_FILENAME,
+            &clip_tokenizer_path,
+        )
+        .await;
         let _ = app_handle.emit("ai-model-download-finish", "CLIP Tokenizer");
         download_result?;
     }

@@ -2014,7 +2014,9 @@ pub async fn stitch_focus_stack(
             serde_json::json!({ "frames": report }),
         );
 
-        *focus_result_handle.lock().unwrap_or_else(|e| e.into_inner()) = Some(DynamicImage::ImageRgb32F(final_image));
+        *focus_result_handle
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = Some(DynamicImage::ImageRgb32F(final_image));
 
         let _ = app_handle.emit(
             "focus-stack-complete",

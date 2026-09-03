@@ -678,7 +678,8 @@ fn generate_linear_bitmap(
 
             let clamped_intensity = intensity.clamp(0.0, 1.0);
             let feather = params.feather.clamp(0.0, 1.0);
-            let smooth_intensity = clamped_intensity * clamped_intensity * (3.0 - 2.0 * clamped_intensity);
+            let smooth_intensity =
+                clamped_intensity * clamped_intensity * (3.0 - 2.0 * clamped_intensity);
             let final_intensity = clamped_intensity * (1.0 - feather) + smooth_intensity * feather;
 
             mask.put_pixel(x_u, y_u, Luma([(final_intensity * 255.0) as u8]));
@@ -1203,8 +1204,12 @@ fn generate_color_bitmap(
             };
 
             if x_unrotated_coarse >= 0.0 && y_unrotated_coarse >= 0.0 {
-                let x_src = (x_unrotated_coarse * inv_scale).round().clamp(0.0, full_w as f32 - 1.0) as u32;
-                let y_src = (y_unrotated_coarse * inv_scale).round().clamp(0.0, full_h as f32 - 1.0) as u32;
+                let x_src = (x_unrotated_coarse * inv_scale)
+                    .round()
+                    .clamp(0.0, full_w as f32 - 1.0) as u32;
+                let y_src = (y_unrotated_coarse * inv_scale)
+                    .round()
+                    .clamp(0.0, full_h as f32 - 1.0) as u32;
 
                 if x_src < full_w && y_src < full_h {
                     let pixel = warped.get_pixel(x_src, y_src);
@@ -1221,7 +1226,14 @@ fn generate_color_bitmap(
         }
     }
 
-    apply_grow_and_feather(&mut mask, params.grow, params.feather, params.decontaminate, width, height);
+    apply_grow_and_feather(
+        &mut mask,
+        params.grow,
+        params.feather,
+        params.decontaminate,
+        width,
+        height,
+    );
     Some(mask)
 }
 
@@ -1303,8 +1315,12 @@ fn generate_luminance_bitmap(
             };
 
             if x_unrotated_coarse >= 0.0 && y_unrotated_coarse >= 0.0 {
-                let x_src = (x_unrotated_coarse * inv_scale).round().clamp(0.0, full_w as f32 - 1.0) as u32;
-                let y_src = (y_unrotated_coarse * inv_scale).round().clamp(0.0, full_h as f32 - 1.0) as u32;
+                let x_src = (x_unrotated_coarse * inv_scale)
+                    .round()
+                    .clamp(0.0, full_w as f32 - 1.0) as u32;
+                let y_src = (y_unrotated_coarse * inv_scale)
+                    .round()
+                    .clamp(0.0, full_h as f32 - 1.0) as u32;
 
                 if x_src < full_w && y_src < full_h {
                     let pixel = warped.get_pixel(x_src, y_src);
@@ -1321,7 +1337,14 @@ fn generate_luminance_bitmap(
         }
     }
 
-    apply_grow_and_feather(&mut mask, params.grow, params.feather, params.decontaminate, width, height);
+    apply_grow_and_feather(
+        &mut mask,
+        params.grow,
+        params.feather,
+        params.decontaminate,
+        width,
+        height,
+    );
     Some(mask)
 }
 
