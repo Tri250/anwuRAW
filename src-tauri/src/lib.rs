@@ -6,12 +6,6 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 mod adjustment_utils;
-mod channel_mixer;
-mod color_range_mask;
-mod detect_straighten;
-mod iptc_processing;
-mod luminance_range_mask;
-mod split_toning;
 mod ai_commands;
 mod ai_connector;
 mod ai_processing;
@@ -20,8 +14,11 @@ mod app_settings;
 mod app_state;
 mod cache_utils;
 mod camera_tethering;
+mod channel_mixer;
+mod color_range_mask;
 mod culling;
 mod denoising;
+mod detect_straighten;
 mod exif_processing;
 mod export_processing;
 mod file_management;
@@ -32,9 +29,11 @@ mod hdr_deghosting;
 mod image_loader;
 mod image_processing;
 mod inpainting;
+mod iptc_processing;
 mod launch_request;
 mod lens_blur;
 mod lens_correction;
+mod luminance_range_mask;
 mod lut_processing;
 mod mask_generation;
 mod multi_exposure;
@@ -43,6 +42,7 @@ mod panorama_stitching;
 mod panorama_utils;
 mod preset_converter;
 mod raw_processing;
+mod split_toning;
 mod tagging;
 mod tagging_utils;
 mod window_customizer;
@@ -171,7 +171,10 @@ pub fn generate_transformed_preview(
     let transform_hash = calculate_transform_hash(adjustments);
 
     let (transformed_full_res, unscaled_crop_offset) = {
-        let mut cache_lock = state.full_transformed_cache.lock().unwrap_or_else(|e| e.into_inner());
+        let mut cache_lock = state
+            .full_transformed_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some((hash, img, offset)) = cache_lock.as_ref() {
             if *hash == transform_hash {
                 (Arc::clone(img), *offset)
@@ -242,7 +245,10 @@ fn cancel_thumbnail_generation(
         .thumbnail_cancellation_token
         .store(true, Ordering::SeqCst);
 
-    let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
+    let mut tracker = state
+        .thumbnail_progress
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     tracker.total = 0;
     tracker.completed = 0;
     drop(tracker);
@@ -261,7 +267,10 @@ pub fn get_cached_full_warped_image(
     let geo_hash = calculate_geometry_hash(js_adjustments);
 
     {
-        let cache_lock = state.full_warped_cache.lock().unwrap_or_else(|e| e.into_inner());
+        let cache_lock = state
+            .full_warped_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some((hash, img)) = cache_lock.as_ref()
             && *hash == geo_hash
         {
@@ -280,7 +289,10 @@ pub fn get_cached_full_warped_image(
     let warped_arc = Arc::new(warped_image);
 
     {
-        let mut cache_lock = state.full_warped_cache.lock().unwrap_or_else(|e| e.into_inner());
+        let mut cache_lock = state
+            .full_warped_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         *cache_lock = Some((geo_hash, Arc::clone(&warped_arc)));
     }
 
@@ -292,7 +304,12 @@ async fn update_wgpu_transform(
     payload: WgpuTransformPayload,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
-    let context = match state.gpu_context.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
+    let context = match state
+        .gpu_context
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+    {
         Some(c) => c.clone(),
         None => return Ok(()),
     };
@@ -343,7 +360,10 @@ fn process_preview_job(
     hydrate_adjustments(&state, &mut adjustments_json);
     let adjustments_clone = adjustments_json;
 
-    let loaded_image_guard = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+    let loaded_image_guard = state
+        .original_image
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let loaded_image = loaded_image_guard
         .as_ref()
         .ok_or("No original image loaded")?
@@ -368,7 +388,10 @@ fn process_preview_job(
         _ => (if has_roi { 1.4_f32 } else { 1.0_f32 }, 75_u8),
     };
 
-    let mut cached_preview_lock = state.cached_preview.lock().unwrap_or_else(|e| e.into_inner());
+    let mut cached_preview_lock = state
+        .cached_preview
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
 
     let base_valid = cached_preview_lock
         .as_ref()
@@ -386,7 +409,10 @@ fn process_preview_job(
             cached.unscaled_crop_offset,
         )
     } else {
-        *state.gpu_image_cache.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        *state
+            .gpu_image_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = None;
 
         let (base, scale, offset) =
             generate_transformed_preview(&state, &loaded_image, &adjustments_clone, preview_dim)?;
@@ -416,7 +442,10 @@ fn process_preview_job(
         };
 
         if is_interactive && base_valid {
-            *state.gpu_image_cache.lock().unwrap_or_else(|e| e.into_inner()) = None;
+            *state
+                .gpu_image_cache
+                .lock()
+                .unwrap_or_else(|e| e.into_inner()) = None;
         }
 
         small
@@ -617,7 +646,10 @@ fn process_preview_job(
 fn start_analytics_worker(app_handle: tauri::AppHandle) {
     let state = app_handle.state::<AppState>();
     let (tx, rx): (Sender<AnalyticsJob>, Receiver<AnalyticsJob>) = mpsc::channel();
-    *state.analytics_worker_tx.lock().unwrap_or_else(|e| e.into_inner()) = Some(tx);
+    *state
+        .analytics_worker_tx
+        .lock()
+        .unwrap_or_else(|e| e.into_inner()) = Some(tx);
 
     std::thread::spawn(move || {
         while let Ok(mut job) = rx.recv() {
@@ -655,7 +687,10 @@ fn start_preview_worker(app_handle: tauri::AppHandle) {
     let state = app_handle.state::<AppState>();
     let (tx, rx): (Sender<PreviewJob>, Receiver<PreviewJob>) = mpsc::channel();
 
-    *state.preview_worker_tx.lock().unwrap_or_else(|e| e.into_inner()) = Some(tx);
+    *state
+        .preview_worker_tx
+        .lock()
+        .unwrap_or_else(|e| e.into_inner()) = Some(tx);
 
     std::thread::spawn(move || {
         while let Ok(mut job) = rx.recv() {
@@ -702,7 +737,10 @@ async fn apply_adjustments(
     let (tx, rx) = tokio::sync::oneshot::channel();
 
     {
-        let tx_guard = state.preview_worker_tx.lock().unwrap_or_else(|e| e.into_inner());
+        let tx_guard = state
+            .preview_worker_tx
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some(worker_tx) = tx_guard.as_ref() {
             let job = PreviewJob {
                 adjustments: js_adjustments,
@@ -869,7 +907,10 @@ async fn preview_geometry_transform(
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
     let (loaded_image_path, is_raw) = {
-        let guard = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+        let guard = state
+            .original_image
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let loaded = guard.as_ref().ok_or("No image loaded")?;
         (loaded.path.clone(), loaded.is_raw)
     };
@@ -890,7 +931,10 @@ async fn preview_geometry_transform(
             let context = get_or_init_gpu_context(&state, &app_handle)?;
 
             let original_image = {
-                let guard = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+                let guard = state
+                    .original_image
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 let loaded = guard.as_ref().ok_or("No image loaded")?;
                 loaded.image.clone()
             };
@@ -958,7 +1002,10 @@ async fn preview_geometry_transform(
                 "preview_geometry_transform_base_gen",
             )?;
 
-            let mut cache = state.geometry_cache.lock().unwrap_or_else(|e| e.into_inner());
+            let mut cache = state
+                .geometry_cache
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             if cache.len() > 5 {
                 cache.clear();
             }
@@ -1062,7 +1109,10 @@ async fn preview_geometry_transform(
 pub fn get_original_image(
     state: &tauri::State<AppState>,
 ) -> Result<(std::sync::Arc<image::DynamicImage>, bool), String> {
-    let original_image_lock = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+    let original_image_lock = state
+        .original_image
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let loaded_image = original_image_lock
         .as_ref()
         .ok_or("No original image loaded")?;
@@ -1437,9 +1487,14 @@ async fn save_hdr(
     first_path_str: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
-    let hdr_image = state.hdr_result.lock().unwrap_or_else(|e| e.into_inner()).take().ok_or_else(|| {
-        "No hdr image found in memory to save. It might have already been saved.".to_string()
-    })?;
+    let hdr_image = state
+        .hdr_result
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take()
+        .ok_or_else(|| {
+            "No hdr image found in memory to save. It might have already been saved.".to_string()
+        })?;
 
     let (first_path, _) = parse_virtual_path(&first_path_str);
     let parent_dir = first_path
@@ -1856,8 +1911,16 @@ fn frontend_ready(
         }
     }
 
-    let open_with_file = state.initial_file_path.lock().unwrap_or_else(|e| e.into_inner()).take();
-    let edit_session = state.pending_edit_session.lock().unwrap_or_else(|e| e.into_inner()).take();
+    let open_with_file = state
+        .initial_file_path
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take();
+    let edit_session = state
+        .pending_edit_session
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take();
     if let Some(path) = &open_with_file {
         log::info!("Frontend is ready, returning initial path: {}", path);
     }

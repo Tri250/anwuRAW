@@ -143,11 +143,15 @@ fn enqueue_metadata(
     }
     drop(pending);
 
-    manager.queue.lock().unwrap_or_else(|e| e.into_inner()).push_back(PendingMetadata {
-        virtual_path,
-        image_path,
-        sidecar_path,
-    });
+    manager
+        .queue
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push_back(PendingMetadata {
+            virtual_path,
+            image_path,
+            sidecar_path,
+        });
     manager.cvar.notify_one();
 }
 
@@ -167,7 +171,10 @@ pub fn start_metadata_workers(app_handle: tauri::AppHandle) {
         std::thread::spawn(move || {
             loop {
                 let item = {
-                    let mut queue = manager_clone.queue.lock().unwrap_or_else(|e| e.into_inner());
+                    let mut queue = manager_clone
+                        .queue
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
                     while queue.is_empty() {
                         queue = manager_clone.cvar.wait(queue).unwrap();
                     }
@@ -483,7 +490,9 @@ pub async fn update_exif_fields(
                 let temp_metadata = crate::exif_processing::load_sidecar(&primary_path);
 
                 let mut exif_data = temp_metadata.exif.unwrap_or_else(|| {
-                    if let Some(existing) = crate::exif_processing::read_rrexif_sidecar(original_path) {
+                    if let Some(existing) =
+                        crate::exif_processing::read_rrexif_sidecar(original_path)
+                    {
                         existing
                     } else if let Ok(mmap) = read_file_mapped(original_path) {
                         crate::exif_processing::read_exif_data_from_bytes(path, &mmap)
@@ -1514,7 +1523,10 @@ pub fn generate_thumbnail_data(
         let crop_data: Option<Crop> = serde_json::from_value(meta.adjustments["crop"].clone()).ok();
 
         let cached_base: Option<(Arc<DynamicImage>, f32)> = {
-            let cache = state.thumbnail_geometry_cache.lock().unwrap_or_else(|e| e.into_inner());
+            let cache = state
+                .thumbnail_geometry_cache
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             if let Some((cached_hash, img, scale)) = cache.get(path_str) {
                 let mut sufficient_resolution = true;
                 if let Some(c) = &crop_data
@@ -1632,7 +1644,10 @@ pub fn generate_thumbnail_data(
 
             let total_scale = gpu_scale * raw_scale_factor;
 
-            let mut cache = state.thumbnail_geometry_cache.lock().unwrap_or_else(|e| e.into_inner());
+            let mut cache = state
+                .thumbnail_geometry_cache
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             if cache.len() >= 8 {
                 let key_to_remove = cache.keys().next().cloned();
                 if let Some(key) = key_to_remove {
@@ -1895,13 +1910,19 @@ pub fn start_thumbnail_workers(app_handle: tauri::AppHandle) {
         std::thread::spawn(move || {
             loop {
                 let path_to_process: String = {
-                    let mut queue = manager_clone.queue.lock().unwrap_or_else(|e| e.into_inner());
+                    let mut queue = manager_clone
+                        .queue
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
                     while queue.is_empty() {
                         queue = manager_clone.cvar.wait(queue).unwrap();
                     }
                     let path = queue.pop_back().unwrap();
 
-                    let mut processing = manager_clone.processing_now.lock().unwrap_or_else(|e| e.into_inner());
+                    let mut processing = manager_clone
+                        .processing_now
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
                     if processing.contains(&path) {
                         let state = app_clone.state::<crate::AppState>();
                         increment_thumbnail_progress(&state, &app_clone);
@@ -1919,7 +1940,10 @@ pub fn start_thumbnail_workers(app_handle: tauri::AppHandle) {
 
                 if let Ok(cache_dir) = get_thumb_cache_dir(&app_clone) {
                     if manager_clone.rotational_disk.load(Ordering::Relaxed) {
-                        let _io_permit = manager_clone.io_gate.lock().unwrap_or_else(|e| e.into_inner());
+                        let _io_permit = manager_clone
+                            .io_gate
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner());
                         prefetch_source_file(&path_to_process);
                     }
 
@@ -1962,11 +1986,18 @@ pub fn update_thumbnail_queue(
 ) -> Result<(), String> {
     let state = app_handle.state::<crate::AppState>();
 
-    let mut queue = state.thumbnail_manager.queue.lock().unwrap_or_else(|e| e.into_inner());
+    let mut queue = state
+        .thumbnail_manager
+        .queue
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
 
     if paths.is_empty() {
         queue.clear();
-        let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
+        let mut tracker = state
+            .thumbnail_progress
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         tracker.total = 0;
         tracker.completed = 0;
         drop(tracker);
@@ -2011,7 +2042,10 @@ pub fn update_thumbnail_queue(
     let queue_len = queue.len();
     drop(queue);
 
-    let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
+    let mut tracker = state
+        .thumbnail_progress
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     tracker.total = tracker.completed + queue_len;
 
     let current = tracker.completed;
@@ -2028,7 +2062,10 @@ pub fn update_thumbnail_queue(
 }
 
 pub fn add_to_thumbnail_queue(state: &AppState, count: usize, app_handle: &AppHandle) {
-    let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
+    let mut tracker = state
+        .thumbnail_progress
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     tracker.total += count;
     let current = tracker.completed;
     let total = tracker.total;
@@ -2041,7 +2078,10 @@ pub fn add_to_thumbnail_queue(state: &AppState, count: usize, app_handle: &AppHa
 }
 
 pub fn increment_thumbnail_progress(state: &AppState, app_handle: &AppHandle) {
-    let mut tracker = state.thumbnail_progress.lock().unwrap_or_else(|e| e.into_inner());
+    let mut tracker = state
+        .thumbnail_progress
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     tracker.completed += 1;
     let current = tracker.completed;
     let total = tracker.total;
@@ -2567,7 +2607,10 @@ pub fn save_metadata_and_update_thumbnail(
         sync_metadata_to_xmp(&source_path, &metadata, create_if_missing);
     }
 
-    let loaded_image_lock = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+    let loaded_image_lock = state
+        .original_image
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let preloaded_image_option = if let Some(loaded_image) = loaded_image_lock.as_ref() {
         if loaded_image.path == path {
             Some(loaded_image.image.clone())
@@ -2684,7 +2727,11 @@ pub async fn apply_adjustments_to_paths(
                         Ok(_) => {
                             if enable_xmp_sync {
                                 let source_path = parse_virtual_path(path).0;
-                                sync_metadata_to_xmp(&source_path, &existing_metadata, create_xmp_if_missing);
+                                sync_metadata_to_xmp(
+                                    &source_path,
+                                    &existing_metadata,
+                                    create_xmp_if_missing,
+                                );
                             }
                             None
                         }
@@ -2696,7 +2743,10 @@ pub async fn apply_adjustments_to_paths(
             .collect();
 
         if !errors.is_empty() {
-            eprintln!("apply_adjustments_to_paths partial errors:\n{}", errors.join("\n"));
+            eprintln!(
+                "apply_adjustments_to_paths partial errors:\n{}",
+                errors.join("\n")
+            );
         }
 
         let state = app_handle.state::<AppState>();
@@ -2770,7 +2820,11 @@ pub async fn reset_adjustments_for_paths(
                         Ok(_) => {
                             if enable_xmp_sync {
                                 let source_path = parse_virtual_path(path).0;
-                                sync_metadata_to_xmp(&source_path, &existing_metadata, create_xmp_if_missing);
+                                sync_metadata_to_xmp(
+                                    &source_path,
+                                    &existing_metadata,
+                                    create_xmp_if_missing,
+                                );
                             }
                             None
                         }
@@ -2782,7 +2836,10 @@ pub async fn reset_adjustments_for_paths(
             .collect();
 
         if !errors.is_empty() {
-            eprintln!("reset_adjustments_for_paths partial errors:\n{}", errors.join("\n"));
+            eprintln!(
+                "reset_adjustments_for_paths partial errors:\n{}",
+                errors.join("\n")
+            );
         }
 
         let state = app_handle.state::<AppState>();
@@ -3285,12 +3342,17 @@ pub fn handle_export_presets_to_file(
         .map_err(|e| format!("Failed to serialize presets: {}", e))?;
 
     // Android 端传入的可能只是文件名（无目录分隔符），需要解析到应用数据目录
-    let resolved_path = if std::path::Path::new(&file_path).parent().map(|p| p.as_os_str().is_empty()).unwrap_or(true) {
+    let resolved_path = if std::path::Path::new(&file_path)
+        .parent()
+        .map(|p| p.as_os_str().is_empty())
+        .unwrap_or(true)
+    {
         let data_dir = app_handle
             .path()
             .app_data_dir()
             .map_err(|e| format!("Failed to resolve app data dir: {}", e))?;
-        std::fs::create_dir_all(&data_dir).map_err(|e| format!("Failed to create data dir: {}", e))?;
+        std::fs::create_dir_all(&data_dir)
+            .map_err(|e| format!("Failed to create data dir: {}", e))?;
         data_dir.join(&file_path)
     } else {
         std::path::PathBuf::from(&file_path)
@@ -3875,7 +3937,10 @@ pub fn generate_filename_from_template(
     let local_date = file_date.with_timezone(&chrono::Local);
 
     // 路径安全：过滤用户可控模板里的路径分隔符，防止 ../ 和 \\ 穿越
-    let template: String = template.chars().map(|c| if c == '/' || c == '\\' { '_' } else { c }).collect();
+    let template: String = template
+        .chars()
+        .map(|c| if c == '/' || c == '\\' { '_' } else { c })
+        .collect();
     let template_has_sequence = template.contains("{sequence}");
 
     let mut result = template;

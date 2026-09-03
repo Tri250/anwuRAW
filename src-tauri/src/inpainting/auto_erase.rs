@@ -24,7 +24,8 @@ pub fn region_grow_mask(
     for y in 0..h {
         for x in 0..w {
             let p = rgb.get_pixel(x, y);
-            lum[(y * w + x) as usize] = 0.299 * p[0] as f32 + 0.587 * p[1] as f32 + 0.114 * p[2] as f32;
+            lum[(y * w + x) as usize] =
+                0.299 * p[0] as f32 + 0.587 * p[1] as f32 + 0.114 * p[2] as f32;
         }
     }
     let grad = sobel_magnitude(&lum, w, h);

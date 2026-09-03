@@ -3,7 +3,7 @@
 //! 在 HSV 颜色空间中根据色相范围 + 饱和度范围选择像素，
 //! 并支持高斯模糊羽化 + 反选 + 混合模式。
 
-use image::{DynamicImage, GrayImage, GenericImageView, RgbImage};
+use image::{DynamicImage, GenericImageView, GrayImage, RgbImage};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -135,7 +135,8 @@ pub fn gaussian_blur_gray(mask: &GrayImage, sigma: f32) -> GrayImage {
             for x in 0..w_usize {
                 let mut v = 0.0f32;
                 for k in 0..kernel_size {
-                    let xi = (x as i32 + k as i32 - radius as i32).clamp(0, w_usize as i32 - 1) as usize;
+                    let xi =
+                        (x as i32 + k as i32 - radius as i32).clamp(0, w_usize as i32 - 1) as usize;
                     v += input[y * w_usize + xi] * kernel[k];
                 }
                 row[x] = v;
@@ -149,7 +150,8 @@ pub fn gaussian_blur_gray(mask: &GrayImage, sigma: f32) -> GrayImage {
             for x in 0..w_usize {
                 let mut v = 0.0f32;
                 for k in 0..kernel_size {
-                    let yi = (y as i32 + k as i32 - radius as i32).clamp(0, h_usize as i32 - 1) as usize;
+                    let yi =
+                        (y as i32 + k as i32 - radius as i32).clamp(0, h_usize as i32 - 1) as usize;
                     v += intermediate[yi * w_usize + x] * kernel[k];
                 }
                 row[x] = v;

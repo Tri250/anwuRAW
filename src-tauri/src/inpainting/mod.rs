@@ -31,7 +31,10 @@ fn prepare_source_image(
     }
 
     let is_raw = {
-        let guard = state.original_image.lock().unwrap_or_else(|e| e.into_inner());
+        let guard = state
+            .original_image
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         guard.as_ref().map(|img| img.is_raw).unwrap_or(false)
     };
 
@@ -353,7 +356,9 @@ pub async fn generate_auto_erase_patch(
         }
     }
     if masked_pixels as f64 > (img_w as f64 * img_h as f64) * 0.6 {
-        return Err("Auto erase coverage is too large; adjust the seed or sensitivity.".to_string());
+        return Err(
+            "Auto erase coverage is too large; adjust the seed or sensitivity.".to_string(),
+        );
     }
     if masked_pixels < 2 {
         return Err("Auto erase did not find a connectible object.".to_string());
@@ -403,14 +408,9 @@ pub async fn generate_auto_erase_patch(
                 color_image.put_pixel(ox, oy, Rgb([px[0], px[1], px[2]]));
             }
         }
-        let output_mask = image::imageops::crop_imm(
-            &mask_bitmap,
-            min_x_u32,
-            min_y_u32,
-            crop_w,
-            crop_h,
-        )
-        .to_image();
+        let output_mask =
+            image::imageops::crop_imm(&mask_bitmap, min_x_u32, min_y_u32, crop_w, crop_h)
+                .to_image();
         return encode_patch_result(
             &color_image,
             &output_mask,
@@ -1300,7 +1300,8 @@ pub async fn generate_retouch_patch(
     let mut mask_pixels = vec![0u8; crop_w_usize * crop_h_usize];
     for y in 0..crop_h_usize {
         for x in 0..crop_w_usize {
-            let m_val = mask_canvas[((y as u32 + min_y_u32) * img_w + (x as u32 + min_x_u32)) as usize];
+            let m_val =
+                mask_canvas[((y as u32 + min_y_u32) * img_w + (x as u32 + min_x_u32)) as usize];
             mask_pixels[y * crop_w_usize + x] = m_val;
         }
     }

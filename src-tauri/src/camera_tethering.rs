@@ -72,7 +72,10 @@ pub async fn tether_connect(app_handle: tauri::AppHandle) -> Result<String, Stri
             let state = app_handle.state::<AppState>();
 
             {
-                let mut session = state.camera_session.lock().unwrap_or_else(|e| e.into_inner());
+                let mut session = state
+                    .camera_session
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 session.camera = None;
             }
 
@@ -133,7 +136,10 @@ pub async fn tether_connect(app_handle: tauri::AppHandle) -> Result<String, Stri
             let model_name = descriptor.model.clone();
 
             {
-                let mut session = state.camera_session.lock().unwrap_or_else(|e| e.into_inner());
+                let mut session = state
+                    .camera_session
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 session.context = Some(context);
                 session.camera = Some(camera);
             }
@@ -157,7 +163,10 @@ pub async fn tether_get_settings(
             use gphoto2::widget::WidgetValue;
 
             let state = app_handle.state::<AppState>();
-            let session = state.camera_session.lock().unwrap_or_else(|e| e.into_inner());
+            let session = state
+                .camera_session
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             let camera = session.camera.as_ref().ok_or("No camera connected")?;
             let context = session.context.as_ref().ok_or("No context initialized")?;
 
@@ -282,7 +291,10 @@ pub async fn tether_set_setting(
             use gphoto2::widget::WidgetType;
 
             let state = app_handle.state::<AppState>();
-            let session = state.camera_session.lock().unwrap_or_else(|e| e.into_inner());
+            let session = state
+                .camera_session
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             let camera = session.camera.as_ref().ok_or("No camera connected")?;
             let context = session.context.as_ref().ok_or("No context initialized")?;
 
@@ -380,7 +392,10 @@ pub async fn tether_autofocus(app_handle: tauri::AppHandle) -> Result<(), String
     {
         tauri::async_runtime::spawn_blocking(move || {
             let state = app_handle.state::<AppState>();
-            let session = state.camera_session.lock().unwrap_or_else(|e| e.into_inner());
+            let session = state
+                .camera_session
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             let camera = session.camera.as_ref().ok_or("No camera connected")?;
             let context = session.context.as_ref().ok_or("No context initialized")?;
 
@@ -435,7 +450,10 @@ pub async fn tether_get_preview(app_handle: tauri::AppHandle) -> Result<Response
     {
         tauri::async_runtime::spawn_blocking(move || {
             let state = app_handle.state::<AppState>();
-            let session = state.camera_session.lock().unwrap_or_else(|e| e.into_inner());
+            let session = state
+                .camera_session
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             let camera = session.camera.as_ref().ok_or("No camera connected")?;
             let context = session.context.as_ref().ok_or("No context initialized")?;
 
@@ -463,7 +481,10 @@ pub async fn tether_capture(
     {
         tauri::async_runtime::spawn_blocking(move || {
             let state = app_handle.state::<AppState>();
-            let session = state.camera_session.lock().unwrap_or_else(|e| e.into_inner());
+            let session = state
+                .camera_session
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             let camera = session.camera.as_ref().ok_or("No camera connected")?;
             let context = session.context.as_ref().ok_or("No context initialized")?;
 

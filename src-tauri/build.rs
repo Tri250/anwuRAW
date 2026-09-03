@@ -60,12 +60,7 @@ fn download_and_verify(
         };
 
         if !response.status().is_success() {
-            last_err = Some(format!(
-                "{} returned status {}",
-                url,
-                response.status()
-            )
-            .into());
+            last_err = Some(format!("{} returned status {}", url, response.status()).into());
             continue;
         }
 
@@ -203,13 +198,9 @@ fn main() {
             let filename = format!("onnxruntimes-v1.22.0/{}", download_filename);
             println!("cargo:warning=Endpoints: {:?}", endpoints);
 
-            if let Err(e) = download_and_verify(
-                endpoints,
-                repo_path,
-                &filename,
-                &dest_path,
-                expected_hash,
-            ) {
+            if let Err(e) =
+                download_and_verify(endpoints, repo_path, &filename, &dest_path, expected_hash)
+            {
                 panic!("Failed to download and verify ONNX Runtime library: {}", e);
             }
         }

@@ -81,7 +81,12 @@ impl ChannelMixerSettings {
 
 /// 对 f32 RGB buffer（线性空间或 sRGB 皆可）应用通道混合器。
 /// 输入输出在同一个 buffer 上操作（原地），按行并行处理。
-pub fn apply_channel_mixer_f32(buffer: &mut [f32], w: usize, h: usize, settings: &ChannelMixerSettings) {
+pub fn apply_channel_mixer_f32(
+    buffer: &mut [f32],
+    w: usize,
+    h: usize,
+    settings: &ChannelMixerSettings,
+) {
     if settings.is_identity() {
         return;
     }
@@ -137,23 +142,22 @@ pub fn apply_channel_mixer_u8(img: &mut RgbImage, settings: &ChannelMixerSetting
 
     let (w, h) = img.dimensions();
     let raw = img.as_mut();
-    raw.par_chunks_mut((w as usize) * 3)
-        .for_each(|row| {
-            for x in 0..(w as usize) {
-                let idx = x * 3;
-                let r_in = row[idx] as f32;
-                let g_in = row[idx + 1] as f32;
-                let b_in = row[idx + 2] as f32;
+    raw.par_chunks_mut((w as usize) * 3).for_each(|row| {
+        for x in 0..(w as usize) {
+            let idx = x * 3;
+            let r_in = row[idx] as f32;
+            let g_in = row[idx + 1] as f32;
+            let b_in = row[idx + 2] as f32;
 
-                let r_out = (r_in * r_r + g_in * r_g + b_in * r_b).clamp(0.0, 255.0) as u8;
-                let g_out = (r_in * g_r + g_in * g_g + b_in * g_b).clamp(0.0, 255.0) as u8;
-                let b_out = (r_in * b_r + g_in * b_g + b_in * b_b).clamp(0.0, 255.0) as u8;
+            let r_out = (r_in * r_r + g_in * r_g + b_in * r_b).clamp(0.0, 255.0) as u8;
+            let g_out = (r_in * g_r + g_in * g_g + b_in * g_b).clamp(0.0, 255.0) as u8;
+            let b_out = (r_in * b_r + g_in * b_g + b_in * b_b).clamp(0.0, 255.0) as u8;
 
-                row[idx] = r_out;
-                row[idx + 1] = g_out;
-                row[idx + 2] = b_out;
-            }
-        });
+            row[idx] = r_out;
+            row[idx + 1] = g_out;
+            row[idx + 2] = b_out;
+        }
+    });
     let _ = h;
 }
 
@@ -179,11 +183,13 @@ pub async fn apply_channel_mixer_command(
     let mut file = std::fs::File::create(&output_path).map_err(|e| e.to_string())?;
     let rgb = processed.to_rgb8();
     let mut encoder = JpegEncoder::new_with_quality(&mut file, 95);
-    encoder.encode(
-        rgb.as_raw(),
-        rgb.width(),
-        rgb.height(),
-        image::ExtendedColorType::Rgb8,
-    ).map_err(|e| e.to_string())?;
+    encoder
+        .encode(
+            rgb.as_raw(),
+            rgb.width(),
+            rgb.height(),
+            image::ExtendedColorType::Rgb8,
+        )
+        .map_err(|e| e.to_string())?;
     Ok(())
 }

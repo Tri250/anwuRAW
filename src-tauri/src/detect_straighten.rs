@@ -17,7 +17,7 @@ use std::collections::HashMap;
 /// 把角度（弧度）归一化到 (-π/2, π/2] 区间
 fn normalize_angle(a: f32) -> f32 {
     let half = std::f32::consts::FRAC_PI_2;
-    
+
     ((a + half) % std::f32::consts::PI + std::f32::consts::PI) % std::f32::consts::PI - half
 }
 
@@ -90,7 +90,7 @@ fn probabilistic_hough(
 
     // 随机采样点来加速（PPHT 核心思想）
     let sample_count = (edge_points.len() / 4).min(200_000).max(5_000);
-    
+
     let mut rng_state: u64 = 42;
     let mut pick = || {
         rng_state = rng_state.wrapping_mul(6364136223846793005).wrapping_add(1);

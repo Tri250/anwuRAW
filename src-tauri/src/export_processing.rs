@@ -70,7 +70,6 @@ pub enum ExportColorSpace {
     ProPhoto,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExportSettings {
@@ -618,25 +617,25 @@ const SRGB_TO_XYZ: [[f32; 3]; 3] = [
 
 // XYZ(D65) → Display P3 (Apple)
 const XYZ_TO_DISPLAY_P3: [[f32; 3]; 3] = [
-    [ 2.493_497, -0.9313836, -0.4027108],
-    [-0.829_489,  1.7626641,  0.0236247],
-    [ 0.0358458, -0.0761724,  0.9568845],
+    [2.493_497, -0.9313836, -0.4027108],
+    [-0.829_489, 1.7626641, 0.0236247],
+    [0.0358458, -0.0761724, 0.9568845],
 ];
 
 // XYZ(D65) → Adobe RGB (1998)
 const XYZ_TO_ADOBE_RGB: [[f32; 3]; 3] = [
-    [ 2.0415879, -0.565_007, -0.347_325],
-    [-0.9692436,  1.8759675,  0.0415551],
-    [ 0.0134443, -0.1183624,  1.0151749],
+    [2.0415879, -0.565_007, -0.347_325],
+    [-0.9692436, 1.8759675, 0.0415551],
+    [0.0134443, -0.1183624, 1.0151749],
 ];
 
 // XYZ(D65) → ProPhoto RGB (ROMM-RGB)
 // primaries: R=(0.7347,0.2653), G=(0.1596,0.8404), B=(0.0366,0.0001), WP=D65
 // 由 primaries + wp 精确推导：XYZ→primary 逆矩阵
 const XYZ_TO_PRO_PHOTO: [[f32; 3]; 3] = [
-    [ 1.3904536, -0.2640605, -0.0528020],
-    [-0.5376556,  1.488_939,  0.0202733],
-    [ 0.0000000,  0.0000000,  0.918_225],
+    [1.3904536, -0.2640605, -0.0528020],
+    [-0.5376556, 1.488_939, 0.0202733],
+    [0.0000000, 0.0000000, 0.918_225],
 ];
 
 fn mat_mul_3x3(a: [[f32; 3]; 3], b: [[f32; 3]; 3]) -> [[f32; 3]; 3] {
@@ -649,10 +648,7 @@ fn mat_mul_3x3(a: [[f32; 3]; 3], b: [[f32; 3]; 3]) -> [[f32; 3]; 3] {
     out
 }
 
-fn apply_color_space_transform(
-    image: &DynamicImage,
-    target: &ExportColorSpace,
-) -> DynamicImage {
+fn apply_color_space_transform(image: &DynamicImage, target: &ExportColorSpace) -> DynamicImage {
     if matches!(target, ExportColorSpace::Srgb) {
         return image.clone();
     }
@@ -1567,7 +1563,10 @@ pub async fn estimate_export_sizes(
         hydrate_adjustments(&state, &mut adjustments_clone);
 
         let new_transform_hash = calculate_transform_hash(&adjustments_clone);
-        let cached_preview_lock = state.cached_preview.lock().unwrap_or_else(|e| e.into_inner());
+        let cached_preview_lock = state
+            .cached_preview
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let preview_dim = settings.editor_preview_resolution.unwrap_or(1920);
 
         let (preview_image, scale, unscaled_crop_offset) = if let Some(cached) =
@@ -1645,7 +1644,8 @@ pub async fn estimate_export_sizes(
             "estimate_export_size",
         )?;
 
-        let cs_preview = apply_color_space_transform(&processed_preview, &export_settings.color_space);
+        let cs_preview =
+            apply_color_space_transform(&processed_preview, &export_settings.color_space);
         let preview_bytes = encode_image_to_bytes(
             &cs_preview,
             &output_format,
@@ -1786,7 +1786,8 @@ pub async fn estimate_export_sizes(
             "estimate_batch_export_size",
         )?;
 
-        let cs_preview = apply_color_space_transform(&processed_preview, &export_settings.color_space);
+        let cs_preview =
+            apply_color_space_transform(&processed_preview, &export_settings.color_space);
         let preview_bytes = encode_image_to_bytes(
             &cs_preview,
             &output_format,
@@ -1920,11 +1921,10 @@ pub fn embed_icc_in_jpeg(jpeg_bytes: &[u8], icc_bytes: &[u8]) -> Result<Vec<u8>,
             break;
         }
         // 其他无 segment 的 marker（如 TEM 0x01、RST 0xD0-0xD7）跳过
-        if (0x01..=0xBF).contains(&marker)
-            && (0xD0..=0xD7).contains(&marker) {
-                continue; // RST markers 没有 length
-            }
-            // 但大多数 marker 还是有 length 字段
+        if (0x01..=0xBF).contains(&marker) && (0xD0..=0xD7).contains(&marker) {
+            continue; // RST markers 没有 length
+        }
+        // 但大多数 marker 还是有 length 字段
 
         if pos + 2 > jpeg_bytes.len() {
             break;
@@ -2027,18 +2027,16 @@ pub fn export_with_icc_and_depth(
 
             fs::write(&output_path, final_bytes).map_err(|e| e.to_string())?;
         }
-        "tiff" => {
-            match bit_depth.unwrap_or(8) {
-                16 => {
-                    let rgba16 = img.to_rgba16();
-                    rgba16.save(&output_path).map_err(|e| e.to_string())?;
-                }
-                _ => {
-                    let rgb8 = img.to_rgb8();
-                    rgb8.save(&output_path).map_err(|e| e.to_string())?;
-                }
+        "tiff" => match bit_depth.unwrap_or(8) {
+            16 => {
+                let rgba16 = img.to_rgba16();
+                rgba16.save(&output_path).map_err(|e| e.to_string())?;
             }
-        }
+            _ => {
+                let rgb8 = img.to_rgb8();
+                rgb8.save(&output_path).map_err(|e| e.to_string())?;
+            }
+        },
         "png" => {
             let rgba = img.to_rgba8();
             rgba.save(&output_path).map_err(|e| e.to_string())?;

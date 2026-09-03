@@ -79,7 +79,9 @@ pub struct IptcDataSet {
 impl IptcDataSet {
     pub fn as_string(&self) -> String {
         // IPTC 通常使用 ISO-8859-1，这与 UTF-8 兼容度很高。
-        String::from_utf8_lossy(&self.data).trim_end_matches('\0').to_string()
+        String::from_utf8_lossy(&self.data)
+            .trim_end_matches('\0')
+            .to_string()
     }
 }
 
@@ -206,7 +208,9 @@ pub fn read_iptc_from_jpeg(bytes: &[u8]) -> Result<HashMap<String, String>, Stri
         let marker = bytes[pos];
         pos += 1;
 
-        if marker == JPEG_EOI || marker == 0xDA /* SOS */ {
+        if marker == JPEG_EOI || marker == 0xDA
+        /* SOS */
+        {
             break;
         }
         if pos + 2 > bytes.len() {
@@ -305,7 +309,10 @@ fn build_app13_segment(iim_bytes: &[u8]) -> Vec<u8> {
 
 /// 把 IPTC 字段写回 JPEG。
 /// 先清理旧的 APP13 段，再插入新的 APP13 段（紧跟在 APP0 JFIF 之后，或 SOF 之前）。
-pub fn write_iptc_to_jpeg(bytes: &[u8], fields: &HashMap<String, String>) -> Result<Vec<u8>, String> {
+pub fn write_iptc_to_jpeg(
+    bytes: &[u8],
+    fields: &HashMap<String, String>,
+) -> Result<Vec<u8>, String> {
     if bytes.len() < 4 || bytes[0] != 0xFF || bytes[1] != JPEG_SOI {
         return Err("Not a valid JPEG file".to_string());
     }
@@ -442,7 +449,10 @@ mod tests {
     fn test_roundtrip_empty_is_invalid() {
         let data = HashMap::new();
         // 空 map 不能写
-        let bytes = vec![0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, b'J', b'F', b'I', b'F', 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xD9];
+        let bytes = vec![
+            0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, b'J', b'F', b'I', b'F', 0x00, 0x01, 0x01, 0x00,
+            0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xD9,
+        ];
         let result = write_iptc_to_jpeg(&bytes, &data);
         assert!(result.is_err());
     }
@@ -472,22 +482,20 @@ pub fn batch_update_iptc_metadata(
     let mut errors: Vec<String> = Vec::new();
     for p in &paths {
         match std::fs::read(p) {
-            Ok(bytes) => {
-                match write_iptc_to_jpeg(&bytes, &fields) {
-                    Ok(new_bytes) => {
-                        if let Err(e) = std::fs::write(p, new_bytes) {
-                            failed += 1;
-                            errors.push(format!("{}: write error {}", p, e));
-                        } else {
-                            success += 1;
-                        }
-                    }
-                    Err(e) => {
+            Ok(bytes) => match write_iptc_to_jpeg(&bytes, &fields) {
+                Ok(new_bytes) => {
+                    if let Err(e) = std::fs::write(p, new_bytes) {
                         failed += 1;
-                        errors.push(format!("{}: {}", p, e));
+                        errors.push(format!("{}: write error {}", p, e));
+                    } else {
+                        success += 1;
                     }
                 }
-            }
+                Err(e) => {
+                    failed += 1;
+                    errors.push(format!("{}: {}", p, e));
+                }
+            },
             Err(e) => {
                 failed += 1;
                 errors.push(format!("{}: {}", p, e));

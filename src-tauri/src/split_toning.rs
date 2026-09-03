@@ -134,7 +134,8 @@ pub fn apply_split_toning_u8(img: &mut RgbImage, settings: &SplitToningSettings)
     let w_usize = w as usize;
 
     let (sh_ab_a, sh_ab_b) = hue_sat_to_oklab_ab(settings.shadows_hue, settings.shadows_saturation);
-    let (hi_ab_a, hi_ab_b) = hue_sat_to_oklab_ab(settings.highlights_hue, settings.highlights_saturation);
+    let (hi_ab_a, hi_ab_b) =
+        hue_sat_to_oklab_ab(settings.highlights_hue, settings.highlights_saturation);
 
     let raw = img.as_mut();
     raw.par_chunks_mut(w_usize * 3)
@@ -191,11 +192,13 @@ pub async fn apply_split_toning_command(
     let mut file = std::fs::File::create(&output_path).map_err(|e| e.to_string())?;
     let rgb = processed.to_rgb8();
     let mut encoder = JpegEncoder::new_with_quality(&mut file, 95);
-    encoder.encode(
-        rgb.as_raw(),
-        rgb.width(),
-        rgb.height(),
-        image::ExtendedColorType::Rgb8,
-    ).map_err(|e| e.to_string())?;
+    encoder
+        .encode(
+            rgb.as_raw(),
+            rgb.width(),
+            rgb.height(),
+            image::ExtendedColorType::Rgb8,
+        )
+        .map_err(|e| e.to_string())?;
     Ok(())
 }

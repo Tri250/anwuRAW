@@ -254,7 +254,12 @@ pub async fn start_background_indexing(
     app_handle: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    if let Some(handle) = state.indexing_task_handle.lock().unwrap_or_else(|e| e.into_inner()).take() {
+    if let Some(handle) = state
+        .indexing_task_handle
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take()
+    {
         println!("Cancelling previous indexing task.");
         handle.abort();
     }
@@ -278,49 +283,50 @@ pub async fn start_background_indexing(
 
     let app_handle_clone = app_handle.clone();
 
-    let task: JoinHandle<()> = tokio::spawn(async move {
-        let _ = app_handle_clone.emit("indexing-started", ());
-        println!("Starting background indexing for: {}", folder_path);
-        println!(
-            "Using {} concurrent threads for AI tagging.",
-            max_concurrent_tasks
-        );
+    let task: JoinHandle<()> =
+        tokio::spawn(async move {
+            let _ = app_handle_clone.emit("indexing-started", ());
+            println!("Starting background indexing for: {}", folder_path);
+            println!(
+                "Using {} concurrent threads for AI tagging.",
+                max_concurrent_tasks
+            );
 
-        let state_clone = app_handle_clone.state::<AppState>();
-        let gpu_context =
-            crate::gpu_processing::get_or_init_gpu_context(&state_clone, &app_handle).ok();
+            let state_clone = app_handle_clone.state::<AppState>();
+            let gpu_context =
+                crate::gpu_processing::get_or_init_gpu_context(&state_clone, &app_handle).ok();
 
-        let image_paths: Vec<PathBuf> = match fs::read_dir(&folder_path) {
-            Ok(entries) => entries
-                .filter_map(Result::ok)
-                .map(|entry| entry.path())
-                .filter(|path| {
-                    path.is_file() && is_supported_image_file(path.to_string_lossy().as_ref())
-                })
-                .collect(),
-            Err(e) => {
-                eprintln!("Failed to read directory '{}': {}", folder_path, e);
-                let _ = app_handle_clone
-                    .emit("indexing-error", format!("Failed to read directory: {}", e));
-                *app_handle_clone
-                    .state::<AppState>()
-                    .indexing_task_handle
-                    .lock()
-                    .unwrap() = None;
-                return;
-            }
-        };
+            let image_paths: Vec<PathBuf> = match fs::read_dir(&folder_path) {
+                Ok(entries) => entries
+                    .filter_map(Result::ok)
+                    .map(|entry| entry.path())
+                    .filter(|path| {
+                        path.is_file() && is_supported_image_file(path.to_string_lossy().as_ref())
+                    })
+                    .collect(),
+                Err(e) => {
+                    eprintln!("Failed to read directory '{}': {}", folder_path, e);
+                    let _ = app_handle_clone
+                        .emit("indexing-error", format!("Failed to read directory: {}", e));
+                    *app_handle_clone
+                        .state::<AppState>()
+                        .indexing_task_handle
+                        .lock()
+                        .unwrap() = None;
+                    return;
+                }
+            };
 
-        println!(
-            "Found {} images to process in {}",
-            image_paths.len(),
-            folder_path
-        );
-        let total_images = image_paths.len();
-        let processed_count = Arc::new(Mutex::new(0));
-        let custom_ai_tags_shared = Arc::new(custom_ai_tags);
+            println!(
+                "Found {} images to process in {}",
+                image_paths.len(),
+                folder_path
+            );
+            let total_images = image_paths.len();
+            let processed_count = Arc::new(Mutex::new(0));
+            let custom_ai_tags_shared = Arc::new(custom_ai_tags);
 
-        stream::iter(image_paths)
+            stream::iter(image_paths)
             .for_each_concurrent(max_concurrent_tasks, |path| {
                 let app_handle_inner = app_handle_clone.clone();
                 let clip_models_inner = clip_models.clone();
@@ -408,17 +414,20 @@ pub async fn start_background_indexing(
             })
             .await;
 
-        println!("Background indexing finished for: {}", folder_path);
-        let _ = app_handle_clone.emit("indexing-finished", ());
+            println!("Background indexing finished for: {}", folder_path);
+            let _ = app_handle_clone.emit("indexing-finished", ());
 
-        *app_handle_clone
-            .state::<AppState>()
-            .indexing_task_handle
-            .lock()
-            .unwrap() = None;
-    });
+            *app_handle_clone
+                .state::<AppState>()
+                .indexing_task_handle
+                .lock()
+                .unwrap() = None;
+        });
 
-    *state.indexing_task_handle.lock().unwrap_or_else(|e| e.into_inner()) = Some(task);
+    *state
+        .indexing_task_handle
+        .lock()
+        .unwrap_or_else(|e| e.into_inner()) = Some(task);
 
     Ok(())
 }
