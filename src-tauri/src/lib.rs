@@ -6,6 +6,12 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 mod adjustment_utils;
+mod channel_mixer;
+mod color_range_mask;
+mod detect_straighten;
+mod iptc_processing;
+mod luminance_range_mask;
+mod split_toning;
 mod ai_commands;
 mod ai_connector;
 mod ai_processing;
@@ -2327,6 +2333,7 @@ pub fn run() {
             panorama_stitching::stitch_panorama,
             panorama_stitching::save_panorama,
             export_processing::export_images,
+            export_processing::export_with_icc_and_depth,
             export_processing::cancel_export,
             export_processing::estimate_export_sizes,
             image_processing::calculate_auto_adjustments,
@@ -2392,6 +2399,14 @@ pub fn run() {
             camera_tethering::tether_capture,
             camera_tethering::tether_get_preview,
             camera_tethering::tether_autofocus,
+            channel_mixer::apply_channel_mixer_command,
+            split_toning::apply_split_toning_command,
+            detect_straighten::detect_straighten_angle,
+            color_range_mask::generate_color_range_mask_command,
+            luminance_range_mask::generate_luminance_range_mask_command,
+            iptc_processing::read_iptc_metadata,
+            iptc_processing::write_iptc_metadata,
+            iptc_processing::batch_update_iptc_metadata,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

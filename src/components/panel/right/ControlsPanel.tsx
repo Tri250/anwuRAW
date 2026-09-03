@@ -8,6 +8,8 @@ import CurveGraph from '../../adjustments/Curves';
 import ColorPanel from '../../adjustments/Color';
 import DetailsPanel from '../../adjustments/Details';
 import EffectsPanel from '../../adjustments/Effects';
+import ChannelMixer from '../../adjustments/ChannelMixer';
+import SplitToning from '../../adjustments/SplitToning';
 import CollapsibleSection from '../../ui/CollapsibleSection';
 import Waveform, { HISTOGRAM_ZONES, type HistogramZone } from '../editor/Waveform';
 import Resizer from '../../ui/Resizer';
@@ -320,6 +322,8 @@ export default function Controls() {
               color: ColorPanel,
               details: DetailsPanel,
               effects: EffectsPanel,
+              channel_mixer: ChannelMixer,
+              split_toning: SplitToning,
             }[sectionName];
 
             const title = t(`editor.adjustments.sections.${sectionName}`);

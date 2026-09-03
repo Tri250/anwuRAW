@@ -1818,3 +1818,234 @@ pub async fn estimate_export_sizes(
 
     Ok(single_image_extrapolated_size * paths.len())
 }
+
+// ---------------------------------------------------------------------------
+// ICC Profile 嵌入 & 色深选择
+// ---------------------------------------------------------------------------
+
+/// ICC profile 嵌入策略
+#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
+pub enum IccProfileType {
+    #[serde(rename = "srgb")]
+    Srgb,
+    #[serde(rename = "adobergb")]
+    AdobeRgb,
+    #[serde(rename = "displayp3")]
+    DisplayP3,
+    #[serde(rename = "keep")]
+    KeepOriginal,
+}
+
+/// 导出色深（目前主要影响 TIFF）
+#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
+pub enum ExportBitDepth {
+    #[serde(rename = "8")]
+    Bit8,
+    #[serde(rename = "16")]
+    Bit16,
+}
+
+/// 根据请求的类型返回对应 ICC profile 字节。
+/// - `KeepOriginal` 返回 `None`，表示不嵌入 ICC。
+/// - 其他类型目前统一返回内置的 sRGB ICC v2 profile，后续可扩展为各色彩空间的真实 profile。
+pub fn get_icc_profile_bytes(profile: IccProfileType) -> Option<Vec<u8>> {
+    match profile {
+        IccProfileType::KeepOriginal => None,
+        _ => Some(build_minimal_srgb_icc()),
+    }
+}
+
+/// 构建最小可用的 sRGB ICC v2 profile。
+///
+/// 该 profile 是公开可用的简化版本，格式符合 ICC v2 规范，
+/// 包含必要的头部、tag table 以及 sRGB 的描述、白点、原色坐标和传递函数，
+/// 可以被主流色彩感知软件（如 Photoshop、GIMP、KDE Color Manager、Windows Color System 等）
+/// 正确识别为 "sRGB IEC61966-2.1"。
+fn build_minimal_srgb_icc() -> Vec<u8> {
+    // sRGB ICC v2 profile（2048 字节占位 / 完整可识别版本）
+    // 由标准 sRGB ICC profile 头部 + tag table + 各 tag 数据组成。
+    // 所有字节均为固定值，不依赖运行时计算。
+    static SRGB_ICC_V2: &[u8] = include_bytes!("icc/srgb-v2.icc");
+    SRGB_ICC_V2.to_vec()
+}
+
+/// 给 JPEG 字节流嵌入 ICC_APP13 marker（FF ED）。
+/// 保留原有所有 APP markers（已存在的 ICC_APP13 段会被替换）。
+pub fn embed_icc_in_jpeg(jpeg_bytes: &[u8], icc_bytes: &[u8]) -> Result<Vec<u8>, String> {
+    if jpeg_bytes.len() < 4 || jpeg_bytes[0] != 0xFF || jpeg_bytes[1] != 0xD8 {
+        return Err("Not a valid JPEG".to_string());
+    }
+
+    // 构建 ICC_PROFILE 段
+    // JPEG ICC APP13 marker: FF ED
+    // segment content: "ICC_PROFILE\0" + chunk_count(1) + chunk_index(1) + profile_data
+    // 对于小于 ~64KB 的 profile，始终使用单 chunk。
+    let header = b"ICC_PROFILE\0";
+    let mut seg_content = Vec::new();
+    seg_content.extend_from_slice(header);
+    seg_content.push(1); // chunk count
+    seg_content.push(1); // chunk index (1-based)
+    seg_content.extend_from_slice(icc_bytes);
+
+    let content_len = seg_content.len() as u16;
+    let seg_len_be: [u8; 2] = (content_len + 2).to_be_bytes(); // length 字段包含自身 2 字节
+
+    let mut full_seg = Vec::new();
+    full_seg.push(0xFF);
+    full_seg.push(0xED);
+    full_seg.extend_from_slice(&seg_len_be);
+    full_seg.extend_from_slice(&seg_content);
+
+    // 重建 JPEG：去掉旧的 ICC_APP13，在 SOI 之后、第一个其他 marker 之前插入新的
+    let mut out = Vec::new();
+    out.push(0xFF);
+    out.push(0xD8); // SOI
+
+    let mut pos: usize = 2;
+    let mut inserted = false;
+
+    while pos + 2 < jpeg_bytes.len() {
+        // 跳过连续的 0xFF 填充
+        while pos < jpeg_bytes.len() && jpeg_bytes[pos] == 0xFF {
+            pos += 1;
+        }
+        if pos >= jpeg_bytes.len() {
+            break;
+        }
+        let marker = jpeg_bytes[pos];
+        pos += 1;
+
+        // EOI / SOS：到达图像数据尾部，停止
+        if marker == 0xD9 || marker == 0xDA {
+            break;
+        }
+        // 其他无 segment 的 marker（如 TEM 0x01、RST 0xD0-0xD7）跳过
+        if marker >= 0x01 && marker <= 0xBF {
+            if marker >= 0xD0 && marker <= 0xD7 {
+                continue; // RST markers 没有 length
+            }
+            // 但大多数 marker 还是有 length 字段
+        }
+
+        if pos + 2 > jpeg_bytes.len() {
+            break;
+        }
+        let length = (jpeg_bytes[pos] as usize) << 8 | jpeg_bytes[pos + 1] as usize;
+        if length < 2 {
+            break;
+        }
+        let seg_start = pos - 1;
+        let seg_end = pos + length;
+        if seg_end > jpeg_bytes.len() {
+            break;
+        }
+
+        // 跳过旧的 ICC_APP13 段
+        if marker == 0xED {
+            pos = seg_end;
+            continue;
+        }
+
+        // 在 SOI 之后的第一个 marker 之前插入新的 ICC_APP13
+        if !inserted {
+            out.extend_from_slice(&full_seg);
+            inserted = true;
+        }
+
+        out.extend_from_slice(&jpeg_bytes[seg_start..seg_end]);
+        pos = seg_end;
+    }
+
+    // 追加剩余的图像数据（从 marker 位置到末尾）
+    if pos < jpeg_bytes.len() {
+        out.extend_from_slice(&jpeg_bytes[pos..]);
+    }
+
+    // 确保 JPEG 以 EOI (FF D9) 结尾
+    if out.len() < 2 || out[out.len() - 2] != 0xFF || out[out.len() - 1] != 0xD9 {
+        out.push(0xFF);
+        out.push(0xD9);
+    }
+
+    Ok(out)
+}
+
+// ---------------------------------------------------------------------------
+// 新的 tauri command：带 ICC 与色深的导出
+// ---------------------------------------------------------------------------
+
+/// 可选 ICC profile 与色深的统一导出命令。
+///
+/// # 参数
+/// - `input_path`: 输入图像路径（由 Rust image crate 支持的任意格式）。
+/// - `output_path`: 输出文件路径。
+/// - `format`: `"jpeg"` / `"jpg"` / `"tiff"` / `"png"`。
+/// - `quality`: JPEG 画质（0–100），其他格式忽略。
+/// - `icc_profile`: `"srgb"` / `"adobergb"` / `"displayp3"` / `"keep"` / `null`。
+/// - `bit_depth`: `8` / `16` / `null`（自动，目前主要影响 TIFF）。
+#[tauri::command]
+pub fn export_with_icc_and_depth(
+    input_path: String,
+    output_path: String,
+    format: String,
+    quality: u8,
+    icc_profile: Option<String>,
+    bit_depth: Option<u8>,
+) -> Result<(), String> {
+    let img = image::open(&input_path).map_err(|e| e.to_string())?;
+
+    match format.as_str() {
+        "jpeg" | "jpg" => {
+            let rgb = img.to_rgb8();
+            let mut buf = Vec::new();
+            {
+                let mut encoder = JpegEncoder::new_with_quality(&mut buf, quality);
+                encoder
+                    .encode(
+                        rgb.as_raw(),
+                        rgb.width(),
+                        rgb.height(),
+                        image::ExtendedColorType::Rgb8,
+                    )
+                    .map_err(|e| e.to_string())?;
+            }
+
+            let final_bytes = if let Some(icc_str) = icc_profile {
+                let profile_type = match icc_str.as_str() {
+                    "srgb" => IccProfileType::Srgb,
+                    "adobergb" => IccProfileType::AdobeRgb,
+                    "displayp3" => IccProfileType::DisplayP3,
+                    _ => IccProfileType::KeepOriginal,
+                };
+                if let Some(icc_bytes) = get_icc_profile_bytes(profile_type) {
+                    embed_icc_in_jpeg(&buf, &icc_bytes)?
+                } else {
+                    buf
+                }
+            } else {
+                buf
+            };
+
+            fs::write(&output_path, final_bytes).map_err(|e| e.to_string())?;
+        }
+        "tiff" => {
+            match bit_depth.unwrap_or(8) {
+                16 => {
+                    let rgba16 = img.to_rgba16();
+                    rgba16.save(&output_path).map_err(|e| e.to_string())?;
+                }
+                _ => {
+                    let rgb8 = img.to_rgb8();
+                    rgb8.save(&output_path).map_err(|e| e.to_string())?;
+                }
+            }
+        }
+        "png" => {
+            let rgba = img.to_rgba8();
+            rgba.save(&output_path).map_err(|e| e.to_string())?;
+        }
+        _ => return Err(format!("Unsupported format: {}", format)),
+    }
+
+    Ok(())
+}
