@@ -29,22 +29,33 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        # 用于读取 tauri.conf.json 版本号做 tag 兜底，并让 git ls-remote 沿用 runner 认证
+
       - name: Determine tag
         id: tag
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ -n "${{ github.event.inputs.tag }}" ]]; then
             tag="${{ github.event.inputs.tag }}"
           elif [[ -n "${{ github.ref_name }}" && "${{ github.ref_name }}" == v* ]]; then
             tag="${{ github.ref_name }}"
           else
-            # 取仓库最新 tag
-            tag="$(git ls-remote --tags --sort=-v:refname "$GITHUB_REPO_URL" \
-                   | head -1 | awk '{print $2}' | sed 's|refs/tags/||')"
-            # 如果 ls-remote 不可用，尝试用 gh
+            # 取仓库最新 tag（checkout 后 origin 已带 runner 认证）
+            tag="$(git ls-remote --tags --sort=-v:refname origin \
+                   | head -1 | awk '{print $2}' | sed 's|refs/tags/||; s|\^{}$||' \
+                   | grep -v '\^{}' || true)"
+            # ls-remote 不可用时退回 gh release list（需 GH_TOKEN）
             if [[ -z "$tag" ]]; then
-              tag="$(gh release list --limit 1 --json tagName -q '.[0].tagName')"
+              tag="$(gh release list --limit 1 --json tagName -q '.[0].tagName' 2>/dev/null || true)"
             fi
+          fi
+          # 兜底：仓库无任何 tag/release 时，使用 tauri.conf.json 当前版本号（即当前分支 HEAD）
+          if [[ -z "$tag" ]]; then
+            tag="v$(node -e "const c=JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json','utf8'));process.stdout.write(c.version||'0.0.0')")"
           fi
           echo "Resolved tag: $tag"
           echo "tag=$tag" >> $GITHUB_OUTPUT
@@ -67,9 +78,11 @@ jobs:
             id="$(gh release view "$tag" --json id -q '.id')"
           else
             echo "📝 Creating draft release for $tag ..."
+            # --target 指向当前 HEAD，确保新 tag 落在触发本次构建的提交上
             gh release create "$tag" \
               --title "$tag" \
               --notes "Automated release for $tag" \
+              --target "$GITHUB_SHA" \
               --draft
             id="$(gh release view "$tag" --json id -q '.id')"
           fi
@@ -78,7 +91,9 @@ jobs:
 
   release:
     needs: ensure-release
-    if: github.event_name != 'release' || always()
+    # release 事件时 ensure-release 被跳过（!cancelled() 允许评估）；
+    # dispatch/tag 路径下 ensure-release 必须成功，失败即中止，避免空 release-id 进入构建
+    if: ${{ !cancelled() && (github.event_name == 'release' || needs.ensure-release.result == 'success') }}
     strategy:
       fail-fast: false
       matrix:
