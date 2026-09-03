@@ -3,6 +3,14 @@
 //! 在 HSV 颜色空间中根据色相范围 + 饱和度范围选择像素，
 //! 并支持高斯模糊羽化 + 反选 + 混合模式。
 
+#![allow(
+    dead_code,
+    clippy::needless_range_loop,
+    clippy::vec_init_then_push,
+    clippy::manual_range_contains,
+    clippy::collapsible_if,
+    clippy::excessive_precision
+)]
 use image::{DynamicImage, GenericImageView, GrayImage, RgbImage};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};

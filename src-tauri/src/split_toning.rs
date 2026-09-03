@@ -16,6 +16,14 @@
 //!   balance            滑块 -100..+100；正值偏向高光，负值偏向阴影
 //!   enabled            开关
 
+#![allow(
+    dead_code,
+    clippy::needless_range_loop,
+    clippy::vec_init_then_push,
+    clippy::manual_range_contains,
+    clippy::collapsible_if,
+    clippy::excessive_precision
+)]
 use image::{DynamicImage, Rgb, RgbImage};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};

@@ -1,3 +1,11 @@
+#![allow(
+    dead_code,
+    clippy::needless_range_loop,
+    clippy::vec_init_then_push,
+    clippy::manual_range_contains,
+    clippy::collapsible_if,
+    clippy::excessive_precision
+)]
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs;

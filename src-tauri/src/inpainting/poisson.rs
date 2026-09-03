@@ -61,7 +61,7 @@ fn sor_solve(
 ///
 /// - `offset != (0,0)`：克隆式修复 —— 从采样源点取纹理，泊松融合 + 全局颜色校正 + 边缘羽化。
 /// - `offset == (0,0)`：扩散式修复 —— 以 Laplace 平滑颜色填充蒙版（Lama 模型不可用时的真实降级）。
-/// 作为 Lama ONNX 模型不可用时的降级路径，保证端侧修复在任何网络条件下都能使用。
+///   作为 Lama ONNX 模型不可用时的降级路径，保证端侧修复在任何网络条件下都能使用。
 pub fn poisson_heal_fill(
     source_image: &DynamicImage,
     mask_bitmap: &image::GrayImage,

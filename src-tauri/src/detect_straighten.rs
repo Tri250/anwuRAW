@@ -11,6 +11,14 @@
 //! 返回角度 = 建议旋转的角（负号表示顺时针，正号表示逆时针），
 //! 前端直接填入 adjustments.rotation 字段即可。
 
+#![allow(
+    dead_code,
+    clippy::needless_range_loop,
+    clippy::vec_init_then_push,
+    clippy::manual_range_contains,
+    clippy::collapsible_if,
+    clippy::excessive_precision
+)]
 use image::{DynamicImage, GenericImageView, GrayImage};
 use std::collections::HashMap;
 
@@ -89,7 +97,7 @@ fn probabilistic_hough(
     }
 
     // 随机采样点来加速（PPHT 核心思想）
-    let sample_count = (edge_points.len() / 4).min(200_000).max(5_000);
+    let sample_count = (edge_points.len() / 4).clamp(5_000, 200_000);
 
     let mut rng_state: u64 = 42;
     let mut pick = || {
@@ -123,7 +131,7 @@ fn probabilistic_hough(
             }
         }
     }
-    peaks.sort_by(|a, b| b.2.cmp(&a.2));
+    peaks.sort_by_key(|a| std::cmp::Reverse(a.2));
     peaks.truncate(50);
     peaks
 }

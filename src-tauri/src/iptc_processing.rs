@@ -8,6 +8,14 @@
 //!   - Adobe Photoshop File Formats Specification v1.4
 //!   - IPTC-NAA IIM 4.1
 
+#![allow(
+    dead_code,
+    clippy::needless_range_loop,
+    clippy::vec_init_then_push,
+    clippy::manual_range_contains,
+    clippy::collapsible_if,
+    clippy::excessive_precision
+)]
 use std::collections::HashMap;
 use std::io::Cursor;
 

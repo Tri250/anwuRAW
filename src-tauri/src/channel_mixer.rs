@@ -15,6 +15,14 @@
 //!
 //! 后端走 CPU 管线（参考 dehaze/glow 的做法），不改 GPU shader。
 
+#![allow(
+    dead_code,
+    clippy::needless_range_loop,
+    clippy::vec_init_then_push,
+    clippy::manual_range_contains,
+    clippy::collapsible_if,
+    clippy::excessive_precision
+)]
 use image::{DynamicImage, RgbImage};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};

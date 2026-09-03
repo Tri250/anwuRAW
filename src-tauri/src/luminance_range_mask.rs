@@ -3,6 +3,14 @@
 //! 计算每个像素的感知亮度（OKLab L 通道近似），根据
 //! [min_luminance, max_luminance] 阈值区间 + 羽化强度生成 8bit 灰度蒙版。
 
+#![allow(
+    dead_code,
+    clippy::needless_range_loop,
+    clippy::vec_init_then_push,
+    clippy::manual_range_contains,
+    clippy::collapsible_if,
+    clippy::excessive_precision
+)]
 use image::{DynamicImage, GenericImageView, GrayImage, RgbImage};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
