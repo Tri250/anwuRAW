@@ -28,6 +28,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    # 必须在 job 级别声明 outputs，否则下游 needs.ensure-release.outputs.* 恒为空，
+    # 导致 build.yml 中所有以 inputs.release-id != '' 门控的上传步骤被静默跳过
+    outputs:
+      release-id: ${{ steps.release.outputs.release-id }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
