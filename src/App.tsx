@@ -646,9 +646,15 @@ function App() {
   };
 
   useEffect(() => {
-    const appWindow = getCurrentWindow();
+    // 非Tauri环境（如浏览器调试）下 getCurrentWindow 会抛错，需安全降级
+    let appWindow: ReturnType<typeof getCurrentWindow> | null = null;
+    try {
+      appWindow = getCurrentWindow();
+    } catch {
+      return;
+    }
     const checkFullscreen = async () => {
-      setUI({ isWindowFullScreen: await appWindow.isFullscreen() });
+      setUI({ isWindowFullScreen: await appWindow!.isFullscreen() });
     };
     checkFullscreen();
     const unlistenPromise = appWindow.onResized(checkFullscreen);

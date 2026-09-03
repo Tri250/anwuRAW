@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import { platform } from '@tauri-apps/plugin-os';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Minus, Square, X } from 'lucide-react';
@@ -24,7 +24,14 @@ export default function TitleBar() {
   const [osPlatform, setOsPlatform] = useState('');
   const [isMaximized, setIsMaximized] = useState(false);
 
-  const appWindow = getCurrentWindow();
+  // 非Tauri环境（如浏览器调试）下 getCurrentWindow 会抛错，需安全降级避免整应用崩溃
+  const appWindow = useMemo(() => {
+    try {
+      return getCurrentWindow();
+    } catch {
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     const getPlatform = async () => {
@@ -40,6 +47,7 @@ export default function TitleBar() {
   }, []);
 
   useEffect(() => {
+    if (!appWindow) return;
     const updateMaximizedState = async () => {
       try {
         const max = await appWindow.isMaximized();
@@ -63,10 +71,11 @@ export default function TitleBar() {
     };
   }, [appWindow]);
 
-  const handleMinimize = () => appWindow.minimize();
-  const handleClose = () => appWindow.close();
+  const handleMinimize = () => appWindow?.minimize();
+  const handleClose = () => appWindow?.close();
 
   const handleMaximize = useCallback(async () => {
+    if (!appWindow) return;
     try {
       if (osPlatform === 'macos') {
         const isFullscreen = await appWindow.isFullscreen();

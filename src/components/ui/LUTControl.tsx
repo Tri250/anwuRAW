@@ -70,7 +70,7 @@ export default function LUTControl({
         onClick: async () => {
           try {
             const updatedList = await invoke<LutEntry[]>('remove_lut', { path: entry.path });
-            setEntries(updatedList);
+            setEntries(Array.isArray(updatedList) ? updatedList : []);
             setPreviews((prev) => {
               const next = { ...prev };
               delete next[entry.path];
@@ -92,9 +92,11 @@ export default function LUTControl({
   const refreshList = useCallback(async () => {
     try {
       const list = await invoke<LutEntry[]>('list_luts');
-      setEntries(list);
+      // 后端异常返回 null 时兜底为空数组，避免渲染层 entries.filter 崩溃
+      setEntries(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error('Failed to list LUTs:', err);
+      setEntries([]);
     }
   }, []);
 
@@ -188,7 +190,7 @@ export default function LUTControl({
 
       const list = await invoke<LutEntry[]>('import_luts', { sourcePaths: validPaths });
       previewCache.current.clear();
-      setEntries(list);
+      setEntries(Array.isArray(list) ? list : []);
       setPreviews({});
     } catch (err) {
       console.error('Failed to import LUTs:', err);
@@ -205,8 +207,9 @@ export default function LUTControl({
     }
   };
 
-  const builtInLuts = entries.filter((e) => e.isBuiltIn);
-  const customLuts = entries.filter((e) => !e.isBuiltIn);
+  const safeEntries = entries ?? [];
+  const builtInLuts = safeEntries.filter((e) => e.isBuiltIn);
+  const customLuts = safeEntries.filter((e) => !e.isBuiltIn);
 
   const renderSwatch = (entry: LutEntry) => {
     const thumb = previews[entry.path];

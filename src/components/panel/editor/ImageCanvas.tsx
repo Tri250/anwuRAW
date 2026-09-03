@@ -367,7 +367,7 @@ const MaskOverlay = memo(
     const cropW = crop ? (isPercent ? (crop.width / 100) * imageWidth : crop.width) : imageWidth;
     const cropH = crop ? (isPercent ? (crop.height / 100) * imageHeight : crop.height) : imageHeight;
 
-    const [p, setP] = useState(subMask.parameters);
+    const [p, setP] = useState(subMask.parameters ?? {});
     const pRef = useRef(p);
     const isDragging = useRef(false);
 
@@ -385,8 +385,9 @@ const MaskOverlay = memo(
 
     useEffect(() => {
       if (!isDragging.current) {
-        setP(subMask.parameters);
-        pRef.current = subMask.parameters;
+        const nextParams = subMask.parameters ?? {};
+        setP(nextParams);
+        pRef.current = nextParams;
       }
     }, [subMask.parameters]);
 
