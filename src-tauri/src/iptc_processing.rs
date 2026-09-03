@@ -13,7 +13,7 @@ use std::io::Cursor;
 
 // ============ Resource Block 签名 ============
 /// Photoshop 3.0 IPTC 资源块签名
-const RESOURCE_SIGNATURE: [u8; 4] = [b'8', b'B', b'I', b'M'];
+const RESOURCE_SIGNATURE: [u8; 4] = *b"8BIM";
 
 /// IPTC-NAA 标准 Resource ID
 const IPTC_NAA_2000: u16 = 0x0404;
@@ -108,7 +108,7 @@ fn read_resource_block(buf: &[u8], offset: usize) -> Option<(usize, u16, Vec<u8>
         return None;
     }
     let name_len = data[0] as usize;
-    let name_total = if (name_len + 1) % 2 == 0 {
+    let name_total = if (name_len + 1).is_multiple_of(2) {
         name_len + 1
     } else {
         name_len + 1 + 1
@@ -124,7 +124,7 @@ fn read_resource_block(buf: &[u8], offset: usize) -> Option<(usize, u16, Vec<u8>
         | data[3] as usize;
     let data = &data[4..];
 
-    let padding = if size % 2 == 0 { 0 } else { 1 };
+    let padding = if size.is_multiple_of(2) { 0 } else { 1 };
     if data.len() < size {
         return None;
     }
@@ -139,7 +139,7 @@ fn read_resource_block(buf: &[u8], offset: usize) -> Option<(usize, u16, Vec<u8>
 fn parse_iim_block(iim: &[u8]) -> Vec<IptcDataSet> {
     let mut out = Vec::new();
     let mut pos = 0;
-    while pos + 1 <= iim.len() {
+    while pos < iim.len() {
         let marker = iim[pos];
         if marker != 0x1C {
             pos += 1;

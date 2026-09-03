@@ -17,8 +17,8 @@ use std::collections::HashMap;
 /// 把角度（弧度）归一化到 (-π/2, π/2] 区间
 fn normalize_angle(a: f32) -> f32 {
     let half = std::f32::consts::FRAC_PI_2;
-    let a = ((a + half) % std::f32::consts::PI + std::f32::consts::PI) % std::f32::consts::PI - half;
-    a
+    
+    ((a + half) % std::f32::consts::PI + std::f32::consts::PI) % std::f32::consts::PI - half
 }
 
 /// 计算 Sobel 梯度 + 方向（单通道 f32 buffer）

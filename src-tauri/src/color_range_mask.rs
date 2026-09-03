@@ -65,7 +65,7 @@ fn rgb_to_hsv(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
 
 /// 角度距离（处理环绕：359° 和 1° 的距离是 2°）
 fn hue_distance(h1: f32, h2: f32) -> f32 {
-    let d = ((h1 - h2).abs() % 360.0);
+    let d = (h1 - h2).abs() % 360.0;
     d.min(360.0 - d)
 }
 

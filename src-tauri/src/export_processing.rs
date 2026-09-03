@@ -1920,12 +1920,11 @@ pub fn embed_icc_in_jpeg(jpeg_bytes: &[u8], icc_bytes: &[u8]) -> Result<Vec<u8>,
             break;
         }
         // 其他无 segment 的 marker（如 TEM 0x01、RST 0xD0-0xD7）跳过
-        if marker >= 0x01 && marker <= 0xBF {
-            if marker >= 0xD0 && marker <= 0xD7 {
+        if (0x01..=0xBF).contains(&marker)
+            && (0xD0..=0xD7).contains(&marker) {
                 continue; // RST markers 没有 length
             }
             // 但大多数 marker 还是有 length 字段
-        }
 
         if pos + 2 > jpeg_bytes.len() {
             break;
