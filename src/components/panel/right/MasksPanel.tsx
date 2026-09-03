@@ -50,6 +50,8 @@ import CurveGraph from '../../adjustments/Curves';
 import ColorPanel from '../../adjustments/Color';
 import DetailsPanel from '../../adjustments/Details';
 import EffectsPanel from '../../adjustments/Effects';
+import ChannelMixer from '../../adjustments/ChannelMixer';
+import SplitToning from '../../adjustments/SplitToning';
 import Waveform from '../editor/Waveform';
 import Resizer from '../../ui/Resizer';
 import { DepthRangePicker } from '../../ui/DepthRangePicker';
@@ -2303,6 +2305,8 @@ function SettingsPanel({
             color: ColorPanel,
             details: DetailsPanel,
             effects: EffectsPanel,
+            channel_mixer: ChannelMixer,
+            split_toning: SplitToning,
           }[sectionName];
           const title = t(`editor.adjustments.sections.${sectionName}`);
           return (
