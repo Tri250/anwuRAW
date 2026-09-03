@@ -3491,20 +3491,33 @@ pub fn apply_post_gpu_adjustments(
     mut img: DynamicImage,
     js_adjustments: &serde_json::Value,
 ) -> DynamicImage {
+    // 读取 sectionVisibility —— 隐藏的 section 不应用后处理
+    let visibility = js_adjustments.get("sectionVisibility");
+    let is_visible = |section: &str| -> bool {
+        visibility
+            .and_then(|v| v.get(section))
+            .and_then(|s| s.as_bool())
+            .unwrap_or(true)
+    };
+
     // Channel Mixer
-    if let Some(cm_val) = js_adjustments.get("channelMixer") {
-        if let Ok(cm) = serde_json::from_value::<ChannelMixerSettings>(cm_val.clone()) {
-            // channel_mixer::ChannelMixerSettings 没有 enabled 字段，用 is_identity 判断
-            if !cm.is_identity() {
-                img = crate::channel_mixer::apply_to_dynamic(&img, &cm);
+    if is_visible("channel_mixer") {
+        if let Some(cm_val) = js_adjustments.get("channelMixer") {
+            if let Ok(cm) = serde_json::from_value::<ChannelMixerSettings>(cm_val.clone()) {
+                // channel_mixer::ChannelMixerSettings 没有 enabled 字段，用 is_identity 判断
+                if !cm.is_identity() {
+                    img = crate::channel_mixer::apply_to_dynamic(&img, &cm);
+                }
             }
         }
     }
     // Split Toning
-    if let Some(st_val) = js_adjustments.get("splitToning") {
-        if let Ok(st) = serde_json::from_value::<SplitToningSettings>(st_val.clone()) {
-            if st.enabled {
-                img = crate::split_toning::apply_to_dynamic(&img, &st);
+    if is_visible("split_toning") {
+        if let Some(st_val) = js_adjustments.get("splitToning") {
+            if let Ok(st) = serde_json::from_value::<SplitToningSettings>(st_val.clone()) {
+                if st.enabled {
+                    img = crate::split_toning::apply_to_dynamic(&img, &st);
+                }
             }
         }
     }

@@ -71,7 +71,7 @@ export default function ChannelMixer({
   const [isOpen, setIsOpen] = useState(true);
 
   const current: ChannelMixerSettings = adjustments.channelMixer || defaultIdentity;
-  const sectionVisible = adjustments.sectionVisibility?.channel !== false;
+  const sectionVisible = adjustments.sectionVisibility?.channel_mixer !== false;
 
   const handleSliderChange =
     (key: keyof ChannelMixerSettings) => (e: { target: { value: string | number } }) => {

@@ -29,6 +29,8 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
   const [isOpen, setIsOpen] = useState(true);
 
   const st: SplitToningSettings = adjustments.splitToning || defaultSplitToning;
+  const sectionVisible = adjustments.sectionVisibility?.split_toning !== false;
+  const contentVisible = st.enabled && sectionVisible;
 
   const handleToggleEnabled = () => {
     setAdjustments({ splitToning: { ...st, enabled: !st.enabled } });
@@ -85,7 +87,7 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
       title={t('adjustments.splitToning.title', 'Split Toning / 分离色调')}
       isOpen={isOpen}
       onToggle={() => setIsOpen(!isOpen)}
-      isContentVisible={st.enabled}
+      isContentVisible={contentVisible}
       onToggleVisibility={handleToggleEnabled}
       canToggleVisibility={true}
     >
@@ -98,7 +100,7 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
         />
       </div>
 
-      <div className={!st.enabled ? 'opacity-50 pointer-events-none' : ''}>
+      <div className={!contentVisible ? 'opacity-50 pointer-events-none' : ''}>
         {/* 高光区域 */}
         <div className="mb-4">
           <Text variant={TextVariants.heading} className="mb-2 block">
