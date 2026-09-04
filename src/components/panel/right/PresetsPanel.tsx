@@ -324,9 +324,7 @@ function PresetItemDisplay({
             >
               <Star
                 size={12}
-                className={
-                  preset.favorite ? 'text-amber-400 fill-amber-400' : 'text-white/70 hover:text-white'
-                }
+                className={preset.favorite ? 'text-amber-400 fill-amber-400' : 'text-white/70 hover:text-white'}
               />
             </button>
           )}
@@ -1236,9 +1234,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
       options = [
         {
           icon: Star,
-          label: (data as Preset)?.favorite
-            ? t('editor.presets.menu.unfavorite')
-            : t('editor.presets.menu.favorite'),
+          label: (data as Preset)?.favorite ? t('editor.presets.menu.unfavorite') : t('editor.presets.menu.favorite'),
           onClick: () => toggleFavorite(data?.id ?? null),
         },
         {
@@ -1350,7 +1346,9 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
               }`}
               disabled={presets.length === 0 || (showFavoritesOnly && !hasAnyFavorite)}
               onClick={() => setShowFavoritesOnly((prev) => !prev)}
-              data-tooltip={showFavoritesOnly ? t('editor.presets.filter.showAll') : t('editor.presets.filter.favorites')}
+              data-tooltip={
+                showFavoritesOnly ? t('editor.presets.filter.showAll') : t('editor.presets.filter.favorites')
+              }
             >
               <Star size={18} className={showFavoritesOnly ? 'fill-amber-400' : ''} />
             </button>

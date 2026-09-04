@@ -89,12 +89,7 @@ export function calculateAreaPreservingCrop(
   return isCropWithinBounds(candidate, W, H, rotation) ? candidate : null;
 }
 
-function rotateCropCenter(
-  crop: Crop,
-  orientedWidth: number,
-  orientedHeight: number,
-  deltaDegrees: number,
-): Crop {
+function rotateCropCenter(crop: Crop, orientedWidth: number, orientedHeight: number, deltaDegrees: number): Crop {
   const rad = (deltaDegrees * Math.PI) / 180;
   const cos = Math.cos(rad);
   const sin = Math.sin(rad);

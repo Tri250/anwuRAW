@@ -606,6 +606,7 @@ RapidRAW isn't just for RAW files! You can also import, edit, and convert standa
 - **Graphics & Textures:** `.tga`, `.ico`, `.dds`
 - **Specialist Formats:** `.qoi`, `.ff`
 - **Netpbm Bitmaps:** `.pnm`, `.pbm`, `.pgm`, `.ppm`, `.pam`
+
 </details>
 
 <details>
@@ -911,6 +912,7 @@ If the application crashes immediately when you try to start editing a picture, 
 3.  Locate the **Processing Backend** setting.
 4.  Change it from **Auto** to a specific backend supported by your OS (e.g., **Vulkan**, **DirectX12**, **OpenGL**, or **Metal**).
 5.  Restart the application and try opening the image again. Experiment with different backends if the first one doesn't work.
+
 </details>
 
 <details>

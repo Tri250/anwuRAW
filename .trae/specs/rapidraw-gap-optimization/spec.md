@@ -303,4 +303,3 @@
 - [ ] ICC profile 数据从哪里来？sRGB 嵌入常见，Adobe RGB 需要随包分发
 
 - [ ] 导出进度通知 Android 端是否需要 Tauri plugin 配合？
-

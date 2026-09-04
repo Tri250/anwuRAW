@@ -37,8 +37,7 @@ function applyThemeColorTransition(root: HTMLElement) {
   }
   // 尊重系统"减少动态效果"偏好：优先不播放颜色过渡动画
   const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (prefersReducedMotion) return;
   root.classList.add('enable-color-transitions');
   // 0.4s 过渡结束后立刻移除类，保证后续 hover/选中等交互不被常驻动画拖慢

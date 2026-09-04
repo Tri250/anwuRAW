@@ -70,13 +70,7 @@ import { useUIStore } from '../../../store/useUIStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
 import { useAiMasking } from '../../../hooks/useAiMasking';
 
-export const STANDALONE_MASK_TYPES: Mask[] = [
-  Mask.Clone,
-  Mask.Heal,
-  Mask.AutoErase,
-  Mask.Liquify,
-  Mask.Retouch,
-];
+export const STANDALONE_MASK_TYPES: Mask[] = [Mask.Clone, Mask.Heal, Mask.AutoErase, Mask.Liquify, Mask.Retouch];
 
 export const isStandaloneMask = (type?: Mask): boolean => Boolean(type && STANDALONE_MASK_TYPES.includes(type));
 
@@ -454,7 +448,8 @@ export default function AIPanel() {
   const activeContainer = (adjustments.aiPatches || []).find((p) => p.id === activePatchContainerId);
   const activeSubMaskData = activeContainer?.subMasks.find((sm) => sm.id === activeSubMaskId);
   const isAiMask =
-    activeSubMaskData && [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.QuickEraser].includes(activeSubMaskData.type);
+    activeSubMaskData &&
+    [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.QuickEraser].includes(activeSubMaskData.type);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -510,7 +505,14 @@ export default function AIPanel() {
       hasPerformedInitialSelection.current = true;
       setIsSettingsPanelEverOpened(true);
     }
-  }, [activePatchContainerId, activeSubMaskId, adjustments.aiPatches, onSelectPatchContainer, onSelectSubMask, selectedImage?.path]);
+  }, [
+    activePatchContainerId,
+    activeSubMaskId,
+    adjustments.aiPatches,
+    onSelectPatchContainer,
+    onSelectSubMask,
+    selectedImage?.path,
+  ]);
 
   useEffect(() => {
     const handler = () => {
@@ -622,8 +624,9 @@ export default function AIPanel() {
       name = t('editor.ai.patches.retouch', { count });
     } else if (type === Mask.AutoErase) {
       const count =
-        (adjustments.aiPatches || [])
-          .filter((p: AiPatch) => p.subMasks.some((sm: SubMask) => sm.type === Mask.AutoErase)).length + 1;
+        (adjustments.aiPatches || []).filter((p: AiPatch) =>
+          p.subMasks.some((sm: SubMask) => sm.type === Mask.AutoErase),
+        ).length + 1;
       name = t('editor.ai.patches.autoErase', { count });
     } else {
       const count = (adjustments.aiPatches || []).length + 1;
@@ -2194,8 +2197,7 @@ function SettingsPanel({
                       activeSubMask.type === Mask.Liquify ||
                       activeSubMask.type === Mask.Retouch ||
                       activeSubMask.type === Mask.AutoErase;
-                    const hasRun =
-                      activeSubMask.type === Mask.AutoErase || activeSubMask.parameters?.lines?.length > 0;
+                    const hasRun = activeSubMask.type === Mask.AutoErase || activeSubMask.parameters?.lines?.length > 0;
                     if (isDirectTool && hasRun) {
                       setTimeout(() => {
                         const sx = activeSubMask.parameters?.sourceX ?? 0;

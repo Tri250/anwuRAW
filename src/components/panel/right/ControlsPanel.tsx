@@ -25,7 +25,10 @@ import { useUIStore } from '../../../store/useUIStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
 import { useWaveformControls } from '../../../hooks/useWaveformControls';
 
-const HISTOGRAM_ZONE_CONFIG: Record<HistogramZone, { key: string; min: number; max: number; scale: number; round: number }> = {
+const HISTOGRAM_ZONE_CONFIG: Record<
+  HistogramZone,
+  { key: string; min: number; max: number; scale: number; round: number }
+> = {
   blacks: { key: 'blacks', min: -100, max: 100, scale: 200, round: 0 },
   shadows: { key: 'shadows', min: -100, max: 100, scale: 200, round: 0 },
   exposure: { key: 'exposure', min: -5, max: 5, scale: 2.5, round: 2 },

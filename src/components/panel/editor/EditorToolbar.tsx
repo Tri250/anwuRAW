@@ -695,7 +695,9 @@ const EditorToolbar = memo(
             )}
             onClick={onToggleCompare}
             onKeyDown={handleButtonKeyDown}
-            data-tooltip={isComparing ? t('editor.toolbar.tooltips.closeCompare') : t('editor.toolbar.tooltips.compare')}
+            data-tooltip={
+              isComparing ? t('editor.toolbar.tooltips.closeCompare') : t('editor.toolbar.tooltips.compare')
+            }
           >
             <SplitSquareHorizontal size={20} />
           </button>

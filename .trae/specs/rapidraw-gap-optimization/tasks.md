@@ -389,4 +389,3 @@
   - `rule` TR-14.1: 新代码中无 unwrap() / expect()（除 .ok() 转换）
 
   - `rubric` TR-14.2: 代码一致性；scale 1-5；阈值 >= 4
-

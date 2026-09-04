@@ -61,9 +61,9 @@ export function useAiMasking() {
       const startPath = selectedImage.path;
 
       // 预先设置加载状态（基于当前已知patchId）
-      const currentPatchId = useEditorStore.getState().adjustments.aiPatches.find((p: AiPatch) =>
-        p.subMasks.some((sm: SubMask) => sm.id === subMaskId),
-      )?.id;
+      const currentPatchId = useEditorStore
+        .getState()
+        .adjustments.aiPatches.find((p: AiPatch) => p.subMasks.some((sm: SubMask) => sm.id === subMaskId))?.id;
       if (!currentPatchId) return;
 
       setAdjustments((prev: Partial<Adjustments>) => ({

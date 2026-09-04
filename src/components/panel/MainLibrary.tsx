@@ -427,7 +427,6 @@ export default function MainLibrary(props: MainLibraryProps) {
                       </div>
                     </div>
                   </div>
-
                 </>
               )}
             </div>

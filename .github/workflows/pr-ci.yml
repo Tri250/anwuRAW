@@ -10,11 +10,11 @@ jobs:
       matrix:
         include:
           - platform: 'windows-latest'
-            args: '--bundles nsis'
+            build-args: '--bundles nsis'
             target: ''
             asset-prefix: '01'
           - platform: 'windows-11-arm'
-            args: '--bundles nsis'
+            build-args: '--bundles nsis'
             target: 'aarch64-pc-windows-msvc'
             asset-prefix: '01'
           - platform: 'macos-14'
@@ -25,11 +25,11 @@ jobs:
             asset-prefix: '02'
           - platform: 'macos-14'
             target: aarch64-apple-darwin
-            args: '--features tethering'
+            build-args: '--features tethering'
             asset-prefix: '02_tethering'
           - platform: 'macos-15-intel'
             target: x86_64-apple-darwin
-            args: '--features tethering'
+            build-args: '--features tethering'
             asset-prefix: '02_tethering'
           - platform: 'ubuntu-22.04'
             target: ''
@@ -45,21 +45,21 @@ jobs:
             asset-prefix: '03'
           - platform: 'ubuntu-22.04'
             target: ''
-            args: '--features tethering'
+            build-args: '--features tethering'
             asset-prefix: '03_tethering'
           - platform: 'ubuntu-24.04'
             target: ''
-            args: '--features tethering'
+            build-args: '--features tethering'
             asset-prefix: '03_tethering'
           - platform: 'ubuntu-latest'
             mobile: 'android'
             target: 'aarch64-linux-android'
-            args: '--debug --target aarch64'
+            build-args: '--debug --target aarch64'
             asset-prefix: '04'
     uses: ./.github/workflows/build.yml
     with:
       platform: ${{ matrix.platform }}
       target: ${{ matrix.target }}
-      build-args: ${{ matrix.args }}
+      build-args: ${{ matrix.build-args }}
       asset-prefix: ${{ matrix.asset-prefix }}
       mobile: ${{ matrix.mobile }}

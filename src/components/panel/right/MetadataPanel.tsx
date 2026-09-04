@@ -789,8 +789,24 @@ export default function MetadataPanel() {
                         <path d="M290,130 L315,128 L325,140 L318,152 L300,155 L288,145 Z" />
                       </g>
                       {/* 赤道 + 经纬辅助线 */}
-                      <line x1="0" y1="90" x2="360" y2="90" stroke="currentColor" strokeOpacity="0.08" strokeWidth="0.4" />
-                      <line x1="180" y1="0" x2="180" y2="180" stroke="currentColor" strokeOpacity="0.08" strokeWidth="0.4" />
+                      <line
+                        x1="0"
+                        y1="90"
+                        x2="360"
+                        y2="90"
+                        stroke="currentColor"
+                        strokeOpacity="0.08"
+                        strokeWidth="0.4"
+                      />
+                      <line
+                        x1="180"
+                        y1="0"
+                        x2="180"
+                        y2="180"
+                        stroke="currentColor"
+                        strokeOpacity="0.08"
+                        strokeWidth="0.4"
+                      />
                       {/* 拍摄位置红点 */}
                       {(() => {
                         // 经纬度 → SVG 坐标：lon [-180,180]→x[0,360], lat [90,-90]→y[0,180]

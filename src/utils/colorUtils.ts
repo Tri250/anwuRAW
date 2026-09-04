@@ -49,15 +49,7 @@ export function srgbToLinear(v: number): number {
   return Math.pow(Math.max(c, 0), 2.2);
 }
 
-export type HslColorKey =
-  | 'reds'
-  | 'oranges'
-  | 'yellows'
-  | 'greens'
-  | 'aquas'
-  | 'blues'
-  | 'purples'
-  | 'magentas';
+export type HslColorKey = 'reds' | 'oranges' | 'yellows' | 'greens' | 'aquas' | 'blues' | 'purples' | 'magentas';
 
 const HUE_BUCKET_BOUNDARIES: Array<{ key: HslColorKey; start: number; end: number }> = [
   { key: 'reds', start: 0, end: 15 },

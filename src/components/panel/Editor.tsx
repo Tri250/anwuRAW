@@ -210,7 +210,6 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     };
   }, []);
 
-
   useEffect(() => {
     setIsComparing(false);
     if (beforeOriginalUrlRef.current) {
@@ -284,11 +283,29 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
       try {
         const override = { ...INITIAL_ADJUSTMENTS };
         const geometryKeys: Array<keyof Adjustments> = [
-          'crop', 'rotation', 'flipHorizontal', 'flipVertical', 'orientationSteps', 'aspectRatio',
-          'transformDistortion', 'transformVertical', 'transformHorizontal', 'transformRotate',
-          'transformAspect', 'transformScale', 'transformXOffset', 'transformYOffset',
-          'lensDistortionAmount', 'lensVignetteAmount', 'lensTcaAmount', 'lensDistortionParams',
-          'lensMaker', 'lensModel', 'lensDistortionEnabled', 'lensTcaEnabled', 'lensVignetteEnabled',
+          'crop',
+          'rotation',
+          'flipHorizontal',
+          'flipVertical',
+          'orientationSteps',
+          'aspectRatio',
+          'transformDistortion',
+          'transformVertical',
+          'transformHorizontal',
+          'transformRotate',
+          'transformAspect',
+          'transformScale',
+          'transformXOffset',
+          'transformYOffset',
+          'lensDistortionAmount',
+          'lensVignetteAmount',
+          'lensTcaAmount',
+          'lensDistortionParams',
+          'lensMaker',
+          'lensModel',
+          'lensDistortionEnabled',
+          'lensTcaEnabled',
+          'lensVignetteEnabled',
         ];
         geometryKeys.forEach((key) => {
           const value = adjustments[key];
@@ -361,7 +378,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         // 视觉等价：±46° ≡ ∓44°，取绝对值更小的等价角度
         let rawRotation = (prev.rotation || 0) + angleCorrection;
         // 归一化到 (-180, 180]
-        rawRotation = ((rawRotation + 180) % 360 + 360) % 360 - 180;
+        rawRotation = ((((rawRotation + 180) % 360) + 360) % 360) - 180;
         // 再归一化到 [0, 360) 然后选 [-45, 45] 或 [135, 225]（视觉等价）中绝对值更小的
         let clamped = Math.max(-45, Math.min(45, rawRotation));
         if (Math.abs(rawRotation) > 45 && Math.abs(rawRotation) <= 135) {
@@ -413,12 +430,15 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
 
   const handleWbPicked = useCallback(() => {}, []);
 
-  const handleHslPicked = useCallback((colorKey: string) => {
-    setEditor(() => ({
-      isHslPickerActive: false,
-      hslTargetColor: colorKey,
-    }));
-  }, [setEditor]);
+  const handleHslPicked = useCallback(
+    (colorKey: string) => {
+      setEditor(() => ({
+        isHslPickerActive: false,
+        hslTargetColor: colorKey,
+      }));
+    },
+    [setEditor],
+  );
 
   useEffect(() => {
     if (isFullScreen) {
@@ -752,10 +772,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
 
   const maskOverlayVisible = useEditorStore((s) => s.maskOverlayVisible);
 
-  const toolbarSubMask = useMemo(
-    () => (showMaskEditingToolbar(activeSubMask) ? activeSubMask : null),
-    [activeSubMask],
-  );
+  const toolbarSubMask = useMemo(() => (showMaskEditingToolbar(activeSubMask) ? activeSubMask : null), [activeSubMask]);
 
   const handleMaskToolbarBrushToolChange = useCallback(
     (tool: ToolType) => {
@@ -822,7 +839,11 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
       updateSubMaskLocal(activeId, { parameters: { lines: [], flow: toolbarSubMask.parameters?.flow ?? 10 } });
     } else if (type === Mask.QuickEraser || type === Mask.AiSubject || type === Mask.AiForeground) {
       updateSubMaskLocal(activeId, {
-        parameters: { maskDataBase64: null, grow: toolbarSubMask.parameters?.grow, feather: toolbarSubMask.parameters?.feather },
+        parameters: {
+          maskDataBase64: null,
+          grow: toolbarSubMask.parameters?.grow,
+          feather: toolbarSubMask.parameters?.feather,
+        },
       });
     } else if (type === Mask.Color || type === Mask.Luminance) {
       updateSubMaskLocal(activeId, { parameters: {} });

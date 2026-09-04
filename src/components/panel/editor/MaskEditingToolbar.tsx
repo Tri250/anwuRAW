@@ -107,7 +107,7 @@ export default function MaskEditingToolbar({
 
   const strengthKey = STRENGTH_PARAM_KEY(subMask.type);
   const strengthValue = strengthKey
-    ? (Number((subMask.parameters as Record<string, unknown>)?.[strengthKey] ?? 40) || 0)
+    ? Number((subMask.parameters as Record<string, unknown>)?.[strengthKey] ?? 40) || 0
     : null;
 
   const buttonBase =
@@ -116,9 +116,7 @@ export default function MaskEditingToolbar({
   const iconButton = (active = false) =>
     clsx(
       buttonBase,
-      active
-        ? 'bg-accent text-white'
-        : 'text-text-secondary hover:bg-card-active hover:text-text-primary',
+      active ? 'bg-accent text-white' : 'text-text-secondary hover:bg-card-active hover:text-text-primary',
     );
 
   /** 紧凑的滑杆控件（笔刷大小 / 柔软度 / 强度） */
@@ -129,10 +127,7 @@ export default function MaskEditingToolbar({
     onChange: (v: number) => void,
     max = 100,
   ) => (
-    <label
-      className="flex items-center gap-2 rounded-lg px-2 text-sm font-medium text-text-secondary"
-      title={label}
-    >
+    <label className="flex items-center gap-2 rounded-lg px-2 text-sm font-medium text-text-secondary" title={label}>
       <span className="flex h-4 w-4 shrink-0 items-center justify-center">{icon}</span>
       <input
         className="h-1 w-20 accent-accent slider-input"
@@ -225,22 +220,14 @@ export default function MaskEditingToolbar({
         ) : null}
 
         {!isStandalone ? (
-          <button
-            className={iconButton(subMask.invert)}
-            onClick={onInvert}
-            title={t('editor.masks.toolbar.invert')}
-          >
+          <button className={iconButton(subMask.invert)} onClick={onInvert} title={t('editor.masks.toolbar.invert')}>
             <FlipHorizontal2 size={16} />
             <span className="hidden sm:inline">{t('editor.masks.toolbar.invert')}</span>
           </button>
         ) : null}
 
         {!isStandalone && CLEAR_TYPES.includes(subMask.type) ? (
-          <button
-            className={iconButton()}
-            onClick={onClear}
-            title={t('editor.masks.toolbar.clearMask')}
-          >
+          <button className={iconButton()} onClick={onClear} title={t('editor.masks.toolbar.clearMask')}>
             <Trash2 size={16} />
             <span className="hidden sm:inline">{t('editor.masks.toolbar.clearMask')}</span>
           </button>
@@ -249,21 +236,14 @@ export default function MaskEditingToolbar({
         <button
           className={iconButton()}
           onClick={onToggleOverlay}
-          title={
-            maskOverlayVisible
-              ? t('editor.masks.toolbar.overlayOff')
-              : t('editor.masks.toolbar.overlayOn')
-          }
+          title={maskOverlayVisible ? t('editor.masks.toolbar.overlayOff') : t('editor.masks.toolbar.overlayOn')}
         >
           {maskOverlayVisible ? <Eye size={16} /> : <EyeOff size={16} />}
         </button>
 
         <div className="mx-1 h-5 w-px bg-border-color" />
 
-        <button
-          className={clsx(buttonBase, 'bg-accent text-white hover:opacity-90')}
-          onClick={onDone}
-        >
+        <button className={clsx(buttonBase, 'bg-accent text-white hover:opacity-90')} onClick={onDone}>
           <Check size={16} />
           <span>{t('editor.masks.toolbar.done')}</span>
         </button>

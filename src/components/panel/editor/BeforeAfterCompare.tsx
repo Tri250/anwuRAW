@@ -106,10 +106,9 @@ export default function BeforeAfterCompare({ beforeUrl, afterUrl, onClose }: Bef
     transformOrigin: 'center center',
   };
 
-  const clip =
-    splitHorizontal
-      ? { clipPath: `inset(${100 - sliderPosition}% 0 0 0)` }
-      : { clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` };
+  const clip = splitHorizontal
+    ? { clipPath: `inset(${100 - sliderPosition}% 0 0 0)` }
+    : { clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` };
 
   const dividerStyle = splitHorizontal
     ? { top: `${sliderPosition}%`, left: 0, right: 0, height: 2, width: '100%', cursor: 'row-resize' }
@@ -191,10 +190,7 @@ export default function BeforeAfterCompare({ beforeUrl, afterUrl, onClose }: Bef
               </div>
 
               {/* Before 层（上层，被 clip 裁剪） */}
-              <div
-                className="absolute inset-0 overflow-hidden pointer-events-none"
-                style={clip}
-              >
+              <div className="absolute inset-0 overflow-hidden pointer-events-none" style={clip}>
                 <div className="w-full h-full origin-center" style={imageStyle}>
                   <img
                     src={beforeUrl}

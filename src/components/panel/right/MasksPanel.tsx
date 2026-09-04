@@ -1,10 +1,4 @@
-import {
-  type ChangeEvent,
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-} from 'react';
+import { type ChangeEvent, useState, useEffect, useRef, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { v4 as uuidv4 } from 'uuid';
 import clsx from 'clsx';
@@ -398,7 +392,8 @@ export default function MasksPanel() {
   const activeContainer = adjustments.masks?.find((m) => m.id === activeMaskContainerId);
   const activeSubMaskData = activeContainer?.subMasks?.find((sm) => sm.id === activeMaskId);
   const isAiMask =
-    activeSubMaskData && [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.AiDepth, Mask.QuickEraser].includes(activeSubMaskData.type);
+    activeSubMaskData &&
+    [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.AiDepth, Mask.QuickEraser].includes(activeSubMaskData.type);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -2039,7 +2034,8 @@ function SettingsPanel({
 
   const subMaskConfig = typedActiveSubMask ? SUB_MASK_CONFIG[typedActiveSubMask.type] || {} : {};
   const isAiMask =
-    activeSubMask && [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.AiDepth, Mask.QuickEraser].includes(activeSubMask.type);
+    activeSubMask &&
+    [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.AiDepth, Mask.QuickEraser].includes(activeSubMask.type);
   const isComponentMode = !!activeSubMask;
 
   const setMaskContainerAdjustments = (updater: any) => {

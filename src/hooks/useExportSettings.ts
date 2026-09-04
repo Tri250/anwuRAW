@@ -90,7 +90,7 @@ export function useExportSettings() {
       watermarkOpacity,
       colorSpace,
       bitDepth,
-    ]
+    ],
   );
 
   return {

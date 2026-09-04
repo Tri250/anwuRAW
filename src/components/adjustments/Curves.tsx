@@ -837,7 +837,12 @@ export default function CurveGraph({
       </div>
 
       <div className="flex items-center gap-1.5 mb-2">
-        <Text variant={TextVariants.small} color={TextColors.secondary} weight={TextWeights.medium} className="shrink-0">
+        <Text
+          variant={TextVariants.small}
+          color={TextColors.secondary}
+          weight={TextWeights.medium}
+          className="shrink-0"
+        >
           {t('adjustments.curves.presets.title')}
         </Text>
         <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto py-0.5 no-scrollbar">

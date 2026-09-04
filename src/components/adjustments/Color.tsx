@@ -490,9 +490,7 @@ export default function ColorPanel({
             <button
               onClick={toggleWbPicker}
               className={`p-1.5 rounded-md transition-colors ${
-                isWbPickerActive
-                  ? 'bg-accent text-button-text'
-                  : 'hover:bg-bg-secondary text-text-secondary'
+                isWbPickerActive ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
               }`}
               data-tooltip={t('adjustments.color.wbPickerTooltip')}
             >
@@ -576,9 +574,7 @@ export default function ColorPanel({
 
       <div className="p-2 bg-bg-tertiary rounded-md">
         <div className="flex justify-between items-center mb-3">
-          <Text variant={TextVariants.heading}>
-            {t('adjustments.color.colorMixer')}
-          </Text>
+          <Text variant={TextVariants.heading}>{t('adjustments.color.colorMixer')}</Text>
           <button
             onClick={toggleHslPicker}
             className={`p-1.5 rounded-md transition-colors ${

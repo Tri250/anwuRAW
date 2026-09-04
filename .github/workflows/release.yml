@@ -105,30 +105,30 @@ jobs:
         include:
           # --- Windows x64 (NSIS installer) ---
           - platform: 'windows-latest'
-            args: '--bundles nsis'
+            build-args: '--bundles nsis'
             target: ''
             asset-prefix: '01_win-x64'
 
           # --- macOS Apple Silicon (M1/M2/M3/M4, ARM64) ---
-          - platform: 'macos-latest'
+          - platform: 'macos-14'
             target: aarch64-apple-darwin
             asset-prefix: '02_macos-arm64'
 
           # --- macOS Apple Silicon + Tethering feature ---
-          - platform: 'macos-latest'
+          - platform: 'macos-14'
             target: aarch64-apple-darwin
-            args: '--features tethering'
+            build-args: '--features tethering'
             asset-prefix: '02_macos-arm64_tethering'
 
-          # --- macOS Intel (x86_64, last stable Intel runner) ---
-          - platform: 'macos-13'
+          # --- macOS Intel (x86_64) ---
+          - platform: 'macos-15-intel'
             target: x86_64-apple-darwin
             asset-prefix: '02_macos-intel'
 
           # --- macOS Intel + Tethering feature ---
-          - platform: 'macos-13'
+          - platform: 'macos-15-intel'
             target: x86_64-apple-darwin
-            args: '--features tethering'
+            build-args: '--features tethering'
             asset-prefix: '02_macos-intel_tethering'
 
           # --- Linux x86_64 (Ubuntu 22.04 LTS) ---
@@ -144,20 +144,20 @@ jobs:
           # --- Linux + Tethering (Ubuntu 22.04) ---
           - platform: 'ubuntu-22.04'
             target: ''
-            args: '--features tethering'
+            build-args: '--features tethering'
             asset-prefix: '03_linux-x64_22.04_tethering'
 
           # --- Linux + Tethering (Ubuntu 24.04) ---
           - platform: 'ubuntu-24.04'
             target: ''
-            args: '--features tethering'
+            build-args: '--features tethering'
             asset-prefix: '03_linux-x64_24.04_tethering'
 
           # --- Android ARM64-v8a (Ubuntu runner 交叉编译) ---
           - platform: 'ubuntu-latest'
             mobile: 'android'
             target: 'aarch64-linux-android'
-            args: '--target aarch64'
+            build-args: '--target aarch64'
             asset-prefix: '04_android-arm64'
 
     uses: ./.github/workflows/build.yml
@@ -166,7 +166,7 @@ jobs:
       ref: ${{ needs.ensure-release.outputs.tag || github.ref }}
       platform: ${{ matrix.platform }}
       target: ${{ matrix.target }}
-      build-args: ${{ matrix.args }}
+      build-args: ${{ matrix.build-args }}
       asset-name-pattern: '[name]_v[version]_[platform]_[arch].[ext]'
       asset-prefix: ${{ matrix.asset-prefix }}
       mobile: ${{ matrix.mobile }}

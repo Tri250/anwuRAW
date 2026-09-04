@@ -149,7 +149,7 @@ export default function CropPanel() {
 
     if (autoCropTimerRef.current) clearTimeout(autoCropTimerRef.current);
     autoCropTimerRef.current = setTimeout(() => {
-      const ratio = aspectRatio || (selectedImage.width / selectedImage.height);
+      const ratio = aspectRatio || selectedImage.width / selectedImage.height;
       const newCrop = calculateAutoCropForRotation(
         selectedImage.width,
         selectedImage.height,
@@ -669,9 +669,7 @@ export default function CropPanel() {
               </div>
               {/* Auto-crop after rotation toggle */}
               <label className="flex items-center justify-between px-4 py-2 rounded-lg bg-surface cursor-pointer select-none">
-                <span className="text-xs text-text-secondary">
-                  {t('editor.crop.autoCropAfterRotate')}
-                </span>
+                <span className="text-xs text-text-secondary">{t('editor.crop.autoCropAfterRotate')}</span>
                 <button
                   type="button"
                   onClick={() => setAutoCropAfterRotate((v) => !v)}

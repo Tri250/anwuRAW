@@ -748,7 +748,9 @@ export default function ExportPanel({
                   </div>
 
                   {/* 位深选择器（仅对支持可变位深的格式可见） */}
-                  {(fileFormat === FileFormats.Png || fileFormat === FileFormats.Tiff || fileFormat === FileFormats.Jxl) && (
+                  {(fileFormat === FileFormats.Png ||
+                    fileFormat === FileFormats.Tiff ||
+                    fileFormat === FileFormats.Jxl) && (
                     <div className="flex flex-col gap-2 mt-3">
                       <label className="flex items-center justify-between text-sm text-text-secondary">
                         <span>{t('export.color.bitDepth')}</span>

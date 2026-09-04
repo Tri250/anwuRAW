@@ -227,8 +227,7 @@ export function useImageProcessing(
 
             setEditor((state) => {
               const patch = state.interactivePatch;
-              if (patch && patch.url)
-                setTimeout(() => URL.revokeObjectURL(patch.url), 100);
+              if (patch && patch.url) setTimeout(() => URL.revokeObjectURL(patch.url), 100);
               return {
                 interactivePatch: {
                   url,

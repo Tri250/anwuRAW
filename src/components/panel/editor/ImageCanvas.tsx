@@ -1529,8 +1529,7 @@ const ImageCanvas = memo(
         if (e.key === '[' || e.key === ']') {
           const target = e.target as HTMLElement | null;
           const isTyping =
-            !!target &&
-            (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+            !!target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
           if (isTyping || !brushToolActiveRef.current) return;
           e.preventDefault();
           const step = e.shiftKey ? 40 : 8;
@@ -1939,9 +1938,7 @@ const ImageCanvas = memo(
             if (arr.length === 0) return 0;
             const sorted = arr.slice().sort((a, b) => a - b);
             const mid = Math.floor(sorted.length / 2);
-            return sorted.length % 2 === 0
-              ? (sorted[mid - 1] + sorted[mid]) / 2
-              : sorted[mid];
+            return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
           };
 
           const deltaTemp = median(tempSignals) * 125.0;
@@ -3072,7 +3069,9 @@ const ImageCanvas = memo(
 
               {!isDrawing.current &&
                 activeSubMask &&
-                (activeSubMask.type === Mask.Clone || activeSubMask.type === Mask.Heal || activeSubMask.type === Mask.AutoErase) &&
+                (activeSubMask.type === Mask.Clone ||
+                  activeSubMask.type === Mask.Heal ||
+                  activeSubMask.type === Mask.AutoErase) &&
                 activeSubMask.parameters?.sourceX !== undefined &&
                 activeSubMask.parameters?.sourceY !== undefined && (
                   <div
@@ -3080,11 +3079,8 @@ const ImageCanvas = memo(
                     style={{
                       position: 'absolute',
                       left:
-                        (activeSubMask.parameters.sourceX - cropX) * imageRenderSize.scale +
-                        imageRenderSize.offsetX,
-                      top:
-                        (activeSubMask.parameters.sourceY - cropY) * imageRenderSize.scale +
-                        imageRenderSize.offsetY,
+                        (activeSubMask.parameters.sourceX - cropX) * imageRenderSize.scale + imageRenderSize.offsetX,
+                      top: (activeSubMask.parameters.sourceY - cropY) * imageRenderSize.scale + imageRenderSize.offsetY,
                       transform: `translate(-50%, -50%) scale(${1 / maxSafeScale})`,
                       transformOrigin: 'center',
                       zIndex: 5,
@@ -3148,11 +3144,11 @@ const ImageCanvas = memo(
                               : subMask;
 
                           const isDirectPatch =
-                          renderSubMask.type === Mask.Clone ||
-                          renderSubMask.type === Mask.Heal ||
-                          renderSubMask.type === Mask.AutoErase ||
-                          renderSubMask.type === Mask.Liquify ||
-                          renderSubMask.type === Mask.Retouch;
+                            renderSubMask.type === Mask.Clone ||
+                            renderSubMask.type === Mask.Heal ||
+                            renderSubMask.type === Mask.AutoErase ||
+                            renderSubMask.type === Mask.Liquify ||
+                            renderSubMask.type === Mask.Retouch;
 
                           const isThisSubMaskActive = renderSubMask.id === activeId;
                           const isActivelyDrawingThis = isThisSubMaskActive && isDrawing.current;

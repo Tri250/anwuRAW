@@ -73,15 +73,14 @@ export default function ChannelMixer({
   const current: ChannelMixerSettings = adjustments.channelMixer || defaultIdentity;
   const sectionVisible = adjustments.sectionVisibility?.channel_mixer !== false;
 
-  const handleSliderChange =
-    (key: keyof ChannelMixerSettings) => (e: { target: { value: string | number } }) => {
-      setAdjustments({
-        channelMixer: {
-          ...current,
-          [key]: Number(e.target.value),
-        },
-      });
-    };
+  const handleSliderChange = (key: keyof ChannelMixerSettings) => (e: { target: { value: string | number } }) => {
+    setAdjustments({
+      channelMixer: {
+        ...current,
+        [key]: Number(e.target.value),
+      },
+    });
+  };
 
   const handleReset = () => {
     setAdjustments({
@@ -104,7 +103,9 @@ export default function ChannelMixer({
       canToggleVisibility={false}
     >
       <div className="flex items-center justify-between mb-3">
-        <Text variant={TextVariants.heading}>{t('adjustments.channelMixer.outputs', 'Output Channels / 输出通道')}</Text>
+        <Text variant={TextVariants.heading}>
+          {t('adjustments.channelMixer.outputs', 'Output Channels / 输出通道')}
+        </Text>
         <button
           type="button"
           onClick={handleReset}
@@ -141,17 +142,10 @@ export default function ChannelMixer({
       {/* 3 行 × 3 列 滑块网格 */}
       <div className="space-y-2">
         {CHANNEL_ROWS.map((row) => (
-          <div
-            key={row.labelKey}
-            className="grid grid-cols-[2.5rem_1fr_1fr_1fr] items-start gap-1"
-          >
+          <div key={row.labelKey} className="grid grid-cols-[2.5rem_1fr_1fr_1fr] items-start gap-1">
             {/* 输出通道彩色圆点标签 */}
             <div className="flex items-center justify-center pt-1">
-              <span
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: row.color }}
-                title={t(row.labelKey)}
-              />
+              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: row.color }} title={t(row.labelKey)} />
             </div>
             {row.outputs.map((output) => (
               <div key={output.key} className="min-w-0">
@@ -173,7 +167,12 @@ export default function ChannelMixer({
 
       {/* 辅助说明 */}
       <div className="mt-3 text-[11px] text-text-secondary/70 leading-tight px-1">
-        <p>{t('adjustments.channelMixer.hint', 'Adjust the percentage of each input color channel that contributes to the output channel.')}</p>
+        <p>
+          {t(
+            'adjustments.channelMixer.hint',
+            'Adjust the percentage of each input color channel that contributes to the output channel.',
+          )}
+        </p>
       </div>
     </CollapsibleSection>
   );

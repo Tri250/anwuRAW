@@ -662,14 +662,23 @@ export const INITIAL_ADJUSTMENTS: Adjustments = {
   vignetteRoundness: 0,
   whites: 0,
   channelMixer: {
-    red_from_red: 100, red_from_green: 0, red_from_blue: 0,
-    green_from_red: 0, green_from_green: 100, green_from_blue: 0,
-    blue_from_red: 0, blue_from_green: 0, blue_from_blue: 100,
+    red_from_red: 100,
+    red_from_green: 0,
+    red_from_blue: 0,
+    green_from_red: 0,
+    green_from_green: 100,
+    green_from_blue: 0,
+    blue_from_red: 0,
+    blue_from_green: 0,
+    blue_from_blue: 100,
   },
   splitToning: {
-    shadows_hue: 200, shadows_saturation: 20,
-    highlights_hue: 40, highlights_saturation: 15,
-    balance: 0, enabled: false,
+    shadows_hue: 200,
+    shadows_saturation: 20,
+    highlights_hue: 40,
+    highlights_saturation: 15,
+    balance: 0,
+    enabled: false,
   },
 };
 
@@ -992,10 +1001,6 @@ export const ADJUSTMENT_SECTIONS: Sections = {
     Effect.LensBlurMinFade,
     Effect.LensBlurMaxFade,
   ],
-  channel_mixer: [
-    'channelMixer',
-  ],
-  split_toning: [
-    'splitToning',
-  ],
+  channel_mixer: ['channelMixer'],
+  split_toning: ['splitToning'],
 };
