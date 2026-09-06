@@ -175,6 +175,44 @@ describe('TC-AI-04 ~ TC-AI-06: AI 子类型蒙版生成', () => {
       feather: 20,
     }));
   });
+
+  // 回归测试:蒙版在 masks 容器(非 aiPatches)中时,AI handler 应正确查找并保留已有参数
+  it('TC-AI-回归: subMask 在 masks 容器中时参数被正确合并(不丢失)', async () => {
+    // 将 subMask 放入 masks 容器而非 aiPatches
+    useEditorStore.setState({
+      adjustments: {
+        ...useEditorStore.getState().adjustments,
+        aiPatches: [],
+        masks: [{
+          id: 'c-1',
+          name: 'C1',
+          visible: true,
+          invert: false,
+          opacity: 100,
+          adjustments: {},
+          subMasks: [{
+            id: 'sm-mask-1',
+            type: Mask.AiForeground,
+            visible: true,
+            invert: false,
+            opacity: 100,
+            mode: SubMaskMode.Additive,
+            parameters: { maskDataBase64: null, grow: 75, feather: 40 },
+          }],
+        }],
+      },
+    });
+    mockInvoke.mockResolvedValueOnce({ maskDataBase64: 'fg-new', grow: 50, feather: 25 });
+    const { result } = renderHook(() => useAiMasking());
+    await act(async () => {
+      await result.current.handleGenerateAiForegroundMask('sm-mask-1');
+    });
+    const sub = useEditorStore.getState().adjustments.masks[0].subMasks[0];
+    // 后端返回的参数应与原有参数合并,而非覆盖丢失
+    expect(sub.parameters.grow).toBe(50);   // 后端返回值覆盖
+    expect(sub.parameters.feather).toBe(25); // 后端返回值覆盖
+    expect(sub.parameters.maskDataBase64).toBe('fg-new');
+  });
 });
 
 describe('TC-AI-07 ~ TC-AI-08: handleDirectPatch 命令分发与切图保护', () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'react-toastify';
 import { useEditorStore } from '../store/useEditorStore';
@@ -7,6 +7,32 @@ import { Adjustments, AiPatch, MaskContainer, Coord } from '../utils/adjustments
 import { SubMask } from '../components/panel/right/Masks';
 import { Invokes } from '../components/ui/AppProperties';
 import { useAuth } from '@clerk/react';
+
+/**
+ * 在最新 adjustments 中查找指定 subMask(同时搜索 masks 与 aiPatches)。
+ * 用于 AI 蒙版 handler 在 await 后获取最新参数,避免:
+ * 1. 使用函数入口时捕获的过期 adjustments 闭包
+ * 2. 仅搜索 aiPatches 导致 masks 容器中的 subMask 参数丢失
+ */
+const findSubMaskInLatestState = (subMaskId: string): SubMask | undefined => {
+  const { adjustments } = useEditorStore.getState();
+  return (
+    adjustments.masks?.flatMap((m: MaskContainer) => m.subMasks).find((sm: SubMask) => sm.id === subMaskId) ||
+    adjustments.aiPatches?.flatMap((p: AiPatch) => p.subMasks).find((sm: SubMask) => sm.id === subMaskId)
+  );
+};
+
+/** 安全解析后端返回的 JSON 字符串,失败时抛出带上下文的可读错误 */
+const parsePatchDataJson = (json: unknown, context: string): Record<string, unknown> => {
+  if (typeof json !== 'string') {
+    throw new Error(`${context}: expected JSON string, got ${typeof json}`);
+  }
+  try {
+    return JSON.parse(json);
+  } catch {
+    throw new Error(`${context}: backend returned invalid JSON (len=${json.length})`);
+  }
+};
 
 const getTransformAdjustments = (adj: Adjustments) => ({
   transformDistortion: adj.transformDistortion,
@@ -110,7 +136,7 @@ export function useAiMasking() {
         // 用户已切换到其他图片 — 丢弃旧结果
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;
 
-        const newPatchData = JSON.parse(newPatchDataJson);
+        const newPatchData = parsePatchDataJson(newPatchDataJson, 'Patch Generation');
         patchesSentToBackend.delete(patchId);
 
         setAdjustments((prev: Partial<Adjustments>) => ({
@@ -171,7 +197,7 @@ export function useAiMasking() {
 
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;
 
-        const newPatchData = JSON.parse(newPatchDataJson);
+        const newPatchData = parsePatchDataJson(newPatchDataJson, 'Generative Replace');
 
         setAdjustments((prev: Adjustments) => ({
           ...prev,
@@ -234,13 +260,17 @@ export function useAiMasking() {
 
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;
 
-        const subMaskToUpdate = adjustments.aiPatches
-          ?.find((p: AiPatch) => p.id === patchId)
-          ?.subMasks.find((sm: SubMask) => sm.id === subMaskId);
+        // 使用最新状态查找 subMask,避免过期闭包导致参数丢失
+        const subMaskToUpdate = findSubMaskInLatestState(subMaskId || '');
         const finalSubMaskParams: any = { ...subMaskToUpdate?.parameters, ...newMaskParams };
+
+        // 先将蒙版参数回写到 state,确保后续 patch 生成失败时参数不丢失
+        updateSubMask(subMaskId || '', { parameters: finalSubMaskParams });
+
+        const latestAdjustments = useEditorStore.getState().adjustments;
         const updatedAdjustmentsForBackend = {
-          ...adjustments,
-          aiPatches: adjustments.aiPatches.map((p: AiPatch) =>
+          ...latestAdjustments,
+          aiPatches: latestAdjustments.aiPatches.map((p: AiPatch) =>
             p.id === patchId
               ? {
                   ...p,
@@ -263,7 +293,7 @@ export function useAiMasking() {
 
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;
 
-        const newPatchData = JSON.parse(newPatchDataJson);
+        const newPatchData = parsePatchDataJson(newPatchDataJson, 'Quick Erase');
 
         setAdjustments((prev: Partial<Adjustments>) => ({
           ...prev,
@@ -273,9 +303,6 @@ export function useAiMasking() {
                   ...p,
                   patchData: newPatchData,
                   isLoading: false,
-                  subMasks: p.subMasks.map((sm: SubMask) =>
-                    sm.id === subMaskId ? { ...sm, parameters: finalSubMaskParams } : sm,
-                  ),
                 }
               : p,
           ),
@@ -354,9 +381,7 @@ export function useAiMasking() {
 
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
 
-      const subMask = adjustments.aiPatches
-        ?.flatMap((p: AiPatch) => p.subMasks)
-        .find((sm: SubMask) => sm.id === subMaskId);
+      const subMask = findSubMaskInLatestState(subMaskId);
       const mergedParameters = { ...(subMask?.parameters || {}), ...(newParameters as Record<string, unknown>) };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
@@ -392,9 +417,7 @@ export function useAiMasking() {
 
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
 
-      const subMask = adjustments.aiPatches
-        ?.flatMap((p: AiPatch) => p.subMasks)
-        .find((sm: SubMask) => sm.id === subMaskId);
+      const subMask = findSubMaskInLatestState(subMaskId);
       const mergedParameters = { ...(subMask?.parameters || {}), ...(newParameters as Record<string, unknown>) };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
@@ -424,9 +447,7 @@ export function useAiMasking() {
 
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
 
-      const subMask = adjustments.aiPatches
-        ?.flatMap((p: AiPatch) => p.subMasks)
-        .find((sm: SubMask) => sm.id === subMaskId);
+      const subMask = findSubMaskInLatestState(subMaskId);
       const mergedParameters = { ...(subMask?.parameters || {}), ...(newParameters as Record<string, unknown>) };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
@@ -456,9 +477,7 @@ export function useAiMasking() {
 
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
 
-      const subMask = adjustments.aiPatches
-        ?.flatMap((p: AiPatch) => p.subMasks)
-        .find((sm: SubMask) => sm.id === subMaskId);
+      const subMask = findSubMaskInLatestState(subMaskId);
       const mergedParameters = { ...(subMask?.parameters || {}), ...(newParameters as Record<string, unknown>) };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
@@ -470,6 +489,9 @@ export function useAiMasking() {
     }
   };
 
+  // 记录上次 precompute 的签名(path + transform 字段),避免 adjustments 任意字段变化都触发 IPC
+  const lastPrecomputeKey = useRef<string>('');
+
   useEffect(() => {
     if (!adjustments) return;
     const activeSubMask =
@@ -478,6 +500,11 @@ export function useAiMasking() {
 
     if (activeSubMask?.type === 'ai-subject' && selectedImagePath) {
       const transformAdjustments = getTransformAdjustments(adjustments);
+      // 构造签名:path + transform 关键字段,仅在签名变化时发起 precompute
+      const signature = `${selectedImagePath}|${JSON.stringify(transformAdjustments)}`;
+      if (signature === lastPrecomputeKey.current) return;
+      lastPrecomputeKey.current = signature;
+
       invoke('precompute_ai_subject_mask', {
         jsAdjustments: transformAdjustments,
         path: selectedImagePath,
