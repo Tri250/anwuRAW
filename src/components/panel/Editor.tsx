@@ -873,9 +873,10 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
       (activeSubMask?.type === Mask.Brush ||
         activeSubMask?.type === Mask.Flow ||
         activeSubMask?.type === Mask.Clone ||
+        activeSubMask?.type === Mask.Heal ||
+        activeSubMask?.type === Mask.AutoErase ||
         activeSubMask?.type === Mask.Liquify ||
         activeSubMask?.type === Mask.Retouch ||
-        activeSubMask?.type === Mask.Heal ||
         activeSubMask?.type === Mask.AiSubject ||
         activeSubMask?.type === Mask.QuickEraser ||
         activeSubMask?.type === Mask.Color ||

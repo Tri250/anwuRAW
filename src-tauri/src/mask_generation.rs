@@ -1382,13 +1382,9 @@ fn generate_sub_mask_bitmap(
             scale,
             crop_offset,
         )),
-        "brush" | "clone" | "heal" | "liquify" | "retouch" => Some(generate_brush_bitmap(
-            &sub_mask.parameters,
-            width,
-            height,
-            scale,
-            crop_offset,
-        )),
+        "brush" | "clone" | "heal" | "liquify" | "retouch" | "auto-erase" => {
+            Some(generate_brush_bitmap(&sub_mask.parameters, width, height, scale, crop_offset))
+        }
         "flow" => Some(generate_flow_bitmap(
             &sub_mask.parameters,
             width,

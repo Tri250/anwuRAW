@@ -40,10 +40,18 @@ export const createSubMask = (
       return { ...common, parameters: { lines: [] } };
     case Mask.Flow:
       return { ...common, parameters: { lines: [], flow: 10 } };
+    case Mask.Clone:
+    case Mask.Heal:
+    case Mask.AutoErase:
+    case Mask.Liquify:
+    case Mask.Retouch:
+      return { ...common, parameters: { lines: [] } };
     case Mask.AiSubject:
-      return { ...common, parameters: { maskDataBase64: null, grow: 50, feather: 25 } };
+      return { ...common, parameters: { maskDataBase64: null, grow: 50, feather: 25, decontaminate: 20 } };
     case Mask.AiForeground:
-      return { ...common, parameters: { maskDataBase64: null, grow: 50, feather: 25 } };
+      return { ...common, parameters: { maskDataBase64: null, grow: 50, feather: 25, decontaminate: 20 } };
+    case Mask.AiSky:
+      return { ...common, parameters: { maskDataBase64: null, grow: 0, feather: 0, decontaminate: 15 } };
     case Mask.QuickEraser:
       return { ...common, parameters: { maskDataBase64: null, grow: 75, feather: 75 } };
     default:

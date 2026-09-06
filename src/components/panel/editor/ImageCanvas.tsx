@@ -842,6 +842,7 @@ const MaskOverlay = memo(
       subMask.type === Mask.Flow ||
       subMask.type === Mask.Clone ||
       subMask.type === Mask.Heal ||
+      subMask.type === Mask.AutoErase ||
       subMask.type === Mask.Liquify ||
       subMask.type === Mask.Retouch
     ) {
