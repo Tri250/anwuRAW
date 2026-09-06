@@ -35,6 +35,7 @@ dependencies = [
  "libc",
  "little_exif",
  "log",
+ "magetypes",
  "memmap2",
  "mimalloc",
  "mozjpeg-rs",
@@ -3630,9 +3631,9 @@ checksum = "fc04a4c58212d57930a24bf47d3fa87485264a3a054e9c10e042eb373573ad3c"
 
 [[package]]
 name = "magetypes"
-version = "0.9.28"
+version = "0.9.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b3e01b6a29880b694607d95eb01da6bf71a291c545a560c5255c26e02a35413"
+checksum = "c4d045ccf3f9d697e15f0b438f73b812ef93eb5e9d29cf5f5cb48dcf09f12e10"
 dependencies = [
  "archmage",
  "rustversion",

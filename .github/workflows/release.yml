@@ -77,10 +77,23 @@ jobs:
             echo "❌ No tag resolved. Aborting."
             exit 1
           fi
-          # 检查是否已存在
-          if gh release view "$tag" 2>/dev/null; then
-            echo "✅ Release for tag $tag already exists."
-            id="$(gh release view "$tag" --json id -q '.id')"
+
+          # 注意：tauri-action 的 releaseId 输入要求是「数字 database id」
+          # （如 383533270），而不是 GraphQL node_id（如 RE_kwDOUHoYy84W3EDW）。
+          # `gh release view --json id` 在新版 gh CLI 中返回的是 node_id，
+          # 会导致 tauri-action 报 "No releaseId or tagName provided" 并静默跳过
+          # 所有资产上传。这里改用 REST API 列举所有 release（含草稿）按
+          # tag_name 过滤，直接拿数字 id。
+          fetch_release_id() {
+            gh api "repos/${GITHUB_REPOSITORY}/releases" \
+              --paginate \
+              --jq ".[] | select(.tag_name == \"$tag\") | .id" \
+              | head -1
+          }
+
+          id="$(fetch_release_id)"
+          if [[ -n "$id" ]]; then
+            echo "✅ Release for tag $tag already exists (id=$id)."
           else
             echo "📝 Creating draft release for $tag ..."
             # --target 指向当前 HEAD，确保新 tag 落在触发本次构建的提交上
@@ -89,8 +102,14 @@ jobs:
               --notes "Automated release for $tag" \
               --target "$GITHUB_SHA" \
               --draft
-            id="$(gh release view "$tag" --json id -q '.id')"
+            id="$(fetch_release_id)"
           fi
+
+          if [[ -z "$id" ]]; then
+            echo "❌ Failed to resolve numeric release id for tag $tag."
+            exit 1
+          fi
+          echo "Resolved numeric release id: $id"
           echo "release-id=$id" >> $GITHUB_OUTPUT
           echo "tag=$tag" >> $GITHUB_OUTPUT
 

@@ -1,6 +1,6 @@
 [package]
 name = "RapidRAW"
-version = "1.6.13"
+version = "1.6.14"
 description = "A blazingly-fast, non-destructive, and GPU-accelerated RAW image editor built with performance in mind."
 authors = ["Timon Käch"]
 edition = "2024"
@@ -66,6 +66,11 @@ mozjpeg-rs = "0.9.2"
 webp = "0.3"
 jxl-oxide = { version = "0.12.6", features = ["image"] }
 jxl-encoder = "0.3.1"
+# Pin magetypes to 0.9.26: jxl-encoder-simd 0.3.0 调用的 from_float32x4_t
+# 在 0.9.28 中被移除/重命名，导致 ARM（Apple Silicon / Android aarch64）的
+# NEON SIMD 路径编译失败。0.9.26 与 jxl-encoder-simd 0.3.0 兼容，且 v1.6.10
+# 已验证全平台可构建。仅作传递依赖版本约束，本 crate 不直接使用 magetypes API。
+magetypes = "=0.9.26"
 filetime = "0.2"
 libc = "0.2.186"
 rgb = "0.8.53"
