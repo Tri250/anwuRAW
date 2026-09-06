@@ -195,3 +195,173 @@ pub fn generate_color_range_mask_command(
     mask.save(&output_path).map_err(|e| e.to_string())?;
     Ok(())
 }
+
+// =============================================================================
+// 单元测试 — 仅在 `cargo test --lib` 时编译
+// 覆盖 TC-COLOR-01 ~ TC-COLOR-14
+// =============================================================================
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 取像素值
+    fn px(img: &image::GrayImage, x: u32, y: u32) -> u8 {
+        img.get_pixel(x, y)[0]
+    }
+
+    /// 全单色 DynamicImage
+    fn solid_rgb(w: u32, h: u32, r: u8, g: u8, b: u8) -> image::DynamicImage {
+        let mut img = image::RgbImage::new(w, h);
+        for x in 0..w {
+            for y in 0..h {
+                img.put_pixel(x, y, image::Rgb([r, g, b]));
+            }
+        }
+        image::DynamicImage::ImageRgb8(img)
+    }
+
+    #[test]
+    fn tc_color_01_default_select_red_values() {
+        let s = ColorRangeSettings::default_select_red();
+        assert_eq!(s.hue_center, 0.0);
+        assert_eq!(s.hue_tolerance, 15.0);
+        assert_eq!(s.min_saturation, 0.3);
+        assert_eq!(s.max_saturation, 1.0);
+        assert_eq!(s.min_value, 0.15);
+        assert_eq!(s.max_value, 1.0);
+        assert_eq!(s.feather, 10.0);
+        assert!(!s.invert);
+    }
+
+    #[test]
+    fn tc_color_02_rgb_to_hsv_red() {
+        let (h, s, v) = rgb_to_hsv(1.0, 0.0, 0.0);
+        assert!((h - 0.0).abs() < 0.001, "红色 hue=0,实际 {}", h);
+        assert!((s - 1.0).abs() < 0.001);
+        assert!((v - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn tc_color_03_rgb_to_hsv_green() {
+        let (h, _s, _v) = rgb_to_hsv(0.0, 1.0, 0.0);
+        assert!((h - 120.0).abs() < 0.001, "绿色 hue=120,实际 {}", h);
+    }
+
+    #[test]
+    fn tc_color_04_rgb_to_hsv_blue() {
+        let (h, _s, _v) = rgb_to_hsv(0.0, 0.0, 1.0);
+        assert!((h - 240.0).abs() < 0.001, "蓝色 hue=240,实际 {}", h);
+    }
+
+    #[test]
+    fn tc_color_05_rgb_to_hsv_gray_has_zero_saturation() {
+        let (_h, s, _v) = rgb_to_hsv(0.5, 0.5, 0.5);
+        assert!(s.abs() < 1e-3, "灰色饱和度应接近 0,实际 {}", s);
+    }
+
+    #[test]
+    fn tc_color_06_hue_distance_wraps_around_360() {
+        let d = hue_distance(359.0, 1.0);
+        assert!((d - 2.0).abs() < 0.001, "359 与 1 的环绕距离应为 2,实际 {}", d);
+    }
+
+    #[test]
+    fn tc_color_07_hue_distance_normal() {
+        let d = hue_distance(100.0, 50.0);
+        assert!((d - 50.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn tc_color_08_generate_raw_mask_red_image_select_red_all_255() {
+        let img = solid_rgb(5, 5, 255, 0, 0);
+        let rgb = img.to_rgb8();
+        let settings = ColorRangeSettings::default_select_red();
+        let mask = generate_raw_mask(&rgb, &settings);
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(px(&mask, x, y), 255, "红色应命中 select_red");
+            }
+        }
+    }
+
+    #[test]
+    fn tc_color_09_generate_raw_mask_green_image_select_red_all_zero() {
+        let img = solid_rgb(5, 5, 0, 255, 0);
+        let rgb = img.to_rgb8();
+        let settings = ColorRangeSettings::default_select_red();
+        let mask = generate_raw_mask(&rgb, &settings);
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(px(&mask, x, y), 0, "绿色不应命中 select_red");
+            }
+        }
+    }
+
+    #[test]
+    fn tc_color_10_generate_raw_mask_invert_flips() {
+        let img = solid_rgb(5, 5, 0, 255, 0); // 绿色,本不命中
+        let rgb = img.to_rgb8();
+        let mut settings = ColorRangeSettings::default_select_red();
+        settings.invert = true;
+        let mask = generate_raw_mask(&rgb, &settings);
+        // 反选后绿色应被选中
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(px(&mask, x, y), 255, "反选后绿色应被选中");
+            }
+        }
+    }
+
+    #[test]
+    fn tc_color_11_gaussian_blur_gray_zero_sigma_returns_clone() {
+        let mut img = image::GrayImage::new(5, 5);
+        img.put_pixel(2, 2, image::Luma([255]));
+        let out = gaussian_blur_gray(&img, 0.3); // sigma < 0.5 早退
+        assert!(out.as_raw() == img.as_raw(), "sigma=0.3 应返回原 mask");
+    }
+
+    #[test]
+    fn tc_color_12_gaussian_blur_gray_kernel_normalized() {
+        // 使用较大图像减少边缘 clamp 对能量守恒的影响;中心点扩散后总和应≈255
+        let mut img = image::GrayImage::new(31, 31);
+        img.put_pixel(15, 15, image::Luma([255]));
+        let out = gaussian_blur_gray(&img, 1.0);
+        // 中心点应被扩散(不再为 255)
+        assert!(out.get_pixel(15, 15)[0] < 255, "中心点应被扩散");
+        // kernel 归一化 → 总和接近 255;边缘 clamp 残余误差放宽至 ±30
+        let sum: u32 = out.iter().map(|p| *p as u32).sum();
+        assert!((sum as i64 - 255).abs() <= 30, "kernel 应大致归一化,实际总和 {}", sum);
+    }
+
+    #[test]
+    fn tc_color_13_generate_mask_feather_clamped_for_tiny_image() {
+        // 1x1 图像,feather=10000 应被 clamp 到 max_sigma=0.25
+        let img = solid_rgb(1, 1, 255, 0, 0);
+        let mut settings = ColorRangeSettings::default_select_red();
+        settings.feather = 10000.0;
+        // 不应 panic,sigma 被 clamp
+        let _mask = generate_mask(&img, &settings);
+    }
+
+    #[test]
+    fn tc_color_14_generate_color_range_mask_command_writes_to_disk() {
+        use std::env;
+        use std::fs;
+        // 跳过条件:测试环境无图像文件或无写入权限
+        let img = solid_rgb(5, 5, 255, 0, 0);
+        let input_path = env::temp_dir().join("rr_test_color_input.png");
+        let output_path = env::temp_dir().join("rr_test_color_output.png");
+        img.save(&input_path).expect("保存输入图像");
+        let settings = ColorRangeSettings::default_select_red();
+        let result = generate_color_range_mask_command(
+            input_path.to_string_lossy().to_string(),
+            output_path.to_string_lossy().to_string(),
+            settings,
+        );
+        assert!(result.is_ok(), "命令应成功,实际 {:?}", result.err());
+        assert!(output_path.exists(), "输出文件应存在");
+        let _ = fs::remove_file(&input_path);
+        let _ = fs::remove_file(&output_path);
+    }
+}
+

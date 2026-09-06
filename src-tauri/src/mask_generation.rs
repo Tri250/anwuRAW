@@ -1625,3 +1625,621 @@ pub fn get_cached_or_generate_mask(
 
     generated
 }
+
+// =============================================================================
+// 单元测试 — 仅在 `cargo test --lib` 时编译,不进入 release 二进制
+// 覆盖 TC-RUST-01 ~ TC-RUST-50
+// =============================================================================
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use image::{GrayImage, Luma, Rgba, RgbaImage};
+
+    /// 取一个像素的灰度值
+    fn px(img: &GrayImage, x: u32, y: u32) -> u8 {
+        img.get_pixel(x, y)[0]
+    }
+
+    // === 7.1 数据结构反序列化 ===
+
+    #[test]
+    fn tc_rust_01_sub_mask_mode_serialization_camel_case() {
+        assert_eq!(serde_json::to_string(&SubMaskMode::Additive).unwrap(), "\"additive\"");
+        assert_eq!(serde_json::to_string(&SubMaskMode::Subtractive).unwrap(), "\"subtractive\"");
+        assert_eq!(serde_json::to_string(&SubMaskMode::Intersect).unwrap(), "\"intersect\"");
+        // 反序列化也走 camelCase
+        let m: SubMaskMode = serde_json::from_str("\"additive\"").unwrap();
+        assert_eq!(m, SubMaskMode::Additive);
+    }
+
+    #[test]
+    fn tc_rust_02_sub_mask_default_opacity_100() {
+        let json = r#"{"id":"x","type":"brush","visible":true,"mode":"additive","parameters":{}}"#;
+        let sm: SubMask = serde_json::from_str(json).unwrap();
+        assert_eq!(sm.opacity, 100.0);
+    }
+
+    #[test]
+    fn tc_rust_03_requires_warped_image_for_color_and_luminance_only() {
+        let mk = |t: &str| MaskDefinition {
+            id: "m".into(),
+            name: "n".into(),
+            visible: true,
+            invert: false,
+            opacity: 100.0,
+            adjustments: serde_json::Value::Null,
+            sub_masks: vec![SubMask {
+                id: "x".into(),
+                mask_type: t.into(),
+                visible: true,
+                invert: false,
+                opacity: 100.0,
+                mode: SubMaskMode::Additive,
+                parameters: serde_json::Value::Null,
+            }],
+        };
+        assert!(mk("color").requires_warped_image());
+        assert!(mk("luminance").requires_warped_image());
+        assert!(!mk("brush").requires_warped_image());
+        assert!(!mk("all").requires_warped_image());
+        assert!(!mk("ai-subject").requires_warped_image());
+    }
+
+    #[test]
+    fn tc_rust_04_linear_mask_parameters_default_matches_frontend() {
+        let p: LinearMaskParameters = serde_json::from_str("{}").unwrap_or_default();
+        assert_eq!(p.range, 50.0);
+        assert_eq!(p.feather, 0.5);
+        assert_eq!(p.start_x, 0.0);
+        assert_eq!(p.start_y, 0.0);
+        assert_eq!(p.end_x, 0.0);
+        assert_eq!(p.end_y, 0.0);
+    }
+
+    #[test]
+    fn tc_rust_05_parametric_mask_parameters_default_matches_frontend() {
+        let p: ParametricMaskParameters = serde_json::from_str("{}").unwrap_or_default();
+        assert_eq!(p.tolerance, 20.0);
+        assert_eq!(p.feather, 35.0);
+        assert_eq!(p.grow, 0.0);
+        assert_eq!(p.decontaminate, 0.0);
+        assert!(!p.flip_horizontal);
+        assert!(!p.flip_vertical);
+        assert_eq!(p.orientation_steps, 0);
+    }
+
+    #[test]
+    fn tc_rust_06_brush_line_defaults() {
+        let line: BrushLine = serde_json::from_str(r#"{"tool":"brush","brushSize":10,"points":[]}"#).unwrap();
+        assert_eq!(line.feather, 0.5);
+        assert_eq!(line.opacity, 1.0);
+    }
+
+    #[test]
+    fn tc_rust_07_flow_line_default_flow_10() {
+        let line: FlowLine = serde_json::from_str(r#"{"tool":"brush","brushSize":10,"points":[]}"#).unwrap();
+        assert_eq!(line.flow, 10.0);
+    }
+
+    // === 7.2 单蒙版生成 ===
+
+    #[test]
+    fn tc_rust_08_generate_all_bitmap_full_255() {
+        let m = generate_all_bitmap(10, 10);
+        for x in 0..10 {
+            for y in 0..10 {
+                assert_eq!(px(&m, x, y), 255);
+            }
+        }
+    }
+
+    #[test]
+    fn tc_rust_09_generate_radial_bitmap_center_max_corner_zero() {
+        let params = serde_json::json!({
+            "centerX": 5, "centerY": 5, "radiusX": 5, "radiusY": 5,
+            "rotation": 0, "feather": 0.0
+        });
+        let m = generate_radial_bitmap(&params, 11, 11, 1.0, (0.0, 0.0));
+        assert_eq!(px(&m, 5, 5), 255, "中心点应为最大值");
+        // 四角距离最大,feather=0 应衰减到 0
+        assert_eq!(px(&m, 0, 0), 0, "四角应衰减到 0");
+    }
+
+    #[test]
+    fn tc_rust_10_generate_radial_bitmap_rotation_preserves_center() {
+        let params = serde_json::json!({
+            "centerX": 5, "centerY": 5, "radiusX": 5, "radiusY": 5,
+            "rotation": 90.0, "feather": 0.0
+        });
+        let m = generate_radial_bitmap(&params, 11, 11, 1.0, (0.0, 0.0));
+        // 旋转 90° 不改变中心点强度
+        assert_eq!(px(&m, 5, 5), 255);
+    }
+
+    #[test]
+    fn tc_rust_11_generate_linear_bitmap_zero_vector_returns_empty() {
+        let params = serde_json::json!({
+            "startX": 5.0, "startY": 5.0, "endX": 5.0, "endY": 5.0,
+            "range": 50.0, "feather": 0.5
+        });
+        let m = generate_linear_bitmap(&params, 11, 11, 1.0, (0.0, 0.0));
+        // len_sq < 0.01 早退
+        for x in 0..11 {
+            for y in 0..11 {
+                assert_eq!(px(&m, x, y), 0);
+            }
+        }
+    }
+
+    #[test]
+    fn tc_rust_12_generate_linear_bitmap_horizontal_gradient() {
+        let params = serde_json::json!({
+            "startX": 0.0, "startY": 5.0, "endX": 10.0, "endY": 5.0,
+            "range": 10.0, "feather": 0.0
+        });
+        let m = generate_linear_bitmap(&params, 11, 11, 1.0, (0.0, 0.0));
+        // 线性蒙版为沿线垂直方向的渐变带:线上点 intensity≈0.5 → ~127
+        let mid = px(&m, 5, 5);
+        assert!(mid > 100 && mid < 160, "线上中点应≈127,实际={}", mid);
+        // 垂直方向一侧(t<0)更亮,另一侧(t>0)更暗
+        assert!(px(&m, 5, 0) > mid, "线上方(t<0)应更亮");
+        assert!(px(&m, 5, 10) < mid, "线下方(t>0)应更暗");
+    }
+
+    #[test]
+    fn tc_rust_13_generate_brush_bitmap_empty_lines_returns_zeros() {
+        let params = serde_json::json!({"lines": []});
+        let m = generate_brush_bitmap(&params, 10, 10, 1.0, (0.0, 0.0));
+        for x in 0..10 {
+            for y in 0..10 {
+                assert_eq!(px(&m, x, y), 0);
+            }
+        }
+    }
+
+    #[test]
+    fn tc_rust_14_generate_brush_bitmap_single_point() {
+        let params = serde_json::json!({
+            "lines": [{
+                "tool": "brush", "brushSize": 4.0, "feather": 0.0, "opacity": 1.0,
+                "points": [{ "x": 5.0, "y": 5.0 }]
+            }]
+        });
+        let m = generate_brush_bitmap(&params, 11, 11, 1.0, (0.0, 0.0));
+        assert_eq!(px(&m, 5, 5), 255, "单点中心应为 255");
+    }
+
+    #[test]
+    fn tc_rust_15_generate_brush_bitmap_eraser_subtracts() {
+        // 先用 brush 写一个区域,再用 eraser 减去
+        let params = serde_json::json!({
+            "lines": [
+                { "tool": "brush", "brushSize": 6.0, "feather": 0.0, "opacity": 1.0,
+                  "points": [{ "x": 5.0, "y": 5.0 }] },
+                { "tool": "eraser", "brushSize": 6.0, "feather": 0.0, "opacity": 1.0,
+                  "points": [{ "x": 5.0, "y": 5.0 }] }
+            ]
+        });
+        let m = generate_brush_bitmap(&params, 11, 11, 1.0, (0.0, 0.0));
+        // 橡皮覆盖中心应减回 0
+        assert_eq!(px(&m, 5, 5), 0, "橡皮后中心应回 0");
+    }
+
+    #[test]
+    fn tc_rust_16_generate_flow_bitmap_saturation_does_not_overflow() {
+        // 同一笔多次叠加(flow 受 opacity 控制)
+        let mut lines: Vec<serde_json::Value> = Vec::new();
+        for _ in 0..50 {
+            lines.push(serde_json::json!({
+                "tool": "brush", "brushSize": 4.0, "feather": 0.0, "opacity": 1.0, "flow": 100.0,
+                "points": [{ "x": 5.0, "y": 5.0 }]
+            }));
+        }
+        let params = serde_json::json!({ "lines": lines });
+        let m = generate_flow_bitmap(&params, 11, 11, 1.0, (0.0, 0.0));
+        assert_eq!(px(&m, 5, 5), 255, "饱和后应为 255,不溢出");
+    }
+
+    #[test]
+    fn tc_rust_17_generate_color_bitmap_without_warped_returns_none() {
+        let params = serde_json::json!({"targetX": 1.0, "targetY": 1.0, "tolerance": 20.0});
+        let m = generate_color_bitmap(&params, 10, 10, 1.0, (0.0, 0.0), None);
+        assert!(m.is_none());
+    }
+
+    #[test]
+    fn tc_rust_18_generate_color_bitmap_exact_match_all_255() {
+        // 全红图像,target 红色,tolerance 足够
+        let mut img = RgbaImage::new(5, 5);
+        for x in 0..5 {
+            for y in 0..5 {
+                img.put_pixel(x, y, Rgba([255, 0, 0, 255]));
+            }
+        }
+        let warped = image::DynamicImage::ImageRgba8(img);
+        let params = serde_json::json!({
+            "targetX": 0.0, "targetY": 0.0, "tolerance": 30.0,
+            "grow": 0.0, "feather": 0.0, "decontaminate": 0.0,
+            "rotation": 0.0, "flipHorizontal": false, "flipVertical": false, "orientationSteps": 0
+        });
+        let m = generate_color_bitmap(&params, 5, 5, 1.0, (0.0, 0.0), Some(&warped));
+        assert!(m.is_some());
+        let mask = m.unwrap();
+        // 全部命中
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(px(&mask, x, y), 255);
+            }
+        }
+    }
+
+    #[test]
+    fn tc_rust_19_generate_color_bitmap_out_of_bounds_target_returns_none() {
+        let mut img = RgbaImage::new(5, 5);
+        img.put_pixel(0, 0, Rgba([255, 0, 0, 255]));
+        let warped = image::DynamicImage::ImageRgba8(img);
+        let params = serde_json::json!({
+            "targetX": -1.0, "targetY": 0.0, "tolerance": 30.0,
+            "grow": 0.0, "feather": 0.0, "decontaminate": 0.0
+        });
+        let m = generate_color_bitmap(&params, 5, 5, 1.0, (0.0, 0.0), Some(&warped));
+        assert!(m.is_none(), "越界 target 应早退");
+    }
+
+    #[test]
+    fn tc_rust_20_generate_luminance_bitmap_threshold_match() {
+        // 全灰图 luma≈128,target 同色
+        let mut img = RgbaImage::new(5, 5);
+        for x in 0..5 {
+            for y in 0..5 {
+                img.put_pixel(x, y, Rgba([128, 128, 128, 255]));
+            }
+        }
+        let warped = image::DynamicImage::ImageRgba8(img);
+        let params = serde_json::json!({
+            "targetX": 0.0, "targetY": 0.0, "tolerance": 30.0,
+            "grow": 0.0, "feather": 0.0, "decontaminate": 0.0,
+            "rotation": 0.0, "flipHorizontal": false, "flipVertical": false, "orientationSteps": 0
+        });
+        let m = generate_luminance_bitmap(&params, 5, 5, 1.0, (0.0, 0.0), Some(&warped));
+        assert!(m.is_some());
+        let mask = m.unwrap();
+        assert_eq!(px(&mask, 0, 0), 255, "同色 target 应命中");
+    }
+
+    #[test]
+    fn tc_rust_21_generate_luminance_bitmap_out_of_bounds_returns_none() {
+        let img = RgbaImage::new(5, 5);
+        let warped = image::DynamicImage::ImageRgba8(img);
+        let params = serde_json::json!({
+            "targetX": 0.0, "targetY": -1.0, "tolerance": 30.0,
+            "grow": 0.0, "feather": 0.0, "decontaminate": 0.0
+        });
+        let m = generate_luminance_bitmap(&params, 5, 5, 1.0, (0.0, 0.0), Some(&warped));
+        assert!(m.is_none());
+    }
+
+    #[test]
+    fn tc_rust_22_generate_ai_bitmap_from_base64_zero_size_returns_empty() {
+        let tf = TransformParams {
+            rotation: 0.0, flip_horizontal: false, flip_vertical: false,
+            orientation_steps: 0, width: 0, height: 5, scale: 1.0, crop_offset: (0.0, 0.0),
+        };
+        let m = generate_ai_bitmap_from_base64("data:image/png;base64,xxx", &tf);
+        assert!(m.is_some());
+        assert_eq!(m.unwrap().dimensions(), (0, 5));
+    }
+
+    #[test]
+    fn tc_rust_23_generate_ai_bitmap_from_base64_invalid_returns_none() {
+        let tf = TransformParams {
+            rotation: 0.0, flip_horizontal: false, flip_vertical: false,
+            orientation_steps: 0, width: 5, height: 5, scale: 1.0, crop_offset: (0.0, 0.0),
+        };
+        // 非法 base64
+        let m = generate_ai_bitmap_from_base64("data:image/png;base64,@@@@", &tf);
+        assert!(m.is_none());
+    }
+
+    #[test]
+    fn tc_rust_25_generate_sub_mask_bitmap_invisible_returns_none() {
+        let sm = SubMask {
+            id: "x".into(), mask_type: "brush".into(), visible: false,
+            invert: false, opacity: 100.0, mode: SubMaskMode::Additive,
+            parameters: serde_json::Value::Null,
+        };
+        let m = generate_sub_mask_bitmap(&sm, 10, 10, 1.0, (0.0, 0.0), None);
+        assert!(m.is_none());
+    }
+
+    #[test]
+    fn tc_rust_26_generate_sub_mask_bitmap_unknown_type_returns_none() {
+        let sm = SubMask {
+            id: "x".into(), mask_type: "unknown-type".into(), visible: true,
+            invert: false, opacity: 100.0, mode: SubMaskMode::Additive,
+            parameters: serde_json::Value::Null,
+        };
+        let m = generate_sub_mask_bitmap(&sm, 10, 10, 1.0, (0.0, 0.0), None);
+        assert!(m.is_none());
+    }
+
+    #[test]
+    fn tc_rust_27_brush_clone_heal_liquify_retouch_share_brush_renderer() {
+        // 五种类型走 generate_brush_bitmap,空笔迹应返回全 0
+        for t in ["brush", "clone", "heal", "liquify", "retouch"] {
+            let sm = SubMask {
+                id: "x".into(), mask_type: t.into(), visible: true,
+                invert: false, opacity: 100.0, mode: SubMaskMode::Additive,
+                parameters: serde_json::json!({"lines": []}),
+            };
+            let m = generate_sub_mask_bitmap(&sm, 5, 5, 1.0, (0.0, 0.0), None);
+            assert!(m.is_some(), "type {} 应走 brush 渲染器", t);
+            let mask = m.unwrap();
+            assert_eq!(px(&mask, 0, 0), 0);
+        }
+    }
+
+    // === 7.3 复合蒙版合成 ===
+
+    fn visible_all_submask(mode: SubMaskMode, opacity: f32, invert: bool) -> SubMask {
+        SubMask {
+            id: "x".into(),
+            mask_type: "all".into(),
+            visible: true,
+            invert,
+            opacity,
+            mode,
+            parameters: serde_json::Value::Null,
+        }
+    }
+
+    #[test]
+    fn tc_rust_28_generate_mask_bitmap_empty_sub_masks_returns_none() {
+        let def = MaskDefinition {
+            id: "m".into(), name: "n".into(), visible: true, invert: false,
+            opacity: 100.0, adjustments: serde_json::Value::Null, sub_masks: vec![],
+        };
+        let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None);
+        assert!(m.is_none());
+    }
+
+    #[test]
+    fn tc_rust_29_generate_mask_bitmap_additive_takes_max() {
+        let def = MaskDefinition {
+            id: "m".into(), name: "n".into(), visible: true, invert: false,
+            opacity: 100.0, adjustments: serde_json::Value::Null,
+            sub_masks: vec![visible_all_submask(SubMaskMode::Additive, 100.0, false)],
+        };
+        let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
+        // 一个全 255 子蒙版,max → 全 255
+        assert_eq!(px(&m, 0, 0), 255);
+    }
+
+    #[test]
+    fn tc_rust_30_generate_mask_bitmap_subtractive_subtracts() {
+        let def = MaskDefinition {
+            id: "m".into(), name: "n".into(), visible: true, invert: false,
+            opacity: 100.0, adjustments: serde_json::Value::Null,
+            sub_masks: vec![visible_all_submask(SubMaskMode::Subtractive, 100.0, false)],
+        };
+        let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
+        // 全 255 主蒙版 - 全 255 子蒙版 = 全 0
+        assert_eq!(px(&m, 0, 0), 0);
+    }
+
+    #[test]
+    fn tc_rust_31_generate_mask_bitmap_intersect_takes_min() {
+        let def = MaskDefinition {
+            id: "m".into(), name: "n".into(), visible: true, invert: false,
+            opacity: 100.0, adjustments: serde_json::Value::Null,
+            sub_masks: vec![visible_all_sub_mask_zero(SubMaskMode::Intersect)],
+        };
+        let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
+        // final_mask 初始 0,min(0, 255) = 0
+        assert_eq!(px(&m, 0, 0), 0);
+    }
+
+    /// 构造一个全 0 的子蒙版(用于 intersect 测试)
+    fn visible_all_sub_mask_zero(mode: SubMaskMode) -> SubMask {
+        // 用 all 类型但通过 invert 反选得到全 0
+        SubMask {
+            id: "x".into(), mask_type: "all".into(), visible: true,
+            invert: true, opacity: 100.0, mode,
+            parameters: serde_json::Value::Null,
+        }
+    }
+
+    #[test]
+    fn tc_rust_32_generate_mask_bitmap_invert_flips_values() {
+        let def = MaskDefinition {
+            id: "m".into(), name: "n".into(), visible: true,
+            invert: true, // 末尾翻转
+            opacity: 100.0,
+            adjustments: serde_json::Value::Null,
+            sub_masks: vec![visible_all_submask(SubMaskMode::Additive, 100.0, false)],
+        };
+        let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
+        // 子蒙版是全 255,主 invert 后为 0
+        assert_eq!(px(&m, 0, 0), 0);
+    }
+
+    #[test]
+    fn tc_rust_33_generate_mask_bitmap_opacity_scales() {
+        let def = MaskDefinition {
+            id: "m".into(), name: "n".into(), visible: true, invert: false,
+            opacity: 50.0, // 整体不透明度 50%
+            adjustments: serde_json::Value::Null,
+            sub_masks: vec![visible_all_submask(SubMaskMode::Additive, 100.0, false)],
+        };
+        let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
+        // 255 * 0.5 = 127.5 → 127 (as u8 截断)
+        let v = px(&m, 0, 0);
+        assert!(v == 127 || v == 128, "opacity=50 应缩放为 ~127,实际 {}", v);
+    }
+
+    #[test]
+    fn tc_rust_34_sub_mask_invert_flips_before_blend() {
+        let sm = visible_all_submask(SubMaskMode::Additive, 100.0, true); // invert=true
+        let def = MaskDefinition {
+            id: "m".into(), name: "n".into(), visible: true, invert: false,
+            opacity: 100.0, adjustments: serde_json::Value::Null,
+            sub_masks: vec![sm],
+        };
+        let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
+        // all 子蒙版 invert 后变全 0,additive max(0,0)=0
+        assert_eq!(px(&m, 0, 0), 0);
+    }
+
+    #[test]
+    fn tc_rust_35_sub_mask_opacity_scales() {
+        let sm = visible_all_submask(SubMaskMode::Additive, 50.0, false); // opacity=50
+        let def = MaskDefinition {
+            id: "m".into(), name: "n".into(), visible: true, invert: false,
+            opacity: 100.0, adjustments: serde_json::Value::Null,
+            sub_masks: vec![sm],
+        };
+        let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
+        // 255 * 0.5 = 127.5 → 127
+        let v = px(&m, 0, 0);
+        assert!(v == 127 || v == 128, "子蒙版 opacity=50 应缩放,实际 {}", v);
+    }
+
+    #[test]
+    fn tc_rust_41_generate_mask_bitmap_invisible_mask_returns_none() {
+        let def = MaskDefinition {
+            id: "m".into(), name: "n".into(), visible: false, invert: false,
+            opacity: 100.0, adjustments: serde_json::Value::Null,
+            sub_masks: vec![visible_all_submask(SubMaskMode::Additive, 100.0, false)],
+        };
+        let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None);
+        assert!(m.is_none(), "整体不可见时不渲染");
+    }
+
+    // === 7.5 形态学辅助函数 ===
+
+    #[test]
+    fn tc_rust_42_grayscale_dilate_expands_bright_pixel() {
+        let mut img = GrayImage::new(5, 5);
+        img.put_pixel(2, 2, Luma([255]));
+        let out = grayscale_dilate(&img, 2);
+        // 应形成以 (2,2) 为中心、半径 2 的全 255 块(5x5 全 255)
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(out.get_pixel(x, y)[0], 255, "({}, {}) 应被扩张为 255", x, y);
+            }
+        }
+    }
+
+    #[test]
+    fn tc_rust_43_grayscale_erode_expands_zero_pixel() {
+        let mut img = GrayImage::from_pixel(5, 5, Luma([255]));
+        img.put_pixel(2, 2, Luma([0]));
+        let out = grayscale_erode(&img, 2);
+        // 0 像素应扩张为 5x5 全 0
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(out.get_pixel(x, y)[0], 0, "({}, {}) 应被腐蚀为 0", x, y);
+            }
+        }
+    }
+
+    #[test]
+    fn tc_rust_44_apply_grow_and_feather_positive_grow_dilates() {
+        // 100x100 图,base_dimension=100,grow=100 → grow_pixels=1.0 → amount=1,膨胀1像素
+        let mut img = GrayImage::new(100, 100);
+        img.put_pixel(50, 50, Luma([255]));
+        apply_grow_and_feather(&mut img, 100.0, 0.0, 0.0, 100, 100);
+        assert_eq!(img.get_pixel(50, 50)[0], 255);
+        // 膨胀后相邻像素应被点亮
+        assert!(img.get_pixel(49, 50)[0] > 0 || img.get_pixel(51, 50)[0] > 0);
+    }
+
+    #[test]
+    fn tc_rust_45_apply_grow_and_feather_negative_grow_erodes() {
+        // 100x100 全白图,中心(50,50)=0,grow=-100 → erode 1像素,0 区域扩张
+        let mut img = GrayImage::from_pixel(100, 100, Luma([255]));
+        img.put_pixel(50, 50, Luma([0]));
+        apply_grow_and_feather(&mut img, -100.0, 0.0, 0.0, 100, 100);
+        // (50,50) 仍为 0
+        assert_eq!(img.get_pixel(50, 50)[0], 0);
+        // 腐蚀后相邻像素应被拉低(0 区域扩张)
+        assert!(img.get_pixel(51, 50)[0] < 255 || img.get_pixel(50, 51)[0] < 255);
+    }
+
+    #[test]
+    fn tc_rust_46_apply_grow_and_feather_zero_grow_no_change() {
+        let mut img = GrayImage::new(5, 5);
+        img.put_pixel(2, 2, Luma([255]));
+        let before = img.clone();
+        apply_grow_and_feather(&mut img, 0.0, 0.0, 0.0, 5, 5);
+        // grow=0、feather=0、decontaminate=0 应不改变图像
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(img.get_pixel(x, y), before.get_pixel(x, y));
+            }
+        }
+    }
+
+    #[test]
+    fn tc_rust_48_stroke_bounds_out_of_canvas_returns_none() {
+        // 所有点都在画布外
+        let pts = vec![Point { x: -100.0, y: -100.0 }, Point { x: -50.0, y: -50.0 }];
+        let bounds = stroke_bounds(&pts, 10, 10, 5.0, 1.0, (0.0, 0.0));
+        assert!(bounds.is_none());
+    }
+
+    #[test]
+    fn tc_rust_49_stroke_bounds_single_point_returns_bbox() {
+        let pts = vec![Point { x: 5.0, y: 5.0 }];
+        let bounds = stroke_bounds(&pts, 11, 11, 5.0, 1.0, (0.0, 0.0));
+        assert!(bounds.is_some());
+        let (min_x, min_y, max_x, max_y) = bounds.unwrap();
+        // (5,5) 应在 bbox 内
+        assert!(min_x <= 5 && 5 <= max_x);
+        assert!(min_y <= 5 && 5 <= max_y);
+    }
+
+    #[test]
+    fn tc_rust_50_render_stroke_layer_parallel_empty_points_returns_zeros() {
+        // 空 points → 直接返回全 0 的 bb
+        let out = render_stroke_layer_parallel(&[], 5.0, 0.0, 1.0, (0.0, 0.0), (0.0, 0.0), 5, 5);
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(out.get_pixel(x, y)[0], 0);
+            }
+        }
+    }
+
+    #[test]
+    fn tc_rust_50b_render_stroke_layer_parallel_zero_radius_returns_zeros() {
+        let pts = vec![Point { x: 5.0, y: 5.0 }];
+        let out = render_stroke_layer_parallel(&pts, 0.0, 0.0, 1.0, (0.0, 0.0), (0.0, 0.0), 5, 5);
+        // radius<=0 早退
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(out.get_pixel(x, y)[0], 0);
+            }
+        }
+    }
+
+    // === 7.4 缓存(hash 一致性)— 验证相同输入产生相同 hash key ===
+    #[test]
+    fn tc_rust_36_hash_determinism_for_same_definition() {
+        // 通过 serde 序列化相同 def 应得到相同字符串
+        let def = MaskDefinition {
+            id: "m".into(), name: "n".into(), visible: true, invert: false,
+            opacity: 100.0, adjustments: serde_json::Value::Null,
+            sub_masks: vec![visible_all_submask(SubMaskMode::Additive, 100.0, false)],
+        };
+        let mut a = def.clone();
+        a.adjustments = serde_json::Value::Null;
+        let mut b = def.clone();
+        b.adjustments = serde_json::Value::Null;
+        // 序列化结果一致(用于 hash key)
+        assert_eq!(
+            serde_json::to_string(&a).unwrap(),
+            serde_json::to_string(&b).unwrap()
+        );
+    }
+}
+

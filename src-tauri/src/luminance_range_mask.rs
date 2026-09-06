@@ -153,3 +153,170 @@ pub fn generate_luminance_range_mask_command(
     mask.save(&output_path).map_err(|e| e.to_string())?;
     Ok(())
 }
+
+// =============================================================================
+// 单元测试 — 仅在 `cargo test --lib` 时编译
+// 覆盖 TC-LUM-01 ~ TC-LUM-14
+// =============================================================================
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 取像素值
+    fn px(img: &image::GrayImage, x: u32, y: u32) -> u8 {
+        img.get_pixel(x, y)[0]
+    }
+
+    /// 全单色 DynamicImage
+    fn solid_rgb(w: u32, h: u32, r: u8, g: u8, b: u8) -> image::DynamicImage {
+        let mut img = image::RgbImage::new(w, h);
+        for x in 0..w {
+            for y in 0..h {
+                img.put_pixel(x, y, image::Rgb([r, g, b]));
+            }
+        }
+        image::DynamicImage::ImageRgb8(img)
+    }
+
+    #[test]
+    fn tc_lum_01_select_shadows_values() {
+        let s = LuminanceRangeSettings::select_shadows();
+        assert_eq!(s.min_luminance, 0.0);
+        assert_eq!(s.max_luminance, 0.35);
+        assert_eq!(s.bandwidth, 0.05);
+        assert_eq!(s.feather, 12.0);
+        assert!(!s.invert);
+    }
+
+    #[test]
+    fn tc_lum_02_select_highlights_values() {
+        let s = LuminanceRangeSettings::select_highlights();
+        assert_eq!(s.min_luminance, 0.65);
+        assert_eq!(s.max_luminance, 1.0);
+    }
+
+    #[test]
+    fn tc_lum_03_select_midtones_values() {
+        let s = LuminanceRangeSettings::select_midtones();
+        assert_eq!(s.min_luminance, 0.3);
+        assert_eq!(s.max_luminance, 0.7);
+    }
+
+    #[test]
+    fn tc_lum_04_compute_luminance_white() {
+        let l = compute_luminance(1.0, 1.0, 1.0);
+        assert!(l > 0.95 && l <= 1.0, "白色亮度应≈1.0,实际 {}", l);
+    }
+
+    #[test]
+    fn tc_lum_05_compute_luminance_black() {
+        let l = compute_luminance(0.0, 0.0, 0.0);
+        assert!(l.abs() < 0.05, "黑色亮度应≈0,实际 {}", l);
+    }
+
+    #[test]
+    fn tc_lum_06_compute_luminance_midgray_monotonic() {
+        let l_black = compute_luminance(0.0, 0.0, 0.0);
+        let l_gray = compute_luminance(0.5, 0.5, 0.5);
+        let l_white = compute_luminance(1.0, 1.0, 1.0);
+        assert!(l_black < l_gray, "黑 < 灰,实际 {} vs {}", l_black, l_gray);
+        assert!(l_gray < l_white, "灰 < 白,实际 {} vs {}", l_gray, l_white);
+    }
+
+    #[test]
+    fn tc_lum_07_smoothstep_midpoint() {
+        let v = smoothstep(0.0, 1.0, 0.5);
+        // smoothstep(0,1,0.5) = 0.5
+        assert!((v - 0.5).abs() < 0.01, "smoothstep 中点应为 0.5,实际 {}", v);
+    }
+
+    #[test]
+    fn tc_lum_08_smoothstep_below_edge_zero() {
+        let v = smoothstep(0.0, 1.0, -1.0);
+        assert!(v.abs() < 0.01, "越界下沿应为 0,实际 {}", v);
+    }
+
+    #[test]
+    fn tc_lum_09_generate_raw_mask_black_image_select_shadows_all_255() {
+        let img = solid_rgb(5, 5, 0, 0, 0);
+        let rgb = img.to_rgb8();
+        let s = LuminanceRangeSettings::select_shadows();
+        let mask = generate_raw_mask(&rgb, &s);
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(px(&mask, x, y), 255, "黑色应命中阴影");
+            }
+        }
+    }
+
+    #[test]
+    fn tc_lum_10_generate_raw_mask_black_image_select_highlights_all_zero() {
+        let img = solid_rgb(5, 5, 0, 0, 0);
+        let rgb = img.to_rgb8();
+        let s = LuminanceRangeSettings::select_highlights();
+        let mask = generate_raw_mask(&rgb, &s);
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(px(&mask, x, y), 0, "黑色不在高光范围");
+            }
+        }
+    }
+
+    #[test]
+    fn tc_lum_11_generate_raw_mask_bandwidth_produces_smooth_transition() {
+        // 构造落入 select_shadows 上过渡区 [lo_hi, hi]=[0.35, 0.40] 的灰像素,
+        // OKLab L ≈ (k/255).cbrt();k=13 → v=0.051 → L≈0.37 落入过渡区,
+        // smoothstep 应产出 0<v<1 的中间值,证明带宽软过渡生效。
+        let mut img = image::RgbImage::new(2, 1);
+        img.put_pixel(0, 0, image::Rgb([0, 0, 0]));     // 黑:lum≈0 ≥ hi_lo → 全选 255
+        img.put_pixel(1, 0, image::Rgb([13, 13, 13]));  // 灰:lum≈0.37 ∈ [0.35, 0.40] → 中间值
+        let s = LuminanceRangeSettings::select_shadows();
+        let mask = generate_raw_mask(&img, &s);
+        // 至少存在一个中间值(0<v<255),证明带宽软过渡生效
+        let has_intermediate = mask.iter().any(|&v| v > 0 && v < 255);
+        assert!(has_intermediate, "带宽过渡应产生中间值");
+    }
+
+    #[test]
+    fn tc_lum_12_generate_raw_mask_invert_flips() {
+        let img = solid_rgb(5, 5, 0, 0, 0); // 黑色,本命中阴影
+        let rgb = img.to_rgb8();
+        let mut s = LuminanceRangeSettings::select_shadows();
+        s.invert = true;
+        let mask = generate_raw_mask(&rgb, &s);
+        for x in 0..5 {
+            for y in 0..5 {
+                assert_eq!(px(&mask, x, y), 0, "反选后黑色应不命中");
+            }
+        }
+    }
+
+    #[test]
+    fn tc_lum_13_generate_mask_with_feather_does_not_panic() {
+        let img = solid_rgb(5, 5, 128, 128, 128);
+        let mut s = LuminanceRangeSettings::select_midtones();
+        s.feather = 5.0;
+        let _mask = generate_mask(&img, &s);
+    }
+
+    #[test]
+    fn tc_lum_14_generate_luminance_range_mask_command_writes_to_disk() {
+        use std::env;
+        use std::fs;
+        let img = solid_rgb(5, 5, 0, 0, 0);
+        let input_path = env::temp_dir().join("rr_test_lum_input.png");
+        let output_path = env::temp_dir().join("rr_test_lum_output.png");
+        img.save(&input_path).expect("保存输入图像");
+        let settings = LuminanceRangeSettings::select_shadows();
+        let result = generate_luminance_range_mask_command(
+            input_path.to_string_lossy().to_string(),
+            output_path.to_string_lossy().to_string(),
+            settings,
+        );
+        assert!(result.is_ok(), "命令应成功,实际 {:?}", result.err());
+        assert!(output_path.exists(), "输出文件应存在");
+        let _ = fs::remove_file(&input_path);
+        let _ = fs::remove_file(&output_path);
+    }
+}
+
