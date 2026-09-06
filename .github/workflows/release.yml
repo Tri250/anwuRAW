@@ -82,13 +82,32 @@ jobs:
           # （如 383533270），而不是 GraphQL node_id（如 RE_kwDOUHoYy84W3EDW）。
           # `gh release view --json id` 在新版 gh CLI 中返回的是 node_id，
           # 会导致 tauri-action 报 "No releaseId or tagName provided" 并静默跳过
-          # 所有资产上传。这里改用 REST API 列举所有 release（含草稿）按
-          # tag_name 过滤，直接拿数字 id。
+          # 所有资产上传。
+          #
+          # 解决方案：用 `gh release view --json apiUrl` 拿到 REST API URL
+          # （形如 https://api.github.com/repos/.../releases/383547493），再从
+          # URL 末段提取数字 id。apiUrl 字段对 draft release 也有效（已验证）。
+          # 加 retry 是为了应对 `gh release create` 后的传播延迟（list 端点
+          # 可能暂时看不到新 release，但 view 端点走 GraphQL 通常立即可见）。
           fetch_release_id() {
-            gh api "repos/${GITHUB_REPOSITORY}/releases" \
-              --paginate \
-              --jq ".[] | select(.tag_name == \"$tag\") | .id" \
-              | head -1
+            for _ in 1 2 3 4 5 6 7 8 9 10; do
+              api_url="$(gh release view "$tag" --json apiUrl -q '.apiUrl' 2>/dev/null || true)"
+              if [[ -n "$api_url" ]]; then
+                echo "${api_url##*/}"
+                return 0
+              fi
+              # 兜底：走 REST list 端点按 tag_name 过滤
+              id="$(gh api "repos/${GITHUB_REPOSITORY}/releases" \
+                --paginate \
+                --jq ".[] | select(.tag_name == \"$tag\") | .id" 2>/dev/null \
+                | head -1 || true)"
+              if [[ -n "$id" ]]; then
+                echo "$id"
+                return 0
+              fi
+              sleep 3
+            done
+            return 1
           }
 
           id="$(fetch_release_id)"
