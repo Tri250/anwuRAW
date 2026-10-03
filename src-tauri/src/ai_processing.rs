@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use anyhow::{Result, anyhow};
+use futures_util::StreamExt;
 use image::imageops::{self, FilterType};
 use image::{
     DynamicImage, GenericImageView, GrayImage, ImageBuffer, Luma, Rgb, Rgb32FImage, Rgba, RgbaImage,
@@ -205,46 +206,6 @@ fn get_models_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
     Ok(models_dir)
 }
 
-fn persist_downloaded_asset(dest: &Path, bytes: &[u8]) -> Result<()> {
-    if bytes.is_empty() {
-        return Err(anyhow::anyhow!(
-            "Downloaded asset for {} was empty",
-            dest.display()
-        ));
-    }
-
-    let parent = dest.parent().ok_or_else(|| {
-        anyhow::anyhow!(
-            "Cannot determine parent directory for downloaded asset {}",
-            dest.display()
-        )
-    })?;
-    fs::create_dir_all(parent)?;
-
-    let file_name = dest
-        .file_name()
-        .and_then(|name| name.to_str())
-        .ok_or_else(|| anyhow::anyhow!("Invalid downloaded asset path {}", dest.display()))?;
-    let tmp_path = dest.with_file_name(format!(".{}.download", file_name));
-
-    {
-        let mut file = fs::File::create(&tmp_path)?;
-        file.write_all(bytes)?;
-        file.sync_all()?;
-    }
-
-    fs::rename(&tmp_path, dest).or_else(|rename_error| -> std::io::Result<()> {
-        if dest.exists() {
-            fs::remove_file(dest)?;
-            fs::rename(&tmp_path, dest)?;
-            Ok(())
-        } else {
-            Err(rename_error)
-        }
-    })?;
-    Ok(())
-}
-
 async fn download_model_with_endpoints(
     endpoints: &[String],
     filename: &str,
@@ -289,15 +250,51 @@ async fn download_model_with_endpoints(
     Err(last_error.unwrap_or_else(|| anyhow!("All model download endpoints failed")))
 }
 
-async fn download_single(url: &str, dest: &Path) -> Result<()> {
-    let client = reqwest::Client::builder()
-        .timeout(tokio::time::Duration::from_secs(120))
-        .connect_timeout(tokio::time::Duration::from_secs(20))
-        .build()?;
+fn part_path_for(dest: &Path) -> PathBuf {
+    let file_name = dest
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("model");
+    dest.with_file_name(format!(".{}.part", file_name))
+}
 
-    // 支持断点续传：检查已下载的部分
-    let existing_size = if dest.exists() {
-        fs::metadata(dest)?.len()
+// 读取系统代理（HTTP_PROXY / HTTPS_PROXY / ALL_PROXY 等环境变量），
+// 供下载模型时使用。这样在内网/带代理的环境中模型下载不会"卡死"。
+fn system_proxy() -> Option<reqwest::Proxy> {
+    for key in [
+        "HTTPS_PROXY",
+        "https_proxy",
+        "HTTP_PROXY",
+        "http_proxy",
+        "ALL_PROXY",
+        "all_proxy",
+    ] {
+        if let Ok(val) = std::env::var(key) {
+            let val = val.trim().to_string();
+            if !val.is_empty() {
+                if let Ok(proxy) = reqwest::Proxy::all(&val) {
+                    return Some(proxy);
+                }
+            }
+        }
+    }
+    None
+}
+
+async fn download_single(url: &str, dest: &Path) -> Result<()> {
+    let mut builder = reqwest::Client::builder()
+        .connect_timeout(tokio::time::Duration::from_secs(20));
+    if let Some(proxy) = system_proxy() {
+        builder = builder.proxy(proxy);
+    }
+    let client = builder.build()?;
+
+    // 真正的断点续传 + 流式落盘：
+    // - 下载写入 `.part` 临时文件，完整成功后原子重命名到最终路径；
+    // - 中断后重试时依据 `.part` 已有字节发起 Range 请求继续，而不是从头再下。
+    let part_path = part_path_for(dest);
+    let existing_size = if part_path.exists() {
+        fs::metadata(&part_path)?.len()
     } else {
         0
     };
@@ -307,34 +304,66 @@ async fn download_single(url: &str, dest: &Path) -> Result<()> {
         request = request.header(reqwest::header::RANGE, format!("bytes={}-", existing_size));
     }
 
+    // 注意：不设置 client 级 `.timeout()`。它作用于整个请求（含读取整个响应体），
+    // 对动辄数百 MB 的模型文件，慢速网络下会因固定 120s 总超时而永远下载不完，
+    // 反复重试导致 UI 看似"卡死/阻塞"。改为下方逐 chunk 的空闲超时兜底。
     let response = request.send().await?;
     let status = response.status();
 
-    let bytes = if status == reqwest::StatusCode::PARTIAL_CONTENT {
-        // 断点续传：读取新的 bytes 追加到已有文件
-        let new_bytes = response.bytes().await?;
-        let mut file = fs::OpenOptions::new().append(true).open(dest)?;
-        file.write_all(&new_bytes)?;
-        // 返回整个文件用于后续 persist
-        fs::read(dest)?.into()
+    let mut file = if status == reqwest::StatusCode::PARTIAL_CONTENT {
+        fs::OpenOptions::new().append(true).open(&part_path)?
+    } else if status.is_success() {
+        fs::File::create(&part_path)?
     } else {
-        // 全新下载（或服务器不支持 Range）
-        if dest.exists() {
-            let _ = fs::remove_file(dest);
-        }
-        if !status.is_success() {
-            let body = response.text().await.unwrap_or_default();
-            return Err(anyhow::anyhow!(
-                "HTTP {} for {}: {}",
-                status,
-                url,
-                &body[..body.len().min(200)]
-            ));
-        }
-        response.bytes().await?
+        let body = response.text().await.unwrap_or_default();
+        return Err(anyhow::anyhow!(
+            "HTTP {} for {}: {}",
+            status,
+            url,
+            &body[..body.len().min(200)]
+        ));
     };
 
-    persist_downloaded_asset(dest, &bytes)
+    // 逐步写入磁盘：避免将整个模型读入内存，降低内存峰值与卡顿。
+    // 空闲超时 60s：只要网络仍在持续产出数据就不会误判；真正停滞才中断。
+    const CHUNK_IDLE_TIMEOUT_SECS: u64 = 60;
+    let mut stream = Box::pin(response.bytes_stream());
+    loop {
+        let next = tokio::time::timeout(
+            tokio::time::Duration::from_secs(CHUNK_IDLE_TIMEOUT_SECS),
+            stream.next(),
+        )
+        .await
+        .map_err(|_| {
+            anyhow::anyhow!(
+                "Download from {} stalled for {}s with no data received",
+                url,
+                CHUNK_IDLE_TIMEOUT_SECS
+            )
+        })?;
+
+        match next {
+            Some(Ok(chunk)) => {
+                file.write_all(&chunk)?;
+            }
+            Some(Err(e)) => return Err(e.into()),
+            None => break,
+        }
+    }
+    file.sync_all()?;
+
+    // 原子重命名；处理 Windows 上目标已存在时 rename 失败的情况
+    fs::rename(&part_path, dest).or_else(|rename_error| -> std::io::Result<()> {
+        if dest.exists() {
+            fs::remove_file(dest)?;
+            fs::rename(&part_path, dest)?;
+            Ok(())
+        } else {
+            Err(rename_error)
+        }
+    })?;
+
+    Ok(())
 }
 
 fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool> {
@@ -412,6 +441,11 @@ async fn download_and_verify_model(
         download_result?;
 
         if !verify_sha256(&dest_path, expected_hash)? {
+            // 下载"成功"但内容校验仍失败：清掉目标与残留 .part，
+            // 避免下次重试从这段坏数据续传而永远失败。
+            let _ = fs::remove_file(&dest_path);
+            let part_path = part_path_for(&dest_path);
+            let _ = fs::remove_file(&part_path);
             return Err(anyhow::anyhow!(
                 "Failed to verify model {} after download. Hash mismatch.",
                 model_name

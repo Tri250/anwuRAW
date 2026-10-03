@@ -20,6 +20,29 @@ fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool, io::Error> {
     Ok(calculated_hash == expected_hash)
 }
 
+/// 读取系统代理（HTTP_PROXY / HTTPS_PROXY / ALL_PROXY 等环境变量）。
+/// 在带代理的构建/内网环境中，缺少代理会导致 ONNX Runtime 下载一直失败而阻塞构建。
+fn system_proxy() -> Option<reqwest::Proxy> {
+    for key in [
+        "HTTPS_PROXY",
+        "https_proxy",
+        "HTTP_PROXY",
+        "http_proxy",
+        "ALL_PROXY",
+        "all_proxy",
+    ] {
+        if let Ok(val) = std::env::var(key) {
+            let val = val.trim().to_string();
+            if !val.is_empty() {
+                if let Ok(proxy) = reqwest::Proxy::all(&val) {
+                    return Some(proxy);
+                }
+            }
+        }
+    }
+    None
+}
+
 fn download_and_verify(
     endpoints: &[&str],
     repo_path: &str,
@@ -34,7 +57,20 @@ fn download_and_verify(
         fs::create_dir_all(parent)?;
     }
 
+    // 用 .part 作为断点续传的中间文件：下载中断后重试/换端点都从已保存字节继续，
+    // 不必每次从头再下（ONNX Runtime 库体积较大，反复重下会明显阻塞构建）。
+    let part_path = {
+        let file_name = temp_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("download");
+        temp_path.with_file_name(format!(".{}.part", file_name))
+    };
+
     let mut last_err: Option<Box<dyn std::error::Error>> = None;
+    let backoff = |attempt: u32| {
+        std::thread::sleep(std::time::Duration::from_millis(1500 * u64::from(attempt)));
+    };
 
     for endpoint in endpoints {
         let url = format!(
@@ -44,51 +80,104 @@ fn download_and_verify(
             filename
         );
 
-        println!("cargo:warning=Trying {} ...", url);
+        for attempt in 1..=3u32 {
+            println!("cargo:warning=Trying {} (attempt {}/3) ...", url, attempt);
 
-        let client = reqwest::blocking::Client::builder()
-            .timeout(std::time::Duration::from_secs(120))
-            .connect_timeout(std::time::Duration::from_secs(20))
-            .build()?;
-
-        let mut response = match client.get(&url).send() {
-            Ok(r) => r,
-            Err(e) => {
-                last_err = Some(e.into());
-                continue;
+            let mut builder = reqwest::blocking::Client::builder()
+                .connect_timeout(std::time::Duration::from_secs(20))
+                .timeout(std::time::Duration::from_secs(120));
+            if let Some(proxy) = system_proxy() {
+                builder = builder.proxy(proxy);
             }
-        };
+            let client = builder.build()?;
 
-        if !response.status().is_success() {
-            last_err = Some(format!("{} returned status {}", url, response.status()).into());
-            continue;
-        }
+            // 断点续传：已有 .part 文件时从已保存字节继续
+            let existing_size = if part_path.exists() {
+                fs::metadata(&part_path)?.len()
+            } else {
+                0
+            };
 
-        {
-            let mut file = fs::File::create(&temp_path)?;
-            response.copy_to(&mut file)?;
-        }
-        println!("cargo:warning=Download complete. Verifying file integrity...");
-
-        match verify_sha256(&temp_path, expected_hash) {
-            Ok(true) => {
-                fs::copy(&temp_path, dest_path)?;
-                fs::remove_file(&temp_path)?;
-                println!(
-                    "cargo:warning=Successfully downloaded and verified {:?}.",
-                    dest_path
+            let mut request = client.get(&url);
+            if existing_size > 0 {
+                request = request.header(
+                    reqwest::header::RANGE,
+                    format!("bytes={}-", existing_size),
                 );
-                return Ok(());
             }
-            Ok(false) => {
-                fs::remove_file(&temp_path).ok();
-                last_err = Some("Verification failed! The downloaded file is corrupt.".into());
+
+            let mut response = match request.send() {
+                Ok(r) => r,
+                Err(e) => {
+                    last_err = Some(e.into());
+                    if attempt < 3 {
+                        backoff(attempt);
+                    }
+                    continue;
+                }
+            };
+
+            let status = response.status().as_u16();
+            let resumed = status == 206;
+            if !resumed && !(200..300).contains(&status) {
+                last_err = Some(format!("{} returned status {}", url, status).into());
+                if attempt < 3 {
+                    backoff(attempt);
+                }
                 continue;
             }
-            Err(e) => {
-                fs::remove_file(&temp_path).ok();
-                last_err = Some(format!("Could not verify file after download: {}", e).into());
+
+            let mut file = if resumed {
+                fs::OpenOptions::new().append(true).open(&part_path)?
+            } else {
+                fs::File::create(&part_path)?
+            };
+
+            // 流式落盘（io::copy 边读边写），不会把整个库读入内存
+            if let Err(e) = io::copy(&mut response, &mut file) {
+                // 保留 .part，便于下次续传
+                last_err = Some(
+                    format!(
+                        "Failed downloading {} ({} bytes already saved): {}",
+                        url, existing_size, e
+                    )
+                    .into(),
+                );
+                if attempt < 3 {
+                    backoff(attempt);
+                }
                 continue;
+            }
+
+            println!("cargo:warning=Download complete. Verifying file integrity...");
+
+            match verify_sha256(&part_path, expected_hash) {
+                Ok(true) => {
+                    fs::copy(&part_path, dest_path)?;
+                    fs::remove_file(&part_path)?;
+                    println!(
+                        "cargo:warning=Successfully downloaded and verified {:?}.",
+                        dest_path
+                    );
+                    return Ok(());
+                }
+                Ok(false) => {
+                    fs::remove_file(&part_path).ok();
+                    last_err =
+                        Some("Verification failed! The downloaded file is corrupt.".into());
+                    if attempt < 3 {
+                        backoff(attempt);
+                    }
+                    continue;
+                }
+                Err(e) => {
+                    fs::remove_file(&part_path).ok();
+                    last_err = Some(format!("Could not verify file after download: {}", e).into());
+                    if attempt < 3 {
+                        backoff(attempt);
+                    }
+                    continue;
+                }
             }
         }
     }

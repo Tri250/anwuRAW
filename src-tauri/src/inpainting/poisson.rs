@@ -15,14 +15,17 @@ fn sor_solve(
     eps: f32,
     max_iterations: usize,
 ) {
-    let mut active = coords.to_vec();
-    let mut stable = vec![0u8; active.len()];
+    // 活动集：携带每个未知像素的"连续小增量"稳定计数。
+    // 某像素连续 2 轮增量都小于 eps 即视为收敛，从活动集剔除，
+    // 避免每轮无谓地重算已收敛像素（否则活动集永不收缩、迭代退化为全量空转）。
+    let mut active: Vec<((usize, usize), u8)> = coords.iter().map(|&c| (c, 0u8)).collect();
 
     for _ in 0..max_iterations {
         let mut next = Vec::with_capacity(active.len());
         let mut max_delta = 0.0f32;
 
-        for (i, &(x, y)) in active.iter().enumerate() {
+        for entry in active.iter_mut() {
+            let (x, y) = entry.0;
             let idx = y * bw + x;
             let mut nb = [0.0f32; 3];
             for c in 0..3 {
@@ -41,12 +44,14 @@ fn sor_solve(
 
             field[idx] = nb;
 
-            if d <= eps && stable[i] < 2 {
-                stable[i] += 1;
-                next.push((x, y));
-            } else if d > eps {
-                stable[i] = 0;
-                next.push((x, y));
+            if d <= eps {
+                entry.1 += 1;
+                if entry.1 < 2 {
+                    next.push(((x, y), entry.1));
+                }
+            } else {
+                entry.1 = 0;
+                next.push(((x, y), 0));
             }
         }
 
