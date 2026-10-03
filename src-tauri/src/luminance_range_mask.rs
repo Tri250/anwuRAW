@@ -73,7 +73,7 @@ fn compute_luminance(r: f32, g: f32, b: f32) -> f32 {
 
 /// smoothstep 过渡函数
 fn smoothstep(e0: f32, e1: f32, x: f32) -> f32 {
-    let t = ((x - e0) / (e1 - e0.max(e0))).clamp(0.0, 1.0);
+    let t = ((x - e0) / (e1 - e0).max(1e-6)).clamp(0.0, 1.0);
     t * t * (3.0 - 2.0 * t)
 }
 
@@ -234,6 +234,14 @@ mod tests {
     fn tc_lum_08_smoothstep_below_edge_zero() {
         let v = smoothstep(0.0, 1.0, -1.0);
         assert!(v.abs() < 0.01, "越界下沿应为 0,实际 {}", v);
+    }
+
+    #[test]
+    fn tc_lum_08b_smoothstep_zero_bandwidth_no_nan() {
+        // bandwidth=0 时 e0==e1,分母需有 epsilon 保护,避免除零产生 NaN
+        let v = smoothstep(0.35, 0.35, 0.35);
+        assert!(v.is_finite(), "e0==e1 时不应产生 NaN,实际 {}", v);
+        assert!((0.0..=1.0).contains(&v));
     }
 
     #[test]
