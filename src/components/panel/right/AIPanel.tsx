@@ -103,7 +103,9 @@ const SUB_MASK_CONFIG: any = {
   [Mask.Clone]: { showBrushTools: true },
   [Mask.Heal]: { showBrushTools: true },
   [Mask.AutoErase]: {
-    showBrushTools: true,
+    // AutoErase 采用"点击种子点 → 区域生长"策略，后端不消费 brushSize/feather/lines，
+    // 隐藏画笔工具避免误导用户以为可以涂抹选区。
+    showBrushTools: false,
     parameters: [{ key: 'sensitivity', min: 1, max: 100, step: 1, defaultValue: 55 }],
   },
   [Mask.Liquify]: {

@@ -46,6 +46,19 @@ export const createSubMask = (
       return { ...common, parameters: { maskDataBase64: null, grow: 50, feather: 25 } };
     case Mask.QuickEraser:
       return { ...common, parameters: { maskDataBase64: null, grow: 75, feather: 75 } };
+    // 修复类工具：统一在工厂里补齐默认参数，避免经 MasksPanel 等非 AIPanel 入口创建时
+    // 丢失 sensitivity / pressure / intensity / liquifyMode 等关键字段，导致后端回落兜底值
+    // 与前端面板展示值不一致。
+    case Mask.Clone:
+      return { ...common, parameters: { lines: [] } };
+    case Mask.Heal:
+      return { ...common, parameters: { lines: [] } };
+    case Mask.AutoErase:
+      return { ...common, parameters: { sensitivity: 55 } };
+    case Mask.Liquify:
+      return { ...common, parameters: { lines: [], pressure: 40, liquifyMode: 'push' } };
+    case Mask.Retouch:
+      return { ...common, parameters: { lines: [], intensity: 40 } };
     default:
       return { ...common, parameters: {} };
   }

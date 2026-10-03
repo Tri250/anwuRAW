@@ -2116,7 +2116,10 @@ const ImageCanvas = memo(
 
         if (isCloneOrHealActive && activeSubMask) {
           const isCtrlPressedLocal = e.evt.ctrlKey || e.evt.metaKey || (window as any).ctrlKeyDown;
-          if (isCtrlPressedLocal || activeSubMask.parameters?.sourceX === undefined) {
+          // Clone/Heal：首次点击或按住 Ctrl 时拾取仿制源；已有源点后转为涂抹。
+          // AutoErase：每次点击都把该点作为区域生长的种子并立即重建，不进入涂抹分支。
+          const isAutoErase = activeSubMask.type === Mask.AutoErase;
+          if (isCtrlPressedLocal || activeSubMask.parameters?.sourceX === undefined || isAutoErase) {
             const pos = getCanvasPointer(e.target.getStage());
             if (!pos) return;
 
@@ -2708,8 +2711,16 @@ const ImageCanvas = memo(
     );
 
     const handleCloneSourceCommit = useCallback(() => {
-      // 源点坐标已通过 onMove 实时写回，提交阶段无需额外动作
-    }, []);
+      // 源点坐标已通过 onMove 实时写回；提交阶段用最新源点触发一次 patch 重建，
+      // 避免拖动仿制源后画面不更新、必须再画一笔才生效的体验问题。
+      const activeId = isMasking ? activeMaskId : activeAiSubMaskId;
+      if (!activeId || !activeSubMask) return;
+      const sx = activeSubMask.parameters?.sourceX ?? 0;
+      const sy = activeSubMask.parameters?.sourceY ?? 0;
+      if (sx !== undefined && sy !== undefined) {
+        triggerDirectPatch(activeId, sx, sy);
+      }
+    }, [activeSubMask, isMasking, activeMaskId, activeAiSubMaskId, triggerDirectPatch]);
 
     useEffect(() => {
       if (!isToolActive) return;

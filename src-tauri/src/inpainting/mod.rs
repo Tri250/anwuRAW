@@ -829,7 +829,7 @@ pub async fn generate_liquify_patch(
                 let pressure_param = params
                     .and_then(|p| p.get("pressure"))
                     .and_then(|v| v.as_f64())
-                    .unwrap_or(50.0) as f32;
+                    .unwrap_or(40.0) as f32;
                 let force = (pressure_param / 100.0).clamp(0.01, 1.0);
 
                 let mode_str = params
@@ -1188,7 +1188,7 @@ pub async fn generate_retouch_patch(
     let mut max_x = 0.0_f32;
     let mut max_y = 0.0_f32;
     let mut max_radius = 0.0_f32;
-    let mut intensity = 50.0_f32;
+    let mut intensity = 40.0_f32;
 
     let sub_masks_val = serde_json::to_value(&patch_definition.sub_masks).unwrap_or(Value::Null);
     let mut mask_canvas = vec![0u8; (img_w * img_h) as usize];
@@ -1201,7 +1201,7 @@ pub async fn generate_retouch_patch(
                 intensity = params
                     .get("intensity")
                     .and_then(|v| v.as_f64())
-                    .unwrap_or(50.0) as f32;
+                    .unwrap_or(40.0) as f32;
 
                 if let Some(lines) = params.get("lines").and_then(|v| v.as_array()) {
                     for line in lines {

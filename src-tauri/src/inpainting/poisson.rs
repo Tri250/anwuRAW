@@ -16,13 +16,16 @@ fn sor_solve(
     max_iterations: usize,
 ) {
     let mut active = coords.to_vec();
-    let mut stable = vec![0u8; active.len()];
+    // 按像素坐标 (y*bw+x) 索引的稳定计数器；之前按 active 内位置索引，
+    // 每轮 active=next 后位置与像素错位，导致连续稳定计数被错误复用/丢失，
+    // 自适应收敛实际不生效。改为坐标索引后计数器才能正确反映每个像素的收敛状态。
+    let mut stable = vec![0u8; field.len()];
 
     for _ in 0..max_iterations {
         let mut next = Vec::with_capacity(active.len());
         let mut max_delta = 0.0f32;
 
-        for (i, &(x, y)) in active.iter().enumerate() {
+        for &(x, y) in active.iter() {
             let idx = y * bw + x;
             let mut nb = [0.0f32; 3];
             for c in 0..3 {
@@ -41,11 +44,11 @@ fn sor_solve(
 
             field[idx] = nb;
 
-            if d <= eps && stable[i] < 2 {
-                stable[i] += 1;
+            if d <= eps && stable[idx] < 2 {
+                stable[idx] += 1;
                 next.push((x, y));
             } else if d > eps {
-                stable[i] = 0;
+                stable[idx] = 0;
                 next.push((x, y));
             }
         }

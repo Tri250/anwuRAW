@@ -82,11 +82,23 @@ describe('TC-CREATE-01 ~ TC-CREATE-11: createSubMask 工厂函数', () => {
     });
   });
 
-  it('TC-CREATE-09: 其他类型默认空参数对象', () => {
-    for (const type of [Mask.Color, Mask.Luminance, Mask.All, Mask.AiSky, Mask.AiDepth, Mask.Clone, Mask.Heal, Mask.AutoErase, Mask.Liquify, Mask.Retouch]) {
+  it('TC-CREATE-09: 非修复类类型默认空参数对象', () => {
+    for (const type of [Mask.Color, Mask.Luminance, Mask.All, Mask.AiSky, Mask.AiDepth]) {
       const sm = createSubMask(type, DIMS);
       expect(sm.parameters).toEqual({});
     }
+  });
+
+  it('TC-CREATE-09b: 修复类工具默认参数与面板/后端兜底值对齐', () => {
+    expect(createSubMask(Mask.Clone, DIMS).parameters).toEqual({ lines: [] });
+    expect(createSubMask(Mask.Heal, DIMS).parameters).toEqual({ lines: [] });
+    expect(createSubMask(Mask.AutoErase, DIMS).parameters).toEqual({ sensitivity: 55 });
+    expect(createSubMask(Mask.Liquify, DIMS).parameters).toEqual({
+      lines: [],
+      pressure: 40,
+      liquifyMode: 'push',
+    });
+    expect(createSubMask(Mask.Retouch, DIMS).parameters).toEqual({ lines: [], intensity: 40 });
   });
 
   it('TC-CREATE-10: imageDimensions 为 null 时不抛异常,回退到 1000x1000', () => {
