@@ -804,7 +804,7 @@
       }
     },
     "toolbar": {
-      "switchToVariant": "Switch to {{label}}",
+      "switchToVariant": "切换到 {{label}}",
       "tooltips": {
         "aperture": "光圈",
         "backToLibrary": "返回图库",
@@ -1067,12 +1067,12 @@
         "filterByEdited": "按编辑状态过滤",
         "filterByFileType": "按文件类型过滤",
         "filterByRating": "按评分过滤",
-        "groupEditedFiles": "Include edited files in groups",
-        "groupIgnoreMetadata": "Ignore mismatched EXIF dates",
-        "groupOff": "Off",
-        "groupPreferJpeg": "Prefer JPEG",
-        "groupPreferRaw": "Prefer RAW",
-        "groupRawJpeg": "Group RAW + JPEG",
+        "groupEditedFiles": "分组中包含已编辑文件",
+        "groupIgnoreMetadata": "忽略不匹配的 EXIF 日期",
+        "groupOff": "关闭",
+        "groupPreferJpeg": "优先 JPEG",
+        "groupPreferRaw": "优先 RAW",
+        "groupRawJpeg": "RAW + JPEG 分组",
         "metadataAlways": "始终",
         "metadataHover": "悬停时",
         "metadataOff": "关闭",
@@ -2045,6 +2045,29 @@
         "showClipping": "显示裁剪警告",
         "vectorscope": "矢量示波器"
       }
+    },
+    "window": {
+      "close": "关闭窗口",
+      "minimize": "最小化窗口",
+      "maximize": "最大化窗口"
+    },
+    "alt": {
+      "preview": "预览",
+      "sourcePreview": "源图预览",
+      "mergedHdr": "合并 HDR",
+      "lensCorrectionPreview": "镜头校正预览",
+      "representative": "代表图像",
+      "stitchedPanorama": "拼接全景",
+      "transformPreview": "变换预览",
+      "denoised": "降噪后",
+      "original": "原图",
+      "selectedPreview": "选中预览",
+      "before": "之前",
+      "after": "之后",
+      "maskOverlay": "蒙版叠加",
+      "cropPreview": "裁剪预览",
+      "splashBackground": "启动画面背景",
+      "tabs": "标签页"
     }
   }
 }

@@ -12,11 +12,11 @@
         "agxDesc": "電影感色調映射",
         "basic": "基礎",
         "basicDesc": "標準色調映射",
-        "filmic": "Filmic Pro",
+        "filmic": "電影化",
         "filmicDesc": "Uncharted 2 — 保留亮部細節、電影感外觀",
-        "gamma": "Gamma 2.2",
+        "gamma": "標準",
         "gammaDesc": "純 sRGB gamma — 最少處理、最準確的基準",
-        "reinhard": "Reinhard",
+        "reinhard": "經典",
         "reinhardDesc": "簡單可靠 — 最適合低階裝置"
       },
       "reset": "重置",
@@ -413,7 +413,9 @@
         "feather": "羽化",
         "grow": "擴張",
         "intensity": "強度",
-        "pressure": "壓力"
+        "pressure": "壓力",
+        "decontaminate": "邊緣淨化",
+        "sensitivity": "靈敏度"
       },
       "patches": {
         "aiEdit": "AI 編輯 {{count}}",
@@ -430,7 +432,12 @@
         "quickErase": "快速擦除 {{count}}",
         "quickErase_one": "快速擦除 {{count}}",
         "quickErase_other": "快速擦除 {{count}}",
-        "retouch": "修飾 {{count}}"
+        "retouch": "修飾 {{count}}",
+        "clone_one": "仿製 {{count}}",
+        "heal_one": "修復 {{count}}",
+        "autoErase": "自動消除 {{count}}",
+        "autoErase_one": "自動消除 {{count}}",
+        "autoErase_other": "自動消除 {{count}}"
       },
       "resetInpaintingTooltip": "重置影像修復",
       "settings": {
@@ -450,7 +457,8 @@
         "placeholder": "例如，一片花海",
         "quickEraseDesc": "填充選區以移除物件。",
         "selectionPropertiesTitle": "選區屬性",
-        "useBasicInpaint": "使用基礎影像修復"
+        "useBasicInpaint": "使用基礎影像修復",
+        "onDeviceNotice": "端側 AI 修復：離線可用，照片資料不離開本裝置。"
       },
       "touchUpTitle": "潤色"
     },
@@ -562,7 +570,8 @@
         "switchToLandscape": "切換為橫向",
         "switchToPortrait": "切換為縱向",
         "transform": "透視和梯形校正"
-      }
+      },
+      "autoCropAfterRotate": "旋轉後自動裁剪黑邊"
     },
     "externalEdit": {
       "done": "完成",
@@ -710,7 +719,9 @@
         "clickToOpenTooltip": "點選在新標籤頁中開啟地圖",
         "latitude": "緯度",
         "longitude": "經度",
-        "title": "GPS 位置"
+        "title": "GPS 位置",
+        "offlineMapLabel": "離線世界地圖，顯示照片定位標記",
+        "openOnlineMap": "開啟線上地圖"
       },
       "organization": {
         "addTagPlaceholder": "新增標籤...",
@@ -793,7 +804,7 @@
       }
     },
     "toolbar": {
-      "switchToVariant": "Switch to {{label}}",
+      "switchToVariant": "切換到 {{label}}",
       "tooltips": {
         "aperture": "光圈",
         "backToLibrary": "返回相簿",
@@ -874,7 +885,8 @@
       "fileSettings": "檔案設定",
       "imageSizing": "影像大小",
       "metadata": "後設資料",
-      "watermark": "水印"
+      "watermark": "水印",
+      "color": "色彩輸出"
     },
     "status": {
       "cancelExport": "取消匯出",
@@ -915,6 +927,17 @@
       "scale": "縮放",
       "spacing": "間距",
       "watermarkImage": "水印影像"
+    },
+    "color": {
+      "bitDepth": "位元深度",
+      "bitDepth8Desc": "檔案更小，適用於標準螢幕顯示",
+      "bitDepth16Desc": "檔案更大，無色調斷層，適合後續編輯",
+      "colorSpace": "色彩空間",
+      "colorSpaceDesc_srgb": "網頁與絕大多數螢幕的標準",
+      "colorSpaceDesc_displayP3": "廣色域 — 適合 Apple / HDR 顯示器",
+      "colorSpaceDesc_adobeRgb": "廣泛用於列印與攝影流程",
+      "colorSpaceDesc_proPhoto": "最大色域 — 專業歸檔用途",
+      "jpgIccWarning": "JPEG 為非 sRGB 時會嵌入 ICC 設定檔；部分看圖軟體可能仍以 sRGB 顯示。"
     }
   },
   "library": {
@@ -1044,12 +1067,12 @@
         "filterByEdited": "按編輯狀態過濾",
         "filterByFileType": "按檔案型別過濾",
         "filterByRating": "按評分過濾",
-        "groupEditedFiles": "Include edited files in groups",
-        "groupIgnoreMetadata": "Ignore mismatched EXIF dates",
-        "groupOff": "Off",
-        "groupPreferJpeg": "Prefer JPEG",
-        "groupPreferRaw": "Prefer RAW",
-        "groupRawJpeg": "Group RAW + JPEG",
+        "groupEditedFiles": "分組中包含已編輯檔案",
+        "groupIgnoreMetadata": "忽略不匹配的 EXIF 日期",
+        "groupOff": "關閉",
+        "groupPreferJpeg": "優先 JPEG",
+        "groupPreferRaw": "優先 RAW",
+        "groupRawJpeg": "RAW + JPEG 分組",
         "metadataAlways": "始終",
         "metadataHover": "懸停時",
         "metadataOff": "關閉",
@@ -1788,7 +1811,10 @@
         "title": "影像預處理",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "基礎"
+          "basic": "基礎",
+          "reinhard": "經典",
+          "filmic": "電影化",
+          "gamma": "標準"
         },
         "tonemapperOverride": "全域色調映射覆蓋",
         "tonemapperOverrideDesc": "為所有影像全域強制使用特定的色調映射器，從調整面板中隱藏色調映射器開關。"
@@ -2019,6 +2045,29 @@
         "showClipping": "顯示裁剪警告",
         "vectorscope": "向量示波器"
       }
+    },
+    "window": {
+      "close": "關閉視窗",
+      "minimize": "最小化視窗",
+      "maximize": "最大化視窗"
+    },
+    "alt": {
+      "preview": "預覽",
+      "sourcePreview": "來源預覽",
+      "mergedHdr": "合併 HDR",
+      "lensCorrectionPreview": "鏡頭校正預覽",
+      "representative": "代表影像",
+      "stitchedPanorama": "拼接全景",
+      "transformPreview": "變換預覽",
+      "denoised": "降噪後",
+      "original": "原圖",
+      "selectedPreview": "選取預覽",
+      "before": "之前",
+      "after": "之後",
+      "maskOverlay": "遮罩疊加",
+      "cropPreview": "裁剪預覽",
+      "splashBackground": "啟動畫面背景",
+      "tabs": "分頁"
     }
   }
 }

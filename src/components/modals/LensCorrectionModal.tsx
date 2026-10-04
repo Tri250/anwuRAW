@@ -889,7 +889,7 @@ export default function LensCorrectionModal({
                     src={previewUrl}
                     className="block object-contain"
                     style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }}
-                    alt="Lens Correction Preview"
+                    alt={t('ui.alt.lensCorrectionPreview')}
                     draggable={false}
                   />
                   {isCompareActive && (

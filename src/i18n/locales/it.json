@@ -2055,6 +2055,29 @@
         "showClipping": "Mostra Avvisi di Ritaglio",
         "vectorscope": "Vettorscopio"
       }
+    },
+    "window": {
+      "close": "Close window",
+      "minimize": "Minimize window",
+      "maximize": "Maximize window"
+    },
+    "alt": {
+      "preview": "Preview",
+      "sourcePreview": "Source preview",
+      "mergedHdr": "Merged HDR",
+      "lensCorrectionPreview": "Lens Correction Preview",
+      "representative": "Representative",
+      "stitchedPanorama": "Stitched Panorama",
+      "transformPreview": "Transform Preview",
+      "denoised": "Denoised",
+      "original": "Original",
+      "selectedPreview": "Selected preview",
+      "before": "Before",
+      "after": "After",
+      "maskOverlay": "Mask Overlay",
+      "cropPreview": "Crop preview",
+      "splashBackground": "Splash screen background",
+      "tabs": "Tabs"
     }
   }
 }

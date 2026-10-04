@@ -182,7 +182,7 @@ export default function BeforeAfterCompare({ beforeUrl, afterUrl, onClose }: Bef
                 <div className="w-full h-full origin-center" style={imageStyle}>
                   <img
                     src={afterUrl}
-                    alt="After"
+                    alt={t('ui.alt.after')}
                     draggable={false}
                     className="w-full h-full object-contain select-none"
                   />
@@ -194,7 +194,7 @@ export default function BeforeAfterCompare({ beforeUrl, afterUrl, onClose }: Bef
                 <div className="w-full h-full origin-center" style={imageStyle}>
                   <img
                     src={beforeUrl}
-                    alt="Before"
+                    alt={t('ui.alt.before')}
                     draggable={false}
                     className="w-full h-full object-contain select-none"
                   />

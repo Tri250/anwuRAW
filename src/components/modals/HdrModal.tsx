@@ -123,7 +123,7 @@ export default function HdrModal({
       return (
         <div className="w-full">
           <div className="w-full max-h-[500px] bg-[#111] rounded-lg overflow-hidden border border-surface flex items-center justify-center">
-            <img src={finalImageBase64} alt="Merged HDR" className="w-full h-full object-contain max-h-[500px]" />
+            <img src={finalImageBase64} alt={t('ui.alt.mergedHdr')} className="w-full h-full object-contain max-h-[500px]" />
           </div>
           {savedPath && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
@@ -147,7 +147,7 @@ export default function HdrModal({
         <div className="flex h-[460px] overflow-hidden rounded-lg border border-surface">
           <div className="w-2/5 relative overflow-hidden shrink-0 bg-[#0a0a0a] flex items-center justify-center">
             {loadingImageUrl ? (
-              <img src={loadingImageUrl} alt="Source preview" className="w-full h-full object-cover" />
+              <img src={loadingImageUrl} alt={t('ui.alt.sourcePreview')} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-surface/50" />
             )}

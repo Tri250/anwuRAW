@@ -125,7 +125,7 @@ export default function PanoramaModal({
           <div className="w-full max-h-[500px] bg-[#111] rounded-lg overflow-hidden border border-surface flex items-center justify-center">
             <img
               src={finalImageBase64}
-              alt="Stitched Panorama"
+              alt={t('ui.alt.stitchedPanorama')}
               className="w-full h-full object-contain max-h-[500px]"
             />
           </div>
@@ -151,7 +151,7 @@ export default function PanoramaModal({
         <div className="flex h-[460px] overflow-hidden rounded-lg border border-surface">
           <div className="w-2/5 relative overflow-hidden shrink-0 bg-[#0a0a0a] flex items-center justify-center">
             {loadingImageUrl ? (
-              <img src={loadingImageUrl} alt="Source preview" className="w-full h-full object-cover" />
+              <img src={loadingImageUrl} alt={t('ui.alt.sourcePreview')} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-surface/50" />
             )}

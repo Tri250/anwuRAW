@@ -2997,7 +2997,7 @@ const ImageCanvas = memo(
 
               {displayedMaskUrl && maskOverlayVisible && (
                 <img
-                  alt="Mask Overlay"
+                  alt={t('ui.alt.maskOverlay')}
                   className="absolute object-contain pointer-events-none"
                   src={displayedMaskUrl}
                   style={{
@@ -3272,7 +3272,7 @@ const ImageCanvas = memo(
                 }}
               >
                 <img
-                  alt="Crop preview"
+                  alt={t('ui.alt.cropPreview')}
                   ref={cropImageRef}
                   src={cropPreviewUrl}
                   style={{
