@@ -775,6 +775,26 @@
         "openOnlineMap": "Obre el mapa en línia",
         "title": "Ubicació GPS"
       },
+      "iptc": {
+        "applyToAll": "Aplica a totes les seleccionades",
+        "batchError": "No s'han pogut aplicar les metadades IPTC",
+        "batchPartial": "IPTC aplicades a {{success}} imatges, {{failed}} han fallat",
+        "batchSuccess": "IPTC aplicades a {{success}}/{{total}} imatges",
+        "fields": {
+          "caption": "Llegenda",
+          "city": "Ciutat",
+          "copyright": "Copyright",
+          "country": "País",
+          "creator": "Creador",
+          "creatorTitle": "Títol del creador",
+          "headline": "Titular",
+          "keywords": "Paraules clau",
+          "province": "Província / Estat"
+        },
+        "noImages": "Cap imatge seleccionada",
+        "saveFailed": "No s'han pogut desar les metadades IPTC",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Afegir etiqueta...",
         "colorLabel": "Etiqueta de color",

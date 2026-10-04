@@ -799,6 +799,26 @@
         "openOnlineMap": "Otwórz mapę online",
         "title": "Lokalizacja GPS"
       },
+      "iptc": {
+        "applyToAll": "Zastosuj do wszystkich zaznaczonych",
+        "batchError": "Nie udało się zastosować metadanych IPTC",
+        "batchPartial": "IPTC zastosowano do {{success}} zdjęć, {{failed}} nie powiodło się",
+        "batchSuccess": "IPTC zastosowano do {{success}}/{{total}} zdjęć",
+        "fields": {
+          "caption": "Podpis",
+          "city": "Miasto",
+          "copyright": "Prawa autorskie",
+          "country": "Kraj",
+          "creator": "Autor",
+          "creatorTitle": "Tytuł autora",
+          "headline": "Nagłówek",
+          "keywords": "Słowa kluczowe",
+          "province": "Województwo / stan"
+        },
+        "noImages": "Nie wybrano zdjęć",
+        "saveFailed": "Nie udało się zapisać metadanych IPTC",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Dodaj tag...",
         "colorLabel": "Etykieta koloru",

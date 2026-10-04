@@ -747,6 +747,26 @@
         "openOnlineMap": "オンライン地図を開く",
         "title": "GPS位置情報"
       },
+      "iptc": {
+        "applyToAll": "選択したすべてに適用",
+        "batchError": "IPTCメタデータの適用に失敗しました",
+        "batchPartial": "{{success}} 件に適用、{{failed}} 件失敗",
+        "batchSuccess": "{{success}}/{{total}} 件に適用しました",
+        "fields": {
+          "caption": "キャプション",
+          "city": "市区町村",
+          "copyright": "著作権",
+          "country": "国",
+          "creator": "作成者",
+          "creatorTitle": "作成者肩書",
+          "headline": "見出し",
+          "keywords": "キーワード",
+          "province": "都道府県"
+        },
+        "noImages": "画像が選択されていません",
+        "saveFailed": "IPTCメタデータの保存に失敗しました",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "タグを追加...",
         "colorLabel": "カラーラベル",

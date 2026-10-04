@@ -23,7 +23,7 @@ import Dropdown from '../ui/Dropdown';
 import Switch from '../ui/Switch';
 import throttle from 'lodash.throttle';
 import { Adjustments } from '../../utils/adjustments';
-import { SelectedImage } from '../ui/AppProperties';
+import { SelectedImage, Invokes } from '../ui/AppProperties';
 import clsx from 'clsx';
 import Text from '../ui/Text';
 import { TextColors, TextVariants } from '../../types/typography';
@@ -235,7 +235,7 @@ export default function LensCorrectionModal({
 
   const fetchDistortionParams = async (maker: string, model: string) => {
     try {
-      const distParams: any = await invoke('get_lens_distortion_params', {
+      const distParams: any = await invoke(Invokes.GetLensDistortionParams, {
         maker,
         model,
         focalLength: focalLength,
@@ -323,12 +323,12 @@ export default function LensCorrectionModal({
       handleResetZoom();
       updatePreview(initParams);
 
-      invoke('get_lensfun_makers')
+      invoke(Invokes.GetLensfunMakers)
         .then((m: any) => setMakers(m))
         .catch(console.error);
 
       if (initParams.lensMaker) {
-        invoke('get_lensfun_lenses_for_maker', { maker: initParams.lensMaker })
+        invoke(Invokes.GetLensfunLensesForMaker, { maker: initParams.lensMaker })
           .then((l: any) => setLenses(l))
           .catch(console.error);
       }
@@ -356,7 +356,7 @@ export default function LensCorrectionModal({
     setLenses([]);
     setDetectionStatus('idle');
 
-    invoke('get_lensfun_lenses_for_maker', { maker })
+    invoke(Invokes.GetLensfunLensesForMaker, { maker })
       .then((l: any) => setLenses(l))
       .catch(console.error);
 
@@ -386,7 +386,7 @@ export default function LensCorrectionModal({
     setParams(tempParams);
     setDetectionStatus('idle');
 
-    invoke('get_lensfun_lenses_for_maker', { maker: selected.maker })
+    invoke(Invokes.GetLensfunLensesForMaker, { maker: selected.maker })
       .then((l: any) => setLenses(l))
       .catch(console.error);
 
@@ -424,12 +424,12 @@ export default function LensCorrectionModal({
     setDetectionStatus('detecting');
 
     try {
-      const result: [string, string] | null = await invoke('autodetect_lens', { maker: exifMaker, model: exifModel });
+      const result: [string, string] | null = await invoke(Invokes.AutodetectLens, { maker: exifMaker, model: exifModel });
 
       if (result) {
         const [detectedMaker, detectedModel] = result;
 
-        invoke('get_lensfun_lenses_for_maker', { maker: detectedMaker })
+        invoke(Invokes.GetLensfunLensesForMaker, { maker: detectedMaker })
           .then((l: any) => setLenses(l))
           .catch(console.error);
 

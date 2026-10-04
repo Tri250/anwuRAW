@@ -775,6 +775,26 @@
         "openOnlineMap": "Apri mappa online",
         "title": "Posizione GPS"
       },
+      "iptc": {
+        "applyToAll": "Applica a tutte le selezionate",
+        "batchError": "Impossibile applicare i metadati IPTC",
+        "batchPartial": "IPTC applicato a {{success}} immagini, {{failed}} non riuscite",
+        "batchSuccess": "IPTC applicato a {{success}}/{{total}} immagini",
+        "fields": {
+          "caption": "Didascalia",
+          "city": "Città",
+          "copyright": "Copyright",
+          "country": "Paese",
+          "creator": "Creatore",
+          "creatorTitle": "Titolo del creatore",
+          "headline": "Titolo",
+          "keywords": "Parole chiave",
+          "province": "Provincia / Regione"
+        },
+        "noImages": "Nessuna immagine selezionata",
+        "saveFailed": "Impossibile salvare i metadati IPTC",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Aggiungi tag...",
         "colorLabel": "Etichetta Colore",

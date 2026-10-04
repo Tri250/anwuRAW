@@ -799,6 +799,26 @@
         "openOnlineMap": "Открыть онлайн-карту",
         "title": "Координаты GPS"
       },
+      "iptc": {
+        "applyToAll": "Применить ко всем выбранным",
+        "batchError": "Не удалось применить метаданные IPTC",
+        "batchPartial": "IPTC применены к {{success}} изображениям, {{failed}} не удалось",
+        "batchSuccess": "IPTC применены к {{success}}/{{total}} изображениям",
+        "fields": {
+          "caption": "Подпись",
+          "city": "Город",
+          "copyright": "Авторские права",
+          "country": "Страна",
+          "creator": "Автор",
+          "creatorTitle": "Должность автора",
+          "headline": "Заголовок",
+          "keywords": "Ключевые слова",
+          "province": "Область / штат"
+        },
+        "noImages": "Изображения не выбраны",
+        "saveFailed": "Не удалось сохранить метаданные IPTC",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Добавить тег...",
         "colorLabel": "Цветовая метка",

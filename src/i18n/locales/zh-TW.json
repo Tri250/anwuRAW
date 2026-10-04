@@ -747,6 +747,26 @@
         "openOnlineMap": "開啟線上地圖",
         "title": "GPS 位置"
       },
+      "iptc": {
+        "applyToAll": "套用到所有選取的圖片",
+        "batchError": "套用 IPTC 中繼資料失敗",
+        "batchPartial": "已套用到 {{success}} 張圖片，{{failed}} 張失敗",
+        "batchSuccess": "已套用到 {{success}}/{{total}} 張圖片",
+        "fields": {
+          "caption": "圖說",
+          "city": "城市",
+          "copyright": "版權",
+          "country": "國家",
+          "creator": "作者",
+          "creatorTitle": "作者職稱",
+          "headline": "標題",
+          "keywords": "關鍵字",
+          "province": "省/州"
+        },
+        "noImages": "未選取圖片",
+        "saveFailed": "儲存 IPTC 中繼資料失敗",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "新增標籤...",
         "colorLabel": "顏色標籤",

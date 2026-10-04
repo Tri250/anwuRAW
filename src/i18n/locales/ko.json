@@ -747,6 +747,26 @@
         "openOnlineMap": "온라인 지도 열기",
         "title": "GPS 위치"
       },
+      "iptc": {
+        "applyToAll": "선택한 모든 항목에 적용",
+        "batchError": "IPTC 메타데이터 적용 실패",
+        "batchPartial": "{{success}}개에 적용, {{failed}}개 실패",
+        "batchSuccess": "{{success}}/{{total}}개에 적용됨",
+        "fields": {
+          "caption": "설명",
+          "city": "도시",
+          "copyright": "저작권",
+          "country": "국가",
+          "creator": "제작자",
+          "creatorTitle": "제작자 직함",
+          "headline": "표제",
+          "keywords": "키워드",
+          "province": "도/주"
+        },
+        "noImages": "선택된 이미지 없음",
+        "saveFailed": "IPTC 메타데이터 저장 실패",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "태그 추가...",
         "colorLabel": "색상 레이블",

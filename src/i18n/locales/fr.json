@@ -776,6 +776,26 @@
         "openOnlineMap": "Open online map",
         "title": "Localisation GPS"
       },
+      "iptc": {
+        "applyToAll": "Appliquer à toutes les sélectionnées",
+        "batchError": "Échec de l'application des métadonnées IPTC",
+        "batchPartial": "IPTC appliqué à {{success}} images, {{failed}} en échec",
+        "batchSuccess": "IPTC appliqué à {{success}}/{{total}} images",
+        "fields": {
+          "caption": "Légende",
+          "city": "Ville",
+          "copyright": "Droits d'auteur",
+          "country": "Pays",
+          "creator": "Créateur",
+          "creatorTitle": "Titre du créateur",
+          "headline": "Titre",
+          "keywords": "Mots-clés",
+          "province": "Province / État"
+        },
+        "noImages": "Aucune image sélectionnée",
+        "saveFailed": "Échec de l'enregistrement des métadonnées IPTC",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Ajouter une étiquette...",
         "colorLabel": "Étiquette de couleur",

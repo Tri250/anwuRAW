@@ -743,11 +743,15 @@ pub fn autodetect_lens(
 pub fn get_lens_distortion_params(
     maker: String,
     model: String,
-    focal_length: f32,
+    focal_length: Option<f32>,
     aperture: Option<f32>,
     distance: Option<f32>,
     state: State<AppState>,
 ) -> Result<Option<LensDistortionParams>, String> {
+    let focal_length = match focal_length {
+        Some(f) => f,
+        None => return Ok(None),
+    };
     let db_guard = state
         .lens_db
         .lock()

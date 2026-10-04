@@ -136,6 +136,8 @@ pub struct CommunityPreset {
     pub include_masks: Option<bool>,
     #[serde(rename = "includeCropTransform")]
     pub include_crop_transform: Option<bool>,
+    #[serde(rename = "presetType")]
+    pub preset_type: Option<String>,
 }
 
 #[derive(serde::Serialize)]
@@ -2426,7 +2428,6 @@ pub fn run() {
             panorama_stitching::stitch_panorama,
             panorama_stitching::save_panorama,
             export_processing::export_images,
-            export_processing::export_with_icc_and_depth,
             export_processing::cancel_export,
             export_processing::estimate_export_sizes,
             image_processing::calculate_auto_adjustments,
@@ -2492,8 +2493,6 @@ pub fn run() {
             camera_tethering::tether_capture,
             camera_tethering::tether_get_preview,
             camera_tethering::tether_autofocus,
-            channel_mixer::apply_channel_mixer_command,
-            split_toning::apply_split_toning_command,
             detect_straighten::detect_straighten_angle,
             color_range_mask::generate_color_range_mask_command,
             luminance_range_mask::generate_luminance_range_mask_command,

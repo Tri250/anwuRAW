@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Check, ChevronDown, ChevronRight, Plus, Star, Tag, X, User } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, FileText, Plus, Star, Tag, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
@@ -134,9 +134,10 @@ interface EditableMetadataItemProps {
   label: string;
   value: string;
   onSave: (val: string) => void;
+  multiline?: boolean;
 }
 
-function EditableMetadataItem({ label, value, onSave }: EditableMetadataItemProps) {
+function EditableMetadataItem({ label, value, onSave, multiline = false }: EditableMetadataItemProps) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value || '');
@@ -155,8 +156,8 @@ function EditableMetadataItem({ label, value, onSave }: EditableMetadataItemProp
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleSave();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (!multiline && e.key === 'Enter') handleSave();
     if (e.key === 'Escape') {
       setLocalValue(value || '');
       setIsEditing(false);
@@ -176,15 +177,27 @@ function EditableMetadataItem({ label, value, onSave }: EditableMetadataItemProp
 
       <div className="w-[55%] shrink-0">
         {isEditing ? (
-          <input
-            autoFocus
-            type="text"
-            value={localValue}
-            onChange={(e) => setLocalValue(e.target.value)}
-            onBlur={handleSave}
-            onKeyDown={handleKeyDown}
-            className="bg-bg-secondary border border-accent rounded-sm px-2 py-0.5 text-xs text-text-primary text-right outline-hidden w-full shadow-sm focus:ring-1 focus:ring-accent/30"
-          />
+          multiline ? (
+            <textarea
+              autoFocus
+              rows={3}
+              value={localValue}
+              onChange={(e) => setLocalValue(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={handleKeyDown}
+              className="bg-bg-secondary border border-accent rounded-sm px-2 py-1 text-xs text-text-primary outline-hidden w-full shadow-sm focus:ring-1 focus:ring-accent/30 resize-y"
+            />
+          ) : (
+            <input
+              autoFocus
+              type="text"
+              value={localValue}
+              onChange={(e) => setLocalValue(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={handleKeyDown}
+              className="bg-bg-secondary border border-accent rounded-sm px-2 py-0.5 text-xs text-text-primary text-right outline-hidden w-full shadow-sm focus:ring-1 focus:ring-accent/30"
+            />
+          )
         ) : (
           <div
             onClick={() => setIsEditing(true)}
@@ -204,6 +217,19 @@ const EDITABLE_FIELDS = [
   { key: 'Artist', label: 'author' },
   { key: 'Copyright', label: 'copyright' },
   { key: 'UserComment', label: 'comments' },
+];
+
+// 后端 read_iptc_from_jpeg 以 "<record>:<dataset>" 作为 key，字段名必须与之一致
+const IPTC_FIELDS: Array<{ key: string; label: string; multiline: boolean }> = [
+  { key: '2:105', label: 'headline', multiline: false },
+  { key: '2:120', label: 'caption', multiline: true },
+  { key: '2:25', label: 'keywords', multiline: false },
+  { key: '2:80', label: 'creator', multiline: false },
+  { key: '2:85', label: 'creatorTitle', multiline: false },
+  { key: '2:90', label: 'city', multiline: false },
+  { key: '2:95', label: 'province', multiline: false },
+  { key: '2:101', label: 'country', multiline: false },
+  { key: '2:116', label: 'copyright', multiline: false },
 ];
 
 const KEY_CAMERA_SETTINGS_MAP: CameraSettings = {
@@ -236,8 +262,12 @@ export default function MetadataPanel() {
   const { t } = useTranslation();
   const [isOrganizationExpanded, setIsOrganizationExpanded] = useState(false);
   const [isAuthorExpanded, setIsAuthorExpanded] = useState(false);
+  const [isIptcExpanded, setIsIptcExpanded] = useState(false);
   const [tagInputValue, setTagInputValue] = useState('');
   const [isTagInputFocused, setIsTagInputFocused] = useState(false);
+  const [iptcFields, setIptcFields] = useState<Record<string, string>>({});
+  const [isIptcLoading, setIsIptcLoading] = useState(false);
+  const [isIptcSaving, setIsIptcSaving] = useState(false);
   const selectedImage = useEditorStore((s) => s.selectedImage);
   const multiSelectedPaths = useLibraryStore((s) => s.multiSelectedPaths);
   const imageRatings = useLibraryStore((s) => s.imageRatings);
@@ -258,6 +288,74 @@ export default function MetadataPanel() {
     const { imageList } = useLibraryStore.getState();
     const groupingMode = useSettingsStore.getState().appSettings?.grouping ?? 'off';
     return expandGroupedPaths(imageList, targetPaths, groupingMode);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadIptc = async () => {
+      if (!selectedImage?.path) {
+        if (!cancelled) setIptcFields({});
+        return;
+      }
+      setIsIptcLoading(true);
+      try {
+        const fields = await invoke<Record<string, string>>(Invokes.ReadIptcMetadata, { path: selectedImage.path });
+        if (!cancelled) setIptcFields(fields ?? {});
+      } catch (err) {
+        if (!cancelled) setIptcFields({});
+        console.error('Failed to load IPTC metadata', err);
+      } finally {
+        if (!cancelled) setIsIptcLoading(false);
+      }
+    };
+    loadIptc();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedImage?.path]);
+
+  const handleSaveIptcField = async (key: string, value: string) => {
+    if (!selectedImage?.path) return;
+    const nextFields = { ...iptcFields, [key]: value };
+    setIptcFields(nextFields);
+    setIsIptcSaving(true);
+    try {
+      await invoke(Invokes.WriteIptcMetadata, { path: selectedImage.path, fields: nextFields });
+    } catch (err) {
+      console.error('Failed to write IPTC metadata', err);
+      toast.error(t('editor.metadata.iptc.saveFailed'));
+    } finally {
+      setIsIptcSaving(false);
+    }
+  };
+
+  const handleApplyIptcToAll = async () => {
+    const paths = getPathsToUpdate();
+    if (paths.length === 0) {
+      toast.error(t('editor.metadata.iptc.noImages'));
+      return;
+    }
+    setIsIptcSaving(true);
+    try {
+      const result = await invoke<{ success: number; failed: number; total: number; errors: string[] }>(
+        Invokes.BatchUpdateIptcMetadata,
+        { paths, fields: iptcFields },
+      );
+      const success = result?.success ?? 0;
+      const failed = result?.failed ?? 0;
+      const total = result?.total ?? paths.length;
+      if (result?.errors?.length) console.error('IPTC batch errors:', result.errors);
+      if (failed > 0) {
+        toast.warn(t('editor.metadata.iptc.batchPartial', { success, failed, total }));
+      } else {
+        toast.success(t('editor.metadata.iptc.batchSuccess', { success, total }));
+      }
+    } catch (err) {
+      console.error('Failed to batch write IPTC metadata', err);
+      toast.error(t('editor.metadata.iptc.batchError'));
+    } finally {
+      setIsIptcSaving(false);
+    }
   };
 
   const { cameraGridSettings, lensSetting, gpsData, otherExifEntries } = useMemo(() => {
@@ -557,6 +655,63 @@ export default function MetadataPanel() {
                             />
                           );
                         })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            <div>
+              <Text variant={TextVariants.heading} className="mb-3">
+                {t('editor.metadata.iptc.title')}
+              </Text>
+              <div className="bg-surface rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setIsIptcExpanded(!isIptcExpanded)}
+                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors"
+                >
+                  <Text
+                    as="span"
+                    variant={TextVariants.label}
+                    color={TextColors.primary}
+                    className="flex items-center gap-2"
+                  >
+                    <FileText size={16} /> {t('editor.metadata.iptc.title')}
+                  </Text>
+                  <Text color={TextColors.secondary}>
+                    {isIptcExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </Text>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {isIptcExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-2 pb-3 pt-2 border-t border-surface/50 flex flex-col gap-0.5">
+                        {IPTC_FIELDS.map((field) => (
+                          <EditableMetadataItem
+                            key={field.key}
+                            label={t(`editor.metadata.iptc.fields.${field.label}`)}
+                            value={iptcFields[field.key] || ''}
+                            multiline={field.multiline}
+                            onSave={(newVal) => handleSaveIptcField(field.key, newVal)}
+                          />
+                        ))}
+                      </div>
+                      <div className="px-4 pb-4">
+                        <button
+                          onClick={handleApplyIptcToAll}
+                          disabled={isIptcSaving || isIptcLoading}
+                          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-accent text-button-text hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {t('editor.metadata.iptc.applyToAll')}
+                        </button>
                       </div>
                     </motion.div>
                   )}

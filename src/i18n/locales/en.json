@@ -754,6 +754,26 @@
         "openOnlineMap": "Open online map",
         "title": "GPS Location"
       },
+      "iptc": {
+        "applyToAll": "Apply to all selected",
+        "batchError": "Failed to apply IPTC metadata",
+        "batchPartial": "IPTC applied to {{success}} images, {{failed}} failed",
+        "batchSuccess": "IPTC applied to {{success}}/{{total}} images",
+        "fields": {
+          "caption": "Caption",
+          "city": "City",
+          "copyright": "Copyright",
+          "country": "Country",
+          "creator": "Creator",
+          "creatorTitle": "Creator Title",
+          "headline": "Headline",
+          "keywords": "Keywords",
+          "province": "Province / State"
+        },
+        "noImages": "No images selected",
+        "saveFailed": "Failed to save IPTC metadata",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Add tag...",
         "colorLabel": "Color Label",

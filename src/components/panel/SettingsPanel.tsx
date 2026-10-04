@@ -686,7 +686,7 @@ export default function SettingsPanel({
   }, []);
 
   useEffect(() => {
-    invoke<string[]>('get_lensfun_makers').then(setLensMakers).catch(console.error);
+    invoke<string[]>(Invokes.GetLensfunMakers).then(setLensMakers).catch(console.error);
   }, []);
 
   const handleProcessingSettingChange = async (key: string, value: any) => {
@@ -735,7 +735,7 @@ export default function SettingsPanel({
     setTempLensModel('');
     setLensModels([]);
     if (maker) {
-      invoke('get_lensfun_lenses_for_maker', { maker })
+      invoke(Invokes.GetLensfunLensesForMaker, { maker })
         .then((l: any) => setLensModels(l))
         .catch(console.error);
     }

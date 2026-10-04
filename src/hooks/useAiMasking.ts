@@ -401,7 +401,7 @@ export function useAiMasking() {
 
     try {
       const transformAdjustments = getTransformAdjustments(adjustments);
-      const newParameters = await invoke('generate_ai_depth_mask', {
+      const newParameters = await invoke(Invokes.GenerateAiDepthMask, {
         jsAdjustments: transformAdjustments,
         path: selectedImage.path,
         minDepth: parameters.minDepth ?? 20,

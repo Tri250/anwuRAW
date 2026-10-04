@@ -751,6 +751,26 @@
         "openOnlineMap": "Online-Karte öffnen",
         "title": "GPS-Standort"
       },
+      "iptc": {
+        "applyToAll": "Auf alle ausgewählten anwenden",
+        "batchError": "Fehler beim Anwenden der IPTC-Metadaten",
+        "batchPartial": "IPTC auf {{success}} Bilder angewendet, {{failed}} fehlgeschlagen",
+        "batchSuccess": "IPTC auf {{success}}/{{total}} Bilder angewendet",
+        "fields": {
+          "caption": "Bildunterschrift",
+          "city": "Stadt",
+          "copyright": "Urheberrecht",
+          "country": "Land",
+          "creator": "Urheber",
+          "creatorTitle": "Urheber-Titel",
+          "headline": "Überschrift",
+          "keywords": "Schlüsselwörter",
+          "province": "Bundesland"
+        },
+        "noImages": "Keine Bilder ausgewählt",
+        "saveFailed": "Fehler beim Speichern der IPTC-Metadaten",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Tag hinzufügen...",
         "colorLabel": "Farbmarkierung",

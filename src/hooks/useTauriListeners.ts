@@ -307,19 +307,6 @@ export function useTauriListeners({
           }));
         }
       }),
-      listen('hdr-error', (event: any) => {
-        if (isEffectActive) {
-          useUIStore.getState().setUI((state) => ({
-            hdrModalState: {
-              ...state.hdrModalState,
-              error: String(event.payload),
-              finalImageBase64: null,
-              isProcessing: false,
-              progressMessage: 'An error occurred.',
-            },
-          }));
-        }
-      }),
       listen('focus-stack-progress', (event: any) => {
         if (isEffectActive) {
           useUIStore.getState().setUI((state) => {
@@ -336,20 +323,6 @@ export function useTauriListeners({
               error: null,
               finalImageBase64: event.payload.base64,
               depthMapBase64: event.payload.depthMap,
-              isProcessing: false,
-              progressMessage: null,
-            },
-          }));
-        }
-      }),
-      listen('focus-stack-error', (event: any) => {
-        if (isEffectActive) {
-          useUIStore.getState().setUI((state) => ({
-            focusStackModalState: {
-              ...state.focusStackModalState,
-              error: String(event.payload),
-              finalImageBase64: null,
-              depthMapBase64: null,
               isProcessing: false,
               progressMessage: null,
             },

@@ -775,6 +775,26 @@
         "openOnlineMap": "Abrir mapa en línea",
         "title": "Ubicación GPS"
       },
+      "iptc": {
+        "applyToAll": "Aplicar a todas las seleccionadas",
+        "batchError": "Error al aplicar los metadatos IPTC",
+        "batchPartial": "IPTC aplicado a {{success}} imágenes, {{failed}} fallaron",
+        "batchSuccess": "IPTC aplicado a {{success}}/{{total}} imágenes",
+        "fields": {
+          "caption": "Leyenda",
+          "city": "Ciudad",
+          "copyright": "Derechos de autor",
+          "country": "País",
+          "creator": "Creador",
+          "creatorTitle": "Título del creador",
+          "headline": "Titular",
+          "keywords": "Palabras clave",
+          "province": "Provincia / Estado"
+        },
+        "noImages": "No hay imágenes seleccionadas",
+        "saveFailed": "Error al guardar los metadatos IPTC",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Añadir etiqueta...",
         "colorLabel": "Etiqueta de color",

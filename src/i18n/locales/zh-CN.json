@@ -753,6 +753,26 @@
         "openOnlineMap": "打开在线地图",
         "title": "GPS 位置"
       },
+      "iptc": {
+        "applyToAll": "应用到全部选中图片",
+        "batchError": "应用 IPTC 元数据失败",
+        "batchPartial": "已应用到 {{success}} 张图片，{{failed}} 张失败",
+        "batchSuccess": "已应用到 {{success}}/{{total}} 张图片",
+        "fields": {
+          "caption": "图注",
+          "city": "城市",
+          "copyright": "版权",
+          "country": "国家",
+          "creator": "作者",
+          "creatorTitle": "作者头衔",
+          "headline": "标题",
+          "keywords": "关键词",
+          "province": "省/州"
+        },
+        "noImages": "未选择图片",
+        "saveFailed": "保存 IPTC 元数据失败",
+        "title": "IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "添加标签...",
         "colorLabel": "颜色标签",

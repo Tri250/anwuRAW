@@ -188,25 +188,4 @@ pub fn apply_to_dynamic(img: &DynamicImage, settings: &SplitToningSettings) -> D
 #[allow(dead_code)]
 fn _keep_rgb(_: Rgb<u8>) {}
 
-#[tauri::command]
-pub async fn apply_split_toning_command(
-    input_path: String,
-    output_path: String,
-    settings: SplitToningSettings,
-) -> Result<(), String> {
-    use image::codecs::jpeg::JpegEncoder;
-    let img = image::open(&input_path).map_err(|e| e.to_string())?;
-    let processed = apply_to_dynamic(&img, &settings);
-    let mut file = std::fs::File::create(&output_path).map_err(|e| e.to_string())?;
-    let rgb = processed.to_rgb8();
-    let mut encoder = JpegEncoder::new_with_quality(&mut file, 95);
-    encoder
-        .encode(
-            rgb.as_raw(),
-            rgb.width(),
-            rgb.height(),
-            image::ExtendedColorType::Rgb8,
-        )
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
+
