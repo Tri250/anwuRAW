@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
-import { open } from '@tauri-apps/plugin-shell';
 import {
   AlertTriangle,
   Check,
@@ -171,9 +170,9 @@ function DisplayModeSwitch({ displayMode, setDisplayMode, t }: DisplayModeSwitch
 export default function MainLibrary(props: MainLibraryProps) {
   const { t } = useTranslation();
   const setUI = useUIStore((state) => state.setUI);
-  const [appVersion, setAppVersion] = useState('');
-  const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
-  const [latestVersion, setLatestVersion] = useState('');
+  const [_appVersion, setAppVersion] = useState('');
+  const [_isUpdateAvailable, setIsUpdateAvailable] = useState(false);
+  const [_latestVersion, setLatestVersion] = useState('');
   const [isBusyDelayed, setIsBusyDelayed] = useState(false);
   const [isBusyLoaderMounted, setIsBusyLoaderMounted] = useState(false);
   const [isProgressHovered, setIsProgressHovered] = useState(false);

@@ -772,7 +772,7 @@ export default function ExportPanel({
                               }`}
                               onClick={() => setBitDepth(b as 8 | 16)}
                             >
-                              {b}-bit
+                              {t('export.color.bitDepthValue', { value: b })}
                             </button>
                           );
                         })}

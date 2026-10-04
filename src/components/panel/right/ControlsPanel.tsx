@@ -11,7 +11,7 @@ import EffectsPanel from '../../adjustments/Effects';
 import ChannelMixer from '../../adjustments/ChannelMixer';
 import SplitToning from '../../adjustments/SplitToning';
 import CollapsibleSection from '../../ui/CollapsibleSection';
-import Waveform, { HISTOGRAM_ZONES, type HistogramZone } from '../editor/Waveform';
+import Waveform, { type HistogramZone } from '../editor/Waveform';
 import Resizer from '../../ui/Resizer';
 import { Adjustments, SectionVisibility, INITIAL_ADJUSTMENTS, ADJUSTMENT_SECTIONS } from '../../../utils/adjustments';
 import { useContextMenu } from '../../../context/ContextMenuContext';

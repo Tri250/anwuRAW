@@ -44,9 +44,8 @@ import Text from '../../ui/Text';
 import Slider from '../../ui/Slider';
 import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { Adjustments, INITIAL_ADJUSTMENTS, ADJUSTMENT_GROUPS } from '../../../utils/adjustments';
-import { Invokes, OPTION_SEPARATOR, Panel, Preset, SelectedImage } from '../../ui/AppProperties';
+import { Invokes, OPTION_SEPARATOR, Preset } from '../../ui/AppProperties';
 import { useEditorStore } from '../../../store/useEditorStore';
-import { useUIStore } from '../../../store/useUIStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
 import { useOsPlatform } from '../../../hooks/useOsPlatform';
 
@@ -265,7 +264,7 @@ const mixAdjustments = (presetObj: any, intensity: number, initialObj: any = INI
 function PresetItemDisplay({
   preset,
   previewUrl,
-  isGeneratingPreviews,
+  isGeneratingPreviews: _isGeneratingPreviews,
   isActive,
   intensity,
   onIntensityChange,
@@ -1209,7 +1208,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     const isFolder = !!item.folder;
     const data = isFolder ? item.folder : item.preset;
 
-    let options = [];
+    let options: unknown[];
     if (isFolder) {
       options = [
         {

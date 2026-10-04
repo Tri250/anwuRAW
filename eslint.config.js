@@ -1,6 +1,7 @@
 const js = require('@eslint/js');
 const tseslint = require('typescript-eslint');
 const i18next = require('eslint-plugin-i18next');
+const reactHooks = require('eslint-plugin-react-hooks');
 
 const tsFiles = ['**/*.{ts,tsx}'];
 
@@ -30,6 +31,7 @@ module.exports = [
     files: tsFiles,
     plugins: {
       i18next,
+      'react-hooks': reactHooks,
     },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -42,10 +44,16 @@ module.exports = [
     },
     rules: {
       'no-unused-vars': 'off',
+      // tsc --noEmit already enforces strict type safety (0 errors). The ~850 pre-existing
+      // `any` usages are tracked as warnings (technical debt) rather than hard errors, since
+      // blindly narrowing them to `unknown` would ripple through downstream usages. CI treats
+      // frontend lint as non-blocking (continue-on-error).
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
+      'react-hooks/exhaustive-deps': 'warn',
       'i18next/no-literal-string': [
         'warn',
         {

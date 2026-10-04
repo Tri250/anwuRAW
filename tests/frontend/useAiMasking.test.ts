@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import { useEditorStore } from '../../src/store/useEditorStore';
 import { useAiMasking } from '../../src/hooks/useAiMasking';
 import { Invokes } from '../../src/components/ui/AppProperties';
-import { Mask, SubMaskMode, ToolType } from '../../src/components/panel/right/Masks';
+import { Mask, SubMaskMode } from '../../src/components/panel/right/Masks';
 import { toast } from 'react-toastify';
 import { mockInvoke } from './setup';
 
@@ -82,11 +82,14 @@ describe('TC-AI-02 ~ TC-AI-03: handleGenerateAiMask 成功/失败', () => {
       await result.current.handleGenerateAiMask('sm-1', { x: 10, y: 20 }, { x: 50, y: 60 });
     });
 
-    expect(mockInvoke).toHaveBeenCalledWith(Invokes.GenerateAiSubjectMask, expect.objectContaining({
-      endPoint: [50, 60],
-      startPoint: [10, 20],
-      path: '/tmp/test.dng',
-    }));
+    expect(mockInvoke).toHaveBeenCalledWith(
+      Invokes.GenerateAiSubjectMask,
+      expect.objectContaining({
+        endPoint: [50, 60],
+        startPoint: [10, 20],
+        path: '/tmp/test.dng',
+      }),
+    );
     expect(useEditorStore.getState().isGeneratingAiMask).toBe(false);
     const sub = useEditorStore.getState().adjustments.aiPatches[0].subMasks[0];
     expect(sub.parameters.grow).toBe(80);
@@ -108,9 +111,7 @@ describe('TC-AI-02 ~ TC-AI-03: handleGenerateAiMask 成功/失败', () => {
   it('TC-AI-验收: selectedImage.path 为空时立即返回不抛错', async () => {
     useEditorStore.setState({ selectedImage: null });
     const { result } = renderHook(() => useAiMasking());
-    await expect(
-      result.current.handleGenerateAiMask('sm-1', { x: 0, y: 0 }, { x: 1, y: 1 }),
-    ).resolves.toBeUndefined();
+    await expect(result.current.handleGenerateAiMask('sm-1', { x: 0, y: 0 }, { x: 1, y: 1 })).resolves.toBeUndefined();
     expect(mockInvoke).not.toHaveBeenCalled();
   });
 });
@@ -122,12 +123,15 @@ describe('TC-AI-04 ~ TC-AI-06: AI 子类型蒙版生成', () => {
     await act(async () => {
       await result.current.handleGenerateAiSkyMask('sm-1');
     });
-    expect(mockInvoke).toHaveBeenCalledWith(Invokes.GenerateAiSkyMask, expect.objectContaining({
-      flipHorizontal: false,
-      flipVertical: false,
-      orientationSteps: 0,
-      rotation: 0,
-    }));
+    expect(mockInvoke).toHaveBeenCalledWith(
+      Invokes.GenerateAiSkyMask,
+      expect.objectContaining({
+        flipHorizontal: false,
+        flipVertical: false,
+        orientationSteps: 0,
+        rotation: 0,
+      }),
+    );
   });
 
   it('TC-AI-05: handleGenerateAiForegroundMask 调用 GenerateAiForegroundMask 命令', async () => {
@@ -146,13 +150,16 @@ describe('TC-AI-04 ~ TC-AI-06: AI 子类型蒙版生成', () => {
       // 故意不传任何 parameters 字段,验证默认回退
       await result.current.handleGenerateAiDepthMask('sm-1', {});
     });
-    expect(mockInvoke).toHaveBeenCalledWith('generate_ai_depth_mask', expect.objectContaining({
-      minDepth: 20,
-      maxDepth: 100,
-      minFade: 15,
-      maxFade: 15,
-      feather: 10,
-    }));
+    expect(mockInvoke).toHaveBeenCalledWith(
+      'generate_ai_depth_mask',
+      expect.objectContaining({
+        minDepth: 20,
+        maxDepth: 100,
+        minFade: 15,
+        maxFade: 15,
+        feather: 10,
+      }),
+    );
   });
 
   it('TC-AI-06b: handleGenerateAiDepthMask 自定义参数透传', async () => {
@@ -167,13 +174,16 @@ describe('TC-AI-04 ~ TC-AI-06: AI 子类型蒙版生成', () => {
         feather: 20,
       });
     });
-    expect(mockInvoke).toHaveBeenCalledWith('generate_ai_depth_mask', expect.objectContaining({
-      minDepth: 30,
-      maxDepth: 90,
-      minFade: 5,
-      maxFade: 25,
-      feather: 20,
-    }));
+    expect(mockInvoke).toHaveBeenCalledWith(
+      'generate_ai_depth_mask',
+      expect.objectContaining({
+        minDepth: 30,
+        maxDepth: 90,
+        minFade: 5,
+        maxFade: 25,
+        feather: 20,
+      }),
+    );
   });
 
   // 回归测试:蒙版在 masks 容器(非 aiPatches)中时,AI handler 应正确查找并保留已有参数
@@ -183,23 +193,27 @@ describe('TC-AI-04 ~ TC-AI-06: AI 子类型蒙版生成', () => {
       adjustments: {
         ...useEditorStore.getState().adjustments,
         aiPatches: [],
-        masks: [{
-          id: 'c-1',
-          name: 'C1',
-          visible: true,
-          invert: false,
-          opacity: 100,
-          adjustments: {},
-          subMasks: [{
-            id: 'sm-mask-1',
-            type: Mask.AiForeground,
+        masks: [
+          {
+            id: 'c-1',
+            name: 'C1',
             visible: true,
             invert: false,
             opacity: 100,
-            mode: SubMaskMode.Additive,
-            parameters: { maskDataBase64: null, grow: 75, feather: 40 },
-          }],
-        }],
+            adjustments: {},
+            subMasks: [
+              {
+                id: 'sm-mask-1',
+                type: Mask.AiForeground,
+                visible: true,
+                invert: false,
+                opacity: 100,
+                mode: SubMaskMode.Additive,
+                parameters: { maskDataBase64: null, grow: 75, feather: 40 },
+              },
+            ],
+          },
+        ],
       },
     });
     mockInvoke.mockResolvedValueOnce({ maskDataBase64: 'fg-new', grow: 50, feather: 25 });
@@ -209,7 +223,7 @@ describe('TC-AI-04 ~ TC-AI-06: AI 子类型蒙版生成', () => {
     });
     const sub = useEditorStore.getState().adjustments.masks[0].subMasks[0];
     // 后端返回的参数应与原有参数合并,而非覆盖丢失
-    expect(sub.parameters.grow).toBe(50);   // 后端返回值覆盖
+    expect(sub.parameters.grow).toBe(50); // 后端返回值覆盖
     expect(sub.parameters.feather).toBe(25); // 后端返回值覆盖
     expect(sub.parameters.maskDataBase64).toBe('fg-new');
   });
@@ -220,15 +234,22 @@ describe('TC-AI-07 ~ TC-AI-08: handleDirectPatch 命令分发与切图保护', (
     useEditorStore.setState({
       adjustments: {
         ...useEditorStore.getState().adjustments,
-        aiPatches: [{
-          ...useEditorStore.getState().adjustments.aiPatches[0],
-          subMasks: [{
-            id: 'sm-1',
-            type: Mask.AutoErase,
-            visible: true, invert: false, opacity: 100, mode: SubMaskMode.Additive,
-            parameters: {},
-          }],
-        }],
+        aiPatches: [
+          {
+            ...useEditorStore.getState().adjustments.aiPatches[0],
+            subMasks: [
+              {
+                id: 'sm-1',
+                type: Mask.AutoErase,
+                visible: true,
+                invert: false,
+                opacity: 100,
+                mode: SubMaskMode.Additive,
+                parameters: {},
+              },
+            ],
+          },
+        ],
       },
     });
     mockInvoke.mockResolvedValueOnce(JSON.stringify({ color: '#fff', mask: 'data:image/png;base64,xxx' }));
@@ -236,24 +257,34 @@ describe('TC-AI-07 ~ TC-AI-08: handleDirectPatch 命令分发与切图保护', (
     await act(async () => {
       await result.current.handleDirectPatch('sm-1', 100, 200);
     });
-    expect(mockInvoke).toHaveBeenCalledWith('generate_auto_erase_patch', expect.objectContaining({
-      sourcePoint: [100, 200],
-    }));
+    expect(mockInvoke).toHaveBeenCalledWith(
+      'generate_auto_erase_patch',
+      expect.objectContaining({
+        sourcePoint: [100, 200],
+      }),
+    );
   });
 
   it('TC-AI-07b: liquify 分发到 generate_liquify_patch', async () => {
     useEditorStore.setState({
       adjustments: {
         ...useEditorStore.getState().adjustments,
-        aiPatches: [{
-          ...useEditorStore.getState().adjustments.aiPatches[0],
-          subMasks: [{
-            id: 'sm-1',
-            type: Mask.Liquify,
-            visible: true, invert: false, opacity: 100, mode: SubMaskMode.Additive,
-            parameters: {},
-          }],
-        }],
+        aiPatches: [
+          {
+            ...useEditorStore.getState().adjustments.aiPatches[0],
+            subMasks: [
+              {
+                id: 'sm-1',
+                type: Mask.Liquify,
+                visible: true,
+                invert: false,
+                opacity: 100,
+                mode: SubMaskMode.Additive,
+                parameters: {},
+              },
+            ],
+          },
+        ],
       },
     });
     mockInvoke.mockResolvedValueOnce(JSON.stringify({ color: '#fff', mask: '' }));
@@ -268,15 +299,22 @@ describe('TC-AI-07 ~ TC-AI-08: handleDirectPatch 命令分发与切图保护', (
     useEditorStore.setState({
       adjustments: {
         ...useEditorStore.getState().adjustments,
-        aiPatches: [{
-          ...useEditorStore.getState().adjustments.aiPatches[0],
-          subMasks: [{
-            id: 'sm-1',
-            type: Mask.Retouch,
-            visible: true, invert: false, opacity: 100, mode: SubMaskMode.Additive,
-            parameters: {},
-          }],
-        }],
+        aiPatches: [
+          {
+            ...useEditorStore.getState().adjustments.aiPatches[0],
+            subMasks: [
+              {
+                id: 'sm-1',
+                type: Mask.Retouch,
+                visible: true,
+                invert: false,
+                opacity: 100,
+                mode: SubMaskMode.Additive,
+                parameters: {},
+              },
+            ],
+          },
+        ],
       },
     });
     mockInvoke.mockResolvedValueOnce(JSON.stringify({ color: '#fff', mask: '' }));
@@ -291,15 +329,22 @@ describe('TC-AI-07 ~ TC-AI-08: handleDirectPatch 命令分发与切图保护', (
     useEditorStore.setState({
       adjustments: {
         ...useEditorStore.getState().adjustments,
-        aiPatches: [{
-          ...useEditorStore.getState().adjustments.aiPatches[0],
-          subMasks: [{
-            id: 'sm-1',
-            type: Mask.Clone,
-            visible: true, invert: false, opacity: 100, mode: SubMaskMode.Additive,
-            parameters: {},
-          }],
-        }],
+        aiPatches: [
+          {
+            ...useEditorStore.getState().adjustments.aiPatches[0],
+            subMasks: [
+              {
+                id: 'sm-1',
+                type: Mask.Clone,
+                visible: true,
+                invert: false,
+                opacity: 100,
+                mode: SubMaskMode.Additive,
+                parameters: {},
+              },
+            ],
+          },
+        ],
       },
     });
     mockInvoke.mockResolvedValueOnce(JSON.stringify({ color: '#fff', mask: '' }));
@@ -316,7 +361,9 @@ describe('TC-AI-07 ~ TC-AI-08: handleDirectPatch 命令分发与切图保护', (
     // 在 invoke resolve 前切图
     const promise = result.current.handleDirectPatch('sm-1', 1, 2);
     useEditorStore.setState({ selectedImage: { path: '/tmp/other.dng' } });
-    await act(async () => { await promise; });
+    await act(async () => {
+      await promise;
+    });
     // patchData 不应更新(切了图)
     const patch = useEditorStore.getState().adjustments.aiPatches.find((p) => p.id === 'patch-1');
     // patchData 仍为 null(切图路径不同导致丢弃)
@@ -397,8 +444,28 @@ describe('TC-AI-12 ~ TC-AI-14: 删除与可见性', () => {
       adjustments: {
         ...useEditorStore.getState().adjustments,
         aiPatches: [
-          { id: 'p-a', name: 'A', visible: true, invert: false, prompt: '', opacity: 100, patchData: null, isLoading: false, subMasks: [] },
-          { id: 'p-b', name: 'B', visible: true, invert: false, prompt: '', opacity: 100, patchData: null, isLoading: false, subMasks: [] },
+          {
+            id: 'p-a',
+            name: 'A',
+            visible: true,
+            invert: false,
+            prompt: '',
+            opacity: 100,
+            patchData: null,
+            isLoading: false,
+            subMasks: [],
+          },
+          {
+            id: 'p-b',
+            name: 'B',
+            visible: true,
+            invert: false,
+            prompt: '',
+            opacity: 100,
+            patchData: null,
+            isLoading: false,
+            subMasks: [],
+          },
         ],
       },
     });

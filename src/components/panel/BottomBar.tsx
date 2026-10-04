@@ -144,7 +144,7 @@ export default function BottomBar({
   onZoomChange = () => {},
   rating,
   selectedImage,
-  setIsFilmstripVisible,
+  setIsFilmstripVisible: _setIsFilmstripVisible,
   showFilmstrip = true,
   showZoomControls = true,
   thumbnailAspectRatio,

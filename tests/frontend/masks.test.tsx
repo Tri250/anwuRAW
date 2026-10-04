@@ -164,22 +164,12 @@ describe('TC-MASK-06: MASK_ICON_MAP 完备性', () => {
 describe('TC-PANEL-04 / TC-PANEL-05: Mask 类型分组合集', () => {
   it('TC-PANEL-04: MASK_AI_TYPES 4 项且 type 正确', () => {
     expect(MASK_AI_TYPES).toHaveLength(4);
-    expect(MASK_AI_TYPES.map((m) => m.type)).toEqual([
-      Mask.AiSubject,
-      Mask.AiSky,
-      Mask.AiForeground,
-      Mask.AiDepth,
-    ]);
+    expect(MASK_AI_TYPES.map((m) => m.type)).toEqual([Mask.AiSubject, Mask.AiSky, Mask.AiForeground, Mask.AiDepth]);
   });
 
   it('TC-PANEL-04: MASK_BASIC_TYPES 4 项且 type 正确', () => {
     expect(MASK_BASIC_TYPES).toHaveLength(4);
-    expect(MASK_BASIC_TYPES.map((m) => m.type)).toEqual([
-      Mask.Brush,
-      Mask.Linear,
-      Mask.Radial,
-      Mask.Flow,
-    ]);
+    expect(MASK_BASIC_TYPES.map((m) => m.type)).toEqual([Mask.Brush, Mask.Linear, Mask.Radial, Mask.Flow]);
   });
 
   it('TC-PANEL-04: MASK_RANGE_TYPES 3 项且 type 正确', () => {

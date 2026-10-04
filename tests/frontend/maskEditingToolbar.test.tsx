@@ -1,12 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {
-  Mask,
-  SubMask,
-  ToolType,
-  getSubMaskName,
-} from '../../src/components/panel/right/Masks';
+import { Mask, SubMask, ToolType } from '../../src/components/panel/right/Masks';
 import {
   showMaskEditingToolbar,
   default as MaskEditingToolbar,
@@ -15,11 +10,7 @@ import {
 // === TC-TB-* 系列:覆盖 MaskEditingToolbar.tsx ===
 
 /** 构造 SubMask fixture */
-function makeSubMask(
-  type: Mask,
-  overrides: Partial<SubMask> = {},
-  parameters: Record<string, unknown> = {},
-): SubMask {
+function makeSubMask(type: Mask, overrides: Partial<SubMask> = {}, parameters: Record<string, unknown> = {}): SubMask {
   return {
     id: 'sm-test',
     visible: true,

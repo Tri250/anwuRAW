@@ -14,7 +14,7 @@ import type { OverlayMode } from '../right/CropPanel';
 import CompositionOverlays from './overlays/CompositionOverlays';
 import CloneSourceHandle from './CloneSourceHandle';
 import { calculateStraightenAngle } from '../../../utils/cropUtils';
-import { rgbToHsl, hueToColorKey, median, srgbToLinear } from '../../../utils/colorUtils';
+import { rgbToHsl, hueToColorKey } from '../../../utils/colorUtils';
 
 interface CursorPreview {
   visible: boolean;
@@ -1484,10 +1484,9 @@ const ImageCanvas = memo(
           setDisplayState((prev) => ({ base: prev.base, fade: newSrc }));
           setIsFadingIn(false);
 
-          let frame1: number;
           let frame2: number;
 
-          frame1 = requestAnimationFrame(() => {
+          const frame1 = requestAnimationFrame(() => {
             frame2 = requestAnimationFrame(() => {
               setIsFadingIn(true);
             });

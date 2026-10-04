@@ -24,7 +24,12 @@ interface SplitToningProps {
   onDragStateChange?: (isDragging: boolean) => void;
 }
 
-const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragStateChange }: SplitToningProps) => {
+const SplitToning = ({
+  adjustments,
+  setAdjustments,
+  isForMask: _isForMask = false,
+  onDragStateChange,
+}: SplitToningProps) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(true);
 

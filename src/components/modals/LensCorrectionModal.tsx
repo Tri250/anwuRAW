@@ -550,7 +550,7 @@ export default function LensCorrectionModal({
     }));
   }, [myLenses, t]);
 
-  const autoDetectButtonContent = () => {
+  const _autoDetectButtonContent = () => {
     switch (detectionStatus) {
       case 'detecting':
         return (

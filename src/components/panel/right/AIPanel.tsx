@@ -220,10 +220,10 @@ const ConnectionStatus = ({
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
 
-  let statusColor = 'bg-green-500';
-  let statusText = t('editor.ai.connection.ready');
-  let titleText = t('editor.ai.connection.backendLabel');
-  let hoverContent: React.ReactNode = null;
+  let statusColor: string;
+  let statusText: string;
+  let titleText: string;
+  let hoverContent: React.ReactNode;
 
   if (aiProvider === 'cloud') {
     titleText = t('editor.ai.connection.cloudLabel');

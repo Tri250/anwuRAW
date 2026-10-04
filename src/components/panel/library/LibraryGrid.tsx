@@ -279,7 +279,11 @@ export default function LibraryGrid(props: any) {
   const handleToggleRecursiveFolder = useCallback((path: string) => {
     setCollapsedRecursiveFolders((prev) => {
       const next = new Set(prev);
-      next.has(path) ? next.delete(path) : next.add(path);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
       return next;
     });
   }, []);
@@ -405,7 +409,7 @@ export default function LibraryGrid(props: any) {
     prevDisplayMode.current = libraryDisplayMode;
     prevListElement.current = element;
 
-    const { rows, rowHeight, headerHeight, columnCount } = gridData;
+    const { rows: _rows, rowHeight, headerHeight, columnCount } = gridData;
 
     let targetTop = 0;
     let found = false;

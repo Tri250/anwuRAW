@@ -49,7 +49,7 @@ export function useImageProcessing(
     selectedImagePathRef.current = selectedImage?.path ?? null;
   }, [selectedImage?.path]);
 
-  const geometricAdjustmentsKey = useMemo(() => {
+  const _geometricAdjustmentsKey = useMemo(() => {
     if (!adjustments) return '';
     const { crop, rotation, flipHorizontal, flipVertical, orientationSteps } = adjustments;
     return JSON.stringify({ crop, rotation, flipHorizontal, flipVertical, orientationSteps });

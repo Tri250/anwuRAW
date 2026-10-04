@@ -174,7 +174,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
 
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const isInitialMount = useRef(true);
+  const _isInitialMount = useRef(true);
   const transformStateRef = useRef<TransformState>(transformState);
   transformStateRef.current = transformState;
   const [isPanningState, setIsPanningState] = useState(false);
@@ -628,7 +628,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         const dt = Math.min(time - lastTime, 32);
         lastTime = time;
 
-        let { positionX: x, positionY: y, scale } = transformStateRef.current;
+        const { scale } = transformStateRef.current;
+        let { positionX: x, positionY: y } = transformStateRef.current;
         const bounds = getTransformBounds(scale);
 
         x += vx * dt;

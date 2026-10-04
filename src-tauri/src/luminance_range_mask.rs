@@ -268,8 +268,8 @@ mod tests {
         // OKLab L ≈ (k/255).cbrt();k=13 → v=0.051 → L≈0.37 落入过渡区,
         // smoothstep 应产出 0<v<1 的中间值,证明带宽软过渡生效。
         let mut img = image::RgbImage::new(2, 1);
-        img.put_pixel(0, 0, image::Rgb([0, 0, 0]));     // 黑:lum≈0 ≥ hi_lo → 全选 255
-        img.put_pixel(1, 0, image::Rgb([13, 13, 13]));  // 灰:lum≈0.37 ∈ [0.35, 0.40] → 中间值
+        img.put_pixel(0, 0, image::Rgb([0, 0, 0])); // 黑:lum≈0 ≥ hi_lo → 全选 255
+        img.put_pixel(1, 0, image::Rgb([13, 13, 13])); // 灰:lum≈0.37 ∈ [0.35, 0.40] → 中间值
         let s = LuminanceRangeSettings::select_shadows();
         let mask = generate_raw_mask(&img, &s);
         // 至少存在一个中间值(0<v<255),证明带宽软过渡生效
@@ -319,4 +319,3 @@ mod tests {
         let _ = fs::remove_file(&output_path);
     }
 }
-

@@ -17,7 +17,6 @@ import {
   BatteryWarning,
   Focus,
   Gauge,
-  Sliders,
   Folder as FolderIcon,
   X,
 } from 'lucide-react';
@@ -351,7 +350,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
     try {
       const config = await invoke<Record<string, any>>(Invokes.TetherGetSettings);
       setTethering({ settings: config });
-    } catch (e) {
+    } catch (_e) {
       handleDisconnect(t('tethering.toasts.communicationFailed'));
     }
   }, [setTethering, handleDisconnect, t]);
@@ -383,7 +382,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
     setIsFocusing(true);
     try {
       await invoke('tether_autofocus');
-    } catch (e) {
+    } catch (_e) {
       toast.error(t('tethering.toasts.afFailed'));
     } finally {
       setIsFocusing(false);
@@ -408,7 +407,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
             paths: [filePath],
             adjustments: autoApplyPreset.adjustments,
           });
-        } catch (presetErr) {
+        } catch (_presetErr) {
           toast.error(t('tethering.toasts.presetApplyFailed'));
         }
       }

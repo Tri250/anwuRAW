@@ -1947,7 +1947,7 @@ function SettingsPanel({
   isSettingsSectionOpen,
   setSettingsSectionOpen,
   presets,
-  handleGenerateAiDepthMask,
+  _handleGenerateAiDepthMask,
 }: any) {
   const typedActiveSubMask = activeSubMask as SubMask | null;
   const { t } = useTranslation();

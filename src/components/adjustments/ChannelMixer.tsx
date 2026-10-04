@@ -64,7 +64,7 @@ const CHANNEL_ROWS: ChannelRow[] = [
 export default function ChannelMixer({
   adjustments,
   setAdjustments,
-  isForMask = false,
+  isForMask: _isForMask = false,
   onDragStateChange,
 }: ChannelMixerProps) {
   const { t } = useTranslation();

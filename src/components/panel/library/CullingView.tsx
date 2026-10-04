@@ -7,7 +7,6 @@ import {
   Star as StarIcon,
   ZoomIn,
   ZoomOut,
-  Maximize,
   Link,
   SquarePen,
   Tag,

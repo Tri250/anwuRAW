@@ -124,6 +124,7 @@ export default function TitleBar() {
             </div>
           )}
           <div data-tauri-drag-region className={`flex items-center h-full ${isMac ? '' : 'px-4'}`}>
+            {/* eslint-disable-next-line i18next/no-literal-string -- brand name, not translatable */}
             <p className="text-sm font-semibold text-text-secondary pointer-events-none">anwuRAW</p>
           </div>
         </div>

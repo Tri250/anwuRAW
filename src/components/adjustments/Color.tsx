@@ -406,7 +406,7 @@ export default function ColorPanel({
   const { t } = useTranslation();
   const [activeColor, setActiveColor] = useState('reds');
   const adjustmentVisibility = appSettings?.adjustmentVisibility || {};
-  const isWgpuEnabled = appSettings?.useWgpuRenderer !== false;
+  const _isWgpuEnabled = appSettings?.useWgpuRenderer !== false;
 
   const setEditor = useEditorStore((s) => s.setEditor);
   const isHslPickerActive = useEditorStore((s) => s.isHslPickerActive);

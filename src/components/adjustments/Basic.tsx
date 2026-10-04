@@ -5,7 +5,7 @@ import { Adjustments, BasicAdjustment } from '../../utils/adjustments';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Text from '../ui/Text';
-import { TextColors, TextVariants, TextWeights } from '../../types/typography';
+import { TextVariants } from '../../types/typography';
 
 interface BasicAdjustmentsProps {
   adjustments: Adjustments;

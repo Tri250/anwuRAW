@@ -2,37 +2,43 @@
   "adjustments": {
     "basic": {
       "blacks": "Blacks",
+      "brightness": "Brightness",
       "contrast": "Contrast",
       "evShift": "EV Shift",
       "exposure": "Exposure",
-      "brightness": "Brightness",
       "highlights": "Highlights",
       "mappers": {
         "agx": "AgX",
         "agxDesc": "Film-like Tonemapping — rich colors, smooth highlights",
         "basic": "Basic",
         "basicDesc": "Standard Tonemapping — simple, fast",
-        "reinhard": "Reinhard",
-        "reinhardDesc": "Simple & reliable — best for low-end devices",
         "filmic": "Filmic Pro",
         "filmicDesc": "Uncharted 2 — preserves highlight detail, filmic look",
         "gamma": "Gamma 2.2",
-        "gammaDesc": "Pure sRGB gamma — minimal processing, most accurate baseline"
+        "gammaDesc": "Pure sRGB gamma — minimal processing, most accurate baseline",
+        "reinhard": "Reinhard",
+        "reinhardDesc": "Simple & reliable — best for low-end devices"
       },
       "reset": "Reset",
       "scene": {
-        "title": "Scene Enhance",
-        "desc": "One-tap professional color grading",
         "auto": "Auto",
         "autoDesc": "Smart scene enhancement",
-        "prototypePortrait": "Portrait",
+        "desc": "One-tap professional color grading",
         "prototypeLandscape": "Landscape",
         "prototypeNight": "Night",
-        "prototypeWarmSunset": "Warm Sunset"
+        "prototypePortrait": "Portrait",
+        "prototypeWarmSunset": "Warm Sunset",
+        "title": "Scene Enhance"
       },
       "shadows": "Shadows",
       "toneMapper": "Tone Mapper",
       "whites": "Whites"
+    },
+    "channelMixer": {
+      "hint": "Adjust the percentage of each input color channel that contributes to the output channel.",
+      "outputs": "Output Channels",
+      "reset": "Reset",
+      "title": "Channel Mixer"
     },
     "color": {
       "ariaSelectColor": "Select {{name}} color",
@@ -59,6 +65,8 @@
         "midtones": "Midtones",
         "shadows": "Shadows"
       },
+      "hslPickActive": "HSL picker active",
+      "hslPickTooltip": "HSL picker",
       "hue": "Hue",
       "localHue": "Local Hue",
       "luminance": "Luminance",
@@ -83,13 +91,13 @@
       "whiteBalance": "White Balance"
     },
     "curves": {
-      "channelTitle": "{{channel}} Channel",
       "channels": {
         "blue": "Blue",
         "green": "Green",
         "luma": "Luma",
         "red": "Red"
       },
+      "channelTitle": "{{channel}} Channel",
       "copyParametric": "Copy {{channel}} Parametric Curve",
       "copyPoint": "Copy {{channel}} Point Curve",
       "curveDataUnavailable": "Curve data not available.",
@@ -107,8 +115,6 @@
       "pastePoint": "Paste Point Curve",
       "pointCurve": "Point Curve",
       "presets": {
-        "title": "Presets",
-        "originalDesc": "Reset curve to original state",
         "brighten": "Brighten",
         "cool": "Cool",
         "darken": "Darken",
@@ -116,8 +122,10 @@
         "film": "Film",
         "lowContrast": "Low Contrast",
         "original": "Original",
+        "originalDesc": "Reset curve to original state",
         "portrait": "Portrait",
         "sCurve": "S-Curve",
+        "title": "Presets",
         "warm": "Warm"
       },
       "resetAllParametric": "Reset All Parametric Curves",
@@ -162,6 +170,14 @@
       "roundness": "Roundness",
       "size": "Size",
       "vignette": "Vignette"
+    },
+    "splitToning": {
+      "balance": "Balance",
+      "enabled": "Enable",
+      "highlights": "Highlights",
+      "saturation": "Saturation",
+      "shadows": "Shadows",
+      "title": "Split Toning"
     }
   },
   "contextMenus": {
@@ -421,6 +437,9 @@
         "aiEdit": "AI Edit {{count}}",
         "aiEdit_one": "AI Edit {{count}}",
         "aiEdit_other": "AI Edit {{count}}",
+        "autoErase": "Auto Erase {{count}}",
+        "autoErase_one": "Auto Erase {{count}}",
+        "autoErase_other": "Auto Erase {{count}}",
         "clone": "Clone {{count}}",
         "clone_one": "Clone {{count}}",
         "clone_other": "Clone {{count}}",
@@ -435,9 +454,8 @@
         "quickErase_one": "Quick Erase {{count}}",
         "quickErase_other": "Quick Erase {{count}}",
         "retouch": "Retouch {{count}}",
-        "autoErase": "Auto Erase {{count}}",
-        "autoErase_one": "Auto Erase {{count}}",
-        "autoErase_other": "Auto Erase {{count}}"
+        "retouch_one": "Retouch {{count}}",
+        "retouch_other": "Retouch {{count}}"
       },
       "resetInpaintingTooltip": "Reset Inpainting",
       "settings": {
@@ -462,8 +480,21 @@
       },
       "touchUpTitle": "Touch Up"
     },
+    "compare": {
+      "after": "After",
+      "before": "Before",
+      "close": "Close",
+      "dragHint": "Drag divider to compare",
+      "loading": "Loading…",
+      "reset": "Reset",
+      "title": "Before / After",
+      "toggleSplit": "Toggle split orientation",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out"
+    },
     "crop": {
       "aspectRatioHeading": "Aspect Ratio",
+      "autoCropAfterRotate": "Auto-crop black borders after rotation",
       "custom": {
         "hPlaceholder": "H",
         "hTooltip": "Height",
@@ -552,11 +583,11 @@
           "name": "1:1"
         }
       },
-      "autoCropAfterRotate": "Auto-crop black borders after rotation",
       "resetTooltip": "Reset Crop & Transform",
       "rotationHeading": "Rotation",
       "title": "Crop & Transform",
       "tooltips": {
+        "aiStraighten": "AI Straighten",
         "compositionOverlay": "Composition Overlay",
         "flipHoriz": "Flip image horizontally",
         "flipVert": "Flip image vertically",
@@ -664,21 +695,21 @@
       },
       "toggleAnalyticsInAdjustments": "Toggle analytics in Adjustments panel",
       "toggleAnalyticsTooltip": "Toggle Analytics Display",
+      "toolbar": {
+        "brushFeather": "Softness",
+        "brushSize": "Brush Size",
+        "clearMask": "Clear Mask",
+        "done": "Done",
+        "invert": "Invert",
+        "overlayOff": "Hide mask overlay",
+        "overlayOn": "Show mask overlay",
+        "strength": "Strength",
+        "title": "Mask Editing"
+      },
       "tooltips": {
         "addToCurrent": "Add {{name}} to Current Mask or Create New (Right-click)",
         "createNew": "Create New {{name}} Mask",
         "selectNewSourcePoint": "{{modifier}} + Click to select a new source point"
-      },
-      "toolbar": {
-        "title": "Mask Editing",
-        "invert": "Invert",
-        "clearMask": "Clear Mask",
-        "overlayOn": "Show mask overlay",
-        "overlayOff": "Hide mask overlay",
-        "done": "Done",
-        "strength": "Strength",
-        "brushSize": "Brush Size",
-        "brushFeather": "Softness"
       }
     },
     "metadata": {
@@ -726,8 +757,8 @@
       "organization": {
         "addTagPlaceholder": "Add tag...",
         "colorLabel": "Color Label",
-        "noTags": "No tags",
         "none": "None",
+        "noTags": "No tags",
         "rating": "Rating",
         "ratingLabels": "Rating & Labels",
         "tags": "Tags",
@@ -759,12 +790,12 @@
         "exportFolder": "Export Folder",
         "exportPreset": "Export Preset",
         "favorite": "Add to Favorites",
-        "unfavorite": "Remove from Favorites",
         "newFolder": "New Folder",
         "newPreset": "New Preset",
         "overwrite": "Overwrite",
         "renameFolder": "Rename Folder",
-        "sortAll": "Sort All Alphabetically"
+        "sortAll": "Sort All Alphabetically",
+        "unfavorite": "Remove from Favorites"
       },
       "status": {
         "empty": "No presets saved yet. Create your own, import from a file, or explore community presets.",
@@ -808,6 +839,8 @@
       "tooltips": {
         "aperture": "Aperture",
         "backToLibrary": "Back to Library",
+        "closeCompare": "Close compare",
+        "compare": "Before / After compare",
         "focalLength": "Focal Length",
         "fullscreen": "Toggle Fullscreen (F)",
         "iso": "ISO",
@@ -815,24 +848,16 @@
         "showEdited": "Show Edited (B)",
         "showOriginal": "Show Original (B)",
         "shutterSpeed": "Shutter Speed",
-        "undo": "Undo (Ctrl+Z) or History (Right-click)",
-        "compare": "Before / After compare",
-        "closeCompare": "Close compare"
+        "undo": "Undo (Ctrl+Z) or History (Right-click)"
       },
       "vc": "VC"
-    },
-    "compare": {
-      "title": "Before / After",
-      "toggleSplit": "Toggle split orientation",
-      "zoomIn": "Zoom in",
-      "zoomOut": "Zoom out",
-      "reset": "Reset",
-      "close": "Close",
-      "before": "Before",
-      "after": "After",
-      "dragHint": "Drag divider to compare",
-      "loading": "Loading…"
     }
+  },
+  "errors": {
+    "errorDetails": "Error details",
+    "loadFailedDescription": "Please restart the app. If the issue persists, check your network connection or reinstall.",
+    "loadFailedTitle": "App failed to load",
+    "reload": "Reload"
   },
   "export": {
     "advanced": {
@@ -847,6 +872,18 @@
       "kb": "KB",
       "mb": "MB",
       "tb": "TB"
+    },
+    "color": {
+      "bitDepth": "Bit Depth",
+      "bitDepth16Desc": "Larger files, posterization-free editing",
+      "bitDepth8Desc": "Smaller files, standard display",
+      "bitDepthValue": "{{value}}-bit",
+      "colorSpace": "Color Space",
+      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
+      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
+      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
+      "colorSpaceDesc_srgb": "Standard for the web and most screens",
+      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
     },
     "dialog": {
       "saveEditedImageTitle": "Save Edited Image",
@@ -863,17 +900,6 @@
       "image_plural": "Images",
       "lut": "LUT",
       "lut_plural": "LUTs"
-    },
-    "color": {
-      "bitDepth": "Bit Depth",
-      "bitDepth8Desc": "Smaller files, standard display",
-      "bitDepth16Desc": "Larger files, posterization-free editing",
-      "colorSpace": "Color Space",
-      "colorSpaceDesc_srgb": "Standard for the web and most screens",
-      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
-      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
-      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
-      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
     },
     "metadata": {
       "removeGps": "Remove GPS Data",
@@ -903,16 +929,17 @@
       "cancelExport": "Cancel Export",
       "cancelled": "Export cancelled",
       "cancelling": "Cancelling export…",
+      "completed": "Export completed",
       "estimatedAverageSize": " ({{size}} avg)",
       "estimatedSize": "Estimated file size: ~{{size}}",
       "estimatedTotalSize": "Estimated total size: ~{{size}}",
       "estimatingSize": "Estimating size...",
+      "exporting": "Exporting…",
+      "exportingProgress": "Exporting… ({{current}}/{{total}})",
       "exportMultiple": "Export {{count}} {{label}}",
       "exportMultiple_one": "Export {{count}} {{label}}",
       "exportMultiple_other": "Export {{count}} {{label}}",
       "exportSingle": "Export {{label}}",
-      "exporting": "Exporting…",
-      "exportingProgress": "Exporting… ({{current}}/{{total}})",
       "failed": "Export failed",
       "noImageSelected": "No image selected for export.",
       "noImagesSelected": "No images selected.",
@@ -971,8 +998,8 @@
       "iso": "ISO",
       "metadata": "Metadata",
       "noMetadataAvailable": "No metadata available",
-      "noTagsAdded": "No tags added",
       "none": "None",
+      "noTagsAdded": "No tags added",
       "rateAndLabel": "Rate & Label",
       "rating": "Rating",
       "selectImagesToCompare": "Select images to compare",
@@ -1159,11 +1186,17 @@
       "communityPresets": "Community Presets",
       "goHome": "Go to Home",
       "importImages": "Import Images"
+    },
+    "viewMode": {
+      "culling": "Culling View",
+      "grid": "Grid View",
+      "list": "List View"
     }
   },
   "masks": {
     "types": {
       "all": "Whole Image",
+      "autoErase": "Auto Erase",
       "brush": "Brush",
       "clone": "Clone",
       "color": "Color",
@@ -1180,8 +1213,7 @@
       "radial": "Radial",
       "retouch": "Retouch",
       "sky": "Sky",
-      "subject": "Subject",
-      "autoErase": "Auto Erase"
+      "subject": "Subject"
     }
   },
   "menus": {
@@ -1287,9 +1319,9 @@
       "applyButton_one": "Apply to 1 image",
       "applyButton_other": "Apply to {{count}} images",
       "bestImage": "Best Image",
+      "blurryImagesTab": "Blurry Images",
       "blurThreshold": "Blur Threshold",
       "blurThresholdDesc": "Images with a sharpness score below this value are flagged. Higher is stricter.",
-      "blurryImagesTab": "Blurry Images",
       "cancel": "Cancel",
       "close": "Close",
       "cullingFailed": "Culling Failed",
@@ -1812,9 +1844,9 @@
         "tonemapperOptions": {
           "agx": "AgX",
           "basic": "Basic",
-          "reinhard": "Reinhard",
           "filmic": "Filmic Pro",
-          "gamma": "Gamma 2.2"
+          "gamma": "Gamma 2.2",
+          "reinhard": "Reinhard"
         },
         "tonemapperOverride": "Global Tonemapper Override",
         "tonemapperOverrideDesc": "Force a specific tonemapper globally for all images, hiding the tonemapper switch from the adjustments panel."
@@ -1851,8 +1883,8 @@
     "tagging": {
       "addCustomPlaceholder": "Add custom AI tags (comma separated)...",
       "addCustomTooltip": "Add AI tag",
-      "addShortcutTooltip": "Add Shortcut",
       "addShortcutsPlaceholder": "Add shortcuts (comma separated)...",
+      "addShortcutTooltip": "Add Shortcut",
       "aiTagging": "AI Tagging",
       "aiTaggingDesc": "Enables automatic image tagging using an AI (CLIP) model. This will download an additional model and impact performance while browsing folders. Tags are used for searching a folder.",
       "amount": "Amount",

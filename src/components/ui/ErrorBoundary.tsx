@@ -1,4 +1,5 @@
 import React from 'react';
+import i18n from 'i18next';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -32,11 +33,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       }
       return (
         <div className="w-full h-screen flex flex-col items-center justify-center bg-bg-primary text-text-primary p-8">
-          <h1 className="text-2xl font-bold mb-4">应用加载出现问题</h1>
-          <p className="text-text-secondary mb-6">请重启应用。如果问题持续，请检查网络连接或重新安装。</p>
+          <h1 className="text-2xl font-bold mb-4">{i18n.t('errors.loadFailedTitle')}</h1>
+          <p className="text-text-secondary mb-6">{i18n.t('errors.loadFailedDescription')}</p>
           {this.state.error && (
             <details className="text-sm text-text-secondary bg-bg-secondary rounded-lg p-4 max-w-xl">
-              <summary className="cursor-pointer font-medium">错误详情</summary>
+              <summary className="cursor-pointer font-medium">{i18n.t('errors.errorDetails')}</summary>
               <pre className="mt-2 whitespace-pre-wrap break-all text-xs">
                 {this.state.error.message}
                 {'\n\n'}
@@ -48,7 +49,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             onClick={() => window.location.reload()}
             className="mt-6 px-6 py-2 bg-accent text-button-text rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
-            重新加载
+            {i18n.t('errors.reload')}
           </button>
         </div>
       );

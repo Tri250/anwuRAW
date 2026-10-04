@@ -164,7 +164,7 @@ function App() {
     isInstantTransition,
     isLayoutReady,
     uiVisibility,
-    isLibraryExportPanelVisible,
+    isLibraryExportPanelVisible: _isLibraryExportPanelVisible,
     leftPanelWidth,
     rightPanelWidth,
     compactEditorPanelHeightOverride,
@@ -1060,7 +1060,7 @@ function App() {
 
 const AppWrapper = () => (
   <ErrorBoundary>
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} routerPush={(to) => {}} routerReplace={(to) => {}}>
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} routerPush={(_to) => {}} routerReplace={(_to) => {}}>
       <ContextMenuProvider>
         {/* 全局动效降级：当系统开启"减少动态效果"时，自动禁用 framer-motion 的非必要动画 */}
         <MotionConfig reducedMotion="user">

@@ -571,8 +571,10 @@ fn process_preview_job(
         }
 
         // [POST-GPU] channel_mixer + split_toning
-        let final_processed_image =
-            crate::image_processing::apply_post_gpu_adjustments(final_processed_image, &adjustments_clone);
+        let final_processed_image = crate::image_processing::apply_post_gpu_adjustments(
+            final_processed_image,
+            &adjustments_clone,
+        );
         let final_processed_image = Arc::new(final_processed_image);
         let final_rgba_image = match &*final_processed_image {
             DynamicImage::ImageRgba8(img) => img,
@@ -881,8 +883,10 @@ fn generate_uncropped_preview(
             "generate_uncropped_preview",
         ) {
             // [POST-GPU] channel_mixer + split_toning
-            let processed_image =
-                crate::image_processing::apply_post_gpu_adjustments(processed_image, &adjustments_clone);
+            let processed_image = crate::image_processing::apply_post_gpu_adjustments(
+                processed_image,
+                &adjustments_clone,
+            );
             let (width, height) = processed_image.dimensions();
             let rgb_pixels = processed_image.to_rgb8().into_vec();
             match Encoder::new(Preset::BaselineFastest)
@@ -1009,8 +1013,10 @@ async fn preview_geometry_transform(
             )?;
 
             // [POST-GPU] channel_mixer + split_toning
-            let processed_base =
-                crate::image_processing::apply_post_gpu_adjustments(processed_base, &temp_adjustments);
+            let processed_base = crate::image_processing::apply_post_gpu_adjustments(
+                processed_base,
+                &temp_adjustments,
+            );
 
             let mut cache = state
                 .geometry_cache
@@ -1378,8 +1384,10 @@ async fn generate_all_community_previews(
             )?;
 
             // [POST-GPU] channel_mixer + split_toning
-            let processed_image_dynamic =
-                crate::image_processing::apply_post_gpu_adjustments(processed_image_dynamic, &js_adjustments);
+            let processed_image_dynamic = crate::image_processing::apply_post_gpu_adjustments(
+                processed_image_dynamic,
+                js_adjustments,
+            );
 
             let processed_image = processed_image_dynamic.to_rgb8();
 

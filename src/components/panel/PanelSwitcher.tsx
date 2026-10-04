@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
@@ -166,7 +167,7 @@ export default function PanelSwitcher({
         }
       }
 
-      let style: any = {};
+      let style: CSSProperties;
       if (tabs.length === 0) {
         style = isVertical ? { top: 4, left: 4, right: 4, height: 2 } : { left: 4, top: 4, bottom: 4, width: 2 };
       } else if (insertIndex < tabs.length) {

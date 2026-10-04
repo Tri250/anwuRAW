@@ -262,7 +262,11 @@ mod tests {
     #[test]
     fn tc_color_06_hue_distance_wraps_around_360() {
         let d = hue_distance(359.0, 1.0);
-        assert!((d - 2.0).abs() < 0.001, "359 与 1 的环绕距离应为 2,实际 {}", d);
+        assert!(
+            (d - 2.0).abs() < 0.001,
+            "359 与 1 的环绕距离应为 2,实际 {}",
+            d
+        );
     }
 
     #[test]
@@ -330,7 +334,11 @@ mod tests {
         assert!(out.get_pixel(15, 15)[0] < 255, "中心点应被扩散");
         // kernel 归一化 → 总和接近 255;边缘 clamp 残余误差放宽至 ±30
         let sum: u32 = out.iter().map(|p| *p as u32).sum();
-        assert!((sum as i64 - 255).abs() <= 30, "kernel 应大致归一化,实际总和 {}", sum);
+        assert!(
+            (sum as i64 - 255).abs() <= 30,
+            "kernel 应大致归一化,实际总和 {}",
+            sum
+        );
     }
 
     #[test]
@@ -364,4 +372,3 @@ mod tests {
         let _ = fs::remove_file(&output_path);
     }
 }
-

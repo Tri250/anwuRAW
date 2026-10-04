@@ -2,10 +2,10 @@
   "adjustments": {
     "basic": {
       "blacks": "Schwarz",
+      "brightness": "Helligkeit",
       "contrast": "Kontrast",
       "evShift": "EV-Korrektur",
       "exposure": "Belichtung",
-      "brightness": "Helligkeit",
       "highlights": "Lichter",
       "mappers": {
         "agx": "AgX",
@@ -21,18 +21,24 @@
       },
       "reset": "Zurücksetzen",
       "scene": {
-        "title": "Szene verbessern",
-        "desc": "Professionelle Farbkorrektur mit einem Klick",
         "auto": "Auto",
         "autoDesc": "Intelligente Szenenverbesserung",
-        "prototypePortrait": "Porträt",
+        "desc": "Professionelle Farbkorrektur mit einem Klick",
         "prototypeLandscape": "Landschaft",
         "prototypeNight": "Nacht",
-        "prototypeWarmSunset": "Warmer Sonnenuntergang"
+        "prototypePortrait": "Porträt",
+        "prototypeWarmSunset": "Warmer Sonnenuntergang",
+        "title": "Szene verbessern"
       },
       "shadows": "Tiefen",
       "toneMapper": "Tonemapper",
       "whites": "Weiß"
+    },
+    "channelMixer": {
+      "hint": "Passen Sie den Prozentsatz jedes Eingangsfarbkanals an, der zum Ausgangskanal beiträgt.",
+      "outputs": "Ausgabekanäle",
+      "reset": "Zurücksetzen",
+      "title": "Kanalmixer"
     },
     "color": {
       "ariaSelectColor": "{{name}}-Farbe auswählen",
@@ -59,6 +65,8 @@
         "midtones": "Mitteltöne",
         "shadows": "Tiefen"
       },
+      "hslPickActive": "HSL-Pipette aktiv",
+      "hslPickTooltip": "HSL-Pipette",
       "hue": "Farbton",
       "localHue": "Lokaler Farbton",
       "luminance": "Luminanz",
@@ -83,13 +91,13 @@
       "whiteBalance": "Weißabgleich"
     },
     "curves": {
-      "channelTitle": "{{channel}}-Kanal",
       "channels": {
         "blue": "Blau",
         "green": "Grün",
         "luma": "Luma",
         "red": "Rot"
       },
+      "channelTitle": "{{channel}}-Kanal",
       "copyParametric": "Parametrische {{channel}}-Kurve kopieren",
       "copyPoint": "Punktkurve ({{channel}}) kopieren",
       "curveDataUnavailable": "Kurvendaten nicht verfügbar.",
@@ -106,13 +114,7 @@
       "pasteParametric": "Parametrische Kurve einfügen",
       "pastePoint": "Punktkurve einfügen",
       "pointCurve": "Punktkurve",
-      "resetAllParametric": "Alle parametrischen Kurven zurücksetzen",
-      "resetAllPoint": "Alle Punktkurven zurücksetzen",
-      "resetParametric": "Parametrische {{channel}}-Kurve zurücksetzen",
-      "resetPoint": "Punktkurve ({{channel}}) zurücksetzen",
       "presets": {
-        "title": "Voreinstellungen",
-        "originalDesc": "Kurve auf den ursprünglichen Zustand zurücksetzen",
         "brighten": "Aufhellen",
         "cool": "Kühl",
         "darken": "Abdunkeln",
@@ -120,10 +122,16 @@
         "film": "Film",
         "lowContrast": "Niedriger Kontrast",
         "original": "Original",
+        "originalDesc": "Kurve auf den ursprünglichen Zustand zurücksetzen",
         "portrait": "Porträt",
         "sCurve": "S-Kurve",
+        "title": "Voreinstellungen",
         "warm": "Warm"
-      }
+      },
+      "resetAllParametric": "Alle parametrischen Kurven zurücksetzen",
+      "resetAllPoint": "Alle Punktkurven zurücksetzen",
+      "resetParametric": "Parametrische {{channel}}-Kurve zurücksetzen",
+      "resetPoint": "Punktkurve ({{channel}}) zurücksetzen"
     },
     "details": {
       "blueYellow": "Blau/Gelb",
@@ -162,6 +170,14 @@
       "roundness": "Rundheit",
       "size": "Größe",
       "vignette": "Vignettierung"
+    },
+    "splitToning": {
+      "balance": "Balance",
+      "enabled": "Aktivieren",
+      "highlights": "Lichter",
+      "saturation": "Sättigung",
+      "shadows": "Schatten",
+      "title": "Teiltonung"
     }
   },
   "contextMenus": {
@@ -419,6 +435,8 @@
         "aiEdit": "KI-Bearbeitung {{count}}",
         "aiEdit_one": "KI-Bearbeitung {{count}}",
         "aiEdit_other": "KI-Bearbeitung {{count}}",
+        "autoErase_one": "Automatisches Löschen {{count}}",
+        "autoErase_other": "Automatisches Löschen {{count}}",
         "clone": "Klonen {{count}}",
         "clone_one": "Klonen {{count}}",
         "clone_other": "Klonen {{count}}",
@@ -432,7 +450,9 @@
         "quickErase": "Schnelles Löschen {{count}}",
         "quickErase_one": "Schnelles Löschen {{count}}",
         "quickErase_other": "Schnelles Löschen {{count}}",
-        "retouch": "Retusche {{count}}"
+        "retouch": "Retusche {{count}}",
+        "retouch_one": "Retusche {{count}}",
+        "retouch_other": "Retusche {{count}}"
       },
       "resetInpaintingTooltip": "Reparieren zurücksetzen",
       "settings": {
@@ -449,6 +469,7 @@
         "inpaintSelectionButton": "Auswahl füllen (Inpaint)",
         "invertComponent": "Komponente umkehren",
         "invertSelection": "Auswahl umkehren",
+        "onDeviceNotice": "KI-Reparatur auf dem Gerät. Funktioniert offline — Ihr Foto verlässt dieses Gerät nicht.",
         "placeholder": "z. B. ein Blumenfeld",
         "quickEraseDesc": "Auswahl füllen, um das Objekt zu entfernen.",
         "selectionPropertiesTitle": "Auswahleigenschaften",
@@ -456,8 +477,21 @@
       },
       "touchUpTitle": "Ausbessern"
     },
+    "compare": {
+      "after": "Nachher",
+      "before": "Vorher",
+      "close": "Schließen",
+      "dragHint": "Zum Vergleichen den Teiler ziehen",
+      "loading": "Wird geladen…",
+      "reset": "Zurücksetzen",
+      "title": "Vorher / Nachher",
+      "toggleSplit": "Teilungsrichtung umschalten",
+      "zoomIn": "Vergrößern",
+      "zoomOut": "Verkleinern"
+    },
     "crop": {
       "aspectRatioHeading": "Seitenverhältnis",
+      "autoCropAfterRotate": "Schwarze Ränder nach der Drehung automatisch zuschneiden",
       "custom": {
         "hPlaceholder": "H",
         "hTooltip": "Höhe",
@@ -550,6 +584,7 @@
       "rotationHeading": "Drehung",
       "title": "Zuschnitt & Form",
       "tooltips": {
+        "aiStraighten": "KI-Ausrichten",
         "compositionOverlay": "Kompositions-Überlagerung",
         "flipHoriz": "Bild horizontal spiegeln",
         "flipVert": "Bild vertikal spiegeln",
@@ -630,17 +665,6 @@
         "grow": "Erweitern",
         "tolerance": "Toleranz"
       },
-      "toolbar": {
-        "title": "Maskenbearbeitung",
-        "invert": "Invertieren",
-        "clearMask": "Maske löschen",
-        "overlayOn": "Maskenüberlagerung anzeigen",
-        "overlayOff": "Maskenüberlagerung ausblenden",
-        "done": "Fertig",
-        "strength": "Stärke",
-        "brushSize": "Pinselgröße",
-        "brushFeather": "Weichheit"
-      },
       "patches": {
         "copyName": "{{name}} Kopie",
         "invertedName": "{{name}} umgekehrt",
@@ -668,6 +692,17 @@
       },
       "toggleAnalyticsInAdjustments": "Analyseanzeige im Anpassungen-Panel umschalten",
       "toggleAnalyticsTooltip": "Analyseanzeige umschalten",
+      "toolbar": {
+        "brushFeather": "Weichheit",
+        "brushSize": "Pinselgröße",
+        "clearMask": "Maske löschen",
+        "done": "Fertig",
+        "invert": "Invertieren",
+        "overlayOff": "Maskenüberlagerung ausblenden",
+        "overlayOn": "Maskenüberlagerung anzeigen",
+        "strength": "Stärke",
+        "title": "Maskenbearbeitung"
+      },
       "tooltips": {
         "addToCurrent": "{{name}} zur aktuellen Maske hinzufügen oder neu erstellen (Rechtsklick)",
         "createNew": "Neue {{name}}-Maske erstellen",
@@ -712,13 +747,15 @@
         "clickToOpenTooltip": "Klicken, um die Karte in neuem Tab zu öffnen",
         "latitude": "Breitengrad",
         "longitude": "Längengrad",
+        "offlineMapLabel": "Offline-Weltkarte mit Markierung des Foto-Standorts",
+        "openOnlineMap": "Online-Karte öffnen",
         "title": "GPS-Standort"
       },
       "organization": {
         "addTagPlaceholder": "Tag hinzufügen...",
         "colorLabel": "Farbmarkierung",
-        "noTags": "Keine Tags",
         "none": "Keine",
+        "noTags": "Keine Tags",
         "rating": "Bewertung",
         "ratingLabels": "Bewertung & Markierungen",
         "tags": "Tags",
@@ -750,12 +787,12 @@
         "exportFolder": "Ordner exportieren",
         "exportPreset": "Vorgabe exportieren",
         "favorite": "Zu Favoriten hinzufügen",
-        "unfavorite": "Aus Favoriten entfernen",
         "newFolder": "Neuer Ordner",
         "newPreset": "Neue Vorgabe",
         "overwrite": "Überschreiben",
         "renameFolder": "Ordner umbenennen",
-        "sortAll": "Alle alphabetisch sortieren"
+        "sortAll": "Alle alphabetisch sortieren",
+        "unfavorite": "Aus Favoriten entfernen"
       },
       "status": {
         "empty": "Noch keine Vorgaben gespeichert. Eigene erstellen, importieren oder Community-Vorgaben entdecken.",
@@ -799,6 +836,8 @@
       "tooltips": {
         "aperture": "Blende",
         "backToLibrary": "Zurück zur Bibliothek",
+        "closeCompare": "Vergleich schließen",
+        "compare": "Vorher/Nachher vergleichen",
         "focalLength": "Brennweite",
         "fullscreen": "Vollbild umschalten (F)",
         "iso": "ISO",
@@ -806,24 +845,16 @@
         "showEdited": "Bearbeitet anzeigen (B)",
         "showOriginal": "Original anzeigen (B)",
         "shutterSpeed": "Verschlusszeit",
-        "undo": "Rückgängig (Strg+Z) oder Verlauf (Rechtsklick)",
-        "compare": "Vorher/Nachher vergleichen",
-        "closeCompare": "Vergleich schließen"
+        "undo": "Rückgängig (Strg+Z) oder Verlauf (Rechtsklick)"
       },
       "vc": "VK"
-    },
-    "compare": {
-      "title": "Vorher / Nachher",
-      "toggleSplit": "Teilungsrichtung umschalten",
-      "zoomIn": "Vergrößern",
-      "zoomOut": "Verkleinern",
-      "reset": "Zurücksetzen",
-      "close": "Schließen",
-      "before": "Vorher",
-      "after": "Nachher",
-      "dragHint": "Zum Vergleichen den Teiler ziehen",
-      "loading": "Wird geladen…"
     }
+  },
+  "errors": {
+    "errorDetails": "Fehlerdetails",
+    "loadFailedDescription": "Bitte starten Sie die App neu. Sollte das Problem weiterhin bestehen, überprüfen Sie Ihre Netzwerkverbindung oder installieren Sie die App neu.",
+    "loadFailedTitle": "App konnte nicht geladen werden",
+    "reload": "Neu laden"
   },
   "export": {
     "advanced": {
@@ -838,6 +869,18 @@
       "kb": "KB",
       "mb": "MB",
       "tb": "TB"
+    },
+    "color": {
+      "bitDepth": "Bittiefe",
+      "bitDepth16Desc": "Größere Dateien, Bearbeitung ohne Posterisierung",
+      "bitDepth8Desc": "Kleinere Dateien, Standardanzeige",
+      "bitDepthValue": "{{value}}-Bit",
+      "colorSpace": "Farbraum",
+      "colorSpaceDesc_adobeRgb": "Weit verbreitet in Druck und Fotografie",
+      "colorSpaceDesc_displayP3": "Großer Farbumfang — ideal für Apple- / HDR-Displays",
+      "colorSpaceDesc_proPhoto": "Größter Farbumfang — für professionelle Archivierung",
+      "colorSpaceDesc_srgb": "Standard für Web und die meisten Bildschirme",
+      "jpgIccWarning": "JPEG bettet ICC-Profil für Nicht-sRGB-Räume ein. Einige Viewer zeigen möglicherweise weiterhin sRGB."
     },
     "dialog": {
       "saveEditedImageTitle": "Bearbeitetes Bild speichern",
@@ -872,6 +915,7 @@
     },
     "sections": {
       "advanced": "Erweitert",
+      "color": "Farbausgabe",
       "fileNaming": "Dateibenennung",
       "fileSettings": "Dateieinstellungen",
       "imageSizing": "Bildgröße",
@@ -882,16 +926,17 @@
       "cancelExport": "Export abbrechen",
       "cancelled": "Export abgebrochen",
       "cancelling": "Export wird abgebrochen…",
+      "completed": "Export abgeschlossen",
       "estimatedAverageSize": " ({{size}} Ø)",
       "estimatedSize": "Geschätzte Dateigröße: ~{{size}}",
       "estimatedTotalSize": "Geschätzte Gesamtgröße: ~{{size}}",
       "estimatingSize": "Größe wird geschätzt...",
+      "exporting": "Wird exportiert…",
+      "exportingProgress": "Wird exportiert… ({{current}}/{{total}})",
       "exportMultiple": "Exportiere {{count}} {{label}}",
       "exportMultiple_one": "Exportiere {{count}} {{label}}",
       "exportMultiple_other": "Exportiere {{count}} {{label}}",
       "exportSingle": "{{label}} exportieren",
-      "exporting": "Wird exportiert…",
-      "exportingProgress": "Wird exportiert… ({{current}}/{{total}})",
       "failed": "Export fehlgeschlagen",
       "noImageSelected": "Kein Bild zum Exportieren ausgewählt.",
       "noImagesSelected": "Keine Bilder ausgewählt.",
@@ -950,8 +995,8 @@
       "iso": "ISO",
       "metadata": "Metadaten",
       "noMetadataAvailable": "Keine Metadaten verfügbar",
-      "noTagsAdded": "Keine Tags hinzugefügt",
       "none": "Keine",
+      "noTagsAdded": "Keine Tags hinzugefügt",
       "rateAndLabel": "Bewerten & Markieren",
       "rating": "Bewertung",
       "selectImagesToCompare": "Wählen Sie Bilder zum Vergleichen aus",
@@ -1138,6 +1183,11 @@
       "communityPresets": "Community-Vorgaben",
       "goHome": "Zur Startseite",
       "importImages": "Bilder importieren"
+    },
+    "viewMode": {
+      "culling": "Aussortieren-Ansicht",
+      "grid": "Rasteransicht",
+      "list": "Listenansicht"
     }
   },
   "masks": {
@@ -1266,9 +1316,9 @@
       "applyButton_one": "Auf 1 Bild anwenden",
       "applyButton_other": "Auf {{count}} Bilder anwenden",
       "bestImage": "Bestes Bild",
+      "blurryImagesTab": "Unscharfe Bilder",
       "blurThreshold": "Unschärfe-Schwellenwert",
       "blurThresholdDesc": "Bilder mit einem Schärfewert unter diesem Wert werden markiert. Höher ist strenger.",
-      "blurryImagesTab": "Unscharfe Bilder",
       "cancel": "Abbrechen",
       "close": "Schließen",
       "cullingFailed": "Aussortieren fehlgeschlagen",
@@ -1827,8 +1877,8 @@
     "tagging": {
       "addCustomPlaceholder": "Benutzerdefinierte KI-Tags hinzufügen (kommagetrennt)...",
       "addCustomTooltip": "KI-Tag hinzufügen",
-      "addShortcutTooltip": "Shortcut hinzufügen",
       "addShortcutsPlaceholder": "Shortcuts hinzufügen (kommagetrennt)...",
+      "addShortcutTooltip": "Shortcut hinzufügen",
       "aiTagging": "KI-Tagging",
       "aiTaggingDesc": "Aktiviert automatisches Bild-Tagging mit einem KI-Modell (CLIP). Dies lädt ein zusätzliches Modell herunter und beeinträchtigt die Leistung beim Durchsuchen.",
       "amount": "Betrag",
