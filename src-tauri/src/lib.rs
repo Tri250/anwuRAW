@@ -1379,7 +1379,7 @@ async fn generate_all_community_previews(
 
             // [POST-GPU] channel_mixer + split_toning
             let processed_image_dynamic =
-                crate::image_processing::apply_post_gpu_adjustments(processed_image_dynamic, &js_adjustments);
+                crate::image_processing::apply_post_gpu_adjustments(processed_image_dynamic, js_adjustments);
 
             let processed_image = processed_image_dynamic.to_rgb8();
 

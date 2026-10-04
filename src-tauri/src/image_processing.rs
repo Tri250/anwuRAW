@@ -3501,25 +3501,21 @@ pub fn apply_post_gpu_adjustments(
     };
 
     // Channel Mixer
-    if is_visible("channel_mixer") {
-        if let Some(cm_val) = js_adjustments.get("channelMixer") {
-            if let Ok(cm) = serde_json::from_value::<ChannelMixerSettings>(cm_val.clone()) {
-                // channel_mixer::ChannelMixerSettings 没有 enabled 字段，用 is_identity 判断
-                if !cm.is_identity() {
-                    img = crate::channel_mixer::apply_to_dynamic(&img, &cm);
-                }
-            }
-        }
+    if is_visible("channel_mixer")
+        && let Some(cm_val) = js_adjustments.get("channelMixer")
+        && let Ok(cm) = serde_json::from_value::<ChannelMixerSettings>(cm_val.clone())
+        && !cm.is_identity()
+    {
+        // channel_mixer::ChannelMixerSettings 没有 enabled 字段，用 is_identity 判断
+        img = crate::channel_mixer::apply_to_dynamic(&img, &cm);
     }
     // Split Toning
-    if is_visible("split_toning") {
-        if let Some(st_val) = js_adjustments.get("splitToning") {
-            if let Ok(st) = serde_json::from_value::<SplitToningSettings>(st_val.clone()) {
-                if st.enabled {
-                    img = crate::split_toning::apply_to_dynamic(&img, &st);
-                }
-            }
-        }
+    if is_visible("split_toning")
+        && let Some(st_val) = js_adjustments.get("splitToning")
+        && let Ok(st) = serde_json::from_value::<SplitToningSettings>(st_val.clone())
+        && st.enabled
+    {
+        img = crate::split_toning::apply_to_dynamic(&img, &st);
     }
     img
 }

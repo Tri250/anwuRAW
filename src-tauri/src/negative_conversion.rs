@@ -132,7 +132,12 @@ fn run_pipeline(
 
     let y0 = 1.0 / (1.0 + (k * x0).exp());
     let y1 = 1.0 / (1.0 + (-k * (1.0 - x0)).exp());
-    let scale = 1.0 / (y1 - y0);
+    // 当 x0 == 0.5 时 y0 == y1，分母为 0 会产生 inf/NaN 进而污染像素。
+    // 用 is_finite 兜底，避免输出出现 NaN 像素。
+    let mut scale = 1.0 / (y1 - y0);
+    if !scale.is_finite() {
+        scale = 1.0;
+    }
 
     out_buffer
         .par_chunks_mut(3)

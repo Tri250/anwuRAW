@@ -33,10 +33,10 @@ fn system_proxy() -> Option<reqwest::Proxy> {
     ] {
         if let Ok(val) = std::env::var(key) {
             let val = val.trim().to_string();
-            if !val.is_empty() {
-                if let Ok(proxy) = reqwest::Proxy::all(&val) {
-                    return Some(proxy);
-                }
+            if !val.is_empty()
+                && let Ok(proxy) = reqwest::Proxy::all(&val)
+            {
+                return Some(proxy);
             }
         }
     }
