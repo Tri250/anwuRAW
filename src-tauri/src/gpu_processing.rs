@@ -64,7 +64,9 @@ impl WgpuDisplay {
                     match self.surface.get_current_texture() {
                         wgpu::CurrentSurfaceTexture::Success(tex)
                         | wgpu::CurrentSurfaceTexture::Suboptimal(tex) => tex,
-                        _ => panic!("Failed to acquire surface texture"),
+                        // 重配后仍拿不到纹理（如窗口最小化/设备丢失的瞬态）时，
+                        // 跳过本帧而非 panic 崩溃整个应用；下一帧渲染循环会再次尝试。
+                        _ => return,
                     }
                 }
                 _ => return,
