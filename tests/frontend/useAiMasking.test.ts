@@ -379,7 +379,7 @@ describe('TC-AI-09 ~ TC-AI-10: handleGenerativeReplace 端侧/云端', () => {
       await result.current.handleGenerativeReplace('patch-1', 'a prompt', true);
     });
     expect(mockInvoke).toHaveBeenCalledWith(
-      Invokes.InvokeGenerativeReplaseWithMaskDef,
+      Invokes.InvokeGenerativeReplaceWithMaskDef,
       expect.objectContaining({ useFastInpaint: true, token: null }),
     );
     const patch = useEditorStore.getState().adjustments.aiPatches.find((p) => p.id === 'patch-1');
@@ -394,7 +394,7 @@ describe('TC-AI-09 ~ TC-AI-10: handleGenerativeReplace 端侧/云端', () => {
       await result.current.handleGenerativeReplace('patch-1', 'cloud prompt', false);
     });
     expect(mockInvoke).toHaveBeenCalledWith(
-      Invokes.InvokeGenerativeReplaseWithMaskDef,
+      Invokes.InvokeGenerativeReplaceWithMaskDef,
       expect.objectContaining({ useFastInpaint: false, token: 'mock-token' }),
     );
   });
