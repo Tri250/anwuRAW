@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新疆合沐纯牛奶进销存管理系统 · PRD 与开发计划 V1.0</title>
+<style>
+  :root{
+    --ink:#1B2A26; --ink-2:#41544E; --ink-3:#6E8079;
+    --brand:#0E7C66; --brand-deep:#0A5A4B; --brand-soft:#E3F1ED; --brand-line:#BFDCD4;
+    --gold:#B98A1D; --gold-soft:#F7EEDB;
+    --bg:#F5F4EF; --card:#FFFFFF; --line:#E4E1D8; --line-soft:#EEEBE3;
+    --warn:#B4530A; --warn-soft:#FBEEDF; --danger:#B3261E; --danger-soft:#FBE9E7;
+    --ok:#1E7B34; --ok-soft:#E5F3E7;
+    --radius:14px; --radius-sm:9px;
+    --font:"Noto Sans SC","Source Han Sans SC","PingFang SC","HarmonyOS Sans SC","MiSans","Microsoft YaHei UI","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    --mono:"JetBrains Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:#CFE9E2}
+
+  /* ---------- 封面 ---------- */
+  .cover{position:relative;overflow:hidden;background:linear-gradient(150deg,#0A5A4B 0%,#0E7C66 52%,#158C74 100%);color:#fff;padding:88px 48px 72px}
+  .cover::before{content:"";position:absolute;inset:0;background:
+    radial-gradient(720px 320px at 88% -10%,rgba(255,255,255,.16),transparent 60%),
+    radial-gradient(560px 300px at -6% 108%,rgba(255,255,255,.10),transparent 60%)}
+  .cover::after{content:"";position:absolute;right:-70px;top:-70px;width:300px;height:300px;border-radius:50%;border:34px solid rgba(255,255,255,.08)}
+  .cover-in{position:relative;max-width:1080px;margin:0 auto;z-index:1}
+  .cover .brand{display:inline-flex;align-items:center;gap:10px;font-size:14px;letter-spacing:.22em;opacity:.92}
+  .cover .brand .dot{width:9px;height:9px;border-radius:50%;background:#F2C94C;box-shadow:0 0 0 4px rgba(242,201,76,.22)}
+  .cover h1{margin-top:26px;font-size:40px;font-weight:800;line-height:1.32;letter-spacing:.01em}
+  .cover h1 small{display:block;margin-top:10px;font-size:19px;font-weight:500;opacity:.9;letter-spacing:.06em}
+  .cover .sub{margin-top:18px;max-width:640px;font-size:15px;opacity:.88}
+  .cover .meta{margin-top:44px;display:flex;flex-wrap:wrap;gap:10px}
+  .cover .meta span{font-size:13px;padding:7px 15px;border:1px solid rgba(255,255,255,.34);border-radius:999px;background:rgba(255,255,255,.10);backdrop-filter:blur(4px)}
+  .cover .ver{position:absolute;top:40px;right:48px;text-align:right;z-index:1}
+  .cover .ver b{display:block;font-size:22px;font-weight:800;letter-spacing:.04em}
+  .cover .ver i{font-style:normal;font-size:12px;opacity:.8;letter-spacing:.18em}
+
+  /* ---------- 布局 ---------- */
+  .wrap{max-width:1080px;margin:0 auto;padding:0 48px 90px}
+  nav.toc{position:sticky;top:0;z-index:50;background:rgba(245,244,239,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 48px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+  nav.toc::-webkit-scrollbar{display:none}
+  nav.toc a{flex:none;font-size:13px;color:var(--ink-2);text-decoration:none;padding:6px 13px;border-radius:999px;border:1px solid transparent;white-space:nowrap;transition:.18s}
+  nav.toc a:hover{color:var(--brand);background:var(--brand-soft);border-color:var(--brand-line)}
+
+  section{margin-top:64px;scroll-margin-top:76px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:26px}
+  .sec-head .no{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--brand);letter-spacing:.05em}
+  .sec-head h2{font-size:25px;font-weight:800;letter-spacing:.02em}
+  .sec-head .tag{margin-left:auto;font-size:12px;color:var(--ink-3)}
+  h3{font-size:17.5px;font-weight:700;margin:30px 0 12px;display:flex;align-items:center;gap:9px}
+  h3::before{content:"";width:7px;height:18px;border-radius:3px;background:var(--brand)}
+  h4{font-size:15px;font-weight:700;margin:18px 0 8px;color:var(--ink)}
+  p{margin:8px 0;color:var(--ink-2)}
+  p.lead{font-size:15.5px;color:var(--ink)}
+  strong{color:var(--ink);font-weight:700}
+  ul,ol{padding-left:22px;color:var(--ink-2)}
+  li{margin:5px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;margin:14px 0;box-shadow:0 1px 2px rgba(27,42,38,.04)}
+  .card.tight{padding:16px 20px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+
+  /* ---------- 表格 ---------- */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0;background:var(--card);border-radius:var(--radius-sm);overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+  th{background:#F0EEE7;color:var(--ink);font-weight:700;text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:13px;letter-spacing:.02em}
+  td{padding:10px 13px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-2)}
+  tr:last-child td{border-bottom:none}
+  td.c,th.c{text-align:center}
+  td b{color:var(--ink)}
+  .num{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:12.5px}
+
+  /* ---------- 徽标 ---------- */
+  .chip{display:inline-block;font-size:11.5px;font-weight:600;padding:2.5px 10px;border-radius:999px;letter-spacing:.03em;white-space:nowrap}
+  .chip.p0{background:var(--brand-soft);color:var(--brand-deep);box-shadow:inset 0 0 0 1px var(--brand-line)}
+  .chip.p1{background:var(--gold-soft);color:#8A6410;box-shadow:inset 0 0 0 1px #E8D8AE}
+  .chip.p2{background:#EFEDE6;color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--line)}
+  .chip.ok{background:var(--ok-soft);color:var(--ok)}
+  .chip.warn{background:var(--warn-soft);color:var(--warn)}
+  .chip.bad{background:var(--danger-soft);color:var(--danger)}
+  .chip.role{background:#EDF2FB;color:#2B4C8C;box-shadow:inset 0 0 0 1px #C9D8F0}
+  .chip.sys{background:#F1ECE4;color:#6B5B33;box-shadow:inset 0 0 0 1px #E0D6C2}
+  .yes{color:var(--brand);font-weight:800}
+  .no-x{color:#C2BCAE}
+  .tbd{color:var(--warn);font-weight:600}
+  .asm{color:#8A6410}
+
+  /* ---------- FR 需求卡 ---------- */
+  .fr{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin:20px 0;overflow:hidden;box-shadow:0 1px 3px rgba(27,42,38,.05)}
+  .fr-head{display:flex;align-items:center;gap:12px;padding:15px 22px;background:linear-gradient(180deg,#FBFAF7,#F6F5EF);border-bottom:1px solid var(--line-soft)}
+  .fr-head .fid{font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;background:var(--brand);padding:4px 10px;border-radius:7px;letter-spacing:.05em}
+  .fr-head h4{margin:0;font-size:16px}
+  .fr-head .pri{margin-left:auto}
+  .fr-body{padding:18px 22px}
+  .fr-body dl{display:grid;grid-template-columns:96px 1fr;gap:7px 14px;font-size:13.5px}
+  .fr-body dt{color:var(--ink-3);font-weight:600;padding-top:1px}
+  .fr-body dd{color:var(--ink-2)}
+  .fr-body dd b{color:var(--ink)}
+
+  /* ---------- 状态机 / 流程 ---------- */
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:12px 0}
+  .flow .st{font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:8px;background:var(--brand-soft);color:var(--brand-deep);box-shadow:inset 0 0 0 1px var(--brand-line)}
+  .flow .st.alt{background:#F1ECE4;color:#6B5B33;box-shadow:inset 0 0 0 1px #E0D6C2}
+  .flow .st.bad{background:var(--danger-soft);color:var(--danger);box-shadow:inset 0 0 0 1px #F0C8C4}
+  .flow .arr{color:#B4AEA0;font-size:13px;font-weight:700}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px 15px;position:relative}
+  .step i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--brand);font-weight:700;letter-spacing:.08em}
+  .step b{display:block;font-size:13.5px;margin-top:3px}
+  .step span{display:block;font-size:12px;color:var(--ink-3);margin-top:2px;line-height:1.55}
+
+  /* ---------- 线框图 ---------- */
+  .frames{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;margin:16px 0}
+  @media(max-width:860px){.frames{grid-template-columns:1fr}}
+  .frame{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .frame .cap{font-size:12px;color:var(--ink-3);margin-bottom:10px;display:flex;justify-content:space-between}
+  .screen{border:1.5px solid #D5D1C6;border-radius:10px;overflow:hidden;background:#FAFAF7;font-size:11px}
+  .screen .bar{background:#EFEEE8;padding:6px 10px;display:flex;gap:4px;align-items:center;border-bottom:1px solid var(--line-soft)}
+  .screen .bar s{width:8px;height:8px;border-radius:50%;background:#D8D4C9;text-decoration:none}
+  .screen .body{display:flex;min-height:170px}
+  .screen .side{width:88px;background:#F3F2EC;border-right:1px solid var(--line-soft);padding:8px 7px;display:flex;flex-direction:column;gap:5px}
+  .screen .side u{text-decoration:none;height:16px;border-radius:4px;background:#E2E0D6}
+  .screen .side u.on{background:var(--brand);opacity:.85}
+  .screen .main{flex:1;padding:9px}
+  .screen .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px}
+  .screen .kpi u{text-decoration:none;height:34px;border-radius:5px;background:#fff;border:1px solid var(--line-soft);position:relative}
+  .screen .kpi u::after{content:"";position:absolute;left:6px;top:6px;width:55%;height:5px;border-radius:2px;background:var(--brand-line)}
+  .screen .kpi u::before{content:"";position:absolute;left:6px;bottom:7px;width:38%;height:8px;border-radius:2px;background:#E9E7DE}
+  .screen .chart{height:64px;border-radius:5px;background:#fff;border:1px solid var(--line-soft);position:relative;overflow:hidden}
+  .screen .chart svg{position:absolute;inset:0;width:100%;height:100%}
+  .screen .tbl{margin-top:6px;display:flex;flex-direction:column;gap:4px}
+  .screen .tbl u{height:14px;border-radius:4px;background:#fff;border:1px solid var(--line-soft)}
+  .phone{width:100%;max-width:250px;margin:0 auto;border:1.5px solid #D5D1C6;border-radius:22px;background:#FAFAF7;overflow:hidden}
+  .phone .notch{height:20px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:3px}
+  .phone .notch s{width:64px;height:5px;border-radius:3px;background:#D8D4C9;text-decoration:none}
+  .phone .pg{padding:8px 10px 0;min-height:238px}
+  .phone .hd{font-size:11px;font-weight:700;margin-bottom:6px}
+  .phone .cards{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .phone .cards u{text-decoration:none;height:40px;border-radius:7px;background:#fff;border:1px solid var(--line-soft);position:relative}
+  .phone .cards u::after{content:"";position:absolute;left:6px;top:6px;width:50%;height:4px;border-radius:2px;background:var(--brand-line)}
+  .phone .cards u::before{content:"";position:absolute;left:6px;bottom:6px;width:34%;height:7px;border-radius:2px;background:#E9E7DE}
+  .phone .big{height:58px;border-radius:8px;background:linear-gradient(135deg,var(--brand),#158C74);margin-top:5px;position:relative}
+  .phone .big::after{content:"";position:absolute;left:9px;top:9px;width:44%;height:5px;border-radius:2px;background:rgba(255,255,255,.75);box-shadow:0 10px 0 rgba(255,255,255,.5),0 20px 0 rgba(255,255,255,.3)}
+  .phone .list{margin-top:6px;display:flex;flex-direction:column;gap:4px}
+  .phone .list u{height:15px;border-radius:5px;background:#fff;border:1px solid var(--line-soft);text-decoration:none}
+  .phone .tab{display:flex;background:#fff;border-top:1px solid var(--line-soft)}
+  .phone .tab u{flex:1;height:30px;text-decoration:none;position:relative}
+  .phone .tab u:first-child::after{content:"";position:absolute;left:50%;top:5px;transform:translateX(-50%);width:12px;height:12px;border-radius:4px;background:var(--brand)}
+
+  /* ---------- 提示块 ---------- */
+  .note{border-left:3px solid var(--brand);background:var(--brand-soft);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:11px 16px;font-size:13.5px;color:var(--ink-2);margin:12px 0}
+  .note.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .note.gold{border-color:var(--gold);background:var(--gold-soft)}
+  .note b{color:var(--ink)}
+
+  /* ---------- 里程碑 ---------- */
+  .ms{position:relative;margin:18px 0;padding-left:30px}
+  .ms::before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--brand-line)}
+  .ms-item{position:relative;margin:0 0 18px}
+  .ms-item::before{content:"";position:absolute;left:-27px;top:6px;width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--brand)}
+  .ms-item.done::before{background:var(--brand)}
+  .ms-item h4{margin:0;font-size:14.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .ms-item p{font-size:13px;margin:3px 0}
+  .ms-item .due{font-size:12px;color:var(--ink-3);font-family:var(--mono)}
+
+  /* ---------- KPI 大数 ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+  @media(max-width:820px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi-card{background:linear-gradient(180deg,#fff,#FBFAF6);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .kpi-card b{display:block;font-size:24px;font-weight:800;color:var(--brand-deep);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .kpi-card span{font-size:12.5px;color:var(--ink-3)}
+  .kpi-card em{display:block;font-style:normal;font-size:11px;color:var(--gold);font-weight:700;margin-top:2px}
+
+  footer{border-top:1px solid var(--line);margin-top:70px;padding:26px 0 8px;font-size:12.5px;color:var(--ink-3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+  @media(max-width:640px){
+    .cover{padding:64px 26px 52px}
+    .cover h1{font-size:29px}
+    .wrap{padding:0 22px 70px}
+    nav.toc{padding:10px 16px}
+    .cover .ver{right:26px;top:28px}
+  }
+  @media print{
+    nav.toc{display:none}
+    body{background:#fff}
+    .cover{padding:60px 40px}
+    section{margin-top:40px;page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= 封面 ================= -->
+<header class="cover">
+  <div class="cover-in">
+    <div class="brand"><span class="dot"></span>HEMU DAIRY · 合沐乳业数字化</div>
+    <h1>新疆合沐纯牛奶 · 进销存管理系统<small>产品需求文档（PRD）与开发计划</small></h1>
+    <p class="sub">面向「总仓库 + 地区 + 多门店」三级架构的一体化进销存平台，覆盖采购入库、库存调拨、批发订货、门店零售、促销执行与回款结算全链路。PC 端 + 安卓移动端同源交付。</p>
+    <div class="meta">
+      <span>区域市场：江西省 赣州市</span><span>产品线：袋装 / 盒装 200ml</span><span>四角色权限体系</span><span>正式版 V1.0 · 可运行交付</span>
+    </div>
+  </div>
+  <div class="ver"><b>V1.0</b><i>OFFICIAL RELEASE</i></div>
+</header>
+
+<nav class="toc">
+  <a href="#s1">01 背景与目标</a><a href="#s2">02 产品契约</a><a href="#s3">03 范围</a><a href="#s4">04 角色与权限</a><a href="#s5">05 业务对象与状态机</a><a href="#s6">06 共享业务规则</a><a href="#s7">07 功能需求</a><a href="#s8">08 关键流程</a><a href="#s9">09 非功能需求</a><a href="#s10">10 技术架构与端侧</a><a href="#s11">11 开发计划</a><a href="#s12">12 验收标准</a><a href="#s13">13 假设与开放问题</a>
+</nav>
+
+<div class="wrap">
+
+<!-- ================= 01 ================= -->
+<section id="s1">
+  <div class="sec-head"><span class="no">01</span><h2>背景与目标</h2><span class="tag">Background & Goals</span></div>
+  <p class="lead">新疆合沐纯牛奶以「200ml 袋装 / 盒装、整箱 16 袋（盒）」的规格进入江西省赣州市市场，采用<b>主仓库 → 地区（赣州市）→ 多门店</b>的分销结构，由业务经理统筹、业务员批发铺市、促销员驻店零售，并执行「买二送半箱」的渠道促销。</p>
+  <div class="card">
+    <h4>现状问题（观察）</h4>
+    <ul>
+      <li>订货、发货、回款依赖电话与微信接龙，<b>订单无审批留痕</b>，错漏单与扯皮时有发生；</li>
+      <li>总仓与各门店库存分散记录，<b>看不见实时水位</b>，断货与积压并存，赠品成本无法核算；</li>
+      <li>「买二送半箱」由各终端口头执行，<b>促销口径不一</b>，业务经理无法核对赠品投放；</li>
+      <li>总经理缺少统一看板，业绩、回款、库存全靠月底手工汇总 Excel。</li>
+    </ul>
+    <h4>产品响应与可观察结果</h4>
+    <ul>
+      <li>批发订单线上创建 → 审批 → 出库 → 回款闭环，<b>每张单据可追溯</b>；</li>
+      <li>总仓 / 门店库存按最小单位（袋、盒）实时记账，<b>任何时点可查水位与流水</b>；</li>
+      <li>促销规则由系统在开单时自动计算与发放，<b>赠品行独立记录、可汇总审计</b>；</li>
+      <li>四类角色登录即见各自工作台，业绩与回款<b>按日自动汇总</b>。</li>
+    </ul>
+  </div>
+  <div class="kpis">
+    <div class="kpi-card"><b>3 级</b><span>组织架构</span><em>主仓 · 地区 · 门店</em></div>
+    <div class="kpi-card"><b>4 类</b><span>业务角色</span><em>总经理/经理/业务员/促销员</em></div>
+    <div class="kpi-card"><b>2 支</b><span>产品 SKU</span><em>袋装 · 盒装 200ml</em></div>
+    <div class="kpi-card"><b>18 个</b><span>功能需求模块</span><em>FR-01 ~ FR-18</em></div>
+  </div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section id="s2">
+  <div class="sec-head"><span class="no">02</span><h2>产品契约</h2><span class="tag">Product Contract</span></div>
+  <table>
+    <tr><th style="width:150px">要素</th><th>定义</th></tr>
+    <tr><td><b>主要用户</b></td><td>总经理（决策）、业务经理（赣州区域运营）、业务员（批发铺市）、促销员（门店零售）——同一套系统、四类差异化解法</td></tr>
+    <tr><td><b>触发</b></td><td>每日开工登录（看板/待办）；进货到仓、门店缺货、客户订货、门店售货、回款到账等业务事件</td></tr>
+    <tr><td><b>核心任务</b></td><td>把「一批牛奶」从总仓经过审批与调拨铺到门店，以批发或零售方式售出并收回货款，全程留痕、账实一致</td></tr>
+    <tr><td><b>完成条件</b></td><td>一笔批发订单从创建到出库回款全状态闭环；一笔零售当场现结；库存数字与实际货数一致（盘点差异为 0）</td></tr>
+    <tr><td><b>共享业务对象</b></td><td><b>订单（批发/零售）</b>——业务员、促销员创建，经理审批，系统扣库存与算促销，总经理看总额</td></tr>
+    <tr><td><b>信任基础</b></td><td>所有库存变动均产生不可篡改流水；金额以「分」精确计算；关键操作记录审计日志</td></tr>
+  </table>
+  <div class="note"><b>设计立场：</b>这是一套「小团队、轻流程」的进销存系统——审批只有一级（业务经理），零售不开单据审批，避免为了流程而流程；但资金与库存两条线（回款登记、出入库流水）必须严格留痕。</div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section id="s3">
+  <div class="sec-head"><span class="no">03</span><h2>范围</h2><span class="tag">Scope · P0 / P1 / P2</span></div>
+  <table>
+    <tr><th>层级</th><th>内容</th><th class="c" style="width:90px">本次交付</th></tr>
+    <tr><td><span class="chip p0">P0</span></td><td>登录鉴权、四角色工作台、组织/门店管理、用户管理、商品与价格管理、采购入库、调拨与门店领货、批发订单（创建/审批/出库/取消）、零售 POS、买二送半箱促销引擎、促销活动配置、回款登记、库存查询与流水、销售/库存/业绩报表、待办、个人中心</td><td class="c"><span class="chip ok">已交付</span></td></tr>
+    <tr><td><span class="chip p1">P1（V1.1 规划）</span></td><td>库存盘点与差异调整、效期/批号管理、小票与箱签打印、导出 Excel、消息推送（微信服务号）</td><td class="c"><span class="chip p2">规划</span></td></tr>
+    <tr><td><span class="chip p2">P2</span></td><td>多区域复制（赣州→其他地市）、经销商门户、车销/访销路线、BI 大屏</td><td class="c"><span class="chip p2">远期</span></td></tr>
+  </table>
+  <div class="note warn"><b>明确不做（V1.0 非目标）：</b>发票开具、财务总账、电商渠道对接、冷链温控 IoT。此类需求出现时另立专项。</div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section id="s4">
+  <div class="sec-head"><span class="no">04</span><h2>角色与权限矩阵</h2><span class="tag">Roles & Permissions</span></div>
+  <p>数据可见范围遵循<b>「总经理全局 → 业务经理区域 → 业务员本人 → 促销员本店」</b>的逐级收敛原则。</p>
+  <table>
+    <tr>
+      <th style="width:190px">能力</th>
+      <th class="c">总经理 GM</th><th class="c">业务经理 MGR</th><th class="c">业务员 SAL</th><th class="c">促销员 PRM</th>
+    </tr>
+    <tr><td>数据看板</td><td class="c">全局</td><td class="c">区域</td><td class="c">本人</td><td class="c">本店</td></tr>
+    <tr><td>组织（总仓/门店）管理</td><td class="c"><span class="yes">✓</span> 维护</td><td class="c"><span class="yes">✓</span> 维护</td><td class="c">查看</td><td class="c">—</td></tr>
+    <tr><td>用户与角色管理</td><td class="c"><span class="yes">✓</span></td><td class="c">—</td><td class="c">—</td><td class="c">—</td></tr>
+    <tr><td>商品与价格维护</td><td class="c"><span class="yes">✓</span></td><td class="c">查看</td><td class="c">查看</td><td class="c">查看</td></tr>
+    <tr><td>促销活动配置</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c">查看</td><td class="c">查看</td></tr>
+    <tr><td>采购入库（总仓）</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c">—</td><td class="c">—</td></tr>
+    <tr><td>调拨（总仓→门店）发起</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c">—</td><td class="c"><span class="yes">✓</span> 领货申请</td></tr>
+    <tr><td>领货申请审批</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c">—</td><td class="c">—</td></tr>
+    <tr><td>批发订单创建</td><td class="c">—</td><td class="c">—</td><td class="c"><span class="yes">✓</span></td><td class="c">—</td></tr>
+    <tr><td>批发订单审批/驳回</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c">—</td><td class="c">—</td></tr>
+    <tr><td>订单出库</td><td class="c"><span class="yes">✓</span></td><td class="c"><span class="yes">✓</span></td><td class="c">—</td><td class="c">—</td></tr>
+    <tr><td>订单取消（审批前）</td><td class="c"><span class="yes">✓</span> 全部</td><td class="c"><span class="yes">✓</span> 全部</td><td class="c"><span class="yes">✓</span> 本人的</td><td class="c">—</td></tr>
+    <tr><td>零售开单（POS）</td><td class="c">查看</td><td class="c">查看</td><td class="c">—</td><td class="c"><span class="yes">✓</span></td></tr>
+    <tr><td>回款登记</td><td class="c">查看</td><td class="c"><span class="yes">✓</span> 确认核销</td><td class="c"><span class="yes">✓</span> 登记</td><td class="c">—（零售现结）</td></tr>
+    <tr><td>库存查询</td><td class="c">全部地点</td><td class="c">全部地点</td><td class="c">总仓+本人客户门店</td><td class="c">本店</td></tr>
+    <tr><td>报表中心</td><td class="c">全局</td><td class="c">区域</td><td class="c">本人业绩</td><td class="c">本店业绩</td></tr>
+    <tr><td>审计日志</td><td class="c"><span class="yes">✓</span></td><td class="c">—</td><td class="c">—</td><td class="c">—</td></tr>
+  </table>
+</section>
+
+<!-- ================= 05 ================= -->
+<section id="s5">
+  <div class="sec-head"><span class="no">05</span><h2>业务对象与状态机</h2><span class="tag">Objects & State Machines</span></div>
+
+  <h3>5.1 商品与价格（价格由总经理维护，全员只读）</h3>
+  <table>
+    <tr><th>SKU 编码</th><th>品名</th><th>分类</th><th>规格</th><th class="c">箱规</th><th class="c">批发价/箱</th><th class="c">零售价/箱</th><th class="c">批发散价</th><th class="c">零售散价</th></tr>
+    <tr><td class="num">HM-BAG-200</td><td><b>合沐纯牛奶（袋装）</b></td><td>袋装</td><td>200ml/袋</td><td class="c num">16 袋/箱</td><td class="c num">¥50.00</td><td class="c num">¥58.00</td><td class="c num">¥3.13/袋</td><td class="c num">¥3.63/袋</td></tr>
+    <tr><td class="num">HM-BOX-200</td><td><b>合沐纯牛奶（盒装）</b></td><td>盒装</td><td>200ml/盒</td><td class="c num">16 盒/箱</td><td class="c num">¥50.00</td><td class="c num">¥58.00</td><td class="c num">¥3.13/盒</td><td class="c num">¥3.63/盒</td></tr>
+  </table>
+  <p class="asm">散件单价 = 箱价 ÷ 16，四舍五入到分（50÷16=3.125→3.13；58÷16=3.625→3.63）。<span class="tbd">[Assumption, TBD]</span></p>
+
+  <h3>5.2 组织对象</h3>
+  <table>
+    <tr><th>对象</th><th>说明</th><th>初始数据</th></tr>
+    <tr><td><b>主仓库（总仓）</b></td><td>唯一中央仓，采购入库的唯一入口，调拨的唯一发出方</td><td>赣州总仓</td></tr>
+    <tr><td><b>地区</b></td><td>江西省赣州市（区域属性挂在门店上，为 P2 多区域复制预留）</td><td>赣州市</td></tr>
+    <tr><td><b>门店</b></td><td>零售终端，同时是批发客户：拥有独立库存、可接收调拨、可被批发订货</td><td>示例门店 5 家（章贡、开发区、南康、赣县、于都）</td></tr>
+  </table>
+
+  <h3>5.3 批发订单状态机</h3>
+  <div class="flow">
+    <span class="st">草稿</span><span class="arr">→</span><span class="st">待审批</span><span class="arr">→</span><span class="st">已审批</span><span class="arr">→</span><span class="st">部分出库</span><span class="arr">→</span><span class="st">已出库</span><span class="arr">→</span><span class="st">已完成</span>
+  </div>
+  <div class="flow">
+    <span class="st">待审批</span><span class="arr">→</span><span class="st bad">已驳回</span><span class="arr">　</span><span class="st alt">待审批/已审批</span><span class="arr">→</span><span class="st alt">已取消</span>
+  </div>
+  <table>
+    <tr><th>状态</th><th>含义</th><th>允许操作</th></tr>
+    <tr><td>草稿</td><td>业务员录入中，未占用任何资源</td><td>修改、提交、删除</td></tr>
+    <tr><td>待审批</td><td>已提交，等待业务经理/总经理处理</td><td>审批、驳回；创建人可取消</td></tr>
+    <tr><td>已审批</td><td>审批通过，待仓库备货出库</td><td>出库（整单或分批）；创建人不可再改</td></tr>
+    <tr><td>部分出库</td><td>已出库数量 &lt; 订单数量（含赠品）</td><td>继续出库</td></tr>
+    <tr><td>已出库</td><td>订单全部数量（含赠品）出库完毕</td><td>回款登记（如未结清）</td></tr>
+    <tr><td>已完成</td><td>已出库且回款结清（或全额现结）</td><td>只读</td></tr>
+    <tr><td>已驳回 / 已取消</td><td>终态，不产生任何库存与资金变动</td><td>只读，可查看驳回/取消原因</td></tr>
+  </table>
+
+  <h3>5.4 调拨单状态机（含门店领货申请）</h3>
+  <div class="flow">
+    <span class="st">待审批</span><span class="arr">→</span><span class="st">在途</span><span class="arr">→</span><span class="st">已入库</span>
+  </div>
+  <div class="flow">
+    <span class="st">待审批</span><span class="arr">→</span><span class="st bad">已驳回</span><span class="arr">　</span><span class="st alt">待审批</span><span class="arr">→</span><span class="st alt">已取消</span>
+  </div>
+  <table>
+    <tr><th>状态</th><th>库存影响</th></tr>
+    <tr><td>待审批</td><td>无。促销员领货申请由此进入；业务经理/总经理直接发起的调拨<b>跳过审批</b>直接进入「在途」</td></tr>
+    <tr><td>在途</td><td>调出方（总仓）库存<b>立即扣减</b>；在途数量单独显示，不记入门店可用库存</td></tr>
+    <tr><td>已入库</td><td>门店确认收货后库存增加；差异（破损/短少）可按实收数入库，差异自动生成「调拨损耗」流水</td></tr>
+    <tr><td>已驳回 / 已取消</td><td>无。驳回仅针对促销员发起的领货申请</td></tr>
+  </table>
+
+  <h3>5.5 回款对象</h3>
+  <table>
+    <tr><th>结算方式</th><th>规则</th></tr>
+    <tr><td>零售（POS）</td><td>现结：现金 / 微信 / 支付宝，收款即完成，不产生应收</td></tr>
+    <tr><td>批发</td><td>允许<b>现结</b>或<b>赊销挂账</b>；挂账订单可在出库后多次回款登记，累计回款 ≥ 应收时订单自动转「已完成」</td></tr>
+  </table>
+</section>
+
+<!-- ================= 06 ================= -->
+<section id="s6">
+  <div class="sec-head"><span class="no">06</span><h2>共享业务规则（唯一口径）</h2><span class="tag">Shared Rules</span></div>
+  <div class="card">
+    <h4 style="margin-top:0">R1 · 单位换算</h4>
+    <p>库存与出库一律以<b>最小单位</b>（袋 / 盒）记账；1 箱 = 16 最小单位。界面统一以「<b>X 箱 Y 散</b>」呈现（Y &lt; 16）。允许散件销售与散件调拨。</p>
+    <h4>R2 · 价格</h4>
+    <p>批发价 <b>¥50/箱</b>，零售价 <b>¥58/箱</b>；散件单价 = 箱价 ÷ 16 四舍五入到分（批发 3.13、零售 3.63）。价格调整仅总经理可操作，调整后<b>仅对新订单生效</b>，历史单据不追溯。</p>
+    <h4>R3 · 促销「买二送半箱」</h4>
+    <p>同一 SKU 在<b>单笔订单</b>内，净购买整箱数（不含散件、不含赠品）每满 <b>2 箱</b>，自动赠送同 SKU <b>0.5 箱 = 8 最小单位</b>：</p>
+    <ul>
+      <li>买 2 箱 → 送 8 袋（0.5 箱）；买 4 箱 → 送 16 袋（1 箱）；买 10 箱 → 送 40 袋（2.5 箱）；</li>
+      <li>净购不足 2 箱不赠送；散件（&lt;16 的数量）<b>不参与</b>满赠计算；</li>
+      <li>赠品单价 0 元、金额 0 元，独立「赠品行」展示，随订单一并出库；</li>
+      <li>赠品数量计入库存扣减与门店收货；</li>
+      <li><b>让利价值</b>（报表口径）= 赠品数量 × 对应渠道散件价（批发单按 3.13、零售单按 3.63），不计入应收。</li>
+    </ul>
+    <h4>R4 · 金额计算</h4>
+    <p>全程以「分」为整数单位计算，展示两位小数（四舍五入）。<b>应收金额 = Σ 正品行（数量 × 单价）</b>；订单级人工优惠（经理审批时可减免）单独记录；<b>实收金额 = 应收 − 订单优惠</b>；赠品不参与应收。</p>
+    <h4>R5 · 库存记账</h4>
+    <ul>
+      <li>采购入库：总仓增加；调拨出库：总仓立即减少；门店确认入库：门店增加；</li>
+      <li>订单审批<b>不占用库存</b>，出库时实时校验并扣减；库存不足时整行阻塞出库并提示缺口数量；</li>
+      <li>任何变动生成<b>出入库流水</b>（类型：采购入库 / 调拨出库 / 调拨入库 / 销售出库 / 赠品出库 / 调拨损耗），流水只增不改。</li>
+    </ul>
+    <h4>R6 · 单号规则</h4>
+    <p>订单号 <span class="num">PF-YYYYMMDD-XXX</span>（批发）、<span class="num">LS-YYYYMMDD-XXX</span>（零售）、调拨 <span class="num">DB-YYYYMMDD-XXX</span>、采购入库 <span class="num">CG-YYYYMMDD-XXX</span>，序号按日自增。</p>
+    <h4>R7 · 审批与减免</h4>
+    <p>批发订单审批人为业务经理与总经理；审批通过时允许填写<b>订单优惠金额</b>（≤ 应收的 10%），超出需总经理审批 <span class="tbd">[Assumption, TBD]</span>。驳回必须填写原因，原单返回业务员且数据保留。</p>
+  </div>
+  <h3>促销计算示例（R3 验证用例）</h3>
+  <table>
+    <tr><th>场景（袋装）</th><th class="c">净购整箱</th><th class="c">散件</th><th class="c">系统赠送</th><th class="c">实发合计</th><th class="c">应收金额</th><th class="c">让利价值</th></tr>
+    <tr><td>业务员：客户买 2 箱</td><td class="c num">2</td><td class="c">—</td><td class="c num">+8 袋</td><td class="c num">40 袋</td><td class="c num">¥100.00</td><td class="c num">¥25.04</td></tr>
+    <tr><td>业务员：客户买 5 箱</td><td class="c num">5</td><td class="c">—</td><td class="c num">+16 袋(1箱)</td><td class="c num">96 袋</td><td class="c num">¥250.00</td><td class="c num">¥50.08</td></tr>
+    <tr><td>业务员：买 1 箱 + 4 袋</td><td class="c num">1</td><td class="c num">4 袋</td><td class="c num">不赠送</td><td class="c num">20 袋</td><td class="c num">¥62.52</td><td class="c num">¥0.00</td></tr>
+    <tr><td>促销员：门店卖 2 箱</td><td class="c num">2</td><td class="c">—</td><td class="c num">+8 袋</td><td class="c num">40 袋</td><td class="c num">¥116.00</td><td class="c num">¥29.04</td></tr>
+  </table>
+</section>
+
+<!-- ================= 07 ================= -->
+<section id="s7">
+  <div class="sec-head"><span class="no">07</span><h2>功能需求</h2><span class="tag">Functional Requirements · FR-01 ~ FR-18</span></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-01</span><h4>统一登录与身份鉴权</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>打开系统未登录或会话过期时，进入登录页。</dd>
+    <dt>规则</dt><dd>工号 + 密码登录；JWT 令牌有效期 12 小时，过期自动登出；密码以加盐散列存储；连续输错 5 次锁定 10 分钟。</dd>
+    <dt>结果</dt><dd>登录成功后按角色进入对应工作台；界面菜单与数据范围按 04 章权限矩阵裁剪，越权访问接口返回 403。</dd>
+    <dt>异常</dt><dd>账号停用提示「账号已停用，请联系总经理」；登录后端与移动端行为一致。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-02</span><h4>角色工作台（四套看板）</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>目的</dt><dd>登录第一屏即回答「今天什么情况、我该做什么」。</dd>
+    <dt>内容</dt><dd>
+      <b>总经理：</b>今日/本月销售额、订单数、回款率、总仓库存箱数、近 14 天销售趋势、门店销量排行、待办（待审批订单/领货）；<br>
+      <b>业务经理：</b>区域口径同上 + 待我审批列表置顶；<br>
+      <b>业务员：</b>我的今日/本月销售额、我的订单状态分布、名下门店库存告警、快捷「新建批发订单」；<br>
+      <b>促销员：</b>本店今日销售额、本店库存（箱/散）、今日促销赠送量、大按钮「零售开单」。</dd>
+    <dt>规则</dt><dd>趋势图与排行按自然日统计；销售额按实收金额（不含让利价值）。</dd>
+    <dt>异常</dt><dd>无数据时展示引导空态，不显示空白图表。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-03</span><h4>组织与门店管理</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>总经理/业务经理在「组织管理」维护总仓与门店档案。</dd>
+    <dt>字段</dt><dd>门店名称*、编码（自动 HM+S+3位序号）、区域（默认赣州市）、地址、联系人、电话、状态（营业/停用）。</dd>
+    <dt>规则</dt><dd>总仓唯一且不可停用；已有库存或未结订单的门店不可删除，仅可停用；停用后不出现在开单选择中。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-04</span><h4>用户与角色管理</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>总经理在「用户管理」创建账号。</dd>
+    <dt>字段</dt><dd>工号*（唯一）、姓名*、角色*（四选一）、所属门店（促销员必填，业务员必填其负责门店范围）、手机号、初始密码、状态。</dd>
+    <dt>规则</dt><dd>角色决定全部权限（见 04 章）；促销员必须绑定门店；停用账号立即失效；总经理可重置任何人密码，本人可在「个人中心」改密。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-05</span><h4>商品与价格管理</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>总经理在「商品管理」维护 SKU。</dd>
+    <dt>字段</dt><dd>SKU 编码、品名、分类（袋装/盒装）、单件规格（200ml）、箱规（16，不可为 0）、批发价/箱*、零售价/箱*、状态。</dd>
+    <dt>规则</dt><dd>散件价由系统按 R2 自动换算展示，不可手工填写；停用商品不可新开单，历史单据保留。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-06</span><h4>采购入库（总仓）</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>总经理/业务经理在「采购入库」登记到货。</dd>
+    <dt>规则</dt><dd>选择商品 → 录入数量（支持按箱与散件混合录入）→ 供应商名称与备注选填 → 确认后总仓库存立即增加并生成 <span class="num">CG-</span> 入库单与「采购入库」流水。</dd>
+    <dt>校验</dt><dd>数量必须 &gt; 0；允许负向红冲（录入负数并注明原因），红冲记录留痕。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-07</span><h4>库存查询与出入库流水</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>各角色在「库存」页查看其权限范围内地点的实时库存。</dd>
+    <dt>展示</dt><dd>每个地点 × 商品显示「X 箱 Y 散（合计 N 最小单位）」；在途数量（调拨未入库）单列。</dd>
+    <dt>流水</dt><dd>按地点/商品/类型/日期筛选，展示每笔变动的单号、类型、数量增减、经手人、时间。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-08</span><h4>调拨与门店领货</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发 1</dt><dd><b>业务经理/总经理</b>发起「总仓 → 门店」调拨：选门店、录数量 → 提交即校验总仓库存并扣减，进入「在途」。</dd>
+    <dt>触发 2</dt><dd><b>促销员</b>在本店发起「领货申请」→ 业务经理/总经理审批 → 通过后同上进入「在途」；驳回需填原因。</dd>
+    <dt>收货</dt><dd>促销员（或经理代确认）在门店端点「确认入库」，按<b>实收数</b>入库；实收 &lt; 发货时差额记「调拨损耗」流水，单据标记「短少」。</dd>
+    <dt>异常</dt><dd>总仓库存不足时禁止提交并提示缺口；在途单不可撤销，只能走收货流程。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-09</span><h4>批发订单（业务员开单）</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>业务员为名下门店（批发客户）创建批发订单。</dd>
+    <dt>录入</dt><dd>选择门店 → 逐行选商品、录入箱数与散件数 → 系统实时显示单价、行金额，并按 R3 自动追加赠品行 → 可填写备注与期望送货时间。</dd>
+    <dt>提交</dt><dd>保存草稿或直接提交，进入「待审批」；业务经理与总经理收到待办。</dd>
+    <dt>校验</dt><dd>门店必须处于营业状态且归属本人；行数量不得同时为 0；不允许对停用商品开单。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-10</span><h4>订单审批与驳回</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>业务经理/总经理在「待办」或订单列表处理「待审批」订单。</dd>
+    <dt>操作</dt><dd>通过（可填写订单优惠金额，≤ 应收 10%，见 R7）；驳回（必填原因）。</dd>
+    <dt>结果</dt><dd>通过 → 「已审批」进入出库队列；驳回 → 终态，原单保留可查，业务员可在待办中看到原因。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-11</span><h4>订单出库与交付</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>业务经理/总经理对「已审批」订单执行出库。</dd>
+    <dt>规则</dt><dd>支持整单出库或分批出库（录入本次实发数量，含赠品）；出库时实时校验<b>总仓库存</b>，不足则阻塞并提示缺口；出库即从总仓扣减并生成「销售出库/赠品出库」流水。</dd>
+    <dt>完成</dt><dd>全部出完 → 「已出库」；若应收已结清（现结）→ 直接「已完成」。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-12</span><h4>促销引擎（买二送半箱）</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>批发/零售开单时，系统对每个商品行自动执行 R3 计算。</dd>
+    <dt>规则</dt><dd>见 06 章 R3；促销计算为服务端唯一实现，前端仅展示计算结果，防止口径不一致。</dd>
+    <dt>结果</dt><dd>订单详情与出库单中赠品行以「促销赠送」标识；报表可按活动汇总赠品数量与让利价值。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-13</span><h4>促销活动管理</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>总经理/业务经理在「促销活动」维护活动。</dd>
+    <dt>字段</dt><dd>活动名称、规则类型（V1.0 固定提供「买二送半箱」模板：满 2 箱赠 0.5 箱）、适用渠道（批发/零售，可多选）、起止日期、状态（启用/停用）。</dd>
+    <dt>规则</dt><dd>同一时间同一 SKU 命中多个启用活动时，只取<b>创建最早</b>的一个；停用立即对未提交订单生效。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-14</span><h4>零售 POS（促销员）</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>促销员在本店移动端打开「零售开单」。</dd>
+    <dt>录入</dt><dd>大按钮选择商品（袋装/盒装）→ 步进器录入箱数与散件数 → 实时显示合计金额与促销赠送 → 选择收款方式（现金/微信/支付宝）→ 确认收款。</dd>
+    <dt>规则</dt><dd>从<b>本店库存</b>实时扣减（含赠品），库存不足时禁止提交并提示；整单现结，生成 <span class="num">LS-</span> 单号，不产生应收。</dd>
+    <dt>异常</dt><dd>断网时禁止开单（V1.0 不做离线），提示「网络不可用，请稍后再试」。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-15</span><h4>回款管理</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>触发</dt><dd>批发订单选择「赊销」后进入应收；业务员登记回款，业务经理确认核销。</dd>
+    <dt>规则</dt><dd>回款方式：现金/微信/支付宝/银行转账；多次回款累计；累计 ≥ 实收金额时订单自动转「已完成」；已完成的订单不可再登记。</dd>
+    <dt>展示</dt><dd>应收明细表：订单、门店、应收、已收、未收、账龄（按出库日起算）。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-16</span><h4>报表中心</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>内容</dt><dd>
+      <b>销售报表：</b>按日销售趋势（批发/零售分色）、按商品分类结构、门店销量排行；<br>
+      <b>促销报表：</b>活动维度赠品数量与让利价值汇总；<br>
+      <b>业绩报表：</b>业务员销售额/订单数/回款率排行；促销员门店销售额排行；<br>
+      <b>库存报表：</b>各地点各商品水位一览（含在途）。</dd>
+    <dt>规则</dt><dd>数据范围按角色收敛（04 章）；支持按日期区间筛选（默认本月）。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-17</span><h4>待办与消息</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>规则</dt><dd>系统内待办中心：业务经理/总经理的待审批订单与领货申请；业务员的订单被驳回/出库/回款确认通知；促销员的领货审批结果与到货提醒。待办数量在导航栏以红点提示。</dd>
+  </dl></div></div>
+
+  <div class="fr"><div class="fr-head"><span class="fid">FR-18</span><h4>个人中心与安全</h4><span class="pri chip p0">P0</span></div><div class="fr-body"><dl>
+    <dt>规则</dt><dd>修改本人密码（验证旧密码）；查看本人信息与角色说明；退出登录清除令牌。所有写操作记录审计日志（谁、何时、对什么、做了什么），总经理可查。</dd>
+  </dl></div></div>
+</section>
+
+<!-- ================= 08 ================= -->
+<section id="s8">
+  <div class="sec-head"><span class="no">08</span><h2>关键流程与界面蓝图</h2><span class="tag">Flows & UI Blueprint</span></div>
+
+  <h3>8.1 批发全链路（P0 主流程）</h3>
+  <div class="steps">
+    <div class="step"><i>STEP 1</i><b>业务员开单</b><span>选择门店与数量，系统自动算促销与金额（FR-09/12）</span></div>
+    <div class="step"><i>STEP 2</i><b>经理审批</b><span>通过/驳回，可给优惠（FR-10）</span></div>
+    <div class="step"><i>STEP 3</i><b>总仓出库</b><span>校验库存扣减，含赠品（FR-11）</span></div>
+    <div class="step"><i>STEP 4</i><b>回款核销</b><span>现结或赊销后登记（FR-15）</span></div>
+    <div class="step"><i>STEP 5</i><b>自动完成</b><span>单据归档，进入报表（FR-16）</span></div>
+  </div>
+
+  <h3>8.2 界面蓝图</h3>
+  <div class="frames">
+    <div class="frame">
+      <div class="cap"><span>PC · 总经理工作台</span><span>≥1024px 侧边导航布局</span></div>
+      <div class="screen">
+        <div class="bar"><s></s><s></s><s></s><span style="font-size:10px;color:#8A8578;margin-left:6px">合沐进销存 · 工作台</span></div>
+        <div class="body">
+          <div class="side"><u class="on"></u><u></u><u></u><u></u><u></u><u></u></div>
+          <div class="main">
+            <div class="kpi"><u></u><u></u><u></u></div>
+            <div class="chart">
+              <svg viewBox="0 0 200 64" preserveAspectRatio="none">
+                <polyline points="0,52 25,46 50,48 75,38 100,40 125,30 150,32 175,20 200,24" fill="none" stroke="#0E7C66" stroke-width="2"/>
+                <polyline points="0,56 25,54 50,55 75,50 100,52 125,46 150,48 175,42 200,44" fill="none" stroke="#B98A1D" stroke-width="2" opacity=".7"/>
+              </svg>
+            </div>
+            <div class="tbl"><u></u><u></u><u></u></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="cap"><span>Android · 促销员零售开单</span><span>PWA 全屏应用</span></div>
+      <div class="phone">
+        <div class="notch"><s></s></div>
+        <div class="pg">
+          <div class="hd">零售开单 · 章贡区万达店</div>
+          <div class="cards"><u></u><u></u></div>
+          <div class="big"></div>
+          <div class="list"><u></u><u></u><u></u></div>
+        </div>
+        <div class="tab"><u></u><u></u><u></u><u></u></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>8.3 库存与调拨链路</h3>
+  <div class="steps">
+    <div class="step"><i>IN</i><b>采购入库</b><span>总仓 +N（CG- 单据，FR-06）</span></div>
+    <div class="step"><i>MOVE</i><b>调拨在途</b><span>总仓 −N，门店在途 +N（FR-08）</span></div>
+    <div class="step"><i>MOVE</i><b>门店入库</b><span>门店 +实收，短少记损耗</span></div>
+    <div class="step"><i>OUT</i><b>批发/零售出库</b><span>门店或总仓 −N（含赠品，FR-11/14）</span></div>
+  </div>
+</section>
+
+<!-- ================= 09 ================= -->
+<section id="s9">
+  <div class="sec-head"><span class="no">09</span><h2>非功能需求</h2><span class="tag">NFR</span></div>
+  <table>
+    <tr><th style="width:130px">维度</th><th>要求</th></tr>
+    <tr><td>兼容性</td><td>PC：Chrome / Edge 100+（≥1280px 最佳）；移动：Android 8+ 主流浏览器与 PWA 安装；同一账号可同时登录两端</td></tr>
+    <tr><td>性能</td><td>开单/审批等写操作响应 &lt; 1s；工作台与报表 &lt; 2s（百级门店、万级单据规模内）</td></tr>
+    <tr><td>数据安全</td><td>密码加盐散列；接口级 RBAC 鉴权；关键写操作审计日志；SQLite 单文件数据库，支持按日文件备份；敏感操作（改价、红冲、优惠）强制留痕</td></tr>
+    <tr><td>金额精度</td><td>分单位整数运算，杜绝浮点误差；展示两位小数</td></tr>
+    <tr><td>可用性</td><td>移动端触控目标 ≥ 44px；关键操作二次确认（出库、收款、改价）；表单错误即时提示</td></tr>
+  </table>
+</section>
+
+<!-- ================= 10 ================= -->
+<section id="s10">
+  <div class="sec-head"><span class="no">10</span><h2>技术架构与端侧交付</h2><span class="tag">Architecture · PC + Android</span></div>
+  <div class="grid2">
+    <div class="card tight">
+      <h4 style="margin-top:0">技术选型（正式版 V1.0 已实现）</h4>
+      <ul style="font-size:13.5px">
+        <li><b>后端：</b>Node.js 24 + Express + 内建 SQLite（node:sqlite），零原生编译依赖，单机部署开箱即用；</li>
+        <li><b>鉴权：</b>JWT（HS256）+ 角色中间件；密码 scrypt 加盐散列；</li>
+        <li><b>前端：</b>原生 ES Module SPA + 自研设计系统（CSS 变量、Noto Sans SC 字体栈、tabular-nums 数字排版）；PC 侧边导航 / 移动底部标签双布局；</li>
+        <li><b>图表：</b>轻量 SVG 自绘（趋势、排行、结构占比），无外部 CDN 依赖，内网可运行；</li>
+        <li><b>部署：</b>单进程 HTTP 服务（默认 :8080），PC 浏览器直接访问；数据文件 <span class="num">data/hemu.db</span>。</li>
+      </ul>
+    </div>
+    <div class="card tight">
+      <h4 style="margin-top:0">安卓移动端交付路线</h4>
+      <ul style="font-size:13.5px">
+        <li><b>路线 A · PWA（V1.0 已内置，推荐）：</b>站点提供 manifest + Service Worker + 应用图标，Android Chrome 打开后「添加到主屏幕」即获全屏、带图标的原生 App 体验，自动更新；</li>
+        <li><b>路线 B · APK 打包（V1.1）：</b>同源代码经 Capacitor 封装为 APK 发布（内部分发或应用市场），技术路径已在工程中预留 <span class="num">capacitor.config</span> 说明文档；</li>
+        <li><b>离线策略：</b>V1.0 要求在线使用；V1.1 引入开单离线缓存与自动重传。</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note"><b>同源双端：</b>PC 与 Android 共用同一服务端与业务逻辑，角色差异只体现在交互布局——促销员/业务员移动端以「开单」为第一入口，总经理/业务经理 PC 端以「看板与审批」为第一入口。</div>
+</section>
+
+<!-- ================= 11 ================= -->
+<section id="s11">
+  <div class="sec-head"><span class="no">11</span><h2>开发计划与里程碑</h2><span class="tag">Delivery Plan</span></div>
+  <p>计划按「两周可用的核心链路 → 一个月全角色正式版」编排。V1.0 正式版已随本文档一并交付并可运行验收。</p>
+  <div class="ms">
+    <div class="ms-item done">
+      <h4>M0 · 需求与设计定稿 <span class="chip p0">已完成</span></h4>
+      <p>业务访谈与规则确认；本 PRD（含角色矩阵、状态机、共享规则 R1-R7）评审通过；UI 设计系统（色彩/字体/组件）定稿。</p>
+      <p class="due">交付物：PRD V1.0 · 设计系统规范</p>
+    </div>
+    <div class="ms-item done">
+      <h4>M1 · 核心链路开发 <span class="chip p0">已完成</span></h4>
+      <p>后端：数据模型、JWT 鉴权、RBAC、采购入库 / 调拨 / 批发订单 / 零售 POS / 促销引擎 / 回款 全部接口；前端：登录 + 四角色工作台 + 开单与审批页面。</p>
+      <p class="due">交付物：可运行系统（核心链路端到端贯通）</p>
+    </div>
+    <div class="ms-item done">
+      <h4>M2 · 全角色功能与双端适配 <span class="chip p0">已完成</span></h4>
+      <p>组织/用户/商品/促销管理页、库存流水、报表中心、待办中心、个人中心；PC 侧边导航与移动底部标签双布局；PWA（manifest + SW + 图标）内置。</p>
+      <p class="due">交付物：功能完整系统（PC + Android PWA）</p>
+    </div>
+    <div class="ms-item done">
+      <h4>M3 · 验收测试与正式版发布 <span class="chip p0">本次交付</span></h4>
+      <p>按 12 章验收标准完成 4 角色 UAT 用例；启动脚本（Windows / Linux）与部署文档交付；V1.0 正式版发布。</p>
+      <p class="due">交付物：V1.0 正式版 + 启动脚本 + 使用说明</p>
+    </div>
+    <div class="ms-item">
+      <h4>V1.1 规划 <span class="chip p1">迭代</span></h4>
+      <p>库存盘点与差异调整、效期批号、小票打印、Excel 导出、Capacitor APK 封装、消息推送。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 12 ================= -->
+<section id="s12">
+  <div class="sec-head"><span class="no">12</span><h2>验收标准（UAT）</h2><span class="tag">Acceptance</span></div>
+  <p>以下用例全部通过即视为达到正式版交付标准。种子数据已内置对应演示账号。</p>
+  <table>
+    <tr><th class="c" style="width:70px">编号</th><th style="width:90px">角色</th><th>验收用例</th><th class="c" style="width:110px">通过标准</th></tr>
+    <tr><td class="c num">UAT-01</td><td>全部</td><td>四类账号分别登录 PC 与移动端</td><td class="c">各见专属工作台与菜单</td></tr>
+    <tr><td class="c num">UAT-02</td><td>总经理</td><td>采购入库 袋装 100 箱</td><td class="c">总仓库存 +1600 袋，流水可查</td></tr>
+    <tr><td class="c num">UAT-03</td><td>业务经理</td><td>调拨 20 箱至「章贡区万达店」并确认入库</td><td class="c">总仓 −320、门店 +320，短少按实收记账</td></tr>
+    <tr><td class="c num">UAT-04</td><td>业务员</td><td>开批发单：袋装 2 箱（买二送半箱）</td><td class="c">自动赠 8 袋；应收 ¥100.00；赠品行 0 元</td></tr>
+    <tr><td class="c num">UAT-05</td><td>业务经理</td><td>审批 UAT-04 订单并整单出库</td><td class="c">总仓扣 40 袋；状态 → 已出库</td></tr>
+    <tr><td class="c num">UAT-06</td><td>业务员</td><td>登记回款 ¥100.00</td><td class="c">订单 → 已完成，应收清零</td></tr>
+    <tr><td class="c num">UAT-07</td><td>业务员</td><td>开单 1 箱 + 4 袋</td><td class="c">不赠送；应收 = 50 + 4×3.13 = ¥62.52</td></tr>
+    <tr><td class="c num">UAT-08</td><td>促销员</td><td>零售 2 箱 + 3 袋，微信收款</td><td class="c">赠 8 袋；应收 = 116 + 10.89 = ¥126.89；本店库存同步扣减</td></tr>
+    <tr><td class="c num">UAT-09</td><td>促销员</td><td>门店库存不足时开单</td><td class="c">阻塞提交并提示缺口数量</td></tr>
+    <tr><td class="c num">UAT-10</td><td>促销员</td><td>发起领货申请 → 经理审批 → 确认入库</td><td class="c">三状态流转正确，短少记损耗</td></tr>
+    <tr><td class="c num">UAT-11</td><td>总经理</td><td>查看销售趋势、促销让利、业务员业绩、库存水位</td><td class="c">与单据明细汇总一致</td></tr>
+    <tr><td class="c num">UAT-12</td><td>安全</td><td>促销员调用审批接口、越权查他店库存</td><td class="c">返回 403，无数据泄露</td></tr>
+    <tr><td class="c num">UAT-13</td><td>双端</td><td>Android Chrome「添加到主屏幕」</td><td class="c">出现品牌图标，全屏运行</td></tr>
+  </table>
+</section>
+
+<!-- ================= 13 ================= -->
+<section id="s13">
+  <div class="sec-head"><span class="no">13</span><h2>假设与开放问题</h2><span class="tag">Assumptions & Open Questions</span></div>
+  <table>
+    <tr><th style="width:120px">类型</th><th>内容</th><th style="width:110px">处理</th></tr>
+    <tr><td><span class="asm">假设</span></td><td>散件单价 = 箱价 ÷ 16 四舍五入到分</td><td>已按此实现，可改</td></tr>
+    <tr><td><span class="asm">假设</span></td><td>「买二送半箱」同时适用于批发与零售，按单笔订单计算，散件不计入满赠基数</td><td>已按此实现，可改</td></tr>
+    <tr><td><span class="asm">假设</span></td><td>批发允许赊销挂账并多次回款；订单优惠上限 10%</td><td>已按此实现，可改</td></tr>
+    <tr><td><span class="asm">假设</span></td><td>促销员领货申请由业务经理一级审批；经理直接调拨免审</td><td>已按此实现，可改</td></tr>
+    <tr><td><span class="tbd">开放问题</span></td><td>是否需要按「件」的第三层规格（如 6×多连包）？</td><td>V1.1 评估</td></tr>
+    <tr><td><span class="tbd">开放问题</span></td><td>赣州市外区域（如南昌）复制时是否独立总仓？</td><td>P2 多区域时定</td></tr>
+  </table>
+  <div class="note gold"><b>演示账号（种子数据，正式使用后请立即修改密码）：</b><br>
+  总经理 <span class="num">gm / 123456</span> · 业务经理 <span class="num">mgr / 123456</span> · 业务员 <span class="num">sales01 / 123456</span> · 促销员 <span class="num">promo01 / 123456</span>（完整账号表见交付 README）</div>
+</section>
+
+<footer>
+  <span>新疆合沐纯牛奶进销存管理系统 · PRD 与开发计划</span>
+  <span>V1.0 正式版 · 2026-10-11 · 密级：内部</span>
+</footer>
+
+</div>
+</body>
+</html>

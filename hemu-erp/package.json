@@ -1,0 +1,20 @@
+{
+  "name": "hemu-milk-erp",
+  "version": "1.0.0",
+  "description": "新疆合沐纯牛奶进销存管理系统（PC + Android PWA）",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "icons": "node scripts/gen-icons.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@babel/parser": "^7.29.9"
+  }
+}
