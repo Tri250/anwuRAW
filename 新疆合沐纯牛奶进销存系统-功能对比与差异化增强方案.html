@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合沐纯牛奶进销存 · 功能对比与差异化增强方案</title>
+<style>
+  :root{--ink:#1f2937;--muted:#6b7280;--line:#d8dde3;--soft:#f3f5f8;--teal:#0d9488;--teal-d:#0f766e;--teal-bg:#ecfdf9;--blue:#2563eb;--blue-bg:#eff4ff;--amber:#d97706;--amber-bg:#fff7e8;--red:#dc2626;--red-bg:#fdeeee}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f0f2f6;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);line-height:1.75;font-size:14.5px}
+  .page{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+  header.hero{background:linear-gradient(135deg,#0d9488 0%,#0f766e 100%);color:#fff;border-radius:16px;padding:32px 40px;margin-bottom:24px}
+  header.hero h1{margin:0 0 6px;font-size:24px}
+  header.hero .sub{opacity:.92;font-size:13.5px}
+  .meta{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;font-size:12.5px}
+  .meta span{background:rgba(255,255,255,.16);padding:4px 12px;border-radius:999px}
+  section{margin-bottom:30px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px 30px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  h2{font-size:19px;margin:0 0 14px;padding-bottom:10px;border-bottom:2px solid var(--line);display:flex;align-items:center;gap:10px}
+  h2 .no{background:var(--teal);color:#fff;width:27px;height:27px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto}
+  h3{font-size:16px;margin:22px 0 10px;color:var(--teal-d)}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:var(--soft);font-weight:600}
+  tr:nth-child(even) td{background:#fafbfc}
+  .up{color:var(--teal-d);font-weight:700}
+  .warn{color:var(--amber)}
+  .gap{color:var(--red);font-weight:600}
+  .pill{display:inline-block;background:var(--teal-bg);color:var(--teal-d);padding:2px 10px;border-radius:999px;font-size:11.5px;font-weight:700}
+  .pill.blue{background:var(--blue-bg);color:var(--blue)}
+  .pill.amber{background:var(--amber-bg);color:var(--amber)}
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .feat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .feat h4{margin:0 0 6px;font-size:14px;color:var(--teal-d)}
+  .feat p{margin:4px 0;font-size:12.5px;color:#475569}
+  .vs{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;margin:16px 0}
+  .vs .box{border-radius:12px;padding:16px;font-size:13px}
+  .vs .left{background:#f8fafc;border:1px dashed #cbd5e1}
+  .vs .right{background:var(--teal-bg);border:1px solid #99f6e4}
+  .vs .arrow{font-size:22px;color:var(--teal-d);font-weight:800}
+  ul{margin:6px 0;padding-left:20px}
+  li{margin:5px 0}
+  .callout{border-left:4px solid var(--teal);background:var(--teal-bg);padding:12px 16px;border-radius:8px;margin:14px 0;font-size:13.5px}
+  .tag{display:inline-block;background:var(--blue-bg);color:var(--blue);padding:1px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-left:5px}
+  @media(max-width:760px){.vs,.g2,.g3{grid-template-columns:1fr}.vs .arrow{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hero">
+  <h1>功能对比与差异化增强方案</h1>
+  <div class="sub">合沐纯牛奶进销存系统 · 明确「比国内同类软件更多」的功能边界与增量点</div>
+  <div class="meta">
+    <span>范围：进销存 + 深度分销 + 资金 + 促销</span>
+    <span>端：PC + Android</span>
+    <span>行业：短保奶 / 快消品分销</span>
+  </div>
+</header>
+
+<!-- 1 结论 -->
+<section>
+<div class="card">
+<h2><span class="no">1</span>一句话结论</h2>
+<div class="vs">
+  <div class="box left"><strong>国内同类进销存：</strong>通用「购销存 + 财务 + 报表」，快消品现场作业与食品效期管理普遍偏弱。核心是<b>事后记账</b>。</div>
+  <div class="arrow">→</div>
+  <div class="box right"><strong>本系统：</strong>在通用进销存之上，叠加<b>食品效期强管控、深度分销现场作业、促销投入产出闭环、账户资金精细化、四级角色经营</b> —— 核心是<b>事前管控 + 现场执行 + 经营决策</b>。</div>
+</div>
+<div class="callout">差异化主线：同类软件「把账记清楚」，本系统「把货管到批次与效期、把活动管到费用与产出、把队伍管到现场执行、把资金管到账期与逾期」。</div>
+</div>
+</section>
+
+<!-- 2 基线对比 -->
+<section>
+<div class="card">
+<h2><span class="no">2</span>功能基线对比（我方 vs 国内同类）</h2>
+<p>下表按功能域对比，<span class="up">绿色=本系统更多/更强</span>，<span class="gap">红色=同类普遍缺失或薄弱、本系统补强</span>。</p>
+<table>
+  <tr><th>功能域</th><th>国内同类常见覆盖</th><th>本系统（合沐）</th></tr>
+  <tr><td>采购管理</td><td>采购单、入库、采购退货、供应商应付</td><td class="up">+ 入库登记生产批次/到期日自动推导 + 入库即生成应付（同事务）</td></tr>
+  <tr><td>销售管理</td><td>销售单、出库、销售退货、客户应收</td><td class="up">+ 库存/账期/额度三重校验 + 部分签收/拒收 + 临期退换货建议</td></tr>
+  <tr><td>库存管理</td><td>库存查询、盘点、调拨、多仓库、成本核算</td><td class="up">+ 三级分销仓（主仓/地区仓）+ 批次现存量/锁定/冻结</td></tr>
+  <tr><td>食品效期</td><td class="gap">仅批次号，无自动化效期管理</td><td><b>临期分级预警 + 过期自动冻结 + FIFO 先到期先出 + 效期驾驶舱</b></td></tr>
+  <tr><td>财务/资金</td><td>应收应付、收付款、利润</td><td class="up">+ 账期 + 信用额度双重控制 + 逾期分级催收 + 回款 FIFO 核销</td></tr>
+  <tr><td>促销管理</td><td class="gap">基本缺失（仅订单打折）</td><td><b>活动方案 + 费用审批 + 投入产出 ROI + 促销员作业</b></td></tr>
+  <tr><td>巡店/拜访</td><td class="gap">普遍缺失</td><td><b>拜访计划 + 签到定位 + 陈列/效期检查 + 补货建议</b></td></tr>
+  <tr><td>移动端</td><td>扫码开单、库存查询</td><td class="up">+ 现场要货/签收/退货/盘点/回款 + 促销员作业 + 移动审批</td></tr>
+  <tr><td>报表看板</td><td>通用统计报表</td><td class="up">+ 四角色经营看板 + 销售目标达成 + 经营预警中心</td></tr>
+  <tr><td>权限/管控</td><td>基础角色权限</td><td class="up">+ 片区数据权限 + 多级审批流 + 单据作废留痕 + 全量审计</td></tr>
+</table>
+</div>
+</section>
+
+<!-- 3 增强功能全景 -->
+<section>
+<div class="card">
+<h2><span class="no">3</span>本系统「更多」的增强功能全景</h2>
+
+<h3>A. 食品效期强管控 <span class="tag">行业特色 · 同类普遍缺失</span></h3>
+<div class="grid g3">
+  <div class="feat"><h4>批次 + 到期日自动推导</h4><p>入库录入生产日期 + 保质期，自动计算到期日，杜绝手算错误。</p></div>
+  <div class="feat"><h4>临期分级 / 过期冻结</h4><p>临期预警天数可配；到期自动冻结不可售、不可出库，仅可报损。</p></div>
+  <div class="feat"><h4>FIFO 先到期先出</h4><p>拣货按到期日升序强制推荐批次，优先消耗临期货，降低损耗。</p></div>
+</div>
+
+<h3>B. 深度分销现场作业 <span class="tag">同类普遍缺失</span></h3>
+<div class="grid g3">
+  <div class="feat"><h4>业务员巡店拜访</h4><p>拜访计划、到店签到（定位）、陈列/效期检查上报，留痕轨迹。</p></div>
+  <div class="feat"><h4>促销员活动作业</h4><p>活动签到/签退、陈列拍照上传、销量上报、赠品物料台账。</p></div>
+  <div class="feat"><h4>补货智能建议</h4><p>按陈列存量 + 历史销量生成建议量，一键转门店要货单。</p></div>
+</div>
+
+<h3>C. 促销投入产出闭环 <span class="tag">同类罕见</span></h3>
+<div class="grid g3">
+  <div class="feat"><h4>活动方案</h4><p>特价/买赠/满减/陈列，指定商品、参与门店、起止时间、促销员。</p></div>
+  <div class="feat"><h4>费用审批</h4><p>物料/赠品/补贴预算走业务经理初审 + 总经理终审。</p></div>
+  <div class="feat"><h4>ROI 核算</h4><p>费用 vs 带动销售/毛利，产出投入产出比，判定活动达标。</p></div>
+</div>
+
+<h3>D. 资金精细化管控 <span class="tag">强于同类</span></h3>
+<div class="grid g3">
+  <div class="feat"><h4>账期 + 信用额度双控</h4><p>下单/审核实时校验额度，超限拦截或特批；账期自动算到期日。</p></div>
+  <div class="feat"><h4>逾期分级催收</h4><p>0-30 / 30-60 / &gt;60 分级，自动推送归属业务员与经理。</p></div>
+  <div class="feat"><h4>回款 FIFO 核销</h4><p>回款按先进先出核销应收，幂等防重复；对账单可导出/确认。</p></div>
+</div>
+
+<h3>E. 多级分销架构 <span class="tag">场景专属</span></h3>
+<div class="grid g3">
+  <div class="feat"><h4>主仓 + 地区仓 + 门店</h4><p>三级货权清晰，主仓/地区仓为公司库存，门店签收即货权转移。</p></div>
+  <div class="feat"><h4>内部调拨</h4><p>主仓 ↔ 地区仓补货，分仓分批次库存统一。</p></div>
+  <div class="feat"><h4>批次流水追溯</h4><p>任何库存在增减写 append-only 流水，可溯源到单据。</p></div>
+</div>
+
+<h3>F. 角色化经营 <span class="tag">差异化</span></h3>
+<div class="grid g3">
+  <div class="feat"><h4>四角色看板</h4><p>总经理/业务经理/业务员/促销员各自匹配数据视角与权限。</p></div>
+  <div class="feat"><h4>销售目标与达成</h4><p>目标下发、达成进度、业务员考核排名。</p></div>
+  <div class="feat"><h4>经营预警中心</h4><p>临期/逾期/低库存/目标未达成四合一聚合预警。</p></div>
+</div>
+
+<h3>G. 管控与合规 <span class="tag">强于同类</span></h3>
+<div class="grid g3">
+  <div class="feat"><h4>多级审批流</h4><p>采购/价格/费用/退款/报损/盘点差异，按金额阈值多级审批。</p></div>
+  <div class="feat"><h4>片区数据隔离</h4><p>业务员仅见本片区门店，经理见所辖片区，总经理/财务全局。</p></div>
+  <div class="feat"><h4>全量审计 + 作废留痕</h4><p>关键操作记录前后值；单据作废不可物理删除。</p></div>
+</div>
+</div>
+</section>
+
+<!-- 4 映射 -->
+<section>
+<div class="card">
+<h2><span class="no">4</span>增强功能 → 模块 / 角色 / 端 映射</h2>
+<table>
+  <tr><th>增强功能</th><th>所属模块</th><th>主要角色</th><th>端</th></tr>
+  <tr><td>批次 + 到期日 + FIFO + 临期冻结</td><td>库存 / 采购 / 销售</td><td>仓管、业务经理</td><td>PC 为主</td></tr>
+  <tr><td>巡店/签到/陈列/效期检查</td><td>巡店</td><td>业务员</td><td>Android</td></tr>
+  <tr><td>促销作业 + ROI 核算</td><td>促销</td><td>促销员、业务经理</td><td>Android + PC</td></tr>
+  <tr><td>账期/额度/逾期/核销</td><td>资金（应收）</td><td>财务、业务经理、业务员</td><td>PC + Android</td></tr>
+  <tr><td>三级仓 + 调拨 + 流水</td><td>库存</td><td>仓管、业务经理</td><td>PC</td></tr>
+  <tr><td>四角色看板 + 目标达成 + 预警中心</td><td>报表</td><td>全部角色</td><td>PC + Android</td></tr>
+  <tr><td>审批流 + 数据权限 + 审计</td><td>系统</td><td>总经理、业务经理</td><td>PC + Android</td></tr>
+</table>
+</div>
+</section>
+
+<!-- 5 新增 FR 增量 -->
+<section>
+<div class="card">
+<h2><span class="no">5</span>建议新增功能条目（可回填 PRD）</h2>
+<p>为落实「功能更多」，在既有 PRD 基础上补充以下增量 FR（带 <span class="pill">P1</span> 为迭代增强）。</p>
+<table>
+  <tr><th>ID</th><th>新增能力</th><th>说明</th><th>优先级</th></tr>
+  <tr><td>FR-INV-08</td><td>库存库龄与周转分析</td><td>按批次展示库龄天降、周转率，识别呆滞临期风险</td><td><span class="pill amber">P1</span></td></tr>
+  <tr><td>FR-SAL-08</td><td>扫码开单 / 验货</td><td>条码扫码快速开单、拣货复核、盘点扫码</td><td><span class="pill amber">P1</span></td></tr>
+  <tr><td>FR-VIS-05</td><td>拜访路线规划 + 地理围栏</td><td>最优路线建议、签到定位偏离阈值校验</td><td><span class="pill amber">P1</span></td></tr>
+  <tr><td>FR-AR-06</td><td>对账单客户电子确认</td><td>对账单推送门店在线确认/异议，闭环对账</td><td><span class="pill amber">P1</span></td></tr>
+  <tr><td>FR-PRO-06</td><td>赠品 / 物料台账</td><td>促销赠品、物料出入库与结转挂账</td><td><span class="pill">P0</span></td></tr>
+  <tr><td>FR-RPT-06</td><td>经营预警中心</td><td>临期/逾期/低库存/目标四类预警聚合推送</td><td><span class="pill">P0</span></td></tr>
+  <tr><td>FR-BA-07</td><td>批次成本与毛利核算</td><td>按批次/效期核算真实毛利，指导定价与清库存</td><td><span class="pill amber">P1</span></td></tr>
+</table>
+<div class="callout">说明：本表仅列出「相对已在 PRD 中覆盖的能力之外」的增量项；既有 PRD 已含的效期、FIFO、巡店、促销 ROI、账期额度、四级看板等不再重复。</div>
+</div>
+</section>
+
+</div>
+</body>
+</html>
