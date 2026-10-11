@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合沐纯牛奶进销存 · PC 端线框原型（可交互）</title>
+<style>
+  :root{--ink:#333a45;--muted:#8a93a2;--line:#c7cdd6;--soft:#eef0f4;--paper:#fff;--blue:#3b82f6;--blue-bg:#eef4ff;--green:#16a34a;--amber:#d97706;--red:#dc2626;--side:#2a3038}
+  *{box-sizing:border-box}
+  body{margin:0;background:#e6e9ee;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);font-size:14px}
+  .hintbar{background:#fff;border-bottom:1px solid var(--line);padding:10px 22px;font-size:12.5px;color:var(--muted);display:flex;gap:10px;align-items:center}
+  .hintbar b{color:var(--blue)}
+  .topbar{height:54px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+  .logo{font-weight:800;color:#1f2937;font-size:15px}
+  .logo small{color:var(--muted);font-weight:400;margin-left:8px;font-size:12px}
+  .topright{display:flex;align-items:center;gap:12px}
+  .role-switch{display:flex;gap:6px}
+  .role{padding:5px 13px;border-radius:999px;border:1.5px solid var(--line);cursor:pointer;font-size:12.5px;font-weight:600;color:#475569;background:#fff}
+  .role.active{background:var(--blue);border-color:var(--blue);color:#fff}
+  .layout{display:flex}
+  .sidebar{width:200px;background:var(--side);min-height:calc(100vh - 88px);padding:14px 0;flex:0 0 auto}
+  .sg{padding:6px 18px;font-size:10.5px;color:#6b7480;letter-spacing:.5px}
+  .si{display:flex;align-items:center;gap:9px;padding:10px 18px;color:#c3cad3;cursor:pointer;font-size:13px;border-left:3px solid transparent}
+  .si:hover{background:#343a44}
+  .si.active{background:#343a44;color:#fff;border-left-color:var(--blue)}
+  .main{flex:1;padding:20px;overflow-y:auto}
+  .crumb{font-size:11.5px;color:var(--muted);margin-bottom:8px}
+  .ptitle{font-size:17px;font-weight:800;margin:0 0 14px}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;border-bottom:1.5px solid var(--line);padding-bottom:0}
+  .tab{padding:8px 14px;font-size:12.5px;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1.5px}
+  .tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:700}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .filters{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+  /* wireframe 组件 */
+  .inp{height:34px;border:1.5px solid var(--line);border-radius:7px;background:#fff;padding:0 10px;font-size:12.5px;color:#475569;min-width:150px;display:flex;align-items:center}
+  .btn{border:1.5px solid var(--line);background:#fff;color:#475569;border-radius:7px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer}
+  .btn:hover{border-color:var(--blue);color:var(--blue)}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.green{background:var(--green);border-color:var(--green);color:#fff}
+  .btn.red{border-color:var(--red);color:var(--red)}
+  .btn.sm{padding:4px 9px;font-size:11.5px;border-radius:6px}
+  .card{background:var(--paper);border:1.5px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+  .card h5{margin:0 0 10px;font-size:13px;color:#1f2937}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;white-space:nowrap}
+  th{background:var(--soft);color:#475569;font-weight:600}
+  tr:hover td{background:#fafbfd}
+  .badge{display:inline-block;font-size:11px;padding:1px 9px;border-radius:999px;font-weight:600;border:1px solid}
+  .b-ok{background:#eafaf0;color:var(--green);border-color:#b7e6c8}
+  .b-warn{background:#fdf3e2;color:var(--amber);border-color:#f3d9a6}
+  .b-red{background:#fdeeee;color:var(--red);border-color:#f3c3c3}
+  .b-info{background:var(--blue-bg);color:var(--blue);border-color:#c6dcff}
+  .b-gray{background:var(--soft);color:#64748b;border-color:var(--line)}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+  .kpi{background:var(--paper);border:1.5px solid var(--line);border-radius:10px;padding:13px}
+  .kpi .lb{font-size:11px;color:var(--muted)}
+  .kpi .vl{font-size:21px;font-weight:800;margin:3px 0}
+  .kpi .sub{font-size:11px;color:var(--muted)}
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .chart{background:var(--paper);border:1.5px solid var(--line);border-radius:10px;padding:14px}
+  .ph{height:130px;border:1.5px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca5b2;font-size:11px;background:repeating-linear-gradient(45deg,#fafbfd,#fafbfd 9px,#f5f6f9 9px,#f5f6f9 18px)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .grow{flex:1}
+  .note{border-left:3px solid var(--blue);background:var(--blue-bg);color:#1d4ed8;font-size:12px;padding:8px 12px;border-radius:0 7px 7px 0;margin:10px 0}
+  .warn-note{border-left-color:var(--amber);background:#fdf6ea;color:#92400e}
+  /* 抽屉 */
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:40;display:none}
+  .overlay.show{display:block}
+  .drawer{position:fixed;top:0;right:0;width:440px;max-width:92vw;height:100%;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.18);z-index:50;padding:20px;transform:translateX(100%);transition:transform .22s;display:flex;flex-direction:column}
+  .drawer.show{transform:translateX(0)}
+  .drawer h4{margin:0 0 14px}
+  .drawer .body{flex:1;overflow-y:auto}
+  .drawer .foot{display:flex;gap:10px;justify-content:flex-end;padding-top:14px;border-top:1px solid var(--line)}
+  .toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);background:#1f2937;color:#fff;padding:10px 18px;border-radius:8px;font-size:12.5px;opacity:0;transition:opacity .2s;z-index:99;pointer-events:none}
+  .toast.show{opacity:1}
+  @media(max-width:860px){.kpis,.charts,.grid2{grid-template-columns:1fr}.sidebar{width:64px}.si span{display:none}.sg{visibility:hidden}}
+</style>
+</head>
+<body>
+<div class="hintbar">💡 低保真可交互线框原型 —— 点击<b>顶部角色</b>、<b>左侧菜单</b>、<b>页内 Tab</b> 与按钮体验流转；图形为虚线占位。</div>
+<div class="topbar">
+  <div class="logo">合沐纯牛奶·进销存<small>江西赣州 · 线框版</small></div>
+  <div class="topright">
+    <div class="role-switch" id="roleSwitch">
+      <div class="role active" data-role="gm">总经理</div>
+      <div class="role" data-role="bm">业务经理</div>
+      <div class="role" data-role="fin">财务</div>
+    </div>
+    <div style="font-size:12.5px;color:var(--muted)" id="roleName">总经理</div>
+  </div>
+</div>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main" id="main"></div>
+</div>
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+let role='gm', page='dashboard', sub={inventory:'lot',receiv:'ar',promo:'act',master:'product',visit:'plan',sys:'role'};
+let orders=[
+  {no:'SO20261011001',store:'旺家超市',amt:896,st:'待审核'},
+  {no:'SO20261011002',store:'好客多便利店',amt:540,st:'待审核'},
+  {no:'SO20261010018',store:'母婴坊',amt:1260,st:'配送中'},
+  {no:'SO20261010012',store:'兴盛商贸',amt:2100,st:'已签收'}
+];
+let approvals=[
+  {biz:'采购申请',no:'PO20261011001',req:'业务经理·王',amt:50400},
+  {biz:'促销费用',no:'PF20261010008',req:'业务经理·王',amt:800},
+  {biz:'折扣折让',no:'SO20261011002',req:'业务员·李',amt:120}
+];
+const ST_BADGE={'待审核':'b-info','配送中':'b-info','已签收':'b-ok','待拣货':'b-warn','已驳回':'b-red'};
+
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500);}
+function openDrawer(title,html){$('#drawer').innerHTML=`<h4>${title}</h4><div class="body">${html}</div><div class="foot"><button class="btn" onclick="closeDrawer()">取消</button><button class="btn primary" onclick="drawerSubmit('${title}')">确认提交</button></div>`;$('#overlay').classList.add('show');$('#drawer').classList.add('show');}
+function closeDrawer(){$('#overlay').classList.remove('show');$('#drawer').classList.remove('show');}
+function drawerSubmit(t){closeDrawer();toast('已提交 '+(t||'单据'));}
+
+const MENUS={
+  gm:[{g:'经营',items:[['dashboard','经营看板'],['approval','审批中心']]},{g:'业务',items:[['sales','销售订单'],['purchase','采购管理'],['inventory','库存管理'],['receiv','应收与回款'],['promo','促销管理'],['visit','巡店管理']]},{g:'基础',items:[['master','基础档案'],['sys','系统设置']]}],
+  bm:[{g:'经营',items:[['dashboard','经营看板'],['sales','销售订单'],['purchase','采购管理']]},{g:'运营',items:[['inventory','库存管理'],['receiv','应收与回款'],['promo','促销管理'],['visit','巡店管理']]},{g:'基础',items:[['master','基础档案']]}],
+  fin:[{g:'资金',items:[['receiv','应收与回款'],['dashboard','经营看板']]},{g:'基础',items:[['master','客户与对账']]}]
+};
+const TITLE={dashboard:'经营看板',sales:'销售订单',purchase:'采购管理',inventory:'库存管理',receiv:'应收与回款',promo:'促销管理',visit:'巡店管理',master:'基础档案',sys:'系统设置',approval:'审批中心'};
+
+function renderSidebar(){
+  $('#sidebar').innerHTML=MENUS[role].map(g=>`<div class="sg">${g.g}</div>`+g.items.map(i=>`<div class="si ${i[0]===page?'active':''}" data-page="${i[0]}">▸<span>${i[1]}</span></div>`).join('')).join('');
+}
+function kpi(lb,vl,sub,color=''){return `<div class="kpi"><div class="lb">${lb}</div><div class="vl" style="${color}">${vl}</div><div class="sub">${sub}</div></div>`;}
+
+// ===== 页面 =====
+function pDashboard(){
+  const warn=`<div class="note warn-note"><b>经营预警中心</b>：临期 3 批次 · 逾期应收 ¥12,400 · 低库存 2 项 —— 点击跳转处理</div>`;
+  return `<div class="ptitle">经营看板 ${role==='gm'?'（全局）':role==='bm'?'（赣州片区）':'（资金）'}</div>
+  <div class="kpis">${kpi('本月销售额','¥512,360','较上月 +12.4%')}${kpi('本月毛利','¥118,400','毛利率 23.1%')}${kpi('应收账款','¥86,200','逾期 ¥12,400','color:var(--amber)')}${kpi('临期/过期','3 批次','约 ¥8,600','color:var(--red)')}</div>
+  ${warn}
+  <div class="charts">
+    <div class="chart"><h5 style="margin:0 0 8px">销售趋势（袋装 vs 盒装）</h5><div class="ph">折线图 · 虚线占位</div></div>
+    <div class="chart"><h5 style="margin:0 0 8px">库存效期分布</h5><div class="ph">环形图 · 正常/临期/过期</div></div>
+    <div class="chart"><h5 style="margin:0 0 8px">门店销售 TOP</h5><div class="ph">柱状图 · 占位</div></div>
+    <div class="chart"><h5 style="margin:0 0 8px">促销投入产出榜</h5><div class="ph">条形图 · ROI 占位</div></div>
+  </div>`;
+}
+function pSales(){
+  return `<div class="ptitle">销售订单</div>
+  <div class="toolbar"><div class="tabs">${['待审核','待拣货','配送中','已签收'].map((t,i)=>`<div class="tab ${i===0?'active':''}" onclick="toast('切换状态筛选：${t}')">${t}</div>`).join('')}</div>
+  <button class="btn primary" onclick="openOrderDrawer()">+ 新建销售单</button></div>
+  <div class="toolbar"><div class="filters"><div class="field"><label>门店</label><div class="inp">全部门店 ▾</div></div><div class="field"><label>单号</label><div class="inp">输入单号</div></div><button class="btn">查询</button><button class="btn">重置</button></div></div>
+  <div class="card"><table><tr><th>单号</th><th>门店</th><th>金额</th><th>状态</th><th>操作</th></tr>
+  ${orders.map((o,i)=>`<tr><td>${o.no}</td><td>${o.store}</td><td>¥${o.amt}</td><td><span class="badge ${ST_BADGE[o.st]}">${o.st}</span></td>
+  <td>${o.st==='待审核'?`<button class="btn green sm" onclick="doOrder(${i},1)">通过</button> <button class="btn red sm" onclick="doOrder(${i},0)">驳回</button>`:`<button class="btn sm" onclick="openOrderDetail(${i})">详情</button>`}</td></tr>`).join('')}
+  </table></div>`;
+}
+function doOrder(i,ok){orders[i].st=ok?'待拣货':'已驳回';toast(ok?'审核通过，释放锁定→拣货':'已驳回，退回草稿');render();}
+function openOrderDetail(i){const o=orders[i];openDrawer('订单详情',`<div class="note">门店 ${o.store} · 金额 ¥${o.amt}</div><table><tr><th>商品</th><th>数量</th><th>金额</th></tr><tr><td>袋装 200ml</td><td>120</td><td>¥336</td></tr><tr><td>盒装 200ml</td><td>100</td><td>¥360</td></tr></table><div class="note warn-note">账期 30 天 · 信用额度 ¥20,000 · 现应收 ¥12,400（正常）</div><button class="btn primary" style="width:100%" onclick="toast('已加入拣货队列')">开始拣货（FIFO）</button>`);}
+function openOrderDrawer(){
+  openDrawer('新建销售单',`
+  <div class="field" style="margin-bottom:10px"><label>客户门店</label><div class="inp">选择门店 ▾</div></div>
+  <div class="field" style="margin-bottom:10px"><label>出库仓库</label><div class="inp">赣州地区仓 ▾</div></div>
+  <table><tr><th>商品</th><th>单价</th><th>数量</th></tr>
+  <tr><td>袋装 200ml</td><td>¥2.8</td><td><div class="row"><button class="btn sm">-</button><span style="padding:2px 8px">80</span><button class="btn sm">+</button></div></td></tr>
+  <tr><td>盒装 200ml</td><td>¥3.6</td><td><div class="row"><button class="btn sm">-</button><span style="padding:2px 8px">40</span><button class="btn sm">+</button></div></td></tr></table>
+  <div class="note">可用库存充足 · 额度内 · 合计 ¥368</div>`);
+}
+
+function pPurchase(){
+  return `<div class="ptitle">采购管理</div>
+  <div class="tabs">${[['采购单','po'],['入库验收','in'],['供应商应付','pay']].map(t=>`<div class="tab ${sub.purchase===t[1]?'active':''}" onclick="setSub('purchase','${t[1]}')">${t[0]}</div>`).join('')}</div>
+  <div class="toolbar"><div class="filters"><div class="field"><label>供应商</label><div class="inp">合沐乳业 ▾</div></div><button class="btn">查询</button></div><button class="btn primary" onclick="toast('进入采购申请填写')">+ 采购申请</button></div>
+  <div class="card"><table><tr><th>单号</th><th>供应商</th><th>商品</th><th>金额</th><th>状态</th><th>操作</th></tr>
+  <tr><td>PO20261011001</td><td>合沐乳业</td><td>袋装 × 18000</td><td>¥50,400</td><td><span class="badge b-info">待审批</span></td><td><button class="btn green sm" onclick="toast('采购审批通过')">审批</button></td></tr>
+  <tr><td>PO20261005002</td><td>合沐乳业</td><td>盒装 × 9000</td><td>¥32,400</td><td><span class="badge b-warn">待收货</span></td><td><button class="btn sm" onclick="openReceiveDrawer()">入库验收</button></td></tr>
+  </table></div>`;
+}
+function openReceiveDrawer(){
+  openDrawer('入库验收',`
+  <div class="field" style="margin-bottom:10px"><label>生产日期</label><div class="inp">2026-10-01</div></div>
+  <div class="field" style="margin-bottom:10px"><label>生产批次号</label><div class="inp">L20261001</div></div>
+  <div class="field" style="margin-bottom:10px"><label>实收数量</label><div class="inp">18000</div></div>
+  <div class="field" style="margin-bottom:10px"><label>到期日（自动计算）</label><div class="inp" style="background:var(--soft)">2026-11-15</div></div>
+  <div class="note">入库增批次库存 + 写流水 + 生成应付（同一事务）</div>`);
+}
+
+function pInventory(){
+  const tabs=[['lot','批次库存'],['age','库龄周转'],['trans','调拨'],['stock','盘点'],['loss','报损']];
+  return `<div class="ptitle">库存管理</div>
+  <div class="tabs">${tabs.map(t=>`<div class="tab ${sub.inventory===t[0]?'active':''}" onclick="setSub('inventory','${t[0]}')">${t[1]}</div>`).join('')}</div>
+  <div class="toolbar"><div class="filters"><div class="field"><label>仓库</label><div class="inp">全部 ▾</div></div><div class="field"><label>商品</label><div class="inp">全部 ▾</div></div><button class="btn">查询</button></div>
+  <div class="row"><button class="btn" onclick="toast('新建调拨单')">调拨</button><button class="btn" onclick="toast('新建盘点单')">盘点</button><button class="btn red" onclick="toast('新建报损单')">报损</button></div></div>
+  <div class="card"><table><tr><th>仓库</th><th>商品</th><th>批次号</th><th>到期日</th><th>现存量</th><th>锁定/冻结</th><th>状态</th><th>操作</th></tr>
+  <tr><td>主仓库</td><td>袋装 200ml</td><td>L20260706</td><td>2026-10-20</td><td>420</td><td>0 / 0</td><td><span class="badge b-ok">正常</span></td><td><button class="btn sm" onclick="toast('查看批次流水')">流水</button></td></tr>
+  <tr><td>地区仓</td><td>袋装 200ml</td><td>L20260628</td><td>2026-10-12</td><td>360</td><td>80 / 0</td><td><span class="badge b-warn">临期</span></td><td><button class="btn sm" onclick="toast('临期：建议优先出库/退换')">处理</button></td></tr>
+  <tr><td>主仓库</td><td>盒装 200ml</td><td>L20260520</td><td>2026-10-01</td><td>60</td><td>0 / 60</td><td><span class="badge b-red">过期</span></td><td><button class="btn red sm" onclick="toast('过期冻结：仅可报损')">报损</button></td></tr>
+  </table></div>`;
+}
+
+function pReceiv(){
+  const tabs=[['ar','应收明细'],['pay','回款登记'],['st','对账单']];
+  return `<div class="ptitle">应收与回款</div>
+  <div class="tabs">${tabs.map(t=>`<div class="tab ${sub.receiv===t[0]?'active':''}" onclick="setSub('receiv','${t[0]}')">${t[1]}</div>`).join('')}</div>
+  <div class="toolbar"><div class="filters"><div class="field"><label>账龄</label><div class="inp">全部 ▾</div></div><button class="btn">查询</button></div><button class="btn primary" onclick="toast('登记回款，FIFO 核销')">+ 登记回款</button></div>
+  <div class="card"><table><tr><th>门店</th><th>应收</th><th>到期日</th><th>账龄</th><th>状态</th><th>操作</th></tr>
+  <tr><td>好客多便利店</td><td>¥2,400</td><td>2026-09-29</td><td>12 天</td><td><span class="badge b-red">逾期</span></td><td><button class="btn sm" onclick="toast('发起催收 / 登记回款')">核销</button></td></tr>
+  <tr><td>兴盛商贸</td><td>¥2,100</td><td>2026-10-11</td><td>0 天</td><td><span class="badge b-warn">今日到期</span></td><td><button class="btn sm" onclick="toast('发起催收 / 登记回款')">核销</button></td></tr>
+  <tr><td>母婴坊</td><td>¥1,050</td><td>2026-10-16</td><td>—</td><td><span class="badge b-ok">正常</span></td><td><button class="btn sm" onclick="toast('登记回款')">核销</button></td></tr>
+  </table></div>
+  <div class="card"><h5>对账单（含客户电子确认）</h5><table><tr><th>门店</th><th>期初</th><th>本期销售</th><th>本期回款</th><th>期末</th><th>操作</th></tr>
+  <tr><td>旺家超市</td><td>¥0</td><td>¥8,960</td><td>¥8,064</td><td>¥896</td><td><button class="btn sm" onclick="toast('生成对账单并推送门店在线确认')">导出/推送</button></td></tr></table></div>`;
+}
+
+function pPromo(){
+  const tabs=[['act','活动列表'],['fee','费用审批'],['roi','投入产出'],['gift','赠品台账']];
+  return `<div class="ptitle">促销管理</div>
+  <div class="tabs">${tabs.map(t=>`<div class="tab ${sub.promo===t[0]?'active':''}" onclick="setSub('promo','${t[0]}')">${t[1]}</div>`).join('')}</div>
+  <div class="toolbar"><div class="filters"><div class="field"><label>状态</label><div class="inp">全部 ▾</div></div></div><button class="btn primary" onclick="toast('新建促销活动（特价/买赠/满减/陈列）')">+ 新建活动</button></div>
+  <div class="card"><table><tr><th>活动</th><th>门店</th><th>费用</th><th>带动销售</th><th>ROI</th><th>状态</th><th>操作</th></tr>
+  <tr><td>袋装买赠</td><td>旺家超市</td><td>¥800</td><td>¥12,000</td><td>1:15.0</td><td><span class="badge b-ok">执行中</span></td><td><button class="btn sm" onclick="toast('查看活动与促销员作业')">详情</button></td></tr>
+  <tr><td>盒装陈列</td><td>好客多</td><td>¥500</td><td>¥6,800</td><td>1:13.6</td><td><span class="badge b-gray">已结束</span></td><td><button class="btn sm" onclick="toast('查看核算结果')">详情</button></td></tr>
+  <tr><td>满减促销</td><td>母婴坊</td><td>¥1,200</td><td>¥9,600</td><td>1:8.0</td><td><span class="badge b-warn">待核算</span></td><td><button class="btn green sm" onclick="toast('完成投入产出核算')">核算</button></td></tr>
+  </table></div>`;
+}
+
+function pVisit(){
+  return `<div class="ptitle">巡店管理</div>
+  <div class="tabs"><div class="tab active">拜访计划</div><div class="tab" onclick="toast('路线规划（增强）')">路线规划</div><div class="tab" onclick="toast('巡店记录')">巡店记录</div></div>
+  <div class="toolbar"><button class="btn primary" onclick="toast('编排拜访计划')">+ 新建计划</button></div>
+  <div class="card"><table><tr><th>业务员</th><th>门店</th><th>计划日</th><th>签到</th><th>陈列/效期</th></tr>
+  <tr><td>李</td><td>旺家超市</td><td>10-11</td><td>09:32 ✓</td><td><span class="badge b-red">发现临期 18 件</span></td></tr>
+  <tr><td>张</td><td>母婴坊</td><td>10-11</td><td>未签到</td><td>—</td></tr></table></div>`;
+}
+
+function pMaster(){
+  const tabs=[['product','商品'],['store','客户门店'],['supplier','供应商'],['price','价格']];
+  return `<div class="ptitle">基础档案</div>
+  <div class="tabs">${tabs.map(t=>`<div class="tab ${sub.master===t[0]?'active':''}" onclick="setSub('master','${t[0]}')">${t[1]}</div>`).join('')}</div>
+  <div class="toolbar"><button class="btn primary" onclick="toast('新增档案（商品/门店/价格）')">+ 新增</button></div>
+  <div class="card"><table><tr><th>编码</th><th>名称</th><th>品类</th><th>规格</th><th>箱规</th><th>保质期</th><th>临期预警</th><th>状态</th></tr>
+  <tr><td>HM-BZ-200</td><td>合沐纯牛奶</td><td>袋装</td><td>200ml</td><td>16</td><td>45天</td><td>7天</td><td><span class="badge b-ok">启用</span></td></tr>
+  <tr><td>HM-HZ-200</td><td>合沐纯牛奶</td><td>盒装</td><td>200ml</td><td>12</td><td>180天</td><td>15天</td><td><span class="badge b-ok">启用</span></td></tr></table></div>`;
+}
+
+function pSys(){
+  return `<div class="ptitle">系统设置</div>
+  <div class="tabs"><div class="tab active">角色权限</div><div class="tab" onclick="toast('审批流配置')">审批流</div><div class="tab" onclick="toast('审计日志')">审计日志</div></div>
+  <div class="card"><h5>角色权限矩阵</h5><table><tr><th>能力</th><th>总经理</th><th>业务经理</th><th>业务员</th><th>促销员</th></tr>
+  <tr><td>采购审批</td><td>✔</td><td>申请/初审</td><td>-</td><td>-</td></tr>
+  <tr><td>销售审核</td><td>特批</td><td>✔</td><td>-</td><td>-</td></tr>
+  <tr><td>应收回款</td><td>查看</td><td>✔</td><td>催收</td><td>-</td></tr>
+  <tr><td>促销作业</td><td>终审</td><td>创建/初审</td><td>执行</td><td>签到/上报</td></tr></table></div>`;
+}
+
+function pApproval(){
+  return `<div class="ptitle">审批中心</div>
+  <div class="card"><table><tr><th>类型</th><th>单号</th><th>申请人</th><th>金额</th><th>操作</th></tr>
+  ${approvals.map((a,i)=>`<tr><td>${a.biz}</td><td>${a.no}</td><td>${a.req}</td><td>¥${a.amt}</td><td><button class="btn green sm" onclick="doApproval(${i},1)">通过</button> <button class="btn red sm" onclick="doApproval(${i},0)">驳回</button></td></tr>`).join('')}
+  ${approvals.length===0?'<tr><td colspan="5" style="text-align:center;color:var(--muted)">✅ 待办已清空</td></tr>':''}</table></div>`;
+}
+function doApproval(i,ok){const a=approvals[i];approvals.splice(i,1);toast((ok?'已通过':'已驳回')+'：'+a.no);render();}
+
+const RENDER={dashboard:pDashboard,sales:pSales,purchase:pPurchase,inventory:pInventory,receiv:pReceiv,promo:pPromo,visit:pVisit,master:pMaster,sys:pSys,approval:pApproval};
+function render(){renderSidebar();$('#main').innerHTML=`<div class="crumb">首页 / ${TITLE[page]||''}</div>`+(RENDER[page]?RENDER[page]():'');$('#roleName').textContent=role==='gm'?'总经理':role==='bm'?'业务经理':'财务';}
+function setSub(ns,k){sub[ns]=k;render();}
+
+$('#sidebar').addEventListener('click',e=>{const it=e.target.closest('.si');if(it){page=it.dataset.page;render();}});
+$('#roleSwitch').addEventListener('click',e=>{const r=e.target.closest('.role');if(!r)return;role=r.dataset.role;document.querySelectorAll('#roleSwitch .role').forEach(x=>x.classList.toggle('active',x===r));const keys=MENUS[role].flatMap(g=>g.items.map(i=>i[0]));if(!keys.includes(page))page=keys[0];render();});
+
+render();
+</script>
+</body>
+</html>
