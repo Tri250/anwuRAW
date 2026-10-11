@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新疆合沐纯牛奶 进销存管理系统 · 技术设计与开发规格</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#1f2329; --muted:#6b7280;
+    --line:#e5e7eb; --brand:#155eef; --brand-2:#3b82f6; --accent:#d97706; --soft:#eef3ff;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif; color:var(--ink); background:var(--bg); line-height:1.7; font-size:15px;}
+  .layout{display:flex; min-height:100vh;}
+  nav.toc{width:290px; flex:0 0 290px; background:#101a2e; color:#d7e0f0; position:sticky; top:0; height:100vh; overflow-y:auto; padding:24px 18px 40px;}
+  nav.toc h2{font-size:14px; color:#fff; margin:0 0 6px;}
+  nav.toc .sub{font-size:11.5px; color:#8aa2c8; margin:0 0 18px;}
+  nav.toc a{display:block; color:#c2d0e8; text-decoration:none; padding:5px 8px; border-radius:6px; font-size:13px;}
+  nav.toc a:hover{background:#1c2a47; color:#fff;}
+  nav.toc .lvl2{padding-left:22px; font-size:12.5px; color:#8fa6cc;}
+  main{flex:1; max-width:1020px; padding:40px 48px 80px;}
+  header.hero{background:linear-gradient(135deg,#155eef,#3b82f6); color:#fff; border-radius:14px; padding:32px 36px; margin-bottom:28px;}
+  header.hero h1{margin:0 0 8px; font-size:25px; line-height:1.4;}
+  header.hero p{margin:4px 0; font-size:13.5px; color:#e7efff;}
+  .hero-meta{display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:16px;}
+  .hero-meta span{background:rgba(255,255,255,.16); padding:5px 12px; border-radius:20px; font-size:12.5px;}
+  h2.sec{font-size:21px; margin:46px 0 16px; padding:12px 16px; background:var(--soft); border-left:5px solid var(--brand); border-radius:6px;}
+  h3.m{font-size:17px; margin:30px 0 10px; color:var(--brand); padding-bottom:6px; border-bottom:1px dashed var(--line);}
+  h4{font-size:15px; margin:20px 0 8px;}
+  p{margin:8px 0;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin:14px 0;}
+  table{border-collapse:collapse; width:100%; margin:12px 0; font-size:13px; background:#fff; border-radius:8px; overflow:hidden;}
+  th,td{border:1px solid var(--line); padding:7px 9px; text-align:left; vertical-align:top;}
+  th{background:#eef3ff; color:#123c8f; font-weight:600; white-space:nowrap;}
+  tr:nth-child(even) td{background:#fafbff;}
+  code{background:#eef1f4; padding:1px 6px; border-radius:4px; font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:12.5px; color:#b45309;}
+  pre{background:#0f1c33; color:#d7e3f8; padding:14px 16px; border-radius:8px; overflow-x:auto; font-size:12.5px; line-height:1.6;}
+  pre code{background:none; color:inherit; padding:0;}
+  .pill{display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; font-weight:600;}
+  .p-p0{background:#e8f5ef; color:#0f6b4f;}
+  .p-p1{background:#fef3e2; color:#b45309;}
+  .note{background:#fff8ec; border-left:4px solid var(--accent); padding:10px 14px; border-radius:6px; margin:12px 0; font-size:13.5px;}
+  .info{background:#eef6f2; border-left:4px solid #0f6b4f; padding:10px 14px; border-radius:6px; margin:12px 0; font-size:13.5px;}
+  ul,ol{padding-left:22px; margin:8px 0;}
+  li{margin:4px 0;}
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:14px 0;}
+  .flow .node{background:#fff; border:1.5px solid var(--brand-2); color:var(--brand); border-radius:8px; padding:8px 14px; font-size:13px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .flow .node.nl{background:var(--soft);}
+  .flow .arrow{color:#94a3b8; font-size:16px; font-weight:700;}
+  @media (max-width:900px){ .layout{flex-direction:column;} nav.toc{position:relative; width:100%; height:auto; max-height:220px;} }
+  @media print{ nav.toc{display:none;} main{max-width:none; padding:0;} }
+  .small{font-size:12.5px; color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc">
+  <h2>技术设计与开发规格</h2>
+  <p class="sub">新疆合沐纯牛奶 进销存管理系统</p>
+  <a href="#s1">1. 文档信息</a>
+  <a href="#s2">2. 技术选型</a>
+  <a href="#s3">3. 系统架构</a>
+  <a href="#s4">4. 数据模型与数据字典</a>
+  <a class="lvl2" href="#s4-1">4.1 表清单</a>
+  <a class="lvl2" href="#s4-2">4.2 核心表字段</a>
+  <a href="#s5">5. 关键业务算法</a>
+  <a class="lvl2" href="#s5-1">5.1 FEFO 分配</a>
+  <a class="lvl2" href="#s5-2">5.2 移动加权成本</a>
+  <a class="lvl2" href="#s5-3">5.3 往来余额</a>
+  <a class="lvl2" href="#s5-4">5.4 红冲与并发</a>
+  <a href="#s6">6. 页面与接口清单</a>
+  <a href="#s7">7. 开发分期</a>
+  <a href="#s8">8. 验收标准</a>
+  <a href="#s9">9. 非功能性需求</a>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>新疆合沐纯牛奶 进销存管理系统<br>技术设计与开发规格（可执行）</h1>
+  <p>与《PRD V1.1 定稿》配套，覆盖技术选型、架构、数据模型、关键算法、页面/接口、开发分期与验收标准</p>
+  <div class="hero-meta">
+    <span>文档版本：V1.0</span>
+    <span>日期：2026-10-11</span>
+    <span>面向：研发 / 测试 / 运维</span>
+  </div>
+</header>
+
+<section id="s1">
+  <h2 class="sec">1. 文档信息</h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:160px">关联文档</th><td>《新疆合沐纯牛奶进销存管理系统-PRD（V1.1 定稿）》为主要需求依据，本规格为实现约束</td></tr>
+      <tr><th>范围</th><td>PC Web 后台 + Android App，单主体多仓库/门店，批次效期 FEFO，赊销应收应付</td></tr>
+      <tr><th>原则</th><td>一期可闭环上线；核心技术决策已定稿，可直接进入开发与排期</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="s2">
+  <h2 class="sec">2. 技术选型</h2>
+  <div class="card">
+    <table>
+      <tr><th>层</th><th>选型</th><th>说明</th></tr>
+      <tr><td>PC 前端</td><td>Vue 3 + TypeScript + Vite + Element Plus + Pinia + ECharts</td><td>进销存 CRUD/表格/打印场景成熟</td></tr>
+      <tr><td>Android</td><td>原生 Kotlin + Jetpack（ViewModel/Compose）+ Retrofit + Room + DataStore + 相机扫码</td><td>现场稳定、通知/相机体验好；团队偏 Web 可降级 uni-app</td></tr>
+      <tr><td>后端</td><td>Java 17 + Spring Boot 3 + MyBatis-Plus + Spring Security(JWT) + Redis</td><td>事务、权限、报表成熟</td></tr>
+      <tr><td>数据库</td><td>MySQL 8.0（InnoDB，utf8mb4）</td><td>事务与行锁支撑并发扣减</td></tr>
+      <tr><td>缓存 / 会话</td><td>Redis</td><td>Token、热库存、预警去重</td></tr>
+      <tr><td>文件存储</td><td>MinIO / 云 OSS</td><td>凭证照片等</td></tr>
+      <tr><td>部署</td><td>Docker Compose（Nginx + 应用 + MySQL + Redis）</td><td>单机起步，可横向扩展</td></tr>
+    </table>
+    <p class="small">选型为推荐实现约束；如团队已有统一技术栈，可在不改变产品行为前提下替换，但事务/行锁、权限与审计能力不可降级。</p>
+  </div>
+</section>
+
+<section id="s3">
+  <h2 class="sec">3. 系统架构</h2>
+  <div class="card">
+    <div class="flow">
+      <span class="node">PC 浏览器</span><span class="arrow">/</span>
+      <span class="node">Android App</span><span class="arrow">→</span>
+      <span class="node">Nginx 网关</span><span class="arrow">→</span>
+      <span class="node">应用服务（认证/基础资料/进销存/财务/报表）</span><span class="arrow">→</span>
+      <span class="node">MySQL</span><span class="arrow">+</span>
+      <span class="node">Redis</span><span class="arrow">+</span>
+      <span class="node">对象存储</span>
+    </div>
+    <p><strong>应用分层：</strong>接口层（Controller）→ 应用服务层（Service，业务规则与事务）→ 领域/数据层（Mapper）。业务规则（FEFO、成本、余额、状态机、权限、审计）集中在 Service 层，两端复用同一套规则，保证 PC/Android 口径一致。</p>
+    <p><strong>关键边界：</strong></p>
+    <ul>
+      <li>行级数据权限（可访问地点）在数据查询层统一拦截，避免各接口遗漏；</li>
+      <li>金额统一用整数「分」存储，避免浮点误差；</li>
+      <li>库存/往来变动一律在事务内完成，配合行锁与流水表保证可追溯。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s4">
+  <h2 class="sec">4. 数据模型与数据字典</h2>
+
+  <h3 class="m" id="s4-1">4.1 表清单</h3>
+  <div class="card">
+    <table>
+      <tr><th>域</th><th>表名</th><th>用途</th></tr>
+      <tr><td>基础资料</td><td><code>product_category</code> / <code>product</code></td><td>分类（袋装/盒装）与商品 SKU</td></tr>
+      <tr><td>基础资料</td><td><code>warehouse</code></td><td>仓库 / 门店（地点），数据权限边界</td></tr>
+      <tr><td>基础资料</td><td><code>supplier</code> / <code>customer</code></td><td>供应商 / 客户（含结算方式、额度、余额）</td></tr>
+      <tr><td>权限</td><td><code>sys_user</code> / <code>role</code> / <code>user_role</code> / <code>user_warehouse</code></td><td>账号、角色、地点授权</td></tr>
+      <tr><td>采购</td><td><code>purchase_order</code> / <code>purchase_order_item</code></td><td>采购入库 / 采购退货（type 区分）</td></tr>
+      <tr><td>销售</td><td><code>sale_order</code> / <code>sale_order_item</code></td><td>销售出库 / 销售退货（type 区分）</td></tr>
+      <tr><td>库存</td><td><code>batch_inventory</code></td><td>批次现存量（地点×商品×批次）</td></tr>
+      <tr><td>库存</td><td><code>inventory_ledger</code></td><td>批次进出流水（追溯与审计）</td></tr>
+      <tr><td>库存</td><td><code>transfer_order</code> / <code>stocktake</code> / <code>scrap_order</code></td><td>调拨 / 盘点 / 报废</td></tr>
+      <tr><td>财务</td><td><code>receipt</code> / <code>payment</code></td><td>收款 / 付款</td></tr>
+      <tr><td>财务</td><td><code>ar_ap_ledger</code></td><td>应收应付流水（金额变动记账）</td></tr>
+      <tr><td>系统</td><td><code>audit_log</code> / <code>alert</code></td><td>审计留痕 / 预警记录</td></tr>
+    </table>
+    <div class="note"><strong>通用字段（每表均含）：</strong><code>id</code>(主键)、<code>tenant_id</code>(预留，本期恒为 1)、<code>created_by</code> / <code>created_at</code> / <code>updated_by</code> / <code>updated_at</code> / <code>deleted</code>(逻辑删除)。</div>
+  </div>
+
+  <h3 class="m" id="s4-2">4.2 核心表字段（关键字典）</h3>
+
+  <h4>product（商品）</h4>
+  <div class="card"><table>
+    <tr><th>字段</th><th>类型</th><th>约束说明</th></tr>
+    <tr><td>code</td><td>varchar(32)</td><td>唯一</td></tr>
+    <tr><td>name</td><td>varchar(64)</td><td>商品名</td></tr>
+    <tr><td>category_id</td><td>bigint</td><td>一级分类（袋装/盒装）</td></tr>
+    <tr><td>spec</td><td>varchar(32)</td><td>规格，如 250mL</td></tr>
+    <tr><td>base_unit</td><td>varchar(8)</td><td>基本单位（袋/盒）</td></tr>
+    <tr><td>pack_unit</td><td>varchar(8)</td><td>整箱单位</td></tr>
+    <tr><td>pack_ratio</td><td>int</td><td>换算率（1 箱 = N 基本单位）</td></tr>
+    <tr><td>shelf_life_days</td><td>int</td><td>保质期天数（默认 180）</td></tr>
+    <tr><td>purchase_price / retail_price / wholesale_price</td><td>bigint</td><td>参考价（单位：分）</td></tr>
+    <tr><td>min_stock</td><td>int</td><td>最低库存（可空）</td></tr>
+    <tr><td>batch_flag</td><td>tinyint</td><td>批次管理标识，牛奶恒 1</td></tr>
+    <tr><td>status</td><td>tinyint</td><td>1 启用 / 0 停用</td></tr>
+  </table></div>
+
+  <h4>customer / supplier（客户 / 供应商，同构）</h4>
+  <div class="card"><table>
+    <tr><th>字段</th><th>类型</th><th>约束说明</th></tr>
+    <tr><td>code / name</td><td>varchar(32)/(64)</td><td>唯一</td></tr>
+    <tr><td>contact / phone / address</td><td>varchar</td><td>联系方式（客户必填）</td></tr>
+    <tr><td>settle_type</td><td>tinyint</td><td>1 赊销 / 2 现款</td></tr>
+    <tr><td>price_level</td><td>tinyint</td><td>客户价格级别：1 零售 / 2 批发 / 3 专属</td></tr>
+    <tr><td>credit_limit</td><td>bigint</td><td>信用额度（分，可空=不限额）</td></tr>
+    <tr><td>balance</td><td>bigint</td><td>应收/应付余额（分，冗余列，事务内维护）</td></tr>
+    <tr><td>status</td><td>tinyint</td><td>启用 / 停用</td></tr>
+  </table></div>
+
+  <h4>sale_order / purchase_order（单据头）</h4>
+  <div class="card"><table>
+    <tr><th>字段</th><th>类型</th><th>约束说明</th></tr>
+    <tr><td>order_no</td><td>varchar(32)</td><td>单据号，唯一</td></tr>
+    <tr><td>type</td><td>tinyint</td><td>1 入库/销售 / 2 退货（正负方向）</td></tr>
+    <tr><td>party_id</td><td>bigint</td><td>供应商（采购）/ 客户（销售）</td></tr>
+    <tr><td>warehouse_id</td><td>bigint</td><td>出/入库地点</td></tr>
+    <tr><td>total_amount</td><td>bigint</td><td>含税合计（分）</td></tr>
+    <tr><td>discount_amount</td><td>bigint</td><td>折扣（分）</td></tr>
+    <tr><td>status</td><td>tinyint</td><td>0 草稿 / 1 待审核 / 2 已审核 / 3 已作废</td></tr>
+    <tr><td>audited_by / audited_at</td><td>-</td><td>审核人与时间</td></tr>
+  </table>
+  <table>
+    <tr><th colspan="3">明细表字段（sale_order_item / purchase_order_item）</th></tr>
+    <tr><th>字段</th><th>类型</th><th>约束说明</th></tr>
+    <tr><td>order_id</td><td>bigint</td><td>头外键</td></tr>
+    <tr><td>product_id</td><td>bigint</td><td>商品</td></tr>
+    <tr><td>batch_id</td><td>bigint</td><td>出/入库批次（多批可拆多行）</td></tr>
+    <tr><td>qty_base</td><td>int</td><td>基本单位数量（内部核算口径）</td></tr>
+    <tr><td>price</td><td>bigint</td><td>单价（分，按基本单位）</td></tr>
+    <tr><td>amount</td><td>bigint</td><td>行金额（分）</td></tr>
+  </table></div>
+
+  <h4>batch_inventory（批次现存量）</h4>
+  <div class="card"><table>
+    <tr><th>字段</th><th>类型</th><th>约束说明</th></tr>
+    <tr><td>warehouse_id / product_id</td><td>bigint</td><td>唯一组合键的一部分</td></tr>
+    <tr><td>batch_no</td><td>varchar(32)</td><td>批次号</td></tr>
+    <tr><td>produce_date</td><td>date</td><td>生产日期</td></tr>
+    <tr><td>expire_date</td><td>date</td><td>到期日（= 生产日期 + 保质期）</td></tr>
+    <tr><td>inbound_at</td><td>datetime</td><td>入库时间（FEFO 排序用）</td></tr>
+    <tr><td>qty</td><td>int</td><td>现存量（非负，事务内扣减）</td></tr>
+    <tr><td>avg_cost</td><td>bigint</td><td>批次移动加权平均成本（分）</td></tr>
+    <tr><td>status</td><td>tinyint</td><td>0 在库 / 1 临期 / 2 过期 / 3 冻结</td></tr>
+    <tr><td colspan="3" class="small">唯一索引：(warehouse_id, product_id, batch_no)；FEFO 排序索引：(product_id, expire_date, inbound_at, batch_no)</td></tr>
+  </table></div>
+
+  <h4>inventory_ledger（库存流水）/ ar_ap_ledger（往来流水）</h4>
+  <div class="card"><table>
+    <tr><th>字段</th><th>类型</th><th>约束说明</th></tr>
+    <tr><td>warehouse_id / product_id / batch_id</td><td>bigint</td><td>库存维度</td></tr>
+    <tr><td>direction</td><td>tinyint</td><td>1 入 / -1 出</td></tr>
+    <tr><td>qty</td><td>int</td><td>变动数量（正）</td></tr>
+    <tr><td>biz_type / biz_no</td><td>varchar</td><td>业务类型 + 来源单据号（采购/销售/调拨/盘点/报废）</td></tr>
+    <tr><td>amount</td><td>bigint</td><td>往来流水金额（分，方向区分借贷）</td></tr>
+  </table>
+  <p class="small">两张流水表均为「只追加、不可改删」，用于任意时点追溯与对账；现存量 / 余额列为冗余汇总，须与流水一致（以流水为最终依据）。</p></div>
+  </div>
+</section>
+
+<section id="s5">
+  <h2 class="sec">5. 关键业务算法</h2>
+
+  <h3 class="m" id="s5-1">5.1 FEFO 批次分配</h3>
+  <div class="card">
+    <ol>
+      <li>锁定目标地点、商品的「在库 / 临期」批次（排除过期、冻结）；</li>
+      <li>按 <code>expire_date ASC → inbound_at ASC → batch_no ASC</code> 排序；</li>
+      <li>逐批扣减需求数量，直到满足；不足则视为库存不足，事务回滚并提示；</li>
+      <li>在单据审核事务内执行扣减并对批次行加行锁（<code>SELECT ... FOR UPDATE</code>），保证并发不超卖。</li>
+    </ol>
+    <pre><code>for batch in available_batches(order.product, order.warehouse):
+    take = min(remain, batch.qty)
+    batch.qty -= take
+    write_ledger(batch, direction=-1, qty=take, biz=order)
+    remain -= take
+    if remain == 0: break
+if remain > 0: raise 库存不足</code></pre>
+  </div>
+
+  <h3 class="m" id="s5-2">5.2 批次移动加权平均成本</h3>
+  <div class="card">
+    <p>采购入库时更新批次成本：<code>新成本 = (原库存×原成本 + 入库数量×入库单价) ÷ (原库存 + 入库数量)</code>（结果四舍五入到分）。</p>
+    <p>销售 / 调拨出库按当前批次 <code>avg_cost</code> 结转成本；毛利 = 售价 − 该批成本。退货回库按原出库成本回补（保证红冲口径一致）。</p>
+  </div>
+
+  <h3 class="m" id="s5-3">5.3 应收 / 应付余额</h3>
+  <div class="card">
+    <p><strong>规则：</strong>销售审核通过增应收、销售退货审核通过减应收、收款核销减应收（采购方向同理为应付）。</p>
+    <p><strong>实现：</strong>每次变动在事务内同时<a>写 ar_ap_ledger 流水</a>并累加/冲减 <code>customer.balance</code>；查询余额直接读冗余列，对账时以流水重算校验一致。</p>
+  </div>
+
+  <h3 class="m" id="s5-4">5.4 红冲与并发控制</h3>
+  <div class="card">
+    <ul>
+      <li><strong>红冲：</strong>对已审核单据生成一张「反向单据」（数量、金额取负），审核后自动回冲库存与往来；原单标记「已红冲」；不可直接 UPDATE 已审核单据。</li>
+      <li><strong>并发：</strong>扣减走唯一索引 + 行锁；单据号唯一；审核幂等（重复提交不产生双倍库存）。</li>
+      <li><strong>金额：</strong>全程整数「分」，仅在展示层转元。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s6">
+  <h2 class="sec">6. 页面与接口清单</h2>
+  <div class="card">
+    <table>
+      <tr><th>模块</th><th>PC 页面</th><th>Android 页面</th><th>主要接口（示例）</th></tr>
+      <tr><td>基础资料</td><td>商品/分类、仓库门店、供应商、客户、员工</td><td>客户列表/新增、商品查看</td><td>product CRUD、customer CRUD、warehouse CRUD</td></tr>
+      <tr><td>采购</td><td>采购入库/退货、采购订单</td><td>—（一期查看）</td><td>purchaseOrder save/submit/audit</td></tr>
+      <tr><td>销售</td><td>销售出库/退货</td><td>开单、退货、收款、扫码</td><td>saleOrder save/submit/audit、preview(fefo分配)、receipt</td></tr>
+      <tr><td>库存</td><td>库存查询、调拨、盘点、报废</td><td>库存查询、扫码</td><td>inventory query、transfer、stocktake、scrap</td></tr>
+      <tr><td>财务</td><td>应收应付台账、收款/付款、对账单</td><td>客户欠款、现场收款</td><td>arap ledger、receipt/payment、statement</td></tr>
+      <tr><td>报表</td><td>销售/库存/采购/账龄/经营</td><td>简报</td><td>report/*</td></tr>
+      <tr><td>系统</td><td>账号/角色/权限、日志、预警</td><td>登录、消息、我的</td><td>auth login、user/role、audit、alert</td></tr>
+    </table>
+    <p class="small">接口路径、入参/出参、权限注解、错误码由后端在编码阶段细化并纳入接口文档；本表用于工作量评估与模块划分。</p>
+  </div>
+</section>
+
+<section id="s7">
+  <h2 class="sec">7. 开发分期</h2>
+  <div class="card">
+    <p>按依赖顺序划分工包，不做时间承诺；每期结束可独立验收、可回归。</p>
+    <table>
+      <tr><th>阶段</th><th>交付内容</th><th>验收要点</th></tr>
+      <tr><td>S1 框架 + 权限</td><td>工程骨架、登录认证、角色/账号、地点数据权限、审计日志基座</td><td>登录、权限隔离、留痕可查</td></tr>
+      <tr><td>S2 基础资料 + 采购</td><td>分类/商品/仓库/供应商/客户、采购入库/退货（生成批次与应付）</td><td>批次入库、应付正确</td></tr>
+      <tr><td>S3 库存</td><td>批次现存量、库存查询、调拨、盘点、报废、效期/低库存预警</td><td>FEFO 排序、盘盈盘亏、临期预警</td></tr>
+      <tr><td>S4 销售 + 财务</td><td>销售出库（FEFO）、销售退货、应收应付台账、收款/付款核销、对账单</td><td>赊销应收、核销、对账平衡</td></tr>
+      <tr><td>S5 报表 + 移动端</td><td>核心报表、单据打印、Android 开单/收款/扫码/查库存欠款</td><td>双端口径一致、现场闭环</td></tr>
+      <tr><td>S6 联调上线</td><td>数据初始化、UAT、迁移、部署</td><td>最小闭环可上线</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="s8">
+  <h2 class="sec">8. 验收标准（关键场景）</h2>
+  <div class="card">
+    <table>
+      <tr><th>场景</th><th>验收标准（Given → When → Then）</th></tr>
+      <tr><td>采购入库</td><td>给定供应商与商品（保质期 180 天），录入生产日期 2026-10-01；提交审核后，系统生成到期日 2027-03-30 的批次，库存 +N，供应商应付 +金额</td></tr>
+      <tr><td>FEFO 出库</td><td>同商品存在两批（30 天到期、120 天到期）；销售时应优先扣减 30 天到期批次</td></tr>
+      <tr><td>过期拦截</td><td>销售单含已过期批次商品；提交被拦截并提示走报废</td></tr>
+      <tr><td>赊销 + 额度</td><td>客户额度 10000，已欠 9000，再开 2000 单；默认拦截进入待审批，需有权限者放行</td></tr>
+      <tr><td>收款核销</td><td>客户应收 5000，收款 3000 逐单核销；余额变 2000，对账单收/付/余相等</td></tr>
+      <tr><td>红冲</td><td>对已审核销售单红冲；库存返还、应收冲减，原单标记已红冲且留痕</td></tr>
+      <tr><td>移动端现场</td><td>业务员扫码商品开单收款，PC 端实时可见同一单据与库存变动</td></tr>
+      <tr><td>盘点</td><td>实盘与账面不一致，审核后生成盘盈/盘亏并调整库存、需填原因</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="s9">
+  <h2 class="sec">9. 非功能性需求</h2>
+  <div class="card">
+    <table>
+      <tr><th>项</th><th>要求</th></tr>
+      <tr><td>性能</td><td>日常单据操作 &lt; 1s；库存/报表列表分页 &lt; 2s；支持万级商品、十万级流水</td></tr>
+      <tr><td>并发</td><td>同商品并发出库不超卖（事务 + 行锁）</td></tr>
+      <tr><td>安全</td><td>密码加密存储、JWT 鉴权、行级数据权限、敏感操作留痕、HTTPS、接口鉴权全覆盖</td></tr>
+      <tr><td>备份</td><td>MySQL 每日全量 + 增量备份，保留 ≥ 30 天</td></tr>
+      <tr><td>一致性</td><td>库存 / 往来余额 —— 流水为最终依据，定期重算校验</td></tr>
+      <tr><td>兼容</td><td>PC 支持 Chrome/Edge 最新版；Android 8.0+</td></tr>
+    </table>
+  </div>
+</section>
+
+</main>
+</div>
+</body>
+</html>
