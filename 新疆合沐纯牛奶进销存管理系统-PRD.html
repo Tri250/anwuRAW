@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新疆合沐纯牛奶 · 进销存管理系统 PRD（正式版）</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#1f2329; --muted:#6b7280;
+    --line:#e5e7eb; --brand:#0f6b4f; --brand-2:#12936f; --accent:#d97706;
+    --soft:#eef6f2; --warn-bg:#fef3e2; --danger:#c0392b;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.75; font-size:15px;
+  }
+  .layout{display:flex; min-height:100vh;}
+  /* 侧边目录 */
+  nav.toc{
+    width:290px; flex:0 0 290px; background:#0b2a24; color:#d7e7e0;
+    position:sticky; top:0; height:100vh; overflow-y:auto; padding:24px 18px 40px;
+  }
+  nav.toc h2{font-size:14px; letter-spacing:1px; color:#fff; margin:0 0 6px;}
+  nav.toc .sub{font-size:11.5px;color:#7fb5a4; margin:0 0 18px;}
+  nav.toc a{display:block; color:#cfe3db; text-decoration:none; padding:5px 8px; border-radius:6px; font-size:13px;}
+  nav.toc a:hover{background:#124636; color:#fff;}
+  nav.toc .lvl2{padding-left:22px; font-size:12.5px; color:#9fc5b8;}
+  nav.toc .badge{display:inline-block; background:var(--brand-2); color:#fff; border-radius:10px; font-size:10px; padding:0 7px; margin-left:6px;}
+  /* 主内容 */
+  main{flex:1; max-width:980px; padding:40px 48px 80px;}
+  header.hero{background:linear-gradient(135deg,#0f6b4f,#12936f); color:#fff; border-radius:14px; padding:32px 36px; margin-bottom:28px;}
+  header.hero h1{margin:0 0 8px; font-size:26px; line-height:1.4;}
+  header.hero p{margin:4px 0; font-size:13.5px; color:#e2f2ec;}
+  .hero-meta{display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:16px;}
+  .hero-meta span{background:rgba(255,255,255,.16); padding:5px 12px; border-radius:20px; font-size:12.5px;}
+  h2.sec{
+    font-size:21px; margin:46px 0 16px; padding:12px 16px; background:var(--soft);
+    border-left:5px solid var(--brand); border-radius:6px;
+  }
+  h3.m{font-size:17px; margin:30px 0 10px; color:var(--brand); padding-bottom:6px; border-bottom:1px dashed var(--line);}
+  h4{font-size:15px; margin:20px 0 8px;}
+  p{margin:8px 0;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin:14px 0;}
+  table{border-collapse:collapse; width:100%; margin:12px 0; font-size:13.5px; background:#fff; border-radius:8px; overflow:hidden;}
+  th,td{border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top;}
+  th{background:#f0f7f4; color:#15463a; font-weight:600; white-space:nowrap;}
+  tr:nth-child(even) td{background:#fafcfb;}
+  code{background:#eef1f4; padding:1px 6px; border-radius:4px; font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-size:12.5px; color:#b45309;}
+  .pill{display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; font-weight:600;}
+  .p-p0{background:#e8f5ef; color:#0f6b4f;}
+  .p-p1{background:#fef3e2; color:#b45309;}
+  .tag-assumption{background:#fde7e7; color:#c0392b; padding:1px 8px; border-radius:4px; font-size:11.5px; font-weight:600;}
+  .tag-tbd{background:#fff4e5; color:#b45309; padding:1px 8px; border-radius:4px; font-size:11.5px; font-weight:600;}
+  .note{background:var(--warn-bg); border-left:4px solid var(--accent); padding:10px 14px; border-radius:6px; margin:12px 0; font-size:13.5px;}
+  .info{background:#eef6f2; border-left:4px solid var(--brand); padding:10px 14px; border-radius:6px; margin:12px 0; font-size:13.5px;}
+  ul,ol{padding-left:22px; margin:8px 0;}
+  li{margin:4px 0;}
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:14px 0;}
+  .flow .node{background:#fff; border:1.5px solid var(--brand-2); color:#0f6b4f; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .flow .node.nl{background:var(--soft);}
+  .flow .arrow{color:#94a3b8; font-size:16px; font-weight:700;}
+  .flow.v{flex-direction:column; align-items:stretch;}
+  .flow.v .arrow{align-self:center;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:900px){ .layout{flex-direction:column;} nav.toc{position:relative; width:100%; height:auto; max-height:220px;} .grid2{grid-template-columns:1fr;}}
+  @media print{ nav.toc{display:none;} main{max-width:none; padding:0;} .card,table{box-shadow:none;}}
+  a.anchor{color:inherit; text-decoration:none;}
+  .small{font-size:12.5px; color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc">
+  <h2>新疆合沐纯牛奶</h2>
+  <p class="sub">进销存管理系统 · PRD 正式版</p>
+  <a href="#s1">1. 文档信息</a>
+  <a href="#s2">2. 背景与目标</a>
+  <a href="#s3">3. 范围界定</a>
+  <a href="#s4">4. 产品模型</a>
+  <a class="lvl2" href="#s4-1">4.1 角色</a>
+  <a class="lvl2" href="#s4-2">4.2 核心对象</a>
+  <a class="lvl2" href="#s4-3">4.3 商品分类体系</a>
+  <a class="lvl2" href="#s4-4">4.4 平台形态</a>
+  <a href="#s5">5. 功能需求</a>
+  <a class="lvl2" href="#s5-1">5.1 基础资料</a>
+  <a class="lvl2" href="#s5-2">5.2 采购管理</a>
+  <a class="lvl2" href="#s5-3">5.3 销售管理</a>
+  <a class="lvl2" href="#s5-4">5.4 库存管理</a>
+  <a class="lvl2" href="#s5-5">5.5 财务与对账</a>
+  <a class="lvl2" href="#s5-6">5.6 报表与统计</a>
+  <a href="#s6">6. 共享规则</a>
+  <a class="lvl2" href="#s6-1">6.1 单据状态机</a>
+  <a class="lvl2" href="#s6-2">6.2 FEFO 出库规则</a>
+  <a class="lvl2" href="#s6-3">6.3 计算规则</a>
+  <a class="lvl2" href="#s6-4">6.4 预警与通知</a>
+  <a class="lvl2" href="#s6-5">6.5 权限矩阵</a>
+  <a class="lvl2" href="#s6-6">6.6 审计与留痕</a>
+  <a href="#s7">7. 平台差异（PC / Android）</a>
+  <a href="#s8">8. 待确认事项</a>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>新疆合沐纯牛奶 进销存管理系统<br>产品需求文档（PRD）· 正式版</h1>
+  <p>面向赣州市区域乳品经销业务，覆盖进货、销售、库存、财务对账的完整业务闭环</p>
+  <div class="hero-meta">
+    <span>文档版本：V1.0（正式版）</span>
+    <span>制定：资深产品经理</span>
+    <span>日期：2026-10-11</span>
+    <span>平台：PC 端 + Android 移动端</span>
+  </div>
+</header>
+
+<section id="s1">
+  <h2 class="sec">1. 文档信息</h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:160px">产品名称</th><td>新疆合沐纯牛奶 进销存管理系统</td></tr>
+      <tr><th>业务区域</th><td>江西省赣州市（单经营主体）</td></tr>
+      <tr><th>商品范围</th><td>袋装、盒装两大分类的新疆合沐纯牛奶（具体 SKU 规格见 8. 待确认事项）</td></tr>
+      <tr><th>经营模式</th><td>赊销 + 应收账款 / 应付账款（账期经销）</td></tr>
+      <tr><th>组织形态</th><td>单经营主体 + 多仓库 / 多门店</td></tr>
+      <tr><th>库存精细度</th><td>批次 + 保质期，FEFO（先到期先出）</td></tr>
+      <tr><th>交付形态</th><td>PC 端（后台管理）+ Android 移动端（业务员现场作业）</td></tr>
+      <tr><th>文档性质</th><td>产品需求规范，作为设计、研发、测试的同一决策依据</td></tr>
+    </table>
+    <p class="small">本文档聚焦产品行为与业务规则，不包含数据库、接口等实现层设计；实现方案由技术设计文档承接。</p>
+  </div>
+</section>
+
+<section id="s2">
+  <h2 class="sec">2. 背景与目标</h2>
+  <div class="card">
+    <p><strong>观察到的业务问题：</strong>乳品为短保质期快消品，进销存依赖批次与效期；赣州区域经销商存在多仓库 / 门店铺货、客户普遍赊销月结的特点。若依赖手工台账或零散表格，会出现以下问题：</p>
+    <ul>
+      <li>库存批次与效期不可追踪，临期 / 过期商品无法及时识别，存在食品安全与报废损失风险；</li>
+      <li>赊销账目以手工记录，客户应收、供应商应付、对账核销易出错、易漏记；</li>
+      <li>多仓库 / 门店库存数据不互通，难以调拨与盘清；</li>
+      <li>业务员现场开单、查库存、确认欠款缺乏工具，效率低且易超信用额度发货。</li>
+    </ul>
+    <p><strong>受影响用户与关键时刻：</strong>采购员在制定进货计划时、仓管员在出入库与效期管理中、业务员在客户现场开单与收款时、财务在做客户 / 供应商对账时、老板在做经营决策时。</p>
+    <p><strong>产品决策：</strong>建设一套以「批次效期 + 应收应付」为核心的进销存系统，PC 端支撑后台全流程管理与经营分析，Android 端支撑业务员现场开单、收款、查库存与查欠款。</p>
+    <p><strong>可观测的产品结果（定性）：</strong></p>
+    <ul>
+      <li>每一笔入库、出库都能追溯到具体批次与到期日；临近效期商品可提前预警并优先出清；</li>
+      <li>每一笔赊销都能自动形成应收，收款可逐单核销，任一客户余额实时可查且可对账；</li>
+      <li>多仓库 / 门店库存实时互通，支持跨点调拨与盘点；</li>
+      <li>业务员现场即可完成开单收款，超信用额度时被明确拦截或提示。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s3">
+  <h2 class="sec">3. 范围界定</h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:120px">层级</th><th>内容</th></tr>
+      <tr>
+        <td><span class="pill p-p0">P0 · 核心</span></td>
+        <td>商品与分类（袋装 / 盒装）、供应商、客户、仓库 / 门店、员工账号；采购入库 / 采购退货；销售出库 / 销售退货（含移动端开单）；批次效期库存、FEFO 出库、调拨、盘点；应收 / 应付台账、收款 / 付款核销、客户对账单；核心报表。</td>
+      </tr>
+      <tr>
+        <td><span class="pill p-p1">P1 · 支撑</span></td>
+        <td>采购订单（预采购计划）、信用额度管控、效期 / 低库存预警、单据打印、数据导入导出、操作留痕审计、报废管理。</td>
+      </tr>
+      <tr>
+        <td><span class="pill p-p1">排除项</span></td>
+        <td>生产制造、配方 / 物料 BOM、财务总账凭证接口、电商平台对接、多法人集团架构（本期单主体）。以上如后续需要另立迭代。</td>
+      </tr>
+    </table>
+    <div class="note"><strong>最小完整闭环：</strong>录入商品档案 → 采购入库（生成批次 + 应付）→ 库存可查 → 销售出库（FEFO 扣减批次 + 生成应收）→ 收款核销 → 对账闭环。这条链路是系统可上线的充分条件。</div>
+  </div>
+</section>
+
+<section id="s4">
+  <h2 class="sec">4. 产品模型</h2>
+
+  <h3 class="m" id="s4-1">4.1 角色</h3>
+  <div class="card">
+    <table>
+      <tr><th>角色</th><th>主要职责</th><th>端</th></tr>
+      <tr><td><strong>老板 / 管理员</strong></td><td>系统配置、账号与权限、全量数据与报表、价格与信用额度最终审批</td><td>PC</td></tr>
+      <tr><td><strong>采购员</strong></td><td>供应商维护、采购入库、采购退货、应付查询</td><td>PC</td></tr>
+      <tr><td><strong>仓管员</strong></td><td>出入库执行、库存查询、调拨、盘点、效期与报废</td><td>PC + Android</td></tr>
+      <tr><td><strong>业务员（销售）</strong></td><td>客户维护、现场销售开单 / 退货、收款登记、查库存与欠款</td><td>Android 为主，PC 辅</td></tr>
+      <tr><td><strong>财务 / 对账</strong></td><td>应收应付、收款付款核销、客户对账单、账龄分析</td><td>PC</td></tr>
+      <tr><td><strong>门店 / 仓库主管</strong></td><td>本点位经营数据、本点位销售开单与出入库</td><td>PC + Android</td></tr>
+    </table>
+  </div>
+
+  <h3 class="m" id="s4-2">4.2 核心对象</h3>
+  <div class="card">
+    <table>
+      <tr><th>对象</th><th>说明</th><th>关键标识</th></tr>
+      <tr><td>商品（SKU）</td><td>可被买卖、盘点的最小商品单元，例如「合沐纯牛奶 250mL 盒装」</td><td>商品编码（唯一）</td></tr>
+      <tr><td>批次</td><td>商品某一生产批次的库存单元，含生产日期与到期日，是效期与成本的追踪对象</td><td>批次号</td></tr>
+      <tr><td>仓库 / 门店</td><td>库存存放与销售出库的物理 / 经营点位</td><td>地点编码</td></tr>
+      <tr><td>供应商</td><td>供货方，结算形成应付</td><td>供应商编码</td></tr>
+      <tr><td>客户</td><td>进货方，赊销形成应收</td><td>客户编码</td></tr>
+      <tr><td>采购入库单 / 采购退货单</td><td>进货与进货退回的单据，驱动库存与应付变动</td><td>单据号</td></tr>
+      <tr><td>销售出库单 / 销售退货单</td><td>销售与销退的单据，驱动库存与应收变动</td><td>单据号</td></tr>
+      <tr><td>调拨单 / 盘点单</td><td>库位间流转与账实核对的单据</td><td>单据号</td></tr>
+      <tr><td>收款单 / 付款单</td><td>对客户应收、供应商应付的核销凭证</td><td>单据号</td></tr>
+    </table>
+  </div>
+
+  <h3 class="m" id="s4-3">4.3 商品分类体系</h3>
+  <div class="card">
+    <p>商品采用<strong>二级分类</strong>，一级固定为「袋装」「盒装」，支持扩展（如后续增加「瓶装」）。</p>
+    <table>
+      <tr><th>一级分类</th><th>说明</th><th>示例规格（<span class="tag-tbd">TBD</span>）</th></tr>
+      <tr><td>袋装</td><td>软袋 / 膜袋包装牛奶</td><td>如 200mL / 220mL / 250mL 袋，整箱 N 袋</td></tr>
+      <tr><td>盒装</td><td>利乐砖 / 纸盒包装牛奶</td><td>如 250mL / 1L 盒，整箱 N 盒</td></tr>
+    </table>
+    <p class="small">具体 SKU（容量、口味、箱规、进价、售价）在「商品档案」中维护，本文档不预设具体数值，避免与实际经营不符。</p>
+  </div>
+
+  <h3 class="m" id="s4-4">4.4 平台形态</h3>
+  <div class="card">
+    <table>
+      <tr><th>端</th><th>形态</th><th>定位</th></tr>
+      <tr><td>PC 端</td><td>Web 后台（浏览器访问）</td><td>全量业务管理、基础资料维护、审核、财务核销、报表分析、打印</td></tr>
+      <tr><td>Android 端</td><td>原生 App</td><td>业务员 / 仓管现场作业：开单、退货、收款、扫码、查库存、查欠款、效期提醒</td></tr>
+    </table>
+    <p>两端共用同一账户体系与数据，实时同步；同一单据 PC 与 Android 均可操作，按角色与数据权限收敛。</p>
+  </div>
+</section>
+
+<section id="s5">
+  <h2 class="sec">5. 功能需求</h2>
+  <p>本节为文档核心。每个模块按「用途 → 触发 → 处理规则 → 结果 / 状态变更 → 字段 → 状态 → 权限 → 异常」组织；跨模块共享规则统一在第 6 节定义，此处仅引用。</p>
+
+  <h3 class="m" id="s5-1">5.1 基础资料</h3>
+
+  <h4 id="fr-master-product">5.1.1 商品与分类管理（FR-MD-01）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>建立袋装 / 盒装牛奶的商品档案，作为进、销、存、账的唯一商品锚点。</p>
+    <p><strong>触发：</strong>管理员 / 采购员在 PC 端新增或编辑商品。</p>
+    <p><strong>字段：</strong></p>
+    <table>
+      <tr><th>字段</th><th>必填</th><th>规则</th></tr>
+      <tr><td>商品编码</td><td>是</td><td>系统内唯一，可自动生成不可重复</td></tr>
+      <tr><td>商品名称</td><td>是</td><td>重复时警告但不拦截</td></tr>
+      <tr><td>一级分类</td><td>是</td><td>袋装 / 盒装（可扩展）</td></tr>
+      <tr><td>规格</td><td>是</td><td>容量 / 净含量，如 250mL</td></tr>
+      <tr><td>基本单位 / 整箱单位</td><td>是</td><td>如「袋 / 箱」并维护换算率（1 箱 = N 袋）</td></tr>
+      <tr><td>保质期天数</td><td>是</td><td>正整数，用于自动计算到期日</td></tr>
+      <tr><td>进价参考 / 零售价 / 批发价</td><td>是</td><td>价格取数来源，销售时按客户价格级别带回可改</td></tr>
+      <tr><td>最低库存（安全库存）</td><td>否</td><td>低于此值触发低库存预警</td></tr>
+      <tr><td>批次管理标识</td><td>是</td><td>牛奶默认开启，不可关闭</td></tr>
+      <tr><td>状态</td><td>是</td><td>启用 / 停用</td></tr>
+    </table>
+    <p><strong>处理规则：</strong>已发生业务（有单据引用）的商品不可删除，只能「停用」；停用商品不可新建单据，历史数据保留可查。</p>
+    <p><strong>异常：</strong>商品编码重复 → 拦截提交；保质期天数 ≤ 0 或非整数 → 拦截；换算率 ≤ 0 → 拦截。</p>
+  </div>
+
+  <h4 id="fr-master-store">5.1.2 仓库 / 门店管理（FR-MD-02）</h4>
+  <div class="card">
+    <table>
+      <tr><th>字段</th><th>规则</th></tr>
+      <tr><td>地点编码 / 名称</td><td>唯一，必填</td></tr>
+      <tr><td>类型</td><td>仓库 / 门店（仓库为存货点，门店为销售点位，均可作出库仓）</td></tr>
+      <tr><td>地址 / 负责人</td><td>选填，用于配送与责任归属</td></tr>
+      <tr><td>状态</td><td>启用 / 停用；停用后不可参与新单据</td></tr>
+    </table>
+    <p><strong>规则：</strong>地点是库存数据与员工数据权限的边界（见 6.5 权限矩阵）。同一商品在不同地点分别保有独立批次库存。</p>
+  </div>
+
+  <h4 id="fr-master-supplier">5.1.3 供应商管理（FR-MD-03）</h4>
+  <div class="card">
+    <table>
+      <tr><th>字段</th><th>规则</th></tr>
+      <tr><td>供应商编码 / 名称</td><td>唯一，必填</td></tr>
+      <tr><td>联系人 / 电话 / 地址</td><td>选填</td></tr>
+      <tr><td>结算方式</td><td>赊销（月结）为主，可配账期天数</td></tr>
+      <tr><td>应付余额</td><td>只读，由采购与付款单据自动汇总（见 6.3）</td></tr>
+      <tr><td>状态</td><td>启用 / 停用</td></tr>
+    </table>
+  </div>
+
+  <h4 id="fr-master-customer">5.1.4 客户管理（FR-MD-04）</h4>
+  <div class="card">
+    <table>
+      <tr><th>字段</th><th>规则</th></tr>
+      <tr><td>客户编码 / 名称</td><td>唯一，必填</td></tr>
+      <tr><td>联系人 / 电话 / 地址</td><td>必填（配送与联系需要）</td></tr>
+      <tr><td>价格级别</td><td>如零售价 / 批发价 / 专属价，决定销售默认取价</td></tr>
+      <tr><td>结算方式</td><td>赊销 / 现款；赊销销售生成应收，现款销售直接形成收款</td></tr>
+      <tr><td>信用额度</td><td>赊销客户可选填，未填视为不限额</td></tr>
+      <tr><td>应收余额</td><td>只读，由销售与收款单据自动汇总（见 6.3）</td></tr>
+      <tr><td>状态</td><td>启用 / 停用；停用客户不可新建销售单</td></tr>
+    </table>
+    <p><strong>异常：</strong>客户编码重复拦截；现款客户不参与信用额度校验。</p>
+  </div>
+
+  <h4 id="fr-master-employee">5.1.5 员工与账号管理（FR-MD-05）</h4>
+  <div class="card">
+    <table>
+      <tr><th>字段</th><th>规则</th></tr>
+      <tr><td>账号 / 姓名 / 手机号</td><td>必填，账号唯一；手机号用于登录与通知</td></tr>
+      <tr><td>角色</td><td>见 4.1 角色，1 人可多角色（权限取并集）</td></tr>
+      <tr><td>可访问地点</td><td>见 6.5 数据权限，决定可见仓库 / 门店范围</td></tr>
+      <tr><td>状态</td><td>启用 / 停用；停用后即时无法登录</td></tr>
+    </table>
+  </div>
+
+  <h3 class="m" id="s5-2">5.2 采购管理</h3>
+
+  <h4 id="fr-purchase-in">5.2.1 采购入库（FR-PUR-01）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>记录向供应商采购牛奶入库，形成批次库存并增加应付。</p>
+    <p><strong>触发：</strong>采购员新建采购入库单（可直接入库，也可由采购订单生成，采购订单为 P1）。</p>
+    <p><strong>处理流程：</strong></p>
+    <div class="flow">
+      <span class="node nl">选择供应商</span><span class="arrow">→</span>
+      <span class="node nl">录入明细（商品/批次/生产日期/数量/进价）</span><span class="arrow">→</span>
+      <span class="node nl">自动算到期日与金额</span><span class="arrow">→</span>
+      <span class="node">提交审核</span><span class="arrow">→</span>
+      <span class="node">审核通过 · 入库生效</span>
+    </div>
+    <p><strong>处理规则：</strong></p>
+    <ul>
+      <li>批次号可自动生成（建议：采购单号 + 序号）或手动录入厂家生产批次号；</li>
+      <li>到期日 = 生产日期 + 商品保质期天数，自动计算，可纠正但须提示；</li>
+      <li>单据金额 = ∑（数量 × 进价），折扣与税额处理见 6.3；</li>
+      <li><strong>审核通过后：</strong>对应地点增加该批次库存数量，同时增加该供应商应付账款余额。</li>
+    </ul>
+    <p><strong>结果 / 状态变更：</strong>单据由「待审核」→「已审核」，库存与应付同步生效（状态机见 6.1）。</p>
+  </div>
+
+  <h4 id="fr-purchase-return">5.2.2 采购退货（FR-PUR-02）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>向供应商退回问题商品，减少批次库存并冲减应付。</p>
+    <p><strong>规则：</strong>选择供应商、商品、<strong>具体批次</strong>、退货数量；退货数量 ≤ 该批次当前库存；审核通过后减少对应批次库存、冲减应付。</p>
+    <p><strong>异常：</strong>退货数量超过库存 → 拦截；所退批次已过期 → 允许（退回供应商），但需备注原因。</p>
+  </div>
+
+  <h4 id="fr-purchase-order">5.2.3 采购订单（FR-PUR-03 · P1）</h4>
+  <div class="card">
+    <p>预采购计划单据，不产生库存与应付。到货后可一键「生成采购入库单」，支持部分到货。非核心路径，不影响 5.2.1 直接入库。</p>
+  </div>
+
+  <h3 class="m" id="s5-3">5.3 销售管理</h3>
+
+  <h4 id="fr-sale-out">5.3.1 销售出库（FR-SAL-01）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>向客户销售牛奶，按 FEFO 扣减批次库存，形成应收或收款。</p>
+    <p><strong>触发：</strong>业务员（PC 或 Android）新建销售出库单。</p>
+    <p><strong>处理流程：</strong></p>
+    <div class="flow">
+      <span class="node nl">选择客户</span><span class="arrow">→</span>
+      <span class="node nl">选商品/数量（取价级别默认价）</span><span class="arrow">→</span>
+      <span class="node nl">信用额度校验</span><span class="arrow">→</span>
+      <span class="node">保存 · FEFO 分配批次</span><span class="arrow">→</span>
+      <span class="node">提交审核</span><span class="arrow">→</span>
+      <span class="node">出库生效</span>
+    </div>
+    <p><strong>处理规则：</strong></p>
+    <ul>
+      <li>售价按客户价格级别默认带回，可手工修改；折扣处理见 6.3；</li>
+      <li>赊销客户：审核后增加应收；现款客户：审核后直接生成收款（记现金 / 转账）；</li>
+      <li>信用额度：赊销客户在「应收余额 + 本单应收金额 ≤ 信用额度」时放行，超限行为见 6.4；</li>
+      <li>批次分配遵循 FEFO 规则（见 6.2），支持有权限的手动指定批次；</li>
+      <li>库存不足：默认拦截提交，提示缺货数量与可售库存。</li>
+    </ul>
+    <p><strong>结果 / 状态变更：</strong>审核通过后，按分配批次扣减库存，客户应收余额增加（或以现款形成实收）。</p>
+    <p><strong>异常：</strong>库存不足、信用超限、客户停用、商品停用、批次已过期（默认禁止销售出库，仅可报废）。</p>
+  </div>
+
+  <h4 id="fr-sale-return">5.3.2 销售退货（FR-SAL-02）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>客户退货回库，增加批次库存并冲减客户应收。</p>
+    <p><strong>规则：</strong>选择客户、商品、数量，并指定<strong>回库存放批次</strong>（可新建退货批次沿用原到期日，或按原批次）；审核后增加库存、冲减应收。</p>
+    <p><strong>异常：</strong>退回商品已过期 → 入「待报废」冻结仓，不进入可售库存。</p>
+  </div>
+
+  <h4 id="fr-sale-mobile">5.3.3 移动端现场开单（FR-SAL-03）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>业务员在客户现场快速开单、收款、退货、查欠款，与 PC 端共用同一单据流。</p>
+    <table>
+      <tr><th>能力</th><th>说明</th></tr>
+      <tr><td>快速开单</td><td>选客户 → 选商品 → 数量 → 提交；支持扫商品条码 / 输入编码</td></tr>
+      <tr><td>现场收款</td><td>开单后引导收款登记（现金 / 扫码转账），核销本次应收</td></tr>
+      <tr><td>欠款与对账</td><td>查看客户应收余额、账期、未结清单</td></tr>
+      <tr><td>库存与效期</td><td>查看各仓批次库存与临期情况，避免缺货 / 推临期</td></tr>
+      <tr><td>凭证拍照</td><td>单据 / 收货签字 / 收款凭证拍照留存 <span class="tag-tbd">TBD</span></td></tr>
+    </table>
+    <p><strong>网络：</strong>在线实时为主；离线开单为可选能力 <span class="tag-tbd">TBD</span>，未确认前按在线设计。</p>
+  </div>
+
+  <h3 class="m" id="s5-4">5.4 库存管理</h3>
+
+  <h4 id="fr-inv-query">5.4.1 库存查询（FR-INV-01）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>按地点 / 分类（袋装、盒装）/ 商品 / 批次，实时查看数量与效期。</p>
+    <table>
+      <tr><th>查询维度</th><th>展示内容</th></tr>
+      <tr><td>汇总库存</td><td>商品在各地点 / 全公司总数量（分袋装、盒装）</td></tr>
+      <tr><td>批次库存</td><td>批次号、生产日期、到期日、剩余天数、数量、状态（在库 / 临期 / 过期）</td></tr>
+    </table>
+  </div>
+
+  <h4 id="fr-inv-fefo">5.4.2 批次与效期管理（FR-INV-02）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>以批次为库存最小单元，落地 FEFO，简化规则见 6.2。</p>
+    <ul>
+      <li>临期预警：到期前 N 天（可配置，默认 30 天 <span class="tag-assumption">假设 TBD</span>）进入临期，推送预警并支持一键「优先出清」；</li>
+      <li>过期批次：自动标记为「已过期」冻结，默认禁止销售出库，只能走报废流程；</li>
+      <li>报废：生成报废单，减少批次库存并记损益，需审核留痕（见 6.6）。</li>
+    </ul>
+  </div>
+
+  <h4 id="fr-inv-transfer">5.4.3 库存调拨（FR-INV-03）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>同一主体内不同地点之间调拨商品（含批次迁移）。</p>
+    <p><strong>状态流转：</strong>草稿 → 待出库 → 在途 → 已完成；可作废。</p>
+    <p><strong>规则：</strong>源地点按 FEFO 扣减、目标地点录入实收批次与数量；调拨在途数量单独可见。</p>
+  </div>
+
+  <h4 id="fr-inv-stocktake">5.4.4 库存盘点（FR-INV-04）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>核对账实，处理盘盈盘亏。</p>
+    <p><strong>流程：</strong>新建盘点单（选地点、商品或分类）→ 录入实盘数量（含批次）→ 提交 → 审核通过 → 生成盘盈 / 盘亏并调整库存。</p>
+    <p><strong>规则：</strong>盘点差值需填写差异原因；盘亏需审核留痕（见 6.6）。</p>
+  </div>
+
+  <h4 id="fr-inv-alert">5.4.5 库存预警（FR-INV-05）</h4>
+  <div class="card">
+    <p>统一预警规则见 6.4，覆盖两类：</p>
+    <ul>
+      <li>效期预警（临期 / 过期）；</li>
+      <li>低库存预警（低于商品安全库存）。</li>
+    </ul>
+  </div>
+
+  <h3 class="m" id="s5-5">5.5 财务与对账</h3>
+
+  <h4 id="fr-fin-arap">5.5.1 应收 / 应付台账（FR-FIN-01）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>按客户 / 供应商汇总往来余额与明细，支持按单据下钻。</p>
+    <table>
+      <tr><th>台账</th><th>维度</th><th>内容</th></tr>
+      <tr><td>应收台账</td><td>客户</td><td>期初 + 销售 − 退货 − 收款 = 实时余额</td></tr>
+      <tr><td>应付台账</td><td>供应商</td><td>期初 + 采购 − 采购退货 − 付款 = 实时余额</td></tr>
+    </table>
+    <p>余额计算规则见 6.3。</p>
+  </div>
+
+  <h4 id="fr-fin-payment">5.5.2 收款 / 付款核销（FR-FIN-02）</h4>
+  <div class="card">
+    <p><strong>收款单：</strong>选择客户 → 录入收款金额与方式（现金 / 银行 / 扫码）→ 核销其应收（支持按单据逐笔核销或部分核销）。</p>
+    <p><strong>付款单：</strong>选择供应商 → 录入付款金额与方式 → 核销其应付。</p>
+    <p><strong>规则：</strong>核销后相应余额实时冲减；支持「预收 / 预付」计入余额但不绑定具体单据。</p>
+    <p><strong>异常：</strong>收款金额大于客户应收余额 → 允许（差额记预收）但需提示；核销的单据必须已审核。</p>
+  </div>
+
+  <h4 id="fr-fin-statement">5.5.3 客户对账单（FR-FIN-03）</h4>
+  <div class="card">
+    <p><strong>用途：</strong>按客户生成一段期间的往来对账单，供月结核对与打印 / 发送。</p>
+    <p><strong>内容：</strong>期初余额、期间销售汇总与明细、退货、收款、期末余额；分袋装 / 盒装汇总数量与金额。</p>
+  </div>
+
+  <h3 class="m" id="s5-6">5.6 报表与统计（FR-RPT）</h3>
+  <div class="card">
+    <table>
+      <tr><th>报表</th><th>维度</th><th>关键指标</th></tr>
+      <tr><td>销售报表</td><td>日 / 月 / 商品 / 客户 / 门店 / 业务员</td><td>数量、金额、毛利</td></tr>
+      <tr><td>库存报表</td><td>地点 / 商品 / 批次</td><td>数量、效期分布、临期占比</td></tr>
+      <tr><td>采购报表</td><td>供应商 / 商品 / 时间</td><td>进货数量、金额、退货</td></tr>
+      <tr><td>应收账龄分析</td><td>客户</td><td>0-30 / 31-60 / 60+ 天账龄、超信用额度客户</td></tr>
+      <tr><td>经营分析</td><td>周期</td><td>销售额、成本、毛利、报废损失</td></tr>
+    </table>
+    <p>毛利 = 销售额 − 批次成本（成本按批次移动加权平均，见 6.3）。报表支持导出 Excel / 打印。</p>
+  </div>
+</section>
+
+<section id="s6">
+  <h2 class="sec">6. 共享规则</h2>
+
+  <h3 class="m" id="s6-1">6.1 单据状态机</h3>
+  <div class="card">
+    <p><strong>进销存业务单据（采购入库 / 采购退货 / 销售出库 / 销售退货 / 盘点）：</strong></p>
+    <div class="flow">
+      <span class="node nl">草稿</span><span class="arrow">→</span>
+      <span class="node nl">待审核</span><span class="arrow">→</span>
+      <span class="node">已审核（生效）</span>
+    </div>
+    <table>
+      <tr><th>状态</th><th>可执行操作</th></tr>
+      <tr><td>草稿</td><td>编辑、删除、提交、作废</td></tr>
+      <tr><td>待审核</td><td>审核通过、驳回（回到草稿）、作废</td></tr>
+      <tr><td>已审核</td><td>只读；如需撤销走「红冲」反向单据（如退货 / 负库存调整），不可直接改删 <span class="tag-assumption">假设 TBD</span></td></tr>
+    </table>
+    <p><strong>调拨单：</strong>草稿 → 待出库 → 在途 → 已完成（可作废）。</p>
+    <div class="note">已审核单据不可直接编辑删除。更正方式统一为「反向单据 + 留痕」，保证账务与审计可追溯。</div>
+  </div>
+
+  <h3 class="m" id="s6-2">6.2 FEFO 出库规则</h3>
+  <div class="card">
+    <p><strong>定义：</strong>销售出库（及调拨出库）时，按批次<strong>到期日最早优先</strong>自动分配可售库存。</p>
+    <p><strong>分配顺序：</strong>同一商品在同一地点，先按「到期日由早到晚」，到期日相同再按「批次号升序 / 入库时间最早」。<span class="tag-assumption">假设 TBD</span></p>
+    <p><strong>约束：</strong></p>
+    <ul>
+      <li>「已过期」批次不参与自动分配，默认禁止销售出库；</li>
+      <li>支持有权限用户手动指定批次出库，但所选批次须库存充足且未过期（过期须走报废）；</li>
+      <li>分配的批次与数量在审核通过时锁定扣减，避免并发超卖。</li>
+    </ul>
+  </div>
+
+  <h3 class="m" id="s6-3">6.3 计算规则</h3>
+  <div class="card">
+    <table>
+      <tr><th>项目</th><th>规则</th></tr>
+      <tr><td>单据金额</td><td>∑（数量 × 单价）− 折扣；支持整单折扣与单品折扣，折扣后金额四舍五入到分</td></tr>
+      <tr><td>税额</td><td>价税处理默认按「含税一口价」 <span class="tag-assumption">假设 TBD</span>；如需价税分离，税率统一配置</td></tr>
+      <tr><td>应收余额</td><td>Σ 已审核销售金额 − Σ 已审核销售退货金额 − Σ 已核销收款</td></tr>
+      <tr><td>应付余额</td><td>Σ 已审核采购金额 − Σ 已审核采购退货金额 − Σ 已核销付款</td></tr>
+      <tr><td>批次库存</td><td>Σ 已审核入库 − Σ 已审核销售出库 − Σ 调出 + Σ 调入 + Σ 盘盈 − Σ 盘亏 − Σ 报废</td></tr>
+      <tr><td>单位换算</td><td>商品支持基本单位与整箱单位换算，销售 / 采购可任选单位，内部统一按基本单位数量核算</td></tr>
+      <tr><td>到期日</td><td>生产日期 + 保质期天数</td></tr>
+      <tr><td>成本 / 毛利</td><td>按批次移动加权平均成本 <span class="tag-assumption">假设 TBD</span>；毛利 = 售价 − 批次成本</td></tr>
+    </table>
+  </div>
+
+  <h3 class="m" id="s6-4">6.4 预警与通知</h3>
+  <div class="card">
+    <table>
+      <tr><th>预警</th><th>触发条件</th><th>通知方式 / 对象</th></tr>
+      <tr><td>临期预警</td><td>批次到期日前 N 天（默认 30，可配置）</td><td>仓管员、业务员、门店主管；App 推送 + PC 待办</td></tr>
+      <tr><td>过期预警</td><td>批次已到期</td><td>仓管员、管理员；强制进入报废待办</td></tr>
+      <tr><td>低库存预警</td><td>商品库存 ≤ 安全库存</td><td>采购员、管理员</td></tr>
+    </table>
+    <p><strong>信用额度超限处理方式</strong>由管理员配置：</p>
+    <ul>
+      <li>「仅警告」：允许开单，但提示风险；</li>
+      <li>「拦截并需审批」：超限单据进入待审核，需有权限者放行 <span class="tag-assumption">假设 TBD 默认拦截</span>。</li>
+    </ul>
+  </div>
+
+  <h3 class="m" id="s6-5">6.5 权限矩阵</h3>
+  <div class="card">
+    <table>
+      <tr><th>能力</th><th>老板</th><th>采购</th><th>仓管</th><th>业务员</th><th>财务</th><th>店长/主管</th></tr>
+      <tr><td>商品 / 供应商 / 客户维护</td><td>✓</td><td>✓（供应商）</td><td>—</td><td>✓（客户，受限）</td><td>—</td><td>—</td></tr>
+      <tr><td>采购入库 / 退货</td><td>✓</td><td>✓</td><td>✓（执行）</td><td>—</td><td>✓（查看）</td><td>—</td></tr>
+      <tr><td>销售开单 / 退货</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>✓（查看）</td><td>✓（本点位）</td></tr>
+      <tr><td>库存查询 / 调拨 / 盘点</td><td>✓</td><td>✓（查看）</td><td>✓</td><td>✓（查看）</td><td>✓（查看）</td><td>✓（本点位）</td></tr>
+      <tr><td>收款 / 付款核销</td><td>✓</td><td>—</td><td>—</td><td>✓（收款）</td><td>✓</td><td>—</td></tr>
+      <tr><td>对账 / 报表</td><td>✓</td><td>—</td><td>—</td><td>✓（本人 / 本客户）</td><td>✓</td><td>✓（本点位）</td></tr>
+      <tr><td>系统配置 / 账号 / 价格 / 额度</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    </table>
+    <p><strong>数据权限（行级边界）：</strong>采购/财务/老板默认全公司；仓管员、业务员、店长默认按「可访问地点」限定，仅见本点位 / 本人归属客户的数据。价格修改、信用额度、批价调整仅老板 / 管理员。</p>
+  </div>
+
+  <h3 class="m" id="s6-6">6.6 审计与留痕</h3>
+  <div class="card">
+    <ul>
+      <li>所有单据的创建、提交、审核、作废、红冲均记录操作人、时间、前后差异；</li>
+      <li>盘亏、报废、超信用额度放行、价格低于底价等敏感操作需二次确认并备注原因；</li>
+      <li>关键数据（价格、额度、保质期）变更需留痕，支持追溯。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s7">
+  <h2 class="sec">7. 平台差异（PC / Android）</h2>
+  <div class="card">
+    <table>
+      <tr><th>能力</th><th>PC 端</th><th>Android 端</th></tr>
+      <tr><td>基础资料维护</td><td>全量（含批量导入）</td><td>查看 + 客户 / 商品快速新增（受限字段）</td></tr>
+      <tr><td>采购管理</td><td>全部</td><td>查看 <span class="tag-tbd">TBD</span></td></tr>
+      <tr><td>销售开单</td><td>全部</td><td>现场开单 / 退货 / 收款（主场景）</td></tr>
+      <tr><td>库存</td><td>查询 / 调拨 / 盘点 / 报废</td><td>查询 / 扫码 / 现场盘点（可选）</td></tr>
+      <tr><td>财务</td><td>应收应付 / 对账 / 账龄</td><td>客户欠款查询 + 现场收款</td></tr>
+      <tr><td>报表</td><td>全量分析 + 导出 + 打印</td><td>简化个人 / 本点位简报</td></tr>
+      <tr><td>登录安全</td><td>账号密码，可选短信验证</td><td>账号密码 + 设备绑定（可选）+ 手势 / 生物识别 <span class="tag-tbd">TBD</span></td></tr>
+    </table>
+    <p><strong>通知：</strong>Android 端抢在临期 / 超额度 / 待办场景做推送；PC 端以降序待办与弹窗为主。</p>
+  </div>
+</section>
+
+<section id="s8">
+  <h2 class="sec">8. 待确认事项（[TBD]）</h2>
+  <div class="card">
+    <p>以下事项不影响系统核心闭环，但会影响正式上线前的最终配置口径，需业务方确认：</p>
+    <table>
+      <tr><th>#</th><th>待确认事项</th><th>影响</th></tr>
+      <tr><td>1</td><td>SKU 具体清单：袋装 / 盒装各自的容量、口味、箱规、进价、售价</td><td>商品档案初始化</td></tr>
+      <tr><td>2</td><td>价税口径：含税一口价 vs 价税分离（税率）</td><td>金额计算与报表</td></tr>
+      <tr><td>3</td><td>临期预警阈值 N 天（默认建议 30）</td><td>效期预警频率</td></tr>
+      <tr><td>4</td><td>信用额度超限：仅警告 vs 拦截需审批</td><td>销售审批流</td></tr>
+      <tr><td>5</td><td>成本核算方式：批次移动加权平均是否可接受</td><td>毛利口径</td></tr>
+      <tr><td>6</td><td>移动端是否需要离线开单、扫码枪、标签打印、凭证拍照</td><td>Android 端范围</td></tr>
+      <tr><td>7</td><td>是否需要电子发票、对接微信 / 支付宝官方收款码</td><td>财务与开票范围</td></tr>
+      <tr><td>8</td><td>已审核单据更正方式：确认采用「红冲 + 反向单据」</td><td>单据状态机</td></tr>
+    </table>
+    <div class="info">本文档其余未标记处均视为已由业务方认可的产品决策；标记 <span class="tag-assumption">假设</span> 与 <span class="tag-tbd">TBD</span> 处需在进入研发前排定。</div>
+  </div>
+</section>
+
+</main>
+</div>
+</body>
+</html>
