@@ -87,6 +87,7 @@
       <div class="role active" data-role="gm">总经理</div>
       <div class="role" data-role="bm">业务经理</div>
       <div class="role" data-role="fin">财务</div>
+      <div class="role" data-role="pm">促销员</div>
     </div>
     <div style="font-size:12.5px;color:var(--muted)" id="roleName">总经理</div>
   </div>
@@ -123,9 +124,10 @@ function drawerSubmit(t){closeDrawer();toast('已提交 '+(t||'单据'));}
 const MENUS={
   gm:[{g:'经营',items:[['dashboard','经营看板'],['approval','审批中心']]},{g:'业务',items:[['sales','销售订单'],['purchase','采购管理'],['inventory','库存管理'],['receiv','应收与回款'],['promo','促销管理'],['visit','巡店管理']]},{g:'基础',items:[['master','基础档案'],['sys','系统设置']]}],
   bm:[{g:'经营',items:[['dashboard','经营看板'],['sales','销售订单'],['purchase','采购管理']]},{g:'运营',items:[['inventory','库存管理'],['receiv','应收与回款'],['promo','促销管理'],['visit','巡店管理']]},{g:'基础',items:[['master','基础档案']]}],
-  fin:[{g:'资金',items:[['receiv','应收与回款'],['dashboard','经营看板']]},{g:'基础',items:[['master','客户与对账']]}]
+  fin:[{g:'资金',items:[['receiv','应收与回款'],['dashboard','经营看板']]},{g:'基础',items:[['master','客户与对账']]}],
+  pm:[{g:'我的',items:[['promoter','促销员看板'],['mypromo','我的活动'],['salreport','销量上报']]},{g:'现场',items:[['checkin','签到与陈列'],['gift','赠品台账']]}]
 };
-const TITLE={dashboard:'经营看板',sales:'销售订单',purchase:'采购管理',inventory:'库存管理',receiv:'应收与回款',promo:'促销管理',visit:'巡店管理',master:'基础档案',sys:'系统设置',approval:'审批中心'};
+const TITLE={dashboard:'经营看板',sales:'销售订单',purchase:'采购管理',inventory:'库存管理',receiv:'应收与回款',promo:'促销管理',visit:'巡店管理',master:'基础档案',sys:'系统设置',approval:'审批中心',promoter:'促销员看板',mypromo:'我的活动',salreport:'销量上报',checkin:'签到与陈列',gift:'赠品台账'};
 
 function renderSidebar(){
   $('#sidebar').innerHTML=MENUS[role].map(g=>`<div class="sg">${g.g}</div>`+g.items.map(i=>`<div class="si ${i[0]===page?'active':''}" data-page="${i[0]}">▸<span>${i[1]}</span></div>`).join('')).join('');
@@ -261,8 +263,42 @@ function pApproval(){
 }
 function doApproval(i,ok){const a=approvals[i];approvals.splice(i,1);toast((ok?'已通过':'已驳回')+'：'+a.no);render();}
 
-const RENDER={dashboard:pDashboard,sales:pSales,purchase:pPurchase,inventory:pInventory,receiv:pReceiv,promo:pPromo,visit:pVisit,master:pMaster,sys:pSys,approval:pApproval};
-function render(){renderSidebar();$('#main').innerHTML=`<div class="crumb">首页 / ${TITLE[page]||''}</div>`+(RENDER[page]?RENDER[page]():'');$('#roleName').textContent=role==='gm'?'总经理':role==='bm'?'业务经理':'财务';}
+function pPromoter(){
+  return `<div class="ptitle">促销员看板</div>
+  <div class="kpis">${kpi('我的本月销量','¥32,800','上报 26 条','color:var(--green)')}${kpi('签到天数','22 天','本月出勤')}${kpi('执行中活动','3 个','待陈列 1','color:var(--amber)')}${kpi('赠品结余','24 件','袋装/盒装')}</div>
+  <div class="note">⏰ 待办：今日「旺家超市」盒装陈列需签到 · 「好客多」销量待上报</div>
+  <div class="grid2">
+    <div class="card"><h5>我的活动（进度）</h5><div class="ph" style="height:100px">活动进度条 · 占位</div></div>
+    <div class="card"><h5>销量上报趋势</h5><div class="ph" style="height:100px">折线图 · 占位</div></div>
+  </div>`;
+}
+function pMypromo(){
+  return `<div class="ptitle">我的活动</div>
+  <div class="card"><table><tr><th>活动</th><th>门店</th><th>时间</th><th>状态</th><th>操作</th></tr>
+  <tr><td>盒装陈列</td><td>旺家超市</td><td>10-01 ~ 10-15</td><td><span class="badge b-ok">执行中</span></td><td><button class="btn sm" onclick="toast('活动现场签到')">签到</button> <button class="btn sm" onclick="toast('上报促销销量')">上报</button></td></tr>
+  <tr><td>袋装买赠</td><td>好客多</td><td>10-05 ~ 10-20</td><td><span class="badge b-ok">执行中</span></td><td><button class="btn sm" onclick="toast('活动现场签到')">签到</button> <button class="btn sm" onclick="toast('上报促销销量')">上报</button></td></tr>
+  <tr><td>满减促销</td><td>母婴坊</td><td>09-15 ~ 09-30</td><td><span class="badge b-gray">已结束</span></td><td><button class="btn sm" onclick="toast('查看活动数据')">详情</button></td></tr></table></div>`;
+}
+function pSalreport(){
+  return `<div class="ptitle">销量上报</div>
+  <div class="toolbar"><button class="btn primary" onclick="toast('新建销量上报（门店/商品/数量/时间）')">+ 销量上报</button></div>
+  <div class="card"><table><tr><th>日期</th><th>门店</th><th>商品</th><th>销量</th><th>关联活动</th><th>状态</th></tr>
+  <tr><td>10-10</td><td>旺家超市</td><td>盒装 200ml</td><td>120</td><td>盒装陈列</td><td><span class="badge b-ok">已确认</span></td></tr>
+  <tr><td>10-09</td><td>好客多</td><td>袋装 200ml</td><td>200</td><td>袋装买赠</td><td><span class="badge b-ok">已确认</span></td></tr></table></div>`;
+}
+function pCheckin(){
+  return `<div class="ptitle">签到与陈列</div>
+  <div class="card"><table><tr><th>日期</th><th>门店</th><th>签到</th><th>签退</th><th>陈列照片</th><th>效期检查</th></tr>
+  <tr><td>10-10</td><td>旺家超市</td><td>09:05（定位✓）</td><td>17:40</td><td><span class="badge b-info">3 张</span></td><td><span class="badge b-warn">发现临期</span></td></tr>
+  <tr><td>10-09</td><td>好客多</td><td>08:55（定位✓）</td><td>16:20</td><td><span class="badge b-info">2 张</span></td><td><span class="badge b-ok">正常</span></td></tr></table></div>`;
+}
+function pGift(){
+  return `<div class="ptitle">赠品台账</div>
+  <div class="card"><table><tr><th>赠品</th><th>期初</th><th>领取</th><th>发放</th><th>结余</th><th>操作</th></tr>
+  <tr><td>袋装 200ml 赠品</td><td>40</td><td>60</td><td>76</td><td>24</td><td><button class="btn sm" onclick="toast('领取/发放登记')">登记</button></td></tr></table></div>`;
+}
+const RENDER={dashboard:pDashboard,sales:pSales,purchase:pPurchase,inventory:pInventory,receiv:pReceiv,promo:pPromo,visit:pVisit,master:pMaster,sys:pSys,approval:pApproval,promoter:pPromoter,mypromo:pMypromo,salreport:pSalreport,checkin:pCheckin,gift:pGift};
+function render(){renderSidebar();$('#main').innerHTML=`<div class="crumb">首页 / ${TITLE[page]||''}</div>`+(RENDER[page]?RENDER[page]():'');$('#roleName').textContent=role==='gm'?'总经理':role==='bm'?'业务经理':role==='pm'?'促销员':'财务';}
 function setSub(ns,k){sub[ns]=k;render();}
 
 $('#sidebar').addEventListener('click',e=>{const it=e.target.closest('.si');if(it){page=it.dataset.page;render();}});
