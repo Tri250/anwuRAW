@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合沐纯牛奶进销存 · Android 端线框交互原型</title>
+<style>
+  :root{--ink:#1f2937;--muted:#9ca3af;--line:#d1d5db;--soft:#f3f4f6;--blue:#2563eb;--blue-bg:#eff6ff;--green:#16a34a;--green-bg:#f0fdf4;--amber:#d97706;--amber-bg:#fffbeb;--red:#dc2626}
+  *{box-sizing:border-box}
+  body{margin:0;background:#eef1f5;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink)}
+  .wrap{max-width:1200px;margin:0 auto;padding:26px 20px 60px}
+  h1{font-size:21px;margin:0}
+  .sub{color:#64748b;font-size:13px;margin-top:4px}
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+  .roles{display:flex;gap:8px}
+  .role{padding:8px 16px;border-radius:999px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:#475569}
+  .role.active{background:var(--blue);border-color:var(--blue);color:#fff}
+  .stage{display:flex;gap:34px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+  .phone{width:375px;height:740px;background:#fff;border-radius:42px;border:10px solid #1f2430;box-shadow:0 20px 50px rgba(0,0,0,.18);overflow:hidden;display:flex;flex-direction:column;position:relative}
+  .statusbar{height:34px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:12px;color:#374151}
+  .nbar{height:50px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:16px;font-weight:600}
+  .nbar .act{cursor:pointer;font-size:12px;font-weight:400;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:999px}
+  .screen{flex:1;overflow-y:auto;background:#f6f7f9;padding:14px}
+  .tabbar{height:58px;background:#fff;border-top:1px solid var(--line);display:flex}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:#9ca3af;cursor:pointer;gap:2px}
+  .tab.active{color:var(--blue)}
+  .tab .ic{font-size:18px;line-height:1}
+  /* wireframe 元素 */
+  .card{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+  .card h4{margin:0 0 8px;font-size:13px}
+  .kpi{display:flex;gap:10px}
+  .kpi div{flex:1;background:var(--soft);border-radius:10px;padding:10px;text-align:center}
+  .kpi b{display:block;font-size:18px;color:var(--ink)}
+  .kpi span{font-size:11px;color:#64748b}
+  .list-item{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;margin-bottom:9px}
+  .list-item .t{font-weight:600;font-size:13px}
+  .list-item .d{font-size:11px;color:#64748b}
+  .badge{font-size:10.5px;padding:2px 8px;border-radius:999px;font-weight:600}
+  .badge.warn{background:var(--amber-bg);color:var(--amber)}
+  .badge.ok{background:var(--green-bg);color:var(--green)}
+  .badge.info{background:var(--blue-bg);color:var(--blue)}
+  .badge.red{background:#fef2f2;color:var(--red)}
+  .btn{display:block;width:100%;text-align:center;padding:11px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid var(--blue);color:var(--blue);background:#fff}
+  .btn.primary{background:var(--blue);color:#fff}
+  .btn.ghost{background:var(--soft);color:#374151;border-color:var(--line)}
+  .btn.small{padding:6px 12px;width:auto;font-size:12px}
+  .btn.green{background:var(--green);border-color:var(--green);color:#fff}
+  .btn.danger{background:#fff;border-color:var(--red);color:var(--red)}
+  .field{margin-bottom:10px}
+  .field label{display:block;font-size:11px;color:#64748b;margin-bottom:3px}
+  .field input,.field select{width:100%;border:1.5px solid var(--line);border-radius:8px;padding:9px;font-size:13px;background:#fff}
+  .stepper{display:flex;align-items:center;gap:10px}
+  .stepper button{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-size:16px;cursor:pointer;line-height:1}
+  .stepper .v{min-width:36px;text-align:center;font-weight:700}
+  .hint{font-size:11px;color:#64748b;background:var(--soft);border-radius:8px;padding:8px;margin:8px 0}
+  .alert{background:var(--amber-bg);border:1px solid var(--amber);color:#92400e;font-size:12px;border-radius:8px;padding:8px;margin-bottom:10px}
+  .toast{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);background:rgba(17,24,39,.92);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:50;max-width:260px;text-align:center}
+  .toast.show{opacity:1}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .seg{display:flex;background:var(--soft);border-radius:10px;padding:3px;margin-bottom:12px}
+  .seg span{flex:1;text-align:center;font-size:12px;padding:7px;border-radius:8px;cursor:pointer;color:#64748b}
+  .seg span.on{background:#fff;color:var(--blue);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .note{flex:0 0 320px;font-size:13px;color:#475569;line-height:1.8}
+  .note b{color:var(--blue)}
+  .note .kv{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px}
+  .note .kv dt{font-size:11px;color:#9ca3af}
+  .note .kv dd{margin:0 0 10px;font-size:13px}
+  .hidden{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div><h1>合沐纯牛奶进销存 · Android 端线框交互原型</h1><div class="sub">点击顶部角色切换体验不同端侧；手机内可点击 Tab、按钮、列表项进行交互</div></div>
+    <div class="roles">
+      <div class="role active" data-role="sales">业务员</div>
+      <div class="role" data-role="promo">促销员</div>
+      <div class="role" data-role="mgr">业务经理·审批</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <!-- 手机 -->
+    <div class="phone">
+      <div class="statusbar"><span>09:41</span><span>▂▄▆ 91%</span></div>
+      <div class="nbar"><span id="navTitle">业务员工作台</span><span class="act" id="navAct">切换角色</span></div>
+      <div class="screen" id="screen"></div>
+      <div class="tabbar" id="tabbar"></div>
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <!-- 说明 -->
+    <div class="note" id="note"></div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const screen = $('#screen'), tabbar = $('#tabbar'), navTitle = $('#navTitle');
+let roleState = 'sales';
+let curTab = 'home';
+let orderItems = {};         // product -> qty
+let checkedIn = false;       // 促销签到状态
+let reportQty = {bag:0, box:0};
+
+// 商品价格/库存样例
+const PRODUCTS = {
+  bag: {name:'新疆合沐纯牛奶 袋装', spec:'200ml', price:2.8, stock:360},
+  box: {name:'新疆合沐纯牛奶 盒装', spec:'200ml', price:3.6, stock:180}
+};
+const STORES = ['赣州·章贡 旺家超市','赣州·南康 好客多便利店','赣州·赣县 母婴坊','赣州·瑞金 兴盛商贸'];
+const APPROVALS = [
+  {no:'SO20261011001', store:'旺家超市', amt:896, type:'要货单', tag:'待审核'},
+  {no:'SO20261011002', store:'好客多便利店', amt:540, type:'折扣单', tag:'待审核'},
+  {no:'LR20261011003', store:'兴盛商贸', amt:210, type:'退货单', tag:'待审核'}
+];
+
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
+
+// 底部 tab 定义
+const TABS = {
+  sales:[
+    {k:'home',ic:'🏠',t:'首页'},
+    {k:'order',ic:'🛒',t:'要货'},
+    {k:'visit',ic:'📍',t:'巡店'},
+    {k:'pay',ic:'💰',t:'回款'},
+    {k:'mine',ic:'👤',t:'我的'}
+  ],
+  promo:[
+    {k:'home',ic:'🏠',t:'首页'},
+    {k:'task',ic:'🎯',t:'作业'},
+    {k:'report',ic:'📊',t:'上报'},
+    {k:'mine',ic:'👤',t:'我的'}
+  ],
+  mgr:[
+    {k:'approve',ic:'📋',t:'待审批'},
+    {k:'done',ic:'✅',t:'已处理'},
+    {k:'board',ic:'📈',t:'看板'}
+  ]
+};
+const TITLES = {sales:{home:'业务员工作台',order:'门店要货',visit:'今日巡店',pay:'回款登记',mine:'个人中心'},promo:{home:'促销员工作台',task:'促销作业',report:'销量上报',mine:'个人中心'},mgr:{approve:'待办审批',done:'已处理',board:'区域看板'}};
+
+function renderTabbar(){
+  tabbar.innerHTML = TABS[roleState].map(t=>`<div class="tab ${t.k===curTab?'active':''}" data-tab="${t.k}"><span class="ic">${t.ic}</span><span>${t.t}</span></div>`).join('');
+}
+function renderNav(){ navTitle.textContent = TITLES[roleState][curTab]; }
+
+// ============ 业务员 ============
+function salesHome(){
+  return `<div class="kpi">
+    <div><b>¥18,640</b><span>本月销售额</span></div>
+    <div><b>86%</b><span>目标达成</span></div>
+    <div><b>¥6,200</b><span>待回款</span></div>
+  </div>
+  <div class="card"><h4>今日待办</h4>
+    <div class="list-item"><div><div class="t">旺家超市 · 巡店</div><div class="d">09:30 · 章贡区</div></div><span class="badge info">待拜访</span></div>
+    <div class="list-item"><div><div class="t">好客多便利店 · 催收</div><div class="d">账期已到 · 欠 ¥2,400</div></div><span class="badge warn">逾期</span></div>
+    <div class="list-item"><div><div class="t">母婴坊 · 要货确认</div><div class="d">临期 18 件待处理</div></div><span class="badge red">临期</span></div>
+  </div>
+  <div class="card"><h4>库存预警</h4>
+    <div class="hint">袋装 200ml · 地区仓库存偏低（可用 360 袋，安全线 500）</div>
+  </div>`;
+}
+function salesOrder(){
+  let rows = Object.keys(PRODUCTS).map(k=>{
+    const p=PRODUCTS[k], q=orderItems[k]||0;
+    const row = `<div class="card"><div style="font-weight:600;font-size:13px">${p.name}</div><div class="d" style="font-size:11px;color:#64748b">${p.spec} · 库存可用 ${p.stock} · ¥${p.price}/袋</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <span class="badge ${q>0?'ok':'info'}">已选 ${q}</span>
+        <div class="stepper"><button onclick="setQty('${k}',-1)">−</button><span class="v" id="q-${k}">${q}</span><button onclick="setQty('${k}',1)">+</button></div>
+      </div></div>`;
+    return row;
+  }).join('');
+  const totalQty = (orderItems.bag||0)+(orderItems.box||0);
+  const totalAmt = (orderItems.bag||0)*PRODUCTS.bag.price + (orderItems.box||0)*PRODUCTS.box.price;
+  return `<div class="field"><label>客户门店</label><select>${STORES.map(s=>`<option>${s}</option>`).join('')}</select></div>
+  ${rows}
+  <div class="card"><div style="display:flex;justify-content:space-between;font-size:13px"><span>合计</span><b>${totalQty} 件 / ¥${totalAmt.toFixed(2)}</b></div></div>
+  <button class="btn primary" onclick="submitOrder()">提交要货单</button>`;
+}
+function salesVisit(){
+  if(!checkedIn){
+    return `<div class="card"><h4>当前门店</h4><div class="t" style="font-weight:700">旺家超市（章贡区）</div>
+    <div class="hint">到达门店后请签到，系统记录定位与时间</div></div>
+    <button class="btn primary" onclick="doCheckin()">📍 到店签到</button>`;
+  }
+  return `<div class="card"><h4>✅ 已签到 · 旺家超市</h4><div class="d">09:32 · 定位已记录</div></div>
+  <div class="card"><h4>陈列与效期检查</h4>
+    <div class="field"><label>陈列位置</label><select><option>端架 / 堆头</option><option>奶制品区货架</option><option>收银台旁</option></select></div>
+    <div class="field"><label>现场陈列量（袋/盒）</label><input placeholder="如 120"></div>
+    <div class="alert">发现临期批次：袋装 生产 2026-07-06，剩余 18 件，建议退换货</div>
+    <button class="btn ghost" onclick="toast('已生成补货建议：袋装 80 件 → 可转要货单')">生成补货建议</button>
+  </div>
+  <button class="btn danger" style="margin-top:4px" onclick="doCheckout()">结束拜访</button>`;
+}
+function salesPay(){
+  return `<div class="card"><h4>待催收回款</h4>
+    <div class="list-item"><div><div class="t">好客多便利店</div><div class="d">应收 ¥2,400 · 已逾期 12 天</div></div><span class="badge warn">逾期</span></div>
+    <div class="list-item"><div><div class="t">母婴坊</div><div class="d">应收 ¥1,050 · 5 天后到期</div></div><span class="badge info">正常</span></div>
+  </div>
+  <div class="card"><h4>现场登记回款</h4>
+    <div class="field"><label>回款金额（元）</label><input placeholder="如 2400"></div>
+    <div class="field"><label>方式</label><select><option>现金收款</option><option>转账收款</option></select></div>
+    <button class="btn primary" onclick="toast('回款已登记，待财务确认核销')">登记回款</button>
+  </div>`;
+}
+function salesMine(){ return `<div class="card" style="text-align:center"><div style="font-size:40px">👤</div><div class="t" style="font-weight:700">李 · 业务员</div><div class="d">赣州片区 · 负责门店 32 家</div></div>
+  <div class="card"><h4>我的目标</h4><div class="kpi"><div><b>¥216k</b><span>月目标</span></div><div><b>86%</b><span>达成</span></div></div></div>
+  <div class="card"><h4>设置</h4><div class="list-item"><div class="t">账号安全</div></div><div class="list-item"><div class="t">关于版本</div><div class="d">V1.0</div></div></div>`; }
+
+// ============ 促销员 ============
+function promoHome(){
+  return `<div class="kpi"><div><b>2</b><span>进行中活动</span></div><div><b>68</b><span>今日销量</span></div></div>
+  <div class="card"><h4>我的活动</h4>
+    <div class="list-item"><div><div class="t">袋装买赠 · 旺家超市</div><div class="d">10-01 ~ 10-15</div></div><span class="badge ok">执行中</span></div>
+    <div class="list-item"><div><div class="t">盒装陈列活动 · 好客多</div><div class="d">10-08 ~ 10-18</div></div><span class="badge info">待开始</span></div>
+  </div>
+  <div class="card"><h4>待办</h4><div class="hint">今日需到「旺家超市」签到并上报销量</div></div>`;
+}
+function promoTask(){
+  if(!checkedIn){
+    return `<div class="card"><h4>今日作业门店</h4><div class="t" style="font-weight:700">旺家超市（袋装买赠活动）</div>
+    <div class="hint">到达门店后签到，活动结束前签退</div></div>
+    <button class="btn primary" onclick="promoCheckin()">🎯 活动签到</button>`;
+  }
+  return `<div class="card"><h4>✅ 已签到 · 10:02</h4><div class="d">活动：袋装买赠 · 旺家超市</div></div>
+  <div class="card"><h4>陈列上报</h4>
+    <div class="field"><label>陈列照片</label><div class="btn ghost" onclick="toast('已模拟上传陈列照片 1 张')">📷 拍照 / 上传</div></div>
+    <div class="field"><label>堆头/货架位置说明</label><input placeholder="如：奶品区端架 2 层"></div>
+  </div>
+  <button class="btn danger" onclick="promoCheckout()">结束签退</button>`;
+}
+function promoReport(){
+  return `<div class="card"><h4>销量上报 · 旺家超市</h4>
+    ${[['bag',PRODUCTS.bag.name],['box',PRODUCTS.box.name]].map(([k,n])=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:13px">${n}</span>
+        <div class="stepper"><button onclick="setReport('${k}',-1)">−</button><span class="v">${reportQty[k]}</span><button onclick="setReport('${k}',1)">+</button></div>
+      </div>`).join('')}
+    <div class="field"><label>赠品使用数量</label><input placeholder="如 20"></div>
+    <button class="btn primary" onclick="toast('销量已上报，用于投入产出核算')">提交上报</button>
+  </div>`; }
+function promoMine(){ return `<div class="card" style="text-align:center"><div style="font-size:40px">👤</div><div class="t" style="font-weight:700">王 · 促销员</div><div class="d">负责赣州 2 场活动</div></div>
+  <div class="card"><h4>我的数据</h4><div class="kpi"><div><b>¥4,200</b><span>带动销量</span></div><div><b>12</b><span>签到天数</span></div></div></div>`; }
+
+// ============ 业务经理 ============
+function mgrApprove(){
+  if(APPROVALS.length===0) return `<div class="card"><h4>✅ 待办已清空</h4><div class="d">暂无待审批单据</div></div>`;
+  return APPROVALS.map((a,i)=>`<div class="list-item"><div><div class="t">${a.store} · ${a.type}</div><div class="d">${a.no} · ¥${a.amt}</div></div>
+    <button class="btn small" onclick="openApprove(${i})">处理</button></div>`).join('');
+}
+function mgrApproveDetail(i){
+  const a=APPROVALS[i];
+  return `<div class="card"><h4>${a.store} · ${a.type}</h4>
+    <div class="d" style="margin:6px 0">单号：${a.no}<br>金额：¥${a.amt}</div>
+    <div class="hint">客户账期 30 天 · 信用额度 ¥20,000 · 当前应收 ¥12,400（正常）</div></div>
+  <div class="grid2">
+    <button class="btn green" onclick="doApprove(${i},'通过')">✓ 通过</button>
+    <button class="btn danger" onclick="doApprove(${i},'驳回')">✗ 驳回</button>
+  </div>`;
+}
+let approveViewing = false;
+function openApprove(i){ approveViewing=true; render(); }
+function doApprove(i,act){ APPROVALS.splice(i,1); approveViewing=false; toast('已完成：'+act); render(); }
+function mgrDone(){ return `<div class="card"><h4>今日已处理 5 项</h4><div class="d">近 7 天审批通过率 94%</div></div>`; }
+function mgrBoard(){ return `<div class="card"><h4>区域经营（赣州）</h4>
+  <div class="kpi" style="flex-wrap:wrap"><div><b>¥512k</b><span>本月销售</span></div><div><b>¥38k</b><span>逾期应收</span></div><div><b>3</b><span>临期预警</span></div></div></div>
+  <div class="card"><h4>业务员业绩</h4>
+    <div class="list-item"><div class="t">李 · 业务员</div><span class="badge ok">86%</span></div>
+    <div class="list-item"><div class="t">张 · 业务员</div><span class="badge warn">58%</span></div>
+  </div>`; }
+
+// ============ 渲染与交互 ============
+const RENDERERS = {
+  sales:{home:salesHome,order:salesOrder,visit:salesVisit,pay:salesPay,mine:salesMine},
+  promo:{home:promoHome,task:promoTask,report:promoReport,mine:promoMine},
+  mgr:{approve:mgrApprove,board:mgrBoard,done:mgrDone}
+};
+function render(){ renderTabbar(); renderNav(); screen.innerHTML = RENDERERS[roleState][curTab](); }
+
+function setQty(k,d){ orderItems[k]=Math.max(0,(orderItems[k]||0)+d); render(); }
+function setReport(k,d){ reportQty[k]=Math.max(0,reportQty[k]+d); render(); }
+function submitOrder(){ const q=(orderItems.bag||0)+(orderItems.box||0); if(q===0) return toast('请先选择商品与数量'); toast('要货单已提交，进入待审核'); orderItems={}; render(); }
+function doCheckin(){ checkedIn=true; toast('签到成功 · 定位已记录'); render(); }
+function doCheckout(){ checkedIn=false; toast('拜访结束，记录已保存'); render(); }
+function promoCheckin(){ checkedIn=true; toast('活动签到成功'); render(); }
+function promoCheckout(){ checkedIn=false; toast('活动签退成功'); render(); }
+
+// 事件绑定
+$('#tabbar').addEventListener('click',e=>{ const t=e.target.closest('.tab'); if(t){ curTab=t.dataset.tab; approveViewing=false; render(); }});
+document.querySelector('.roles').addEventListener('click',e=>{ const r=e.target.closest('.role'); if(!r) return; roleState=r.dataset.role; document.querySelectorAll('.role').forEach(x=>x.classList.toggle('active',x===r)); curTab=TABS[roleState][0].k; approveViewing=false; checkedIn=false; render(); });
+$('#navAct').addEventListener('click',()=>{ toast('请使用页面顶部角色按钮切换'); });
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合沐纯牛奶进销存系统 · 技术架构与数据库设计</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --ink:#1f2430; --muted:#6b7280;
+    --primary:#7c3aed; --primary-dark:#6d28d9; --line:#e5e7eb;
+    --tag-bg:#f3efff; --tag-ink:#7c3aed; --ok:#15803d; --ok-bg:#f0fdf4;
+    --warn:#b45309; --warn-bg:#fff7ed; --danger:#b91c1c; --danger-bg:#fef2f2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;font-size:14.5px}
+  .page{max-width:1120px;margin:0 auto;padding:32px 20px 80px}
+  header.hero{background:linear-gradient(135deg,#7c3aed 0%,#5b21b6 100%);color:#fff;border-radius:16px;padding:34px 40px;margin-bottom:26px}
+  header.hero h1{margin:0 0 6px;font-size:25px}
+  header.hero .sub{opacity:.92;font-size:14px}
+  .meta{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;font-size:13px}
+  .meta span{background:rgba(255,255,255,.16);padding:4px 12px;border-radius:999px}
+  section{margin-bottom:30px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 30px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  h2{font-size:19px;margin:0 0 14px;padding-bottom:10px;border-bottom:2px solid var(--line);display:flex;align-items:center;gap:10px}
+  h2 .no{background:var(--primary);color:#fff;width:27px;height:27px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto}
+  h3{font-size:16px;margin:24px 0 10px;color:var(--primary-dark)}
+  h4{font-size:14px;margin:16px 0 8px}
+  p{margin:8px 0}
+  .tag{display:inline-block;background:var(--tag-bg);color:var(--tag-ink);padding:1px 9px;border-radius:6px;font-size:12px;font-weight:600;margin-left:6px;vertical-align:middle}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#f3efff;font-weight:600;white-space:nowrap}
+  tr:nth-child(even) td{background:#faf9ff}
+  code,.fld{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  .fld{color:#6d28d9}
+  .flow{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0;text-align:center}
+  .flow svg{max-width:100%;height:auto}
+  .callout{border-left:4px solid var(--primary);background:var(--tag-bg);padding:12px 16px;border-radius:8px;margin:14px 0;font-size:14px}
+  .callout.warn{border-left-color:#f59e0b;background:var(--warn-bg)}
+  ul{margin:8px 0;padding-left:22px}
+  li{margin:5px 0}
+  .tbl-title{font-weight:700;margin:18px 0 4px;color:#4c1d95}
+  .pk::after{content:" PK";color:#dc2626;font-size:11px;font-weight:700}
+  .fk::after{content:" FK";color:#2563eb;font-size:11px;font-weight:700}
+  @media(max-width:720px){.meta{gap:8px}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hero">
+  <h1>新疆合沐纯牛奶进销存管理系统</h1>
+  <div class="sub">技术架构与数据库设计 · 与 PRD V1.0 对齐 · 供后端 / 前端 / 移动端开发</div>
+  <div class="meta">
+    <span>版本：V1.0</span>
+    <span>目标端：PC Web + Android</span>
+    <span>业务域：快消品分销进销存</span>
+  </div>
+</header>
+
+<!-- 1 架构概述 -->
+<section>
+<div class="card">
+<h2><span class="no">1</span>架构概述</h2>
+<p>系统采用 <strong>前后端分离 + 移动端</strong> 的单体优先（Modular Monolith）架构：一个后端应用按业务域拆分为清晰模块，前端分 PC 管理端与 Android 移动端，两端共用同一后端 API。该选型兼顾小团队快速交付与后续拆分演进。</p>
+
+<div class="flow">
+<svg viewBox="0 0 980 360" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Microsoft YaHei,sans-serif">
+  <defs><marker id="m" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8"/></marker></defs>
+  <!-- 客户端层 -->
+  <text x="40" y="26" font-size="13" font-weight="700" fill="#475569">客户端</text>
+  <rect x="40" y="40" width="250" height="80" rx="12" fill="#eef3ff" stroke="#3b82f6"/>
+  <text x="165" y="72" text-anchor="middle" font-size="14" font-weight="700" fill="#1d4ed8">PC 管理端</text>
+  <text x="165" y="92" text-anchor="middle" font-size="11.5" fill="#64748b">Vue3 + Element Plus + Vite</text>
+  <rect x="330" y="40" width="250" height="80" rx="12" fill="#eef3ff" stroke="#3b82f6"/>
+  <text x="455" y="72" text-anchor="middle" font-size="14" font-weight="700" fill="#1d4ed8">Android 移动端</text>
+  <text x="455" y="92" text-anchor="middle" font-size="11.5" fill="#64748b">uni-app（定位/拍照/扫码原生插件）</text>
+  <line x1="455" y1="120" x2="455" y2="148" stroke="#94a3b8" stroke-width="2" marker-end="url(#m)"/>
+  <line x1="165" y1="120" x2="165" y2="148" stroke="#94a3b8" stroke-width="2" marker-end="url(#m)"/>
+
+  <!-- 接入层 -->
+  <rect x="120" y="152" width="670" height="56" rx="10" fill="#f0fdf4" stroke="#22c55e"/>
+  <text x="455" y="175" text-anchor="middle" font-size="13.5" font-weight="700" fill="#15803d">API 网关 / 接入层</text>
+  <text x="455" y="194" text-anchor="middle" font-size="11.5" fill="#64748b">Nginx 反向代理 + 鉴权（JWT）+ 限流 + 移动端统一接口</text>
+
+  <!-- 应用层 -->
+  <line x1="455" y1="208" x2="455" y2="232" stroke="#94a3b8" stroke-width="2" marker-end="url(#m)"/>
+  <rect x="120" y="236" width="670" height="80" rx="10" fill="#f3efff" stroke="#7c3aed"/>
+  <text x="455" y="262" text-anchor="middle" font-size="13.5" font-weight="700" fill="#6d28d9">应用层（模块化单体 · Spring Boot）</text>
+  <text x="455" y="282" text-anchor="middle" font-size="11.5" fill="#64748b">主数据 / 采购 / 销售 / 库存 / 应收 / 促销 / 巡店 / 报表 / 权限 · 事务边界清晰</text>
+  <text x="455" y="299" text-anchor="middle" font-size="11.5" fill="#64748b">定时任务：效期计算 · 临期/过期预警 · 逾期检测 · 库存流水对账</text>
+
+  <!-- 数据层 -->
+  <line x1="200" y1="316" x2="200" y2="336" stroke="#94a3b8" stroke-width="2" marker-end="url(#m)"/>
+  <line x1="455" y1="316" x2="455" y2="336" stroke="#94a3b8" stroke-width="2" marker-end="url(#m)"/>
+  <line x1="710" y1="316" x2="710" y2="336" stroke="#94a3b8" stroke-width="2" marker-end="url(#m)"/>
+  <text x="40" y="344" font-size="12" font-weight="700" fill="#475569">数据层</text>
+  <rect x="100" y="328" width="200" height="44" rx="10" fill="#fff" stroke="#94a3b8"/>
+  <text x="200" y="355" text-anchor="middle" font-size="13" fill="#334155">MySQL 8（业务主库）</text>
+  <rect x="355" y="328" width="200" height="44" rx="10" fill="#fff" stroke="#94a3b8"/>
+  <text x="455" y="355" text-anchor="middle" font-size="13" fill="#334155">Redis（会话/预警缓存）</text>
+  <rect x="610" y="328" width="270" height="44" rx="10" fill="#fff" stroke="#94a3b8"/>
+  <text x="745" y="347" text-anchor="middle" font-size="13" fill="#334155">对象存储 OSS/MinIO</text>
+  <text x="745" y="364" text-anchor="middle" font-size="11" fill="#64748b">签收凭证/陈列照片</text>
+</svg>
+</div>
+</div>
+</section>
+
+<!-- 2 技术选型 -->
+<section>
+<div class="card">
+<h2><span class="no">2</span>技术选型建议</h2>
+<p>以下为建议选型（可替换），理由聚焦业务契合而非技术偏好。</p>
+<table>
+  <tr><th>层</th><th>选型</th><th>理由 / 备注</th></tr>
+  <tr><td>PC 前端</td><td>Vue 3 + TypeScript + Element Plus + Vite</td><td>管理后台表单/表格密集，Element Plus 组件成熟，Vite 构建快</td></tr>
+  <tr><td>Android 端</td><td>uni-app（Vue 语法）+ 原生插件</td><td>一套代码可复用，定位/拍照/扫码/推送用原生插件弥补能力</td></tr>
+  <tr><td>后端</td><td>Spring Boot 3 + Java 17</td><td>企业进销存生态成熟、事务与并发控制可靠；备选 Node.js NestJS</td></tr>
+  <tr><td>主数据库</td><td>MySQL 8.0（InnoDB）</td><td>事务、行锁、索引满足进销存一致性</td></tr>
+  <tr><td>缓存 / 会话</td><td>Redis</td><td>登录态、验证码、临期/预警任务缓存、幂等锁</td></tr>
+  <tr><td>对象存储</td><td>阿里云 OSS / 自建 MinIO</td><td>签收凭证、陈列照片、对账单导出附件</td></tr>
+  <tr><td>移动推送</td><td>极光 / 个推 / 厂商通道</td><td>待审批、临期、逾期、活动提醒</td></tr>
+  <tr><td>定时任务</td><td>XXL-Job（或 Spring Scheduler）</td><td>效期计算、临期预警、逾期检测、库存对账</td></tr>
+</table>
+<div class="callout warn">选型为建议，非硬性约束；外包/自研团队可按现有技术栈替换，但需保持「后端统一 API + 事务边界 + 定时任务」三要素不变。</div>
+</div>
+</section>
+
+<!-- 3 模块划分 -->
+<section>
+<div class="card">
+<h2><span class="no">3</span>后端模块划分</h2>
+<table>
+  <tr><th>模块</th><th>职责</th><th>核心业务对象</th></tr>
+  <tr><td>auth &amp; 权限</td><td>登录鉴权、角色权限、片区数据权限、审批流、审计日志</td><td>用户/角色/审批实例/审计日志</td></tr>
+  <tr><td>master 主数据</td><td>商品、仓库、供应商、客户门店、价格、片区归属</td><td>product / warehouse / customer_store / supplier / price</td></tr>
+  <tr><td>purchase 采购</td><td>采购申请/审批/入库验收/采购退货/应付</td><td>purchase_order / purchase_receive / payable</td></tr>
+  <tr><td>sales 销售</td><td>门店要货/审核/出库配送/签收/销售退货</td><td>sales_order / sales_delivery / sales_return</td></tr>
+  <tr><td>inventory 库存</td><td>批次库存、调拨、盘点、效期、报损、流水</td><td>inventory_lot / transfer_order / stocktake / inventory_flow</td></tr>
+  <tr><td>finance 资金</td><td>应收、回款核销、对账、账期额度、逾期</td><td>receivable / payment / statement</td></tr>
+  <tr><td>promotion 促销</td><td>活动、费用审批、促销员作业、投入产出核算</td><td>promotion / promotion_execution</td></tr>
+  <tr><td>visit 巡店</td><td>拜访计划、签到定位、陈列与效期检查</td><td>visit_plan / visit_record</td></tr>
+  <tr><td>report 报表</td><td>经营/区域/个人看板、库存效期、投入产出</td><td>只读聚合（视图/统计表）</td></tr>
+</table>
+</div>
+</section>
+
+<!-- 4 核心流程 -->
+<section>
+<div class="card">
+<h2><span class="no">4</span>核心业务流程与事务边界</h2>
+
+<h3>4.1 门店要货 → 出库 → 签收 → 应收</h3>
+<div class="flow">
+<svg viewBox="0 0 980 170" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Microsoft YaHei,sans-serif">
+  <defs><marker id="s" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#2f6fed"/></marker></defs>
+  <g font-size="12" text-anchor="middle" fill="#334155">
+    <rect x="20" y="55" width="150" height="56" rx="10" fill="#eef3ff" stroke="#2f6fed"/>
+    <text x="95" y="80" font-weight="700">1 要货(草稿)</text><text x="95" y="98">锁库存</text>
+    <line x1="170" y1="83" x2="216" y2="83" stroke="#2f6fed" stroke-width="2" marker-end="url(#s)"/>
+    <rect x="224" y="55" width="150" height="56" rx="10" fill="#eef3ff" stroke="#2f6fed"/>
+    <text x="299" y="80" font-weight="700">2 审核</text><text x="299" y="98">价格/账期/额度</text>
+    <line x1="374" y1="83" x2="420" y2="83" stroke="#2f6fed" stroke-width="2" marker-end="url(#s)"/>
+    <rect x="428" y="55" width="150" height="56" rx="10" fill="#eef3ff" stroke="#2f6fed"/>
+    <text x="503" y="80" font-weight="700">3 拣货出库</text><text x="503" y="98">FIFO 扣批次</text>
+    <line x1="578" y1="83" x2="624" y2="83" stroke="#2f6fed" stroke-width="2" marker-end="url(#s)"/>
+    <rect x="632" y="55" width="150" height="56" rx="10" fill="#eef3ff" stroke="#2f6fed"/>
+    <text x="707" y="80" font-weight="700">4 门店签收</text><text x="707" y="98">生成应收</text>
+    <line x1="782" y1="83" x2="828" y2="83" stroke="#2f6fed" stroke-width="2" marker-end="url(#s)"/>
+    <rect x="836" y="55" width="130" height="56" rx="10" fill="#f0fdf4" stroke="#22c55e"/>
+    <text x="901" y="80" font-weight="700">应收生成</text><text x="901" y="98">账期/到期日</text>
+  </g>
+  <text x="30" y="150" font-size="12" fill="#94a3b8">事务点：步骤3扣批次库存 + 写库存流水 同事务；步骤4签收 + 生成应收 同事务（不一致则回滚）</text>
+</svg>
+</div>
+
+<h3>4.2 采购入库 / 销售退货 / 回款核销（要点）</h3>
+<ul>
+  <li><strong>采购入库：</strong>验收入库（增加批次库存 + 记录流水）与生成应付在同一事务；录入生产日期自动推导到期日。</li>
+  <li><strong>销售退货：</strong>收货判定「可再售 / 报损」，可再售回库（加批次 + 流水），同时冲减应收；两处需同事务。</li>
+  <li><strong>回款核销：</strong>登记回款 + 按 FIFO 核销应收，需用行锁避免并发重复核销；使用 Redis 幂等锁防重复提交。</li>
+  <li><strong>FIFO 出库：</strong>按到期日升序锁定批次并扣减，需在数据库行锁定批次行防超卖。</li>
+</ul>
+<div class="callout warn">一致性原则：任何「库存增减 + 单据/资金变化」的成对动作必须置于同一数据库事务；并发扣减用行锁；重复提交用幂等键（如订单号 + 操作类型）。</div>
+</div>
+</section>
+
+<!-- 5 数据库设计 -->
+<section>
+<div class="card">
+<h2><span class="no">5</span>数据库设计</h2>
+
+<h3>5.1 ER 关系概览</h3>
+<div class="flow">
+<svg viewBox="0 0 960 400" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Microsoft YaHei,sans-serif">
+  <defs><marker id="e" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8"/></marker></defs>
+  <g font-size="12" text-anchor="middle">
+    <!-- 主数据 -->
+    <rect x="20" y="20" width="150" height="52" rx="8" fill="#f3efff" stroke="#7c3aed"/>
+    <text x="95" y="43" font-weight="700" fill="#6d28d9">product 商品</text><text x="95" y="60" fill="#64748b">SKU · 箱规 · 保质期</text>
+    <rect x="20" y="100" width="150" height="52" rx="8" fill="#f3efff" stroke="#7c3aed"/>
+    <text x="95" y="123" font-weight="700" fill="#6d28d9">warehouse 仓库</text><text x="95" y="140" fill="#64748b">主仓 / 地区仓</text>
+    <rect x="210" y="100" width="165" height="52" rx="8" fill="#f3efff" stroke="#7c3aed"/>
+    <text x="292" y="123" font-weight="700" fill="#6d28d9">customer_store 门店</text><text x="292" y="140" fill="#64748b">账期 · 额度 · 片区</text>
+    <rect x="210" y="20" width="165" height="52" rx="8" fill="#f3efff" stroke="#7c3aed"/>
+    <text x="292" y="43" font-weight="700" fill="#6d28d9">supplier 供应商</text><text x="292" y="60" fill="#64748b">账期 · 结算方式</text>
+
+    <!-- 库存 -->
+    <rect x="430" y="60" width="175" height="56" rx="8" fill="#eef3ff" stroke="#3b82f6"/>
+    <text x="517" y="83" font-weight="700" fill="#1d4ed8">inventory_lot 批次库存</text><text x="517" y="100" fill="#64748b">仓+商品+批次+现存量/锁定/冻结</text>
+    <rect x="430" y="150" width="175" height="52" rx="8" fill="#eef3ff" stroke="#3b82f6"/>
+    <text x="517" y="173" font-weight="700" fill="#1d4ed8">inventory_flow 流水</text><text x="517" y="190" fill="#64748b">不可改 · 追溯</text>
+
+    <!-- 单据 -->
+    <rect x="660" y="20" width="150" height="52" rx="8" fill="#fef3e2" stroke="#f59e0b"/>
+    <text x="735" y="43" font-weight="700" fill="#b45309">purchase_order 采购</text><text x="735" y="60" fill="#64748b">申请→审批→入库</text>
+    <rect x="660" y="100" width="150" height="52" rx="8" fill="#fef3e2" stroke="#f59e0b"/>
+    <text x="735" y="123" font-weight="700" fill="#b45309">sales_order 销售</text><text x="735" y="140" fill="#64748b">要货→出库→签收</text>
+    <rect x="660" y="180" width="150" height="52" rx="8" fill="#fef3e2" stroke="#f59e0b"/>
+    <text x="735" y="203" font-weight="700" fill="#b45309">transfer/stocktake</text><text x="735" y="220" fill="#64748b">调拨 · 盘点</text>
+
+    <!-- 资金 -->
+    <rect x="430" y="250" width="175" height="52" rx="8" fill="#f0fdf4" stroke="#22c55e"/>
+    <text x="517" y="273" font-weight="700" fill="#15803d">receivable 应收</text><text x="517" y="290" fill="#64748b">账期 · 到期日 · 余额</text>
+    <rect x="430" y="330" width="175" height="52" rx="8" fill="#f0fdf4" stroke="#22c55e"/>
+    <text x="517" y="353" font-weight="700" fill="#15803d">payment 回款</text><text x="517" y="370" fill="#64748b">核销关联</text>
+
+    <!-- 促销/巡店 -->
+    <rect x="660" y="270" width="150" height="52" rx="8" fill="#fef2f2" stroke="#ef4444"/>
+    <text x="735" y="293" font-weight="700" fill="#b91c1c">promotion 促销</text><text x="735" y="310" fill="#64748b">活动/费用/产出</text>
+    <rect x="660" y="345" width="150" height="48" rx="8" fill="#fef2f2" stroke="#ef4444"/>
+    <text x="735" y="375" fill="#b91c1c" font-weight="700">visit_record 巡店</text>
+
+    <!-- 连线 -->
+    <line x1="95" y1="72" x2="517" y2="116" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#e)"/>
+    <line x1="292" y1="152" x2="430" y2="100" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#e)"/>
+    <line x1="375" y1="152" x2="495" y2="152" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#e)"/>
+    <line x1="605" y1="88" x2="660" y2="46" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#e)"/>
+    <line x1="605" y1="176" x2="660" y2="126" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#e)"/>
+    <line x1="605" y1="176" x2="517" y2="276" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#e)"/>
+    <line x1="517" y1="302" x2="517" y2="330" stroke="#22c55e" stroke-width="1.5" marker-end="url(#e)"/>
+    <line x1="735" y1="152" x2="605" y2="162" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#e)"/>
+    <line x1="735" y1="206" x2="605" y2="190" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#e)"/>
+  </g>
+</svg>
+</div>
+
+<h3>5.2 核心表字段设计</h3>
+<p>前缀约定：业务主键采用自增 <code>id</code>，普遍含 <code>org_id / created_at / updated_at / deleted</code> 公共字段（以下省略，按需保留 <code>deleted</code> 软删除）。状态码取值见「5.3 状态枚举」。</p>
+
+<div class="tbl-title">sys_user 用户账号</div>
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><span class="fld pk">id</span></td><td>bigint</td><td>主键</td></tr>
+  <tr><td><span class="fld">username / password</span></td><td>varchar</td><td>登录名 / 加密存储密码</td></tr>
+  <tr><td><span class="fld">real_name</span></td><td>varchar</td><td>姓名</td></tr>
+  <tr><td><span class="fld">role</span></td><td>tinyint</td><td>角色：1总经理 2业务经理 3业务员 4促销员 5财务</td></tr>
+  <tr><td><span class="fld">dept_id</span></td><td>bigint</td><td>所属片区（数据权限）</td></tr>
+  <tr><td><span class="fld">phone / status</span></td><td>varchar / tinyint</td><td>手机号· 启用状态</td></tr>
+</table>
+
+<div class="tbl-title">warehouse 仓库</div>
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><span class="fld pk">id</span></td><td>bigint</td><td>主键</td></tr>
+  <tr><td><span class="fld">code / name</span></td><td>varchar</td><td>编码 / 名称（主仓库、赣州地区仓）</td></tr>
+  <tr><td><span class="fld">type</span></td><td>tinyint</td><td>1总仓 2地区仓</td></tr>
+  <tr><td><span class="fld">address / manager_id</span></td><td>varchar / bigint</td><td>地址 · 负责人</td></tr>
+  <tr><td><span class="fld">enable_flag</span></td><td>tinyint</td><td>1启用 0停用</td></tr>
+</table>
+
+<div class="tbl-title">product 商品（SKU）</div>
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><span class="fld pk">id</span></td><td>bigint</td><td>主键</td></tr>
+  <tr><td><span class="fld">code / name</span></td><td>varchar</td><td>编码 / 名称（新疆合沐纯牛奶）</td></tr>
+  <tr><td><span class="fld">category</span></td><td>tinyint</td><td>1袋装 2盒装</td></tr>
+  <tr><td><span class="fld">spec</span></td><td>varchar</td><td>规格 200ml</td></tr>
+  <tr><td><span class="fld">unit</span></td><td>varchar</td><td>最小库存单位（袋/盒）</td></tr>
+  <tr><td><span class="fld">pieces_per_carton</span></td><td>int</td><td>箱规（每箱袋/盒数）</td></tr>
+  <tr><td><span class="fld">shelf_life_days</span></td><td>int</td><td>保质期天数（推导到期日）</td></tr>
+  <tr><td><span class="fld">warning_days</span></td><td>int</td><td>临期预警天数</td></tr>
+  <tr><td><span class="fld">safe_stock</span></td><td>int</td><td>安全库存（低库存预警）</td></tr>
+  <tr><td><span class="fld">min_price / retail_price</span></td><td>decimal(10,2)</td><td>最低售价 / 建议零售价</td></tr>
+  <tr><td><span class="fld">barcode / status</span></td><td>varchar / tinyint</td><td>条码 · 1启用 0停用</td></tr>
+</table>
+
+<div class="tbl-title">customer_store 客户门店</div>
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><span class="fld pk">id</span></td><td>bigint</td><td>主键</td></tr>
+  <tr><td><span class="fld">code / name</span></td><td>varchar</td><td>编码 / 门店名</td></tr>
+  <tr><td><span class="fld">country_region</span></td><td>varchar</td><td>赣州下辖县区</td></tr>
+  <tr><td><span class="fld">store_type</span></td><td>tinyint</td><td>1超市 2便利店 3母婴 4其他</td></tr>
+  <tr><td><span class="fld">contact / phone</span></td><td>varchar</td><td>联系人 · 电话</td></tr>
+  <tr><td><span class="fld">lng / lat</span></td><td>decimal(10,6)</td><td>定位坐标（巡店/促销签到校验）</td></tr>
+  <tr><td><span class="fld">credit_days</span></td><td>int</td><td>账期（天）</td></tr>
+  <tr><td><span class="fld">credit_limit</span></td><td>decimal(12,2)</td><td>信用额度</td></tr>
+  <tr><td><span class="fld">settle_type</span></td><td>tinyint</td><td>结算方式</td></tr>
+  <tr><td><span class="fld">salesman_id</span></td><td>bigint</td><td>归属业务员（片区）</td></tr>
+  <tr><td><span class="fld">status</span></td><td>tinyint</td><td>1正常 0停用</td></tr>
+</table>
+
+<div class="tbl-title">supplier 供应商</div>
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><span class="fld pk">id</span></td><td>bigint</td><td>主键</td></tr>
+  <tr><td><span class="fld">name / contact / phone</span></td><td>varchar</td><td>名称 · 联系人 · 电话</td></tr>
+  <tr><td><span class="fld">settle_type / credit_days</span></td><td>tinyint / int</td><td>结算方式 · 账期</td></tr>
+</table>
+
+<div class="tbl-title">inventory_lot 批次库存（权威库存表）</div>
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><span class="fld pk">id</span></td><td>bigint</td><td>主键</td></tr>
+  <tr><td><span class="fld fk">warehouse_id</span></td><td>bigint</td><td>仓库</td></tr>
+  <tr><td><span class="fld fk">product_id</span></td><td>bigint</td><td>商品</td></tr>
+  <tr><td><span class="fld">lot_no</span></td><td>varchar</td><td>生产批次号</td></tr>
+  <tr><td><span class="fld">produce_date</span></td><td>date</td><td>生产日期</td></tr>
+  <tr><td><span class="fld">expire_date</span></td><td>date</td><td>到期日（=生产日期+保质期）</td></tr>
+  <tr><td><span class="fld">qty</span></td><td>int</td><td>现存量（最小单位）</td></tr>
+  <tr><td><span class="fld">locked_qty</span></td><td>int</td><td>锁定量（待拣货/待出库）</td></tr>
+  <tr><td><span class="fld">frozen_qty</span></td><td>int</td><td>冻结量（过期/待报损）</td></tr>
+  <tr><td><span class="fld">status</span></td><td>tinyint</td><td>1正常 2临期 3过期（冻结）</td></tr>
+</table>
+<p><strong>可用量 = qty − locked_qty − frozen_qty</strong>（查询时计算，出库校验用）。</p>
+
+<div class="tbl-title">inventory_flow 库存流水（append-only）</div>
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><span class="fld pk">id</span></td><td>bigint</td><td>主键</td></tr>
+  <tr><td><span class="fld fk">warehouse_id / product_id</span></td><td>bigint</td><td>仓库 · 商品</td></tr>
+  <tr><td><span class="fld">lot_no</span></td><td>varchar</td><td>批次</td></tr>
+  <tr><td><span class="fld">biz_type</span></td><td>tinyint</td><td>1入库 2出库 3调拨入/出 4盘点盈/亏 5报损 6退货入</td></tr>
+  <tr><td><span class="fld">change_qty</span></td><td>int</td><td>变动数量（可为负）</td></tr>
+  <tr><td><span class="fld fk">ref_no</span></td><td>varchar</td><td>关联单据号</td></tr>
+  <tr><td><span class="fld">operator_id / created_at</span></td><td>bigint / datetime</td><td>操作人 · 时间</td></tr>
+</table>
+
+<div class="tbl-title">sales_order 销售单（要货）+ sales_order_item 明细</div>
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><span class="fld pk">id / order_no</span></td><td>bigint / varchar</td><td>主键 · 单号</td></tr>
+  <tr><td><span class="fld fk">store_id / salesman_id</span></td><td>bigint</td><td>客户门店 · 业务员</td></tr>
+  <tr><td><span class="fld fk">warehouse_id</span></td><td>bigint</td><td>出库仓</td></tr>
+  <tr><td><span class="fld">status</span></td><td>tinyint</td><td>草稿/待审核/待拣货/待配送/配送中/已签收/驳回/作废</td></tr>
+  <tr><td><span class="fld">total_amount / discount</span></td><td>decimal(12,2)</td><td>总额 · 折让</td></tr>
+  <tr><td><span class="fld">promotion_id</span></td><td>bigint</td><td>关联促销（可空）</td></tr>
+  <tr><td><span class="fld">signed_at / signed_qty</span></td><td>datetime / int</td><td>签收时间 · 签收数量（部分签收）</td></tr>
+</table>
+<p>明细表 sales_order_item：<code>order_id / product_id / qty / price / amount / 建议 lot 指向出库批次</code>。</p>
+
+<div class="tbl-title">purchase_order 采购单 + item（对称结构，简列）</div>
+<p>含 <code>supplier_id / warehouse_id / status(草稿/待审批/待收货/部分收货/已收货/驳回/取消)</code>，明细 <code>product_id / qty / price / amount</code>；入库时逐批写入 inventory_lot 并生成应付。</p>
+
+<div class="tbl-title">sales_return 销售退货 + item</div>
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><span class="fld pk">id</span></td><td>bigint</td><td>主键</td></tr>
+  <tr><td><span class="fld fk">src_order_id / store_id</span></td><td>bigint</td><td>原销售单 · 门店</td></tr>
+  <tr><td><span class="fld">status</span></td><td>tinyint</td><td>待审核/待收货/已收货/完成</td></tr>
+  <tr><td><span class="fld">dispose_type</span></td><td>tinyint</td><td>收货判定：1可再售 2报损/冻结</td></tr>
+  <tr><td><span class="fld">reason / amount</span></td><td>varchar / decimal</td><td>原因 · 冲减金额</td></tr>
+</table>
+
+<div class="tbl-title">transfer_order 调拨 / stocktake 盘点（简列）</div>
+<p>调拨：<code>from_wh / to_wh / status(草稿/待出库/待到货/已到货/取消)</code> + 明细批次数量。<br>盘点：<code>warehouse_id / product_id / book_qty / actual_qty / diff_qty / status(草稿/盘点中/待审批/完成)</code> 审批后写盘盈盘亏流水。</p>
+
+<div class="tbl-title">receivable 应收 / payment 回款 / payment_receivable 核销</div>
+<table>
+  <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+  <tr><td><span class="fld pk">id</span></td><td>bigint</td><td>主键</td></tr>
+  <tr><td><span class="fld fk">store_id</span></td><td>bigint</td><td>客户门店</td></tr>
+  <tr><td><span class="fld fk">src_order_no</span></td><td>varchar</td><td>来源销售单号</td></tr>
+  <tr><td><span class="fld">amount / settled_amount</span></td><td>decimal(12,2)</td><td>应收金额 · 已核销金额</td></tr>
+  <tr><td><span class="fld">due_date</span></td><td>date</td><td>账期到期日</td></tr>
+  <tr><td><span class="fld">status</span></td><td>tinyint</td><td>1未结清 2部分核销 3已结清 4逾期</td></tr>
+</table>
+<p>payment：<code>store_id / amount / pay_date / pay_type(现金/转账) / voucher</code>。<br>payment_receivable：<code>payment_id / receivable_id / offset_amount</code>（FIFO 核销关联，防重复核销）。</p>
+
+<div class="tbl-title">promotion 促销 + promotion_execution 作业</div>
+<p>promotion：<code>name / type(特价/买赠/满减/陈列) / product_id / start_date / end_date / store_scope / budget_fee / status(草稿/待审批/执行中/已结束/已核算)</code>。<br>promotion_execution：<code>promotion_id / store_id / promotor_id / check_in_at / check_out_at / display_photo / sales_qty / freebie_qty</code>（签到/陈列/销量上报）。</p>
+
+<div class="tbl-title">visit_plan / visit_record 巡店</div>
+<p>visit_plan：<code>salesman_id / store_id / visit_date / status</code>。<br>visit_record：<code>plan_id / store_id / check_in_at / lng / lat / display_qty / expiry_check / photo / suggest_order</code>。</p>
+
+<div class="tbl-title">approval_record 审批 / audit_log 审计 / notification 通知（公共）</div>
+<p>approval_record：<code>biz_type / biz_id / approve_user / action(通过/驳回/转交) / comment / created_at</code>。<br>audit_log：<code>user_id / module / action / before_val / after_val / created_at</code>。<br>notification：<code>user_id / type / title / content / read_flag / created_at</code>。</p>
+
+<h3>5.3 关键状态枚举（与 PRD 状态机一致）</h3>
+<table>
+  <tr><th>对象</th><th>枚举值（tinyint）</th></tr>
+  <tr><td>销售单</td><td>0草稿 1待审核 2待拣货 3待配送 4配送中 5已签收 6驳回 7作废</td></tr>
+  <tr><td>采购单</td><td>0草稿 1待审批 2待收货 3部分收货 4已收货 5驳回 6取消</td></tr>
+  <tr><td>批次</td><td>1正常 2临期 3过期（冻结）</td></tr>
+  <tr><td>应收</td><td>1未结清 2部分核销 3已结清 4逾期</td></tr>
+  <tr><td>促销</td><td>0草稿 1待审批 2执行中 3已结束 4已核算 5驳回</td></tr>
+</table>
+
+<h3>5.4 关键索引建议</h3>
+<ul>
+  <li>inventory_lot：<code>(warehouse_id, product_id, expire_date)</code> 支持库存查询与 FIFO；<code>(status, expire_date)</code> 支持临期/过期扫描。</li>
+  <li>sales_order：<code>(store_id, status)</code>、<code>(order_no)</code> 唯一。</li>
+  <li>receivable：<code>(store_id, status, due_date)</code> 支持逾期扫描。</li>
+  <li>inventory_flow：<code>(ref_no)</code>、<code>(warehouse_id, product_id, created_at)</code>。</li>
+</ul>
+</div>
+</section>
+
+<div class="callout"><strong>交付说明：</strong>本文与 PRD 业务规则一一对齐（SKU、批次、FIFO、效期、账期额度、审批、促销投入产出），可作为后端建库与接口开发、前端与移动端联调的直接依据。金额精度统一 2 位小数，数量统一最小单位整数。</div>
+
+</div>
+</body>
+</html>
