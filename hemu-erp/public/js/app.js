@@ -30,6 +30,7 @@ function renderLogin(root) {
   btn.addEventListener('click', doLogin);
   uPass.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
   uName.addEventListener('keydown', (e) => { if (e.key === 'Enter') uPass.focus(); });
+  setTimeout(() => { (uName.value.trim() ? uPass : uName).focus(); }, 60);
   root.append(h('div', { class: 'login-wrap' },
     h('div', { class: 'login-card' },
       h('div', { class: 'login-brand' },

@@ -147,6 +147,14 @@ export function skeleton(rows = 4) {
 export const empty = (title, sub, ico = '📦') =>
   h('div', { class: 'empty' }, h('div', { class: 'e-ico' }, ico), h('b', {}, title), sub ? h('span', {}, sub) : null);
 
+/* 加载失败态（含重试） */
+export const errCard = (e, retry) =>
+  h('div', { class: 'card' }, h('div', { class: 'empty' },
+    h('div', { class: 'e-ico' }, '⚠'),
+    h('b', {}, '加载失败'),
+    h('span', {}, e && e.message ? e.message : '网络异常，请稍后重试'),
+    retry ? h('button', { class: 'btn sm', style: 'margin-top:14px', onclick: retry }, '重试') : null));
+
 /* 状态流水线 */
 export function pipeline(steps, currentIdx, badIdx = -1) {
   return h('div', { class: 'pipeline' },

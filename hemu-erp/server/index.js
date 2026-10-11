@@ -304,6 +304,7 @@ function createTransfer(req, res, asApplication) {
   const to = db.prepare('SELECT * FROM locations WHERE id=?').get(Number(to_loc));
   if (!to || to.type !== 'store') return fail(res, '请选择收货门店');
   if (to.status !== 'active') return fail(res, '该门店已停用');
+  if (asApplication && req.user.role === 'prm' && req.user.store_id !== to.id) return fail(res, '促销员只能为本店申请领货', 403);
   const main = db.prepare("SELECT id FROM locations WHERE type='main'").get();
   const prods = db.prepare('SELECT * FROM products').all();
   const norm = [];

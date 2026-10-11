@@ -1,8 +1,8 @@
 /* 业务页面：订单 · POS · 库存 · 调拨 · 采购 · 回款 · 应收 · 商品 · 门店 · 用户 · 促销 */
 import { API } from './api.js';
 import {
-  h, $, fmtMoney, fmtNum, fmtQty, fmtDay, fmtTime, ROLE_NAME, chip, statusChip,
-  ORDER_STATUS, TRANSFER_STATUS, MOVE_TYPE, empty, table, icon, toast, modal,
+  h, $, $$, fmtMoney, fmtNum, fmtQty, fmtDay, fmtTime, ROLE_NAME, chip, statusChip,
+  ORDER_STATUS, TRANSFER_STATUS, MOVE_TYPE, empty, errCard, table, icon, toast, modal,
   confirmBox, field, stepper, skeleton, pipeline,
 } from './ui.js';
 
@@ -41,12 +41,25 @@ function qtyRows(products, { withStock = null } = {}) {
   return rows;
 }
 
+/* 数量录入表格（调拨/采购弹窗共用） */
+function buildQtyTable(rows) {
+  return h('div', { class: 'tbl-wrap' },
+    h('table', { class: 'tbl' },
+      h('thead', {}, h('tr', {},
+        h('th', {}, '商品'),
+        h('th', { class: 'ta-c', style: 'width:110px' }, '整箱'),
+        h('th', { class: 'ta-c', style: 'width:96px' }, '散件'))),
+      h('tbody', {}, rows.map((r) => h('tr', {},
+        h('td', {}, h('b', {}, r.p.name), h('span', { style: 'font-size:11px;color:var(--ink-3);margin-left:4px' }, catName(r.p.category))),
+        h('td', { align: 'center' }, r.cartons), h('td', { align: 'center' }, r.loose))))));
+}
+
 /* ============ 订单列表 ============ */
 export async function pageOrders(root) {
   const u = API.user;
   const seg = h('div', { class: 'seg' });
   const body = h('div', {});
-  const tabs = [['', '全部'], ['pending', '待审批'], ['approved', '待出库'], ['shipped', '待回款'], ['done', '已完成'], ['rejected', '已驳回']];
+  const tabs = [['', '全部'], ['draft', '草稿'], ['pending', '待审批'], ['approved', '待出库'], ['shipped', '待回款'], ['done', '已完成'], ['rejected', '已驳回'], ['cancelled', '已取消']];
   let cur = '';
   const render = async () => {
     body.innerHTML = '';
@@ -70,10 +83,10 @@ export async function pageOrders(root) {
         h('div', { class: 'card-hd' }, h('b', {}, `订单记录（${rows.length}）`), h('div', { class: 'hd-right' },
           u.role === 'sal' ? h('a', { class: 'btn sm', href: '#/orders/new' }, '+ 新建订单') : null)),
         table(cols, rows, { minWidth: 640 })));
-    } catch (e) { body.innerHTML = ''; body.append(h('div', { class: 'card' }, empty('加载失败', e.message, '⚠'))); }
+    } catch (e) { body.innerHTML = ""; body.append(errCard(e, render)); }
   };
   for (const [k, label] of tabs) {
-    if (k === 'rejected' && userCan('sal', 'prm')) continue;
+    if (userCan('sal', 'prm') && (k === 'rejected' || k === 'cancelled')) continue;
     const s = h('s', { onclick: () => { cur = k; $$('.seg s', seg).forEach((x) => x.classList.remove('on')); s.classList.add('on'); render(); } }, label);
     if (k === cur) s.classList.add('on');
     seg.append(s);
@@ -89,13 +102,16 @@ export async function pageOrderDetail(root, id) {
     root.append(h('div', { class: 'card' }, empty('无法加载订单', e.message, '⚠'))); return;
   }
   const u = API.user;
-  const steps = ['创建', '审批', '出库', '回款', '完成'];
-  const stepIdx = { draft: 0, pending: 1, approved: 1, partial: 2, shipped: 2, done: 4, rejected: 1, cancelled: 0 }[o.status];
+  const isRetail = o.type === 'retail';
+  const steps = isRetail ? ['创建', '结算', '完成'] : ['创建', '审批', '出库', '回款', '完成'];
+  const stepIdx = isRetail
+    ? { done: 2 }[o.status] ?? 1
+    : { draft: 0, pending: 1, approved: 1, partial: 2, shipped: 2, done: 4, rejected: 1, cancelled: 0 }[o.status];
   const bad = o.status === 'rejected' || o.status === 'cancelled' ? 1 : -1;
   root.append(h('div', { class: 'card' },
     h('div', { class: 'card-hd' },
       h('b', {}, `${o.no}`), statusChip(ORDER_STATUS, o.status),
-      h('div', { class: 'hd-right' }, h('button', { class: 'btn ghost sm', onclick: () => history.back() }, '← 返回'))),
+      h('div', { class: 'hd-right' }, h('a', { class: 'btn ghost sm', href: '#/orders' }, '← 返回列表'))),
     pipeline(steps, stepIdx, bad),
     h('div', { class: 'grid g4', style: 'margin-top:6px' },
       kvCell('门店', o.store_name), kvCell('业务员', o.salesman_name),
@@ -394,6 +410,7 @@ export async function pagePOS(root) {
   }
 
   const payBtn = h('button', { class: 'btn lg block', style: 'height:52px;font-size:16px' }, '结算收款');
+  const p_upc = (pid) => { const p = actProds.find((x) => x.id === pid); return p ? p.units_per_carton : 16; };
   payBtn.addEventListener('click', async () => {
     const items = actProds.filter((p) => cart[p.id] > 0).map((p) => ({
       product_id: p.id, cartons: Math.floor(cart[p.id] / p.units_per_carton), loose: cart[p.id] % p.units_per_carton,
@@ -403,7 +420,10 @@ export async function pagePOS(root) {
     try {
       const r = await API.post('/api/orders', { type: 'retail', items, payment_method: payMethod.value });
       toast(`成交！单号 ${r.no} · 实收 ${fmtMoney(r.payable)}${r.gift_value ? ' · 含赠品' : ''}`, 'ok');
-      location.reload();
+      for (const p of actProds) cart[p.id] = 0;
+      for (const i of items) stockMap[i.product_id] = Math.max(0, (stockMap[i.product_id] || 0) - (i.cartons * p_upc(i.product_id) + i.loose));
+      refresh();
+      payBtn.disabled = false;
     } catch (e) { payBtn.disabled = false; toast(e.message, 'err'); }
   });
 
@@ -456,7 +476,7 @@ export async function pageInventory(root) {
             } },
           ], items, { minWidth: 620 })));
       }
-    } catch (e) { body.innerHTML = ''; body.append(h('div', { class: 'card' }, empty('加载失败', e.message, '⚠'))); }
+    } catch (e) { body.innerHTML = ""; body.append(errCard(e, render)); }
   };
   sel.addEventListener('change', render);
   root.append(h('div', { class: 'card', style: 'padding:14px 18px' },
@@ -491,7 +511,7 @@ export async function pageTransfers(root) {
             ]),
           },
         ], rows, { minWidth: 680 })));
-    } catch (e) { body.innerHTML = ''; body.append(h('div', { class: 'card' }, empty('加载失败', e.message, '⚠'))); }
+    } catch (e) { body.innerHTML = ""; body.append(errCard(e, refresh)); }
   }
   root.append(body);
   await refresh();
@@ -538,7 +558,6 @@ async function newTransfer(root, done) {
   const [prods, locs] = await Promise.all([loadProducts(), loadLocations()]);
   const stores = locs.filter((l) => l.type === 'store' && l.status === 'active');
   if (!stores.length) return toast('暂无可用门店', 'err');
-  const storeSel = h('select', { class: 'ipt' }, stores.map((s) => h('option', { value: s.id }, s.name)));
   const note = h('input', { class: 'ipt', placeholder: '用途说明（选填）' });
   const rows = prods.filter((p) => p.status === 'active').map((p) => {
     const cartons = h('input', { class: 'ipt num', type: 'number', min: 0, value: '0', style: 'width:72px;text-align:center' });
@@ -546,6 +565,10 @@ async function newTransfer(root, done) {
     return { p, cartons, loose };
   });
   const isPrm = API.user.role === 'prm';
+  const myStore = locs.find((l) => l.id === API.user.store_id);
+  const storeSel = isPrm && myStore
+    ? h('div', { class: 'ipt', style: 'background:var(--brand-ghost);color:var(--brand-deep);font-weight:600;display:flex;align-items:center' }, `${myStore.name}（本店）`)
+    : h('select', { class: 'ipt' }, stores.map((s) => h('option', { value: s.id }, s.name)));
   const m = modal({
     title: isPrm ? '门店领货申请' : '新建调拨（总仓 → 门店）',
     wide: true,
@@ -565,8 +588,9 @@ async function newTransfer(root, done) {
       h('button', { class: 'btn', onclick: async () => {
         const items = rows.map((r) => ({ product_id: r.p.id, cartons: Number(r.cartons.value) || 0, loose: Number(r.loose.value) || 0 })).filter((x) => x.cartons + x.loose > 0);
         if (!items.length) return toast('请至少填写一个商品数量', 'err');
+        const toLoc = isPrm ? API.user.store_id : Number(storeSel.value);
         try {
-          const r = await API.post('/api/transfers', { to_loc: Number(storeSel.value), items, note: note.value });
+          const r = await API.post('/api/transfers', { to_loc: toLoc, items, note: note.value });
           m.close();
           toast(r.status === 'pending' ? '领货申请已提交，等待审批' : `调拨已发货：${r.no}`, 'ok');
           done();
@@ -600,7 +624,7 @@ export async function pagePurchases(root) {
             { title: '时间', render: (p) => fmtTime(p.created_at) },
           ], rows, { minWidth: 620 })
           : empty('暂无采购记录', '点击「采购入库」登记到货', '🏭')));
-    } catch (e) { body.innerHTML = ''; body.append(h('div', { class: 'card' }, empty('加载失败', e.message, '⚠'))); }
+    } catch (e) { body.innerHTML = ""; body.append(errCard(e, refresh)); }
   }
   const productsCache = await loadProducts();
   root.append(body);
@@ -665,7 +689,7 @@ export async function pagePayments(root) {
               } }, '确认到账') : '') },
           ], rows, { minWidth: 680 })
           : empty('暂无回款记录', '在订单详情中可登记回款', '💰')));
-    } catch (e) { body.innerHTML = ''; body.append(h('div', { class: 'card' }, empty('加载失败', e.message, '⚠'))); }
+    } catch (e) { body.innerHTML = ""; body.append(errCard(e, refresh)); }
   }
   root.append(body);
   await refresh();
@@ -739,6 +763,10 @@ function editProduct(p, done) {
       h('button', { class: 'btn ghost', onclick: () => m.close() }, '取消'),
       h('button', { class: 'btn', onclick: async () => {
         const body = { name: name.value.trim(), wholesale_price: Number(wp.value), retail_price: Number(rp.value) };
+        if (!body.name) return toast('请填写商品名称', 'err');
+        if (!body.wholesale_price || body.wholesale_price <= 0) return toast('请填写有效的批发价', 'err');
+        if (!body.retail_price || body.retail_price <= 0) return toast('请填写有效的零售价', 'err');
+        if (!p && !sku.value.trim()) return toast('请填写 SKU', 'err');
         if (!p) { body.sku = sku.value.trim(); body.category = cat.value; body.units_per_carton = 16; }
         try {
           if (p) await API.put(`/api/products/${p.id}`, body);
@@ -797,6 +825,7 @@ function editStore(l, done) {
     footer: [
       h('button', { class: 'btn ghost', onclick: () => m.close() }, '取消'),
       h('button', { class: 'btn', onclick: async () => {
+        if (!name.value.trim()) return toast('请填写门店名称', 'err');
         try {
           const body = { name: name.value.trim(), address: addr.value, contact: contact.value, phone: phone.value };
           if (l) { body.status = status.value; await API.put(`/api/locations/${l.id}`, body); }
@@ -854,6 +883,11 @@ export async function pageUsers(root) {
       footer: [
         h('button', { class: 'btn ghost', onclick: () => m.close() }, '取消'),
         h('button', { class: 'btn', onclick: async () => {
+          if (!u && !username.value.trim()) return toast('请填写登录工号', 'err');
+          if (!name.value.trim()) return toast('请填写姓名', 'err');
+          if (role.value === 'prm' && !store.value) return toast('促销员必须绑定门店', 'err');
+          if (!u && (pass.value || '').length < 6) return toast('初始密码至少 6 位', 'err');
+          if (u && pass.value && pass.value.length < 6) return toast('新密码至少 6 位', 'err');
           try {
             if (u) {
               await API.put(`/api/users/${u.id}`, {

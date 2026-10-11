@@ -1,6 +1,6 @@
 /* 页面：工作台 · 待办 · 报表 · 个人中心 · 审计 */
 import { API } from './api.js';
-import { h, $, fmtMoney, fmtNum, fmtQty, fmtDay, ROLE_NAME, chip, statusChip, ORDER_STATUS, MOVE_TYPE, lineChart, empty, table, icon, toast, modal, field } from './ui.js';
+import { h, $, $$, fmtMoney, fmtNum, fmtQty, fmtDay, ROLE_NAME, chip, statusChip, ORDER_STATUS, MOVE_TYPE, lineChart, empty, errCard, table, icon, toast, modal, field } from './ui.js';
 
 /* ============ 工作台 ============ */
 export async function pageDash(root) {
@@ -48,7 +48,7 @@ export async function pageDash(root) {
         kpi('我的本月销售额', fmtMoney(d.month.sales), `本月 ${d.month.orders} 单 · 促销让利 ${fmtMoney(d.month.gift_value)}`, 'gold')),
       h('div', { class: 'card' },
         h('div', { class: 'card-hd' }, h('b', {}, '我的订单状态'), h('span', { style: 'margin-left:auto' },
-          h('a', { class: 'btn sm', href: '#/orders-new' }, '+ 新建批发订单'))),
+          h('a', { class: 'btn sm', href: '#/orders/new' }, '+ 新建批发订单'))),
         h('div', { class: 'grid g4' }, st('draft', '草稿'), st('pending', '待审批'), st('approved', '待出库'), st('shipped', '待回款'))),
       trendCard(d.trend14, '我的销售趋势（近 14 天）'),
       topStoresCard(d.top_stores));
@@ -210,26 +210,26 @@ export async function pageReports(root) {
     body.append(h('div', { class: 'skel', style: 'height:120px;margin-top:12px' }));
     try {
       if (cur === 'sales') {
-        const [sales, cat] = await Promise.all([API.get('/api/reports/sales?days=14'), API.get('/api/reports/sales?days=14')]);
+        const sales = await API.get('/api/reports/sales?days=14');
         const has = sales.daily.some((x) => x.wholesale + x.retail > 0);
         body.innerHTML = '';
         body.append(h('div', { class: 'card' },
           h('div', { class: 'card-hd' }, h('b', {}, '销售趋势（近 14 天）')),
-          has ? h('div', { class: 'chart-legend' },
-            h('span', {}, h('s', { style: 'background:var(--brand)' }), '批发'),
-            h('span', {}, h('s', { style: 'background:var(--gold)' }), '零售'))
-            + '' : '',
-          has ? lineChart([
-            { color: '#0E7C66', data: sales.daily.map((x) => x.wholesale) },
-            { color: '#B98A1D', data: sales.daily.map((x) => x.retail) },
-          ], { height: 210, labels: sales.daily.map((x) => x.d) }) : empty('暂无销售数据', '', '📈')));
+          has ? h('div', {},
+            h('div', { class: 'chart-legend' },
+              h('span', {}, h('s', { style: 'background:var(--brand)' }), '批发'),
+              h('span', {}, h('s', { style: 'background:var(--gold)' }), '零售')),
+            lineChart([
+              { color: '#0E7C66', data: sales.daily.map((x) => x.wholesale) },
+              { color: '#B98A1D', data: sales.daily.map((x) => x.retail) },
+            ], { height: 210, labels: sales.daily.map((x) => x.d) })) : empty('暂无销售数据', '', '📈')));
         const tot = sales.daily.reduce((s, x) => s + x.wholesale + x.retail, 0);
         const gift = sales.daily.reduce((s, x) => s + (x.gift || 0), 0);
         body.append(h('div', { class: 'grid g3' },
           h('div', { class: 'kpi' }, h('div', { class: 'k-label' }, '近 14 天销售额'), h('div', { class: 'k-value' }, fmtMoney(tot))),
           h('div', { class: 'kpi gold' }, h('div', { class: 'k-label' }, '促销让利价值'), h('div', { class: 'k-value' }, fmtMoney(gift))),
           h('div', { class: 'kpi info' }, h('div', { class: 'k-label' }, '商品结构'), h('div', { class: 'k-value', style: 'font-size:15px' },
-            (cat.by_category || []).map((c) => `${c.category === 'bag' ? '袋装' : '盒装'} ${fmtQty(c.units, 16)}`).join(' · ') || '—'))));
+            (sales.by_category || []).map((c) => `${c.category === 'bag' ? '袋装' : '盒装'} ${fmtQty(c.units, 16)}`).join(' · ') || '—'))));
       } else if (cur === 'stores') {
         const rows = await API.get('/api/reports/by-store');
         body.innerHTML = '';
@@ -275,7 +275,7 @@ export async function pageReports(root) {
             { title: '在途', align: 'right', render: (r) => r.transit ? chip(`在途 ${fmtQty(r.transit, r.units_per_carton)}`, 'info') : '—' },
           ], rows, { minWidth: 520 })));
       }
-    } catch (e) { body.innerHTML = ''; body.append(empty('加载失败', e.message, '⚠')); }
+    } catch (e) { body.innerHTML = ''; body.append(errCard(e, render)); }
   };
   for (const [k, label] of tabs) {
     if (!avail.includes(k)) continue;
