@@ -1,5 +1,5 @@
 /* 合沐进销存 Service Worker · 静态资源 network-first（离线回退缓存），API 不缓存 */
-const CACHE = 'hemu-cache-v3';
+const CACHE = 'hemu-cache-v4';
 self.addEventListener('install', (e) => self.skipWaiting());
 self.addEventListener('activate', (e) => {
   e.waitUntil(

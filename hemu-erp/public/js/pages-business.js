@@ -474,14 +474,153 @@ export async function pageInventory(root) {
               if (t > 800) return chip('偏高', 'info');
               return chip('正常', 'ok');
             } },
+            { title: '', align: 'right', render: (r) => r.total > 0 ? h('button', { class: 'btn sm ghost', onclick: () => showBatches(r, render) }, '批次') : null },
           ], items, { minWidth: 620 })));
       }
     } catch (e) { body.innerHTML = ""; body.append(errCard(e, render)); }
   };
   sel.addEventListener('change', render);
   root.append(h('div', { class: 'card', style: 'padding:14px 18px' },
-    h('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap' }, h('span', { style: 'font-size:13px;color:var(--ink-3)' }, '筛选地点'), sel)), body);
+    h('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap' }, h('span', { style: 'font-size:13px;color:var(--ink-3)' }, '筛选地点'), sel),
+    h('span', { style: 'margin-left:auto' }, h('a', { class: 'btn sm ghost', href: '#/expiry' }, '⏰ 临期预警'))), body);
   await render();
+}
+
+/* 批次明细弹窗（生产日期 / 到期日 / 剩余天数档位） */
+const LEVEL_META = {
+  urgent: { label: '紧急', cls: 'danger', hint: '剩余 ≤ 3 天' },
+  near: { label: '临期', cls: 'gold', hint: '剩余 ≤ 10 天' },
+  expired: { label: '已过期', cls: 'bad', hint: '' },
+  ok: { label: '新鲜', cls: 'ok', hint: '' },
+};
+async function showBatches(r, refresh) {
+  const box = h('div', {}, skeleton(3));
+  const m = modal({
+    title: `批次明细 · ${r.product_name} @ ${r.location_name}`,
+    wide: true,
+    body: box,
+    footer: [h('button', { class: 'btn ghost', onclick: () => m.close() }, '关闭')],
+  });
+  try {
+    const rows = await API.get(`/api/batches?location_id=${r.location_id}&product_id=${r.product_id}`);
+    box.innerHTML = '';
+    if (!rows.length) { box.append(empty('暂无批次数据', '', '📦')); return; }
+    const canWriteoff = userCan('gm', 'mgr');
+    box.append(table([
+      { title: '生产日期', render: (b) => b.produced_date },
+      { title: '到期日', render: (b) => h('b', {}, b.expire_date) },
+      { title: '剩余', align: 'center', render: (b) => h('span', { style: `font-weight:700;color:${b.level === 'urgent' ? 'var(--danger)' : b.level === 'near' ? 'var(--gold-deep)' : 'var(--brand-deep)'}` }, `${b.days_left} 天`) },
+      { title: '数量', align: 'right', render: (b) => fmtQty(b.qty, b.units_per_carton) },
+      { title: '状态', align: 'center', render: (b) => chip(LEVEL_META[b.level].label, LEVEL_META[b.level].cls) },
+      { title: '来源', render: (b) => h('span', { class: 'mono', style: 'font-size:11.5px' }, b.ref_no || '—') },
+      canWriteoff ? { title: '', align: 'right', render: (b) => (b.level !== 'ok' && b.qty > 0) ? h('button', { class: 'btn sm danger ghost', onclick: () => writeoffBatch(b, r, m, refresh) }, '报废') : null } : null,
+    ].filter(Boolean), rows, { minWidth: 620 }));
+    box.append(h('p', { style: 'font-size:11.5px;color:var(--ink-3);margin-top:8px' }, '出库按「先到期先出」FIFO 自动扣减批次；临期（≤10天）/紧急（≤3天）批次建议优先促销或报废。'));
+  } catch (e) { box.innerHTML = ''; box.append(errCard(e, () => showBatches(r, refresh))); }
+}
+async function writeoffBatch(b, r, parentModal, refresh) {
+  const inp = h('input', { class: 'ipt num', type: 'number', min: 1, max: b.qty, value: String(b.qty), style: 'width:110px;text-align:center' });
+  const reason = h('input', { class: 'ipt', placeholder: '报废原因（如：临期清货 / 变质）' });
+  const m = modal({
+    title: `报废登记 · ${r.product_name}`,
+    body: [
+      h('p', { style: 'font-size:12.5px;color:var(--ink-3);margin-bottom:10px' }, `批次 ${b.produced_date} 生产 · ${b.expire_date} 到期 · 余量 ${fmtQty(b.qty, b.units_per_carton)}。报废将从库存同步核减并记入审计。`),
+      field('报废数量（件）', inp, true),
+      field('报废原因', reason, false),
+    ],
+    footer: [
+      h('button', { class: 'btn ghost', onclick: () => m.close() }, '取消'),
+      h('button', { class: 'btn danger', onclick: async () => {
+        try {
+          await API.post('/api/expiry/writeoff', { batch_id: b.id, qty: Number(inp.value) || 0, reason: reason.value });
+          m.close(); parentModal.close(); toast('报废完成，库存已核减', 'ok');
+          if (refresh) refresh();
+        } catch (e) { toast(e.message, 'err'); }
+      } }, '确认报废'),
+    ],
+  });
+}
+
+/* ============ 临期预警中心 ============ */
+export async function pageExpiry(root) {
+  const u = API.user;
+  const body = h('div', {});
+  const seg = h('div', { class: 'seg' }, [['', '全部'], ['urgent', '紧急'], ['near', '临期'], ['expired', '已过期']].map(([k, label], i) =>
+    h('s', { class: i === 0 ? 'on' : '', 'data-k': k }, label)));
+  let cur = '';
+  const statBox = h('div', { class: 'grid g4' });
+  const statCell = (n, label, color) => h('div', { class: 'kpi' },
+    h('div', { class: 'k-label' }, label), h('div', { class: 'k-value', style: `color:${color}` }, n));
+  const render = async () => {
+    body.innerHTML = '';
+    body.append(skeleton(5));
+    try {
+      const { rows, stat } = await API.get('/api/expiry/alerts');
+      body.innerHTML = '';
+      statBox.innerHTML = '';
+      statBox.append(
+        statCell(stat.urgent, '紧急（剩余 ≤ 3 天）', 'var(--danger)'),
+        statCell(stat.near, '临期（剩余 ≤ 10 天）', 'var(--gold-deep)'),
+        statCell(stat.expired, '已过期', 'var(--ink-2)'),
+        statCell(stat.batches, '预警批次（个）', 'var(--brand-deep)'));
+      const list = rows.filter((r) => !cur || r.level === cur);
+      if (!list.length) {
+        body.append(h('div', { class: 'card' }, empty(cur === 'expired' ? '没有过期批次' : '没有预警批次', '库存新鲜度良好，继续保持', '✅')));
+        return;
+      }
+      const canWriteoff = userCan('gm', 'mgr');
+      body.append(h('div', { class: 'card' },
+        h('div', { class: 'card-hd' }, h('b', {}, `预警批次（${list.length}）`), h('span', { style: 'margin-left:auto' },
+          h('span', { style: 'font-size:11.5px;color:var(--ink-3)' }, u.role === 'prm' ? '范围：本店' : u.role === 'sal' ? '范围：总仓' : '范围：全部库位'))),
+        table([
+          { title: '库位', render: (r) => h('div', {}, h('b', {}, r.location_name), h('span', { style: 'margin-left:4px' }, chip(r.location_type === 'main' ? '总仓' : '门店', r.location_type === 'main' ? 'brand' : 'info'))) },
+          { title: '商品', render: (r) => h('div', {}, h('b', {}, r.product_name), h('span', { style: 'margin-left:4px' }, CAT_CHIP(r.category))) },
+          { title: '生产日期', render: (r) => r.produced_date },
+          { title: '到期日', render: (r) => h('b', {}, r.expire_date) },
+          { title: '剩余', align: 'center', render: (r) => h('span', { style: `font-weight:800;color:${r.level === 'urgent' ? 'var(--danger)' : r.level === 'near' ? 'var(--gold-deep)' : 'var(--ink-2)'}` }, r.days_left < 0 ? `已过期 ${-r.days_left} 天` : `${r.days_left} 天`) },
+          { title: '数量', align: 'right', render: (r) => h('b', {}, fmtQty(r.qty, r.units_per_carton)) },
+          { title: '状态', align: 'center', render: (r) => chip(LEVEL_META[r.level].label, LEVEL_META[r.level].cls) },
+          { title: '来源', render: (r) => h('span', { class: 'mono', style: 'font-size:11.5px' }, r.ref_no || '—') },
+          canWriteoff ? { title: '', align: 'right', render: (r) => h('button', { class: 'btn sm danger ghost', onclick: () => writeoffDirect(r, render) }, '报废') } : null,
+        ].filter(Boolean), list, { minWidth: 760 })),
+        h('div', { class: 'card', style: 'padding:12px 18px' },
+          h('span', { style: 'font-size:12px;color:var(--ink-3)' }, '💡 处置建议：紧急批次优先「买二送半箱」促销消化或调往高动销门店；无法消化的由经理/总经理登记报废（自动核减库存并写入审计日志）。')));
+    } catch (e) { body.innerHTML = ""; body.append(errCard(e, render)); }
+  };
+  seg.addEventListener('click', (e) => {
+    const s = e.target.closest('s[data-k]');
+    if (!s) return;
+    seg.querySelectorAll('s').forEach((x) => x.classList.toggle('on', x === s));
+    cur = s.dataset.k;
+    render();
+  });
+  root.append(h('div', { class: 'card', style: 'padding:14px 18px' },
+    h('div', { style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap' },
+      h('b', { style: 'font-size:14px' }, '⏰ 临期预警中心'),
+      seg)), statBox, body);
+  await render();
+}
+async function writeoffDirect(r, refresh) {
+  const inp = h('input', { class: 'ipt num', type: 'number', min: 1, max: r.qty, value: String(r.qty), style: 'width:110px;text-align:center' });
+  const reason = h('input', { class: 'ipt', placeholder: '报废原因（如：临期清货 / 变质）' });
+  const m = modal({
+    title: `报废登记 · ${r.product_name} @ ${r.location_name}`,
+    body: [
+      h('p', { style: 'font-size:12.5px;color:var(--ink-3);margin-bottom:10px' }, `批次 ${r.produced_date} 生产 · ${r.expire_date} 到期（剩 ${r.days_left} 天）· 余量 ${fmtQty(r.qty, r.units_per_carton)}。报废将从库存同步核减并记入审计。`),
+      field('报废数量（件）', inp, true),
+      field('报废原因', reason, false),
+    ],
+    footer: [
+      h('button', { class: 'btn ghost', onclick: () => m.close() }, '取消'),
+      h('button', { class: 'btn danger', onclick: async () => {
+        try {
+          await API.post('/api/expiry/writeoff', { batch_id: r.id, qty: Number(inp.value) || 0, reason: reason.value });
+          m.close(); toast('报废完成，库存已核减', 'ok');
+          if (refresh) refresh();
+        } catch (e) { toast(e.message, 'err'); }
+      } }, '确认报废'),
+    ],
+  });
 }
 
 /* ============ 调拨 / 领货 ============ */

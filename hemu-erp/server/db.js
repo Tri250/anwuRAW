@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS products (
   units_per_carton INTEGER NOT NULL DEFAULT 16,
   wholesale_price INTEGER NOT NULL,
   retail_price INTEGER NOT NULL,
+  shelf_life_days INTEGER NOT NULL DEFAULT 90,
   status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','disabled')),
   created_at TEXT NOT NULL
 );
@@ -167,6 +168,16 @@ CREATE TABLE IF NOT EXISTS promotions (
   created_by INTEGER,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS batches (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL,
+  location_id INTEGER NOT NULL,
+  qty INTEGER NOT NULL DEFAULT 0,
+  produced_date TEXT NOT NULL,
+  expire_date TEXT NOT NULL,
+  ref_no TEXT DEFAULT '',
+  created_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS audit_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER, username TEXT,
@@ -175,7 +186,17 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 CREATE INDEX IF NOT EXISTS idx_moves_loc ON stock_moves(location_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at);
+CREATE INDEX IF NOT EXISTS idx_batches_loc ON batches(location_id, product_id, expire_date);
 `);
+
+/* ---------------- 轻量迁移（兼容已有库） ---------------- */
+(function migrate() {
+  const prodCols = db.prepare('PRAGMA table_info(products)').all().map((c) => c.name);
+  if (!prodCols.includes('shelf_life_days')) {
+    db.exec("ALTER TABLE products ADD COLUMN shelf_life_days INTEGER NOT NULL DEFAULT 90");
+    db.exec("UPDATE products SET shelf_life_days=45 WHERE category='bag'"); // 袋装短保 45 天
+  }
+})();
 
 /* ---------------- 单号 ---------------- */
 function nextNo(prefix, table) {
@@ -203,6 +224,53 @@ function addStock(locationId, productId, delta, type, refNo, note, userId, at) {
 function audit(userId, username, action, target, detail) {
   db.prepare('INSERT INTO audit_logs (user_id, username, action, target, detail, created_at) VALUES (?,?,?,?,?,?)')
     .run(userId || null, username || '', action, target || '', typeof detail === 'string' ? detail : JSON.stringify(detail || {}), now());
+}
+
+/* ---------------- 批次管理（临期预警 · FIFO 先进先出） ---------------- */
+function addDays(dateStr, n) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setDate(d.getDate() + n);
+  const p = (x) => String(x).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+function addBatch(locationId, productId, qty, producedDate, shelfLifeDays, refNo, expireOverride) {
+  qty = Math.max(0, Math.floor(Number(qty) || 0));
+  if (qty <= 0) return;
+  const expireDate = expireOverride || addDays(producedDate, shelfLifeDays);
+  db.prepare('INSERT INTO batches (product_id,location_id,qty,produced_date,expire_date,ref_no,created_at) VALUES (?,?,?,?,?,?,?)')
+    .run(productId, locationId, qty, producedDate, expireDate, refNo || '', now());
+}
+/** FIFO 按到期日升序扣减批次，返回扣减明细 [{produced_date,expire_date,qty}]（供调拨承接批次信息） */
+function consumeBatches(locationId, productId, qty) {
+  let remain = Math.max(0, Math.floor(Number(qty) || 0));
+  const takes = [];
+  const rows = db.prepare('SELECT * FROM batches WHERE location_id=? AND product_id=? AND qty>0 ORDER BY expire_date ASC, id ASC').all(locationId, productId);
+  for (const b of rows) {
+    if (remain <= 0) break;
+    const take = Math.min(b.qty, remain);
+    db.prepare('UPDATE batches SET qty = qty - ? WHERE id=?').run(take, b.id);
+    remain -= take;
+    takes.push({ produced_date: b.produced_date, expire_date: b.expire_date, qty: take });
+  }
+  db.prepare('DELETE FROM batches WHERE location_id=? AND product_id=? AND qty<=0').run(locationId, productId);
+  return takes;
+}
+/** 为既有库存初始化批次（演示：80% 新鲜 / 12% 临期 / 8% 紧急，比例取整余数归新鲜批） */
+function ensureBatches() {
+  const count = db.prepare('SELECT COUNT(*) c FROM batches').get().c;
+  if (count > 0) return;
+  const products = Object.fromEntries(db.prepare('SELECT id, shelf_life_days FROM products').all().map((p) => [p.id, p.shelf_life_days]));
+  const invs = db.prepare('SELECT * FROM inventory WHERE qty>0').all();
+  const today = dayStr(0);
+  for (const inv of invs) {
+    const shelf = products[inv.product_id] || 90;
+    const urgent = Math.min(Math.floor(inv.qty * 0.08), 120);
+    const near = Math.min(Math.floor(inv.qty * 0.12), 400);
+    const fresh = inv.qty - urgent - near;
+    if (fresh > 0) addBatch(inv.location_id, inv.product_id, fresh, dayStr(7), shelf, 'INIT');
+    if (near > 0) addBatch(inv.location_id, inv.product_id, near, addDays(today, -(shelf - 8)), shelf, 'INIT');
+    if (urgent > 0) addBatch(inv.location_id, inv.product_id, urgent, addDays(today, -(shelf - 3)), shelf, 'INIT');
+  }
 }
 
 /* ---------------- 促销引擎（唯一实现） ---------------- */
@@ -254,7 +322,7 @@ function seed() {
 
   const insLoc = db.prepare('INSERT INTO locations (code,name,type,region,address,contact,phone,created_at) VALUES (?,?,?,?,?,?,?,?)');
   const insUser = db.prepare('INSERT INTO users (username,name,role,password_hash,store_id,phone,created_at) VALUES (?,?,?,?,?,?,?)');
-  const insProd = db.prepare('INSERT INTO products (sku,name,category,spec,units_per_carton,wholesale_price,retail_price,created_at) VALUES (?,?,?,?,?,?,?,?)');
+  const insProd = db.prepare('INSERT INTO products (sku,name,category,spec,units_per_carton,wholesale_price,retail_price,shelf_life_days,created_at) VALUES (?,?,?,?,?,?,?,?,?)');
   const insPromo = db.prepare('INSERT INTO promotions (name,type,channels,start_date,end_date,status,created_by,created_at) VALUES (?,?,?,?,?,?,?,?)');
 
   // 地点
@@ -277,9 +345,9 @@ function seed() {
   const p2 = Number(insUser.run('promo02', '吴倩（促销员）', 'prm', pwd, stores[1], '13800000006', now()).lastInsertRowid);
   const p3 = Number(insUser.run('promo03', '郑芳（促销员）', 'prm', pwd, stores[4], '13800000007', now()).lastInsertRowid);
 
-  // 商品
-  const bagId = Number(insProd.run('HM-BAG-200', '合沐纯牛奶（袋装）', 'bag', '200ml/袋', 16, 5000, 5800, now()).lastInsertRowid);
-  const boxId = Number(insProd.run('HM-BOX-200', '合沐纯牛奶（盒装）', 'box', '200ml/盒', 16, 5000, 5800, now()).lastInsertRowid);
+  // 商品（袋装短保 45 天 · 盒装常温 90 天）
+  const bagId = Number(insProd.run('HM-BAG-200', '合沐纯牛奶（袋装）', 'bag', '200ml/袋', 16, 5000, 5800, 45, now()).lastInsertRowid);
+  const boxId = Number(insProd.run('HM-BOX-200', '合沐纯牛奶（盒装）', 'box', '200ml/盒', 16, 5000, 5800, 90, now()).lastInsertRowid);
 
   // 促销活动：买二送半箱
   insPromo.run('买二送半箱（袋装/盒装通用）', 'buy2_half', 'wholesale,retail', '2026-01-01', '2027-12-31', 'active', gmId, now());
@@ -379,5 +447,6 @@ function seed() {
 }
 
 seed();
+ensureBatches();
 
-module.exports = { db, hashPassword, verifyPassword, now, dayStr, nextNo, getInv, addStock, audit, buildOrderLines, activePromotion, DB_PATH };
+module.exports = { db, hashPassword, verifyPassword, now, dayStr, nextNo, getInv, addStock, audit, buildOrderLines, activePromotion, addBatch, consumeBatches, ensureBatches, DB_PATH };

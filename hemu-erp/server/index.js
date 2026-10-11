@@ -8,7 +8,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const {
   db, hashPassword, verifyPassword, now, dayStr, nextNo,
-  getInv, addStock, audit, buildOrderLines, DB_PATH,
+  getInv, addStock, audit, buildOrderLines, addBatch, consumeBatches, DB_PATH,
 } = require('./db');
 
 const app = express();
@@ -273,7 +273,11 @@ app.post('/api/purchases', auth, roles('gm', 'mgr'), wrap((req, res) => {
     db.prepare('INSERT INTO purchases (no,supplier,note,items,user_id,created_at) VALUES (?,?,?,?,?,?)')
       .run(no, supplier || '', note || '', JSON.stringify(norm), req.user.id, now());
     for (const n of norm) {
-      if (n.qty >= 0) addStock(main.id, n.product_id, n.qty, 'purchase', no, note || '', req.user.id);
+      if (n.qty >= 0) {
+        addStock(main.id, n.product_id, n.qty, 'purchase', no, note || '', req.user.id);
+        const prod = prods.find((x) => x.id === n.product_id);
+        addBatch(main.id, n.product_id, n.qty, dayStr(0), prod ? prod.shelf_life_days : 90, no);
+      }
     }
   });
   audit(req.user.id, req.user.username, 'purchase.create', no, { totalAmount, supplier });
@@ -339,9 +343,11 @@ function createTransfer(req, res, asApplication) {
       .run(no, main.id, to.id, JSON.stringify(norm), 'transit', note || '', req.user.id, req.user.id, now(), now());
     for (const n of norm) {
       addStock(main.id, n.product_id, -n.qty, 'transfer_out', no, '调拨出库', req.user.id);
+      n.batch_takes = consumeBatches(main.id, n.product_id, n.qty);
       getInv(to.id, n.product_id);
       db.prepare('UPDATE inventory SET transit = transit + ? WHERE location_id=? AND product_id=?').run(n.qty, to.id, n.product_id);
     }
+    db.prepare('UPDATE transfers SET items=? WHERE no=?').run(JSON.stringify(norm), no);
   });
   audit(req.user.id, req.user.username, 'transfer.create', no, { to: to.name });
   ok(res, { no, status: 'transit' });
@@ -374,9 +380,11 @@ app.post('/api/transfers/:id/approve', auth, roles('gm', 'mgr'), wrap((req, res)
     db.prepare("UPDATE transfers SET status='transit', approved_by=?, approved_at=? WHERE id=?").run(req.user.id, now(), t.id);
     for (const n of items) {
       addStock(t.from_loc, n.product_id, -n.qty, 'transfer_out', t.no, '调拨出库', req.user.id);
+      n.batch_takes = consumeBatches(t.from_loc, n.product_id, n.qty);
       getInv(t.to_loc, n.product_id);
       db.prepare('UPDATE inventory SET transit = transit + ? WHERE location_id=? AND product_id=?').run(n.qty, t.to_loc, n.product_id);
     }
+    db.prepare('UPDATE transfers SET items=? WHERE id=?').run(JSON.stringify(items), t.id);
   });
   audit(req.user.id, req.user.username, 'transfer.approve', t.no, {});
   ok(res, { status: 'transit' });
@@ -388,6 +396,7 @@ app.post('/api/transfers/:id/receive', auth, wrap((req, res) => {
   if (req.user.role === 'prm' && req.user.store_id !== t.to_loc) return fail(res, '只能确认本店收货', 403);
   const items = JSON.parse(t.items);
   const recv = req.body && Array.isArray(req.body.items) ? req.body.items : null;
+  const prods = db.prepare('SELECT id, shelf_life_days FROM products').all();
   tx(() => {
     for (const n of items) {
       let received = n.qty;
@@ -401,6 +410,16 @@ app.post('/api/transfers/:id/receive', auth, wrap((req, res) => {
       db.prepare('UPDATE inventory SET transit = transit - ?, qty = qty + ? WHERE location_id=? AND product_id=?')
         .run(n.qty, received, t.to_loc, n.product_id);
       addStock(t.to_loc, n.product_id, received, 'transfer_in', t.no, '调拨入库', req.user.id);
+      // 批次承接：按出库批次明细（FIFO 序）分配到货数量，保质期随货转移
+      const shelf = (prods.find((x) => x.id === n.product_id) || {}).shelf_life_days || 90;
+      let left = received;
+      for (const tk of n.batch_takes || []) {
+        if (left <= 0) break;
+        const take = Math.min(tk.qty, left);
+        addBatch(t.to_loc, n.product_id, take, tk.produced_date, shelf, t.no, tk.expire_date);
+        left -= take;
+      }
+      if (left > 0) addBatch(t.to_loc, n.product_id, left, dayStr(7), shelf, t.no); // 旧单兜底（视为入库前 7 天生产）
       if (diff > 0) addStock(t.to_loc, n.product_id, 0, 'loss', t.no, `调拨短少 ${diff} 件`, req.user.id);
     }
     db.prepare("UPDATE transfers SET status='received', received_at=? WHERE id=?").run(now(), t.id);
@@ -492,6 +511,7 @@ app.post('/api/orders', auth, wrap((req, res) => {
       for (const l of built.lines) {
         db.prepare('UPDATE order_items SET shipped_qty=? WHERE order_id=? AND product_id=? AND kind=?').run(l.qty, oid, l.product_id, l.kind);
         addStock(store.id, l.product_id, -l.qty, l.kind === 'gift' ? 'gift_out' : 'sale_out', no, '零售出库', req.user.id);
+        consumeBatches(store.id, l.product_id, l.qty);
       }
       db.prepare('UPDATE orders SET shipped_at=?, done_at=? WHERE id=?').run(now(), now(), oid);
       return { oid, no };
@@ -578,6 +598,7 @@ app.post('/api/orders/:id/ship', auth, roles('gm', 'mgr'), wrap((req, res) => {
     for (const p of plan) {
       db.prepare('UPDATE order_items SET shipped_qty = shipped_qty + ? WHERE id=?').run(p.shipQty, p.item.id);
       addStock(main.id, p.item.product_id, -p.shipQty, p.item.kind === 'gift' ? 'gift_out' : 'sale_out', o.no, o.type === 'wholesale' ? '批发出库' : '零售出库', req.user.id);
+      consumeBatches(main.id, p.item.product_id, p.shipQty);
     }
     const totalQty = items.reduce((s, i) => s + i.qty, 0);
     const shipped = db.prepare('SELECT SUM(shipped_qty) s FROM order_items WHERE order_id=?').get(o.id).s || 0;
@@ -827,6 +848,79 @@ app.get('/api/reports/inventory', auth, wrap((req, res) => {
 app.get('/api/audit', auth, roles('gm'), wrap((req, res) => {
   ok(res, db.prepare('SELECT * FROM audit_logs ORDER BY id DESC LIMIT 300').all());
 }));
+
+/* ================= 临期预警（批次 · FIFO） ================= */
+const EXPIRY = { urgent: 3, near: 10 }; // 剩余 ≤3 天紧急、≤10 天临期
+function expiryLevel(daysLeft) {
+  if (daysLeft < 0) return 'expired';
+  if (daysLeft <= EXPIRY.urgent) return 'urgent';
+  if (daysLeft <= EXPIRY.near) return 'near';
+  return 'ok';
+}
+/* 可见库位范围：gm/mgr 全部 · sal 总仓 · prm 本店 */
+function expiryScope(req) {
+  const u = req.user;
+  if (u.role === 'prm') return { cond: 'b.location_id=?', arg: u.store_id };
+  if (u.role === 'sal') return { cond: "l.type='main'", arg: null };
+  return { cond: null, arg: null };
+}
+app.get('/api/expiry/alerts', auth, wrap((req, res) => {
+  const sc = expiryScope(req);
+  let sql = `SELECT b.*, p.name AS product_name, p.category, p.sku, p.units_per_carton,
+      l.name AS location_name, l.type AS location_type
+    FROM batches b JOIN products p ON p.id=b.product_id JOIN locations l ON l.id=b.location_id
+    WHERE b.qty>0`;
+  const args = [];
+  if (sc.cond) { sql += ` AND ${sc.cond}`; if (sc.arg !== null) args.push(sc.arg); }
+  sql += ' ORDER BY b.expire_date ASC, l.type DESC, p.id';
+  const today = dayStr(0);
+  const rows = db.prepare(sql).all(...args).map((b) => {
+    const daysLeft = Math.round((new Date(`${b.expire_date}T00:00:00`) - new Date(`${today}T00:00:00`)) / 86400000);
+    return { ...b, days_left: daysLeft, level: expiryLevel(daysLeft), ...splitUnits(b.qty, b.units_per_carton) };
+  }).filter((b) => b.level !== 'ok');
+  const stat = {
+    urgent: rows.filter((r) => r.level === 'urgent').reduce((s, r) => s + r.qty, 0),
+    near: rows.filter((r) => r.level === 'near').reduce((s, r) => s + r.qty, 0),
+    expired: rows.filter((r) => r.level === 'expired').reduce((s, r) => s + r.qty, 0),
+    batches: rows.length,
+  };
+  ok(res, { rows, stat });
+}));
+app.get('/api/batches', auth, wrap((req, res) => {
+  const locationId = Number(req.query.location_id);
+  const productId = Number(req.query.product_id);
+  if (!locationId || !productId) return fail(res, '参数缺失');
+  if (req.user.role === 'prm' && locationId !== Number(req.user.store_id)) return fail(res, '促销员只能查看本店批次', 403);
+  const loc = db.prepare('SELECT * FROM locations WHERE id=?').get(locationId);
+  if (req.user.role === 'sal' && loc && loc.type !== 'main') return fail(res, '业务员仅可查看总仓批次', 403);
+  const today = dayStr(0);
+  const rows = db.prepare(`SELECT b.*, p.name AS product_name, p.units_per_carton, l.name AS location_name
+    FROM batches b JOIN products p ON p.id=b.product_id JOIN locations l ON l.id=b.location_id
+    WHERE b.location_id=? AND b.product_id=? AND b.qty>0 ORDER BY b.expire_date ASC`).all(locationId, productId);
+  ok(res, rows.map((b) => {
+    const daysLeft = Math.round((new Date(`${b.expire_date}T00:00:00`) - new Date(`${today}T00:00:00`)) / 86400000);
+    return { ...b, days_left: daysLeft, level: expiryLevel(daysLeft), ...splitUnits(b.qty, b.units_per_carton) };
+  }));
+}));
+app.post('/api/expiry/writeoff', auth, roles('gm', 'mgr'), wrap((req, res) => {
+  const { batch_id, qty, reason } = req.body || {};
+  const b = db.prepare('SELECT * FROM batches WHERE id=?').get(Number(batch_id));
+  if (!b) return fail(res, '批次不存在', 404);
+  const n = Math.floor(Number(qty) || 0);
+  if (n <= 0) return fail(res, '报废数量必须大于 0');
+  if (n > b.qty) return fail(res, `报废数量超过批次余量（${b.qty} 件）`);
+  const inv = getInv(b.location_id, b.product_id);
+  if (inv.qty < n) return fail(res, `库存不足：当前在库 ${inv.qty} 件`);
+  const r = tx(() => {
+    db.prepare('UPDATE batches SET qty = qty - ? WHERE id=?').run(n, b.id);
+    db.prepare('DELETE FROM batches WHERE qty<=0 AND id=?').run(b.id);
+    addStock(b.location_id, b.product_id, -n, 'writeoff', b.ref_no || '', `临期/过期报废：${reason || '未填写原因'}`, req.user.id);
+    return { qty: n };
+  });
+  audit(req.user.id, req.user.username, 'expiry.writeoff', `batch#${b.id}`, { product: b.product_id, qty: n, reason: reason || '', expire: b.expire_date });
+  ok(res, r);
+}));
+
 
 /* ================= 静态资源 & SPA ================= */
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');

@@ -5,7 +5,7 @@ import { pageDash, pageTodos, pageReports, pageMe, pageAudit } from './pages-cor
 import {
   pageOrders, pageOrderDetail, pageOrderNew, pagePOS, pageInventory,
   pageTransfers, pagePurchases, pagePayments, pageReceivables,
-  pageProducts, pageStores, pageUsers, pagePromotions,
+  pageProducts, pageStores, pageUsers, pagePromotions, pageExpiry,
 } from './pages-business.js';
 
 /* ---------------- 登录页 ---------------- */
@@ -61,6 +61,7 @@ const NAV = {
     ]],
     ['仓储', [
       ['#/inventory', 'stock', '库存查询'],
+      ['#/expiry', 'bell', '临期预警', 'expiry'],
       ['#/purchases', 'box', '采购入库'],
       ['#/transfers', 'truck', '调拨管理'],
     ]],
@@ -87,6 +88,7 @@ const NAV = {
     ]],
     ['仓储', [
       ['#/inventory', 'stock', '库存查询'],
+      ['#/expiry', 'bell', '临期预警', 'expiry'],
       ['#/purchases', 'box', '采购入库'],
       ['#/transfers', 'truck', '调拨管理'],
     ]],
@@ -122,6 +124,7 @@ const NAV = {
     ]],
     ['仓储', [
       ['#/inventory', 'stock', '本店库存'],
+      ['#/expiry', 'bell', '临期预警', 'expiry'],
       ['#/transfers', 'truck', '领货申请'],
     ]],
     ['查询', [
@@ -142,6 +145,7 @@ const PAGE_TITLE = {
   pos: '零售开单', inventory: '库存查询', transfers: '调拨管理', purchases: '采购入库',
   payments: '回款记录', receivables: '应收台账', products: '商品价格', stores: '门店组织',
   users: '用户账号', promotions: '促销活动', reports: '报表中心', me: '个人中心', audit: '审计日志',
+  expiry: '临期预警',
 };
 
 /* ---------------- 布局 ---------------- */
@@ -202,8 +206,11 @@ async function loadBadges() {
   try {
     const u = API.user;
     if (u.role === 'gm' || u.role === 'mgr') {
-      const t = await API.get('/api/todos');
-      return { todos: t.orders.length + t.transfers.length + t.payments.length };
+      const [t, ex] = await Promise.all([
+        API.get('/api/todos'),
+        API.get('/api/expiry/alerts').catch(() => ({ stat: { batches: 0 } })),
+      ]);
+      return { todos: t.orders.length + t.transfers.length + t.payments.length, expiry: ex.stat.batches || 0 };
     }
   } catch { /* 忽略 */ }
   return {};
@@ -218,7 +225,7 @@ async function renderRoute(root, hash) {
     inventory: pageInventory, transfers: pageTransfers, purchases: pagePurchases,
     payments: pagePayments, receivables: pageReceivables, products: pageProducts,
     stores: pageStores, users: pageUsers, promotions: pagePromotions,
-    reports: pageReports, me: pageMe, audit: pageAudit,
+    reports: pageReports, me: pageMe, audit: pageAudit, expiry: pageExpiry,
   };
   const fn = routes[hash];
   if (!fn) { location.hash = '#/dash'; return; }

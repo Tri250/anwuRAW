@@ -3,6 +3,33 @@ import { API } from './api.js';
 import { h, $, $$, fmtMoney, fmtNum, fmtQty, fmtDay, ROLE_NAME, chip, statusChip, ORDER_STATUS, MOVE_TYPE, lineChart, empty, errCard, table, icon, toast, modal, field } from './ui.js';
 
 /* ============ 工作台 ============ */
+/* 临期预警卡（异步加载，有预警才显示；按角色范围：gm/mgr 全部 · sal 总仓 · prm 本店） */
+function expiryCard() {
+  const card = h('div', { class: 'card', style: 'display:none;border-color:var(--gold)' });
+  API.get('/api/expiry/alerts').then(({ rows, stat }) => {
+    if (!stat.batches) return;
+    card.style.display = '';
+    const lv = (n, label, color) => h('div', { style: 'text-align:center' },
+      h('div', { style: `font-size:20px;font-weight:800;color:${color}` }, n),
+      h('div', { style: 'font-size:11.5px;color:var(--ink-3)' }, label));
+    card.append(
+      h('div', { class: 'card-hd' }, h('b', {}, '⏰ 临期预警'),
+        h('span', { class: 'chip gold', style: 'margin-left:2px' }, `${stat.batches} 批`),
+        h('span', { style: 'margin-left:auto' }, h('a', { class: 'btn ghost sm', href: '#/expiry' }, '处理中心'))),
+      h('div', { class: 'grid g3', style: 'margin-bottom:10px' },
+        lv(stat.urgent, '紧急（≤3天）', '#D93025'),
+        lv(stat.near, '临期（≤10天）', '#B98A1D'),
+        lv(stat.expired, '已过期', 'var(--ink-2)')),
+      h('div', {}, rows.slice(0, 3).map((r) => h('div', { class: 'todo-item' },
+        h('div', { class: 't-ico' }, r.level === 'urgent' ? '🔴' : '🟠'),
+        h('div', { class: 't-main' },
+          h('b', {}, `${r.product_name} · ${r.location_name}`),
+          h('span', {}, `${fmtQty(r.qty, r.units_per_carton)} · 到期 ${r.expire_date} · 剩 ${r.days_left} 天`)),
+        h('span', { class: `chip ${r.level === 'urgent' ? 'danger' : 'gold'}` }, r.level === 'urgent' ? '紧急' : '临期')))));
+  }).catch(() => {});
+  return card;
+}
+
 export async function pageDash(root) {
   const u = API.user;
   const d = await API.get('/api/dashboard');
@@ -22,6 +49,7 @@ export async function pageDash(root) {
       h('div', { class: 'grid g2' },
         kpi('本店今日销售额', fmtMoney(d.today.sales), `今日 ${d.today.orders} 单`),
         kpi('本店本月销售额', fmtMoney(d.month.sales), `本月 ${d.month.orders} 单 · 促销让利 ${fmtMoney(d.month.gift_value)}`, 'gold')),
+      expiryCard(),
       h('div', { class: 'grid g2' },
         h('div', { class: 'card' },
           h('div', { class: 'card-hd' }, h('b', {}, '本店实时库存'), h('span', { style: 'margin-left:auto' },
@@ -50,6 +78,7 @@ export async function pageDash(root) {
         h('div', { class: 'card-hd' }, h('b', {}, '我的订单状态'), h('span', { style: 'margin-left:auto' },
           h('a', { class: 'btn sm', href: '#/orders/new' }, '+ 新建批发订单'))),
         h('div', { class: 'grid g4' }, st('draft', '草稿'), st('pending', '待审批'), st('approved', '待出库'), st('shipped', '待回款'))),
+      expiryCard(),
       trendCard(d.trend14, '我的销售趋势（近 14 天）'),
       topStoresCard(d.top_stores));
     return;
@@ -67,6 +96,7 @@ export async function pageDash(root) {
     h('div', { class: 'grid g2' },
       trendCard(d.trend14, '销售趋势（近 14 天）'),
       topStoresCard(d.top_stores)),
+    expiryCard(),
     total > 0 ? h('div', { class: 'card', style: 'border-color:var(--brand-line)' },
       h('div', { class: 'card-hd' }, h('b', {}, '待我处理'),
         h('span', { class: 'chip warn', style: 'margin-left:2px' }, `${total} 项`),
@@ -288,6 +318,51 @@ export async function pageReports(root) {
 }
 
 /* ============ 个人中心 ============ */
+/* 角色功能清单（可视化权限矩阵） */
+const ROLE_FEATURES = {
+  gm: [
+    ['📊', '经营总览', '全局销售 / 应收 / 库存实时看板与 14 天趋势'],
+    ['📋', '订单管理', '查看全部批发与零售订单、全程跟踪状态'],
+    ['✅', '审批处理', '批发订单审批、门店领货申请审批'],
+    ['💰', '资金管理', '应收台账、回款确认、促销让利监控'],
+    ['⏰', '临期预警', '全部库位批次新鲜度监控与报废登记'],
+    ['🏭', '仓储管理', '库存查询、采购入库、总仓调拨'],
+    ['⚙️', '系统管理', '商品价格、门店组织、用户账号、审计日志'],
+  ],
+  mgr: [
+    ['📊', '区域运营', '赣州区域销售 / 应收 / 库存看板'],
+    ['✅', '订单审批', '批发订单审批与整单出库执行'],
+    ['🚚', '调拨管理', '门店领货审批、总仓调拨、收货核销'],
+    ['🏭', '采购入库', '供应商到货登记与入库'],
+    ['💰', '回款确认', '业务员登记回款的到账确认'],
+    ['⏰', '临期预警', '全部库位批次监控与报废登记'],
+  ],
+  sal: [
+    ['🧾', '批发开单', '客户门店订货单创建（含买二送半箱自动赠品）'],
+    ['📦', '订单跟进', '本人订单全状态跟踪、草稿续提'],
+    ['💰', '回款登记', '登记客户回款并跟踪确认进度'],
+    ['📊', '业绩看板', '个人销售趋势、待回款与门店排行'],
+    ['🏭', '总仓查询', '总仓库存与临期预警查看'],
+  ],
+  prm: [
+    ['🛒', '零售开单', '门店 POS 收银（现金/微信/支付宝，自动促销）'],
+    ['🚚', '领货申请', '向总仓申请本店补货、确认收货'],
+    ['🏪', '本店库存', '本店实时库存与批次新鲜度'],
+    ['⏰', '临期预警', '本店临期批次监控（提前促销消化）'],
+    ['📊', '销售报表', '本店销售趋势与促销活动查看'],
+  ],
+};
+function roleFeaturesCard(role) {
+  const feats = ROLE_FEATURES[role] || [];
+  return h('div', { class: 'card' },
+    h('div', { class: 'card-hd' }, h('b', {}, '我的角色功能'),
+      h('span', { class: 'chip brand', style: 'margin-left:2px' }, `${feats.length} 项`)),
+    h('div', { style: 'display:grid;gap:8px' }, feats.map(([ico, title, desc]) =>
+      h('div', { class: 'todo-item', style: 'background:var(--bg-soft);border-radius:12px' },
+        h('div', { class: 't-ico' }, ico),
+        h('div', { class: 't-main' }, h('b', {}, title), h('span', {}, desc))))));
+}
+
 export function pageMe(root) {
   const u = API.user;
   const oldP = h('input', { class: 'ipt', type: 'password', placeholder: '请输入原密码' });
@@ -301,6 +376,7 @@ export function pageMe(root) {
           h('div', { style: 'font-size:12.5px;color:var(--ink-3);margin-top:2px' },
             `${ROLE_NAME[u.role]} · 工号 ${u.username}`, u.store_name ? ` · ${u.store_name}` : ''))),
       h('div', { style: 'margin-top:12px' }, chip(`权限范围：${{ gm: '全局数据与系统管理', mgr: '赣州区域运营管理', sal: '本人客户与订单', prm: '本店零售与库存' }[u.role]}`, 'brand'))),
+    roleFeaturesCard(u.role),
     h('div', { class: 'card' },
       h('div', { class: 'card-hd' }, h('b', {}, '修改密码')),
       field('原密码', oldP, true),

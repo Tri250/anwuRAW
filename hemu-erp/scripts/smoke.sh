@@ -35,4 +35,16 @@ curl -s "$B/reports/sales?days=14" -H "Authorization: Bearer $GM" | J
 curl -s "$B/reports/by-salesman" -H "Authorization: Bearer $MGR" | J
 echo "== 11. 采购入库"
 curl -s -X POST $B/purchases -H "Authorization: Bearer $MGR" -H 'Content-Type: application/json' -d '{"items":[{"product_id":1,"cartons":100,"loose":0}],"supplier":"测试供应商"}' | J
+echo "== 12. 临期预警: gm 视角统计（应含 urgent/near 批次）"
+curl -s "$B/expiry/alerts" -H "Authorization: Bearer $GM" | python3 -c "import sys,json;d=json.load(sys.stdin)['data'];print('stat:',d['stat'],'| sample:',[(r['location_name'][:6],r['days_left'],r['level']) for r in d['rows'][:2]])"
+echo "== 13. prm 视角（应仅本店）+ prm 查总仓批次应403"
+curl -s "$B/expiry/alerts" -H "Authorization: Bearer $PRM" | python3 -c "import sys,json;d=json.load(sys.stdin)['data'];print('stores:',set(r['location_name'] for r in d['rows']))"
+curl -s -o /dev/null -w "%{http_code}\n" "$B/batches?location_id=1&product_id=1" -H "Authorization: Bearer $PRM"
+echo "== 14. 采购后总仓袋装批次应新增今日批(ref=CG开头)"
+curl -s "$B/batches?location_id=1&product_id=1" -H "Authorization: Bearer $GM" | python3 -c "import sys,json;rows=json.load(sys.stdin)['data'];print([(r['qty'],r['days_left'],r['level'],r['ref_no'][:9]) for r in rows])"
+echo "== 15. 报废: mgr 报废一批临期批次 10 件"
+BID=$(curl -s "$B/expiry/alerts" -H "Authorization: Bearer $GM" | python3 -c "import sys,json;rows=json.load(sys.stdin)['data']['rows'];print(next(r['id'] for r in rows if r['level']=='urgent'))")
+curl -s -X POST $B/expiry/writeoff -H "Authorization: Bearer $MGR" -H 'Content-Type: application/json' -d "{\"batch_id\":$BID,\"qty\":10,\"reason\":\"冒烟测试报废\"}" | J
+echo "== 16. RBAC: prm 报废应403"
+curl -s -o /dev/null -w "%{http_code}\n" -X POST $B/expiry/writeoff -H "Authorization: Bearer $PRM" -H 'Content-Type: application/json' -d "{\"batch_id\":$BID,\"qty\":1}"
 echo "== DONE"
