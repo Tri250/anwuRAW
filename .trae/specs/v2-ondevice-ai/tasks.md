@@ -94,7 +94,7 @@
 
 ## Task 5: 可选下载包与离线状态
 
-- **Status**: `pending`
+- **Status**: `partial`（2026-10-13 完成离线分类/状态可视化/数据层命令/i18n，Rust 84/84 全绿；剩余：飞行模式手动测试清单，归 Task 6 收尾执行）
 - **Priority**: medium
 - **Depends On**: Task 2
 - **Description**:
@@ -103,9 +103,17 @@
   - 飞行模式手动测试清单执行（桌面断网 + Android 飞行模式）
 - **Acceptance Criteria Addressed**: AC-5
 - **Test Requirements**:
-  - `rule` TR-5.1: 离线测试清单全过
-  - `rule` TR-5.2: 未下载模型离线时 UI 文案正确（i18n 全语言键位存在）
-- **Notes**: 不做后台自动下载（用户明确触发）
+  - `rule` TR-5.1: 离线测试清单全过 ⏳（手动项，清单见完成记录，归 Task 6 执行）
+  - `rule` TR-5.2: 未下载模型离线时 UI 文案正确（i18n 全语言键位存在）✅（13 语言 × editor.ai/masks 双命名空间校验通过 + 离线分类单测）
+- **Notes**: 不做后台自动下载（用户明确触发）✅（download_optional_model 为显式命令，get_or_init 链路仅含 non-optional 模型）
+- **完成记录**:
+  - **离线分类**：ai_processing.rs 新增 `is_network_error`（reqwest 错误特征词匹配，单测覆盖 dns/refused/timeout 命中与 404/哈希/磁盘错误不误判）；download_and_verify_model 失败时 emit `ai-model-download-error` 事件 `{ model, reason: offline|failed }`
+  - **状态可视化**：useProcessStore 新增 `aiModelDownloadError`；useTauriListeners 监听 error 事件（start 时清除旧错误）；MasksPanel 与 AIPanel 的 AI 蒙版卡片新增错误态（红色 TriangleAlert + 离线/失败文案 + 模型名），显示条件 `!status && error` 与下载中互斥
+  - **体积预估确认框数据层**：ai_commands 新增 `get_model_download_info(ids)`（id/名称/size_bytes/downloaded/optional，size 来自 Task 2 在线核实的 manifest）与 `download_optional_model(id)`（显式触发下载，复用 download_entry 哈希校验链路）；lib.rs 已注册。确认框 UI 组件待 Task 3 产出首个 optional 模型（INT8 变体）时接线，避免为空流程造 UI
+  - **i18n**：13 语言 `aiModelDownloadOffline/Failed` 人工翻译，editor.ai.settings 与 editor.masks.settings 双命名空间同步，脚本校验平齐
+  - **自动重试语义**：每次用户触发 AI 功能时 get_or_init 链路天然重试下载（含断点续传），符合"不做后台自动下载"边界
+  - **飞行模式手动清单（待 Task 6）**：① 桌面断网触发 AI 蒙版 → 离线卡片文案出现且模型名正确；② 恢复网络再触发 → 下载成功自动续传；③ Android 飞行模式同 ①；④ optional 模型（Task 3 后）离线触发 → 不自动下载
+  - 验证：cargo test 84/84（+1）、tsc ✓、vitest 73/73 ✓、i18n 校验 ✓
 
 ## Task 6: 性能验证与收尾
 

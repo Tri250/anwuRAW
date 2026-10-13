@@ -471,6 +471,8 @@
       "resetInpaintingTooltip": "Resetuj Inpainting",
       "settings": {
         "aiModelDownloading": "Pobieranie modelu AI: ",
+        "aiModelDownloadFailed": "Pobieranie modelu AI nie powiodło się. Użyj funkcji ponownie, aby spróbować jeszcze raz.",
+        "aiModelDownloadOffline": "Sieć niedostępna – nie można pobrać modelu AI. Po przywróceniu połączenia użyj funkcji ponownie, a pobieranie zostanie automatycznie ponowione.",
         "basicInpaintTooltipDisabled": "Generatywny backend jest niedostępny lub nieskonfigurowany. Wymagany jest podstawowy inpainting.",
         "basicInpaintTooltipEnabled": "Podstawowy inpainting jest szybszy, ale nie generatywny. Odznacz, aby użyć Generatywnej AI za pomocą monitu tekstowego.",
         "componentPropertiesTitle": "Właściwości dla {{name}}",
@@ -688,6 +690,8 @@
       "resetMaskingTooltip": "Resetuj maskowanie",
       "settings": {
         "aiModelDownloading": "Pobieranie modelu AI: ",
+        "aiModelDownloadFailed": "Pobieranie modelu AI nie powiodło się. Użyj funkcji ponownie, aby spróbować jeszcze raz.",
+        "aiModelDownloadOffline": "Sieć niedostępna – nie można pobrać modelu AI. Po przywróceniu połączenia użyj funkcji ponownie, a pobieranie zostanie automatycznie ponowione.",
         "applyPreset": "Zastosuj preset",
         "componentPropertiesTitle": "Właściwości dla {{name}}",
         "copySectionSettings": "Kopiuj ustawienia sekcji {{section}}",

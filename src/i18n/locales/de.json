@@ -431,6 +431,8 @@
       "resetInpaintingTooltip": "Reparieren zurücksetzen",
       "settings": {
         "aiModelDownloading": "KI-Modell wird heruntergeladen: ",
+        "aiModelDownloadFailed": "KI-Modell-Download fehlgeschlagen. Verwenden Sie die Funktion erneut, um es erneut zu versuchen.",
+        "aiModelDownloadOffline": "Netzwerk nicht verfügbar – KI-Modell kann nicht heruntergeladen werden. Nach Wiederherstellung der Verbindung wird der Download bei erneuter Verwendung automatisch wiederholt.",
         "basicInpaintTooltipDisabled": "Generatives Backend nicht verfügbar. Einfaches Reparieren ist erforderlich.",
         "basicInpaintTooltipEnabled": "Einfaches Reparieren ist schneller, aber nicht generativ. Deaktivieren für Text-Prompt-KI.",
         "componentPropertiesTitle": "{{name}}-Eigenschaften",
@@ -646,6 +648,8 @@
       "resetMaskingTooltip": "Maskierung zurücksetzen",
       "settings": {
         "aiModelDownloading": "KI-Modell wird heruntergeladen: ",
+        "aiModelDownloadFailed": "KI-Modell-Download fehlgeschlagen. Verwenden Sie die Funktion erneut, um es erneut zu versuchen.",
+        "aiModelDownloadOffline": "Netzwerk nicht verfügbar – KI-Modell kann nicht heruntergeladen werden. Nach Wiederherstellung der Verbindung wird der Download bei erneuter Verwendung automatisch wiederholt.",
         "applyPreset": "Vorgabe anwenden",
         "componentPropertiesTitle": "{{name}}-Eigenschaften",
         "copySectionSettings": "{{section}}-Einstellungen kopieren",

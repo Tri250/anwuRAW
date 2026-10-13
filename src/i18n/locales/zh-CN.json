@@ -436,6 +436,8 @@
       "resetInpaintingTooltip": "重置图像修复",
       "settings": {
         "aiModelDownloading": "AI 模型下载中：",
+        "aiModelDownloadFailed": "AI 模型下载失败，再次使用该功能即可重试。",
+        "aiModelDownloadOffline": "网络不可用，无法下载 AI 模型。恢复网络后再次使用该功能将自动重试。",
         "basicInpaintTooltipDisabled": "生成式后端不可用或未配置。需要基础图像修复。",
         "basicInpaintTooltipEnabled": "基础图像修复更快但不具备生成式能力。取消勾选以使用生成式 AI 并输入文本提示。",
         "componentPropertiesTitle": "{{name}} 属性",
@@ -642,6 +644,8 @@
       "resetMaskingTooltip": "重置蒙版",
       "settings": {
         "aiModelDownloading": "AI 模型下载中：",
+        "aiModelDownloadFailed": "AI 模型下载失败，再次使用该功能即可重试。",
+        "aiModelDownloadOffline": "网络不可用，无法下载 AI 模型。恢复网络后再次使用该功能将自动重试。",
         "applyPreset": "应用预设",
         "componentPropertiesTitle": "{{name}} 属性",
         "copySectionSettings": "复制 {{section}} 设置",

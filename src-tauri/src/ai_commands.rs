@@ -8,8 +8,9 @@ use image::{GrayImage, ImageFormat};
 use crate::ai_connector;
 use crate::ai_processing::{
     AiDepthMaskParameters, AiForegroundMaskParameters, AiSkyMaskParameters,
-    AiSubjectMaskParameters, CachedDepthMap, generate_image_embeddings, get_or_init_ai_models,
-    run_depth_anything_model, run_sam_decoder, run_sky_seg_model, run_u2netp_model,
+    AiSubjectMaskParameters, CachedDepthMap, download_entry, endpoints_from_handle,
+    generate_image_embeddings, get_models_dir, get_or_init_ai_models, run_depth_anything_model,
+    run_sam_decoder, run_sky_seg_model, run_u2netp_model,
 };
 use crate::app_settings::load_settings;
 use crate::app_state::AppState;
@@ -425,4 +426,55 @@ pub async fn test_ai_connector_connection(address: String) -> Result<(), String>
         Ok(false) => Err("Server reachable but returned bad health status".to_string()),
         Err(e) => Err(e.to_string()),
     }
+}
+
+/// 模型下载状态信息（Task 5：体积预估确认框 / 状态可视化数据层）
+#[derive(serde::Serialize)]
+pub struct ModelDownloadInfo {
+    pub id: String,
+    pub display_name: String,
+    pub size_bytes: Option<u64>,
+    pub downloaded: bool,
+    pub optional: bool,
+}
+
+/// 批量查询模型下载状态：下载体积预估（size_bytes 来自 manifest，已在线核实）、
+/// 是否已下载、是否为可选下载包（optional 模型必须用户明确触发下载）
+#[tauri::command]
+pub fn get_model_download_info(
+    app_handle: tauri::AppHandle,
+    ids: Vec<String>,
+) -> Result<Vec<ModelDownloadInfo>, String> {
+    let models_dir = get_models_dir(&app_handle).map_err(|e| e.to_string())?;
+    let manifest = crate::model_manifest::ModelManifest::embedded();
+    Ok(ids
+        .iter()
+        .filter_map(|id| manifest.get(id))
+        .map(|entry| ModelDownloadInfo {
+            id: entry.id.clone(),
+            display_name: entry.display_name.clone(),
+            size_bytes: entry.default_variant().and_then(|v| v.size_bytes),
+            downloaded: entry
+                .filename()
+                .map(|f| models_dir.join(f).exists())
+                .unwrap_or(false),
+            optional: entry
+                .default_variant()
+                .map(|v| v.optional)
+                .unwrap_or(false),
+        })
+        .collect())
+}
+
+/// 显式下载可选模型（用户在体积预估确认框确认后触发；不做后台自动下载）
+#[tauri::command]
+pub async fn download_optional_model(
+    app_handle: tauri::AppHandle,
+    id: String,
+) -> Result<(), String> {
+    let models_dir = get_models_dir(&app_handle).map_err(|e| e.to_string())?;
+    let endpoints = endpoints_from_handle(&app_handle);
+    download_entry(&app_handle, &models_dir, &endpoints, &id)
+        .await
+        .map_err(|e| e.to_string())
 }

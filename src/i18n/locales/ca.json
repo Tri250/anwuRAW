@@ -431,6 +431,8 @@
       "resetInpaintingTooltip": "Restablir Inpainting",
       "settings": {
         "aiModelDownloading": "S'està baixant el model d'IA: ",
+        "aiModelDownloadFailed": "No s'ha pogut baixar el model d'IA. Torneu a utilitzar la funció per reintentar-ho.",
+        "aiModelDownloadOffline": "Xarxa no disponible: no es pot baixar el model d'IA. Quan es restableixi la connexió, torneu a utilitzar la funció i la baixada es repetirà automàticament.",
         "basicInpaintTooltipDisabled": "Rerefons generatiu no disponible o no configurat. Es requereix l'inpainting bàsic.",
         "basicInpaintTooltipEnabled": "L'inpainting bàsic és més ràpid però no és generatiu. Desmarqueu per utilitzar l'IA generativa amb una indicació de text.",
         "componentPropertiesTitle": "Propietats de {{name}}",
@@ -646,6 +648,8 @@
       "resetMaskingTooltip": "Restablir emmascarament",
       "settings": {
         "aiModelDownloading": "S'està baixant el model d'IA: ",
+        "aiModelDownloadFailed": "No s'ha pogut baixar el model d'IA. Torneu a utilitzar la funció per reintentar-ho.",
+        "aiModelDownloadOffline": "Xarxa no disponible: no es pot baixar el model d'IA. Quan es restableixi la connexió, torneu a utilitzar la funció i la baixada es repetirà automàticament.",
         "applyPreset": "Aplicar ajust preestablert",
         "componentPropertiesTitle": "Propietats de {{name}}",
         "copySectionSettings": "Copiar ajustaments de {{section}}",

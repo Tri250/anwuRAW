@@ -33,8 +33,28 @@ fn build_hf_url(endpoint: &str, filename: &str) -> String {
     )
 }
 
+/// 下载失败原因分类：网络不可达（离线/飞行模式）→ true。
+/// reqwest 网络层错误经 anyhow 链格式化后的稳定特征词；HTTP 状态码类错误
+/// （如 404）与哈希校验失败不属于网络错误，不会误判（TR-5.2 离线文案依据）。
+fn is_network_error(err: &anyhow::Error) -> bool {
+    let text = format!("{err:#}").to_lowercase();
+    const MARKERS: [&str; 10] = [
+        "dns error",
+        "connect error",
+        "connection refused",
+        "connection reset",
+        "connection aborted",
+        "network unreachable",
+        "network is unreachable",
+        "timed out",
+        "error sending request",
+        "certificate",
+    ];
+    MARKERS.iter().any(|m| text.contains(m))
+}
+
 // --- 从 AppHandle 读取用户配置的模型下载端点并解析 ---
-fn endpoints_from_handle(app_handle: &tauri::AppHandle) -> Vec<String> {
+pub(crate) fn endpoints_from_handle(app_handle: &tauri::AppHandle) -> Vec<String> {
     let user_setting = crate::app_settings::load_settings(app_handle.clone())
         .ok()
         .and_then(|s| {
@@ -174,7 +194,7 @@ fn edt_2d(grid: &[bool], width: usize, height: usize) -> Vec<f32> {
     f.into_iter().map(|v| v.sqrt()).collect()
 }
 
-fn get_models_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
+pub(crate) fn get_models_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
     let models_dir = app_handle.path().app_data_dir()?.join("models");
     if !models_dir.exists() {
         fs::create_dir_all(&models_dir)?;
@@ -398,7 +418,15 @@ async fn download_and_verify_model(
         let _ = app_handle.emit("ai-model-download-start", model_name);
         let download_result = download_model_with_endpoints(endpoints, filename, &dest_path).await;
         let _ = app_handle.emit("ai-model-download-finish", model_name);
-        download_result?;
+        if let Err(e) = download_result {
+            // 下载失败区分「离线」与「一般失败」，前端据此展示明确离线文案（Task 5）
+            let reason = if is_network_error(&e) { "offline" } else { "failed" };
+            let _ = app_handle.emit(
+                "ai-model-download-error",
+                serde_json::json!({ "model": model_name, "reason": reason }),
+            );
+            return Err(e);
+        }
 
         ensure_model_hash(&dest_path, expected_hash, model_name)?;
     }
@@ -406,7 +434,7 @@ async fn download_and_verify_model(
 }
 
 /// 按 manifest id 下载并校验默认变体：文件名/哈希/显示名全部由 manifest 提供
-async fn download_entry(
+pub(crate) async fn download_entry(
     app_handle: &tauri::AppHandle,
     models_dir: &Path,
     endpoints: &[String],
@@ -1708,5 +1736,31 @@ mod tests {
         assert!(ensure_model_hash(&missing, &good_hash, "Test Model").is_err());
 
         fs::remove_file(&path).ok();
+    }
+
+    /// TR-5.2 前置：网络错误分类不误判 HTTP 状态错误与哈希错误
+    #[test]
+    fn test_is_network_error_classification() {
+        let offline = anyhow::anyhow!(
+            "Endpoint https://hf-mirror.com attempt 3 failed: error sending request for url (https://hf-mirror.com/x.onnx): dns error: failed to lookup address information"
+        );
+        assert!(is_network_error(&offline));
+
+        let refused = anyhow::anyhow!("Endpoint attempt 1 failed: connection refused");
+        assert!(is_network_error(&refused));
+
+        let timeout = anyhow::anyhow!("Endpoint attempt 2 failed: operation timed out");
+        assert!(is_network_error(&timeout));
+
+        // HTTP 状态错误 / 哈希错误 / 磁盘错误不属于网络错误
+        assert!(!is_network_error(&anyhow::anyhow!(
+            "HTTP 404 for https://hf-mirror.com/skyseg_u2net.onnx: Entry not found"
+        )));
+        assert!(!is_network_error(&anyhow::anyhow!(
+            "Model Sky Model failed SHA-256 verification."
+        )));
+        assert!(!is_network_error(&anyhow::anyhow!(
+            "No such file or directory (os error 2)"
+        )));
     }
 }

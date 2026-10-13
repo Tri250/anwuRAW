@@ -452,6 +452,8 @@
       "resetInpaintingTooltip": "Réinitialiser l'Inpainting",
       "settings": {
         "aiModelDownloading": "Téléchargement du modèle IA : ",
+        "aiModelDownloadFailed": "Échec du téléchargement du modèle IA. Réutilisez la fonction pour réessayer.",
+        "aiModelDownloadOffline": "Réseau indisponible – impossible de télécharger le modèle IA. Une fois la connexion rétablie, réutilisez la fonction : la reprise sera automatique.",
         "basicInpaintTooltipDisabled": "Moteur génératif non disponible ou non configuré. L'inpainting simple est requis.",
         "basicInpaintTooltipEnabled": "L'inpainting simple est plus rapide mais non génératif. Décochez pour utiliser l'IA générative avec un prompt texte.",
         "componentPropertiesTitle": "Propriétés de {{name}}",
@@ -670,6 +672,8 @@
       "resetMaskingTooltip": "Réinitialiser le masquage",
       "settings": {
         "aiModelDownloading": "Téléchargement du modèle IA : ",
+        "aiModelDownloadFailed": "Échec du téléchargement du modèle IA. Réutilisez la fonction pour réessayer.",
+        "aiModelDownloadOffline": "Réseau indisponible – impossible de télécharger le modèle IA. Une fois la connexion rétablie, réutilisez la fonction : la reprise sera automatique.",
         "applyPreset": "Appliquer le paramètre prédéfini",
         "componentPropertiesTitle": "Propriétés de {{name}}",
         "copySectionSettings": "Copier les paramètres de la section {{section}}",

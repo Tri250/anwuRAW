@@ -451,6 +451,8 @@
       "resetInpaintingTooltip": "Restablecer Inpainting",
       "settings": {
         "aiModelDownloading": "Descargando modelo de IA: ",
+        "aiModelDownloadFailed": "Error al descargar el modelo de IA. Vuelva a usar la función para reintentarlo.",
+        "aiModelDownloadOffline": "Red no disponible: no se puede descargar el modelo de IA. Cuando se restablezca la conexión, vuelva a usar la función y se reintentará automáticamente.",
         "basicInpaintTooltipDisabled": "Backend generativo no disponible o no configurado. Se requiere Inpainting básico.",
         "basicInpaintTooltipEnabled": "El Inpainting básico es más rápido pero no generativo. Desmarca para usar IA Generativa con un prompt de texto.",
         "componentPropertiesTitle": "Propiedades de {{name}}",
@@ -667,6 +669,8 @@
       "resetMaskingTooltip": "Restablecer enmascaramiento",
       "settings": {
         "aiModelDownloading": "Descargando modelo de IA: ",
+        "aiModelDownloadFailed": "Error al descargar el modelo de IA. Vuelva a usar la función para reintentarlo.",
+        "aiModelDownloadOffline": "Red no disponible: no se puede descargar el modelo de IA. Cuando se restablezca la conexión, vuelva a usar la función y se reintentará automáticamente.",
         "applyPreset": "Aplicar ajuste preestablecido",
         "componentPropertiesTitle": "Propiedades de {{name}}",
         "copySectionSettings": "Copiar ajustes de {{section}}",

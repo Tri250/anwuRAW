@@ -451,6 +451,8 @@
       "resetInpaintingTooltip": "Redefinir Preenchimento",
       "settings": {
         "aiModelDownloading": "Baixando Modelo de IA: ",
+        "aiModelDownloadFailed": "Falha ao baixar o modelo de IA. Use a função novamente para tentar de novo.",
+        "aiModelDownloadOffline": "Rede indisponível – não é possível baixar o modelo de IA. Quando a conexão for restabelecida, use a função novamente e a tentativa será automática.",
         "basicInpaintTooltipDisabled": "Backend generativo não disponível ou não configurado. O preenchimento básico é necessário.",
         "basicInpaintTooltipEnabled": "O preenchimento básico é mais rápido, mas não é generativo. Desmarque para usar IA Generativa com um prompt de texto.",
         "componentPropertiesTitle": "Propriedades de {{name}}",
@@ -667,6 +669,8 @@
       "resetMaskingTooltip": "Redefinir Mascaramento",
       "settings": {
         "aiModelDownloading": "Baixando Modelo de IA: ",
+        "aiModelDownloadFailed": "Falha ao baixar o modelo de IA. Use a função novamente para tentar de novo.",
+        "aiModelDownloadOffline": "Rede indisponível – não é possível baixar o modelo de IA. Quando a conexão for restabelecida, use a função novamente e a tentativa será automática.",
         "applyPreset": "Aplicar Predefinição",
         "componentPropertiesTitle": "Propriedades de {{name}}",
         "copySectionSettings": "Copiar Configurações de {{section}}",

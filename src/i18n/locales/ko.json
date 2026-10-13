@@ -429,6 +429,8 @@
       "resetInpaintingTooltip": "인페인팅 초기화",
       "settings": {
         "aiModelDownloading": "AI 모델 다운로드 중: ",
+        "aiModelDownloadFailed": "AI 모델 다운로드에 실패했습니다. 해당 기능을 다시 사용하면 재시도합니다.",
+        "aiModelDownloadOffline": "네트워크를 사용할 수 없어 AI 모델을 다운로드할 수 없습니다. 네트워크가 복구된 후 기능을 다시 사용하면 자동으로 재시도합니다.",
         "basicInpaintTooltipDisabled": "생성형 백엔드를 사용할 수 없거나 구성되지 않았습니다. 기본 인페인팅이 필요합니다.",
         "basicInpaintTooltipEnabled": "기본 인페인팅은 더 빠르지만 생성형은 아닙니다. 텍스트 프롬프트로 생성형 AI를 사용하려면 선택을 해제하세요.",
         "componentPropertiesTitle": "{{name}} 속성",
@@ -644,6 +646,8 @@
       "resetMaskingTooltip": "마스킹 초기화",
       "settings": {
         "aiModelDownloading": "AI 모델 다운로드 중: ",
+        "aiModelDownloadFailed": "AI 모델 다운로드에 실패했습니다. 해당 기능을 다시 사용하면 재시도합니다.",
+        "aiModelDownloadOffline": "네트워크를 사용할 수 없어 AI 모델을 다운로드할 수 없습니다. 네트워크가 복구된 후 기능을 다시 사용하면 자동으로 재시도합니다.",
         "applyPreset": "프리셋 적용",
         "componentPropertiesTitle": "{{name}} 속성",
         "copySectionSettings": "{{section}} 설정 복사",

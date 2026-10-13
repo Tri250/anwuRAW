@@ -429,6 +429,8 @@
       "resetInpaintingTooltip": "重置影像修復",
       "settings": {
         "aiModelDownloading": "AI 模型下載中：",
+        "aiModelDownloadFailed": "AI 模型下載失敗，再次使用該功能即可重試。",
+        "aiModelDownloadOffline": "網路無法使用，無法下載 AI 模型。恢復網路後再次使用該功能將自動重試。",
         "basicInpaintTooltipDisabled": "生成式後端不可用或未配置。需要基礎影像修復。",
         "basicInpaintTooltipEnabled": "基礎影像修復更快但不具備生成式能力。取消勾選以使用生成式 AI 並輸入文字提示。",
         "componentPropertiesTitle": "{{name}} 屬性",
@@ -644,6 +646,8 @@
       "resetMaskingTooltip": "重置遮色片",
       "settings": {
         "aiModelDownloading": "AI 模型下載中：",
+        "aiModelDownloadFailed": "AI 模型下載失敗，再次使用該功能即可重試。",
+        "aiModelDownloadOffline": "網路無法使用，無法下載 AI 模型。恢復網路後再次使用該功能將自動重試。",
         "applyPreset": "應用預設",
         "componentPropertiesTitle": "{{name}} 屬性",
         "copySectionSettings": "複製 {{section}} 設定",

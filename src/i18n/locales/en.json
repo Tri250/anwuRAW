@@ -436,6 +436,8 @@
       "resetInpaintingTooltip": "Reset Inpainting",
       "settings": {
         "aiModelDownloading": "AI Model Downloading: ",
+        "aiModelDownloadFailed": "AI model download failed. Use the feature again to retry.",
+        "aiModelDownloadOffline": "Network unavailable - cannot download AI model. Once you're back online, use the feature again to retry automatically.",
         "basicInpaintTooltipDisabled": "Generative backend not available or not configured. Basic inpainting is required.",
         "basicInpaintTooltipEnabled": "Basic inpainting is quicker but not generative. Uncheck to use Generative AI with a text prompt.",
         "componentPropertiesTitle": "{{name}} Properties",
@@ -642,6 +644,8 @@
       "resetMaskingTooltip": "Reset Masking",
       "settings": {
         "aiModelDownloading": "AI Model Downloading: ",
+        "aiModelDownloadFailed": "AI model download failed. Use the feature again to retry.",
+        "aiModelDownloadOffline": "Network unavailable - cannot download AI model. Once you're back online, use the feature again to retry automatically.",
         "applyPreset": "Apply Preset",
         "componentPropertiesTitle": "{{name}} Properties",
         "copySectionSettings": "Copy {{section}} Settings",

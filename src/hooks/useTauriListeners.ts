@@ -136,10 +136,16 @@ export function useTauriListeners({
         }));
       }),
       listen('ai-model-download-start', (event: any) => {
-        if (isEffectActive) useProcessStore.getState().setProcess({ aiModelDownloadStatus: event.payload });
+        if (isEffectActive)
+          useProcessStore
+            .getState()
+            .setProcess({ aiModelDownloadStatus: event.payload, aiModelDownloadError: null });
       }),
       listen('ai-model-download-finish', () => {
         if (isEffectActive) useProcessStore.getState().setProcess({ aiModelDownloadStatus: null });
+      }),
+      listen('ai-model-download-error', (event: any) => {
+        if (isEffectActive) useProcessStore.getState().setProcess({ aiModelDownloadError: event.payload });
       }),
       listen('indexing-started', () => {
         if (isEffectActive)

@@ -34,6 +34,7 @@ import {
   Trash2,
   SwatchBook,
   SquaresIntersect,
+  TriangleAlert,
 } from 'lucide-react';
 
 import CollapsibleSection from '../../ui/CollapsibleSection';
@@ -298,9 +299,10 @@ export default function MasksPanel() {
     })),
   );
 
-  const { aiModelDownloadStatus } = useProcessStore(
+  const { aiModelDownloadStatus, aiModelDownloadError } = useProcessStore(
     useShallow((state) => ({
       aiModelDownloadStatus: state.aiModelDownloadStatus,
+      aiModelDownloadError: state.aiModelDownloadError,
     })),
   );
 
@@ -1227,6 +1229,7 @@ export default function MasksPanel() {
                       container={activeContainer}
                       activeSubMask={activeSubMaskData || null}
                       aiModelDownloadStatus={aiModelDownloadStatus}
+                      aiModelDownloadError={aiModelDownloadError}
                       brushSettings={brushSettings}
                       setBrushSettings={setBrushSettings}
                       updateContainer={updateContainer}
@@ -1932,6 +1935,7 @@ function SettingsPanel({
   container,
   activeSubMask,
   aiModelDownloadStatus,
+  aiModelDownloadError,
   brushSettings,
   setBrushSettings,
   updateContainer,
@@ -2227,6 +2231,28 @@ function SettingsPanel({
                   <div className="leading-relaxed">
                     <Text variant={TextVariants.small}>{t('editor.masks.settings.aiModelDownloading')}</Text>
                     <span>{aiModelDownloadStatus}</span>
+                  </div>
+                </Text>
+              )}
+
+              {isAiMask && !aiModelDownloadStatus && aiModelDownloadError && (
+                <Text
+                  as="div"
+                  variant={TextVariants.small}
+                  color={TextColors.error}
+                  weight={TextWeights.medium}
+                  className="p-3 bg-card-active rounded-md border border-surface flex items-center gap-3"
+                >
+                  <TriangleAlert size={16} className="shrink-0" />
+                  <div className="leading-relaxed">
+                    <Text variant={TextVariants.small}>
+                      {t(
+                        aiModelDownloadError.reason === 'offline'
+                          ? 'editor.ai.settings.aiModelDownloadOffline'
+                          : 'editor.ai.settings.aiModelDownloadFailed',
+                      )}
+                    </Text>
+                    <span>{aiModelDownloadError.model}</span>
                   </div>
                 </Text>
               )}

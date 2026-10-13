@@ -19,6 +19,7 @@ interface ProcessState {
   thumbnailProgress: Progress;
   previews: Record<string, { url: string; thumbKey: string; timestamp: number }>;
   aiModelDownloadStatus: string | null;
+  aiModelDownloadError: { model: string; reason: 'offline' | 'failed' } | null;
   copiedFilePaths: Array<string>;
   isCopied: boolean;
   isPasted: boolean;
@@ -49,6 +50,7 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
   thumbnailProgress: { current: 0, total: 0 },
   previews: {},
   aiModelDownloadStatus: null,
+  aiModelDownloadError: null,
   copiedFilePaths: [],
   isCopied: false,
   isPasted: false,

@@ -451,6 +451,8 @@
       "resetInpaintingTooltip": "Ripristina Inpainting",
       "settings": {
         "aiModelDownloading": "Download Modello AI: ",
+        "aiModelDownloadFailed": "Download del modello AI non riuscito. Usa di nuovo la funzione per riprovare.",
+        "aiModelDownloadOffline": "Rete non disponibile: impossibile scaricare il modello AI. Una volta ripristinata la connessione, usa di nuovo la funzione e il download verrà ripetuto automaticamente.",
         "basicInpaintTooltipDisabled": "Backend generativo non disponibile o non configurato. È richiesto l'inpainting semplice.",
         "basicInpaintTooltipEnabled": "L'inpainting semplice è più veloce ma non generativo. Deseleziona per usare l'AI generativa con un prompt di testo.",
         "componentPropertiesTitle": "Proprietà {{name}}",
@@ -667,6 +669,8 @@
       "resetMaskingTooltip": "Ripristina Mascheratura",
       "settings": {
         "aiModelDownloading": "Download Modello AI: ",
+        "aiModelDownloadFailed": "Download del modello AI non riuscito. Usa di nuovo la funzione per riprovare.",
+        "aiModelDownloadOffline": "Rete non disponibile: impossibile scaricare il modello AI. Una volta ripristinata la connessione, usa di nuovo la funzione e il download verrà ripetuto automaticamente.",
         "applyPreset": "Applica Predefinito",
         "componentPropertiesTitle": "Proprietà {{name}}",
         "copySectionSettings": "Copia Impostazioni {{section}}",

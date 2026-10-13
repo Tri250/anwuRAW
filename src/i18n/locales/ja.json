@@ -429,6 +429,8 @@
       "resetInpaintingTooltip": "インペインティングをリセット",
       "settings": {
         "aiModelDownloading": "AIモデルをダウンロード中: ",
+        "aiModelDownloadFailed": "AI モデルのダウンロードに失敗しました。もう一度機能を使用すると再試行されます。",
+        "aiModelDownloadOffline": "ネットワークに接続できないため AI モデルをダウンロードできません。ネットワーク回復後にもう一度機能を使用すると自動的に再試行されます。",
         "basicInpaintTooltipDisabled": "生成バックエンドが利用できないか、設定されていません。簡易インペインティングが必要です。",
         "basicInpaintTooltipEnabled": "簡易インペインティングは高速ですが、非生成式です。テキストプロンプトによるAIを使用する場合はチェックを外してください。",
         "componentPropertiesTitle": "{{name}} のプロパティ",
@@ -644,6 +646,8 @@
       "resetMaskingTooltip": "マスク処理をリセット",
       "settings": {
         "aiModelDownloading": "AIモデルをダウンロード中: ",
+        "aiModelDownloadFailed": "AI モデルのダウンロードに失敗しました。もう一度機能を使用すると再試行されます。",
+        "aiModelDownloadOffline": "ネットワークに接続できないため AI モデルをダウンロードできません。ネットワーク回復後にもう一度機能を使用すると自動的に再試行されます。",
         "applyPreset": "プリセットを適用",
         "componentPropertiesTitle": "{{name}} のプロパティ",
         "copySectionSettings": "{{section}}設定をコピー",
