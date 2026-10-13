@@ -1388,9 +1388,9 @@ pub struct Point {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Pod, Zeroable, Default)]
 #[repr(C)]
 pub struct HslColor {
-    hue: f32,
-    saturation: f32,
-    luminance: f32,
+    pub(crate) hue: f32,
+    pub(crate) saturation: f32,
+    pub(crate) luminance: f32,
     _pad: f32,
 }
 
@@ -2070,7 +2070,7 @@ pub fn is_image_edited(
     bytemuck::bytes_of(&current_adj) != bytemuck::bytes_of(&default_adj)
 }
 
-fn get_global_adjustments_from_json(
+pub(crate) fn get_global_adjustments_from_json(
     js_adjustments: &serde_json::Value,
     is_raw: bool,
     tonemapper_override: Option<u32>,

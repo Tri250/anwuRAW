@@ -42,6 +42,10 @@ mod multi_exposure;
 mod negative_conversion;
 mod panorama_stitching;
 mod panorama_utils;
+#[cfg(any(test, feature = "golden-tests"))]
+mod param_matrix;
+#[cfg(feature = "golden-tests")]
+pub mod golden_harness;
 mod preset_converter;
 mod raw_processing;
 mod split_toning;

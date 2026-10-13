@@ -75,3 +75,61 @@ jobs:
       - name: Clippy
         working-directory: src-tauri
         run: cargo clippy --all-targets --all-features -- -D warnings
+
+  contract-tests:
+    name: Contract Tests (snapshot + CPU/GPU consistency)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Frontend tests
+        run: npm test
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ''
+          rust-src-dir: src-tauri
+
+      # mesa-vulkan-drivers 提供 lavapipe 软件 Vulkan（无需 GPU），vulkan-tools 用于环境自检
+      - name: Install system dependencies (incl. lavapipe)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            pkg-config \
+            libgphoto2-dev \
+            mesa-vulkan-drivers \
+            vulkan-tools
+
+      - name: Verify lavapipe adapter
+        run: vulkaninfo --summary | grep -i llvmpipe
+
+      # 沙箱实测：全套 ~30s（快照 367 例 25s + 一致性 48 对 2.5s），无需分片；
+      # 若未来矩阵膨胀，可按 golden_assets 基准图 shard 并行。
+      - name: Contract tests
+        working-directory: src-tauri
+        env:
+          WGPU_BACKEND: vulkan
+        run: |
+          set -o pipefail
+          cargo test --features golden-tests -- --nocapture 2>&1 | tee /tmp/contract_test.log
+
+      # 失败时日志含超限案例的 mean/max ΔE 与 top-10 偏差位置，便于排查
+      - name: Upload ΔE report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-test-report
+          path: /tmp/contract_test.log
+          retention-days: 14

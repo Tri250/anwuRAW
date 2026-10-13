@@ -13,6 +13,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [features]
 default = []
 tethering = ["dep:gphoto2"]
+# 契约测试 harness（spec: v2-engine-contract-tests）—— 仅测试用，不进生产二进制
+golden-tests = []
+# 显式重建快照基线：cargo test --features golden-baseline-update --test contract_snapshot
+golden-baseline-update = ["golden-tests"]
 
 [dependencies]
 tauri = { version = "2.11", features = [ "macos-private-api", "rustls-tls", "protocol-asset" ] }
