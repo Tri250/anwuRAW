@@ -213,6 +213,7 @@ export interface AppSettings {
   adjustmentVisibility?: { [key: string]: boolean };
   rawHighlightCompression?: number;
   processingBackend?: string;
+  aiAccelerationMode?: 'auto' | 'performance' | 'compatibility';
   linuxGpuOptimization?: boolean;
   exportPresets?: ExportPreset[];
   myLenses?: any;

@@ -1704,6 +1704,14 @@
       "alwaysDecodeRaw": "常にRAWをデコード",
       "alwaysDecodeRawDesc": "埋め込まれたJPEGプレビューを使用する代わりに、サムネイルの完全なRAWデコードを強制します。サムネイルの色やコントラストが開いた画像と異なる場合に有効にしてください。",
       "alwaysDecodeRawLabel": "サムネイル用に常にRAWをデコード",
+      "aiAcceleration": "AI アクセラレーション",
+      "aiAccelerationCurrent": "現在適用中：{{ep}}",
+      "aiAccelerationDesc": "AI モデルの実行方法を選択：「自動」は対応ハードウェア（NNAPI / CoreML）で加速し、「互換」は CPU のみを使用します。変更はアプリ再起動後に有効になります。",
+      "aiAccelerationModes": {
+        "auto": "自動（推奨）",
+        "compatibility": "互換モード（CPU のみ）",
+        "performance": "パフォーマンス（ハードウェア）"
+      },
       "backend": "処理バックエンド",
       "backendDesc": "グラフィックスAPIを選択します。「自動」を推奨します。一部のシステムでのクラッシュを回避できる場合があります。",
       "backends": {

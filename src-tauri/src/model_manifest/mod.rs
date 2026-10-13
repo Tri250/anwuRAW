@@ -96,6 +96,8 @@ impl ModelEntry {
         self.default_variant().map(|v| v.filename.as_str())
     }
 
+    /// 默认变体的 sha256（A1 模型管理器预留 API，本任务仅数据层）
+    #[allow(dead_code)]
     pub fn sha256(&self) -> Option<&str> {
         self.default_variant().map(|v| v.sha256.as_str())
     }

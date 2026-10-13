@@ -436,6 +436,25 @@ fn joined_model_path(models_dir: &Path, id: &str) -> Result<PathBuf> {
         .ok_or_else(|| anyhow!("Model {} has no default variant in manifest", id))
 }
 
+/// 统一 Session 创建（Task 4 EP 委托层）：档位由用户设置解析，
+/// EP 约束取自 manifest recommended_ep，全部 EP 失败回退 CPU
+fn create_ai_session(
+    models_dir: &Path,
+    id: &str,
+    mode: crate::ai_acceleration::AiAccelerationMode,
+) -> Result<Session> {
+    let recommended_ep = crate::model_manifest::require(id)?
+        .default_variant()
+        .map(|v| v.recommended_ep.clone())
+        .unwrap_or_default();
+    let model_path = joined_model_path(models_dir, id)?;
+    Ok(crate::ai_acceleration::build_session(
+        &model_path,
+        mode,
+        &recommended_ep,
+    )?)
+}
+
 pub async fn get_or_init_ai_models(
     app_handle: &tauri::AppHandle,
     ai_state_mutex: &Mutex<Option<AiState>>,
@@ -472,17 +491,12 @@ pub async fn get_or_init_ai_models(
 
     let _ = ort::init().with_name("AI").commit();
 
-    let encoder_path = joined_model_path(&models_dir, "sam_encoder")?;
-    let decoder_path = joined_model_path(&models_dir, "sam_decoder")?;
-    let u2netp_path = joined_model_path(&models_dir, "foreground_u2net")?;
-    let sky_seg_path = joined_model_path(&models_dir, "sky_seg")?;
-    let depth_path = joined_model_path(&models_dir, "depth_anything")?;
-
-    let sam_encoder = Session::builder()?.commit_from_file(encoder_path)?;
-    let sam_decoder = Session::builder()?.commit_from_file(decoder_path)?;
-    let u2netp = Session::builder()?.commit_from_file(u2netp_path)?;
-    let sky_seg = Session::builder()?.commit_from_file(sky_seg_path)?;
-    let depth_anything = Session::builder()?.commit_from_file(depth_path)?;
+    let acceleration_mode = crate::ai_acceleration::mode_from_handle(app_handle);
+    let sam_encoder = create_ai_session(&models_dir, "sam_encoder", acceleration_mode)?;
+    let sam_decoder = create_ai_session(&models_dir, "sam_decoder", acceleration_mode)?;
+    let u2netp = create_ai_session(&models_dir, "foreground_u2net", acceleration_mode)?;
+    let sky_seg = create_ai_session(&models_dir, "sky_seg", acceleration_mode)?;
+    let depth_anything = create_ai_session(&models_dir, "depth_anything", acceleration_mode)?;
 
     crate::register_exit_handler();
 
@@ -541,8 +555,8 @@ pub async fn get_or_init_denoise_model(
     download_entry(app_handle, &models_dir, &endpoints, "denoise_nind").await?;
 
     let _ = ort::init().with_name("AI-Denoise").commit();
-    let model_path = joined_model_path(&models_dir, "denoise_nind")?;
-    let session = Session::builder()?.commit_from_file(model_path)?;
+    let acceleration_mode = crate::ai_acceleration::mode_from_handle(app_handle);
+    let session = create_ai_session(&models_dir, "denoise_nind", acceleration_mode)?;
     let denoise_model = Arc::new(Mutex::new(session));
 
     crate::register_exit_handler();
@@ -597,9 +611,9 @@ pub async fn get_or_init_clip_models(
     download_entry(app_handle, &models_dir, &endpoints, "clip_tokenizer").await?;
 
     let _ = ort::init().with_name("AI-Tagging").commit();
-    let clip_model_path = joined_model_path(&models_dir, "clip_model")?;
+    let acceleration_mode = crate::ai_acceleration::mode_from_handle(app_handle);
     let clip_tokenizer_path = joined_model_path(&models_dir, "clip_tokenizer")?;
-    let model = Mutex::new(Session::builder()?.commit_from_file(clip_model_path)?);
+    let model = Mutex::new(create_ai_session(&models_dir, "clip_model", acceleration_mode)?);
     let tokenizer =
         Tokenizer::from_file(clip_tokenizer_path).map_err(|e| anyhow::anyhow!(e.to_string()))?;
 
@@ -654,8 +668,8 @@ pub async fn get_or_init_lama_model(
     download_entry(app_handle, &models_dir, &endpoints, "inpainting_lama").await?;
 
     let _ = ort::init().with_name("AI-Inpainting").commit();
-    let model_path = joined_model_path(&models_dir, "inpainting_lama")?;
-    let session = Session::builder()?.commit_from_file(model_path)?;
+    let acceleration_mode = crate::ai_acceleration::mode_from_handle(app_handle);
+    let session = create_ai_session(&models_dir, "inpainting_lama", acceleration_mode)?;
     let lama_model = Arc::new(Mutex::new(session));
 
     crate::register_exit_handler();

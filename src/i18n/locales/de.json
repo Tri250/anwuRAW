@@ -1706,6 +1706,14 @@
       "alwaysDecodeRaw": "RAW immer decodieren",
       "alwaysDecodeRawDesc": "Erzwingt die vollständige RAW-Decodierung für Vorschaubilder, anstatt eingebettete JPEG-Vorschauen zu verwenden. Aktiviere diese Option, wenn sich die Vorschaubilder farblich oder im Kontrast vom geöffneten Bild unterscheiden.",
       "alwaysDecodeRawLabel": "RAW für Vorschaubilder immer decodieren",
+      "aiAcceleration": "KI-Beschleunigung",
+      "aiAccelerationCurrent": "Derzeit aktiv: {{ep}}",
+      "aiAccelerationDesc": "Wählen Sie, wie KI-Modelle ausgeführt werden: „Automatisch“ nutzt Hardwarebeschleunigung (NNAPI / CoreML), „Kompatibilität“ erzwingt CPU. Änderungen werden nach einem Neustart der App wirksam.",
+      "aiAccelerationModes": {
+        "auto": "Automatisch (empfohlen)",
+        "compatibility": "Kompatibilität (nur CPU)",
+        "performance": "Leistung (Hardware)"
+      },
       "backend": "Verarbeitungs-Backend",
       "backendDesc": "Wählen Sie die Grafik-API. 'Auto' wird empfohlen. Kann Abstürze auf einigen Systemen beheben.",
       "backends": {

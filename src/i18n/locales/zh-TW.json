@@ -1704,6 +1704,14 @@
       "alwaysDecodeRaw": "始終解碼 RAW",
       "alwaysDecodeRawDesc": "強制對縮圖進行完整的 RAW 解碼，而不是使用內建的 JPEG 預覽。如果您的縮圖在顏色或對比度上與打開的影像不同，請啟用此選項。",
       "alwaysDecodeRawLabel": "始終為縮圖解碼 RAW",
+      "aiAcceleration": "AI 加速檔位",
+      "aiAccelerationCurrent": "目前生效：{{ep}}",
+      "aiAccelerationDesc": "選擇 AI 模型的執行方式：自動檔在硬體支援時使用 NNAPI / CoreML 加速；相容檔強制 CPU。變更將在重新啟動應用程式後生效。",
+      "aiAccelerationModes": {
+        "auto": "自動（建議）",
+        "compatibility": "相容模式（僅 CPU）",
+        "performance": "效能優先（硬體加速）"
+      },
       "backend": "處理後端",
       "backendDesc": "選擇圖形 API。推薦使用「自動」。在某些系統上可能解決崩潰問題。",
       "backends": {

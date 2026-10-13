@@ -6,6 +6,7 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 mod adjustment_utils;
+mod ai_acceleration;
 mod ai_commands;
 mod ai_connector;
 mod ai_processing;
@@ -2396,6 +2397,7 @@ pub fn run() {
             app_settings::load_settings,
             app_settings::save_settings,
             app_settings::is_tethering_supported,
+            ai_acceleration::get_active_ai_execution_provider,
             ai_commands::generate_ai_subject_mask,
             ai_commands::precompute_ai_subject_mask,
             ai_commands::generate_ai_foreground_mask,

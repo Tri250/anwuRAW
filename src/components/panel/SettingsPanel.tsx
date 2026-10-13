@@ -455,6 +455,7 @@ export default function SettingsPanel({
     mediumThumbnailResolution: appSettings?.mediumThumbnailResolution || 1280,
     rawHighlightCompression: appSettings?.rawHighlightCompression ?? 2.5,
     processingBackend: appSettings?.processingBackend || 'auto',
+    aiAccelerationMode: appSettings?.aiAccelerationMode || 'auto',
     linuxGpuOptimization: appSettings?.linuxGpuOptimization ?? false,
     highResZoomMultiplier: appSettings?.highResZoomMultiplier || 1.0,
     useFullDpiRendering: appSettings?.useFullDpiRendering ?? false,
@@ -516,6 +517,15 @@ export default function SettingsPanel({
     [t],
   );
 
+  const aiAccelerationOptions = useMemo<OptionItem<string>[]>(
+    () => [
+      { value: 'auto', label: t('settings.processing.aiAccelerationModes.auto') },
+      { value: 'performance', label: t('settings.processing.aiAccelerationModes.performance') },
+      { value: 'compatibility', label: t('settings.processing.aiAccelerationModes.compatibility') },
+    ],
+    [t],
+  );
+
   const tonemapperOptions = useMemo<OptionItem<string>[]>(
     () => [
       { value: 'agx', label: t('settings.processing.preprocessing.tonemapperOptions.agx') },
@@ -564,6 +574,7 @@ export default function SettingsPanel({
       mediumThumbnailResolution: appSettings?.mediumThumbnailResolution || 1280,
       rawHighlightCompression: appSettings?.rawHighlightCompression ?? 2.5,
       processingBackend: appSettings?.processingBackend || 'auto',
+      aiAccelerationMode: appSettings?.aiAccelerationMode || 'auto',
       linuxGpuOptimization: appSettings?.linuxGpuOptimization ?? false,
       highResZoomMultiplier: appSettings?.highResZoomMultiplier || 1.0,
       useFullDpiRendering: appSettings?.useFullDpiRendering ?? false,
@@ -596,11 +607,20 @@ export default function SettingsPanel({
     invoke<string[]>('get_lensfun_makers').then(setLensMakers).catch(console.error);
   }, []);
 
+  // AI 委托层最近一次创建 Session 实际生效的 EP（null = 尚未创建过）
+  const [activeAiEp, setActiveAiEp] = useState<string | null>(null);
+  useEffect(() => {
+    invoke<string | null>('get_active_ai_execution_provider')
+      .then(setActiveAiEp)
+      .catch(() => setActiveAiEp(null));
+  }, []);
+
   const handleProcessingSettingChange = async (key: string, value: any) => {
     setProcessingSettings((prev) => ({ ...prev, [key]: value }));
 
     if (
       key === 'processingBackend' ||
+      key === 'aiAccelerationMode' ||
       key === 'linuxGpuOptimization' ||
       key === 'useWgpuRenderer' ||
       key === 'thumbnailWorkerThreads'
@@ -1789,6 +1809,29 @@ export default function SettingsPanel({
                               (option) => option.value === processingSettings.processingBackend,
                             )
                               ? processingSettings.processingBackend
+                              : 'auto'
+                          }
+                          triggerClassName="bg-bg-primary"
+                        />
+                      </SettingItem>
+
+                      <SettingItem
+                        label={t('settings.processing.aiAcceleration')}
+                        description={
+                          t('settings.processing.aiAccelerationDesc') +
+                          (activeAiEp
+                            ? ` ${t('settings.processing.aiAccelerationCurrent', { ep: activeAiEp })}`
+                            : '')
+                        }
+                      >
+                        <Dropdown
+                          onChange={(value: any) => handleProcessingSettingChange('aiAccelerationMode', value)}
+                          options={aiAccelerationOptions}
+                          value={
+                            aiAccelerationOptions.some(
+                              (option) => option.value === processingSettings.aiAccelerationMode,
+                            )
+                              ? processingSettings.aiAccelerationMode
                               : 'auto'
                           }
                           triggerClassName="bg-bg-primary"

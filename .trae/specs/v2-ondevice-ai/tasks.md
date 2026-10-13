@@ -70,7 +70,7 @@
 
 ## Task 4: EP 执行委托层
 
-- **Status**: `pending`
+- **Status**: `partial`（2026-10-13 完成抽象层+设置项+i18n，Rust 83/83 全绿；剩余：Task 0 PoC 结论回填 recommended_ep + Android/macOS 真机注册验证）
 - **Priority**: high
 - **Depends On**: Task 0, Task 2
 - **Description**:
@@ -80,10 +80,17 @@
   - i18n 13 语言键位补齐
 - **Acceptance Criteria Addressed**: AC-4
 - **Test Requirements**:
-  - `rule` TR-4.1: compatibility 档在所有平台恒为 CPU 成功
-  - `rule` TR-4.2: auto 档在无 NNAPI/CoreML 设备正确回退
-  - `rule` TR-4.3: 设置项重启后保持
-- **Notes**: EP 选择失败必须回退而非 panic；错误信息入日志
+  - `rule` TR-4.1: compatibility 档在所有平台恒为 CPU 成功 ✅（单测 hardware_allowed 决策 + 桌面构建实证）
+  - `rule` TR-4.2: auto 档在无 NNAPI/CoreML 设备正确回退 ✅（单测 + 桌面平台恒 CPU）
+  - `rule` TR-4.3: 设置项重启后保持 ✅（serde 往返单测 + settings.json 持久化机制复用）
+- **Notes**: EP 选择失败必须回退而非 panic；错误信息入日志 ✅（逐 EP 注册 try_register_platform_ep，失败 println 日志 + CPU 兜底）
+- **完成记录**:
+  - 新增 `src-tauri/src/ai_acceleration.rs`：AiAccelerationMode 枚举（serde lowercase 持久化）、ActiveExecutionProvider 原子记录、hardware_allowed 决策（compatibility 恒否 + manifest 约束否决）、try_register_platform_ep（Android=NNAPI / macOS=CoreML 逐 EP 注册，load-dynamic feature 已覆盖结构体可用性，无需新增 cargo feature）、build_session 统一入口
+  - ai_processing.rs 全部 8 个 Session 创建点收敛至 create_ai_session → build_session
+  - app_settings.rs 新增 ai_acceleration_mode（serde default = auto，旧 settings.json 无该字段时安全回退）
+  - 前端：AppProperties 类型 + SettingsPanel 处理区段"AI 加速档位"下拉（restartRequired 机制，更改重启生效）+ 当前生效 EP 显示（get_active_ai_execution_provider 命令，lib.rs 已注册）
+  - i18n 13 语言 aiAcceleration×5 键人工翻译，键位平齐校验通过
+  - 验证：cargo test 83/83（新增 5）、tsc ✓、前端 73/73 ✓
 
 ## Task 5: 可选下载包与离线状态
 

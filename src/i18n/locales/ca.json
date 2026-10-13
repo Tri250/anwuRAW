@@ -1706,6 +1706,14 @@
       "alwaysDecodeRaw": "Descodificar sempre els RAW",
       "alwaysDecodeRawDesc": "Força la descodificació RAW completa per a les miniatures en lloc d'utilitzar les previsualitzacions JPEG incrustades. Activeu aquesta opció si les miniatures tenen colors o contrastos diferents respecte a la imatge oberta.",
       "alwaysDecodeRawLabel": "Descodificar sempre els RAW per a miniatures",
+      "aiAcceleration": "Acceleració d'IA",
+      "aiAccelerationCurrent": "Actiu actualment: {{ep}}",
+      "aiAccelerationDesc": "Trieu com s'executen els models d'IA: «Automàtic» utilitza l'acceleració per maquinari (NNAPI / CoreML) quan estigui disponible; «Compatibilitat» força la CPU. Els canvis s'aplicaran després de reiniciar l'aplicació.",
+      "aiAccelerationModes": {
+        "auto": "Automàtic (recomanat)",
+        "compatibility": "Compatibilitat (només CPU)",
+        "performance": "Rendiment (maquinari)"
+      },
       "backend": "Motor de processament",
       "backendDesc": "Seleccioneu l'API de gràfics. Es recomana 'Auto'. Pot solucionar bloquejos en alguns sistemes.",
       "backends": {

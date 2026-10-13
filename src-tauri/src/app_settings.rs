@@ -440,6 +440,10 @@ pub struct AppSettings {
     pub thumbnail_size: Option<String>,
     pub thumbnail_aspect_ratio: Option<String>,
     pub ai_provider: Option<String>,
+    /// AI 推理加速档位：auto（默认，探测硬件加速）/ performance（强制硬件）/
+    /// compatibility（强制 CPU）。更改在应用重启（重新创建 Session）后生效。
+    #[serde(default)]
+    pub ai_acceleration_mode: crate::ai_acceleration::AiAccelerationMode,
     /// AI 模型下载端点：auto（默认，国内优先 hf-mirror + huggingface 降级）
     /// 可选值：auto | hf-mirror | huggingface | 自定义 URL
     #[serde(default = "default_model_endpoint")]
@@ -571,6 +575,7 @@ impl Default for AppSettings {
             thumbnail_size: Some("medium".to_string()),
             thumbnail_aspect_ratio: Some("cover".to_string()),
             ai_provider: Some("cpu".to_string()),
+            ai_acceleration_mode: crate::ai_acceleration::AiAccelerationMode::default(),
             model_endpoint: default_model_endpoint(),
             adjustment_visibility: default_adjustment_visibility(),
             open_tree_sections: default_open_tree_sections(),

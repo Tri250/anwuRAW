@@ -1727,6 +1727,14 @@
       "alwaysDecodeRaw": "Always Decode RAW",
       "alwaysDecodeRawDesc": "Force full RAW decoding for thumbnails instead of using embedded JPEG previews. Enable this if your thumbnails look different in color or contrast compared to the opened image.",
       "alwaysDecodeRawLabel": "Always decode RAW for thumbnails",
+      "aiAcceleration": "AI Acceleration",
+      "aiAccelerationCurrent": "Currently active: {{ep}}",
+      "aiAccelerationDesc": "Choose how AI models run: Auto uses hardware acceleration (NNAPI / CoreML) when available; Compatibility forces CPU. Changes take effect after an app restart.",
+      "aiAccelerationModes": {
+        "auto": "Auto (recommended)",
+        "compatibility": "Compatibility (CPU only)",
+        "performance": "Performance (hardware)"
+      },
       "backend": "Processing Backend",
       "backendDesc": "Select the graphics API. 'Auto' is recommended. May fix crashes on some systems.",
       "backends": {

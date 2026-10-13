@@ -1727,6 +1727,14 @@
       "alwaysDecodeRaw": "始终解码 RAW",
       "alwaysDecodeRawDesc": "强制对缩略图进行完整的 RAW 解码，而不是使用内置的 JPEG 预览。如果您的缩略图在颜色或对比度上与打开的图像不同，请启用此选项。",
       "alwaysDecodeRawLabel": "始终为缩略图解码 RAW",
+      "aiAcceleration": "AI 加速档位",
+      "aiAccelerationCurrent": "当前生效：{{ep}}",
+      "aiAccelerationDesc": "选择 AI 模型的运行方式：自动档在硬件支持时使用 NNAPI / CoreML 加速；兼容档强制 CPU。更改将在重启应用后生效。",
+      "aiAccelerationModes": {
+        "auto": "自动（推荐）",
+        "compatibility": "兼容模式（仅 CPU）",
+        "performance": "性能优先（硬件加速）"
+      },
       "backend": "处理后端",
       "backendDesc": "选择图形 API。推荐使用「自动」。在某些系统上可能解决崩溃问题。",
       "backends": {

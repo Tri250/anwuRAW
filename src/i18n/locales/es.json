@@ -1739,6 +1739,14 @@
       "alwaysDecodeRaw": "Decodificar RAW siempre",
       "alwaysDecodeRawDesc": "Fuerza la decodificación RAW completa para las miniaturas en lugar de usar vistas previas JPEG incrustadas. Activa esta opción si las miniaturas tienen colores o contrastes diferentes a la imagen abierta.",
       "alwaysDecodeRawLabel": "Decodificar RAW siempre para miniaturas",
+      "aiAcceleration": "Aceleración de IA",
+      "aiAccelerationCurrent": "Activo actualmente: {{ep}}",
+      "aiAccelerationDesc": "Elige cómo se ejecutan los modelos de IA: «Automático» usa aceleración por hardware (NNAPI / CoreML) cuando está disponible; «Compatibilidad» fuerza la CPU. Los cambios se aplican tras reiniciar la aplicación.",
+      "aiAccelerationModes": {
+        "auto": "Automático (recomendado)",
+        "compatibility": "Compatibilidad (solo CPU)",
+        "performance": "Rendimiento (hardware)"
+      },
       "backend": "Backend de procesamiento",
       "backendDesc": "Selecciona la API de gráficos. Se recomienda 'Auto'. Puede solucionar bloqueos en algunos sistemas.",
       "backends": {
