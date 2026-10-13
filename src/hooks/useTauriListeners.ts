@@ -137,9 +137,7 @@ export function useTauriListeners({
       }),
       listen('ai-model-download-start', (event: any) => {
         if (isEffectActive)
-          useProcessStore
-            .getState()
-            .setProcess({ aiModelDownloadStatus: event.payload, aiModelDownloadError: null });
+          useProcessStore.getState().setProcess({ aiModelDownloadStatus: event.payload, aiModelDownloadError: null });
       }),
       listen('ai-model-download-finish', () => {
         if (isEffectActive) useProcessStore.getState().setProcess({ aiModelDownloadStatus: null });

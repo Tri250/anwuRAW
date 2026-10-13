@@ -9,7 +9,7 @@
 //! 后即可逐模型精确控制。
 
 use std::path::Path;
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
 #[cfg(any(target_os = "android", target_os = "macos"))]
 use ort::execution_providers::ExecutionProvider;
@@ -105,33 +105,80 @@ fn hardware_allowed(mode: AiAccelerationMode, recommended_ep: &[String]) -> bool
     }
 }
 
-/// 逐 EP 注册平台硬件候选，返回实际注册成功者；失败记日志并静默回退。
-/// ort 对 EP 不支持的算子会在运行期自动落到 CPU（逐节点回退）。
-fn try_register_platform_ep(builder: &mut SessionBuilder) -> Option<ActiveExecutionProvider> {
+/// 平台硬件 EP 候选策略表（W7-G3 数据化）：按优先级排序，CPU 为恒定兜底不列入。
+/// 新平台/新 EP 接入只需扩表，不散落 cfg 分支。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HardwareEp {
+    Nnapi,
+    CoreML,
+}
+
+impl HardwareEp {
+    fn active_provider(self) -> ActiveExecutionProvider {
+        match self {
+            Self::Nnapi => ActiveExecutionProvider::Nnapi,
+            Self::CoreML => ActiveExecutionProvider::CoreML,
+        }
+    }
+
+    fn register(self, builder: &mut SessionBuilder) -> ort::Result<()> {
+        match self {
+            #[cfg(target_os = "android")]
+            Self::Nnapi => NNAPIExecutionProvider::default().register(builder),
+            #[cfg(not(target_os = "android"))]
+            Self::Nnapi => Err(ort::Error::new("NNAPI not compiled for this platform")),
+            #[cfg(target_os = "macos")]
+            Self::CoreML => CoreMLExecutionProvider::default().register(builder),
+            #[cfg(not(target_os = "macos"))]
+            Self::CoreML => Err(ort::Error::new("CoreML not compiled for this platform")),
+        }
+    }
+}
+
+/// 当前平台的硬件候选表（空 = 桌面平台，恒 CPU）
+fn platform_ep_candidates() -> &'static [HardwareEp] {
     #[cfg(target_os = "android")]
     {
-        let ep = NNAPIExecutionProvider::default();
-        match ep.register(builder) {
-            Ok(()) => return Some(ActiveExecutionProvider::Nnapi),
-            Err(e) => println!("[AI] NNAPI execution provider unavailable: {}", e),
-        }
+        &[HardwareEp::Nnapi]
     }
     #[cfg(target_os = "macos")]
     {
-        let ep = CoreMLExecutionProvider::default();
-        match ep.register(builder) {
-            Ok(()) => return Some(ActiveExecutionProvider::CoreML),
-            Err(e) => println!("[AI] CoreML execution provider unavailable: {}", e),
-        }
+        &[HardwareEp::CoreML]
     }
     #[cfg(not(any(target_os = "android", target_os = "macos")))]
     {
-        let _ = builder;
+        &[]
+    }
+}
+
+/// 最近一次 Session 创建是否发生硬件→CPU 降档（W7-G3 运行时自动降档，UI 提示用）
+static LAST_DEGRADED: AtomicBool = AtomicBool::new(false);
+
+pub fn last_degradation() -> bool {
+    LAST_DEGRADED.load(Ordering::Relaxed)
+}
+
+/// 降档重试决策纯函数：硬件尝试失败且档位允许兜底成功时重试 CPU。
+/// compatibility 从不做硬件尝试（hardware_attempt 恒 false）。
+fn should_retry_on_cpu(mode: AiAccelerationMode, hardware_attempt: bool) -> bool {
+    hardware_attempt && !matches!(mode, AiAccelerationMode::Compatibility)
+}
+
+/// 逐候选注册平台硬件 EP，返回实际注册成功者；失败记日志并继续下一候选。
+/// ort 对 EP 不支持的算子会在运行期自动落到 CPU（逐节点回退）。
+fn try_register_platform_ep(builder: &mut SessionBuilder) -> Option<ActiveExecutionProvider> {
+    for candidate in platform_ep_candidates() {
+        match candidate.register(builder) {
+            Ok(()) => return Some(candidate.active_provider()),
+            Err(e) => println!("[AI] hardware EP {:?} unavailable: {}", candidate, e),
+        }
     }
     None
 }
 
 /// 统一 Session 创建入口（TR-4.1/4.2：任何 EP 失败都回退 CPU，不 panic）
+/// W7-G3：硬件 EP 注册成功但模型 commit 失败（算子缺失/形状不支持等）时，
+/// Auto/Performance 档自动降档纯 CPU 重试一次并记录降档事件。
 pub fn build_session(
     model_path: &Path,
     mode: AiAccelerationMode,
@@ -139,15 +186,32 @@ pub fn build_session(
 ) -> ort::Result<Session> {
     let mut builder = Session::builder()?;
 
-    let active_ep = if hardware_allowed(mode, recommended_ep) {
+    let hardware_attempt = hardware_allowed(mode, recommended_ep);
+    let active_ep = if hardware_attempt {
         try_register_platform_ep(&mut builder).unwrap_or(ActiveExecutionProvider::Cpu)
     } else {
         ActiveExecutionProvider::Cpu
     };
 
-    let session = builder.commit_from_file(model_path)?;
-    record_active_ep(active_ep);
-    Ok(session)
+    match builder.commit_from_file(model_path) {
+        Ok(session) => {
+            LAST_DEGRADED.store(false, Ordering::Relaxed);
+            record_active_ep(active_ep);
+            Ok(session)
+        }
+        Err(e) if should_retry_on_cpu(mode, hardware_attempt) => {
+            println!(
+                "[AI] Session init with {:?} failed ({}); degrading to CPU retry",
+                active_ep, e
+            );
+            let cpu_builder = Session::builder()?;
+            let session = cpu_builder.commit_from_file(model_path)?;
+            LAST_DEGRADED.store(true, Ordering::Relaxed);
+            record_active_ep(ActiveExecutionProvider::Cpu);
+            Ok(session)
+        }
+        Err(e) => Err(e),
+    }
 }
 
 /// 从用户设置解析档位；设置读取失败时回退默认 auto
@@ -249,5 +313,37 @@ mod tests {
         }
         assert_eq!(ActiveExecutionProvider::from_index(0), None);
         assert_eq!(ActiveExecutionProvider::from_index(99), None);
+    }
+
+    /// G3: 平台候选策略表数据化 —— android/macos 非空，桌面恒空
+    #[test]
+    fn test_platform_ep_candidates_table() {
+        let candidates = platform_ep_candidates();
+        if cfg!(target_os = "android") {
+            assert_eq!(candidates, &[HardwareEp::Nnapi]);
+        } else if cfg!(target_os = "macos") {
+            assert_eq!(candidates, &[HardwareEp::CoreML]);
+        } else {
+            assert!(
+                candidates.is_empty(),
+                "desktop platforms have no hardware EP candidates"
+            );
+        }
+    }
+
+    /// G3: 降档决策 —— 仅硬件尝试过才重试；compatibility 永不重试
+    #[test]
+    fn test_should_retry_on_cpu_decision() {
+        assert!(should_retry_on_cpu(AiAccelerationMode::Auto, true));
+        assert!(should_retry_on_cpu(AiAccelerationMode::Performance, true));
+        assert!(!should_retry_on_cpu(AiAccelerationMode::Auto, false));
+        assert!(!should_retry_on_cpu(
+            AiAccelerationMode::Compatibility,
+            true
+        ));
+        assert!(!should_retry_on_cpu(
+            AiAccelerationMode::Compatibility,
+            false
+        ));
     }
 }

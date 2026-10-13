@@ -28,11 +28,6 @@ pub struct DeltaStats {
 pub const MAX_MEAN: f64 = 0.5;
 pub const MAX_SINGLE: f64 = 2.0;
 
-/// CPU/GPU 一致性阈值（AC-4）：ΔE2000 mean < 1.0
-/// （仅 contract_consistency 消费；其余测试 target 编译时该常量视为 dead_code）
-#[allow(dead_code)]
-pub const CONSISTENCY_MAX_MEAN: f64 = 1.0;
-
 /// RGB8 全图逐像素对比（两图长度必须一致且 = w*h*3）
 pub fn compare_rgb8(a: &[u8], b: &[u8], width: u32, height: u32) -> DeltaStats {
     let n = width as usize * height as usize;

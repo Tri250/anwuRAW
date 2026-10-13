@@ -11,7 +11,7 @@ use crate::app_settings::load_settings;
 use crate::app_state::AppState;
 use crate::file_management::parse_virtual_path;
 use crate::formats::is_raw_file;
-use crate::image_processing::apply_cpu_default_raw_processing;
+use crate::image_processing::apply_raw_input_prep;
 
 const MEMORY_BUDGET_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
@@ -2093,7 +2093,7 @@ fn decode_frame(
         crate::image_loader::load_base_image_from_bytes(&bytes, path, false, settings, None)
             .map_err(|e| format!("Failed to decode {}: {}", path, e))?;
     if is_raw_file(path) {
-        apply_cpu_default_raw_processing(&mut dyn_img);
+        apply_raw_input_prep(&mut dyn_img);
     }
     Ok(PlanarRgb::from_rgb32f(&dyn_img.to_rgb32f()))
 }

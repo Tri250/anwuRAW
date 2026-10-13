@@ -4,3 +4,8 @@ src-tauri/target
 src-tauri/gen
 src-tauri/rawler
 data
+# 规划/评审文档为人工撰写产物，不做格式门禁
+docs
+.trae
+tests/masks-test-plan.md
+src-tauri/tests/golden/README.md

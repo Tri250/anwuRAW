@@ -2,10 +2,10 @@
   "adjustments": {
     "basic": {
       "blacks": "黑色",
+      "brightness": "亮度",
       "contrast": "對比",
       "evShift": "EV 偏移",
       "exposure": "曝光",
-      "brightness": "亮度",
       "highlights": "亮部",
       "mappers": {
         "agx": "AgX",
@@ -21,18 +21,24 @@
       },
       "reset": "重置",
       "scene": {
-        "title": "場景增強",
-        "desc": "一鍵套用專業調色風格",
         "auto": "自動",
         "autoDesc": "智慧場景增強",
-        "prototypePortrait": "人像",
+        "desc": "一鍵套用專業調色風格",
         "prototypeLandscape": "風景",
         "prototypeNight": "夜景",
-        "prototypeWarmSunset": "暖陽"
+        "prototypePortrait": "人像",
+        "prototypeWarmSunset": "暖陽",
+        "title": "場景增強"
       },
       "shadows": "陰影",
       "toneMapper": "色調映射",
       "whites": "白色"
+    },
+    "channelMixer": {
+      "hint": "Adjust the percentage of each input color channel that contributes to the output channel.",
+      "outputs": "Output Channels / 输出通道",
+      "reset": "Reset / 重置",
+      "title": "Channel Mixer / 通道混合器"
     },
     "color": {
       "ariaSelectColor": "選擇 {{name}} 顏色",
@@ -59,6 +65,8 @@
         "midtones": "中間調",
         "shadows": "陰影"
       },
+      "hslPickActive": "Color picker active — click the image to sample a hue",
+      "hslPickTooltip": "Pick color from image",
       "hue": "色相",
       "localHue": "局部色調",
       "luminance": "亮度",
@@ -83,13 +91,13 @@
       "whiteBalance": "白平衡"
     },
     "curves": {
-      "channelTitle": "{{channel}} 通道",
       "channels": {
         "blue": "藍色",
         "green": "綠色",
         "luma": "亮度",
         "red": "紅色"
       },
+      "channelTitle": "{{channel}} 通道",
       "copyParametric": "複製 {{channel}} 參數曲線",
       "copyPoint": "複製 {{channel}} 點曲線",
       "curveDataUnavailable": "曲線資料不可用。",
@@ -106,13 +114,7 @@
       "pasteParametric": "貼上參數曲線",
       "pastePoint": "貼上點曲線",
       "pointCurve": "點曲線",
-      "resetAllParametric": "重置所有參數曲線",
-      "resetAllPoint": "重置所有點曲線",
-      "resetParametric": "重置 {{channel}} 參數曲線",
-      "resetPoint": "重置 {{channel}} 點曲線",
       "presets": {
-        "title": "預設",
-        "originalDesc": "將曲線重置為原圖狀態",
         "brighten": "提亮",
         "cool": "冷調",
         "darken": "壓暗",
@@ -120,10 +122,16 @@
         "film": "膠片",
         "lowContrast": "低對比",
         "original": "原圖",
+        "originalDesc": "將曲線重置為原圖狀態",
         "portrait": "人像",
         "sCurve": "S 曲線",
+        "title": "預設",
         "warm": "暖調"
-      }
+      },
+      "resetAllParametric": "重置所有參數曲線",
+      "resetAllPoint": "重置所有點曲線",
+      "resetParametric": "重置 {{channel}} 參數曲線",
+      "resetPoint": "重置 {{channel}} 點曲線"
     },
     "details": {
       "blueYellow": "藍/黃",
@@ -162,6 +170,14 @@
       "roundness": "圓度",
       "size": "大小",
       "vignette": "暗角"
+    },
+    "splitToning": {
+      "balance": "Balance / 平衡",
+      "enabled": "Enable / 启用",
+      "highlights": "Highlights / 高光",
+      "saturation": "Saturation",
+      "shadows": "Shadows / 阴影",
+      "title": "Split Toning / 分离色调"
     }
   },
   "contextMenus": {
@@ -413,6 +429,7 @@
         "aiEdit": "AI 編輯 {{count}}",
         "aiEdit_one": "AI 編輯 {{count}}",
         "aiEdit_other": "AI 編輯 {{count}}",
+        "autoErase_other": "Auto Erase {{count}}",
         "clone": "仿製 {{count}}",
         "clone_other": "仿製 {{count}}",
         "heal": "修復 {{count}}",
@@ -424,12 +441,13 @@
         "quickErase": "快速擦除 {{count}}",
         "quickErase_one": "快速擦除 {{count}}",
         "quickErase_other": "快速擦除 {{count}}",
-        "retouch": "修飾 {{count}}"
+        "retouch": "修飾 {{count}}",
+        "retouch_other": "Retouch {{count}} patches"
       },
       "resetInpaintingTooltip": "重置影像修復",
       "settings": {
-        "aiModelDownloading": "AI 模型下載中：",
         "aiModelDownloadFailed": "AI 模型下載失敗，再次使用該功能即可重試。",
+        "aiModelDownloading": "AI 模型下載中：",
         "aiModelDownloadOffline": "網路無法使用，無法下載 AI 模型。恢復網路後再次使用該功能將自動重試。",
         "basicInpaintTooltipDisabled": "生成式後端不可用或未配置。需要基礎影像修復。",
         "basicInpaintTooltipEnabled": "基礎影像修復更快但不具備生成式能力。取消勾選以使用生成式 AI 並輸入文字提示。",
@@ -443,6 +461,7 @@
         "inpaintSelectionButton": "修復選區",
         "invertComponent": "反轉元件",
         "invertSelection": "反轉選區",
+        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device.",
         "placeholder": "例如，一片花海",
         "quickEraseDesc": "填充選區以移除物件。",
         "selectionPropertiesTitle": "選區屬性",
@@ -450,8 +469,21 @@
       },
       "touchUpTitle": "潤色"
     },
+    "compare": {
+      "after": "調整後",
+      "before": "原圖",
+      "close": "關閉",
+      "dragHint": "拖動分隔線進行對比",
+      "loading": "載入中…",
+      "reset": "重置",
+      "title": "修改前後對比",
+      "toggleSplit": "切換分割方向",
+      "zoomIn": "放大",
+      "zoomOut": "縮小"
+    },
     "crop": {
       "aspectRatioHeading": "寬高比",
+      "autoCropAfterRotate": "Auto-crop black borders after rotation",
       "custom": {
         "hPlaceholder": "高",
         "hTooltip": "高度",
@@ -544,6 +576,7 @@
       "rotationHeading": "旋轉",
       "title": "裁剪與變換",
       "tooltips": {
+        "aiStraighten": "Auto-straighten horizon",
         "compositionOverlay": "構圖疊加",
         "flipHoriz": "水平翻轉影像",
         "flipVert": "垂直翻轉影像",
@@ -624,17 +657,6 @@
         "grow": "擴張",
         "tolerance": "容差"
       },
-      "toolbar": {
-        "title": "蒙版編輯",
-        "invert": "反轉",
-        "clearMask": "清除蒙版",
-        "overlayOn": "顯示蒙版疊加",
-        "overlayOff": "隱藏蒙版疊加",
-        "done": "完成",
-        "strength": "強度",
-        "brushSize": "筆刷大小",
-        "brushFeather": "柔軟度"
-      },
       "patches": {
         "copyName": "{{name}} 副本",
         "invertedName": "{{name}} 反轉",
@@ -645,8 +667,8 @@
       "rangeTitle": "範圍與全域",
       "resetMaskingTooltip": "重置遮色片",
       "settings": {
-        "aiModelDownloading": "AI 模型下載中：",
         "aiModelDownloadFailed": "AI 模型下載失敗，再次使用該功能即可重試。",
+        "aiModelDownloading": "AI 模型下載中：",
         "aiModelDownloadOffline": "網路無法使用，無法下載 AI 模型。恢復網路後再次使用該功能將自動重試。",
         "applyPreset": "應用預設",
         "componentPropertiesTitle": "{{name}} 屬性",
@@ -664,6 +686,17 @@
       },
       "toggleAnalyticsInAdjustments": "在調整面板中切換分析",
       "toggleAnalyticsTooltip": "切換分析顯示",
+      "toolbar": {
+        "brushFeather": "柔軟度",
+        "brushSize": "筆刷大小",
+        "clearMask": "清除蒙版",
+        "done": "完成",
+        "invert": "反轉",
+        "overlayOff": "隱藏蒙版疊加",
+        "overlayOn": "顯示蒙版疊加",
+        "strength": "強度",
+        "title": "蒙版編輯"
+      },
       "tooltips": {
         "addToCurrent": "將 {{name}} 新增到當前遮色片或建立新遮色片（右鍵單擊）",
         "createNew": "建立新 {{name}} 遮色片",
@@ -708,13 +741,15 @@
         "clickToOpenTooltip": "點選在新標籤頁中開啟地圖",
         "latitude": "緯度",
         "longitude": "經度",
+        "offlineMapLabel": "Offline world map with photo location marker",
+        "openOnlineMap": "Open online map",
         "title": "GPS 位置"
       },
       "organization": {
         "addTagPlaceholder": "新增標籤...",
         "colorLabel": "顏色標籤",
-        "noTags": "無標籤",
         "none": "無",
+        "noTags": "無標籤",
         "rating": "評分",
         "ratingLabels": "評分與標籤",
         "tags": "標籤",
@@ -746,12 +781,12 @@
         "exportFolder": "匯出資料夾",
         "exportPreset": "匯出預設",
         "favorite": "加入收藏",
-        "unfavorite": "取消收藏",
         "newFolder": "新建資料夾",
         "newPreset": "新建預設",
         "overwrite": "覆蓋",
         "renameFolder": "重新命名資料夾",
-        "sortAll": "全部按字母排序"
+        "sortAll": "全部按字母排序",
+        "unfavorite": "取消收藏"
       },
       "status": {
         "empty": "尚未儲存預設。建立您自己的預設、從檔案匯入或探索社群預設。",
@@ -795,6 +830,8 @@
       "tooltips": {
         "aperture": "光圈",
         "backToLibrary": "返回相簿",
+        "closeCompare": "關閉對比",
+        "compare": "修改前後對比",
         "focalLength": "焦距",
         "fullscreen": "切換全屏（F）",
         "iso": "ISO",
@@ -802,23 +839,9 @@
         "showEdited": "顯示編輯後（B）",
         "showOriginal": "顯示原始（B）",
         "shutterSpeed": "快門速度",
-        "undo": "復原（Ctrl+Z）或歷史記錄（右鍵單擊）",
-        "compare": "修改前後對比",
-        "closeCompare": "關閉對比"
+        "undo": "復原（Ctrl+Z）或歷史記錄（右鍵單擊）"
       },
       "vc": "VC"
-    },
-    "compare": {
-      "title": "修改前後對比",
-      "toggleSplit": "切換分割方向",
-      "zoomIn": "放大",
-      "zoomOut": "縮小",
-      "reset": "重置",
-      "close": "關閉",
-      "before": "原圖",
-      "after": "調整後",
-      "dragHint": "拖動分隔線進行對比",
-      "loading": "載入中…"
     }
   },
   "export": {
@@ -834,6 +857,17 @@
       "kb": "KB",
       "mb": "MB",
       "tb": "TB"
+    },
+    "color": {
+      "bitDepth": "Bit Depth",
+      "bitDepth16Desc": "Larger files, posterization-free editing",
+      "bitDepth8Desc": "Smaller files, standard display",
+      "colorSpace": "Color Space",
+      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
+      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
+      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
+      "colorSpaceDesc_srgb": "Standard for the web and most screens",
+      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
     },
     "dialog": {
       "saveEditedImageTitle": "儲存編輯後的影像",
@@ -868,6 +902,7 @@
     },
     "sections": {
       "advanced": "高階",
+      "color": "Color Output",
       "fileNaming": "檔案命名",
       "fileSettings": "檔案設定",
       "imageSizing": "影像大小",
@@ -878,16 +913,17 @@
       "cancelExport": "取消匯出",
       "cancelled": "匯出已取消",
       "cancelling": "正在取消匯出…",
+      "completed": "Export completed",
       "estimatedAverageSize": "（平均 {{size}}）",
       "estimatedSize": "預計檔案大小：約 {{size}}",
       "estimatedTotalSize": "預計總大小：約 {{size}}",
       "estimatingSize": "正在估算大小...",
+      "exporting": "匯出中…",
+      "exportingProgress": "匯出中…（{{current}}/{{total}}）",
       "exportMultiple": "匯出 {{count}} {{label}}",
       "exportMultiple_one": "匯出 {{count}} {{label}}",
       "exportMultiple_other": "匯出 {{count}} {{label}}",
       "exportSingle": "匯出 {{label}}",
-      "exporting": "匯出中…",
-      "exportingProgress": "匯出中…（{{current}}/{{total}}）",
       "failed": "匯出失敗",
       "noImageSelected": "未選擇要匯出的影像。",
       "noImagesSelected": "未選擇影像。",
@@ -946,8 +982,8 @@
       "iso": "ISO",
       "metadata": "中繼資料",
       "noMetadataAvailable": "無可用中繼資料",
-      "noTagsAdded": "未新增標籤",
       "none": "無",
+      "noTagsAdded": "未新增標籤",
       "rateAndLabel": "評分與標籤",
       "rating": "評分",
       "selectImagesToCompare": "選擇要比較的影像",
@@ -1134,6 +1170,11 @@
       "communityPresets": "社群預設",
       "goHome": "返回首頁",
       "importImages": "匯入影像"
+    },
+    "viewMode": {
+      "culling": "Culling View",
+      "grid": "Grid View",
+      "list": "List View"
     }
   },
   "masks": {
@@ -1262,9 +1303,9 @@
       "applyButton_one": "應用到 1 張影像",
       "applyButton_other": "應用到 {{count}} 張影像",
       "bestImage": "最佳影像",
+      "blurryImagesTab": "模糊影像",
       "blurThreshold": "模糊臨界值",
       "blurThresholdDesc": "銳度評分低於此值的影像將被標記。值越高越嚴格。",
-      "blurryImagesTab": "模糊影像",
       "cancel": "取消",
       "close": "關閉",
       "cullingFailed": "篩選失敗",
@@ -1698,16 +1739,13 @@
           "title": "內建 AI（CPU）"
         },
         "description": "RapidRAW 的 AI 專為靈活性而設計。選擇您理想的工作流程，從快速的本地工具到強大的自託管。",
+        "localFirstNote": "所有 AI 功能皆在本機裝置上完整執行 —— 無需帳號、無需訂閱、無需雲端連線。",
         "providers": {
           "aiConnector": "AI 聯結器",
           "cpu": "CPU"
         },
-        "title": "生成式 AI",
-        "localFirstNote": "所有 AI 功能皆在本機裝置上完整執行 —— 無需帳號、無需訂閱、無需雲端連線。"
+        "title": "生成式 AI"
       },
-      "alwaysDecodeRaw": "始終解碼 RAW",
-      "alwaysDecodeRawDesc": "強制對縮圖進行完整的 RAW 解碼，而不是使用內建的 JPEG 預覽。如果您的縮圖在顏色或對比度上與打開的影像不同，請啟用此選項。",
-      "alwaysDecodeRawLabel": "始終為縮圖解碼 RAW",
       "aiAcceleration": "AI 加速檔位",
       "aiAccelerationCurrent": "目前生效：{{ep}}",
       "aiAccelerationDesc": "選擇 AI 模型的執行方式：自動檔在硬體支援時使用 NNAPI / CoreML 加速；相容檔強制 CPU。變更將在重新啟動應用程式後生效。",
@@ -1716,6 +1754,9 @@
         "compatibility": "相容模式（僅 CPU）",
         "performance": "效能優先（硬體加速）"
       },
+      "alwaysDecodeRaw": "始終解碼 RAW",
+      "alwaysDecodeRawDesc": "強制對縮圖進行完整的 RAW 解碼，而不是使用內建的 JPEG 預覽。如果您的縮圖在顏色或對比度上與打開的影像不同，請啟用此選項。",
+      "alwaysDecodeRawLabel": "始終為縮圖解碼 RAW",
       "backend": "處理後端",
       "backendDesc": "選擇圖形 API。推薦使用「自動」。在某些系統上可能解決崩潰問題。",
       "backends": {
@@ -1810,8 +1851,8 @@
     "tagging": {
       "addCustomPlaceholder": "新增自定義 AI 標籤（逗號分隔）...",
       "addCustomTooltip": "新增 AI 標籤",
-      "addShortcutTooltip": "新增快捷方式",
       "addShortcutsPlaceholder": "新增快捷方式（逗號分隔）...",
+      "addShortcutTooltip": "新增快捷方式",
       "aiTagging": "AI 標籤",
       "aiTaggingDesc": "使用 AI（CLIP）模型啟用自動影像標籤。這將下載額外的模型，並在瀏覽資料夾時影響效能。標籤用於搜尋資料夾。",
       "amount": "數量",

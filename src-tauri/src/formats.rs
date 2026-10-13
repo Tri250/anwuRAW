@@ -116,3 +116,63 @@ pub fn is_supported_image_file<P: AsRef<Path>>(path: P) -> bool {
         .iter()
         .any(|non_raw_ext| non_raw_ext.eq_ignore_ascii_case(ext))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 注册表数据完整性：描述非空、普通格式无重复。
+    #[test]
+    fn registry_entries_are_well_formed() {
+        for &(ext, description) in RAW_EXTENSIONS {
+            assert!(!ext.is_empty() && ext == ext.to_ascii_lowercase(), "ext must be lowercase: {ext}");
+            assert!(!description.is_empty(), "{ext}: description required");
+        }
+
+        let mut non_raw: Vec<&&str> = NON_RAW_EXTENSIONS.iter().collect();
+        non_raw.sort();
+        let before = non_raw.len();
+        non_raw.dedup();
+        assert_eq!(before, non_raw.len(), "duplicate non-raw extension");
+    }
+
+    /// RAW 判定：代表厂商样例 + 大小写不敏感 + 非 RAW/无扩展名排除。
+    #[test]
+    fn raw_detection_matrix() {
+        let raw_samples = [
+            "IMG_0001.CR3",
+            "DSC_1234.NEF",
+            "a7r5.ARW",
+            "capture.dng",
+            "IMG_0001.ProRAW.pro",
+            "pana.RW2",
+            "fuji.RAF",
+        ];
+        for name in raw_samples {
+            assert!(is_raw_file(name), "{name} should be raw");
+            assert!(is_supported_image_file(name), "{name} should be supported");
+        }
+
+        for name in ["photo.JPG", "render.PNG", "anim.gif", "scan.tiff", "depth.exr"] {
+            assert!(!is_raw_file(name), "{name} must not be raw");
+            assert!(is_supported_image_file(name), "{name} should be supported");
+        }
+
+        for name in ["archive.zip", "notes.txt", "noext", ".hidden.png"] {
+            assert!(!is_supported_image_file(name), "{name} must be rejected");
+        }
+    }
+
+    /// 上游 `image` crate 支持的格式都应已注册（防新格式遗漏）。
+    #[test]
+    fn image_crate_formats_are_registered() {
+        // image 0.25 能解码的扩展名采样（不含 exr/hdr 等已在表中的）
+        let expected = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "webp", "qoi", "ff"];
+        for ext in expected {
+            assert!(
+                NON_RAW_EXTENSIONS.contains(&ext),
+                "{ext} supported by `image` crate but missing from NON_RAW_EXTENSIONS"
+            );
+        }
+    }
+}

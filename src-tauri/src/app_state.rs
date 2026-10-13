@@ -19,6 +19,7 @@ use crate::image_processing::GpuContext;
 use crate::launch_request::ExternalEditSession;
 use crate::lens_correction::LensDatabase;
 use crate::lut_processing::Lut;
+use crate::render_scheduler::RenderScheduler;
 
 #[derive(Serialize, Deserialize)]
 pub struct WindowState {
@@ -148,6 +149,7 @@ pub struct AppState {
     pub ai_state: Mutex<Option<AiState>>,
     pub ai_init_lock: TokioMutex<()>,
     pub export_task_token: Arc<Mutex<Option<Arc<AtomicBool>>>>,
+    pub export_job_manager: Arc<crate::export_queue::ExportJobManager>,
     pub hdr_result: Arc<Mutex<Option<DynamicImage>>>,
     pub panorama_result: Arc<Mutex<Option<DynamicImage>>>,
     pub focus_stack_result: Arc<Mutex<Option<DynamicImage>>>,
@@ -171,6 +173,7 @@ pub struct AppState {
     pub decoded_image_cache: Mutex<DecodedImageCache>,
     pub thumbnail_manager: Arc<ThumbnailManager>,
     pub metadata_manager: Arc<MetadataManager>,
+    pub render_scheduler: Arc<RenderScheduler>,
     pub disks_cache: Mutex<Option<Disks>>,
     pub disks_cache_refreshing: AtomicBool,
     pub camera_session: Mutex<CameraSession>,

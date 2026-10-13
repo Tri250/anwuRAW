@@ -3,7 +3,7 @@ use crate::app_state::AppState;
 use crate::file_management::parse_virtual_path;
 use crate::formats::is_raw_file;
 use crate::image_loader::load_base_image_from_bytes;
-use crate::image_processing::apply_cpu_default_raw_processing;
+use crate::image_processing::apply_raw_input_prep;
 use base64::{Engine as _, engine::general_purpose};
 use image::{DynamicImage, GenericImageView, ImageFormat, Rgb, Rgb32FImage};
 use rayon::prelude::*;
@@ -358,7 +358,7 @@ fn denoise_image(
     let mut denoised_preview_source = out_dynamic.clone();
 
     if is_raw {
-        apply_cpu_default_raw_processing(&mut denoised_preview_source);
+        apply_raw_input_prep(&mut denoised_preview_source);
     }
 
     let denoised_preview = if new_width != width {
@@ -378,7 +378,7 @@ fn denoise_image(
     let mut original_dynamic = DynamicImage::ImageRgb32F(rgb_img_for_denoiser);
 
     if is_raw {
-        apply_cpu_default_raw_processing(&mut original_dynamic);
+        apply_raw_input_prep(&mut original_dynamic);
     }
     let original_preview = if new_width != width {
         original_dynamic.resize(new_width, new_height, image::imageops::FilterType::Lanczos3)

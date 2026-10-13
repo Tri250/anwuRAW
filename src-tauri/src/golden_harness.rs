@@ -23,10 +23,8 @@ use crate::param_matrix::{MATRIX, TONE_MAPPER_LEVELS, levels};
 
 pub use crate::gpu_processing::GpuProcessor;
 pub use crate::image_processing::GpuContext;
-// CPU/GPU 一致性 harness（Task 5）所需的 CPU 侧实现
-pub use crate::image_processing::{
-    apply_cpu_agx_tonemap, apply_cpu_default_raw_processing, apply_srgb_to_linear,
-};
+// AR-2 后仅存的 CPU 侧算子（合成域 input-prep 表面，供测试消费）
+pub use crate::image_processing::{apply_raw_input_prep, apply_srgb_to_linear};
 
 /// 单个快照案例：某张基准图 × 某组 adjustments（+ 可选合成 LUT）
 pub struct CaseSpec {
@@ -381,5 +379,143 @@ pub fn render_case(
     let view = texture.create_view(&Default::default());
 
     let (pixels, _w, _h, _x, _y) = processor.run(&view, width, height, request, false, false)?;
-    Ok(pixels)
+
+    // W4-D3：PostStage（channel_mixer + split_toning）收编为引擎后段，
+    // 纳入快照契约。对未包含 channelMixer/splitToning 键的既有案例为
+    // 精确恒等（字节不变），历史基线无需重建。
+    let img = DynamicImage::ImageRgba8(
+        image::RgbaImage::from_raw(width, height, pixels).expect("processor output dims"),
+    );
+    let img = crate::image_processing::apply_post_gpu_adjustments(img, adjustment);
+    Ok(img.to_rgba8().into_raw())
+}
+
+/// W4-D3 PostStage 案例：channel_mixer / split_toning 的引擎后段契约锁定。
+///
+/// - channelMixer 非单位矩阵（对角失衡 + 交叉项）× color_checker
+/// - channelMixer 单色化（灰度混合）× gradient_v
+/// - splitToning 启用（阴影/高光双向着色 + balance）× gradient_v
+/// - sectionVisibility 门控：键存在但 section 隐藏 → 必须恒等
+/// - channelMixer + splitToning 复合 × skin_tone
+pub fn poststage_cases() -> Vec<CaseSpec> {
+    let mut cases = Vec::new();
+
+    // channelMixer 非单位矩阵 × color_checker（色块对通道重映射最敏感）
+    let mut adj = base_visibility(true);
+    inject(
+        &mut adj,
+        "",
+        "channelMixer",
+        json!({
+            "red_from_red": 120.0, "red_from_green": -10.0, "red_from_blue": 5.0,
+            "green_from_red": 10.0, "green_from_green": 105.0, "green_from_blue": 0.0,
+            "blue_from_red": 0.0, "blue_from_green": 15.0, "blue_from_blue": 90.0
+        }),
+    );
+    cases.push(CaseSpec {
+        id: "color_checker__channelMixer__matrix".into(),
+        image_id: "color_checker",
+        adjustment: adj,
+        lut: None,
+    });
+
+    // channelMixer 单色化（灰度等权）× gradient_v
+    let mut adj = base_visibility(true);
+    inject(
+        &mut adj,
+        "",
+        "channelMixer",
+        json!({
+            "red_from_red": 30.0, "red_from_green": 59.0, "red_from_blue": 11.0,
+            "green_from_red": 30.0, "green_from_green": 59.0, "green_from_blue": 11.0,
+            "blue_from_red": 30.0, "blue_from_green": 59.0, "blue_from_blue": 11.0
+        }),
+    );
+    cases.push(CaseSpec {
+        id: "gradient_v__channelMixer__mono".into(),
+        image_id: "gradient_v",
+        adjustment: adj,
+        lut: None,
+    });
+
+    // splitToning 双向着色 × gradient_v（亮度分层最敏感）
+    let mut adj = base_visibility(true);
+    inject(
+        &mut adj,
+        "",
+        "splitToning",
+        json!({
+            "shadows_hue": 30.0, "shadows_saturation": 50.0,
+            "highlights_hue": 200.0, "highlights_saturation": 50.0,
+            "balance": 10.0, "enabled": true
+        }),
+    );
+    cases.push(CaseSpec {
+        id: "gradient_v__splitToning__dual".into(),
+        image_id: "gradient_v",
+        adjustment: adj,
+        lut: None,
+    });
+
+    // sectionVisibility 门控：channelMixer/splitToning 键存在但隐藏 → 恒等输出
+    let mut adj = base_visibility(true);
+    adj["sectionVisibility"]["channel_mixer"] = json!(false);
+    adj["sectionVisibility"]["split_toning"] = json!(false);
+    inject(
+        &mut adj,
+        "",
+        "channelMixer",
+        json!({
+            "red_from_red": 150.0, "red_from_green": 0.0, "red_from_blue": 0.0,
+            "green_from_red": 0.0, "green_from_green": 50.0, "green_from_blue": 0.0,
+            "blue_from_red": 0.0, "blue_from_green": 0.0, "blue_from_blue": 50.0
+        }),
+    );
+    inject(
+        &mut adj,
+        "",
+        "splitToning",
+        json!({
+            "shadows_hue": 90.0, "shadows_saturation": 80.0,
+            "highlights_hue": 300.0, "highlights_saturation": 80.0,
+            "balance": 0.0, "enabled": true
+        }),
+    );
+    cases.push(CaseSpec {
+        id: "color_checker__poststage__hidden".into(),
+        image_id: "color_checker",
+        adjustment: adj,
+        lut: None,
+    });
+
+    // 复合：channelMixer + splitToning 同时启用 × skin_tone
+    let mut adj = base_visibility(true);
+    inject(
+        &mut adj,
+        "",
+        "channelMixer",
+        json!({
+            "red_from_red": 110.0, "red_from_green": 5.0, "red_from_blue": 0.0,
+            "green_from_red": 0.0, "green_from_green": 100.0, "green_from_blue": 5.0,
+            "blue_from_red": 0.0, "blue_from_green": 0.0, "blue_from_blue": 95.0
+        }),
+    );
+    inject(
+        &mut adj,
+        "",
+        "splitToning",
+        json!({
+            "shadows_hue": 210.0, "shadows_saturation": 30.0,
+            "highlights_hue": 45.0, "highlights_saturation": 40.0,
+            "balance": -20.0, "enabled": true
+        }),
+    );
+    cases.push(CaseSpec {
+        id: "skin_tone__poststage__combo".into(),
+        image_id: "skin_tone",
+        adjustment: adj,
+        lut: None,
+    });
+
+    cases
 }

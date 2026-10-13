@@ -1,3 +1,5 @@
+//! W7-G4 AI 能力命令：生成式蒙版/深度/主体分割（纯端侧模型推理）。
+
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::io::Cursor;
@@ -5,25 +7,37 @@ use std::io::Cursor;
 use base64::{Engine as _, engine::general_purpose};
 use image::{GrayImage, ImageFormat};
 
-use crate::ai_connector;
 use crate::ai_processing::{
     AiDepthMaskParameters, AiForegroundMaskParameters, AiSkyMaskParameters,
-    AiSubjectMaskParameters, CachedDepthMap, download_entry, endpoints_from_handle,
-    generate_image_embeddings, get_models_dir, get_or_init_ai_models, run_depth_anything_model,
-    run_sam_decoder, run_sky_seg_model, run_u2netp_model,
+    AiSubjectMaskParameters, CachedDepthMap, generate_image_embeddings, get_or_init_ai_models,
+    run_depth_anything_model, run_sam_decoder, run_sky_seg_model, run_u2netp_model,
 };
-use crate::app_settings::load_settings;
 use crate::app_state::AppState;
 use crate::cache_utils::GEOMETRY_KEYS;
-use crate::get_cached_full_warped_image;
+use crate::commands::engine::get_cached_full_warped_image;
 
-fn encode_to_base64_png(image: &GrayImage) -> Result<String, String> {
+pub(super) fn encode_to_base64_png(image: &GrayImage) -> Result<String, String> {
     let mut buf = Cursor::new(Vec::new());
     image
         .write_to(&mut buf, ImageFormat::Png)
         .map_err(|e| e.to_string())?;
     let base64_str = general_purpose::STANDARD.encode(buf.get_ref());
     Ok(format!("data:image/png;base64,{}", base64_str))
+}
+
+/// path + 几何参数哈希（深度图/embeddings 缓存键）
+pub(super) fn geometry_cache_hash(path: &str, js_adjustments: &serde_json::Value) -> String {
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(path.as_bytes());
+    let mut geo_hasher = DefaultHasher::new();
+    for key in GEOMETRY_KEYS {
+        if let Some(val) = js_adjustments.get(key) {
+            key.hash(&mut geo_hasher);
+            val.to_string().hash(&mut geo_hasher);
+        }
+    }
+    hasher.update(&geo_hasher.finish().to_le_bytes());
+    hasher.finalize().to_hex().to_string()
 }
 
 #[tauri::command]
@@ -105,19 +119,7 @@ pub async fn generate_ai_depth_mask(
         .await
         .map_err(|e| e.to_string())?;
 
-    let path_hash = {
-        let mut hasher = blake3::Hasher::new();
-        hasher.update(path.as_bytes());
-        let mut geo_hasher = DefaultHasher::new();
-        for key in GEOMETRY_KEYS {
-            if let Some(val) = js_adjustments.get(key) {
-                key.hash(&mut geo_hasher);
-                val.to_string().hash(&mut geo_hasher);
-            }
-        }
-        hasher.update(&geo_hasher.finish().to_le_bytes());
-        hasher.finalize().to_hex().to_string()
-    };
+    let path_hash = geometry_cache_hash(&path, &js_adjustments);
 
     let cached_depth = {
         let mut ai_state_lock = state.ai_state.lock().unwrap_or_else(|e| e.into_inner());
@@ -190,7 +192,8 @@ pub async fn generate_full_image_depth_map(
     .await
     .map_err(|e| e.to_string())?;
 
-    let warped_image = crate::get_cached_full_warped_image(&state, &js_adjustments)?;
+    let warped_image =
+        crate::commands::engine::get_cached_full_warped_image(&state, &js_adjustments)?;
 
     let depth_img = crate::ai_processing::run_depth_anything_model(
         warped_image.as_ref(),
@@ -225,19 +228,7 @@ pub async fn generate_ai_subject_mask(
         .await
         .map_err(|e| e.to_string())?;
 
-    let path_hash = {
-        let mut hasher = blake3::Hasher::new();
-        hasher.update(path.as_bytes());
-        let mut geo_hasher = DefaultHasher::new();
-        for key in GEOMETRY_KEYS {
-            if let Some(val) = js_adjustments.get(key) {
-                key.hash(&mut geo_hasher);
-                val.to_string().hash(&mut geo_hasher);
-            }
-        }
-        hasher.update(&geo_hasher.finish().to_le_bytes());
-        hasher.finalize().to_hex().to_string()
-    };
+    let path_hash = geometry_cache_hash(&path, &js_adjustments);
 
     let embeddings = {
         let mut ai_state_lock = state.ai_state.lock().unwrap_or_else(|e| e.into_inner());
@@ -371,19 +362,7 @@ pub async fn precompute_ai_subject_mask(
         .await
         .map_err(|e| e.to_string())?;
 
-    let path_hash = {
-        let mut hasher = blake3::Hasher::new();
-        hasher.update(path.as_bytes());
-        let mut geo_hasher = DefaultHasher::new();
-        for key in GEOMETRY_KEYS {
-            if let Some(val) = js_adjustments.get(key) {
-                key.hash(&mut geo_hasher);
-                val.to_string().hash(&mut geo_hasher);
-            }
-        }
-        hasher.update(&geo_hasher.finish().to_le_bytes());
-        hasher.finalize().to_hex().to_string()
-    };
+    let path_hash = geometry_cache_hash(&path, &js_adjustments);
 
     let mut ai_state_lock = state.ai_state.lock().unwrap_or_else(|e| e.into_inner());
     let ai_state = ai_state_lock.as_mut().unwrap();
@@ -402,79 +381,4 @@ pub async fn precompute_ai_subject_mask(
     ai_state.embeddings = Some(new_embeddings);
 
     Ok(())
-}
-
-#[tauri::command]
-pub async fn check_ai_connector_status(app_handle: tauri::AppHandle) {
-    let settings = load_settings(app_handle.clone()).unwrap_or_default();
-    let is_connected = if let Some(address) = settings.ai_connector_address {
-        ai_connector::check_status(&address).await.unwrap_or(false)
-    } else {
-        false
-    };
-    use tauri::Emitter;
-    let _ = app_handle.emit(
-        "ai-connector-status-update",
-        serde_json::json!({ "connected": is_connected }),
-    );
-}
-
-#[tauri::command]
-pub async fn test_ai_connector_connection(address: String) -> Result<(), String> {
-    match ai_connector::check_status(&address).await {
-        Ok(true) => Ok(()),
-        Ok(false) => Err("Server reachable but returned bad health status".to_string()),
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-/// 模型下载状态信息（Task 5：体积预估确认框 / 状态可视化数据层）
-#[derive(serde::Serialize)]
-pub struct ModelDownloadInfo {
-    pub id: String,
-    pub display_name: String,
-    pub size_bytes: Option<u64>,
-    pub downloaded: bool,
-    pub optional: bool,
-}
-
-/// 批量查询模型下载状态：下载体积预估（size_bytes 来自 manifest，已在线核实）、
-/// 是否已下载、是否为可选下载包（optional 模型必须用户明确触发下载）
-#[tauri::command]
-pub fn get_model_download_info(
-    app_handle: tauri::AppHandle,
-    ids: Vec<String>,
-) -> Result<Vec<ModelDownloadInfo>, String> {
-    let models_dir = get_models_dir(&app_handle).map_err(|e| e.to_string())?;
-    let manifest = crate::model_manifest::ModelManifest::embedded();
-    Ok(ids
-        .iter()
-        .filter_map(|id| manifest.get(id))
-        .map(|entry| ModelDownloadInfo {
-            id: entry.id.clone(),
-            display_name: entry.display_name.clone(),
-            size_bytes: entry.default_variant().and_then(|v| v.size_bytes),
-            downloaded: entry
-                .filename()
-                .map(|f| models_dir.join(f).exists())
-                .unwrap_or(false),
-            optional: entry
-                .default_variant()
-                .map(|v| v.optional)
-                .unwrap_or(false),
-        })
-        .collect())
-}
-
-/// 显式下载可选模型（用户在体积预估确认框确认后触发；不做后台自动下载）
-#[tauri::command]
-pub async fn download_optional_model(
-    app_handle: tauri::AppHandle,
-    id: String,
-) -> Result<(), String> {
-    let models_dir = get_models_dir(&app_handle).map_err(|e| e.to_string())?;
-    let endpoints = endpoints_from_handle(&app_handle);
-    download_entry(&app_handle, &models_dir, &endpoints, &id)
-        .await
-        .map_err(|e| e.to_string())
 }

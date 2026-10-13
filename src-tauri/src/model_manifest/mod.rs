@@ -15,6 +15,8 @@ use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
 
+pub mod integrity;
+
 const MANIFEST_JSON: &str = include_str!("models.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,7 +67,15 @@ impl ModelManifest {
     pub fn embedded() -> &'static ModelManifest {
         static MANIFEST: OnceLock<ModelManifest> = OnceLock::new();
         MANIFEST.get_or_init(|| {
-            serde_json::from_str(MANIFEST_JSON).expect("embedded models.json must be valid")
+            let manifest: ModelManifest =
+                serde_json::from_str(MANIFEST_JSON).expect("embedded models.json must be valid");
+            assert!(
+                manifest.version <= integrity::SUPPORTED_MANIFEST_VERSION,
+                "manifest schema v{} exceeds supported v{}; review integrity/migration before bump",
+                manifest.version,
+                integrity::SUPPORTED_MANIFEST_VERSION
+            );
+            manifest
         })
     }
 

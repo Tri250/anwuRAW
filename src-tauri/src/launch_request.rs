@@ -162,3 +162,74 @@ pub fn emit_launch_request(app_handle: &tauri::AppHandle, request: LaunchRequest
         LaunchRequest::None => {}
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args(list: &[&str]) -> Vec<String> {
+        list.iter().map(|s| s.to_string()).collect()
+    }
+
+    /// TR-LR-1: 无头导出参数全解析（含 quality 非法值回退 90、缺省 format）。
+    #[test]
+    fn tr_lr_1_headless_export_parse() {
+        let req = parse_launch_args(&args(&["export", "in.raf", "--output", "out.tiff", "--quality", "75", "--keep-metadata", "--adjustments", "{\"exposure\":1}"]));
+        match req {
+            LaunchRequest::HeadlessExport(s) => {
+                assert_eq!(s.source, "in.raf");
+                assert_eq!(s.output, "out.tiff");
+                // 语义：无头导出的格式只来自 --format（缺省 jpeg），
+                // 不像 edit-session 分支那样从输出扩展名推断
+                assert_eq!(s.format, "jpeg");
+                assert_eq!(s.quality, 75);
+                assert!(s.keep_metadata);
+                assert_eq!(s.adjustments_override.as_deref(), Some("{\"exposure\":1}"));
+            }
+            other => panic!("expected headless export, got {other:?}"),
+        }
+
+        // 非法 quality 回退默认 90；无 --output 时字段为空（由执行侧报错）
+        let req = parse_launch_args(&args(&["export", "in.jpg", "--quality", "abc"]));
+        match req {
+            LaunchRequest::HeadlessExport(s) => {
+                assert_eq!(s.quality, 90);
+                assert_eq!(s.format, "jpeg");
+                assert!(s.output.is_empty());
+                assert!(!s.keep_metadata);
+            }
+            other => panic!("expected headless export, got {other:?}"),
+        }
+    }
+
+    /// TR-LR-2: 外部编辑会话——--edit + --output；tif→tiff 归一；quality 缺省 90。
+    #[test]
+    fn tr_lr_2_edit_session_parse() {
+        let req = parse_launch_args(&args(&["--edit", "raw.raf", "--output", "out.tif", "--quality", "80"]));
+        match req {
+            LaunchRequest::EditSession(s) => {
+                assert_eq!(s.source, "raw.raf");
+                assert_eq!(s.format, "tiff");
+                assert_eq!(s.jpeg_quality, 80);
+            }
+            other => panic!("expected edit session, got {other:?}"),
+        }
+
+        // 扩展名缺省格式推断
+        let req = parse_launch_args(&args(&["--edit", "a.jpg", "--output", "b.png"]));
+        match req {
+            LaunchRequest::EditSession(s) => assert_eq!(s.format, "png"),
+            other => panic!("expected edit session, got {other:?}"),
+        }
+    }
+
+    /// TR-LR-3: 文件打开与空参数；--edit 无 --output → OpenFile。
+    #[test]
+    fn tr_lr_3_open_and_fallbacks() {
+        assert!(matches!(parse_launch_args(&args(&["pic.jpg"])), LaunchRequest::OpenFile(p) if p == "pic.jpg"));
+        assert!(matches!(parse_launch_args(&args(&["--edit", "x.raf"])), LaunchRequest::OpenFile(p) if p == "x.raf"));
+        assert!(matches!(parse_launch_args(&args(&[])), LaunchRequest::None));
+        // 选项在前、位置参数在后（--output 单独出现不构成 edit session）
+        assert!(matches!(parse_launch_args(&args(&["--output", "o.jpg", "p.jpg"])), LaunchRequest::OpenFile(p) if p == "p.jpg"));
+    }
+}

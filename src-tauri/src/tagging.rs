@@ -16,9 +16,10 @@ use walkdir::WalkDir;
 
 use crate::file_management::{self, parse_virtual_path};
 use crate::formats::is_supported_image_file;
-use crate::hierarchy::TAG_HIERARCHY;
+use crate::tagging_utils::hierarchy::TAG_HIERARCHY;
 use crate::image_processing::ImageMetadata;
-use crate::{AppState, candidates::TAG_CANDIDATES};
+use crate::tagging_utils::candidates::TAG_CANDIDATES;
+use crate::AppState;
 
 pub const COLOR_TAG_PREFIX: &str = "color:";
 pub const USER_TAG_PREFIX: &str = "user:";

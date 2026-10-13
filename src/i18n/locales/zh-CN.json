@@ -2,10 +2,10 @@
   "adjustments": {
     "basic": {
       "blacks": "黑色",
+      "brightness": "亮度",
       "contrast": "对比度",
       "evShift": "EV 偏移",
       "exposure": "曝光",
-      "brightness": "亮度",
       "highlights": "高光",
       "mappers": {
         "agx": "AgX",
@@ -21,18 +21,24 @@
       },
       "reset": "重置",
       "scene": {
-        "title": "场景增强",
-        "desc": "一键应用专业调色风格",
         "auto": "自动",
         "autoDesc": "智能场景增强",
-        "prototypePortrait": "人像",
+        "desc": "一键应用专业调色风格",
         "prototypeLandscape": "风景",
         "prototypeNight": "夜景",
-        "prototypeWarmSunset": "暖阳"
+        "prototypePortrait": "人像",
+        "prototypeWarmSunset": "暖阳",
+        "title": "场景增强"
       },
       "shadows": "阴影",
       "toneMapper": "色调映射",
       "whites": "白色"
+    },
+    "channelMixer": {
+      "hint": "Adjust the percentage of each input color channel that contributes to the output channel.",
+      "outputs": "Output Channels / 输出通道",
+      "reset": "Reset / 重置",
+      "title": "Channel Mixer / 通道混合器"
     },
     "color": {
       "ariaSelectColor": "选择 {{name}} 颜色",
@@ -59,6 +65,8 @@
         "midtones": "中间调",
         "shadows": "阴影"
       },
+      "hslPickActive": "Color picker active — click the image to sample a hue",
+      "hslPickTooltip": "Pick color from image",
       "hue": "色相",
       "localHue": "局部色调",
       "luminance": "亮度",
@@ -83,13 +91,13 @@
       "whiteBalance": "白平衡"
     },
     "curves": {
-      "channelTitle": "{{channel}} 通道",
       "channels": {
         "blue": "蓝色",
         "green": "绿色",
         "luma": "亮度",
         "red": "红色"
       },
+      "channelTitle": "{{channel}} 通道",
       "copyParametric": "复制 {{channel}} 参数曲线",
       "copyPoint": "复制 {{channel}} 点曲线",
       "curveDataUnavailable": "曲线数据不可用。",
@@ -107,8 +115,6 @@
       "pastePoint": "粘贴点曲线",
       "pointCurve": "点曲线",
       "presets": {
-        "title": "预设",
-        "originalDesc": "将曲线重置为原图状态",
         "brighten": "提亮",
         "cool": "冷调",
         "darken": "压暗",
@@ -116,8 +122,10 @@
         "film": "胶片",
         "lowContrast": "低对比",
         "original": "原图",
+        "originalDesc": "将曲线重置为原图状态",
         "portrait": "人像",
         "sCurve": "S 曲线",
+        "title": "预设",
         "warm": "暖调"
       },
       "resetAllParametric": "重置所有参数曲线",
@@ -162,6 +170,14 @@
       "roundness": "圆度",
       "size": "大小",
       "vignette": "暗角"
+    },
+    "splitToning": {
+      "balance": "Balance / 平衡",
+      "enabled": "Enable / 启用",
+      "highlights": "Highlights / 高光",
+      "saturation": "Saturation",
+      "shadows": "Shadows / 阴影",
+      "title": "Split Toning / 分离色调"
     }
   },
   "contextMenus": {
@@ -404,17 +420,20 @@
       "manualCleanupTitle": "手动清理",
       "noImageSelected": "未选择图像。",
       "params": {
+        "decontaminate": "边缘净化",
         "feather": "羽化",
         "grow": "扩展",
         "intensity": "强度",
         "pressure": "压力",
-        "decontaminate": "边缘净化",
         "sensitivity": "灵敏度"
       },
       "patches": {
         "aiEdit": "AI 编辑 {{count}}",
         "aiEdit_one": "AI 编辑 {{count}}",
         "aiEdit_other": "AI 编辑 {{count}}",
+        "autoErase": "自动消除 {{count}}",
+        "autoErase_one": "自动消除 {{count}}",
+        "autoErase_other": "自动消除 {{count}}",
         "clone": "克隆 {{count}}",
         "clone_one": "克隆 {{count}}",
         "clone_other": "克隆 {{count}}",
@@ -429,14 +448,12 @@
         "quickErase_one": "快速擦除 {{count}}",
         "quickErase_other": "快速擦除 {{count}}",
         "retouch": "修饰 {{count}}",
-        "autoErase": "自动消除 {{count}}",
-        "autoErase_one": "自动消除 {{count}}",
-        "autoErase_other": "自动消除 {{count}}"
+        "retouch_other": "Retouch {{count}} patches"
       },
       "resetInpaintingTooltip": "重置图像修复",
       "settings": {
-        "aiModelDownloading": "AI 模型下载中：",
         "aiModelDownloadFailed": "AI 模型下载失败，再次使用该功能即可重试。",
+        "aiModelDownloading": "AI 模型下载中：",
         "aiModelDownloadOffline": "网络不可用，无法下载 AI 模型。恢复网络后再次使用该功能将自动重试。",
         "basicInpaintTooltipDisabled": "生成式后端不可用或未配置。需要基础图像修复。",
         "basicInpaintTooltipEnabled": "基础图像修复更快但不具备生成式能力。取消勾选以使用生成式 AI 并输入文本提示。",
@@ -458,8 +475,21 @@
       },
       "touchUpTitle": "润色"
     },
+    "compare": {
+      "after": "调整后",
+      "before": "原图",
+      "close": "关闭",
+      "dragHint": "拖动分隔线进行对比",
+      "loading": "加载中…",
+      "reset": "重置",
+      "title": "修改前后对比",
+      "toggleSplit": "切换分割方向",
+      "zoomIn": "放大",
+      "zoomOut": "缩小"
+    },
     "crop": {
       "aspectRatioHeading": "宽高比",
+      "autoCropAfterRotate": "旋转后自动裁剪黑边",
       "custom": {
         "hPlaceholder": "高",
         "hTooltip": "高度",
@@ -552,6 +582,7 @@
       "rotationHeading": "旋转",
       "title": "裁剪与变换",
       "tooltips": {
+        "aiStraighten": "Auto-straighten horizon",
         "compositionOverlay": "构图叠加",
         "flipHoriz": "水平翻转图像",
         "flipVert": "垂直翻转图像",
@@ -566,8 +597,7 @@
         "switchToLandscape": "切换为横向",
         "switchToPortrait": "切换为纵向",
         "transform": "透视和梯形校正"
-      },
-      "autoCropAfterRotate": "旋转后自动裁剪黑边"
+      }
     },
     "externalEdit": {
       "done": "完成",
@@ -643,8 +673,8 @@
       "rangeTitle": "范围与全局",
       "resetMaskingTooltip": "重置蒙版",
       "settings": {
-        "aiModelDownloading": "AI 模型下载中：",
         "aiModelDownloadFailed": "AI 模型下载失败，再次使用该功能即可重试。",
+        "aiModelDownloading": "AI 模型下载中：",
         "aiModelDownloadOffline": "网络不可用，无法下载 AI 模型。恢复网络后再次使用该功能将自动重试。",
         "applyPreset": "应用预设",
         "componentPropertiesTitle": "{{name}} 属性",
@@ -662,21 +692,21 @@
       },
       "toggleAnalyticsInAdjustments": "在调整面板中切换分析",
       "toggleAnalyticsTooltip": "切换分析显示",
+      "toolbar": {
+        "brushFeather": "柔软度",
+        "brushSize": "笔刷大小",
+        "clearMask": "清除蒙版",
+        "done": "完成",
+        "invert": "反选",
+        "overlayOff": "隐藏蒙版叠加",
+        "overlayOn": "显示蒙版叠加",
+        "strength": "强度",
+        "title": "蒙版编辑"
+      },
       "tooltips": {
         "addToCurrent": "将 {{name}} 添加到当前蒙版或创建新蒙版（右键单击）",
         "createNew": "创建新 {{name}} 蒙版",
         "selectNewSourcePoint": "{{modifier}} + 点击选择新的源点"
-      },
-      "toolbar": {
-        "title": "蒙版编辑",
-        "invert": "反选",
-        "clearMask": "清除蒙版",
-        "overlayOn": "显示蒙版叠加",
-        "overlayOff": "隐藏蒙版叠加",
-        "done": "完成",
-        "strength": "强度",
-        "brushSize": "笔刷大小",
-        "brushFeather": "柔软度"
       }
     },
     "metadata": {
@@ -717,15 +747,15 @@
         "clickToOpenTooltip": "点击在新标签页中打开地图",
         "latitude": "纬度",
         "longitude": "经度",
-        "title": "GPS 位置",
         "offlineMapLabel": "离线世界地图，显示照片定位标记",
-        "openOnlineMap": "打开在线地图"
+        "openOnlineMap": "打开在线地图",
+        "title": "GPS 位置"
       },
       "organization": {
         "addTagPlaceholder": "添加标签...",
         "colorLabel": "颜色标签",
-        "noTags": "无标签",
         "none": "无",
+        "noTags": "无标签",
         "rating": "评分",
         "ratingLabels": "评分与标签",
         "tags": "标签",
@@ -757,12 +787,12 @@
         "exportFolder": "导出文件夹",
         "exportPreset": "导出预设",
         "favorite": "添加到收藏",
-        "unfavorite": "取消收藏",
         "newFolder": "新建文件夹",
         "newPreset": "新建预设",
         "overwrite": "覆盖",
         "renameFolder": "重命名文件夹",
-        "sortAll": "全部按字母排序"
+        "sortAll": "全部按字母排序",
+        "unfavorite": "取消收藏"
       },
       "status": {
         "empty": "尚未保存预设。创建您自己的预设、从文件导入或探索社区预设。",
@@ -806,6 +836,8 @@
       "tooltips": {
         "aperture": "光圈",
         "backToLibrary": "返回图库",
+        "closeCompare": "关闭对比",
+        "compare": "修改前后对比",
         "focalLength": "焦距",
         "fullscreen": "切换全屏（F）",
         "iso": "ISO",
@@ -813,23 +845,9 @@
         "showEdited": "显示编辑后（B）",
         "showOriginal": "显示原始（B）",
         "shutterSpeed": "快门速度",
-        "undo": "撤销（Ctrl+Z）或历史记录（右键单击）",
-        "compare": "修改前后对比",
-        "closeCompare": "关闭对比"
+        "undo": "撤销（Ctrl+Z）或历史记录（右键单击）"
       },
       "vc": "VC"
-    },
-    "compare": {
-      "title": "修改前后对比",
-      "toggleSplit": "切换分割方向",
-      "zoomIn": "放大",
-      "zoomOut": "缩小",
-      "reset": "重置",
-      "close": "关闭",
-      "before": "原图",
-      "after": "调整后",
-      "dragHint": "拖动分隔线进行对比",
-      "loading": "加载中…"
     }
   },
   "export": {
@@ -845,6 +863,17 @@
       "kb": "KB",
       "mb": "MB",
       "tb": "TB"
+    },
+    "color": {
+      "bitDepth": "位深",
+      "bitDepth16Desc": "文件更大，无色调断裂，适合继续编辑",
+      "bitDepth8Desc": "文件更小，标准屏幕显示",
+      "colorSpace": "色彩空间",
+      "colorSpaceDesc_adobeRgb": "广泛用于打印与摄影流程",
+      "colorSpaceDesc_displayP3": "广色域 — 适合苹果 / HDR 显示器",
+      "colorSpaceDesc_proPhoto": "最大色域 — 专业归档用途",
+      "colorSpaceDesc_srgb": "网页与绝大多数屏幕的标准",
+      "jpgIccWarning": "JPEG 非 sRGB 时会嵌入 ICC 配置文件；部分看图软件可能仍按 sRGB 显示。"
     },
     "dialog": {
       "saveEditedImageTitle": "保存编辑后的图像",
@@ -866,17 +895,6 @@
       "removeGps": "移除 GPS 数据",
       "saveWithMetadata": "保存时包含元数据"
     },
-    "color": {
-      "bitDepth": "位深",
-      "bitDepth16Desc": "文件更大，无色调断裂，适合继续编辑",
-      "bitDepth8Desc": "文件更小，标准屏幕显示",
-      "colorSpace": "色彩空间",
-      "colorSpaceDesc_adobeRgb": "广泛用于打印与摄影流程",
-      "colorSpaceDesc_displayP3": "广色域 — 适合苹果 / HDR 显示器",
-      "colorSpaceDesc_proPhoto": "最大色域 — 专业归档用途",
-      "colorSpaceDesc_srgb": "网页与绝大多数屏幕的标准",
-      "jpgIccWarning": "JPEG 非 sRGB 时会嵌入 ICC 配置文件；部分看图软件可能仍按 sRGB 显示。"
-    },
     "resize": {
       "dontEnlarge": "不放大",
       "modes": {
@@ -890,27 +908,28 @@
     },
     "sections": {
       "advanced": "高级",
+      "color": "色彩输出",
       "fileNaming": "文件命名",
       "fileSettings": "文件设置",
       "imageSizing": "图像大小",
       "metadata": "元数据",
-      "watermark": "水印",
-      "color": "色彩输出"
+      "watermark": "水印"
     },
     "status": {
       "cancelExport": "取消导出",
       "cancelled": "导出已取消",
       "cancelling": "正在取消导出…",
+      "completed": "Export completed",
       "estimatedAverageSize": "（平均 {{size}}）",
       "estimatedSize": "预计文件大小：约 {{size}}",
       "estimatedTotalSize": "预计总大小：约 {{size}}",
       "estimatingSize": "正在估算大小...",
+      "exporting": "导出中…",
+      "exportingProgress": "导出中…（{{current}}/{{total}}）",
       "exportMultiple": "导出 {{count}} {{label}}",
       "exportMultiple_one": "导出 {{count}} {{label}}",
       "exportMultiple_other": "导出 {{count}} {{label}}",
       "exportSingle": "导出 {{label}}",
-      "exporting": "导出中…",
-      "exportingProgress": "导出中…（{{current}}/{{total}}）",
       "failed": "导出失败",
       "noImageSelected": "未选择要导出的图像。",
       "noImagesSelected": "未选择图像。",
@@ -969,8 +988,8 @@
       "iso": "ISO",
       "metadata": "元数据",
       "noMetadataAvailable": "无可用元数据",
-      "noTagsAdded": "未添加标签",
       "none": "无",
+      "noTagsAdded": "未添加标签",
       "rateAndLabel": "评分与标签",
       "rating": "评分",
       "selectImagesToCompare": "选择要比较的图像",
@@ -1157,11 +1176,17 @@
       "communityPresets": "社区预设",
       "goHome": "返回首页",
       "importImages": "导入图像"
+    },
+    "viewMode": {
+      "culling": "Culling View",
+      "grid": "Grid View",
+      "list": "List View"
     }
   },
   "masks": {
     "types": {
       "all": "整个图像",
+      "autoErase": "自动消除",
       "brush": "画笔",
       "clone": "克隆",
       "color": "颜色",
@@ -1178,8 +1203,7 @@
       "radial": "径向",
       "retouch": "修饰",
       "sky": "天空",
-      "subject": "主体",
-      "autoErase": "自动消除"
+      "subject": "主体"
     }
   },
   "menus": {
@@ -1285,9 +1309,9 @@
       "applyButton_one": "应用到 1 张图像",
       "applyButton_other": "应用到 {{count}} 张图像",
       "bestImage": "最佳图像",
+      "blurryImagesTab": "模糊图像",
       "blurThreshold": "模糊阈值",
       "blurThresholdDesc": "锐度评分低于此值的图像将被标记。值越高越严格。",
-      "blurryImagesTab": "模糊图像",
       "cancel": "取消",
       "close": "关闭",
       "cullingFailed": "筛选失败",
@@ -1721,16 +1745,13 @@
           "title": "内置 AI（CPU）"
         },
         "description": "RapidRAW 的 AI 专为灵活性而设计。选择您理想的工作流程，从快速的本地工具到强大的自托管。",
+        "localFirstNote": "所有 AI 功能均在本地设备上完整运行 —— 无需账号、无需订阅、无需连接云端。",
         "providers": {
           "aiConnector": "AI 连接器",
           "cpu": "CPU"
         },
-        "title": "生成式 AI",
-        "localFirstNote": "所有 AI 功能均在本地设备上完整运行 —— 无需账号、无需订阅、无需连接云端。"
+        "title": "生成式 AI"
       },
-      "alwaysDecodeRaw": "始终解码 RAW",
-      "alwaysDecodeRawDesc": "强制对缩略图进行完整的 RAW 解码，而不是使用内置的 JPEG 预览。如果您的缩略图在颜色或对比度上与打开的图像不同，请启用此选项。",
-      "alwaysDecodeRawLabel": "始终为缩略图解码 RAW",
       "aiAcceleration": "AI 加速档位",
       "aiAccelerationCurrent": "当前生效：{{ep}}",
       "aiAccelerationDesc": "选择 AI 模型的运行方式：自动档在硬件支持时使用 NNAPI / CoreML 加速；兼容档强制 CPU。更改将在重启应用后生效。",
@@ -1739,6 +1760,9 @@
         "compatibility": "兼容模式（仅 CPU）",
         "performance": "性能优先（硬件加速）"
       },
+      "alwaysDecodeRaw": "始终解码 RAW",
+      "alwaysDecodeRawDesc": "强制对缩略图进行完整的 RAW 解码，而不是使用内置的 JPEG 预览。如果您的缩略图在颜色或对比度上与打开的图像不同，请启用此选项。",
+      "alwaysDecodeRawLabel": "始终为缩略图解码 RAW",
       "backend": "处理后端",
       "backendDesc": "选择图形 API。推荐使用「自动」。在某些系统上可能解决崩溃问题。",
       "backends": {
@@ -1836,8 +1860,8 @@
     "tagging": {
       "addCustomPlaceholder": "添加自定义 AI 标签（逗号分隔）...",
       "addCustomTooltip": "添加 AI 标签",
-      "addShortcutTooltip": "添加快捷方式",
       "addShortcutsPlaceholder": "添加快捷方式（逗号分隔）...",
+      "addShortcutTooltip": "添加快捷方式",
       "aiTagging": "AI 标签",
       "aiTaggingDesc": "使用 AI（CLIP）模型启用自动图像标签。这将下载额外的模型，并在浏览文件夹时影响性能。标签用于搜索文件夹。",
       "amount": "数量",

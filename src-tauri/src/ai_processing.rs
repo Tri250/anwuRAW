@@ -24,6 +24,104 @@ use tokio::sync::Mutex as TokioMutex;
 const HF_MIRROR_ENDPOINT: &str = "https://hf-mirror.com";
 const HF_OFFICIAL_ENDPOINT: &str = "https://huggingface.co";
 
+// ===== W7-G2 CapabilityAdapter：能力 → 所需模型单一注册表 =====
+
+/// 端侧 AI 能力适配器：声明能力所需模型 id（与 model_manifest 对齐）。
+/// 下载层按登记表驱动；能力新增只扩此表，不再散改下载列表。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CapabilityAdapter {
+    pub capability: &'static str,
+    pub required_models: &'static [&'static str],
+}
+
+pub const SUBJECT_MASK: CapabilityAdapter = CapabilityAdapter {
+    capability: "subject_masking",
+    required_models: &["sam_encoder", "sam_decoder"],
+};
+pub const SKY_MASK: CapabilityAdapter = CapabilityAdapter {
+    capability: "sky_masking",
+    required_models: &["sky_seg"],
+};
+pub const FOREGROUND_MASK: CapabilityAdapter = CapabilityAdapter {
+    capability: "foreground_masking",
+    required_models: &["foreground_u2net"],
+};
+pub const DEPTH_ESTIMATION: CapabilityAdapter = CapabilityAdapter {
+    capability: "depth_estimation",
+    required_models: &["depth_anything"],
+};
+pub const INPAINTING: CapabilityAdapter = CapabilityAdapter {
+    capability: "inpainting",
+    required_models: &["inpainting_lama"],
+};
+pub const DENOISING: CapabilityAdapter = CapabilityAdapter {
+    capability: "denoising",
+    required_models: &["denoise_nind"],
+};
+pub const IMAGE_TAGGING: CapabilityAdapter = CapabilityAdapter {
+    capability: "image_tagging",
+    required_models: &["clip_model", "clip_tokenizer"],
+};
+
+/// 全部能力登记表（单一数据源；GET_MODEL_INFO/UI 亦可消费）
+pub const ALL_CAPABILITIES: &[CapabilityAdapter] = &[
+    SUBJECT_MASK,
+    SKY_MASK,
+    FOREGROUND_MASK,
+    DEPTH_ESTIMATION,
+    INPAINTING,
+    DENOISING,
+    IMAGE_TAGGING,
+];
+
+impl CapabilityAdapter {
+    pub fn get(capability: &str) -> Option<&'static CapabilityAdapter> {
+        ALL_CAPABILITIES.iter().find(|c| c.capability == capability)
+    }
+
+    /// 能力所需但 models_dir 缺失的模型 id（模型中心/预检消费）
+    pub fn missing_models(&self, models_dir: &Path) -> Vec<&'static str> {
+        self.required_models
+            .iter()
+            .filter(|id| {
+                crate::model_manifest::require(id)
+                    .ok()
+                    .and_then(|e| e.filename())
+                    .map(|f| !models_dir.join(f).exists())
+                    .unwrap_or(true)
+            })
+            .copied()
+            .collect()
+    }
+}
+
+/// 指定能力集合的模型 id 并集（去重，保持登记序）。
+/// get_or_init_ai_models 的下载列表由此驱动（蒙版/深度四能力）。
+pub fn capability_model_ids(capabilities: &[CapabilityAdapter]) -> Vec<&'static str> {
+    let mut ids: Vec<&'static str> = Vec::new();
+    for cap in capabilities {
+        for id in cap.required_models {
+            if !ids.contains(id) {
+                ids.push(id);
+            }
+        }
+    }
+    ids
+}
+
+/// 按能力惰性下载缺失模型（Session 加载仍由 get_or_init_* 管理；幂等）
+pub(crate) async fn ensure_capability_models(
+    adapter: &CapabilityAdapter,
+    app_handle: &tauri::AppHandle,
+    models_dir: &Path,
+    endpoints: &[String],
+) -> Result<()> {
+    for id in adapter.required_models {
+        download_entry(app_handle, models_dir, endpoints, id).await?;
+    }
+    Ok(())
+}
+
 fn build_hf_url(endpoint: &str, filename: &str) -> String {
     format!(
         "{}/{}/resolve/main/{}?download=true",
@@ -511,11 +609,15 @@ pub async fn get_or_init_ai_models(
     let models_dir = get_models_dir(app_handle)?;
     let endpoints = endpoints_from_handle(app_handle);
 
-    download_entry(app_handle, &models_dir, &endpoints, "sam_encoder").await?;
-    download_entry(app_handle, &models_dir, &endpoints, "sam_decoder").await?;
-    download_entry(app_handle, &models_dir, &endpoints, "foreground_u2net").await?;
-    download_entry(app_handle, &models_dir, &endpoints, "sky_seg").await?;
-    download_entry(app_handle, &models_dir, &endpoints, "depth_anything").await?;
+    // W7-G2: 下载列表由 CapabilityAdapter 注册表驱动（蒙版/深度四能力并集）
+    for id in capability_model_ids(&[
+        SUBJECT_MASK,
+        SKY_MASK,
+        FOREGROUND_MASK,
+        DEPTH_ESTIMATION,
+    ]) {
+        download_entry(app_handle, &models_dir, &endpoints, id).await?;
+    }
 
     let _ = ort::init().with_name("AI").commit();
 
@@ -526,7 +628,7 @@ pub async fn get_or_init_ai_models(
     let sky_seg = create_ai_session(&models_dir, "sky_seg", acceleration_mode)?;
     let depth_anything = create_ai_session(&models_dir, "depth_anything", acceleration_mode)?;
 
-    crate::register_exit_handler();
+    crate::commands::system::register_exit_handler();
 
     let models = Arc::new(AiModels {
         sam_encoder: Mutex::new(sam_encoder),
@@ -587,7 +689,7 @@ pub async fn get_or_init_denoise_model(
     let session = create_ai_session(&models_dir, "denoise_nind", acceleration_mode)?;
     let denoise_model = Arc::new(Mutex::new(session));
 
-    crate::register_exit_handler();
+    crate::commands::system::register_exit_handler();
 
     let mut ai_state_lock = ai_state_mutex.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(state) = ai_state_lock.as_mut() {
@@ -645,7 +747,7 @@ pub async fn get_or_init_clip_models(
     let tokenizer =
         Tokenizer::from_file(clip_tokenizer_path).map_err(|e| anyhow::anyhow!(e.to_string()))?;
 
-    crate::register_exit_handler();
+    crate::commands::system::register_exit_handler();
 
     let clip_models = Arc::new(ClipModels { model, tokenizer });
 
@@ -700,7 +802,7 @@ pub async fn get_or_init_lama_model(
     let session = create_ai_session(&models_dir, "inpainting_lama", acceleration_mode)?;
     let lama_model = Arc::new(Mutex::new(session));
 
-    crate::register_exit_handler();
+    crate::commands::system::register_exit_handler();
 
     let mut ai_state_lock = ai_state_mutex.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(state) = ai_state_lock.as_mut() {
@@ -965,6 +1067,195 @@ pub fn run_ai_denoise(
     Ok(DynamicImage::ImageRgb32F(out_img_buffer))
 }
 
+// ===== W7-G5: lama 大图 tile 化 =====
+
+/// lama 推理 tensor 维度（64 对齐，模型约束）
+fn lama_tensor_dim(w: u32, h: u32) -> usize {
+    let align = 64u32;
+    let mut d = w.max(h);
+    if d % align != 0 {
+        d += align - (d % align);
+    }
+    d.max(align) as usize
+}
+
+/// tile 原点序列：覆盖整个 [0,w)x[0,h)，单 tile ≤ tile 维、相邻重叠 ≥ overlap。
+/// len ≤ tile 时单 tile；否则步进 tile-overlap，末原点强制贴右/下边界。
+fn lama_tile_origins(w: u32, h: u32, tile: u32, overlap: u32) -> Vec<(u32, u32)> {
+    let origins_1d = |len: u32| -> Vec<u32> {
+        if len <= tile {
+            return vec![0];
+        }
+        let step = (tile - overlap).max(1);
+        let mut v: Vec<u32> = Vec::new();
+        let mut x = 0u32;
+        while x + tile < len {
+            v.push(x);
+            x += step;
+        }
+        v.push(len - tile);
+        v.dedup();
+        v
+    };
+    let xs = origins_1d(w);
+    let ys = origins_1d(h);
+    let mut out = Vec::with_capacity(xs.len() * ys.len());
+    for y in ys {
+        for x in &xs {
+            out.push((*x, y));
+        }
+    }
+    out
+}
+
+/// 像素到 tile 四边的最小距离
+fn dist_to_tile_edge(x: u32, y: u32, w: u32, h: u32) -> u32 {
+    x.min(y).min(w - 1 - x).min(h - 1 - y)
+}
+
+/// tile 融合权重：mask alpha × 线性边缘羽化窗（重叠区平滑过渡，避免 tile 缝）
+fn tile_blend_weight(mask_alpha: f32, dist_to_edge: f32, feather: u32) -> f32 {
+    let feather = feather as f32;
+    if feather <= 0.0 {
+        return mask_alpha.clamp(0.0, 1.0);
+    }
+    let edge = (dist_to_edge / feather).clamp(0.0, 1.0);
+    mask_alpha.clamp(0.0, 1.0) * edge
+}
+
+/// 单 tile lama 推理：输入 (fw,fh) ≤ tensor_dim，零填充对齐后运行，输出 (fw,fh)
+fn run_lama_tile(
+    inf_img: &RgbaImage,
+    inf_mask: &GrayImage,
+    tensor_dim: usize,
+    lama_session: &Mutex<Session>,
+) -> Result<RgbaImage> {
+    let (fw, fh) = inf_img.dimensions();
+
+    let mut img_tensor = Array::<f32, _>::zeros((1, 3, tensor_dim, tensor_dim));
+    let mut msk_tensor = Array::<f32, _>::zeros((1, 1, tensor_dim, tensor_dim));
+
+    for y in 0..tensor_dim {
+        for x in 0..tensor_dim {
+            let sx = (x as u32).min(fw.saturating_sub(1));
+            let sy = (y as u32).min(fh.saturating_sub(1));
+
+            let p = inf_img.get_pixel(sx, sy);
+            let m = inf_mask.get_pixel(sx, sy)[0];
+
+            img_tensor[[0, 0, y, x]] = p[0] as f32 / 255.0;
+            img_tensor[[0, 1, y, x]] = p[1] as f32 / 255.0;
+            img_tensor[[0, 2, y, x]] = p[2] as f32 / 255.0;
+            msk_tensor[[0, 0, y, x]] = if m > 0 { 1.0 } else { 0.0 };
+        }
+    }
+
+    let t_img = Tensor::from_array(img_tensor.into_dyn().as_standard_layout().into_owned())?;
+    let t_msk = Tensor::from_array(msk_tensor.into_dyn().as_standard_layout().into_owned())?;
+
+    let output_tensor = {
+        let mut session = lama_session.lock().unwrap_or_else(|e| e.into_inner());
+        let outputs = session.run(ort::inputs!["image" => t_img, "mask" => t_msk])?;
+        outputs[0].try_extract_array::<f32>()?.to_owned()
+    };
+
+    let mut result = RgbaImage::new(fw, fh);
+    for y in 0..fh {
+        for x in 0..fw {
+            let r = output_tensor[[0, 0, y as usize, x as usize]].clamp(0.0, 255.0) as u8;
+            let g = output_tensor[[0, 1, y as usize, x as usize]].clamp(0.0, 255.0) as u8;
+            let b = output_tensor[[0, 2, y as usize, x as usize]].clamp(0.0, 255.0) as u8;
+            result.put_pixel(x, y, Rgba([r, g, b, 255]));
+        }
+    }
+    Ok(result)
+}
+
+/// W7-G5: 大裁剪区 tile 化推理（替代整体下采样，保留原分辨率细节）。
+/// 768 tile / 64 重叠 / 32 羽化；仅含 mask 的 tile 参与推理；
+/// 重叠区按 mask×边缘窗加权融合，无覆盖的边缘 mask 像素回退到最近 tile 原输出。
+fn lama_inpaint_tiled(
+    cropped_img: &RgbaImage,
+    cropped_mask: &GrayImage,
+    lama_session: &Mutex<Session>,
+) -> Result<RgbaImage> {
+    const TILE: u32 = 768;
+    const OVERLAP: u32 = 64;
+    const FEATHER: u32 = 32;
+
+    let (crop_w, crop_h) = cropped_img.dimensions();
+    let mut acc = vec![0.0f32; crop_w as usize * crop_h as usize * 3];
+    let mut wsum = vec![0.0f32; crop_w as usize * crop_h as usize];
+    let mut tile_outputs: Vec<(u32, u32, RgbaImage)> = Vec::new();
+    let mut any = false;
+
+    for (tx, ty) in lama_tile_origins(crop_w, crop_h, TILE, OVERLAP) {
+        let tw = TILE.min(crop_w - tx);
+        let th = TILE.min(crop_h - ty);
+
+        let tile_mask = imageops::crop_imm(cropped_mask, tx, ty, tw, th).to_image();
+        if !tile_mask.pixels().any(|p| p[0] > 0) {
+            continue;
+        }
+
+        let tile_img = imageops::crop_imm(cropped_img, tx, ty, tw, th).to_image();
+        let tensor_dim = lama_tensor_dim(tw, th);
+        let out = run_lama_tile(&tile_img, &tile_mask, tensor_dim, lama_session)?;
+
+        for y in 0..th {
+            for x in 0..tw {
+                let m = tile_mask.get_pixel(x, y)[0];
+                if m == 0 {
+                    continue;
+                }
+                let d = dist_to_tile_edge(x, y, tw, th) as f32;
+                let w = tile_blend_weight(m as f32 / 255.0, d, FEATHER);
+                if w <= 0.0 {
+                    continue;
+                }
+                let px = (ty + y) as usize * crop_w as usize + (tx + x) as usize;
+                let i = px * 3;
+                let p = out.get_pixel(x, y);
+                acc[i] += p[0] as f32 * w;
+                acc[i + 1] += p[1] as f32 * w;
+                acc[i + 2] += p[2] as f32 * w;
+                wsum[px] += w;
+                any = true;
+            }
+        }
+        tile_outputs.push((tx, ty, out));
+    }
+
+    let mut result = RgbaImage::new(crop_w, crop_h);
+    for y in 0..crop_h {
+        for x in 0..crop_w {
+            let px = y as usize * crop_w as usize + x as usize;
+            let i = px * 3;
+            let pixel = if wsum[px] > 0.0 {
+                Rgba([
+                    (acc[i] / wsum[px]) as u8,
+                    (acc[i + 1] / wsum[px]) as u8,
+                    (acc[i + 2] / wsum[px]) as u8,
+                    255,
+                ])
+            } else if cropped_mask.get_pixel(x, y)[0] > 0 {
+                // 边缘 mask 像素（所有覆盖 tile 权重≈0）：回退到首个包含 tile 的原始输出
+                tile_outputs
+                    .iter()
+                    .find(|(tx, ty, out)| {
+                        x >= *tx && y >= *ty && x < tx + out.width() && y < ty + out.height()
+                    })
+                    .map(|(tx, ty, out)| *out.get_pixel(x - tx, y - ty))
+                    .unwrap_or_else(|| *cropped_img.get_pixel(x, y))
+            } else {
+                *cropped_img.get_pixel(x, y)
+            };
+            result.put_pixel(x, y, pixel);
+        }
+    }
+    Ok(result)
+}
+
 pub fn run_lama_inpainting(
     image: &DynamicImage,
     mask: &GrayImage,
@@ -1010,72 +1301,14 @@ pub fn run_lama_inpainting(
     let cropped_mask = imageops::crop_imm(mask, x0, y0, crop_w, crop_h).to_image();
 
     let max_dim_limit: u32 = 768;
-    let needs_downscale = crop_w > max_dim_limit || crop_h > max_dim_limit;
+    let needs_tiling = crop_w > max_dim_limit || crop_h > max_dim_limit;
 
-    let (fw, fh, inf_img, inf_mask) = if needs_downscale {
-        let scale = max_dim_limit as f32 / crop_w.max(crop_h) as f32;
-
-        let scaled_w = (crop_w as f32 * scale).round().max(1.0) as u32;
-        let scaled_h = (crop_h as f32 * scale).round().max(1.0) as u32;
-
-        (
-            scaled_w,
-            scaled_h,
-            imageops::resize(&cropped_img, scaled_w, scaled_h, FilterType::Lanczos3),
-            imageops::resize(&cropped_mask, scaled_w, scaled_h, FilterType::Triangle),
-        )
+    let result_crop = if needs_tiling {
+        // W7-G5: 大区域 tile 化推理（不做整体下采样，保留原分辨率细节）
+        lama_inpaint_tiled(&cropped_img, &cropped_mask, lama_session)?
     } else {
-        (crop_w, crop_h, cropped_img.clone(), cropped_mask.clone())
-    };
-
-    let align = 64u32;
-    let mut tensor_dim = fw.max(fh);
-    if tensor_dim % align != 0 {
-        tensor_dim += align - (tensor_dim % align);
-    }
-    let tensor_dim = tensor_dim.max(align) as usize;
-
-    let mut img_tensor = Array::<f32, _>::zeros((1, 3, tensor_dim, tensor_dim));
-    let mut msk_tensor = Array::<f32, _>::zeros((1, 1, tensor_dim, tensor_dim));
-
-    for y in 0..tensor_dim {
-        for x in 0..tensor_dim {
-            let sx = (x as u32).min(fw.saturating_sub(1));
-            let sy = (y as u32).min(fh.saturating_sub(1));
-
-            let p = inf_img.get_pixel(sx, sy);
-            let m = inf_mask.get_pixel(sx, sy)[0];
-
-            img_tensor[[0, 0, y, x]] = p[0] as f32 / 255.0;
-            img_tensor[[0, 1, y, x]] = p[1] as f32 / 255.0;
-            img_tensor[[0, 2, y, x]] = p[2] as f32 / 255.0;
-            msk_tensor[[0, 0, y, x]] = if m > 0 { 1.0 } else { 0.0 };
-        }
-    }
-
-    let t_img = Tensor::from_array(img_tensor.into_dyn().as_standard_layout().into_owned())?;
-    let t_msk = Tensor::from_array(msk_tensor.into_dyn().as_standard_layout().into_owned())?;
-
-    let output_tensor = {
-        let mut session = lama_session.lock().unwrap_or_else(|e| e.into_inner());
-        let outputs = session.run(ort::inputs!["image" => t_img, "mask" => t_msk])?;
-        outputs[0].try_extract_array::<f32>()?.to_owned()
-    };
-
-    let mut result_inf = RgbaImage::new(fw, fh);
-    for y in 0..fh {
-        for x in 0..fw {
-            let r = output_tensor[[0, 0, y as usize, x as usize]].clamp(0.0, 255.0) as u8;
-            let g = output_tensor[[0, 1, y as usize, x as usize]].clamp(0.0, 255.0) as u8;
-            let b = output_tensor[[0, 2, y as usize, x as usize]].clamp(0.0, 255.0) as u8;
-            result_inf.put_pixel(x, y, Rgba([r, g, b, 255]));
-        }
-    }
-
-    let result_crop = if needs_downscale {
-        imageops::resize(&result_inf, crop_w, crop_h, FilterType::Lanczos3)
-    } else {
-        result_inf
+        let tensor_dim = lama_tensor_dim(crop_w, crop_h);
+        run_lama_tile(&cropped_img, &cropped_mask, tensor_dim, lama_session)?
     };
 
     let mut final_image = image.to_rgba8();
@@ -1762,5 +1995,114 @@ mod tests {
         assert!(!is_network_error(&anyhow::anyhow!(
             "No such file or directory (os error 2)"
         )));
+    }
+
+    /// W7-G2: 能力注册表与 model_manifest 对齐 —— 每能力的模型 id 都存在
+    #[test]
+    fn test_capability_registry_aligns_with_manifest() {
+        for cap in ALL_CAPABILITIES {
+            assert!(!cap.required_models.is_empty(), "{} has no models", cap.capability);
+            for id in cap.required_models {
+                crate::model_manifest::require(id)
+                    .unwrap_or_else(|e| panic!("{} requires {}: {}", cap.capability, id, e));
+            }
+        }
+    }
+
+    /// W7-G2: capability_model_ids 并集去重且保持登记序
+    #[test]
+    fn test_capability_model_ids_union_order() {
+        let ids = capability_model_ids(&[
+            SUBJECT_MASK,
+            SKY_MASK,
+            FOREGROUND_MASK,
+            DEPTH_ESTIMATION,
+        ]);
+        assert_eq!(
+            ids,
+            vec![
+                "sam_encoder",
+                "sam_decoder",
+                "sky_seg",
+                "foreground_u2net",
+                "depth_anything"
+            ]
+        );
+        // 并集不重复
+        let mut sorted = ids.clone();
+        sorted.sort_unstable();
+        let len = sorted.len();
+        sorted.dedup();
+        assert_eq!(sorted.len(), len);
+    }
+
+    /// W7-G2: get / missing_models 接口语义
+    #[test]
+    fn test_capability_get_and_missing_models() {
+        assert_eq!(CapabilityAdapter::get("subject_masking"), Some(&SUBJECT_MASK));
+        assert_eq!(CapabilityAdapter::get("bogus"), None);
+
+        let dir = std::env::temp_dir().join(format!("rr-g2-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let missing = SKY_MASK.missing_models(&dir);
+        assert_eq!(missing, vec!["sky_seg"]);
+
+        // 命中 manifest 文件名后视为已具备
+        let sky = crate::model_manifest::require("sky_seg").unwrap();
+        fs::write(dir.join(sky.filename().unwrap()), b"stub").unwrap();
+        assert!(SKY_MASK.missing_models(&dir).is_empty());
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    /// W7-G5: tile 原点 —— 小区域单 tile；大区域全覆盖且重叠
+    #[test]
+    fn test_lama_tile_origins() {
+        // 单 tile：≤768
+        assert_eq!(lama_tile_origins(512, 512, 768, 64), vec![(0, 0)]);
+        assert_eq!(lama_tile_origins(768, 768, 768, 64), vec![(0, 0)]);
+
+        // 一维多 tile：2000 → 原点 0,704,1232（1232+768=2000 贴边）
+        let origins = lama_tile_origins(2000, 768, 768, 64);
+        let xs: Vec<u32> = origins.iter().map(|(x, _)| *x).collect();
+        assert_eq!(xs, vec![0, 704, 1232]);
+        // y 单 tile
+        assert!(origins.iter().all(|(_, y)| *y == 0));
+
+        // 覆盖完整性：所有像素都被某个 tile 覆盖（x 轴检查）
+        let origins = lama_tile_origins(3840, 2160, 768, 64);
+        let mut xs_covered = vec![false; 3840];
+        for (x, _) in &origins {
+            for i in *x as usize..((*x + 768) as usize).min(3840) {
+                xs_covered[i] = true;
+            }
+        }
+        assert!(xs_covered.iter().all(|c| *c), "x axis fully covered");
+
+        // tile 尺寸约束：末原点 + tile = len
+        let (last_x, _) = origins.last().unwrap();
+        assert_eq!(last_x + 768, 3840);
+    }
+
+    /// W7-G5: 融合权重 —— 中心=mask alpha；羽化带内线性；feather=0 恒等
+    #[test]
+    fn test_tile_blend_weight() {
+        assert!((tile_blend_weight(1.0, 100.0, 32) - 1.0).abs() < 1e-6);
+        assert!((tile_blend_weight(0.5, 100.0, 32) - 0.5).abs() < 1e-6);
+        // 羽化带内：dist=16, feather=32 → 一半
+        assert!((tile_blend_weight(1.0, 16.0, 32) - 0.5).abs() < 1e-6);
+        // 边缘 dist=0 → 0
+        assert_eq!(tile_blend_weight(1.0, 0.0, 32), 0.0);
+        // feather=0 → 恒等 mask alpha
+        assert!((tile_blend_weight(0.7, 0.0, 0) - 0.7).abs() < 1e-6);
+        // alpha clamp
+        assert!((tile_blend_weight(1.5, 100.0, 32) - 1.0).abs() < 1e-6);
+    }
+
+    /// W7-G5: tensor 维度 64 对齐
+    #[test]
+    fn test_lama_tensor_dim_alignment() {
+        assert_eq!(lama_tensor_dim(768, 512), 768);
+        assert_eq!(lama_tensor_dim(769, 512), 832);
+        assert_eq!(lama_tensor_dim(1, 1), 64);
     }
 }

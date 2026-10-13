@@ -167,6 +167,7 @@ pub fn get_or_init_gpu_context(
         let _ = std::fs::write(p, "initializing_gpu");
     }
 
+    let instance_backends = instance_desc.backends;
     let instance = wgpu::Instance::new(instance_desc);
 
     #[cfg(not(any(target_os = "android", target_os = "linux")))]
@@ -200,17 +201,85 @@ pub fn get_or_init_gpu_context(
     #[cfg(any(target_os = "android", target_os = "linux"))]
     let surface_opt: Option<wgpu::Surface> = None;
 
-    let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::HighPerformance,
-        compatible_surface: surface_opt.as_ref(),
-        ..Default::default()
-    }))
-    .map_err(|e| {
-        if let Some(p) = &flag_path {
-            let _ = std::fs::remove_file(p);
+    // W4-D2 后端选择策略：vulkan（硬件）→ lavapipe（软件 vulkan）→ GL → 明确报错。
+    // 阶段 1：request_adapter（兼容 surface，HighPerformance），命中硬件即用；
+    // 阶段 2：仅无 surface 场景（headless/禁用渲染器）无 surface 重试硬件；
+    // 阶段 3：enumerate 全量候选 + select_backend 策略核（软件回退携带明示，
+    //         强制后端校验、空列表给可操作错误而非 panic）。
+    let forced_backend = std::env::var("WGPU_BACKEND").ok();
+
+    let request = |compatible_surface: Option<&wgpu::Surface>| {
+        pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            compatible_surface,
+            ..Default::default()
+        }))
+    };
+
+    let mut hardware_adapter: Option<wgpu::Adapter> = None;
+    let mut surface_still_compatible = true;
+    if let Ok(a) = request(surface_opt.as_ref()) {
+        let probe = crate::gpu_backends::probe_from_info(&a.get_info());
+        if !probe.is_software {
+            hardware_adapter = Some(a);
         }
-        format!("Failed to find a wgpu adapter: {}", e)
-    })?;
+    }
+    if hardware_adapter.is_none() && surface_opt.is_none() {
+        if let Ok(a) = request(None) {
+            let probe = crate::gpu_backends::probe_from_info(&a.get_info());
+            if !probe.is_software {
+                hardware_adapter = Some(a);
+            }
+        }
+    }
+
+    let (adapter, selection) = if let Some(a) = hardware_adapter {
+        let probe = crate::gpu_backends::probe_from_info(&a.get_info());
+        (
+            a,
+            crate::gpu_backends::BackendSelection::Hardware(probe),
+        )
+    } else {
+        // 软件回退路径不保证 surface 兼容（get_capabilities 可能 panic），
+        // 统一转 compute-only，展示层回落 webview 渲染。
+        surface_still_compatible = false;
+        let probed: Vec<(wgpu::Adapter, crate::gpu_backends::AdapterProbe)> =
+            pollster::block_on(instance.enumerate_adapters(instance_backends))
+                .into_iter()
+                .map(|a| {
+                    let p = crate::gpu_backends::probe_from_info(&a.get_info());
+                    (a, p)
+                })
+                .collect();
+        let probes: Vec<crate::gpu_backends::AdapterProbe> =
+            probed.iter().map(|(_, p)| p.clone()).collect();
+        let selection = crate::gpu_backends::select_backend(&probes, forced_backend.as_deref())
+            .map_err(|e| {
+                if let Some(p) = &flag_path {
+                    let _ = std::fs::remove_file(p);
+                }
+                e
+            })?;
+        let chosen = match &selection {
+            crate::gpu_backends::BackendSelection::Hardware(p)
+            | crate::gpu_backends::BackendSelection::SoftwareFallback(p, _) => p.name.clone(),
+        };
+        let adapter = probed
+            .into_iter()
+            .find(|(_, p)| p.name == chosen)
+            .map(|(a, _)| a)
+            .ok_or_else(|| "selected adapter no longer available".to_string())?;
+        (adapter, selection)
+    };
+
+    if let crate::gpu_backends::BackendSelection::SoftwareFallback(_, notice) = &selection {
+        log::warn!("GPU 初始化（软件回退）：{notice}");
+    } else if let Some(name) = std::env::var("WGPU_BACKEND").ok() {
+        log::info!("GPU 初始化：使用用户强制后端 {name}");
+    }
+    // 软件回退时丢弃 surface（android/linux 本就无 surface，桌面平台转 compute-only）
+    #[cfg_attr(any(target_os = "android", target_os = "linux"), allow(unused_variables, unused_assignments))]
+    let surface_opt = if surface_still_compatible { surface_opt } else { None };
 
     let mut required_features = wgpu::Features::empty();
     if adapter

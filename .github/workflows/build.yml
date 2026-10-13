@@ -129,8 +129,14 @@ jobs:
             echo "${ANDROID_KEY_BASE64}" | base64 -d > $RUNNER_TEMP/keystore.jks
             echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
             echo "✅ Android release signing configured from secrets."
+          elif [[ -n "${{ inputs.release-id }}" ]]; then
+            # 发布路径（会向 GitHub Release 上传资产）禁止降级签名——
+            # debug keystore 签名的 APK 会破坏升级链且不可逆，必须失败
+            echo "❌ Android release signing secrets missing, refusing to publish a debug-signed build."
+            echo "   Configure ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD / ANDROID_KEY_BASE64 repository secrets."
+            exit 1
           else
-            echo "⚠️ Android release signing secrets not configured. Generating a temporary debug keystore..."
+            echo "⚠️ Android release signing secrets not configured. Generating a temporary debug keystore (artifact build only)..."
             DEBUG_KS=$RUNNER_TEMP/debug.keystore
             keytool -genkeypair -v -keystore "$DEBUG_KS" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" 2>&1
             echo "keyAlias=androiddebugkey" > keystore.properties

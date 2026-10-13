@@ -23,15 +23,13 @@ jobs:
 
       - name: Check Formatting
         run: npm run format:check
-        continue-on-error: true
 
-      - name: Run ESLint
-        run: npm run lint
-        continue-on-error: true
+      # 基线棘轮：存量 873 错误冻结，新增即红；债务清偿后由 --max-warnings 0 接管
+      - name: Run ESLint (baseline ratchet)
+        run: node scripts/eslint-ratchet.mjs
 
       - name: Check Translation Sync
         run: npm run i18n:check
-        continue-on-error: true
 
   fmt:
     name: cargo fmt

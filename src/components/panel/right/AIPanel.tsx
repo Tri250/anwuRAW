@@ -1091,10 +1091,7 @@ export default function AIPanel() {
                     className="z-10 shrink-0"
                     onClick={handleDeselect}
                   >
-                    <ConnectionStatus
-                      aiProvider={aiProvider}
-                      isAIConnectorConnected={isAIConnectorConnected}
-                    />
+                    <ConnectionStatus aiProvider={aiProvider} isAIConnectorConnected={isAIConnectorConnected} />
 
                     <Text variant={TextVariants.heading} className="mb-2 mt-6">
                       {t('editor.ai.manualCleanupTitle')}

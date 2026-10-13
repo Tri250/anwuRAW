@@ -14,16 +14,19 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use image::codecs::jpeg::JpegEncoder;
-use image::{DynamicImage, GenericImageView, GrayImage, ImageBuffer, ImageFormat, Luma, imageops};
-use jxl_encoder::{
-    LosslessConfig, LossyConfig, PixelLayout,
-    api::{calibrated_jxl_quality, quality_to_distance},
-};
+use image::{DynamicImage, GenericImageView, GrayImage, ImageBuffer, Luma, imageops};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::Emitter;
 use tauri::Manager;
+
+// W8-H1: 编码器注册表/ICC/色彩空间迁至 export_encoders（外部路径经 re-export 保持不变）
+use crate::export_encoders;
+pub use crate::export_encoders::{
+    IccProfileType, apply_color_space_transform, embed_icc_in_jpeg, encode_image_to_bytes,
+    get_icc_profile_bytes,
+};
+use crate::export_queue::{ExportJobSnapshot, ExportJobStatus};
 
 use crate::AppState;
 use crate::exif_processing;
@@ -45,10 +48,10 @@ use crate::lut_processing::{
 use crate::mask_generation::{MaskDefinition, generate_mask_bitmap};
 
 use crate::cache_utils::{calculate_full_job_hash, calculate_transform_hash};
-use crate::{
-    apply_all_transformations, generate_transformed_preview, get_cached_or_generate_mask,
-    hydrate_adjustments, load_settings, resolve_warped_image_for_masks,
-};
+use crate::commands::engine::{generate_transformed_preview, get_original_image};
+use crate::adjustment_utils::{apply_all_transformations, hydrate_adjustments};
+use crate::app_settings::load_settings;
+use crate::mask_generation::{get_cached_or_generate_mask, resolve_warped_image_for_masks};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -104,7 +107,7 @@ fn default_bit_depth() -> u8 {
 }
 
 #[derive(Clone)]
-pub(crate) enum ExportAdjustmentsMode {
+pub enum ExportAdjustmentsMode {
     UseSidecars {
         active_path: Option<String>,
         active_adjustments: Option<Value>,
@@ -611,182 +614,12 @@ fn encode_grayscale_to_png(bitmap: &GrayImage) -> Result<Vec<u8>, String> {
     let mut buf = Vec::new();
     let mut cursor = Cursor::new(&mut buf);
     bitmap
-        .write_to(&mut cursor, ImageFormat::Png)
+        .write_to(&mut cursor, image::ImageFormat::Png)
         .map_err(|e| e.to_string())?;
     Ok(buf)
 }
 
-// --- 色彩空间变换 ---
-
-// sRGB → XYZ(D65) 变换矩阵（行主序）
-const SRGB_TO_XYZ: [[f32; 3]; 3] = [
-    [0.4124564, 0.3575761, 0.1804375],
-    [0.2126729, 0.7151522, 0.0721750],
-    [0.0193339, 0.119_192, 0.9503041],
-];
-
-// XYZ(D65) → Display P3 (Apple)
-const XYZ_TO_DISPLAY_P3: [[f32; 3]; 3] = [
-    [2.493_497, -0.9313836, -0.4027108],
-    [-0.829_489, 1.7626641, 0.0236247],
-    [0.0358458, -0.0761724, 0.9568845],
-];
-
-// XYZ(D65) → Adobe RGB (1998)
-const XYZ_TO_ADOBE_RGB: [[f32; 3]; 3] = [
-    [2.0415879, -0.565_007, -0.347_325],
-    [-0.9692436, 1.8759675, 0.0415551],
-    [0.0134443, -0.1183624, 1.0151749],
-];
-
-// XYZ(D65) → ProPhoto RGB (ROMM-RGB)
-// primaries: R=(0.7347,0.2653), G=(0.1596,0.8404), B=(0.0366,0.0001), WP=D65
-// 由 primaries + wp 精确推导：XYZ→primary 逆矩阵
-const XYZ_TO_PRO_PHOTO: [[f32; 3]; 3] = [
-    [1.3904536, -0.2640605, -0.0528020],
-    [-0.5376556, 1.488_939, 0.0202733],
-    [0.0000000, 0.0000000, 0.918_225],
-];
-
-fn mat_mul_3x3(a: [[f32; 3]; 3], b: [[f32; 3]; 3]) -> [[f32; 3]; 3] {
-    let mut out = [[0.0f32; 3]; 3];
-    for i in 0..3 {
-        for j in 0..3 {
-            out[i][j] = a[i][0] * b[0][j] + a[i][1] * b[1][j] + a[i][2] * b[2][j];
-        }
-    }
-    out
-}
-
-fn apply_color_space_transform(image: &DynamicImage, target: &ExportColorSpace) -> DynamicImage {
-    if matches!(target, ExportColorSpace::Srgb) {
-        return image.clone();
-    }
-
-    // sRGB → 目标空间 3x3 矩阵（先 sRGB→XYZ，再 XYZ→目标）
-    let transform = match target {
-        ExportColorSpace::DisplayP3 => mat_mul_3x3(XYZ_TO_DISPLAY_P3, SRGB_TO_XYZ),
-        ExportColorSpace::AdobeRgb => mat_mul_3x3(XYZ_TO_ADOBE_RGB, SRGB_TO_XYZ),
-        ExportColorSpace::ProPhoto => mat_mul_3x3(XYZ_TO_PRO_PHOTO, SRGB_TO_XYZ),
-        ExportColorSpace::Srgb => return image.clone(),
-    };
-
-    // 使用 16-bit float buffer 做高精度变换，再降到目标位深
-    let rgba16 = image.to_rgba16();
-    let (w, h) = rgba16.dimensions();
-    let mut out_buf = Vec::with_capacity((w * h * 4) as usize);
-
-    for pixel in rgba16.pixels() {
-        let r = pixel[0] as f32 / 65535.0;
-        let g = pixel[1] as f32 / 65535.0;
-        let b = pixel[2] as f32 / 65535.0;
-        let a = pixel[3];
-
-        let nr = (transform[0][0] * r + transform[0][1] * g + transform[0][2] * b).clamp(0.0, 1.0);
-        let ng = (transform[1][0] * r + transform[1][1] * g + transform[1][2] * b).clamp(0.0, 1.0);
-        let nb = (transform[2][0] * r + transform[2][1] * g + transform[2][2] * b).clamp(0.0, 1.0);
-
-        out_buf.push((nr * 65535.0) as u16);
-        out_buf.push((ng * 65535.0) as u16);
-        out_buf.push((nb * 65535.0) as u16);
-        out_buf.push(a);
-    }
-
-    let out: image::ImageBuffer<image::Rgba<u16>, Vec<u16>> =
-        image::ImageBuffer::from_raw(w, h, out_buf).unwrap();
-    DynamicImage::ImageRgba16(out)
-}
-
-fn encode_image_to_bytes(
-    image: &DynamicImage,
-    output_format: &str,
-    jpeg_quality: u8,
-    _color_space: &ExportColorSpace,
-    bit_depth: u8,
-) -> Result<Vec<u8>, String> {
-    let mut image_bytes = Vec::new();
-    let mut cursor = Cursor::new(&mut image_bytes);
-
-    match output_format.to_lowercase().as_str() {
-        "jxl" => {
-            let (width, height) = image.dimensions();
-            let has_alpha = image.color().has_alpha();
-
-            let jxl_data = if jpeg_quality == 100 {
-                if has_alpha {
-                    let rgba = image.to_rgba8();
-                    LosslessConfig::new()
-                        .encode(rgba.as_raw(), width, height, PixelLayout::Rgba8)
-                        .map_err(|e| format!("Failed to encode lossless JXL: {}", e))?
-                } else {
-                    let rgb = image.to_rgb8();
-                    LosslessConfig::new()
-                        .encode(rgb.as_raw(), width, height, PixelLayout::Rgb8)
-                        .map_err(|e| format!("Failed to encode lossless JXL: {}", e))?
-                }
-            } else {
-                let jxl_quality = calibrated_jxl_quality(jpeg_quality as f32);
-                let distance = quality_to_distance(jxl_quality);
-
-                if has_alpha {
-                    let rgba = image.to_rgba8();
-                    LossyConfig::new(distance)
-                        .encode(rgba.as_raw(), width, height, PixelLayout::Rgba8)
-                        .map_err(|e| format!("Failed to encode lossy JXL: {}", e))?
-                } else {
-                    let rgb = image.to_rgb8();
-                    LossyConfig::new(distance)
-                        .encode(rgb.as_raw(), width, height, PixelLayout::Rgb8)
-                        .map_err(|e| format!("Failed to encode lossy JXL: {}", e))?
-                }
-            };
-
-            return Ok(jxl_data);
-        }
-        "webp" => {
-            let encoder = webp::Encoder::from_image(image)
-                .map_err(|_| "Failed to create WebP encoder".to_string())?;
-            let webp_mem = encoder.encode(jpeg_quality as f32);
-            return Ok(webp_mem.to_vec());
-        }
-        "jpg" | "jpeg" => {
-            let rgb_image = image.to_rgb8();
-            let encoder = JpegEncoder::new_with_quality(&mut cursor, jpeg_quality);
-            rgb_image
-                .write_with_encoder(encoder)
-                .map_err(|e| e.to_string())?;
-        }
-        "png" => {
-            // PNG 根据 bit_depth 选择 8-bit 或 16-bit
-            let image_to_encode = if bit_depth >= 16 {
-                DynamicImage::ImageRgb16(image.to_rgb16())
-            } else {
-                image.to_rgb8().into()
-            };
-            image_to_encode
-                .write_to(&mut cursor, image::ImageFormat::Png)
-                .map_err(|e| e.to_string())?;
-        }
-        "tiff" => {
-            // TIFF 根据 bit_depth 选择 8-bit 或 16-bit
-            let image_to_encode = if bit_depth >= 16 {
-                DynamicImage::ImageRgb16(image.to_rgb16())
-            } else {
-                image.to_rgb8().into()
-            };
-            image_to_encode
-                .write_to(&mut cursor, image::ImageFormat::Tiff)
-                .map_err(|e| e.to_string())?;
-        }
-        "avif" => {
-            image
-                .write_to(&mut cursor, image::ImageFormat::Avif)
-                .map_err(|e| e.to_string())?;
-        }
-        _ => return Err(format!("Unsupported file format: {}", output_format)),
-    };
-    Ok(image_bytes)
-}
+// 色彩空间变换 / encode_image_to_bytes / ICC 嵌入 → crate::export_encoders（W8-H1）
 
 #[allow(clippy::too_many_arguments)]
 fn export_masks_for_image(
@@ -1071,10 +904,31 @@ pub(crate) async fn export_images_impl(
             export_items.push((i, path_str, *count, explicit_vc));
         }
 
+        // W8-H1: 任务登记 —— items 保留原始虚拟路径串（含 vc= 标记），供续跑/重试回放
+        let job_manager = app_handle
+            .state::<AppState>()
+            .export_job_manager
+            .clone();
+        let job_id = job_manager.begin_job(
+            export_items.iter().map(|(_, p, _, _)| p.clone()).collect(),
+            crate::export_queue::JobConfig {
+                output_folder_or_file: output_folder_or_file.clone(),
+                is_explicit_file_path,
+                base_origin_folders: base_origin_folders.clone(),
+                export_settings: export_settings.clone(),
+                output_format: output_format.clone(),
+                adjustments_mode: adjustments_mode.clone(),
+            },
+        );
+
         let semaphore = Arc::new(tokio::sync::Semaphore::new(num_threads));
         let mut join_handles = Vec::new();
 
         for (global_index, image_path_str, appearance_count, explicit_vc) in export_items {
+            // W8-H1: 暂停检查点 —— 暂停期间停止派发新 item（取消即刻放行）
+            job_manager
+                .wait_while_paused_async(&cancellation_token)
+                .await;
             if cancellation_token.load(Ordering::SeqCst) {
                 break;
             }
@@ -1094,11 +948,18 @@ pub(crate) async fn export_images_impl(
             let settings = settings.clone();
             let cancellation_token_clone = Arc::clone(&cancellation_token);
             let adjustments_mode = adjustments_mode.clone();
+            let job_manager_clone = Arc::clone(&job_manager);
 
             let handle = tokio::task::spawn_blocking(move || {
                 ensure_export_not_cancelled(&cancellation_token_clone)?;
 
                 let state = app_handle_clone.state::<AppState>();
+
+                // W4-D1：Batch 优先级 —— 主视图交互窗口期间让路（取消即刻放行）
+                state.render_scheduler.wait_slot(&cancellation_token_clone);
+                // W8-H1: 暂停检查点 —— 暂停期间不启动新 item
+                job_manager_clone.wait_while_paused_sync(&cancellation_token_clone);
+
                 let (source_path, sidecar_path) = parse_virtual_path(&image_path_str);
                 let source_path_str = source_path.to_string_lossy().to_string();
 
@@ -1202,7 +1063,7 @@ pub(crate) async fn export_images_impl(
                     }
 
                     let base_image = if is_current_edit {
-                        match crate::get_original_image(&state) {
+                        match get_original_image(&state) {
                             Ok((orig_data_arc, _)) => {
                                 composite_patches_on_image(&orig_data_arc, &js_adjustments)
                                     .map_err(|e| format!("Failed to composite AI patches: {}", e))?
@@ -1298,6 +1159,21 @@ pub(crate) async fn export_images_impl(
                     Ok(())
                 })();
 
+                // W8-H1: 成败登记（取消中的失败不计入失败清单）
+                match &result {
+                    Ok(()) => job_manager_clone.record_success(job_id, global_index),
+                    Err(err) => {
+                        if !cancellation_token_clone.load(Ordering::SeqCst) {
+                            job_manager_clone.record_failure(
+                                job_id,
+                                global_index,
+                                &image_path_str,
+                                err.clone(),
+                            );
+                        }
+                    }
+                }
+
                 if !cancellation_token_clone.load(Ordering::SeqCst) {
                     let current_progress =
                         progress_counter_clone.fetch_add(1, Ordering::SeqCst) + 1;
@@ -1337,6 +1213,15 @@ pub(crate) async fn export_images_impl(
             &export_state.export_task_token,
             &cancellation_token,
             |cancelled| {
+                // W8-H1: 任务落账（陈旧任务不会进入此闭包，记录不被覆盖）
+                job_manager.finalize(
+                    job_id,
+                    if cancelled {
+                        ExportJobStatus::Cancelled
+                    } else {
+                        ExportJobStatus::Completed
+                    },
+                );
                 if cancelled {
                     log::info!("Batch export cancelled and worker cleanup completed");
                     let _ = app_handle.emit("export-cancelled", ());
@@ -1534,6 +1419,98 @@ pub fn cancel_export(
         }
     }
     Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// W8-H1: ExportJob 队列命令（暂停/续跑/状态/失败重试）
+// ---------------------------------------------------------------------------
+
+/// 暂停当前导出任务：停止派发新 item，在途 item 完成后挂起。
+#[tauri::command]
+pub fn pause_export(
+    state: tauri::State<AppState>,
+) -> Result<Option<ExportJobSnapshot>, String> {
+    state.export_job_manager.pause()?;
+    Ok(state.export_job_manager.snapshot())
+}
+
+/// 查询当前/最近一次导出任务快照（含失败清单）。
+#[tauri::command]
+pub fn get_export_job_status(
+    state: tauri::State<AppState>,
+) -> Result<Option<ExportJobSnapshot>, String> {
+    Ok(state.export_job_manager.snapshot())
+}
+
+/// 续跑：有在跑任务则解除暂停；否则从最近一次「中断」任务处继续
+/// （未完成项按原序重新导出，失败项一并重试）。
+#[tauri::command]
+pub async fn resume_export(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<Option<ExportJobSnapshot>, String> {
+    let manager = state.export_job_manager.clone();
+    if manager.active_id().is_some() {
+        manager.unpause()?;
+        return Ok(manager.snapshot());
+    }
+
+    let (config, remaining) = manager
+        .resume_plan()
+        .ok_or_else(|| "No interrupted export job to resume.".to_string())?;
+    log::info!(
+        "Resuming interrupted export: {} remaining item(s)",
+        remaining.len()
+    );
+
+    export_images_impl(
+        remaining,
+        config.output_folder_or_file,
+        config.is_explicit_file_path,
+        config.base_origin_folders,
+        config.export_settings,
+        config.output_format,
+        config.adjustments_mode,
+        state,
+        app_handle,
+        None,
+    )
+    .await?;
+
+    Ok(manager.snapshot())
+}
+
+/// 重试最近一次导出的失败项（仅失败清单中的路径，参数快照原样回放）。
+#[tauri::command]
+pub async fn retry_failed_exports(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<Option<ExportJobSnapshot>, String> {
+    let manager = state.export_job_manager.clone();
+    if manager.active_id().is_some() {
+        return Err("An export is already in progress.".to_string());
+    }
+
+    let (config, failed_paths) = manager
+        .failed_retry_plan()
+        .ok_or_else(|| "No export failures to retry.".to_string())?;
+    log::info!("Retrying {} failed export item(s)", failed_paths.len());
+
+    export_images_impl(
+        failed_paths,
+        config.output_folder_or_file,
+        config.is_explicit_file_path,
+        config.base_origin_folders,
+        config.export_settings,
+        config.output_format,
+        config.adjustments_mode,
+        state,
+        app_handle,
+        None,
+    )
+    .await?;
+
+    Ok(manager.snapshot())
 }
 
 #[tauri::command]
@@ -1841,154 +1818,7 @@ pub async fn estimate_export_sizes(
     Ok(single_image_extrapolated_size * paths.len())
 }
 
-// ---------------------------------------------------------------------------
-// ICC Profile 嵌入 & 色深选择
-// ---------------------------------------------------------------------------
-
-/// ICC profile 嵌入策略
-#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
-pub enum IccProfileType {
-    #[serde(rename = "srgb")]
-    Srgb,
-    #[serde(rename = "adobergb")]
-    AdobeRgb,
-    #[serde(rename = "displayp3")]
-    DisplayP3,
-    #[serde(rename = "keep")]
-    KeepOriginal,
-}
-
-/// 导出色深（目前主要影响 TIFF）
-#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
-pub enum ExportBitDepth {
-    #[serde(rename = "8")]
-    Bit8,
-    #[serde(rename = "16")]
-    Bit16,
-}
-
-/// 根据请求的类型返回对应 ICC profile 字节。
-/// - `KeepOriginal` 返回 `None`，表示不嵌入 ICC。
-/// - 其他类型目前统一返回内置的 sRGB ICC v2 profile，后续可扩展为各色彩空间的真实 profile。
-pub fn get_icc_profile_bytes(profile: IccProfileType) -> Option<Vec<u8>> {
-    match profile {
-        IccProfileType::KeepOriginal => None,
-        _ => Some(build_minimal_srgb_icc()),
-    }
-}
-
-/// 构建最小可用的 sRGB ICC v2 profile。
-///
-/// 该 profile 是公开可用的简化版本，格式符合 ICC v2 规范，
-/// 包含必要的头部、tag table 以及 sRGB 的描述、白点、原色坐标和传递函数，
-/// 可以被主流色彩感知软件（如 Photoshop、GIMP、KDE Color Manager、Windows Color System 等）
-/// 正确识别为 "sRGB IEC61966-2.1"。
-fn build_minimal_srgb_icc() -> Vec<u8> {
-    // sRGB ICC v2 profile（2048 字节占位 / 完整可识别版本）
-    // 由标准 sRGB ICC profile 头部 + tag table + 各 tag 数据组成。
-    // 所有字节均为固定值，不依赖运行时计算。
-    static SRGB_ICC_V2: &[u8] = include_bytes!("icc/srgb-v2.icc");
-    SRGB_ICC_V2.to_vec()
-}
-
-/// 给 JPEG 字节流嵌入 ICC_APP13 marker（FF ED）。
-/// 保留原有所有 APP markers（已存在的 ICC_APP13 段会被替换）。
-pub fn embed_icc_in_jpeg(jpeg_bytes: &[u8], icc_bytes: &[u8]) -> Result<Vec<u8>, String> {
-    if jpeg_bytes.len() < 4 || jpeg_bytes[0] != 0xFF || jpeg_bytes[1] != 0xD8 {
-        return Err("Not a valid JPEG".to_string());
-    }
-
-    // 构建 ICC_PROFILE 段
-    // JPEG ICC APP13 marker: FF ED
-    // segment content: "ICC_PROFILE\0" + chunk_count(1) + chunk_index(1) + profile_data
-    // 对于小于 ~64KB 的 profile，始终使用单 chunk。
-    let header = b"ICC_PROFILE\0";
-    let mut seg_content = Vec::new();
-    seg_content.extend_from_slice(header);
-    seg_content.push(1); // chunk count
-    seg_content.push(1); // chunk index (1-based)
-    seg_content.extend_from_slice(icc_bytes);
-
-    let content_len = seg_content.len() as u16;
-    let seg_len_be: [u8; 2] = (content_len + 2).to_be_bytes(); // length 字段包含自身 2 字节
-
-    let mut full_seg = Vec::new();
-    full_seg.push(0xFF);
-    full_seg.push(0xED);
-    full_seg.extend_from_slice(&seg_len_be);
-    full_seg.extend_from_slice(&seg_content);
-
-    // 重建 JPEG：去掉旧的 ICC_APP13，在 SOI 之后、第一个其他 marker 之前插入新的
-    let mut out = Vec::new();
-    out.push(0xFF);
-    out.push(0xD8); // SOI
-
-    let mut pos: usize = 2;
-    let mut inserted = false;
-
-    while pos + 2 < jpeg_bytes.len() {
-        // 跳过连续的 0xFF 填充
-        while pos < jpeg_bytes.len() && jpeg_bytes[pos] == 0xFF {
-            pos += 1;
-        }
-        if pos >= jpeg_bytes.len() {
-            break;
-        }
-        let marker = jpeg_bytes[pos];
-        pos += 1;
-
-        // EOI / SOS：到达图像数据尾部，停止
-        if marker == 0xD9 || marker == 0xDA {
-            break;
-        }
-        // 其他无 segment 的 marker（如 TEM 0x01、RST 0xD0-0xD7）跳过
-        if (0x01..=0xBF).contains(&marker) && (0xD0..=0xD7).contains(&marker) {
-            continue; // RST markers 没有 length
-        }
-        // 但大多数 marker 还是有 length 字段
-
-        if pos + 2 > jpeg_bytes.len() {
-            break;
-        }
-        let length = (jpeg_bytes[pos] as usize) << 8 | jpeg_bytes[pos + 1] as usize;
-        if length < 2 {
-            break;
-        }
-        let seg_start = pos - 1;
-        let seg_end = pos + length;
-        if seg_end > jpeg_bytes.len() {
-            break;
-        }
-
-        // 跳过旧的 ICC_APP13 段
-        if marker == 0xED {
-            pos = seg_end;
-            continue;
-        }
-
-        // 在 SOI 之后的第一个 marker 之前插入新的 ICC_APP13
-        if !inserted {
-            out.extend_from_slice(&full_seg);
-            inserted = true;
-        }
-
-        out.extend_from_slice(&jpeg_bytes[seg_start..seg_end]);
-        pos = seg_end;
-    }
-
-    // 追加剩余的图像数据（从 marker 位置到末尾）
-    if pos < jpeg_bytes.len() {
-        out.extend_from_slice(&jpeg_bytes[pos..]);
-    }
-
-    // 确保 JPEG 以 EOI (FF D9) 结尾
-    if out.len() < 2 || out[out.len() - 2] != 0xFF || out[out.len() - 1] != 0xD9 {
-        out.push(0xFF);
-        out.push(0xD9);
-    }
-
-    Ok(out)
-}
+// ICC Profile 嵌入 & 色深选择 → crate::export_encoders（W8-H1）
 
 // ---------------------------------------------------------------------------
 // 新的 tauri command：带 ICC 与色深的导出
@@ -2014,56 +1844,31 @@ pub fn export_with_icc_and_depth(
 ) -> Result<(), String> {
     let img = image::open(&input_path).map_err(|e| e.to_string())?;
 
-    match format.as_str() {
-        "jpeg" | "jpg" => {
-            let rgb = img.to_rgb8();
-            let mut buf = Vec::new();
-            {
-                let mut encoder = JpegEncoder::new_with_quality(&mut buf, quality);
-                encoder
-                    .encode(
-                        rgb.as_raw(),
-                        rgb.width(),
-                        rgb.height(),
-                        image::ExtendedColorType::Rgb8,
-                    )
-                    .map_err(|e| e.to_string())?;
-            }
+    // W8-H1: 注册表前置校验（格式 × 色深 × ICC），非法组合 fail fast
+    let spec = export_encoders::validate_encode_request(
+        &format,
+        bit_depth.unwrap_or(8),
+        icc_profile.as_deref(),
+    )?;
 
-            let final_bytes = if let Some(icc_str) = icc_profile {
-                let profile_type = match icc_str.as_str() {
-                    "srgb" => IccProfileType::Srgb,
-                    "adobergb" => IccProfileType::AdobeRgb,
-                    "displayp3" => IccProfileType::DisplayP3,
-                    _ => IccProfileType::KeepOriginal,
-                };
-                if let Some(icc_bytes) = get_icc_profile_bytes(profile_type) {
-                    embed_icc_in_jpeg(&buf, &icc_bytes)?
-                } else {
-                    buf
-                }
-            } else {
-                buf
+    let mut bytes = export_encoders::encode_with_spec(&img, spec, quality, bit_depth.unwrap_or(8))?;
+
+    // ICC 嵌入（JPEG APP13；注册表校验已保证仅具嵌入能力的格式携带请求）
+    if spec.icc == export_encoders::IccEmbedding::JpegApp13 {
+        if let Some(icc_str) = &icc_profile {
+            let profile_type = match icc_str.as_str() {
+                "srgb" => IccProfileType::Srgb,
+                "adobergb" => IccProfileType::AdobeRgb,
+                "displayp3" => IccProfileType::DisplayP3,
+                _ => IccProfileType::KeepOriginal,
             };
-
-            fs::write(&output_path, final_bytes).map_err(|e| e.to_string())?;
-        }
-        "tiff" => match bit_depth.unwrap_or(8) {
-            16 => {
-                let rgba16 = img.to_rgba16();
-                rgba16.save(&output_path).map_err(|e| e.to_string())?;
+            if let Some(icc_bytes) = get_icc_profile_bytes(profile_type) {
+                bytes = embed_icc_in_jpeg(&bytes, &icc_bytes)?;
             }
-            _ => {
-                let rgb8 = img.to_rgb8();
-                rgb8.save(&output_path).map_err(|e| e.to_string())?;
-            }
-        },
-        "png" => {
-            let rgba = img.to_rgba8();
-            rgba.save(&output_path).map_err(|e| e.to_string())?;
         }
-        _ => return Err(format!("Unsupported format: {}", format)),
     }
+
+    fs::write(&output_path, bytes).map_err(|e| e.to_string())?;
 
     Ok(())
 }

@@ -13,7 +13,7 @@ use serde_json::Value;
 use serde_json::json;
 use std::borrow::Cow;
 use std::f32::consts::PI;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 pub use crate::gpu_processing::{
     RenderRequest, get_or_init_gpu_context, process_and_get_dynamic_image,
@@ -64,7 +64,8 @@ pub struct ImageMetadata {
 impl Default for ImageMetadata {
     fn default() -> Self {
         ImageMetadata {
-            version: 1,
+            // 新写入的 sidecar 直接落在当前 schema 版本（见 metadata_migration）
+            version: crate::metadata_migration::METADATA_VERSION,
             rating: 0,
             adjustments: Value::Null,
             tags: None,
@@ -1129,7 +1130,17 @@ pub fn inverse_transform_point(
     (x, y)
 }
 
-pub fn apply_cpu_default_raw_processing(image: &mut DynamicImage) {
+/// 合成域 RAW 输入预处理（raw input prep）—— AR-2 单实现改造后唯一保留的 CPU RAW 算子。
+///
+/// 语义：将 image_loader 输出的线性 RAW（Rgb32F）转入显示参照工作空间
+/// （γ2.38 反变换 + 1.28 线性对比度拉伸），供**合成类算子**消费：
+/// focus_stacking / panorama_stitching / hdr_deghosting / denoising /
+/// 几何 warp 底图（get_cached_full_warped_image，供 CPU 蒙版采样）。
+///
+/// ⚠️ 非展示渲染算子：展示路径（主视图/缩略图/导出预览）的 RAW 默认观感
+/// 统一由 GPU mode0+is_raw 分支提供（含 lavapipe 软件回退）。
+/// 本函数输出与 GPU 展示观感存在历史刻意差异，禁止用于任何展示路径。
+pub fn apply_raw_input_prep(image: &mut DynamicImage) {
     let mut f32_image = image.to_rgb32f();
 
     const GAMMA: f32 = 2.38;
@@ -1639,54 +1650,57 @@ struct AdjustmentScales {
     flares: f32,
 }
 
-const SCALES: AdjustmentScales = AdjustmentScales {
-    exposure: 0.8,
-    brightness: 0.8,
-    contrast: 100.0,
-    highlights: 120.0,
-    shadows: 120.0,
-    whites: 30.0,
-    blacks: 40.0,
-    saturation: 100.0,
-    temperature: 25.0,
-    tint: 100.0,
-    vibrance: 100.0,
+/// AR-2 C3 单源：标量 scale/default 全部由 param_matrix 注册表派生（零字面量）。
+/// 结构参数（hsl 三轴、colorGrading 饱和/亮度）有意不进标量注册表，
+/// 保留字面量并在此标注 —— 它们有独立的结构化解析与测试覆盖。
+static SCALES: LazyLock<AdjustmentScales> = LazyLock::new(|| AdjustmentScales {
+    exposure: crate::param_matrix::scale("basic", "exposure"),
+    brightness: crate::param_matrix::scale("basic", "brightness"),
+    contrast: crate::param_matrix::scale("basic", "contrast"),
+    highlights: crate::param_matrix::scale("basic", "highlights"),
+    shadows: crate::param_matrix::scale("basic", "shadows"),
+    whites: crate::param_matrix::scale("basic", "whites"),
+    blacks: crate::param_matrix::scale("basic", "blacks"),
+    saturation: crate::param_matrix::scale("color", "saturation"),
+    temperature: crate::param_matrix::scale("color", "temperature"),
+    tint: crate::param_matrix::scale("color", "tint"),
+    vibrance: crate::param_matrix::scale("color", "vibrance"),
 
-    sharpness: 50.0,
-    sharpness_threshold: 100.0,
-    luma_noise_reduction: 100.0,
-    color_noise_reduction: 100.0,
-    clarity: 125.0,
-    dehaze: 750.0,
-    structure: 125.0,
-    centré: 250.0,
+    sharpness: crate::param_matrix::scale("details", "sharpness"),
+    sharpness_threshold: crate::param_matrix::scale("details", "sharpnessThreshold"),
+    luma_noise_reduction: crate::param_matrix::scale("details", "lumaNoiseReduction"),
+    color_noise_reduction: crate::param_matrix::scale("details", "colorNoiseReduction"),
+    clarity: crate::param_matrix::scale("details", "clarity"),
+    dehaze: crate::param_matrix::scale("details", "dehaze"),
+    structure: crate::param_matrix::scale("details", "structure"),
+    centré: crate::param_matrix::scale("details", "centré"),
 
-    vignette_amount: 100.0,
-    vignette_midpoint: 100.0,
-    vignette_roundness: 100.0,
-    vignette_feather: 100.0,
-    grain_amount: 200.0,
-    grain_size: 50.0,
-    grain_roughness: 100.0,
+    vignette_amount: crate::param_matrix::scale("effects", "vignetteAmount"),
+    vignette_midpoint: crate::param_matrix::scale("effects", "vignetteMidpoint"),
+    vignette_roundness: crate::param_matrix::scale("effects", "vignetteRoundness"),
+    vignette_feather: crate::param_matrix::scale("effects", "vignetteFeather"),
+    grain_amount: crate::param_matrix::scale("effects", "grainAmount"),
+    grain_size: crate::param_matrix::scale("effects", "grainSize"),
+    grain_roughness: crate::param_matrix::scale("effects", "grainRoughness"),
 
-    chromatic_aberration: 10000.0,
+    chromatic_aberration: crate::param_matrix::scale("details", "chromaticAberrationRedCyan"),
 
+    // 结构参数（注册表外）：HSL 三轴与 colorGrading 饱和/亮度
     hsl_hue_multiplier: 0.3,
     hsl_saturation: 100.0,
     hsl_luminance: 100.0,
-
     color_grading_saturation: 500.0,
     color_grading_luminance: 500.0,
-    color_grading_blending: 100.0,
-    color_grading_balance: 200.0,
 
-    color_calibration_hue: 400.0,
-    color_calibration_saturation: 120.0,
+    color_grading_blending: crate::param_matrix::scale("colorGrading", "blending"),
+    color_grading_balance: crate::param_matrix::scale("colorGrading", "balance"),
+    color_calibration_hue: crate::param_matrix::scale("colorCalibration", "redHue"),
+    color_calibration_saturation: crate::param_matrix::scale("colorCalibration", "redSaturation"),
 
-    glow: 100.0,
-    halation: 100.0,
-    flares: 100.0,
-};
+    glow: crate::param_matrix::scale("effects", "glowAmount"),
+    halation: crate::param_matrix::scale("effects", "halationAmount"),
+    flares: crate::param_matrix::scale("effects", "flareAmount"),
+});
 
 fn parse_hsl_adjustments(js_hsl: &serde_json::Value) -> [HslColor; 8] {
     let mut hsl_array = [HslColor::default(); 8];
@@ -1872,130 +1886,6 @@ pub fn resolve_tonemapper_override_from_handle(
 ) -> Option<u32> {
     let settings = crate::app_settings::load_settings(app_handle.clone()).unwrap_or_default();
     resolve_tonemapper_override(&settings, is_raw)
-}
-
-pub fn apply_cpu_agx_tonemap(image: &mut DynamicImage) {
-    const AGX_EPSILON: f32 = 1.0e-6;
-    const AGX_MIN_EV: f32 = -15.2;
-    const AGX_MAX_EV: f32 = 5.0;
-    const AGX_RANGE_EV: f32 = AGX_MAX_EV - AGX_MIN_EV;
-    const AGX_GAMMA: f32 = 2.4;
-    const AGX_SLOPE: f32 = 2.3843;
-    const AGX_TOE_POWER: f32 = 1.5;
-    const AGX_SHOULDER_POWER: f32 = 1.5;
-    const AGX_TOE_TRANSITION_X: f32 = 0.6060606;
-    const AGX_TOE_TRANSITION_Y: f32 = 0.43446;
-    const AGX_SHOULDER_TRANSITION_X: f32 = 0.6060606;
-    const AGX_SHOULDER_TRANSITION_Y: f32 = 0.43446;
-    const AGX_INTERCEPT: f32 = -1.0112;
-    const AGX_TOE_SCALE: f32 = -1.0359;
-    const AGX_SHOULDER_SCALE: f32 = 1.3475;
-
-    fn agx_sigmoid(x: f32, power: f32) -> f32 {
-        x / (1.0 + x.powf(power)).powf(1.0 / power)
-    }
-
-    fn agx_scaled_sigmoid(x: f32, scale: f32, slope: f32, power: f32, tx: f32, ty: f32) -> f32 {
-        scale * agx_sigmoid(slope * (x - tx) / scale, power) + ty
-    }
-
-    fn agx_curve_channel(x: f32) -> f32 {
-        let result = if x < AGX_TOE_TRANSITION_X {
-            agx_scaled_sigmoid(
-                x,
-                AGX_TOE_SCALE,
-                AGX_SLOPE,
-                AGX_TOE_POWER,
-                AGX_TOE_TRANSITION_X,
-                AGX_TOE_TRANSITION_Y,
-            )
-        } else if x <= AGX_SHOULDER_TRANSITION_X {
-            AGX_SLOPE * x + AGX_INTERCEPT
-        } else {
-            agx_scaled_sigmoid(
-                x,
-                AGX_SHOULDER_SCALE,
-                AGX_SLOPE,
-                AGX_SHOULDER_POWER,
-                AGX_SHOULDER_TRANSITION_X,
-                AGX_SHOULDER_TRANSITION_Y,
-            )
-        };
-        result.clamp(0.0, 1.0)
-    }
-
-    const LUT_SIZE: usize = 4096;
-    let mut curve_lut = [0.0f32; LUT_SIZE];
-    for (i, slot) in curve_lut.iter_mut().enumerate() {
-        let x = i as f32 / (LUT_SIZE - 1) as f32;
-        *slot = agx_curve_channel(x).max(0.0).powf(AGX_GAMMA);
-    }
-
-    let (pipe_to_rendering, rendering_to_pipe) = calculate_agx_matrices_glam();
-
-    let mut f32_image = image.to_rgb32f();
-
-    f32_image.par_chunks_mut(3).for_each(|pixel_chunk| {
-        let r = pixel_chunk[0];
-        let g = pixel_chunk[1];
-        let b = pixel_chunk[2];
-
-        // agx_compress_gamut：和 shader 端完全一致
-        // 1) 负值平移
-        let min_c = r.min(g).min(b);
-        let (mut r, mut g, mut b) = if min_c < 0.0 {
-            (r - min_c, g - min_c, b - min_c)
-        } else {
-            (r, g, b)
-        };
-
-        // 2) 超 gamut 平滑压缩（通道 > 1.0 时做 hue-preserving soft saturate）
-        let max_c = r.max(g).max(b);
-        if max_c > 1.0 {
-            let luma = (r * 0.2126 + g * 0.7152 + b * 0.0722).max(1e-6);
-            let (rr, gg, bb) = (r / luma, g / luma, b / luma);
-            let (rc, gc, bc) = (rr / (1.0 + rr), gg / (1.0 + gg), bb / (1.0 + bb));
-            r = rc * luma;
-            g = gc * luma;
-            b = bc * luma;
-        }
-
-        let in_rendering = pipe_to_rendering * Vec3::new(r, g, b);
-
-        let x = Vec3::new(
-            (in_rendering.x / 0.18).max(AGX_EPSILON),
-            (in_rendering.y / 0.18).max(AGX_EPSILON),
-            (in_rendering.z / 0.18).max(AGX_EPSILON),
-        );
-        let log_encoded = Vec3::new(
-            (x.x.log2() - AGX_MIN_EV) / AGX_RANGE_EV,
-            (x.y.log2() - AGX_MIN_EV) / AGX_RANGE_EV,
-            (x.z.log2() - AGX_MIN_EV) / AGX_RANGE_EV,
-        );
-        let mapped = Vec3::new(
-            log_encoded.x.clamp(0.0, 1.0),
-            log_encoded.y.clamp(0.0, 1.0),
-            log_encoded.z.clamp(0.0, 1.0),
-        );
-
-        let lut_lookup = |v: f32| -> f32 {
-            let idx = (v * (LUT_SIZE - 1) as f32) as usize;
-            curve_lut[idx.min(LUT_SIZE - 1)]
-        };
-        let curved = Vec3::new(
-            lut_lookup(mapped.x),
-            lut_lookup(mapped.y),
-            lut_lookup(mapped.z),
-        );
-
-        let final_color = rendering_to_pipe * curved;
-
-        pixel_chunk[0] = final_color.x.clamp(0.0, 1.0);
-        pixel_chunk[1] = final_color.y.clamp(0.0, 1.0);
-        pixel_chunk[2] = final_color.z.clamp(0.0, 1.0);
-    });
-
-    *image = DynamicImage::ImageRgb32F(f32_image);
 }
 
 pub fn is_image_edited(
@@ -2211,7 +2101,7 @@ pub(crate) fn get_global_adjustments_from_json(
         temperature: get_val("color", "temperature", SCALES.temperature, None),
         tint: get_val("color", "tint", SCALES.tint, None),
         vibrance: get_val("color", "vibrance", SCALES.vibrance, None),
-        hue: get_val("color", "hue", 1.0, None),
+        hue: get_val("color", "hue", crate::param_matrix::scale("color", "hue"), None),
         _pad_color1: 0.0,
         _pad_color2: 0.0,
         _pad_color3: 0.0,
@@ -2239,27 +2129,32 @@ pub(crate) fn get_global_adjustments_from_json(
             "effects",
             "vignetteMidpoint",
             SCALES.vignette_midpoint,
-            Some(50.0),
+            crate::param_matrix::default_of("effects", "vignetteMidpoint"),
         ),
         vignette_roundness: get_val(
             "effects",
             "vignetteRoundness",
             SCALES.vignette_roundness,
-            Some(0.0),
+            crate::param_matrix::default_of("effects", "vignetteRoundness"),
         ),
         vignette_feather: get_val(
             "effects",
             "vignetteFeather",
             SCALES.vignette_feather,
-            Some(50.0),
+            crate::param_matrix::default_of("effects", "vignetteFeather"),
         ),
         grain_amount: get_val("effects", "grainAmount", SCALES.grain_amount, None),
-        grain_size: get_val("effects", "grainSize", SCALES.grain_size, Some(25.0)),
+        grain_size: get_val(
+            "effects",
+            "grainSize",
+            SCALES.grain_size,
+            crate::param_matrix::default_of("effects", "grainSize"),
+        ),
         grain_roughness: get_val(
             "effects",
             "grainRoughness",
             SCALES.grain_roughness,
-            Some(50.0),
+            crate::param_matrix::default_of("effects", "grainRoughness"),
         ),
 
         chromatic_aberration_red_cyan: get_val(
@@ -2370,7 +2265,7 @@ pub(crate) fn get_global_adjustments_from_json(
             "details",
             "sharpnessThreshold",
             SCALES.sharpness_threshold,
-            Some(15.0),
+            crate::param_matrix::default_of("details", "sharpnessThreshold"),
         ),
     }
 }
@@ -3522,4 +3417,162 @@ pub fn apply_post_gpu_adjustments(
         }
     }
     img
+}
+
+#[cfg(test)]
+mod input_prep_contract_tests {
+    //! AR-2 C2：input-prep 契约单测（原 raw_default CPU/GPU 一致性对的替身）。
+    //!
+    //! 展示路径 CPU 算子退役后，CPU RAW 侧仅余合成域 input prep。
+    //! 此处锁定其数学契约：γ2.38 反变换 + 1.28 线性对比度拉伸 + [0,1] 钳制。
+    //! 数值锚点为独立预计算的期望值（非公式复算），防止常量静默漂移。
+
+    use super::*;
+
+    const GAMMA: f32 = 2.38;
+    const CONTRAST: f32 = 1.28;
+
+    fn gray(vals: &[f32]) -> DynamicImage {
+        let data: Vec<f32> = vals.iter().flat_map(|v| [*v, *v, *v]).collect();
+        let n = vals.len() as u32;
+        DynamicImage::ImageRgb32F(Rgb32FImage::from_raw(n, 1, data).expect("gray image dims"))
+    }
+
+    fn run(img: &mut DynamicImage) -> Vec<f32> {
+        apply_raw_input_prep(img);
+        match img {
+            DynamicImage::ImageRgb32F(buf) => buf.as_raw().clone(),
+            _ => panic!("input_prep must output Rgb32F"),
+        }
+    }
+
+    /// 数值锚点：独立预计算（f64 手算，容差 2e-3 覆盖 f32 powf 平台差）
+    #[test]
+    fn ip1_gamma_contrast_anchors() {
+        // 0.73 精算：ln0.73=-0.314711/2.38=-0.132231 → e^-0.132231=0.876122
+        // (0.876122-0.5)*1.28+0.5 = 0.481436+0.5 = 0.981436
+        let anchors: [(f32, f64); 5] = [
+            (0.04, 0.19101),
+            (0.18, 0.48273),
+            (0.5, 0.81668),
+            (0.73, 0.98144),
+            (1.0, 1.0),
+        ];
+        let mut img = gray(&anchors.iter().map(|(v, _)| *v).collect::<Vec<_>>());
+        let out = run(&mut img);
+        for (i, (_, expected)) in anchors.iter().enumerate() {
+            let got = out[i * 3];
+            assert!(
+                (got as f64 - expected).abs() < 2e-3,
+                "anchor {i}: got {got}, expected {expected}"
+            );
+        }
+    }
+
+    /// 端点钳制：0→0（下溢钳制），1→1（上溢钳制）
+    #[test]
+    fn ip2_endpoints_clamped() {
+        let mut img = gray(&[0.0, 1.0]);
+        let out = run(&mut img);
+        assert_eq!(out[0], 0.0);
+        assert_eq!(out[3], 1.0);
+    }
+
+    /// 单调性：输入递增 → 输出非递减
+    #[test]
+    fn ip3_monotonic() {
+        let vals: Vec<f32> = (0..=10).map(|i| i as f32 / 10.0).collect();
+        let mut img = gray(&vals);
+        let out = run(&mut img);
+        for w in out.chunks_exact(3) {
+            // 灰度图三通道一致
+            assert!((w[0] - w[1]).abs() < 1e-6 && (w[1] - w[2]).abs() < 1e-6);
+        }
+        let g: Vec<f32> = out.chunks_exact(3).map(|w| w[0]).collect();
+        for pair in g.windows(2) {
+            assert!(pair[1] >= pair[0], "monotonicity violated at {pair:?}");
+        }
+        assert_eq!(g[0], 0.0);
+        assert_eq!(g[10], 1.0);
+    }
+
+    /// 非 Rgb32F 输入自动转换（生产中 image_loader 输出 Rgb32F，但函数契约须容错）
+    #[test]
+    fn ip4_rgb16_input_converted() {
+        let data: Vec<u16> = vec![32768, 32768, 32768]; // ≈0.5
+        let mut img = DynamicImage::ImageRgb16(
+            image::ImageBuffer::<image::Rgb<u16>, Vec<u16>>::from_raw(1, 1, data).unwrap(),
+        );
+        let out = run(&mut img);
+        assert!((out[0] - 0.81668).abs() < 2e-3, "got {}", out[0]);
+    }
+
+    /// 确定性：同输入两次执行结果逐位一致（合成域可重放前提）
+    #[test]
+    fn ip5_deterministic() {
+        let vals: Vec<f32> = [0.1f32, 0.33, 0.57, 0.88].to_vec();
+        let mut a = gray(&vals);
+        let mut b = gray(&vals);
+        let ra = run(&mut a);
+        let rb = run(&mut b);
+        assert_eq!(ra, rb);
+    }
+
+    /// 公式一致性：测试内公式（γ+对比度）与实现输出全量对齐
+    #[test]
+    fn ip6_formula_consistency() {
+        let vals: Vec<f32> = [0.02f32, 0.11, 0.29, 0.46, 0.62, 0.95].to_vec();
+        let mut img = gray(&vals);
+        let out = run(&mut img);
+        for (i, v) in vals.iter().enumerate() {
+            let expected = ((v.powf(1.0 / GAMMA) - 0.5) * CONTRAST + 0.5).clamp(0.0, 1.0);
+            assert!((out[i * 3] - expected).abs() < 1e-6);
+        }
+    }
+}
+
+#[cfg(test)]
+mod param_schema_single_source_tests {
+    //! AR-2 C3：参数 schema 单源交叉断言。
+    //!
+    //! SCALES 全部标量 scale/default 已由 param_matrix 注册表派生（构造期保证，
+    //! 零字面量）。此处补反向完整性：SCALES eager 可解析 —— 任何注册表缺项
+    //! 会在 LazyLock 初始化时 panic，测试期即刻暴露而非静默回退遗留值。
+
+    use super::*;
+
+    #[test]
+    fn c3_scales_resolvable_from_registry() {
+        let s = &*SCALES;
+        // 派生方向抽查：值必须等于注册表条目（非遗留字面量巧合）
+        assert_eq!(s.exposure, crate::param_matrix::scale("basic", "exposure"));
+        assert_eq!(s.dehaze, crate::param_matrix::scale("details", "dehaze"));
+        assert_eq!(
+            s.chromatic_aberration,
+            crate::param_matrix::scale("details", "chromaticAberrationRedCyan")
+        );
+        assert_eq!(
+            s.color_calibration_hue,
+            crate::param_matrix::scale("colorCalibration", "redHue")
+        );
+        assert_eq!(
+            s.color_grading_blending,
+            crate::param_matrix::scale("colorGrading", "blending")
+        );
+        assert_eq!(s.glow, crate::param_matrix::scale("effects", "glowAmount"));
+    }
+
+    /// 注册表 default 查询全量可解析且与 levels() 档位自洽
+    #[test]
+    fn c3_registry_defaults_consistent() {
+        for spec in crate::param_matrix::MATRIX {
+            let d = crate::param_matrix::default_of(spec.section, spec.key);
+            assert_eq!(d, spec.default, "{}.{}", spec.section, spec.key);
+            let levels = crate::param_matrix::levels(spec);
+            match spec.default {
+                None => assert_eq!(levels[2], 0.0),
+                Some(dv) => assert_eq!(levels[2], dv),
+            }
+        }
+    }
 }

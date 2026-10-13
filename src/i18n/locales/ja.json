@@ -2,10 +2,10 @@
   "adjustments": {
     "basic": {
       "blacks": "黒レベル",
+      "brightness": "明るさ",
       "contrast": "コントラスト",
       "evShift": "露出補正",
       "exposure": "露光量",
-      "brightness": "明るさ",
       "highlights": "ハイライト",
       "mappers": {
         "agx": "AgX",
@@ -21,18 +21,24 @@
       },
       "reset": "リセット",
       "scene": {
-        "title": "シーン強調",
-        "desc": "ワンタップでプロのカラーグレーディング",
         "auto": "自動",
         "autoDesc": "スマートなシーン強調",
-        "prototypePortrait": "ポートレート",
+        "desc": "ワンタップでプロのカラーグレーディング",
         "prototypeLandscape": "風景",
         "prototypeNight": "夜景",
-        "prototypeWarmSunset": "夕焼け"
+        "prototypePortrait": "ポートレート",
+        "prototypeWarmSunset": "夕焼け",
+        "title": "シーン強調"
       },
       "shadows": "シャドウ",
       "toneMapper": "トーンマッパー",
       "whites": "白レベル"
+    },
+    "channelMixer": {
+      "hint": "Adjust the percentage of each input color channel that contributes to the output channel.",
+      "outputs": "Output Channels / 输出通道",
+      "reset": "Reset / 重置",
+      "title": "Channel Mixer / 通道混合器"
     },
     "color": {
       "ariaSelectColor": "{{name}}色を選択",
@@ -59,6 +65,8 @@
         "midtones": "中間調",
         "shadows": "シャドウ"
       },
+      "hslPickActive": "Color picker active — click the image to sample a hue",
+      "hslPickTooltip": "Pick color from image",
       "hue": "色相",
       "localHue": "ローカル色相",
       "luminance": "輝度",
@@ -83,13 +91,13 @@
       "whiteBalance": "ホワイトバランス"
     },
     "curves": {
-      "channelTitle": "{{channel}} チャンネル",
       "channels": {
         "blue": "ブルー",
         "green": "グリーン",
         "luma": "ルミナンス",
         "red": "レッド"
       },
+      "channelTitle": "{{channel}} チャンネル",
       "copyParametric": "{{channel}} パラメトリックカーブをコピー",
       "copyPoint": "{{channel}} ポイントカーブをコピー",
       "curveDataUnavailable": "カーブデータがありません。",
@@ -106,13 +114,7 @@
       "pasteParametric": "パラメトリックカーブを貼り付け",
       "pastePoint": "ポイントカーブを貼り付け",
       "pointCurve": "ポイントカーブ",
-      "resetAllParametric": "すべてのパラメトリックカーブをリセット",
-      "resetAllPoint": "すべてのポイントカーブをリセット",
-      "resetParametric": "{{channel}} パラメトリックカーブをリセット",
-      "resetPoint": "{{channel}} ポイントカーブをリセット",
       "presets": {
-        "title": "プリセット",
-        "originalDesc": "曲線を元の状態にリセット",
         "brighten": "明るく",
         "cool": "クール",
         "darken": "暗く",
@@ -120,10 +122,16 @@
         "film": "フィルム",
         "lowContrast": "低コントラスト",
         "original": "元画像",
+        "originalDesc": "曲線を元の状態にリセット",
         "portrait": "ポートレート",
         "sCurve": "Sカーブ",
+        "title": "プリセット",
         "warm": "ウォーム"
-      }
+      },
+      "resetAllParametric": "すべてのパラメトリックカーブをリセット",
+      "resetAllPoint": "すべてのポイントカーブをリセット",
+      "resetParametric": "{{channel}} パラメトリックカーブをリセット",
+      "resetPoint": "{{channel}} ポイントカーブをリセット"
     },
     "details": {
       "blueYellow": "ブルー/イエロー",
@@ -162,6 +170,14 @@
       "roundness": "丸み",
       "size": "サイズ",
       "vignette": "周辺光量補正"
+    },
+    "splitToning": {
+      "balance": "Balance / 平衡",
+      "enabled": "Enable / 启用",
+      "highlights": "Highlights / 高光",
+      "saturation": "Saturation",
+      "shadows": "Shadows / 阴影",
+      "title": "Split Toning / 分离色调"
     }
   },
   "contextMenus": {
@@ -413,6 +429,7 @@
         "aiEdit": "AI編集 {{count}}",
         "aiEdit_one": "AI編集 {{count}}",
         "aiEdit_other": "AI編集 {{count}}",
+        "autoErase_other": "Auto Erase {{count}}",
         "clone": "クローン {{count}}",
         "clone_other": "クローン {{count}}",
         "heal": "修復 {{count}}",
@@ -424,12 +441,13 @@
         "quickErase": "クイック消去 {{count}}",
         "quickErase_one": "クイック消去 {{count}}",
         "quickErase_other": "クイック消去 {{count}}",
-        "retouch": "レタッチ {{count}}"
+        "retouch": "レタッチ {{count}}",
+        "retouch_other": "Retouch {{count}} patches"
       },
       "resetInpaintingTooltip": "インペインティングをリセット",
       "settings": {
-        "aiModelDownloading": "AIモデルをダウンロード中: ",
         "aiModelDownloadFailed": "AI モデルのダウンロードに失敗しました。もう一度機能を使用すると再試行されます。",
+        "aiModelDownloading": "AIモデルをダウンロード中: ",
         "aiModelDownloadOffline": "ネットワークに接続できないため AI モデルをダウンロードできません。ネットワーク回復後にもう一度機能を使用すると自動的に再試行されます。",
         "basicInpaintTooltipDisabled": "生成バックエンドが利用できないか、設定されていません。簡易インペインティングが必要です。",
         "basicInpaintTooltipEnabled": "簡易インペインティングは高速ですが、非生成式です。テキストプロンプトによるAIを使用する場合はチェックを外してください。",
@@ -443,6 +461,7 @@
         "inpaintSelectionButton": "選択範囲を塗りつぶし",
         "invertComponent": "コンポーネントを反転",
         "invertSelection": "選択範囲を反転",
+        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device.",
         "placeholder": "例: お花畑",
         "quickEraseDesc": "選択範囲を塗りつぶしてオブジェクトを削除します。",
         "selectionPropertiesTitle": "選択範囲のプロパティ",
@@ -450,8 +469,21 @@
       },
       "touchUpTitle": "タッチアップ"
     },
+    "compare": {
+      "after": "調整後",
+      "before": "元画像",
+      "close": "閉じる",
+      "dragHint": "区切り線をドラッグして比較",
+      "loading": "読み込み中…",
+      "reset": "リセット",
+      "title": "Before / After",
+      "toggleSplit": "分割方向を切り替え",
+      "zoomIn": "拡大",
+      "zoomOut": "縮小"
+    },
     "crop": {
       "aspectRatioHeading": "アスペクト比",
+      "autoCropAfterRotate": "Auto-crop black borders after rotation",
       "custom": {
         "hPlaceholder": "H",
         "hTooltip": "高さ",
@@ -544,6 +576,7 @@
       "rotationHeading": "回転",
       "title": "切り抜きと変形",
       "tooltips": {
+        "aiStraighten": "Auto-straighten horizon",
         "compositionOverlay": "構図ガイド",
         "flipHoriz": "画像を水平方向に反転",
         "flipVert": "画像を垂直方向に反転",
@@ -624,17 +657,6 @@
         "grow": "拡張",
         "tolerance": "Tolerance"
       },
-      "toolbar": {
-        "title": "マスク編集",
-        "invert": "反転",
-        "clearMask": "マスクをクリア",
-        "overlayOn": "マスクオーバーレイを表示",
-        "overlayOff": "マスクオーバーレイを非表示",
-        "done": "完了",
-        "strength": "強度",
-        "brushSize": "ブラシサイズ",
-        "brushFeather": "ソフト度"
-      },
       "patches": {
         "copyName": "{{name}} のコピー",
         "invertedName": "{{name}} 反転",
@@ -645,8 +667,8 @@
       "rangeTitle": "範囲とグローバル",
       "resetMaskingTooltip": "マスク処理をリセット",
       "settings": {
-        "aiModelDownloading": "AIモデルをダウンロード中: ",
         "aiModelDownloadFailed": "AI モデルのダウンロードに失敗しました。もう一度機能を使用すると再試行されます。",
+        "aiModelDownloading": "AIモデルをダウンロード中: ",
         "aiModelDownloadOffline": "ネットワークに接続できないため AI モデルをダウンロードできません。ネットワーク回復後にもう一度機能を使用すると自動的に再試行されます。",
         "applyPreset": "プリセットを適用",
         "componentPropertiesTitle": "{{name}} のプロパティ",
@@ -664,6 +686,17 @@
       },
       "toggleAnalyticsInAdjustments": "調整パネルでアナリティクスを切り替える",
       "toggleAnalyticsTooltip": "アナリティクス表示の切り替え",
+      "toolbar": {
+        "brushFeather": "ソフト度",
+        "brushSize": "ブラシサイズ",
+        "clearMask": "マスクをクリア",
+        "done": "完了",
+        "invert": "反転",
+        "overlayOff": "マスクオーバーレイを非表示",
+        "overlayOn": "マスクオーバーレイを表示",
+        "strength": "強度",
+        "title": "マスク編集"
+      },
       "tooltips": {
         "addToCurrent": "{{name}}を現在のマスクに追加、または新規作成 (右クリック)",
         "createNew": "新規の {{name}} マスクを作成",
@@ -708,13 +741,15 @@
         "clickToOpenTooltip": "クリックして新しいタブで地図を表示",
         "latitude": "緯度",
         "longitude": "経度",
+        "offlineMapLabel": "Offline world map with photo location marker",
+        "openOnlineMap": "Open online map",
         "title": "GPS位置情報"
       },
       "organization": {
         "addTagPlaceholder": "タグを追加...",
         "colorLabel": "カラーラベル",
-        "noTags": "タグなし",
         "none": "なし",
+        "noTags": "タグなし",
         "rating": "評価",
         "ratingLabels": "評価とラベル",
         "tags": "タグ",
@@ -746,12 +781,12 @@
         "exportFolder": "フォルダを書き出し",
         "exportPreset": "プリセットを書き出し",
         "favorite": "お気に入りに追加",
-        "unfavorite": "お気に入りから削除",
         "newFolder": "新規フォルダ",
         "newPreset": "新規プリセット",
         "overwrite": "上書き",
         "renameFolder": "フォルダ名を変更",
-        "sortAll": "すべて名前順に並べ替え"
+        "sortAll": "すべて名前順に並べ替え",
+        "unfavorite": "お気に入りから削除"
       },
       "status": {
         "empty": "保存されたプリセットはまだありません。作成、インポート、またはコミュニティのプリセットを探してみましょう。",
@@ -795,6 +830,8 @@
       "tooltips": {
         "aperture": "絞り値",
         "backToLibrary": "ライブラリに戻る",
+        "closeCompare": "比較を閉じる",
+        "compare": "Before/After 比較",
         "focalLength": "焦点距離",
         "fullscreen": "全画面表示切り替え (F)",
         "iso": "ISO感度",
@@ -802,23 +839,9 @@
         "showEdited": "編集後を表示 (B)",
         "showOriginal": "オリジナルを表示 (B)",
         "shutterSpeed": "シャッタースピード",
-        "undo": "元に戻す (Ctrl+Z) または履歴 (右クリック)",
-        "compare": "Before/After 比較",
-        "closeCompare": "比較を閉じる"
+        "undo": "元に戻す (Ctrl+Z) または履歴 (右クリック)"
       },
       "vc": "仮想"
-    },
-    "compare": {
-      "title": "Before / After",
-      "toggleSplit": "分割方向を切り替え",
-      "zoomIn": "拡大",
-      "zoomOut": "縮小",
-      "reset": "リセット",
-      "close": "閉じる",
-      "before": "元画像",
-      "after": "調整後",
-      "dragHint": "区切り線をドラッグして比較",
-      "loading": "読み込み中…"
     }
   },
   "export": {
@@ -834,6 +857,17 @@
       "kb": "KB",
       "mb": "MB",
       "tb": "TB"
+    },
+    "color": {
+      "bitDepth": "Bit Depth",
+      "bitDepth16Desc": "Larger files, posterization-free editing",
+      "bitDepth8Desc": "Smaller files, standard display",
+      "colorSpace": "Color Space",
+      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
+      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
+      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
+      "colorSpaceDesc_srgb": "Standard for the web and most screens",
+      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
     },
     "dialog": {
       "saveEditedImageTitle": "編集した画像を保存",
@@ -868,6 +902,7 @@
     },
     "sections": {
       "advanced": "詳細設定",
+      "color": "Color Output",
       "fileNaming": "ファイル名の命名",
       "fileSettings": "ファイル設定",
       "imageSizing": "画像サイズ",
@@ -878,16 +913,17 @@
       "cancelExport": "書き出しをキャンセル",
       "cancelled": "書き出しがキャンセルされました",
       "cancelling": "書き出しをキャンセル中…",
+      "completed": "Export completed",
       "estimatedAverageSize": " (平均 {{size}})",
       "estimatedSize": "推定ファイルサイズ: ~{{size}}",
       "estimatedTotalSize": "推定合計サイズ: ~{{size}}",
       "estimatingSize": "サイズを推定中...",
+      "exporting": "書き出し中…",
+      "exportingProgress": "書き出し中… ({{current}}/{{total}})",
       "exportMultiple": "{{count}} 件の {{label}} を書き出し",
       "exportMultiple_one": "{{count}} 件 of {{label}} を書き出し",
       "exportMultiple_other": "{{count}} 件の {{label}} を書き出し",
       "exportSingle": "{{label}} を書き出し",
-      "exporting": "書き出し中…",
-      "exportingProgress": "書き出し中… ({{current}}/{{total}})",
       "failed": "書き出しに失敗しました",
       "noImageSelected": "書き出す画像が選択されていません。",
       "noImagesSelected": "画像が選択されていません。",
@@ -946,8 +982,8 @@
       "iso": "ISO",
       "metadata": "メタデータ",
       "noMetadataAvailable": "メタデータがありません",
-      "noTagsAdded": "タグが追加されていません",
       "none": "なし",
+      "noTagsAdded": "タグが追加されていません",
       "rateAndLabel": "評価とラベル",
       "rating": "評価",
       "selectImagesToCompare": "比較する画像を選択",
@@ -1134,6 +1170,11 @@
       "communityPresets": "コミュニティプリセット",
       "goHome": "ホームへ移動",
       "importImages": "画像をインポート"
+    },
+    "viewMode": {
+      "culling": "Culling View",
+      "grid": "Grid View",
+      "list": "List View"
     }
   },
   "masks": {
@@ -1262,9 +1303,9 @@
       "applyButton_one": "1 枚の画像に適用",
       "applyButton_other": "{{count}} 枚の画像に適用",
       "bestImage": "ベスト画像",
+      "blurryImagesTab": "ぼやけた画像",
       "blurThreshold": "ブレのしきい値",
       "blurThresholdDesc": "この値以下のシャープネススコアを持つ画像にフラグを立てます。高いほど厳密になります。",
-      "blurryImagesTab": "ぼやけた画像",
       "cancel": "キャンセル",
       "close": "閉じる",
       "cullingFailed": "選別失敗",
@@ -1698,16 +1739,13 @@
           "title": "内蔵AI (CPU)"
         },
         "description": "RapidRAWのAIは、優れた柔軟性を備えています。高速なローカル処理から本格的なセルフホストまで、最適なワークフローを選択してください。",
+        "localFirstNote": "すべてのAI機能はデバイス上で完全に動作します。アカウント登録もサブスクリプションもクラウド接続も不要です。",
         "providers": {
           "aiConnector": "AI Connector",
           "cpu": "CPU"
         },
-        "title": "生成AI",
-        "localFirstNote": "すべてのAI機能はデバイス上で完全に動作します。アカウント登録もサブスクリプションもクラウド接続も不要です。"
+        "title": "生成AI"
       },
-      "alwaysDecodeRaw": "常にRAWをデコード",
-      "alwaysDecodeRawDesc": "埋め込まれたJPEGプレビューを使用する代わりに、サムネイルの完全なRAWデコードを強制します。サムネイルの色やコントラストが開いた画像と異なる場合に有効にしてください。",
-      "alwaysDecodeRawLabel": "サムネイル用に常にRAWをデコード",
       "aiAcceleration": "AI アクセラレーション",
       "aiAccelerationCurrent": "現在適用中：{{ep}}",
       "aiAccelerationDesc": "AI モデルの実行方法を選択：「自動」は対応ハードウェア（NNAPI / CoreML）で加速し、「互換」は CPU のみを使用します。変更はアプリ再起動後に有効になります。",
@@ -1716,6 +1754,9 @@
         "compatibility": "互換モード（CPU のみ）",
         "performance": "パフォーマンス（ハードウェア）"
       },
+      "alwaysDecodeRaw": "常にRAWをデコード",
+      "alwaysDecodeRawDesc": "埋め込まれたJPEGプレビューを使用する代わりに、サムネイルの完全なRAWデコードを強制します。サムネイルの色やコントラストが開いた画像と異なる場合に有効にしてください。",
+      "alwaysDecodeRawLabel": "サムネイル用に常にRAWをデコード",
       "backend": "処理バックエンド",
       "backendDesc": "グラフィックスAPIを選択します。「自動」を推奨します。一部のシステムでのクラッシュを回避できる場合があります。",
       "backends": {
@@ -1810,8 +1851,8 @@
     "tagging": {
       "addCustomPlaceholder": "カスタムAIタグを入力（カンマ区切り）...",
       "addCustomTooltip": "AIタグを追加",
-      "addShortcutTooltip": "ショートカットを追加",
       "addShortcutsPlaceholder": "ショートカットを入力（カンマ区切り）...",
+      "addShortcutTooltip": "ショートカットを追加",
       "aiTagging": "AIタグ付け",
       "aiTaggingDesc": "AI（CLIP）モデルを使用した自動画像タグ付けを有効にします。追加のモデルがダウンロードされ、フォルダ閲覧時のパフォーマンスに影響します。タグはフォルダ内検索に使用されます。",
       "amount": "適用度",

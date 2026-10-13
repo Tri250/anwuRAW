@@ -14,7 +14,7 @@ use std::time::Instant;
 use tauri::{AppHandle, Emitter};
 
 use crate::formats::is_raw_file;
-use crate::image_processing::apply_cpu_default_raw_processing;
+use crate::image_processing::apply_raw_input_prep;
 use crate::panorama_utils::{processing, stitching};
 
 pub const BRIEF_DESCRIPTOR_SIZE: usize = 256;
@@ -222,7 +222,7 @@ fn stitch_images(image_paths: Vec<String>, app_handle: AppHandle) -> Result<Dyna
             .map_err(|e| format!("Failed to load image {}: {}", filename, e))?;
 
             if is_raw_file(filename) {
-                apply_cpu_default_raw_processing(&mut dynamic_image);
+                apply_raw_input_prep(&mut dynamic_image);
             }
 
             let image_f32 = dynamic_image.to_rgb32f();

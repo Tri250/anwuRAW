@@ -47,8 +47,25 @@ pub fn load_sidecar(sidecar_path: &Path) -> ImageMetadata {
         return ImageMetadata::default();
     };
 
-    let mut meta = serde_json::from_str::<ImageMetadata>(&content).unwrap_or_default();
-    let mut healed = false;
+    // 统一迁移入口：v1 sidecar 就地升级 v2 并回写（与下方的 bloat 自愈同模式）
+    let (mut meta, mut healed) = match crate::metadata_migration::parse_and_migrate(&content) {
+        Ok((meta, report)) => {
+            let migrated = !report.is_empty();
+            if migrated {
+                log::info!(
+                    "Migrated sidecar to v{} for {}: {:?}",
+                    meta.version,
+                    sidecar_path.display(),
+                    report
+                );
+            }
+            (meta, migrated)
+        }
+        Err(e) => {
+            log::warn!("Unreadable sidecar {}: {e}", sidecar_path.display());
+            (ImageMetadata::default(), false)
+        }
+    };
 
     if let Some(ref mut exif_map) = meta.exif {
         for val in exif_map.values_mut() {

@@ -3,7 +3,7 @@ use crate::exif_processing::{read_exposure_time_secs, read_iso};
 use crate::formats::is_raw_file;
 use crate::image_loader::load_base_image_from_bytes;
 use crate::image_processing::{
-    apply_cpu_default_raw_processing, apply_linear_to_srgb, apply_srgb_to_linear,
+    apply_raw_input_prep, apply_linear_to_srgb, apply_srgb_to_linear,
 };
 use crate::panorama_stitching::{Feature, KeyPoint, Match};
 use crate::panorama_utils::{processing, stitching};
@@ -149,7 +149,7 @@ fn detect_frame_features(
 ) -> FrameDetection {
     let mut detection_proxy = image.clone();
     if source_is_raw {
-        apply_cpu_default_raw_processing(&mut detection_proxy);
+        apply_raw_input_prep(&mut detection_proxy);
     } else {
         detection_proxy = apply_linear_to_srgb(detection_proxy);
     }

@@ -8,13 +8,14 @@
 //! cargo test --features golden-baseline-update --test contract_snapshot
 //! ```
 //!
-//! 案例矩阵（366 例）：
+//! 案例矩阵（371 例）：
 //! - identity × 16 张基准图（全默认输出）
 //! - 40 标量 × 4 非默认档（L0/L1/L3/L4）× 2 代表图（gradient_v 色调轴 / color_checker 色相轴）
 //! - 全矩阵复合 ±s × 2 代表图
 //! - toneMapper 枚举 5 档 × 2 代表图
 //! - curves 3 形态 / hsl 2 例 / colorGrading 全区间 / showClipping
 //! - 真实合成 LUT × 2 档强度
+//! - W4-D3 PostStage：channelMixer 矩阵/单色、splitToning 双向、sectionVisibility 门控、复合（5 例）
 //!
 //! TR-4.3 为 harness 自检：注入亚可视 LSB 级偏差必须被捕获且报告位置精确（纯 CPU，无 GPU）。
 //! 阈值标定依据：均匀 ±1 LSB 漂移的 mean ΔE2000 ≈ 0.16-0.45，落在 mean<0.5 门限的
@@ -28,8 +29,8 @@ use std::time::Instant;
 
 use image::{DynamicImage, ImageBuffer, Rgb};
 use rapidraw_lib::golden_harness::{
-    CaseSpec, GpuContext, GpuProcessor, composite_case, identity_case, lut_cases, render_case,
-    request_gpu_context, scalar_cases, structural_cases, tonemapper_cases,
+    CaseSpec, GpuContext, GpuProcessor, composite_case, identity_case, lut_cases, poststage_cases,
+    render_case, request_gpu_context, scalar_cases, structural_cases, tonemapper_cases,
 };
 
 use golden::generator::{H, W, all_images};
@@ -52,6 +53,8 @@ fn build_all_cases() -> Vec<CaseSpec> {
     }
     cases.extend(structural_cases());
     cases.extend(lut_cases());
+    // W4-D3：PostStage（channel_mixer / split_toning）引擎后段契约
+    cases.extend(poststage_cases());
     cases
 }
 

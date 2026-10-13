@@ -1819,9 +1819,7 @@ export default function SettingsPanel({
                         label={t('settings.processing.aiAcceleration')}
                         description={
                           t('settings.processing.aiAccelerationDesc') +
-                          (activeAiEp
-                            ? ` ${t('settings.processing.aiAccelerationCurrent', { ep: activeAiEp })}`
-                            : '')
+                          (activeAiEp ? ` ${t('settings.processing.aiAccelerationCurrent', { ep: activeAiEp })}` : '')
                         }
                       >
                         <Dropdown
@@ -2105,7 +2103,6 @@ export default function SettingsPanel({
                             </div>
                           </motion.div>
                         )}
-
                       </AnimatePresence>
                     </div>
                   </div>

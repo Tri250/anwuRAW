@@ -83,7 +83,18 @@ describe('TC-CREATE-01 ~ TC-CREATE-11: createSubMask 工厂函数', () => {
   });
 
   it('TC-CREATE-09: 其他类型默认空参数对象', () => {
-    for (const type of [Mask.Color, Mask.Luminance, Mask.All, Mask.AiSky, Mask.AiDepth, Mask.Clone, Mask.Heal, Mask.AutoErase, Mask.Liquify, Mask.Retouch]) {
+    for (const type of [
+      Mask.Color,
+      Mask.Luminance,
+      Mask.All,
+      Mask.AiSky,
+      Mask.AiDepth,
+      Mask.Clone,
+      Mask.Heal,
+      Mask.AutoErase,
+      Mask.Liquify,
+      Mask.Retouch,
+    ]) {
       const sm = createSubMask(type, DIMS);
       expect(sm.parameters).toEqual({});
     }

@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "generated": "2026-10-13",
+  "algorithm": "单文件: 内容 sha256；目录: 相对路径排序后按 '{sha256}  {相对路径}\\n' 逐行拼接再取 sha256",
+  "assets": [
+    {
+      "name": "lensfun_db",
+      "path": "lensfun_db",
+      "kind": "directory",
+      "sha256": "a443f584d98bfddff234f073947624edb5d1a638149fc1e8292446a217a834c1",
+      "file_count": 59
+    },
+    {
+      "name": "film_luts",
+      "path": "resources/film_luts",
+      "kind": "directory",
+      "sha256": "e5410500f4c6e64f04be01e5334205baf338373b9eecc1f9a6c8839dcd3ae303",
+      "file_count": 7
+    },
+    {
+      "name": "licenses",
+      "path": "resources/licenses",
+      "kind": "directory",
+      "sha256": "a4472c0738be91ba7d828c848c8964e368a19a125835ff40d527abc4acef3d70",
+      "file_count": 3
+    },
+    {
+      "name": "onnxruntime_android",
+      "path": "resources/libonnxruntime.so",
+      "kind": "file",
+      "sha256": "3da6146e14e7b8aaec625dde11d6114c7457c87a5f93d744897da8781e35c673",
+      "size": 21042416,
+      "ort_version": "2.0.0-rc.10",
+      "note": "Android arm64-v8a 动态加载运行时；版本必须与 Cargo.toml ort = =2.0.0-rc.10 匹配（SBOM 由 CI 发布流程引用本清单）"
+    }
+  ]
+}

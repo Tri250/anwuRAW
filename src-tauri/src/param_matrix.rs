@@ -1,15 +1,22 @@
-//! 参数扫描矩阵（spec: v2-engine-contract-tests, Task 3）。
+//! 参数扫描矩阵（spec: v2-engine-contract-tests, Task 3；AR-2 C3 起为生产参数 schema）。
 //!
 //! **决策记录**：任务书原文要求 TOML 数据文件；实际落地为 Rust 常量表 ——
 //! 矩阵需要与 `get_global_adjustments_from_json`（crate 私有）及 `SCALES`
 //! （私有常量）做同 crate 断言，TOML 方案要么把解析函数改为 pub（污染生产
 //! API），要么复制 SCALES 值（漂移源）。常量表取得同等数据驱动性 + 零 dev 依赖。
 //!
+//! **AR-2 C3 单源**：本表自 v2.0 起升级为生产参数 schema —— 解析侧
+//! `SCALES` 的每个标量 scale/default 均由 `scale()`/`default_of()` 从本表
+//! 派生（结构参数 hsl/colorGrading 饱和·亮度除外，见下）。注册表缺项
+//! 会在 SCALES 构建时 panic（`scales_resolvable_from_registry` 测试 eagerly
+//! 触发），解析回归在测试期即刻暴露。
+//!
 //! 完整性机制：TR-3.2 在「全参数 +scale 注入」档位下断言关键字段指纹 ——
 //! 参数若进矩阵但解析侧丢失 → 字段回默认 → 指纹红（防解析回归）；
-//! 解析侧新增参数而矩阵未配 → 由 Task 4 快照回归在输出层暴露，届时补矩阵。
+//! 解析侧新增参数而矩阵未配 → SCALES 构建 panic（反向完整性）。
 
 /// 标量参数规格：`scale` 必须与 image_processing.rs 的 `SCALES` 对齐
+/// （C3 后方向反转：SCALES 由本表派生，对齐关系由构造保证）
 pub struct ParamSpec {
     pub section: &'static str,
     pub key: &'static str,
@@ -102,6 +109,24 @@ pub fn levels(spec: &ParamSpec) -> [f64; 5] {
         None => [-2.0 * s, -s, 0.0, s, 2.0 * s],
         Some(d) => [d - 2.0 * s, d - s, d, d + s, d + 2.0 * s],
     }
+}
+
+/// 注册表查 scale（C3 单源入口）：缺项 panic —— 解析侧禁止出现注册表外标量。
+pub fn scale(section: &str, key: &str) -> f32 {
+    MATRIX
+        .iter()
+        .find(|s| s.section == section && s.key == key)
+        .unwrap_or_else(|| panic!("param registry missing {section}.{key} — SCALES 必须全部由注册表派生"))
+        .scale
+}
+
+/// 注册表查 default（raw 值域）
+pub fn default_of(section: &str, key: &str) -> Option<f64> {
+    MATRIX
+        .iter()
+        .find(|s| s.section == section && s.key == key)
+        .unwrap_or_else(|| panic!("param registry missing {section}.{key} — SCALES 必须全部由注册表派生"))
+        .default
 }
 
 /// toneMapper 枚举全档（解析映射：agx=1 reinhard=2 filmic/filmic_pro=3 gamma=4 none=5 其他=0）

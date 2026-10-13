@@ -13,7 +13,7 @@ use std::io::Cursor;
 use std::sync::Arc;
 
 use crate::app_state::AppState;
-use crate::get_cached_full_warped_image;
+use crate::commands::engine::get_cached_full_warped_image;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(crate = "serde")]

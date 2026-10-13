@@ -396,9 +396,15 @@ pub fn default_open_tree_sections() -> Vec<String> {
     vec!["current".to_string()]
 }
 
+/// 设置 schema 版本。v1 = 无版本号的历史文件；v2 = 引入 settingsVersion 戳。
+pub const SETTINGS_VERSION: u32 = 2;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
+    /// schema 版本戳；v1 历史文件缺省（反序列化为 0），load 时升级并回写
+    #[serde(default)]
+    pub settings_version: u32,
     pub last_root_path: Option<String>,
     #[serde(default)]
     pub root_folders: Vec<String>,
@@ -541,6 +547,7 @@ pub struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
+            settings_version: SETTINGS_VERSION,
             last_root_path: None,
             root_folders: Vec::new(),
             pinned_folders: Vec::new(),
@@ -655,36 +662,60 @@ pub fn is_tethering_supported() -> bool {
     cfg!(feature = "tethering")
 }
 
-#[tauri::command]
-pub fn load_settings(app_handle: AppHandle) -> Result<AppSettings, String> {
-    let path = get_settings_path(&app_handle)?;
+/// 探测磁盘上设置文件的 schema 版本；无版本号或损坏文件按 v1 处理（迁移链幂等）。
+pub fn detect_on_disk_settings_version(content: &str) -> u32 {
+    serde_json::from_str::<Value>(content)
+        .ok()
+        .and_then(|v| v.get("settingsVersion").and_then(|x| x.as_u64()))
+        .map(|v| v as u32)
+        .unwrap_or(1)
+}
 
-    let mut settings: AppSettings = if path.exists() {
-        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        serde_json::from_str(&content).unwrap_or_default()
-    } else {
-        AppSettings::default()
-    };
+/// 版本化迁移链：v(n) → 当前版本的归一化步骤。返回是否发生变更（需要回写）。
+pub fn apply_settings_migrations(settings: &mut AppSettings, on_disk_version: u32) -> bool {
+    let mut modified = false;
 
-    let all_current_keys = all_available_adjustments();
-    let default_included = default_included_adjustments();
-    let mut settings_modified = false;
-
+    // v1 起的一次性归一：last_root_path → root_folders（幂等）
     if settings.root_folders.is_empty()
         && let Some(last) = &settings.last_root_path
     {
         settings.root_folders.push(last.clone());
-        settings_modified = true;
+        modified = true;
     }
 
+    // Linux GPU 开关 v1 语义迁移（自持标志位守卫，重复执行无害）
     #[cfg(target_os = "linux")]
     if !settings.linux_gpu_optimization_migrated_v1.unwrap_or(false) {
         if settings.linux_gpu_optimization == Some(true) {
             settings.linux_gpu_optimization = Some(false);
         }
         settings.linux_gpu_optimization_migrated_v1 = Some(true);
-        settings_modified = true;
+        modified = true;
     }
+
+    if on_disk_version < SETTINGS_VERSION {
+        settings.settings_version = SETTINGS_VERSION;
+        modified = true;
+    }
+
+    modified
+}
+
+#[tauri::command]
+pub fn load_settings(app_handle: AppHandle) -> Result<AppSettings, String> {
+    let path = get_settings_path(&app_handle)?;
+
+    let (mut settings, on_disk_version) = if path.exists() {
+        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        let version = detect_on_disk_settings_version(&content);
+        (serde_json::from_str(&content).unwrap_or_default(), version)
+    } else {
+        (AppSettings::default(), SETTINGS_VERSION)
+    };
+
+    let all_current_keys = all_available_adjustments();
+    let default_included = default_included_adjustments();
+    let mut settings_modified = apply_settings_migrations(&mut settings, on_disk_version);
 
     let is_first_migration = settings.copy_paste_settings.known_adjustments.is_empty();
 
@@ -736,4 +767,50 @@ pub fn save_settings(settings: AppSettings, app_handle: AppHandle) -> Result<(),
         .unwrap()
         .set_capacity(cache_size);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// TR-SET-1: 版本探测——v2 戳、v1 缺省、损坏文件三分支。
+    #[test]
+    fn tr_set_1_version_detection() {
+        assert_eq!(detect_on_disk_settings_version(r#"{"settingsVersion":2}"#), 2);
+        assert_eq!(detect_on_disk_settings_version(r#"{"theme":"dark"}"#), 1);
+        assert_eq!(detect_on_disk_settings_version("not json"), 1);
+        assert_eq!(detect_on_disk_settings_version(r#"{"settingsVersion":"x"}"#), 1);
+    }
+
+    /// TR-SET-2: v1 设置迁移——root_folders 归一 + 版本戳，且二次执行幂等。
+    #[test]
+    fn tr_set_2_v1_migration_and_idempotence() {
+        let mut v1 = AppSettings {
+            settings_version: 0,
+            last_root_path: Some("/photos".to_string()),
+            root_folders: Vec::new(),
+            ..AppSettings::default()
+        };
+        // 手工把版本戳还原成"磁盘上的 v1 状态"
+        v1.settings_version = 0;
+
+        assert!(apply_settings_migrations(&mut v1, 1), "first migration must report change");
+        assert_eq!(v1.settings_version, SETTINGS_VERSION);
+        assert_eq!(v1.root_folders, vec!["/photos".to_string()]);
+
+        // 幂等：迁移后的设置再走一遍迁移链，零变更
+        let snapshot = serde_json::to_string(&v1).unwrap();
+        assert!(!apply_settings_migrations(&mut v1, SETTINGS_VERSION), "second run must be a no-op");
+        assert_eq!(serde_json::to_string(&v1).unwrap(), snapshot);
+    }
+
+    /// TR-SET-3: 新默认设置直接落在当前版本，序列化含版本戳字段。
+    #[test]
+    fn tr_set_3_default_is_current_version() {
+        let settings = AppSettings::default();
+        assert_eq!(settings.settings_version, SETTINGS_VERSION);
+        let json = serde_json::to_string(&settings).unwrap();
+        assert!(json.contains("settingsVersion"), "camelCase stamp must round-trip");
+        assert_eq!(detect_on_disk_settings_version(&json), SETTINGS_VERSION);
+    }
 }
