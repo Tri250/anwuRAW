@@ -408,19 +408,13 @@
       "comingSoon": "Wkrótce",
       "connection": {
         "backendLabel": "Backend AI:",
-        "builtinDesc": "Używanie podstawowego lokalnego procesora. Wybierz Chmurę lub Złącze AI w ustawieniach do zastępowania generatywnego.",
+        "builtinDesc": "Używanie podstawowego lokalnego procesora. Aby korzystać z zamiany generatywnej, wybierz AI Connector w ustawieniach.",
         "builtinLabel": "Wbudowane AI:",
-        "cloudLabel": "AI w Chmurze:",
         "connectorConnectedDesc": "Połączono z lokalnym backendem generatywnym.",
         "connectorDisconnectedDesc": "Dostępny tylko prosty inpainting. Uruchom swój lokalny backend.",
         "connectorLabel": "Złącze AI:",
-        "loginRequiredDesc": "Zaloguj się przez Ustawienia, aby korzystać z AI w Chmurze.",
-        "monthlyUsage": "Miesięczne użycie",
         "notDetected": "Nie wykryto",
-        "notLoggedIn": "Nie zalogowano",
-        "proRequiredDesc": "Wymagana subskrypcja Pro. Ulepsz w Ustawieniach.",
-        "ready": "Gotowe",
-        "upgradeRequired": "Wymagane ulepszenie"
+        "ready": "Gotowe"
       },
       "createNewTitle": "Utwórz nową edycję generatywną",
       "createNewTooltip": "Utwórz nową edycję {{name}}",
@@ -1749,27 +1743,6 @@
     },
     "processing": {
       "ai": {
-        "cloud": {
-          "description": "Dla osób szukających prostego rozwiązania, opcjonalna subskrypcja dostarcza tych samych wysokiej jakości wyników co własny serwer bez żadnych problemów. To najwygodniejsza opcja i najlepszy sposób na wsparcie projektu.",
-          "feature1": "Maksymalna wygoda, brak konieczności konfiguracji",
-          "feature2": "Te same rezultaty co przy rozwiązaniach lokalnych",
-          "feature3": "Nie wymaga mocnego sprzętu komputerowego",
-          "signedIn": {
-            "active": "Subskrypcja w chmurze jest aktywna",
-            "inactive": "Brak aktywnej subskrypcji",
-            "logout": "Wyloguj się",
-            "manage": "Zarządzaj",
-            "usage": "Miesięczne zużycie",
-            "usageStats": "{{requests}} / {{limit}} żądań"
-          },
-          "signedOut": {
-            "noAccount": "Nie masz konta?",
-            "signup": "Zarejestruj się na stronie",
-            "upgradeBtn": "Ulepsz na stronie",
-            "upgradeDesc": "Aby użyć funkcji AI w chmurze, potrzebujesz subskrypcji."
-          },
-          "title": "Usługa w chmurze"
-        },
         "connector": {
           "address": "Adres Złącza AI",
           "addressDesc": "Wprowadź adres i port swojej uruchomionej instancji Złącza AI. Wymagane dla funkcji generatywnego AI.",
@@ -1793,10 +1766,10 @@
         "description": "AI w RapidRAW została zbudowana z myślą o elastyczności. Wybierz swój idealny przepływ pracy, od szybkich lokalnych narzędzi po potężne rozwiązania serwerowe.",
         "providers": {
           "aiConnector": "Złącze AI",
-          "cloud": "Chmura",
           "cpu": "CPU"
         },
-        "title": "Generatywne AI"
+        "title": "Generatywne AI",
+        "localFirstNote": "Wszystkie funkcje AI działają w całości na Twoim urządzeniu — bez konta, bez subskrypcji i bez połączenia z chmurą."
       },
       "alwaysDecodeRaw": "Zawsze dekoduj RAW",
       "alwaysDecodeRawDesc": "Wymusza pełne dekodowanie RAW dla miniatur zamiast korzystania z osadzonych podglądów JPEG. Włącz tę opcję, jeśli miniatury różnią się kolorami lub kontrastem od otwartego obrazu.",

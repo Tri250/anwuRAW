@@ -376,19 +376,13 @@
       "comingSoon": "即将推出",
       "connection": {
         "backendLabel": "AI 后端：",
-        "builtinDesc": "使用基础本地 CPU。在设置中选择云端或 AI 连接器以使用生成式替换。",
+        "builtinDesc": "正在使用基础本地 CPU。如需生成式替换，请在设置中选择 AI Connector。",
         "builtinLabel": "内置 AI：",
-        "cloudLabel": "云端 AI：",
         "connectorConnectedDesc": "已连接到本地生成式后端。",
         "connectorDisconnectedDesc": "仅可使用简单修复。请启动您的本地后端。",
         "connectorLabel": "AI 连接器：",
-        "loginRequiredDesc": "通过设置登录以使用云端 AI。",
-        "monthlyUsage": "月度使用量",
         "notDetected": "未检测到",
-        "notLoggedIn": "未登录",
-        "proRequiredDesc": "需要 Pro 订阅。请在设置中升级。",
-        "ready": "就绪",
-        "upgradeRequired": "需要升级"
+        "ready": "就绪"
       },
       "createNewTitle": "创建新的生成式编辑",
       "createNewTooltip": "创建新的 {{name}} 编辑",
@@ -1702,27 +1696,6 @@
     },
     "processing": {
       "ai": {
-        "cloud": {
-          "description": "对于那些想要更简单解决方案的用户，可选订阅提供与自托管相同的高质量结果，无需任何麻烦。这是最方便的选择，也是支持本项目的最佳方式。",
-          "feature1": "最大便利，无需设置",
-          "feature2": "与自托管相同的结果",
-          "feature3": "无需强大硬件",
-          "signedIn": {
-            "active": "云端订阅已激活",
-            "inactive": "无有效订阅",
-            "logout": "退出登录",
-            "manage": "管理",
-            "usage": "月度使用量",
-            "usageStats": "{{requests}} / {{limit}} 请求"
-          },
-          "signedOut": {
-            "noAccount": "还没有账户？",
-            "signup": "在网站上注册",
-            "upgradeBtn": "在网站上升级",
-            "upgradeDesc": "要使用云端 AI 功能，您需要订阅云端服务。"
-          },
-          "title": "云端服务"
-        },
         "connector": {
           "address": "AI 连接器地址",
           "addressDesc": "输入您正在运行的 AI 连接器实例的地址和端口。这是使用生成式 AI 功能所必需的。",
@@ -1746,10 +1719,10 @@
         "description": "RapidRAW 的 AI 专为灵活性而设计。选择您理想的工作流程，从快速的本地工具到强大的自托管。",
         "providers": {
           "aiConnector": "AI 连接器",
-          "cloud": "云端",
           "cpu": "CPU"
         },
-        "title": "生成式 AI"
+        "title": "生成式 AI",
+        "localFirstNote": "所有 AI 功能均在本地设备上完整运行 —— 无需账号、无需订阅、无需连接云端。"
       },
       "alwaysDecodeRaw": "始终解码 RAW",
       "alwaysDecodeRawDesc": "强制对缩略图进行完整的 RAW 解码，而不是使用内置的 JPEG 预览。如果您的缩略图在颜色或对比度上与打开的图像不同，请启用此选项。",

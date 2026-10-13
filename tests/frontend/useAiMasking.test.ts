@@ -324,32 +324,30 @@ describe('TC-AI-07 ~ TC-AI-08: handleDirectPatch 命令分发与切图保护', (
   });
 });
 
-describe('TC-AI-09 ~ TC-AI-10: handleGenerativeReplace 端侧/云端', () => {
-  it('TC-AI-09: useFastInpaint=true 时跳过 getToken,token=null', async () => {
+describe('TC-AI-09 ~ TC-AI-10: handleGenerativeReplace 端侧执行（无云依赖）', () => {
+  it('TC-AI-09: useFastInpaint=true 时本地快速修复,不携带 token', async () => {
     mockInvoke.mockResolvedValueOnce(JSON.stringify({ color: '#fff', mask: 'data:image/png;base64,fast' }));
     const { result } = renderHook(() => useAiMasking());
     await act(async () => {
       await result.current.handleGenerativeReplace('patch-1', 'a prompt', true);
     });
-    expect(mockInvoke).toHaveBeenCalledWith(
-      Invokes.InvokeGenerativeReplaseWithMaskDef,
-      expect.objectContaining({ useFastInpaint: true, token: null }),
-    );
+    const call = mockInvoke.mock.calls.find((c) => c[0] === Invokes.InvokeGenerativeReplaseWithMaskDef);
+    expect(call![1]).toMatchObject({ useFastInpaint: true });
+    expect(call![1]).not.toHaveProperty('token');
     const patch = useEditorStore.getState().adjustments.aiPatches.find((p) => p.id === 'patch-1');
     expect(patch.isLoading).toBe(false);
     expect(patch.patchData).toEqual({ color: '#fff', mask: 'data:image/png;base64,fast' });
   });
 
-  it('TC-AI-10: useFastInpaint=false 时透传 token', async () => {
-    mockInvoke.mockResolvedValueOnce(JSON.stringify({ color: '#fff', mask: 'cloud' }));
+  it('TC-AI-10: useFastInpaint=false 时同样端侧执行,不获取云 token（端侧优先决策）', async () => {
+    mockInvoke.mockResolvedValueOnce(JSON.stringify({ color: '#fff', mask: 'local' }));
     const { result } = renderHook(() => useAiMasking());
     await act(async () => {
-      await result.current.handleGenerativeReplace('patch-1', 'cloud prompt', false);
+      await result.current.handleGenerativeReplace('patch-1', 'a prompt', false);
     });
-    expect(mockInvoke).toHaveBeenCalledWith(
-      Invokes.InvokeGenerativeReplaseWithMaskDef,
-      expect.objectContaining({ useFastInpaint: false, token: 'mock-token' }),
-    );
+    const call = mockInvoke.mock.calls.find((c) => c[0] === Invokes.InvokeGenerativeReplaseWithMaskDef);
+    expect(call![1]).toMatchObject({ useFastInpaint: false });
+    expect(call![1]).not.toHaveProperty('token');
   });
 });
 

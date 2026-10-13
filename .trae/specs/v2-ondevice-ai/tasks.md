@@ -16,7 +16,7 @@
 
 ## Task 1: 移除 Clerk 及云账号 UI
 
-- **Status**: `pending`
+- **Status**: `done`（2026-10-13 完成；bundle gzip 626.51→583.36 kB，−6.9%）
 - **Priority**: high
 - **Depends On**: None
 - **Description**:

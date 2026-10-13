@@ -376,19 +376,13 @@
       "comingSoon": "Demnächst",
       "connection": {
         "backendLabel": "KI-Backend:",
-        "builtinDesc": "Nutzt lokale CPU. Für generatives Ersetzen wählen Sie Cloud oder AI Connector.",
+        "builtinDesc": "Grundlegende lokale CPU wird verwendet. Wählen Sie in den Einstellungen den KI-Connector für generatives Ersetzen.",
         "builtinLabel": "Integrierte KI:",
-        "cloudLabel": "Cloud-KI:",
         "connectorConnectedDesc": "Verbunden mit lokalem generativen Backend.",
         "connectorDisconnectedDesc": "Nur einfaches Reparieren verfügbar. Starten Sie Ihr lokales Backend.",
         "connectorLabel": "AI Connector:",
-        "loginRequiredDesc": "In den Einstellungen anmelden, um Cloud-KI zu nutzen.",
-        "monthlyUsage": "Monatliche Nutzung",
         "notDetected": "Nicht erkannt",
-        "notLoggedIn": "Nicht angemeldet",
-        "proRequiredDesc": "Pro-Abo erforderlich. In den Einstellungen upgraden.",
-        "ready": "Bereit",
-        "upgradeRequired": "Upgrade erforderlich"
+        "ready": "Bereit"
       },
       "createNewTitle": "Neue generative Bearbeitung erstellen",
       "createNewTooltip": "Neue {{name}}-Bearbeitung erstellen",
@@ -1681,27 +1675,6 @@
     },
     "processing": {
       "ai": {
-        "cloud": {
-          "description": "Für diejenigen, die eine einfachere Lösung wünschen, bietet ein optionales Abonnement die gleichen hochwertigen Ergebnisse wie das Selbst-Hosting ohne den Aufwand. Dies ist die bequemste Option und der beste Weg, das Projekt zu unterstützen.",
-          "feature1": "Maximaler Komfort, keine Einrichtung",
-          "feature2": "Gleiche Ergebnisse wie beim Selbst-Hosting",
-          "feature3": "Keine leistungsstarke Hardware erforderlich",
-          "signedIn": {
-            "active": "Cloud-Abonnement Aktiv",
-            "inactive": "Kein aktives Abonnement",
-            "logout": "Abmelden",
-            "manage": "Verwalten",
-            "usage": "Monatliche Nutzung",
-            "usageStats": "{{requests}} / {{limit}} Anfragen"
-          },
-          "signedOut": {
-            "noAccount": "Haben Sie kein Konto?",
-            "signup": "Melden Sie sich auf der Website an",
-            "upgradeBtn": "Upgrade auf der Website",
-            "upgradeDesc": "Um Cloud-KI-Funktionen zu nutzen, benötigen Sie ein Cloud-Abonnement."
-          },
-          "title": "Cloud-Dienst"
-        },
         "connector": {
           "address": "AI Connector Adresse",
           "addressDesc": "Geben Sie die Adresse und den Port Ihrer laufenden AI Connector Instanz ein. Erforderlich für generative KI-Funktionen.",
@@ -1725,10 +1698,10 @@
         "description": "Die KI von RapidRAW ist auf Flexibilität ausgelegt. Wählen Sie Ihren idealen Workflow.",
         "providers": {
           "aiConnector": "AI Connector",
-          "cloud": "Cloud",
           "cpu": "CPU"
         },
-        "title": "Generative KI"
+        "title": "Generative KI",
+        "localFirstNote": "Alle KI-Funktionen laufen vollständig auf Ihrem Gerät — kein Konto, kein Abo, keine Cloud-Verbindung."
       },
       "alwaysDecodeRaw": "RAW immer decodieren",
       "alwaysDecodeRawDesc": "Erzwingt die vollständige RAW-Decodierung für Vorschaubilder, anstatt eingebettete JPEG-Vorschauen zu verwenden. Aktiviere diese Option, wenn sich die Vorschaubilder farblich oder im Kontrast vom geöffneten Bild unterscheiden.",

@@ -30,10 +30,6 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: (...args: unknown[]) => mockInvoke(...args),
 }));
 
-vi.mock('@clerk/react', () => ({
-  useAuth: () => ({ getToken: vi.fn().mockResolvedValue('mock-token') }),
-}));
-
 // React-Toastify 的 toast.error 在 jsdom 中触发副作用,做静默 mock
 vi.mock('react-toastify', () => ({
   toast: {

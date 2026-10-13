@@ -376,19 +376,13 @@
       "comingSoon": "近日公開",
       "connection": {
         "backendLabel": "AI バックエンド:",
-        "builtinDesc": "ローカルCPUを使用しています。生成塗りつぶしを使用するには、設定でクラウドまたはAI Connectorを選択してください。",
+        "builtinDesc": "基本的なローカルCPUを使用中。生成置換には設定でAI Connectorを選択してください。",
         "builtinLabel": "内蔵AI:",
-        "cloudLabel": "クラウドAI:",
         "connectorConnectedDesc": "ローカルの生成バックエンドに接続されました。",
         "connectorDisconnectedDesc": "簡易スポット修正のみ利用可能です。ローカルバックエンドを起動してください。",
         "connectorLabel": "AI Connector:",
-        "loginRequiredDesc": "クラウドAIを使用するには設定からログインしてください。",
-        "monthlyUsage": "月間使用量",
         "notDetected": "検出されませんでした",
-        "notLoggedIn": "未ログイン",
-        "proRequiredDesc": "Proサブスクリプションが必要です。設定からアップグレードしてください。",
-        "ready": "準備完了",
-        "upgradeRequired": "アップグレードが必要です"
+        "ready": "準備完了"
       },
       "createNewTitle": "新しい生成編集を作成",
       "createNewTooltip": "新しい {{name}} 編集を作成",
@@ -1679,27 +1673,6 @@
     },
     "processing": {
       "ai": {
-        "cloud": {
-          "description": "手軽さを求める方には、セルフホストの手間をかけずに高品質な結果を得られる、オプションのサブスクリプションをおすすめします。最も便利かつプロジェクト開発への貢献につながる方法です。",
-          "feature1": "セットアップ不要で究極の快適性",
-          "feature2": "セルフホストと同様の高品質な仕上がり",
-          "feature3": "高スペックなハードウェアが不要",
-          "signedIn": {
-            "active": "クラウドサブスクリプション有効",
-            "inactive": "サブスクリプションが無効です",
-            "logout": "ログアウト",
-            "manage": "管理する",
-            "usage": "月間使用量",
-            "usageStats": "{{requests}} / {{limit}} 件のリクエスト"
-          },
-          "signedOut": {
-            "noAccount": "アカウントをお持ちではありませんか？",
-            "signup": "Webサイトで会員登録",
-            "upgradeBtn": "Webサイトでアップグレード",
-            "upgradeDesc": "クラウドAI機能を使用するには、クラウドサブスクリプションへの加入が必要です。"
-          },
-          "title": "クラウドサービス"
-        },
         "connector": {
           "address": "AI Connectorのアドレス",
           "addressDesc": "起動中の AI Connector インスタンスのアドレスとポートを入力してください。生成AI機能に必要です。",
@@ -1723,10 +1696,10 @@
         "description": "RapidRAWのAIは、優れた柔軟性を備えています。高速なローカル処理から本格的なセルフホストまで、最適なワークフローを選択してください。",
         "providers": {
           "aiConnector": "AI Connector",
-          "cloud": "クラウド",
           "cpu": "CPU"
         },
-        "title": "生成AI"
+        "title": "生成AI",
+        "localFirstNote": "すべてのAI機能はデバイス上で完全に動作します。アカウント登録もサブスクリプションもクラウド接続も不要です。"
       },
       "alwaysDecodeRaw": "常にRAWをデコード",
       "alwaysDecodeRawDesc": "埋め込まれたJPEGプレビューを使用する代わりに、サムネイルの完全なRAWデコードを強制します。サムネイルの色やコントラストが開いた画像と異なる場合に有効にしてください。",

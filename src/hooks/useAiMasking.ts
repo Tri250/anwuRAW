@@ -6,7 +6,6 @@ import { useEditorActions } from './useEditorActions';
 import { Adjustments, AiPatch, MaskContainer, Coord } from '../utils/adjustments';
 import { SubMask } from '../components/panel/right/Masks';
 import { Invokes } from '../components/ui/AppProperties';
-import { useAuth } from '@clerk/react';
 
 /**
  * 在最新 adjustments 中查找指定 subMask(同时搜索 masks 与 aiPatches)。
@@ -61,7 +60,6 @@ export function useAiMasking() {
   const activeAiSubMaskId = useEditorStore((state) => state.activeAiSubMaskId);
   const selectedImagePath = useEditorStore((state) => state.selectedImage?.path);
   const adjustments = useEditorStore((state) => state.adjustments);
-  const { getToken } = useAuth();
 
   const updateSubMask = useCallback(
     (subMaskId: string, updatedData: any) => {
@@ -168,16 +166,7 @@ export function useAiMasking() {
       if (!patch) return;
 
       const patchDefinition = { ...patch, prompt };
-      // 仅在走云端/远端生成（非端侧快速涂画）时才获取鉴权 token；
-      // 端侧 Lama 模型修复完全本地执行，无需登录，避免断网/未登录时阻断可用性。
-      let token: string | null = null;
-      if (!useFastInpaint) {
-        try {
-          token = await getToken();
-        } catch (_err) {
-          token = null;
-        }
-      }
+      // 端侧优先：推理全部本地执行，不获取云鉴权 token，避免断网时阻断可用性。
 
       setAdjustments((prev: Adjustments) => ({
         ...prev,
@@ -192,7 +181,6 @@ export function useAiMasking() {
           patchDefinition: patchDefinition,
           path: selectedImage.path,
           useFastInpaint: useFastInpaint,
-          token: token || null,
         });
 
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;
@@ -224,7 +212,7 @@ export function useAiMasking() {
         setEditor({ isGeneratingAi: false });
       }
     },
-    [setAdjustments, setEditor, getToken],
+    [setAdjustments, setEditor],
   );
 
   const handleQuickErase = useCallback(
@@ -288,7 +276,6 @@ export function useAiMasking() {
           patchDefinition: { ...patchDefinitionForBackend, prompt: '' },
           path: selectedImage.path,
           useFastInpaint: true,
-          token: null,
         });
 
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;
@@ -319,7 +306,7 @@ export function useAiMasking() {
         setEditor({ isGeneratingAi: false });
       }
     },
-    [setAdjustments, setEditor, getToken],
+    [setAdjustments, setEditor],
   );
 
   const handleDeleteMaskContainer = useCallback(
