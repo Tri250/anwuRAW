@@ -620,11 +620,8 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
               onClick: () => {
                 setUI({
                   panoramaModalState: {
-                    error: null,
                     finalImageBase64: null,
                     isOpen: true,
-                    isProcessing: false,
-                    progressMessage: null,
                     stitchingSourcePaths: finalSelection,
                   },
                 });
@@ -637,11 +634,8 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
               onClick: () => {
                 setUI({
                   hdrModalState: {
-                    error: null,
                     finalImageBase64: null,
                     isOpen: true,
-                    isProcessing: false,
-                    progressMessage: null,
                     stitchingSourcePaths: finalSelection,
                   },
                 });
@@ -654,12 +648,9 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
               onClick: () => {
                 setUI({
                   focusStackModalState: {
-                    error: null,
                     finalImageBase64: null,
                     depthMapBase64: null,
                     isOpen: true,
-                    isProcessing: false,
-                    progressMessage: null,
                     sourcePaths: finalSelection,
                   },
                 });

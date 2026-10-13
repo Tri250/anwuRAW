@@ -1,0 +1,686 @@
+/**
+ * W9-I2 预设 store：原 usePresets 的 presets 状态与全部 CRUD 下放为全局状态。
+ * 预设数据生命周期与应用一致，多面板（PresetsPanel/MasksPanel/TetheringPanel）共享单源。
+ * 需要"当前调整"的动作（addPreset/configurePreset/overwritePreset）直接读 useEditorStore。
+ */
+import { create } from 'zustand';
+import debounce from 'lodash.debounce';
+import i18n from 'i18next';
+import { invoke } from '@tauri-apps/api/core';
+import { useEditorStore } from './useEditorStore';
+import {
+  Adjustments,
+  COPYABLE_ADJUSTMENT_KEYS,
+  ADJUSTMENT_GROUPS,
+  INITIAL_ADJUSTMENTS,
+} from '../utils/adjustments';
+import { Folder, Invokes, Preset } from '../components/ui/AppProperties';
+
+export enum PresetListType {
+  Folder = 'folder',
+  Preset = 'preset',
+}
+
+export interface UserPreset {
+  folder?: Folder;
+  id?: string | undefined;
+  name?: string | undefined;
+  preset?: Preset;
+}
+
+export interface PresetImportFailure {
+  fileName: string;
+  error: string;
+}
+
+export interface PresetImportResult {
+  presets: Array<UserPreset>;
+  failures: Array<PresetImportFailure>;
+}
+
+function arrayMove<T>(array: T[], from: number, to: number): T[] {
+  const newArray = array.slice();
+  const [item] = newArray.splice(from, 1);
+  newArray.splice(to, 0, item);
+  return newArray;
+}
+
+const savePresetsToBackend = debounce((presetsToSave: Array<UserPreset>) => {
+  invoke(Invokes.SavePresets, { presets: presetsToSave }).catch((err) =>
+    console.error('Failed to save presets:', err),
+  );
+}, 500);
+
+const GEOMETRY_KEYS = ADJUSTMENT_GROUPS.geometry.flatMap((group) => group.keys);
+const MASK_KEYS = ADJUSTMENT_GROUPS.masks.flatMap((group) => group.keys);
+
+/** 在预设树中查找指定 id 的预设 */
+function findPresetById(presets: Array<UserPreset>, id: string | null | undefined): Preset | null {
+  for (const item of presets) {
+    if (item.preset && item.preset.id === id) return item.preset;
+    if (item.folder) {
+      const found = item.folder.children.find((p: Preset) => p.id === id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/** 按 COPYABLE 键从当前调整构造预设参数（tool 类型剔除默认值） */
+function buildPresetAdjustments(
+  currentAdjustments: Adjustments,
+  includeMasks: boolean,
+  includeCropTransform: boolean,
+  presetType: 'tool' | 'style',
+  baseAdjustments?: Record<string, any>,
+): Record<string, any> {
+  const source = baseAdjustments ?? currentAdjustments;
+  const presetAdjustments: Record<string, any> = {};
+
+  for (const key of COPYABLE_ADJUSTMENT_KEYS) {
+    if (!includeMasks && MASK_KEYS.includes(key)) continue;
+    if (!includeCropTransform && GEOMETRY_KEYS.includes(key)) continue;
+
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      const currentValue = source[key as keyof Adjustments];
+      if (presetType === 'tool') {
+        const defaultValue = INITIAL_ADJUSTMENTS[key as keyof Adjustments];
+        if (JSON.stringify(currentValue) !== JSON.stringify(defaultValue)) {
+          presetAdjustments[key] = currentValue;
+        }
+      } else {
+        presetAdjustments[key] = currentValue;
+      }
+    }
+  }
+  return presetAdjustments;
+}
+
+/** 类型切换时补齐/剔除键（configurePreset 专用；oldType === presetType 时不做类型分支） */
+function reconcilePresetAdjustments(
+  existing: Record<string, any>,
+  includeMasks: boolean,
+  includeCropTransform: boolean,
+  presetType: 'tool' | 'style',
+  oldType: 'tool' | 'style',
+): Record<string, any> {
+  const newAdjustments: Record<string, any> = { ...existing };
+  if (oldType !== presetType) {
+    if (presetType === 'tool') {
+      for (const key of Object.keys(newAdjustments)) {
+        if (JSON.stringify(newAdjustments[key]) === JSON.stringify(INITIAL_ADJUSTMENTS[key as keyof Adjustments])) {
+          delete newAdjustments[key];
+        }
+      }
+    } else {
+      for (const key of COPYABLE_ADJUSTMENT_KEYS) {
+        if (!includeMasks && MASK_KEYS.includes(key)) continue;
+        if (!includeCropTransform && GEOMETRY_KEYS.includes(key)) continue;
+        if (newAdjustments[key] === undefined) {
+          newAdjustments[key] = INITIAL_ADJUSTMENTS[key as keyof Adjustments];
+        }
+      }
+    }
+  }
+  if (!includeMasks) {
+    for (const k of MASK_KEYS) delete newAdjustments[k];
+  }
+  if (!includeCropTransform) {
+    for (const k of GEOMETRY_KEYS) delete newAdjustments[k];
+  }
+  return newAdjustments;
+}
+
+interface PresetState {
+  presets: Array<UserPreset>;
+  isLoading: boolean;
+  hasLoaded: boolean;
+
+  loadPresets: () => Promise<void>;
+  ensureLoaded: () => void;
+  addPreset: (
+    name: string,
+    folderId?: string | null,
+    includeMasks?: boolean,
+    includeCropTransform?: boolean,
+    presetType?: 'tool' | 'style',
+  ) => Preset;
+  addFolder: (name: string) => void;
+  deleteItem: (id: string) => void;
+  renameItem: (id: string | null, newName: string) => void;
+  configurePreset: (
+    id: string | null,
+    name: string,
+    includeMasks: boolean,
+    includeCropTransform: boolean,
+    presetType: 'tool' | 'style',
+  ) => Preset | null;
+  overwritePreset: (id: string | null) => Preset | null;
+  duplicatePreset: (presetId: string | null) => Preset | null;
+  movePreset: (presetId: string, targetFolderId: string | null, overId?: string | null) => void;
+  reorderItems: (activeId: string, overId: string) => void;
+  toggleFavorite: (presetId: string | null) => void;
+  sortAllPresetsAlphabetically: () => void;
+  importPresetsFromFile: (filePath: string) => Promise<void>;
+  importLegacyPresetsFromFile: (filePath: string) => Promise<void>;
+  importPresetsFromFiles: (filePaths: Array<string>) => Promise<PresetImportResult>;
+  exportPresetsToFile: (presetsToExport: Array<UserPreset>, filePath: string) => Promise<void>;
+}
+
+export const usePresetStore = create<PresetState>((set, get) => ({
+  presets: [],
+  isLoading: true,
+  hasLoaded: false,
+
+  loadPresets: async () => {
+    set({ isLoading: true });
+    try {
+      const loadedPresets: Array<UserPreset> = await invoke(Invokes.LoadPresets);
+      set({ presets: loadedPresets, hasLoaded: true });
+    } catch (error) {
+      console.error('Failed to load presets:', error);
+      set({ presets: [], hasLoaded: true });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  ensureLoaded: () => {
+    if (!get().hasLoaded) {
+      get().loadPresets();
+    }
+  },
+
+  addPreset: (name, folderId = null, includeMasks = false, includeCropTransform = false, presetType = 'style') => {
+    const presets = get().presets;
+    const currentAdjustments = useEditorStore.getState().adjustments;
+
+    const newPresetData: Preset = {
+      adjustments: buildPresetAdjustments(currentAdjustments, includeMasks, includeCropTransform, presetType),
+      id: crypto.randomUUID(),
+      name,
+      includeMasks,
+      includeCropTransform,
+      presetType,
+    };
+
+    let updatedPresets: Array<UserPreset>;
+    if (folderId) {
+      updatedPresets = presets.map((item: UserPreset) => {
+        if (item.folder && item.folder.id === folderId) {
+          return {
+            folder: {
+              ...item.folder,
+              children: [...item.folder.children, newPresetData],
+            },
+          };
+        }
+        return item;
+      });
+    } else {
+      updatedPresets = [...presets, { preset: newPresetData }];
+    }
+
+    set({ presets: updatedPresets });
+    savePresetsToBackend(updatedPresets);
+    return newPresetData;
+  },
+
+  addFolder: (name) => {
+    const newFolder = {
+      folder: {
+        id: crypto.randomUUID(),
+        name,
+        children: [],
+      },
+    };
+
+    set((state) => {
+      const updatedPresets = [...state.presets];
+      const firstPresetIndex = updatedPresets.findIndex((p: UserPreset) => p.preset);
+
+      if (firstPresetIndex === -1) {
+        updatedPresets.push(newFolder);
+      } else {
+        updatedPresets.splice(firstPresetIndex, 0, newFolder);
+      }
+
+      savePresetsToBackend(updatedPresets);
+      return { presets: updatedPresets };
+    });
+  },
+
+  deleteItem: (id) => {
+    let updatedPresets = get().presets.filter((item: UserPreset) => item.preset?.id !== id && item.folder?.id !== id);
+    updatedPresets = updatedPresets.map((item: UserPreset) => {
+      if (item.folder) {
+        return {
+          folder: {
+            ...item.folder,
+            children: item.folder.children.filter((child: Preset) => child.id !== id),
+          },
+        };
+      }
+      return item;
+    });
+    set({ presets: updatedPresets });
+    savePresetsToBackend(updatedPresets);
+  },
+
+  renameItem: (id, newName) => {
+    const updatedPresets = get().presets.map((item: UserPreset) => {
+      if (item.preset?.id === id) {
+        return { preset: { ...item.preset, name: newName } };
+      }
+      if (item.folder?.id === id) {
+        return { folder: { ...item.folder, name: newName } };
+      }
+      if (item.folder) {
+        return {
+          folder: {
+            ...item.folder,
+            children: item.folder.children.map((child: Preset) => (child.id === id ? { ...child, name: newName } : child)),
+          },
+        };
+      }
+      return item;
+    });
+    set({ presets: updatedPresets });
+    savePresetsToBackend(updatedPresets);
+  },
+
+  configurePreset: (id, name, includeMasks, includeCropTransform, presetType) => {
+    const presets = get().presets;
+    const existingPreset = findPresetById(presets, id);
+    if (!existingPreset) return null;
+
+    const newAdjustments = reconcilePresetAdjustments(
+      existingPreset.adjustments,
+      includeMasks,
+      includeCropTransform,
+      presetType,
+      existingPreset.presetType || 'style',
+    );
+
+    let updatedPreset: Preset | null = null;
+    const updatedPresets = presets.map((item: UserPreset) => {
+      if (item.preset?.id === id) {
+        updatedPreset = {
+          ...item.preset,
+          name,
+          adjustments: newAdjustments,
+          includeMasks,
+          includeCropTransform,
+          presetType,
+        };
+        return { preset: updatedPreset };
+      }
+      if (item.folder) {
+        let found = false;
+        const newChildren = item.folder.children.map((child: Preset) => {
+          if (child.id === id) {
+            found = true;
+            updatedPreset = {
+              ...child,
+              name,
+              adjustments: newAdjustments,
+              includeMasks,
+              includeCropTransform,
+              presetType,
+            };
+            return updatedPreset;
+          }
+          return child;
+        });
+        if (found) {
+          return { folder: { ...item.folder, children: newChildren } };
+        }
+      }
+      return item;
+    });
+
+    set({ presets: updatedPresets });
+    savePresetsToBackend(updatedPresets);
+    return updatedPreset;
+  },
+
+  overwritePreset: (id) => {
+    const presets = get().presets;
+    const existingPreset = findPresetById(presets, id);
+    if (!existingPreset) return null;
+
+    const includeMasks =
+      existingPreset.includeMasks ??
+      (existingPreset.adjustments?.masks && existingPreset.adjustments.masks.length > 0) ??
+      false;
+    const includeCropTransform =
+      existingPreset.includeCropTransform ??
+      GEOMETRY_KEYS.some((key) => existingPreset.adjustments?.[key] !== undefined) ??
+      false;
+    const presetType = existingPreset.presetType || 'style';
+
+    const currentAdjustments = useEditorStore.getState().adjustments;
+    const presetAdjustments = buildPresetAdjustments(
+      currentAdjustments,
+      includeMasks,
+      includeCropTransform,
+      presetType,
+    );
+
+    let updatedPreset: Preset | null = null;
+    const updatedPresets = presets.map((item: UserPreset) => {
+      if (item.preset?.id === id) {
+        updatedPreset = {
+          ...item.preset,
+          adjustments: presetAdjustments,
+          includeMasks,
+          includeCropTransform,
+          presetType,
+        };
+        return { preset: updatedPreset };
+      }
+      if (item.folder) {
+        let found = false;
+        const newChildren = item.folder.children.map((child: Preset) => {
+          if (child.id === id) {
+            found = true;
+            updatedPreset = {
+              ...child,
+              adjustments: presetAdjustments,
+              includeMasks,
+              includeCropTransform,
+              presetType,
+            };
+            return updatedPreset;
+          }
+          return child;
+        });
+        if (found) {
+          return { folder: { ...item.folder, children: newChildren } };
+        }
+      }
+      return item;
+    });
+
+    set({ presets: updatedPresets });
+    savePresetsToBackend(updatedPresets);
+    return updatedPreset;
+  },
+
+  duplicatePreset: (presetId) => {
+    const presets = get().presets;
+    let presetToDuplicate: Preset | null = null;
+    let sourceFolderId: string | null = null;
+
+    for (const item of presets) {
+      if (item.preset?.id === presetId) {
+        presetToDuplicate = item.preset;
+        break;
+      }
+      if (item.folder) {
+        const found = item.folder.children.find((p: any) => p.id === presetId);
+        if (found) {
+          presetToDuplicate = found;
+          sourceFolderId = item.folder.id ?? null;
+          break;
+        }
+      }
+    }
+
+    if (!presetToDuplicate) {
+      return null;
+    }
+
+    const newPreset: Preset = {
+      adjustments: JSON.parse(JSON.stringify(presetToDuplicate.adjustments)),
+      id: crypto.randomUUID(),
+      name: `${presetToDuplicate.name} ${i18n.t('editor.presets.duplicateSuffix')}`,
+      includeMasks: presetToDuplicate.includeMasks,
+      includeCropTransform: presetToDuplicate.includeCropTransform,
+      presetType: presetToDuplicate.presetType || 'style',
+      favorite: false,
+    };
+
+    let updatedPresets;
+    if (sourceFolderId) {
+      updatedPresets = presets.map((item: UserPreset) => {
+        if (item.folder?.id === sourceFolderId) {
+          const originalIndex = item.folder.children.findIndex((p: any) => p.id === presetId);
+          const newChildren = [...item.folder.children];
+          newChildren.splice(originalIndex + 1, 0, newPreset);
+          return { folder: { ...item.folder, children: newChildren } };
+        }
+        return item;
+      });
+    } else {
+      const originalIndex = presets.findIndex((item: UserPreset) => item.preset?.id === presetId);
+      updatedPresets = [...presets];
+      updatedPresets.splice(originalIndex + 1, 0, { preset: newPreset });
+    }
+
+    set({ presets: updatedPresets });
+    savePresetsToBackend(updatedPresets);
+    return newPreset;
+  },
+
+  movePreset: (presetId, targetFolderId, overId = null) => {
+    const presets = get().presets;
+    let presetToMove: Preset | null = null;
+    let sourceFolderId: string | null = null;
+
+    for (const item of presets) {
+      if (item.preset?.id === presetId) {
+        presetToMove = item.preset;
+        break;
+      }
+      if (item.folder) {
+        const found = item.folder.children.find((p: any) => p.id === presetId);
+        if (found) {
+          presetToMove = found;
+          sourceFolderId = item.folder.id ?? null;
+          break;
+        }
+      }
+    }
+
+    if (!presetToMove) {
+      return;
+    }
+
+    let updatedPresets = [...presets];
+
+    if (sourceFolderId) {
+      updatedPresets = updatedPresets.map((item: UserPreset) =>
+        item.folder?.id === sourceFolderId
+          ? { folder: { ...item.folder, children: item.folder.children.filter((p: any) => p.id !== presetId) } }
+          : item,
+      );
+    } else {
+      updatedPresets = updatedPresets.filter((item: UserPreset) => item.preset?.id !== presetId);
+    }
+
+    if (targetFolderId) {
+      updatedPresets = updatedPresets.map((item: UserPreset) => {
+        if (item.folder?.id === targetFolderId) {
+          const newChildren = [...item.folder.children];
+          if (overId) {
+            const overIndex = newChildren.findIndex((p) => p.id === overId);
+            if (overIndex !== -1) {
+              newChildren.splice(overIndex, 0, presetToMove!);
+            } else {
+              newChildren.push(presetToMove!);
+            }
+          } else {
+            newChildren.push(presetToMove!);
+          }
+          return { folder: { ...item.folder, children: newChildren } };
+        }
+        return item;
+      });
+    } else {
+      if (overId) {
+        const overIndex = updatedPresets.findIndex(
+          (item) => item.preset?.id === overId || item.folder?.id === overId,
+        );
+        if (overIndex !== -1) {
+          updatedPresets.splice(overIndex, 0, { preset: presetToMove });
+        } else {
+          updatedPresets.push({ preset: presetToMove });
+        }
+      } else {
+        updatedPresets.push({ preset: presetToMove });
+      }
+    }
+
+    set({ presets: updatedPresets });
+    savePresetsToBackend(updatedPresets);
+  },
+
+  reorderItems: (activeId, overId) => {
+    set((state) => {
+      const currentPresets = state.presets;
+      const getIndex = (arr: Array<UserPreset>, id: string) =>
+        arr.findIndex((item: UserPreset) => item.preset?.id === id || item.folder?.id === id || item?.id === id);
+
+      const activeRootIndex = getIndex(currentPresets, activeId);
+      const overRootIndex = getIndex(currentPresets, overId);
+
+      if (activeRootIndex !== -1 && overRootIndex !== -1) {
+        const newPresets: Array<UserPreset> = arrayMove(currentPresets, activeRootIndex, overRootIndex);
+        savePresetsToBackend(newPresets);
+        return { presets: newPresets };
+      }
+
+      for (const item of currentPresets) {
+        if (item.folder) {
+          const activeChildIndex = getIndex(item.folder.children, activeId);
+          const overChildIndex = getIndex(item.folder.children, overId);
+
+          if (activeChildIndex !== -1 && overChildIndex !== -1) {
+            const newPresets = currentPresets.map((p: UserPreset) => {
+              if (p.folder?.id === item.folder?.id) {
+                return {
+                  folder: {
+                    ...p?.folder,
+                    children: arrayMove(p.folder?.children, activeChildIndex, overChildIndex),
+                  },
+                };
+              }
+              return p;
+            });
+            savePresetsToBackend(newPresets);
+            return { presets: newPresets };
+          }
+        }
+      }
+
+      return state;
+    });
+  },
+
+  toggleFavorite: (presetId) => {
+    if (!presetId) return;
+
+    let found = false;
+    const updatedPresets = get().presets.map((item: UserPreset) => {
+      if (item.preset?.id === presetId) {
+        found = true;
+        return { preset: { ...item.preset, favorite: !item.preset.favorite } };
+      }
+      if (item.folder) {
+        const child = item.folder.children.find((p: Preset) => p.id === presetId);
+        if (child) {
+          found = true;
+          return {
+            folder: {
+              ...item.folder,
+              children: item.folder.children.map((p: Preset) =>
+                p.id === presetId ? { ...p, favorite: !p.favorite } : p,
+              ),
+            },
+          };
+        }
+      }
+      return item;
+    });
+
+    if (!found) return;
+    set({ presets: updatedPresets });
+    savePresetsToBackend(updatedPresets);
+  },
+
+  sortAllPresetsAlphabetically: () => {
+    set((state) => {
+      const newPresets: Array<UserPreset> = JSON.parse(JSON.stringify(state.presets));
+      const sortOptions = { numeric: true, sensitivity: 'base' };
+
+      newPresets.forEach((item: UserPreset) => {
+        if (item.folder && item.folder.children) {
+          item.folder.children.sort((a: any, b: any) => a.name.localeCompare(b.name, undefined, sortOptions));
+        }
+      });
+
+      const folders = newPresets.filter((item: UserPreset) => item.folder);
+      const rootPresets = newPresets.filter((item: UserPreset) => item.preset);
+
+      folders.sort((a: any, b: any) => a.folder.name.localeCompare(b.folder.name, undefined, sortOptions));
+      rootPresets.sort((a: any, b: any) => a.preset.name.localeCompare(b.preset.name, undefined, sortOptions));
+
+      const sortedPresets = [...folders, ...rootPresets];
+
+      savePresetsToBackend(sortedPresets);
+      return { presets: sortedPresets };
+    });
+  },
+
+  importPresetsFromFile: async (filePath) => {
+    set({ isLoading: true });
+    try {
+      const updatedPresetList: Array<any> = await invoke(Invokes.HandleImportPresetsFromFile, { filePath });
+      set({ presets: updatedPresetList });
+    } catch (error) {
+      console.error('Failed to import presets from file:', error);
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  importLegacyPresetsFromFile: async (filePath) => {
+    set({ isLoading: true });
+    try {
+      const updatedPresetList: Array<UserPreset> = await invoke(Invokes.HandleImportLegacyPresetsFromFile, {
+        filePath,
+      });
+      set({ presets: updatedPresetList });
+    } catch (error) {
+      console.error('Failed to import legacy presets from file:', error);
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  importPresetsFromFiles: async (filePaths) => {
+    set({ isLoading: true });
+    try {
+      const result: PresetImportResult = await invoke(Invokes.HandleImportPresetsFromFiles, { filePaths });
+      set({ presets: result.presets });
+      return result;
+    } catch (error) {
+      console.error('Failed to import presets from files:', error);
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  exportPresetsToFile: async (presetsToExport, filePath) => {
+    try {
+      await invoke(Invokes.HandleExportPresetsToFile, { presetsToExport, filePath });
+    } catch (error) {
+      console.error('Failed to export presets to file:', error);
+      throw error;
+    }
+  },
+}));

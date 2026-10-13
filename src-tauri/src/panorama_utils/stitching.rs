@@ -1,10 +1,10 @@
+use crate::compose_queue::ComposeJobHandle;
 use crate::panorama_stitching::ImageInfo;
 use image::{GrayImage, Rgb, Rgb32FImage};
 use nalgebra::{Matrix3, Point3};
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::path::Path;
-use tauri::{AppHandle, Emitter};
 
 const FEATHER_WIDTH: f64 = 100.0;
 
@@ -34,10 +34,11 @@ struct SeamInfo {
 pub fn progressive_seam_stitcher(
     images: &[&ImageInfo],
     global_homographies: &HashMap<usize, Matrix3<f64>>,
-    app_handle: AppHandle,
-) -> Rgb32FImage {
+    job: &ComposeJobHandle,
+    progress: &(dyn Fn(&str) + Sync),
+) -> Result<Rgb32FImage, String> {
     if images.is_empty() {
-        return Rgb32FImage::new(0, 0);
+        return Ok(Rgb32FImage::new(0, 0));
     }
 
     let mut min_x = f64::INFINITY;
@@ -105,6 +106,7 @@ pub fn progressive_seam_stitcher(
         });
 
     for (i, &img_to_add_info) in images.iter().skip(1).enumerate() {
+        job.checkpoint()?;
         let progress_msg = format!(
             "Stitching image {} of {}: {}",
             i + 2,
@@ -114,7 +116,7 @@ pub fn progressive_seam_stitcher(
                 .unwrap_or_default()
                 .to_string_lossy()
         );
-        let _ = app_handle.emit("panorama-progress", &progress_msg);
+        progress(&progress_msg);
         println!("  - Progressively stitching '{}'", img_to_add_info.filename);
 
         let h_add = &global_homographies[&img_to_add_info.id];
@@ -361,7 +363,7 @@ pub fn progressive_seam_stitcher(
         }
     }
 
-    panorama
+    Ok(panorama)
 }
 
 fn find_adaptive_seam(ctx: &SeamContext) -> Option<SeamInfo> {

@@ -10,8 +10,75 @@
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use tauri::Manager;
 
 pub const SCHEMA_VERSION: u32 = 1;
+
+/// W9-I3 前端索引消费：查询 DTO（camelCase，与前端 filterCriteria/searchCriteria 映射）。
+#[derive(Deserialize, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct IndexQueryDto {
+    pub folder_prefix: Option<String>,
+    pub min_rating: Option<u8>,
+    /// "only" | "exclude" | 其他(视为全部)
+    pub raw_status: Option<String>,
+    pub edited_status: Option<String>,
+    pub with_tags: Option<Vec<String>>,
+    pub without_tags: Option<Vec<String>>,
+    pub limit: Option<u32>,
+}
+
+impl From<IndexQueryDto> for QueryFilter {
+    fn from(dto: IndexQueryDto) -> Self {
+        let raw_status = match dto.raw_status.as_deref() {
+            Some("only") => Some(RawStatus::Only),
+            Some("exclude") => Some(RawStatus::Exclude),
+            _ => None,
+        };
+        let edited_status = match dto.edited_status.as_deref() {
+            Some("only") => Some(EditedStatus::Only),
+            Some("exclude") => Some(EditedStatus::Exclude),
+            _ => None,
+        };
+        QueryFilter {
+            folder_prefix: dto.folder_prefix,
+            min_rating: dto.min_rating,
+            raw_status,
+            edited_status,
+            with_tags: dto.with_tags.unwrap_or_default(),
+            without_tags: dto.without_tags.unwrap_or_default(),
+            limit: dto.limit,
+        }
+    }
+}
+
+/// W9-I3 索引可用性快照：available=false 表示索引不可用（前端必须回退本地过滤）。
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct IndexStats {
+    pub available: bool,
+    pub count: Option<u64>,
+}
+
+/// 索引查询（W9-I3 数据源消费唯一读入口）。索引不可用返回空集，调用方据此回退。
+#[tauri::command]
+pub fn library_index_query(app_handle: tauri::AppHandle, filter: IndexQueryDto) -> Vec<ImageIndexRecord> {
+    with_library_index(&app_handle, |index| index.query(&filter.into())).unwrap_or_default()
+}
+
+#[tauri::command]
+pub fn library_index_stats(app_handle: tauri::AppHandle) -> IndexStats {
+    match with_library_index(&app_handle, |index| index.record_count()) {
+        Some(count) => IndexStats {
+            available: true,
+            count: Some(count),
+        },
+        None => IndexStats {
+            available: false,
+            count: None,
+        },
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ImageIndexRecord {
@@ -311,6 +378,105 @@ impl LibraryIndex {
             .query_map([parent], |row| row.get::<_, String>(0))
             .map_err(|e| e.to_string())?;
         rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())
+    }
+
+    /// 元数据变更：批量更新评分（W9-I3 索引消费接线，best-effort 调用方忽略错误）。
+    pub fn update_ratings(&self, updates: &[(String, u8)]) -> Result<u64, String> {
+        let tx = self.conn.unchecked_transaction().map_err(|e| e.to_string())?;
+        let mut updated = 0u64;
+        {
+            let mut stmt = tx
+                .prepare("UPDATE images SET rating = ?1 WHERE path = ?2")
+                .map_err(|e| e.to_string())?;
+            for (path, rating) in updates {
+                updated += stmt
+                    .execute(rusqlite::params![*rating as i64, path])
+                    .map_err(|e| e.to_string())? as u64;
+            }
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(updated)
+    }
+
+    /// 元数据变更：批量重写标签集合（色标/用户标签/清空均走此入口）。
+    pub fn update_tags(&self, updates: &[(String, Vec<String>)]) -> Result<u64, String> {
+        let tx = self.conn.unchecked_transaction().map_err(|e| e.to_string())?;
+        let mut updated = 0u64;
+        {
+            let mut stmt = tx
+                .prepare("UPDATE images SET tags_json = ?1 WHERE path = ?2")
+                .map_err(|e| e.to_string())?;
+            for (path, tags) in updates {
+                let tags_json = serde_json::to_string(tags).map_err(|e| e.to_string())?;
+                updated += stmt
+                    .execute(rusqlite::params![tags_json, path])
+                    .map_err(|e| e.to_string())? as u64;
+            }
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(updated)
+    }
+
+    /// 元数据变更：编辑标记（保存调整置 true，重置置 false）。
+    pub fn update_edited(&self, updates: &[(String, bool)]) -> Result<u64, String> {
+        let tx = self.conn.unchecked_transaction().map_err(|e| e.to_string())?;
+        let mut updated = 0u64;
+        {
+            let mut stmt = tx
+                .prepare("UPDATE images SET edited = ?1 WHERE path = ?2")
+                .map_err(|e| e.to_string())?;
+            for (path, edited) in updates {
+                updated += stmt
+                    .execute(rusqlite::params![*edited as i64, path])
+                    .map_err(|e| e.to_string())? as u64;
+            }
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(updated)
+    }
+
+    /// 删除文件及其全部虚拟副本条目（物理删除/连带删除后索引清理）。
+    pub fn remove_path_with_virtual_copies(&self, paths: &[String]) -> Result<u64, String> {
+        let tx = self.conn.unchecked_transaction().map_err(|e| e.to_string())?;
+        let mut removed = 0u64;
+        {
+            let mut stmt = tx
+                .prepare("DELETE FROM images WHERE path = ?1 OR path LIKE ?1 || '?vc=%'")
+                .map_err(|e| e.to_string())?;
+            for path in paths {
+                removed += stmt.execute([path]).map_err(|e| e.to_string())? as u64;
+            }
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(removed)
+    }
+}
+
+/// 惰性打开并缓存于 AppState 的索引共享访问。
+///
+/// 可牺牲性契约：打不开/写失败只记日志返回 None，绝不阻断扫描或元数据主路径。
+pub fn with_library_index<R>(
+    app_handle: &tauri::AppHandle,
+    f: impl FnOnce(&LibraryIndex) -> Result<R, String>,
+) -> Option<R> {
+    let state = app_handle.state::<crate::AppState>();
+    let mut guard = state.library_index.lock().unwrap_or_else(|e| e.into_inner());
+    if guard.is_none() {
+        let dir = app_handle.path().app_data_dir().ok()?;
+        match LibraryIndex::open_at(&dir.join("library.index")) {
+            Ok(index) => *guard = Some(index),
+            Err(e) => {
+                eprintln!("[library_index] open failed (expendable, skipped): {e}");
+                return None;
+            }
+        }
+    }
+    match f(guard.as_ref().expect("just initialized")) {
+        Ok(r) => Some(r),
+        Err(e) => {
+            eprintln!("[library_index] operation failed (expendable, skipped): {e}");
+            None
+        }
     }
 }
 

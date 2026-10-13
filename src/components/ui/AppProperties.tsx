@@ -73,6 +73,8 @@ export enum Invokes {
   IsTetheringSupported = 'is_tethering_supported',
   ListImagesInDir = 'list_images_in_dir',
   ListImagesRecursive = 'list_images_recursive',
+  LibraryIndexQuery = 'library_index_query',
+  LibraryIndexStats = 'library_index_stats',
   LoadImage = 'load_image',
   LoadMetadata = 'load_metadata',
   LoadPresets = 'load_presets',

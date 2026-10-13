@@ -1,4 +1,5 @@
 //! W7-G4 AI 模型管理命令：下载状态查询 / 可选模型显式下载（不做后台自动下载）。
+//! W9-I4 模型状态中心：全量三态清单（Missing/Intact/Corrupted）。
 
 use crate::ai_processing::{download_entry, endpoints_from_handle, get_models_dir};
 
@@ -10,6 +11,50 @@ pub struct ModelDownloadInfo {
     pub size_bytes: Option<u64>,
     pub downloaded: bool,
     pub optional: bool,
+}
+
+/// 模型状态中心条目（W9-I4）：manifest × 本地三态，UI 直接消费
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelStatusEntry {
+    pub model_id: String,
+    pub display_name: String,
+    pub purpose: String,
+    pub filename: String,
+    pub size_bytes: Option<u64>,
+    pub optional: bool,
+    /// missing | intact | corrupted
+    pub state: String,
+}
+
+/// 全量模型状态清单：integrity::diff_local_models 三态扫描（sha256 校验），
+/// 供 AIPanel 模型状态中心渲染装/下载/更新三态。
+#[tauri::command]
+pub fn model_status_list(app_handle: tauri::AppHandle) -> Result<Vec<ModelStatusEntry>, String> {
+    let models_dir = get_models_dir(&app_handle).map_err(|e| e.to_string())?;
+    let statuses = crate::model_manifest::integrity::diff_local_models(&models_dir);
+    let manifest = crate::model_manifest::ModelManifest::embedded();
+    Ok(statuses
+        .iter()
+        .filter_map(|s| {
+            let entry = manifest.get(&s.model_id)?;
+            let variant = entry.default_variant()?;
+            Some(ModelStatusEntry {
+                model_id: entry.id.clone(),
+                display_name: entry.display_name.clone(),
+                purpose: entry.purpose.clone(),
+                filename: s.filename.clone(),
+                size_bytes: s.size_bytes,
+                optional: variant.optional,
+                state: match s.state {
+                    crate::model_manifest::integrity::LocalModelState::Missing => "missing",
+                    crate::model_manifest::integrity::LocalModelState::Intact => "intact",
+                    crate::model_manifest::integrity::LocalModelState::Corrupted => "corrupted",
+                }
+                .to_string(),
+            })
+        })
+        .collect())
 }
 
 /// 批量查询模型下载状态：下载体积预估（size_bytes 来自 manifest，已在线核实）、

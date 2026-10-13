@@ -150,6 +150,7 @@ pub struct AppState {
     pub ai_init_lock: TokioMutex<()>,
     pub export_task_token: Arc<Mutex<Option<Arc<AtomicBool>>>>,
     pub export_job_manager: Arc<crate::export_queue::ExportJobManager>,
+    pub compose_job_manager: Arc<crate::compose_queue::ComposeJobManager>,
     pub hdr_result: Arc<Mutex<Option<DynamicImage>>>,
     pub panorama_result: Arc<Mutex<Option<DynamicImage>>>,
     pub focus_stack_result: Arc<Mutex<Option<DynamicImage>>>,
@@ -177,4 +178,6 @@ pub struct AppState {
     pub disks_cache: Mutex<Option<Disks>>,
     pub disks_cache_refreshing: AtomicBool,
     pub camera_session: Mutex<CameraSession>,
+    /// W9-I3：图库索引（AR-4 可牺牲性派生数据），惰性打开于 app_data_dir/library.index。
+    pub library_index: Mutex<Option<crate::library_index::LibraryIndex>>,
 }

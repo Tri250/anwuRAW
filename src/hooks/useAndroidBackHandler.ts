@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useUIStore } from '../store/useUIStore';
 import { useSettingsStore } from '../store/useSettingsStore';
+import { useProcessStore } from '../store/useProcessStore';
 
 export function useAndroidBackHandler() {
   useEffect(() => {
@@ -47,26 +48,22 @@ export function useAndroidBackHandler() {
         return;
       }
       if (ui.panoramaModalState.isOpen) {
+        useProcessStore.getState().resetCompose('panorama');
         ui.setUI({
           panoramaModalState: {
             isOpen: false,
-            isProcessing: false,
-            progressMessage: '',
             finalImageBase64: null,
-            error: null,
             stitchingSourcePaths: [],
           },
         });
         return;
       }
       if (ui.hdrModalState.isOpen) {
+        useProcessStore.getState().resetCompose('hdr');
         ui.setUI({
           hdrModalState: {
             isOpen: false,
-            isProcessing: false,
-            progressMessage: '',
             finalImageBase64: null,
-            error: null,
             stitchingSourcePaths: [],
           },
         });

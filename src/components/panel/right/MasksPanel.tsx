@@ -389,7 +389,7 @@ export default function MasksPanel() {
   const [analyzingSubMaskId, setAnalyzingSubMaskId] = useState<string | null>(null);
 
   const { showContextMenu } = useContextMenu();
-  const { presets } = usePresets(adjustments);
+  const { presets } = usePresets();
 
   const activeContainer = adjustments.masks?.find((m) => m.id === activeMaskContainerId);
   const activeSubMaskData = activeContainer?.subMasks?.find((sm) => sm.id === activeMaskId);

@@ -68,12 +68,31 @@ pub async fn stitch_panorama(
         .collect();
 
     let panorama_result_handle = state.panorama_result.clone();
+    let settings = load_settings(app_handle.clone()).unwrap_or_default();
 
-    let task = tokio::task::spawn_blocking(move || {
-        let panorama_result = stitch_images(source_paths, app_handle.clone());
+    // W8-H3: 统一 ComposeJob 协议（进度/取消/落账）
+    let job = crate::compose_queue::ComposeJobHandle::begin(
+        &state.compose_job_manager,
+        crate::compose_queue::ComposeModality::Panorama,
+        source_paths.clone(),
+    );
+
+    let job_task = job.clone();
+    let task = tokio::task::spawn_blocking(move || -> Result<(), String> {
+        let report = {
+            let ah = app_handle.clone();
+            let job_ref = &job_task;
+            move |msg: &str| {
+                let _ = ah.emit("panorama-progress", msg);
+                job_ref.message(msg);
+            }
+        };
+
+        let panorama_result = stitch_images(source_paths, &settings, &job_task, &report);
 
         match panorama_result {
             Ok(panorama_image) => {
+                job_task.phase("preview");
                 let _ = app_handle.emit("panorama-progress", "Creating preview...");
 
                 let (w, h) = panorama_image.dimensions();
@@ -116,11 +135,12 @@ pub async fn stitch_panorama(
         }
     });
 
-    match task.await {
-        Ok(Ok(_)) => Ok(()),
-        Ok(Err(e)) => Err(e),
-        Err(join_err) => Err(format!("Panorama task failed: {}", join_err)),
-    }
+    let result = match task.await {
+        Ok(r) => r,
+        Err(e) => Err(format!("Panorama task failed: {}", e)),
+    };
+    job.finalize(&result);
+    result
 }
 
 #[tauri::command]
@@ -175,21 +195,25 @@ pub async fn save_panorama(
     Ok(output_path.to_string_lossy().to_string())
 }
 
-fn stitch_images(image_paths: Vec<String>, app_handle: AppHandle) -> Result<DynamicImage, String> {
+fn stitch_images(
+    image_paths: Vec<String>,
+    settings: &crate::app_settings::AppSettings,
+    job: &crate::compose_queue::ComposeJobHandle,
+    progress: &(dyn Fn(&str) + Sync),
+) -> Result<DynamicImage, String> {
     if image_paths.len() < 2 {
         return Err("At least two images are required for a panorama.".to_string());
     }
 
-    let _ = app_handle.emit("panorama-progress", "Starting panorama process...");
+    progress("Starting panorama process...");
     println!(
         "Starting panorama stitching process for {} images...",
         image_paths.len()
     );
 
-    let settings = load_settings(app_handle.clone()).unwrap_or_default();
-
     let start_time = Instant::now();
-    let _ = app_handle.emit("panorama-progress", "Loading and preparing images...");
+    job.phase("load");
+    progress("Loading and preparing images...");
     println!("Loading and preparing images (in parallel)...");
     let brief_pairs = processing::generate_brief_pairs();
 
@@ -197,16 +221,13 @@ fn stitch_images(image_paths: Vec<String>, app_handle: AppHandle) -> Result<Dyna
         .par_iter()
         .enumerate()
         .map(|(i, filename)| {
-            let _ = app_handle.emit(
-                "panorama-progress",
-                format!(
-                    "Processing '{}'",
-                    Path::new(filename)
-                        .file_name()
-                        .unwrap_or_default()
-                        .to_string_lossy()
-                ),
-            );
+            progress(&format!(
+                "Processing '{}'",
+                Path::new(filename)
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+            ));
             println!("  - Processing '{}'", filename);
 
             let file_bytes = fs::read(filename)
@@ -216,7 +237,7 @@ fn stitch_images(image_paths: Vec<String>, app_handle: AppHandle) -> Result<Dyna
                 &file_bytes,
                 filename,
                 false,
-                &settings,
+                settings,
                 None,
             )
             .map_err(|e| format!("Failed to load image {}: {}", filename, e))?;
@@ -269,8 +290,10 @@ fn stitch_images(image_paths: Vec<String>, app_handle: AppHandle) -> Result<Dyna
         start_time.elapsed()
     );
 
+    job.checkpoint()?;
+    job.phase("match");
     let start_time = Instant::now();
-    let _ = app_handle.emit("panorama-progress", "Finding image matches...");
+    progress("Finding image matches...");
     println!("Finding all pairwise matches (in parallel)...");
     let mut pairwise_matches: HashMap<(usize, usize), MatchInfo> = HashMap::new();
 
@@ -355,8 +378,10 @@ fn stitch_images(image_paths: Vec<String>, app_handle: AppHandle) -> Result<Dyna
         );
     }
 
+    job.checkpoint()?;
+    job.phase("order");
     let start_time = Instant::now();
-    let _ = app_handle.emit("panorama-progress", "Determining stitching order...");
+    progress("Determining stitching order...");
     println!("Determining stitching order...");
     let (ordered_indices, global_homographies) =
         build_stitching_order(&image_data, &pairwise_matches);
@@ -376,40 +401,34 @@ fn stitch_images(image_paths: Vec<String>, app_handle: AppHandle) -> Result<Dyna
         })
         .collect();
     println!("Stitching order determined: {:?}", ordered_filenames);
-    let _ = app_handle.emit(
-        "panorama-progress",
-        format!("Stitching order: {}", ordered_filenames.join(" -> ")),
-    );
+    progress(&format!("Stitching order: {}", ordered_filenames.join(" -> ")));
 
     let stitched_images_info: Vec<&ImageInfo> =
         ordered_indices.iter().map(|&i| &image_data[i]).collect();
     let unstitched_count = image_data.len() - stitched_images_info.len();
     if unstitched_count > 0 {
-        let warning_msg = format!(
+        progress(&format!(
             "Warning: {} image(s) could not be matched and will be excluded.",
             unstitched_count
-        );
-        println!("{}", warning_msg);
-        let _ = app_handle.emit("panorama-warning", warning_msg);
+        ));
     }
     println!(
         "Global homography calculation completed in {:.2?}\n",
         start_time.elapsed()
     );
 
+    job.checkpoint()?;
+    job.phase("warp");
     let start_time = Instant::now();
-    let _ = app_handle.emit("panorama-progress", "Warping and blending images...");
+    progress("Warping and blending images...");
     println!("Warping and blending full-resolution images with progressive optimal seams...");
 
-    let panorama = stitching::progressive_seam_stitcher(
-        &stitched_images_info,
-        &global_homographies,
-        app_handle.clone(),
-    );
+    let panorama =
+        stitching::progressive_seam_stitcher(&stitched_images_info, &global_homographies, job, progress)?;
 
     println!("Stitching completed in {:.2?}\n", start_time.elapsed());
 
-    let _ = app_handle.emit("panorama-progress", "Finalizing panorama...");
+    progress("Finalizing panorama...");
 
     Ok(DynamicImage::ImageRgb32F(panorama))
 }

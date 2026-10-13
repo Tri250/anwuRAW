@@ -70,18 +70,18 @@
 
 | ID | 项 | 状态 | 验证 |
 |---|---|---|---|
-| H1 | ExportJob 队列（暂停/续跑/失败清单）+ 编码器注册表（格式×色深×ICC 校验） | todo | 100 张中断续跑 |
-| H2 | DNG/HDR 导出扩展点 + CLI 共用同一 Job | todo | CLI/GUI byte 一致 |
-| H3 | ComposeJob 队列统一四合成模态 | todo | 四模态共用协议 |
-| H4 | hdr_deghosting/multi_exposure 共享对齐核；focus_stacking ROI 加速 | todo | 基准集回归 |
+| H1 | ExportJob 队列（暂停/续跑/失败清单）+ 编码器注册表（格式×色深×ICC 校验） | done | export_queue.rs 纯状态机 11 单测（100 项中断续跑/失败清单/陈旧任务落账/暂停取消竞态）；export_encoders.rs 注册表 13 单测（格式×色深×ICC 校验/编码魔数/APP13 替换/色彩空间恒等）；4 新命令 pause_export/resume_export/retry_failed_exports/get_export_job_status；export_images_impl 接线（派发前暂停检查点+成败登记+落账）；export_with_icc_and_depth 注册表前置校验 fail fast；ExportBitDepth 死类型删除 |
+| H2 | DNG/HDR 导出扩展点 + CLI 共用同一 Job | done | export_encoders.rs 扩展编码层（EXR 32-bit float RGB 归档 / DNG 显式未实现扩展点 / save_hdr 格式扩展 png-tiff-exr），编码器注册表累计 20 单测；CLI/GUI 共用 export_images_impl 队列与参数构造，编码确定性 byte 一致契约锁定 |
+| H3 | ComposeJob 队列统一四合成模态 | done | compose_queue.rs 纯状态机 12 单测（阶段表驱动进度/取消检查点/重试计划/单活跃任务）；Hdr/Panorama/FocusStack 管线接入 ComposeJobHandle，MultiExposure 协议预留位；新增 cancel_compose_job/get_compose_job_status 命令 |
+| H4 | hdr_deghosting/multi_exposure 共享对齐核；focus_stacking ROI 加速 | done | alignment_core.rs 共享对齐核（detect_frame_features/align_frame_to_reference 单实现），hdr_deghosting 改造为消费者删除约 160 行重复实现；focus_stacking ROI 加速（estimate_coarse_shift 缩图 SAD → alignment_rois 候选窗口 → 窗口内金字塔求解全幅坐标系 → 低质量窗口内 identity 重试仍失败回退全幅），roi_tests 5 单测（粗位移恢复/ROI 性质/与全幅对齐等价 t<1px/耗时基准 ROI ≤ 0.7× 全幅） |
 
 ## W9 前端（I1-I8）
 
 | ID | 项 | 状态 | 验证 |
 |---|---|---|---|
-| I1 | useProcessStore 渲染状态机（单数据流，双入口清零） | todo | 竞态测试 |
-| I2 | 7 个业务 hooks 下放 store（单文件 <150 行） | todo | 行数审计 |
-| I3 | 图库虚拟化 10 万张 + 索引数据源消费（依赖 B3） | todo | 掉帧断言 |
+| I1 | useProcessStore 渲染状态机（单数据流，双入口清零） | done | composeRuns 状态机（panorama/hdr/focusStack/multiExposure 预留）：beginCompose 返回单调 epoch，trackComposeMessage/composeSettled epoch+phase 双重守卫（迟到事件丢弃、done/error 不可逆写、保存失败 done→error 有意覆盖）、resetCompose 关闭失效；动作入口（useProductivityActions）/事件入口（useTauriListeners 六监听器）/关闭路径（AppModals+useAndroidBackHandler）全部收敛；uiStore 三模态删除 isProcessing/progressMessage/error 字段；竞态测试 composeRuns.test.ts 8 例 |
+| I2 | 7 个业务 hooks 下放 store（单文件 <150 行） | done | 7 hooks 全部 <150 行（9-102 行）：useImageProcessing→store/renderEngine、useAiMasking→services/aiMaskingService、useExportSettings→store/useExportStore、usePresets→store/usePresetStore、useFileOperations/useLibraryActions/useProductivityActions→services/*Service；依赖经 appServiceRegistry 注册（7 槽位 fail-fast），渲染链路仅存于 store；3 处 usePresets(adjustments) 调用方去参；服务行为测试 services.test.ts 12 例；tsc 0 错 / vitest 93 绿 / cargo 217 绿 / 棘轮 873→871 自动收紧 |
+| I3 | 图库虚拟化 10 万张 + 索引数据源消费（依赖 B3） | done | 掉帧断言：100k 挂载/滚动节点有界(<200)+耗时预算内；索引语义与本地过滤 15 例对齐 |
 | I4 | AIPanel 模型状态中心（装/下载/更新全程 UI） | todo | 组件测试 |
 | I5 | ExportPanel 新参数 UI（ICC/色深/DNG/队列进度） | todo | 与 CLI 一致断言 |
 | I6 | 蒙版树 UI（40 容器导航/命名）+ Waveform 点选取样载体 | todo | 组件测试 |
@@ -109,3 +109,4 @@
 - 2026-10-13: W4（D1-D3）完成。D1 RenderScheduler 三级优先级（400ms 交互窗口/20ms 轮询/取消优先，6 断言）+ 四路接线；D2 gpu_backends 策略核（vulkan 硬件→软件 lavapipe→GL→可操作报错，10 单测）+ gpu_processing 三阶段接入（软件回退转 compute-only 防表面 panic）；D3 PostStage 收编快照契约（render_case 接入 apply_post_gpu_adjustments，既有 366 例精确恒等，新增 5 例后 371 例基线重建）。cargo 131 lib + ΔE 11 + 快照 10 + golden 10 + poc 2 全绿；npm 73 全绿。启动 W5。
 - 2026-10-13: W5（E1-E3）完成。E2 file_management 四拆为 library_scan/thumb_service/file_ops/metadata_repo（pub mod + pub(crate) helper + 六处跨模块路径修正）；E1 commands/ 八域 façade（130 命令注册，跨模块命令 pub use 函数 + __cmd__ 宏按定义模块相对路径重导出，本文件命令依赖 tauri 自动导出）；E3 lib.rs 2546→269 行装配化（mod/分配器/run()/invoke_handler/RunEvent），遮蔽警告清除。tauri 宏机制结论：#[tauri::command] 为 pub 命令自动生成模块内 `pub use __cmd__x`，绝对/根路径引用宏展开宏被编译器禁止，重导出必须走定义模块相对路径。cargo 131 lib + 快照 10 + golden 10 + poc 2 全绿；npm 73 全绿。启动 W7。
 - 2026-10-13: W7（G1-G5）完成。G1 model_manifest/integrity.rs（版本对齐断言 + 流式 sha256 + 三态 diff 扫描，6 单测）；G2 CapabilityAdapter 注册表 7 能力单一数据源驱动下载列表 + 惰性预检 API（3 接口单测），Session 全量惰性化登记后续增强；G3 EP 策略表数据化 + commit 失败自动降档 CPU 重试 + 降档标记（2 单测）；G4 ai_commands 目录化三子模块 + 遗留 cloud 分支整体删除（端侧约束收口）+ ai_connector 依赖图审计默认关闭；G5 lama 大图 tile 化（768/64/32 覆盖+羽化融合替代整体下采样，3 纯函数单测），denoising 既有 tile 化确认在位。cargo 145 lib + ΔE 11 + 快照 10 + golden 10 + poc 2 全绿；npm 73 全绿。启动 W8。
+- 2026-10-13: W8（H1-H4）完成。H1 ExportJob 纯状态机队列（11 单测：100 项中断续跑/失败清单/陈旧任务落账/暂停取消竞态）+ 编码器注册表（格式×色深×ICC 前置校验 fail fast）+ 4 队列命令；H2 扩展编码层（EXR 归档/DNG 扩展点/save_hdr 扩展，注册表累计 20 单测）+ CLI/GUI 共用队列 byte 一致；H3 ComposeJob 纯状态机（12 单测）统一四合成模态协议，Hdr/Panorama/FocusStack 接线（MultiExposure 预留），ComposeJobHandle 全 Arc 克隆零成本；H4 alignment_core 共享对齐核（hdr_deghosting 委托化删除约 160 行重复）+ focus_stacking ROI 加速（粗位移 SAD → 候选窗口 → 全幅坐标系窗口求解 → 两级回退），roi_tests 5 单测含 ≥30% 提速基准（ROI ≤ 0.7× 全幅实测通过）。cargo 196 lib + ΔE 11 + 快照 10 + golden 10 + poc 2 全绿；npm 73 全绿。启动 W9 前端。

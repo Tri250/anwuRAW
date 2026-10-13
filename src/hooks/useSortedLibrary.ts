@@ -1,11 +1,16 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { RawStatus, EditedStatus, SortDirection, ImageFile, GroupingMode } from '../components/ui/AppProperties';
 import { buildImageGroups, GroupBadgeInfo, GroupId } from '../utils/imageGrouping';
+import {
+  ADVANCED_QUERY_REGEX,
+  INDEX_ACCEL_THRESHOLD,
+  filterFingerprint,
+  queryIndexMatchedPaths,
+} from '../services/libraryIndexService';
 
-export const ADVANCED_QUERY_REGEX =
-  /^(iso|aperture|f|shutter|s|focal|mm|rating|color|camera|make|model|lens)\s*(?::)?\s*(>=|<=|>|<|=)?\s*(.+)$/i;
+export { ADVANCED_QUERY_REGEX };
 
 const parseShutter = (val: string | undefined): number => {
   if (!val) return 0;
@@ -172,12 +177,18 @@ function computeGroupedLibrary(libraryState: any, settingsState: any): GroupedLi
   let processedList = imageList;
   let searchMatchingGroupIds: Set<string> | null = null;
 
+  // W9-I3 索引捷径：指纹与当前条件一致时按索引命中集合短路，跳过全量 regex/EXIF 扫描。
+  // 指纹不一致（条件已变、结果未回）时走本地路径，保证正确性优先。
+  const indexShortcutActive =
+    !!libraryState.indexMatchedPaths &&
+    libraryState.indexMatchedKey === filterFingerprint(filterCriteria, searchCriteria);
+
   if (isGroupingActive) {
     const groupEditedFiles = appSettings?.groupEditedFiles ?? true;
     const groupingResult = buildImageGroups(imageList, groupingMode, groupEditedFiles);
     processedList = groupingResult.displayList;
 
-    if (isSearchActive) {
+    if (isSearchActive && !indexShortcutActive) {
       searchMatchingGroupIds = new Set<string>();
       for (const image of imageList) {
         if (!image.group_id) continue;
@@ -188,14 +199,20 @@ function computeGroupedLibrary(libraryState: any, settingsState: any): GroupedLi
     }
   }
 
-  const filteredList = processedList.filter((image: ImageFile) => matchesFilter(image));
+  if (indexShortcutActive) {
+    const matched = libraryState.indexMatchedPaths!;
+    processedList = processedList.filter((image: ImageFile) => matched.has(image.path));
+  }
 
-  const filteredBySearch = !isSearchActive
-    ? filteredList
-    : filteredList.filter((image: ImageFile) => {
-        if (searchMatchingGroupIds && image.group_id && searchMatchingGroupIds.has(image.group_id)) return true;
-        return matchesSearch(image);
-      });
+  const filteredList = indexShortcutActive ? processedList : processedList.filter((image: ImageFile) => matchesFilter(image));
+
+  const filteredBySearch =
+    indexShortcutActive || !isSearchActive
+      ? filteredList
+      : filteredList.filter((image: ImageFile) => {
+          if (searchMatchingGroupIds && image.group_id && searchMatchingGroupIds.has(image.group_id)) return true;
+          return matchesSearch(image);
+        });
 
   const list = [...filteredBySearch];
 
@@ -272,15 +289,34 @@ export function useSortedLibrary() {
   const filterCriteria = useLibraryStore((state) => state.filterCriteria);
   const searchCriteria = useLibraryStore((state) => state.searchCriteria);
   const sortCriteria = useLibraryStore((state) => state.sortCriteria);
+  const indexMatchedPaths = useLibraryStore((state) => state.indexMatchedPaths);
+  const indexMatchedKey = useLibraryStore((state) => state.indexMatchedKey);
 
   const appSettings = useSettingsStore((state) => state.appSettings);
 
   const result = useMemo(() => {
     return computeGroupedLibrary(
-      { imageList, imageRatings, filterCriteria, searchCriteria, sortCriteria },
+      { imageList, imageRatings, filterCriteria, searchCriteria, sortCriteria, indexMatchedPaths, indexMatchedKey },
       { appSettings },
     );
-  }, [imageList, sortCriteria, imageRatings, filterCriteria, searchCriteria, appSettings]);
+  }, [imageList, sortCriteria, imageRatings, filterCriteria, searchCriteria, appSettings, indexMatchedPaths, indexMatchedKey]);
+
+  // W9-I3 大库索引加速：超过阈值且条件可由索引承担时，后台查询命中集合写回 store。
+  // 返回 null（不可用/覆盖率不足）同样写回，保证指纹失效后走本地路径。
+  useEffect(() => {
+    if (imageList.length < INDEX_ACCEL_THRESHOLD) return;
+    let cancelled = false;
+    queryIndexMatchedPaths(imageList, filterCriteria, searchCriteria).then((matched) => {
+      if (cancelled) return;
+      useLibraryStore.getState().setLibrary({
+        indexMatchedPaths: matched,
+        indexMatchedKey: matched ? filterFingerprint(filterCriteria, searchCriteria) : null,
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [imageList, filterCriteria, searchCriteria]);
 
   return result;
 }

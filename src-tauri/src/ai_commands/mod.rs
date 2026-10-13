@@ -12,7 +12,7 @@ pub use capability::{
     generate_ai_subject_mask, generate_full_image_depth_map, precompute_ai_subject_mask,
 };
 pub use connector::{check_ai_connector_status, test_ai_connector_connection};
-pub use management::{ModelDownloadInfo, download_optional_model, get_model_download_info};
+pub use management::{ModelDownloadInfo, download_optional_model, get_model_download_info, model_status_list};
 
 // W7-G4: 命令宏按定义路径重导出（generate_handler 经 commands::ai::<cmd> 查找）。
 pub use capability::{
@@ -30,6 +30,7 @@ pub use connector::{
     __tauri_command_name_test_ai_connector_connection,
 };
 pub use management::{
-    __cmd__download_optional_model, __cmd__get_model_download_info,
+    __cmd__download_optional_model, __cmd__get_model_download_info, __cmd__model_status_list,
     __tauri_command_name_download_optional_model, __tauri_command_name_get_model_download_info,
+    __tauri_command_name_model_status_list,
 };

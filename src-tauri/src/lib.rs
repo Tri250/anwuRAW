@@ -10,6 +10,7 @@ mod ai_acceleration;
 mod ai_commands;
 mod ai_connector;
 mod ai_processing;
+mod alignment_core;
 mod android_integration;
 mod app_settings;
 mod app_state;
@@ -19,6 +20,7 @@ mod camera_tethering;
 mod channel_mixer;
 mod color_range_mask;
 mod commands;
+mod compose_queue;
 mod culling;
 mod denoising;
 mod detect_straighten;
@@ -159,6 +161,8 @@ pub fn run() {
             commands::library::get_supported_file_types,
             commands::library::list_images_in_dir,
             commands::library::list_images_recursive,
+            commands::library::library_index_query,
+            commands::library::library_index_stats,
             commands::library::get_folder_tree,
             commands::library::get_folder_children,
             commands::library::get_pinned_folder_trees,
@@ -219,6 +223,7 @@ pub fn run() {
             commands::ai::download_optional_model,
             commands::ai::generate_ai_subject_mask,
             commands::ai::get_model_download_info,
+            commands::ai::model_status_list,
             commands::ai::precompute_ai_subject_mask,
             commands::ai::generate_ai_foreground_mask,
             commands::ai::generate_ai_sky_mask,
@@ -247,6 +252,8 @@ pub fn run() {
             commands::compose::merge_hdr,
             commands::compose::save_hdr,
             commands::compose::save_collage,
+            commands::compose::cancel_compose_job,
+            commands::compose::get_compose_job_status,
             commands::compose::stitch_panorama,
             commands::compose::save_panorama,
             commands::compose::stitch_focus_stack,

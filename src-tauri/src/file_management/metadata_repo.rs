@@ -381,6 +381,17 @@ pub fn save_metadata_and_update_thumbnail(
     let json_string = serde_json::to_string_pretty(&metadata).map_err(|e| e.to_string())?;
     std::fs::write(&sidecar_path, json_string).map_err(|e| e.to_string())?;
 
+    // W9-I3：保存调整 → 索引 edited 标记（可牺牲性，best-effort）。
+    {
+        let handle = app_handle.clone();
+        let path_for_index = path.clone();
+        std::thread::spawn(move || {
+            let _ = crate::library_index::with_library_index(&handle, |index| {
+                index.update_edited(&[(path_for_index, true)])
+            });
+        });
+    }
+
     if let Ok(settings) = load_settings(app_handle.clone())
         && settings.enable_xmp_sync.unwrap_or(false)
     {
@@ -623,6 +634,12 @@ pub async fn reset_adjustments_for_paths(
             );
         }
 
+        // W9-I3：重置调整 → 索引 edited 标记清除（可牺牲性，best-effort）。
+        {
+            let updates: Vec<(String, bool)> = paths.iter().map(|p| (p.clone(), false)).collect();
+            let _ = crate::library_index::with_library_index(&app_handle, |index| index.update_edited(&updates));
+        }
+
         let state = app_handle.state::<AppState>();
         let thumb_cache_dir = match resolve_thumbnail_cache_dir(&app_handle) {
             Ok(dir) => dir,
@@ -797,9 +814,9 @@ pub fn set_color_label_for_paths(
     let enable_xmp_sync = settings.enable_xmp_sync.unwrap_or(false);
     let create_xmp_if_missing = settings.create_xmp_if_missing.unwrap_or(false);
 
-    let errors: Vec<String> = paths
+    let results: Vec<Result<(String, Vec<String>), String>> = paths
         .par_iter()
-        .filter_map(|path| {
+        .map(|path| {
             let (_, sidecar_path) = parse_virtual_path(path);
 
             let mut metadata = crate::exif_processing::load_sidecar(&sidecar_path);
@@ -812,6 +829,8 @@ pub fn set_color_label_for_paths(
             {
                 tags.push(format!("{}{}", COLOR_TAG_PREFIX, c));
             }
+
+            let final_tags = tags.clone();
 
             if tags.is_empty() {
                 metadata.tags = None;
@@ -826,16 +845,25 @@ pub fn set_color_label_for_paths(
                             let source_path = parse_virtual_path(path).0;
                             sync_metadata_to_xmp(&source_path, &metadata, create_xmp_if_missing);
                         }
-                        None
+                        Ok((path.clone(), final_tags))
                     }
-                    Err(e) => Some(format!("{}: 写入 sidecar 失败: {}", path, e)),
+                    Err(e) => Err(format!("{}: 写入 sidecar 失败: {}", path, e)),
                 },
-                Err(e) => Some(format!("{}: JSON 序列化失败: {}", path, e)),
+                Err(e) => Err(format!("{}: JSON 序列化失败: {}", path, e)),
             }
         })
         .collect();
 
+    let errors: Vec<String> = results.iter().filter_map(|r| r.as_ref().err().cloned()).collect();
+
     if errors.is_empty() {
+        // W9-I3：色标（标签集合）变更同步图库索引（可牺牲性，best-effort）。
+        let handle = app_handle.clone();
+        let updates: Vec<(String, Vec<String>)> =
+            results.iter().filter_map(|r| r.as_ref().ok().cloned()).collect();
+        std::thread::spawn(move || {
+            let _ = crate::library_index::with_library_index(&handle, |index| index.update_tags(&updates));
+        });
         Ok(())
     } else {
         Err(format!("部分文件颜色标签更新失败:\n{}", errors.join("\n")))
@@ -877,6 +905,12 @@ pub fn set_rating_for_paths(
         .collect();
 
     if errors.is_empty() {
+        // W9-I3：评分变更同步图库索引（可牺牲性，best-effort）。
+        let handle = app_handle.clone();
+        let updates: Vec<(String, u8)> = paths.iter().map(|p| (p.clone(), rating)).collect();
+        std::thread::spawn(move || {
+            let _ = crate::library_index::with_library_index(&handle, |index| index.update_ratings(&updates));
+        });
         Ok(())
     } else {
         Err(format!("部分文件评分更新失败:\n{}", errors.join("\n")))

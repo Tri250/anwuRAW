@@ -596,7 +596,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     reorderItems,
     sortAllPresetsAlphabetically,
     toggleFavorite,
-  } = usePresets(adjustments);
+  } = usePresets();
   const { showContextMenu } = useContextMenu();
   const [previews, setPreviews] = useState<Record<string, string | null>>({});
   const [isGeneratingPreviews, setIsGeneratingPreviews] = useState(false);

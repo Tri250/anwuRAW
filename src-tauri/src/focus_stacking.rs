@@ -5,10 +5,12 @@ use rayon::prelude::*;
 use std::fs;
 use std::io::{Cursor, Read, Write};
 use std::path::PathBuf;
+use std::sync::atomic::AtomicBool;
 use tauri::{AppHandle, Emitter};
 
 use crate::app_settings::load_settings;
 use crate::app_state::AppState;
+use crate::compose_queue::ComposeJobHandle;
 use crate::file_management::parse_virtual_path;
 use crate::formats::is_raw_file;
 use crate::image_processing::apply_raw_input_prep;
@@ -699,6 +701,9 @@ pub struct AlignConfig {
     pub target_samples: usize,
     pub min_quality: f64,
     pub polynomial_refinement: bool,
+    /// ROI 加速：对齐金字塔仅在候选窗口上构建/求解（W8-H4）。
+    /// 取值 (0,1) 为窗口边长占比；<=0 或 >=1 时退回全幅对齐。
+    pub roi_fraction: f64,
 }
 
 impl Default for AlignConfig {
@@ -710,6 +715,7 @@ impl Default for AlignConfig {
             target_samples: 160_000,
             min_quality: 0.25,
             polynomial_refinement: true,
+            roi_fraction: 0.6,
         }
     }
 }
@@ -720,10 +726,121 @@ struct LevelData {
     gx: Plane,
     gy: Plane,
     scale: f64,
+    /// 该级坐标下的采样平移：tmpl 局部坐标 + tmpl_shift = rescaled-warp 输入坐标；
+    /// rescaled-warp 输出 - src_shift = src 局部采样坐标。全幅 ROI 时均为 0。
+    tmpl_shift: (f64, f64),
+    src_shift: (f64, f64),
 }
 
 pub struct AlignPyramids {
     levels: Vec<LevelData>,
+}
+
+/// 对齐候选窗口（全幅 align 域坐标，(x0, y0, w, h)）。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct AlignRoi {
+    pub tmpl: (usize, usize, usize, usize),
+    pub src: (usize, usize, usize, usize),
+}
+
+impl AlignRoi {
+    pub fn full(w: usize, h: usize) -> Self {
+        AlignRoi {
+            tmpl: (0, 0, w, h),
+            src: (0, 0, w, h),
+        }
+    }
+
+    pub fn is_full(&self, w: usize, h: usize) -> bool {
+        self.tmpl == (0, 0, w, h) && self.src == (0, 0, w, h)
+    }
+}
+
+/// W8-H4 ROI 加速核心（纯函数）：按粗位移确定模板/源候选窗口。
+/// `roi_fraction` 为窗口边长占比，(0,1) 之外或窗口低于最小可用尺寸时退回全幅。
+/// 模板窗口以全幅中心向位移反方向偏移半程，源窗口 = 模板窗口 + 粗位移（逐轴 clamp）。
+pub fn alignment_rois(aw: usize, ah: usize, shift: (f64, f64), roi_fraction: f64) -> AlignRoi {
+    let full = AlignRoi::full(aw, ah);
+    if !(roi_fraction > 0.0 && roi_fraction < 1.0) {
+        return full;
+    }
+    let min_side = 160usize;
+    let rw = ((aw as f64 * roi_fraction).round() as usize)
+        .clamp(min_side.min(aw), aw);
+    let rh = ((ah as f64 * roi_fraction).round() as usize)
+        .clamp(min_side.min(ah), ah);
+    if rw >= aw && rh >= ah {
+        return full;
+    }
+
+    // 半程反向偏移让两窗口的并集尽量居中。
+    let cx = aw as f64 / 2.0 - shift.0 / 2.0;
+    let cy = ah as f64 / 2.0 - shift.1 / 2.0;
+    let tx0 = ((cx - rw as f64 / 2.0).round() as i64).clamp(0, (aw - rw) as i64) as usize;
+    let ty0 = ((cy - rh as f64 / 2.0).round() as i64).clamp(0, (ah - rh) as i64) as usize;
+    let sx0 = (tx0 as f64 + shift.0.round()).clamp(0.0, (aw - rw) as f64) as usize;
+    let sy0 = (ty0 as f64 + shift.1.round()).clamp(0.0, (ah - rh) as f64) as usize;
+
+    AlignRoi {
+        tmpl: (tx0, ty0, rw, rh),
+        src: (sx0, sy0, rw, rh),
+    }
+}
+
+/// W8-H4 粗位移估计（纯函数、确定性）：缩图 SAD 网格搜索。
+/// 返回 align 域坐标下 src 相对 tmpl 的平移估计。
+pub fn estimate_coarse_shift(
+    tmpl: &Plane,
+    src: &Plane,
+    small: usize,
+    search_radius: i64,
+) -> (f64, f64) {
+    let small = small.max(32);
+    let (tw, th) = fit_dims(tmpl.w, tmpl.h, small);
+    let (sw, sh) = fit_dims(src.w, src.h, small);
+    let t = resize_to(tmpl, tw, th);
+    let s = resize_to(src, sw, sh);
+    let r = search_radius.max(0) as usize;
+    let x0 = r.min(tw.saturating_sub(1));
+    let y0 = r.min(th.saturating_sub(1));
+    let x1 = tw.saturating_sub(r);
+    let y1 = th.saturating_sub(r);
+    let mut best = (0i64, 0i64);
+    let mut best_cost = f64::INFINITY;
+    for dy in -(r as i64)..=(r as i64) {
+        for dx in -(r as i64)..=(r as i64) {
+            let mut acc = 0f64;
+            let mut cnt = 0f64;
+            for y in y0..y1 {
+                for x in x0..x1 {
+                    let sv = s.clamped(x as i64 + dx, y as i64 + dy) as f64;
+                    let tv = t.at(x, y) as f64;
+                    acc += (sv - tv).abs();
+                    cnt += 1.0;
+                }
+            }
+            let cost = acc / cnt.max(1.0);
+            if cost < best_cost - 1e-9 {
+                best_cost = cost;
+                best = (dx, dy);
+            }
+        }
+    }
+    // 缩图位移换算回 align 域（fit_dims 保持等比）。
+    let scale = tw as f64 / tmpl.w.max(1) as f64;
+    if scale <= 0.0 {
+        return (0.0, 0.0);
+    }
+    (best.0 as f64 / scale, best.1 as f64 / scale)
+}
+
+fn crop_plane(src: &Plane, x0: usize, y0: usize, w: usize, h: usize) -> Plane {
+    let mut out = Plane::new(w, h);
+    for y in 0..h {
+        let s = (y0 + y) * src.w + x0;
+        out.data[y * w..y * w + w].copy_from_slice(&src.data[s..s + w]);
+    }
+    out
 }
 
 pub fn build_align_pyramids(
@@ -731,9 +848,26 @@ pub fn build_align_pyramids(
     src_full: &Plane,
     cfg: &AlignConfig,
 ) -> AlignPyramids {
+    build_align_pyramids_in_roi(tmpl_full, src_full, cfg, &AlignRoi::full(tmpl_full.w, tmpl_full.h))
+}
+
+/// W8-H4：在候选窗口上构建对齐金字塔。窗口越小，构建与求解开销越低。
+/// 求解坐标系仍为全幅 align 域（通过逐级 shift 采样平移实现），产出的
+/// LensWarp/FramePose 与全幅对齐语义一致。
+pub fn build_align_pyramids_in_roi(
+    tmpl_full: &Plane,
+    src_full: &Plane,
+    cfg: &AlignConfig,
+    roi: &AlignRoi,
+) -> AlignPyramids {
+    let (tx, ty, tw, th) = roi.tmpl;
+    let (sx, sy, sw, sh) = roi.src;
+    let off_t = (tx as f64, ty as f64);
+    let off_s = (sx as f64, sy as f64);
+    let mut tmpl = crop_plane(tmpl_full, tx, ty, tw, th);
+    let mut src = crop_plane(src_full, sx, sy, sw, sh);
+
     let mut start_scale = 1.0f64;
-    let mut tmpl = tmpl_full.clone();
-    let mut src = src_full.clone();
     while tmpl.w.max(tmpl.h) > cfg.finest_dim && tmpl.w.min(tmpl.h) > 32 {
         tmpl = downsample(&tmpl);
         src = downsample(&src);
@@ -757,12 +891,16 @@ pub fn build_align_pyramids(
     let mut levels = Vec::with_capacity(tp.len());
     for i in 0..tp.len() {
         let (gx, gy) = sp[i].gradients();
+        let scale = start_scale * 0.5f64.powi(i as i32);
         levels.push(LevelData {
             tmpl: tp[i].clone(),
             src: sp[i].clone(),
             gx,
             gy,
-            scale: start_scale * 0.5f64.powi(i as i32),
+            scale,
+            // 局部坐标 -> 全幅坐标 = off + local/scale；rescaled-warp 输入 = 全幅*scale。
+            tmpl_shift: (off_t.0 * scale, off_t.1 * scale),
+            src_shift: (off_s.0 * scale, off_s.1 * scale),
         });
     }
     AlignPyramids { levels }
@@ -981,14 +1119,20 @@ fn collect_samples(
             let mut jv = [0f64; 21];
             let mut x = 0usize;
             while x < w {
-                let (u, v) = warp.apply(x as f64, y as f64);
+                // ROI 坐标桥接（W8-H4）：局部坐标平移到 rescaled-warp 的全幅×scale 域，
+                // 输出再平移回 src 局部采样域。全幅 ROI 时 shift 为 0，行为与原实现一致。
+                let xin = x as f64 + lvl.tmpl_shift.0;
+                let yin = y as f64 + lvl.tmpl_shift.1;
+                let (u, v) = warp.apply(xin, yin);
+                let u = u - lvl.src_shift.0;
+                let v = v - lvl.src_shift.1;
                 if u >= 1.0 && v >= 1.0 && u < (lvl.src.w - 2) as f64 && v < (lvl.src.h - 2) as f64
                 {
                     let val = lvl.src.sample_bilinear(u as f32, v as f32) as f64;
                     let gx = lvl.gx.sample_bilinear(u as f32, v as f32) as f64;
                     let gy = lvl.gy.sample_bilinear(u as f32, v as f32) as f64;
                     if gx * gx + gy * gy > 1e-10 {
-                        warp.jacobian(x as f64, y as f64, model, &mut ju, &mut jv);
+                        warp.jacobian(xin, yin, model, &mut ju, &mut jv);
                         let t = lvl.tmpl.at(x, y) as f64;
                         local.push(Sample {
                             ju,
@@ -1688,6 +1832,7 @@ pub fn run_focus_stack<S: FrameSource + ?Sized>(
     src: &S,
     cfg: &StackConfig,
     progress: &dyn Fn(&str),
+    job: &ComposeJobHandle,
 ) -> Result<StackResult, String> {
     let n = src.len();
     if n < 2 {
@@ -1713,6 +1858,7 @@ pub fn run_focus_stack<S: FrameSource + ?Sized>(
         .collect();
 
     if cfg.align_enabled {
+        job.phase("align");
         progress("Preparing alignment references...");
         let mut align_luma: Vec<Plane> = Vec::with_capacity(n);
         for i in 0..n {
@@ -1732,6 +1878,7 @@ pub fn run_focus_stack<S: FrameSource + ?Sized>(
 
         let mut acfg = cfg.align;
         acfg.finest_dim = acfg.finest_dim.max(aw.max(ah));
+        let use_roi = acfg.roi_fraction > 0.0 && acfg.roi_fraction < 1.0;
 
         let mut completed = 0;
         for pass in 0..2 {
@@ -1742,20 +1889,48 @@ pub fn run_focus_stack<S: FrameSource + ?Sized>(
             };
             let mut prev = LensWarp::identity(aw, ah);
             for &i in order.iter() {
+                job.checkpoint()?;
                 completed += 1;
                 progress(&format!("Aligning frame {} of {}...", completed, n - 1));
-                let pyr = build_align_pyramids(&align_luma[reference], &align_luma[i], &acfg);
-                let pose = solve_alignment(&pyr, prev, &acfg);
-                let pose = if pose.quality < acfg.min_quality || !pose.warp.is_plausible() {
-                    let retry = solve_alignment(&pyr, LensWarp::identity(aw, ah), &acfg);
-                    if retry.quality > pose.quality {
-                        retry
-                    } else {
-                        pose
-                    }
+
+                // W8-H4 ROI 加速：粗位移 -> 候选窗口 -> 窗口内金字塔求解；
+                // 低质量时先窗口内 identity 重试，仍失败再回退全幅重试。
+                let rois = if use_roi {
+                    let coarse = estimate_coarse_shift(
+                        &align_luma[reference],
+                        &align_luma[i],
+                        192,
+                        12,
+                    );
+                    alignment_rois(aw, ah, coarse, acfg.roi_fraction)
                 } else {
-                    pose
+                    AlignRoi::full(aw, ah)
                 };
+
+                let bad = |p: &FramePose| p.quality < acfg.min_quality || !p.warp.is_plausible();
+                let better = |a: FramePose, b: FramePose| if b.quality > a.quality { b } else { a };
+
+                let pyr = build_align_pyramids_in_roi(
+                    &align_luma[reference],
+                    &align_luma[i],
+                    &acfg,
+                    &rois,
+                );
+                let mut pose = solve_alignment(&pyr, prev, &acfg);
+                if bad(&pose) {
+                    let retry = solve_alignment(&pyr, LensWarp::identity(aw, ah), &acfg);
+                    pose = better(pose, retry);
+                }
+                if bad(&pose) && !rois.is_full(aw, ah) {
+                    let full_pyr =
+                        build_align_pyramids(&align_luma[reference], &align_luma[i], &acfg);
+                    let mut fp = solve_alignment(&full_pyr, prev, &acfg);
+                    if bad(&fp) {
+                        let fr = solve_alignment(&full_pyr, LensWarp::identity(aw, ah), &acfg);
+                        fp = better(fp, fr);
+                    }
+                    pose = better(pose, fp);
+                }
                 poses[i] = pose;
                 if pose.warp.is_plausible() {
                     prev = pose.warp;
@@ -1785,11 +1960,13 @@ pub fn run_focus_stack<S: FrameSource + ?Sized>(
     let (dw, dh) = fit_dims(w, h, cfg.fusion.decision_dim);
     let levels = level_count(w, h, cfg.fusion.max_levels);
 
+    job.phase("measure");
     let mut scores: Vec<Vec<Plane>> = Vec::with_capacity(n);
     let mut bases: Vec<Plane> = Vec::with_capacity(n);
     let mut masks: Vec<Plane> = Vec::with_capacity(n);
 
     for (i, full_pose) in full_poses.iter().enumerate().take(n) {
+        job.checkpoint()?;
         progress(&format!("Measuring focus in frame {} of {}...", i + 1, n));
         let frame = src.get(i)?;
         let (warped, mask) = warp_or_copy(&frame, full_pose, cfg.align_enabled, w, h);
@@ -1805,13 +1982,16 @@ pub fn run_focus_stack<S: FrameSource + ?Sized>(
         masks.push(resize_to(&mask, dw, dh).map(|v| if v > 0.98 { 1.0 } else { 0.0 }));
     }
 
+    job.phase("labels");
     progress("Solving depth labels...");
     let decision = decide_labels(&scores, &bases, &masks, &cfg.fusion);
     drop(scores);
     drop(bases);
 
+    job.phase("blend");
     let mut acc = MergeAccumulator::new(w, h, &cfg.fusion);
     for (i, full_pose) in full_poses.iter().enumerate().take(n) {
+        job.checkpoint()?;
         progress(&format!("Blending frame {} of {}...", i + 1, n));
         let frame = src.get(i)?;
         let (warped, _) = warp_or_copy(&frame, full_pose, cfg.align_enabled, w, h);
@@ -1971,20 +2151,33 @@ pub async fn stitch_focus_stack(
 
     let focus_result_handle = state.focus_stack_result.clone();
 
+    // W8-H3: 统一 ComposeJob 协议（进度/取消/落账）
+    let job = crate::compose_queue::ComposeJobHandle::begin(
+        &state.compose_job_manager,
+        crate::compose_queue::ComposeModality::FocusStack,
+        source_paths.clone(),
+    );
+
+    let job_task = job.clone();
     let task = tokio::task::spawn_blocking(move || -> Result<(), String> {
         let progress = {
             let ah = app_handle.clone();
+            let job_ref = &job_task;
             move |msg: &str| {
                 let _ = ah.emit("focus-stack-progress", msg);
+                job_ref.message(msg);
             }
         };
 
-        let source = load_frames(&source_paths, &app_handle, &progress)?;
+        job_task.phase("load");
+        let source = load_frames(&source_paths, &app_handle, &progress, &job_task.cancel)?;
         let n = source.len();
 
         let cfg = StackConfig::default();
-        let result = run_focus_stack(source.as_ref(), &cfg, &progress)?;
+        let result = run_focus_stack(source.as_ref(), &cfg, &progress, &job_task)?;
+        job_task.checkpoint()?;
 
+        job_task.phase("preview");
         progress("Creating preview...");
         let final_image = result.image.to_rgb32f();
         let preview = make_preview(&final_image, 1200)?;
@@ -2025,17 +2218,19 @@ pub async fn stitch_focus_stack(
         Ok(())
     });
 
-    match task.await {
-        Ok(Ok(())) => Ok(()),
-        Ok(Err(e)) => Err(e),
+    let result = match task.await {
+        Ok(r) => r,
         Err(e) => Err(format!("Task failed: {}", e)),
-    }
+    };
+    job.finalize(&result);
+    result
 }
 
 fn load_frames(
     paths: &[String],
     app_handle: &AppHandle,
     progress: &dyn Fn(&str),
+    cancel: &AtomicBool,
 ) -> Result<Box<dyn FrameSource>, String> {
     let settings = load_settings(app_handle.clone()).unwrap_or_default();
     let n = paths.len();
@@ -2049,6 +2244,9 @@ fn load_frames(
         let mut frames = Vec::with_capacity(n);
         frames.push(first);
         for (i, p) in paths.iter().enumerate().skip(1) {
+            if cancel.load(std::sync::atomic::Ordering::SeqCst) {
+                return Err(crate::compose_queue::CANCELLED_MSG.to_string());
+            }
             progress(&format!("Loading frame {} of {}...", i + 1, n));
             let f = decode_frame(p, &settings)?;
             check_dims(i, &f, w, h)?;
@@ -2060,6 +2258,9 @@ fn load_frames(
         disk.write(0, &first)?;
         drop(first);
         for (i, p) in paths.iter().enumerate().skip(1) {
+            if cancel.load(std::sync::atomic::Ordering::SeqCst) {
+                return Err(crate::compose_queue::CANCELLED_MSG.to_string());
+            }
             progress(&format!("Loading frame {} of {}...", i + 1, n));
             let f = decode_frame(p, &settings)?;
             check_dims(i, &f, w, h)?;
@@ -2164,4 +2365,170 @@ pub async fn save_focus_stack(
     crate::exif_processing::write_rrexif_sidecar(&first_path_str, &output_path).ok();
 
     Ok(output_path.to_string_lossy().to_string())
+}
+
+#[cfg(test)]
+mod roi_tests {
+    use super::*;
+    use std::time::Duration;
+
+    /// 确定性多频正弦纹理（梯度丰富、带平滑结构）。
+    fn synth_texture(w: usize, h: usize) -> Plane {
+        let mut seed: u64 = 0x1234_5678;
+        let mut rnd = move || {
+            seed = seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            ((seed >> 33) as f64) / ((1u64 << 31) as f64)
+        };
+        let waves: Vec<(f64, f64, f64, f64)> = (0..24)
+            .map(|_| {
+                (
+                    (rnd() - 0.5) * 0.12,
+                    (rnd() - 0.5) * 0.12,
+                    rnd() * std::f64::consts::TAU,
+                    0.5 + rnd(),
+                )
+            })
+            .collect();
+        let mut p = Plane::new(w, h);
+        for y in 0..h {
+            for x in 0..w {
+                let (xf, yf) = (x as f64, y as f64);
+                let mut v = 0.5f64;
+                for &(fx, fy, ph, amp) in &waves {
+                    v += amp * 0.04 * ((fx * xf + fy * yf) * std::f64::consts::TAU + ph).sin();
+                }
+                p.data[y * w + x] = v as f32;
+            }
+        }
+        p
+    }
+
+    /// src(u,v) = tmpl(u+dx, v+dy)，双线性采样（可含亚像素）。
+    fn shifted(src_tmpl: &Plane, dx: f64, dy: f64) -> Plane {
+        let mut out = Plane::new(src_tmpl.w, src_tmpl.h);
+        for y in 0..out.h {
+            for x in 0..out.w {
+                out.data[y * out.w + x] =
+                    src_tmpl.sample_bilinear((x as f64 + dx) as f32, (y as f64 + dy) as f32);
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn coarse_shift_recovers_synthetic_translation() {
+        let tmpl = synth_texture(640, 512);
+        let src = shifted(&tmpl, 7.0, -5.0);
+        let (dx, dy) = estimate_coarse_shift(&tmpl, &src, 256, 12);
+        assert!(
+            (dx - (-7.0)).abs() <= 3.5 && (dy - 5.0).abs() <= 3.5,
+            "expected ~(-7, 5), got ({dx}, {dy})"
+        );
+    }
+
+    #[test]
+    fn coarse_shift_zero_for_identical_planes() {
+        let tmpl = synth_texture(400, 300);
+        let (dx, dy) = estimate_coarse_shift(&tmpl, &tmpl, 256, 12);
+        assert_eq!((dx, dy), (0.0, 0.0));
+    }
+
+    #[test]
+    fn alignment_rois_properties() {
+        // 居中 + 面积约束
+        let roi = alignment_rois(1000, 800, (0.0, 0.0), 0.6);
+        assert_eq!(roi.tmpl, (200, 160, 600, 480));
+        assert_eq!(roi.src, roi.tmpl);
+        let area_frac =
+            (600.0 * 480.0) / (1000.0 * 800.0);
+        assert!(area_frac <= 0.36 + 1e-9);
+
+        // 位移时两窗口逐轴合法且覆盖位移
+        let roi = alignment_rois(1000, 800, (40.0, -30.0), 0.6);
+        let (tx, ty, tw, th) = roi.tmpl;
+        let (sx, sy, sw, sh) = roi.src;
+        assert_eq!((tw, th, sw, sh), (600, 480, 600, 480));
+        assert!(tx + tw <= 1000 && ty + th <= 800);
+        assert!(sx + sw <= 1000 && sy + sh <= 800);
+        assert!((sx as i64 - tx as i64).abs() <= 41);
+        assert!((sy as i64 - ty as i64).abs() <= 31);
+
+        // 退化参数退回全幅
+        assert_eq!(alignment_rois(1000, 800, (0.0, 0.0), 0.0), AlignRoi::full(1000, 800));
+        assert_eq!(alignment_rois(1000, 800, (0.0, 0.0), 1.0), AlignRoi::full(1000, 800));
+
+        // 小图退回全幅（低于最小窗口）
+        assert_eq!(alignment_rois(120, 100, (0.0, 0.0), 0.6), AlignRoi::full(120, 100));
+    }
+
+    #[test]
+    fn roi_alignment_matches_full_alignment() {
+        let (w, h) = (640, 512);
+        let tmpl = synth_texture(w, h);
+        let src = shifted(&tmpl, 3.0, 2.0);
+        let cfg = AlignConfig::default();
+
+        let full = build_align_pyramids(&tmpl, &src, &cfg);
+        let pose_full = solve_alignment(&full, LensWarp::identity(w, h), &cfg);
+        assert!(pose_full.quality >= cfg.min_quality, "full quality {}", pose_full.quality);
+
+        let rois = alignment_rois(w, h, (-3.0, 2.0), cfg.roi_fraction);
+        assert!(!rois.is_full(w, h));
+        let roi = build_align_pyramids_in_roi(&tmpl, &src, &cfg, &rois);
+        let pose_roi = solve_alignment(&roi, LensWarp::identity(w, h), &cfg);
+        assert!(pose_roi.quality >= cfg.min_quality, "roi quality {}", pose_roi.quality);
+
+        // S(u,v)=T(u+3,v+2) => warp.t ≈ (-3, -2)
+        assert!(
+            (pose_roi.warp.t[0] - (-3.0)).abs() < 1.0
+                && (pose_roi.warp.t[1] - (-2.0)).abs() < 1.0,
+            "roi t = {:?}",
+            pose_roi.warp.t
+        );
+        assert!(
+            (pose_full.warp.t[0] - pose_roi.warp.t[0]).abs() < 1.0
+                && (pose_full.warp.t[1] - pose_roi.warp.t[1]).abs() < 1.0,
+            "full t = {:?}, roi t = {:?}",
+            pose_full.warp.t,
+            pose_roi.warp.t
+        );
+    }
+
+    fn bench_align_once(tmpl: &Plane, src: &Plane, cfg: &AlignConfig) -> Duration {
+        let t0 = std::time::Instant::now();
+        let pyr = build_align_pyramids(tmpl, src, cfg);
+        let _ = solve_alignment(&pyr, LensWarp::identity(tmpl.w, tmpl.h), cfg);
+        t0.elapsed()
+    }
+
+    fn bench_align_roi_once(tmpl: &Plane, src: &Plane, cfg: &AlignConfig) -> Duration {
+        let rois = alignment_rois(tmpl.w, tmpl.h, (0.0, 0.0), cfg.roi_fraction);
+        let t0 = std::time::Instant::now();
+        let pyr = build_align_pyramids_in_roi(tmpl, src, cfg, &rois);
+        let _ = solve_alignment(&pyr, LensWarp::identity(tmpl.w, tmpl.h), cfg);
+        t0.elapsed()
+    }
+
+    /// W8-H4 验收：ROI 加速后对齐耗时较全幅降低 ≥ 30%（基准集：合成纹理平移帧）。
+    /// 取 3 次运行的最小值（最能代表真实成本、对 CI 噪声最稳健）。
+    #[test]
+    fn roi_alignment_at_least_30_percent_faster() {
+        let (w, h) = (900, 700);
+        let tmpl = synth_texture(w, h);
+        let src = shifted(&tmpl, 4.0, -3.0);
+        let cfg = AlignConfig::default();
+
+        let mut best_full = Duration::MAX;
+        let mut best_roi = Duration::MAX;
+        for _ in 0..3 {
+            best_full = best_full.min(bench_align_once(&tmpl, &src, &cfg));
+            best_roi = best_roi.min(bench_align_roi_once(&tmpl, &src, &cfg));
+        }
+        assert!(
+            best_roi.as_secs_f64() <= 0.7 * best_full.as_secs_f64(),
+            "roi {best_roi:?} should be >=30% faster than full {best_full:?}"
+        );
+    }
 }

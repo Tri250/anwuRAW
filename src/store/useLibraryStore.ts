@@ -41,6 +41,10 @@ interface LibraryState {
   sortCriteria: SortCriteria;
   filterCriteria: FilterCriteria;
   searchCriteria: SearchCriteria;
+  /** W9-I3 索引捷径命中集合（可牺牲性派生数据，null = 走本地过滤）。 */
+  indexMatchedPaths: Set<string> | null;
+  /** 命中集合对应的条件指纹；与当前条件不符时不消费。 */
+  indexMatchedKey: string | null;
 
   // UI State specific to the Library View
   isTreeLoading: boolean;
@@ -77,6 +81,8 @@ export const useLibraryStore = create<LibraryState>((set) => ({
   sortCriteria: { key: 'name', order: SortDirection.Ascending },
   filterCriteria: { colors: [], rating: 0, rawStatus: RawStatus.All },
   searchCriteria: { tags: [], text: '', mode: 'OR' },
+  indexMatchedPaths: null,
+  indexMatchedKey: null,
 
   isTreeLoading: false,
   isViewLoading: false,

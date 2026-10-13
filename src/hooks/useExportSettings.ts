@@ -1,140 +1,102 @@
-import { useState, useMemo, useCallback } from 'react';
-import { ExportPreset, WatermarkAnchor } from '../components/ui/ExportImportProperties';
+/**
+ * W9-I2 瘦身后的纯绑定层：导出设置状态在 store/useExportStore.ts。
+ * 本 hook 仅做 store 选择器到 ExportPanel 原有消费形状的适配。
+ */
+import { useMemo } from 'react';
+import { useExportStore } from '../store/useExportStore';
 
 export function useExportSettings() {
-  const [fileFormat, setFileFormat] = useState('jpeg');
-  const [jpegQuality, setJpegQuality] = useState(90);
-  const [enableResize, setEnableResize] = useState(false);
-  const [resizeMode, setResizeMode] = useState('longEdge');
-  const [resizeValue, setResizeValue] = useState(2048);
-  const [dontEnlarge, setDontEnlarge] = useState(true);
-  const [keepMetadata, setKeepMetadata] = useState(true);
-  const [preserveTimestamps, setPreserveTimestamps] = useState(false);
-  const [stripGps, setStripGps] = useState(true);
-  const [exportMasks, setExportMasks] = useState(false);
-  const [preserveFolders, setPreserveFolders] = useState(false);
-  const [filenameTemplate, setFilenameTemplate] = useState('{original_filename}_edited');
-  const [enableWatermark, setEnableWatermark] = useState(false);
-  const [watermarkPath, setWatermarkPath] = useState<string | null>(null);
-  const [watermarkAnchor, setWatermarkAnchor] = useState<WatermarkAnchor>(WatermarkAnchor.BottomRight);
-  const [watermarkScale, setWatermarkScale] = useState(10);
-  const [watermarkSpacing, setWatermarkSpacing] = useState(5);
-  const [watermarkOpacity, setWatermarkOpacity] = useState(75);
-  const [colorSpace, setColorSpace] = useState<'srgb' | 'displayP3' | 'adobeRgb' | 'proPhoto'>('srgb');
-  const [bitDepth, setBitDepth] = useState<8 | 16>(8);
-
-  const handleApplyPreset = useCallback((preset: ExportPreset) => {
-    setFileFormat(preset.fileFormat);
-    setJpegQuality(preset.jpegQuality);
-    setEnableResize(preset.enableResize);
-    setResizeMode(preset.resizeMode);
-    setResizeValue(preset.resizeValue);
-    setDontEnlarge(preset.dontEnlarge);
-    setKeepMetadata(preset.keepMetadata);
-    setPreserveTimestamps(preset.preserveTimestamps ?? false);
-    setStripGps(preset.stripGps);
-    setExportMasks(preset.exportMasks ?? false);
-    setPreserveFolders(preset.preserveFolders ?? false);
-    setFilenameTemplate(preset.filenameTemplate);
-    setEnableWatermark(preset.enableWatermark);
-    setWatermarkPath(preset.watermarkPath);
-    setWatermarkAnchor(preset.watermarkAnchor as WatermarkAnchor);
-    setWatermarkScale(preset.watermarkScale);
-    setWatermarkSpacing(preset.watermarkSpacing);
-    setWatermarkOpacity(preset.watermarkOpacity);
-    setColorSpace((preset as any).colorSpace ?? 'srgb');
-    setBitDepth((preset as any).bitDepth ?? 8);
-  }, []);
+  const s = useExportStore();
 
   const currentSettingsObject = useMemo(
     () => ({
-      fileFormat,
-      jpegQuality,
-      enableResize,
-      resizeMode,
-      resizeValue,
-      dontEnlarge,
-      keepMetadata,
-      preserveTimestamps,
-      stripGps,
-      exportMasks,
-      preserveFolders,
-      filenameTemplate,
-      enableWatermark,
-      watermarkPath,
-      watermarkAnchor,
-      watermarkScale,
-      watermarkSpacing,
-      watermarkOpacity,
-      colorSpace,
-      bitDepth,
+      fileFormat: s.fileFormat,
+      jpegQuality: s.jpegQuality,
+      enableResize: s.enableResize,
+      resizeMode: s.resizeMode,
+      resizeValue: s.resizeValue,
+      dontEnlarge: s.dontEnlarge,
+      keepMetadata: s.keepMetadata,
+      preserveTimestamps: s.preserveTimestamps,
+      stripGps: s.stripGps,
+      exportMasks: s.exportMasks,
+      preserveFolders: s.preserveFolders,
+      filenameTemplate: s.filenameTemplate,
+      enableWatermark: s.enableWatermark,
+      watermarkPath: s.watermarkPath,
+      watermarkAnchor: s.watermarkAnchor,
+      watermarkScale: s.watermarkScale,
+      watermarkSpacing: s.watermarkSpacing,
+      watermarkOpacity: s.watermarkOpacity,
+      colorSpace: s.colorSpace,
+      bitDepth: s.bitDepth,
     }),
     [
-      fileFormat,
-      jpegQuality,
-      enableResize,
-      resizeMode,
-      resizeValue,
-      dontEnlarge,
-      keepMetadata,
-      preserveTimestamps,
-      stripGps,
-      exportMasks,
-      preserveFolders,
-      filenameTemplate,
-      enableWatermark,
-      watermarkPath,
-      watermarkAnchor,
-      watermarkScale,
-      watermarkSpacing,
-      watermarkOpacity,
-      colorSpace,
-      bitDepth,
+      s.fileFormat,
+      s.jpegQuality,
+      s.enableResize,
+      s.resizeMode,
+      s.resizeValue,
+      s.dontEnlarge,
+      s.keepMetadata,
+      s.preserveTimestamps,
+      s.stripGps,
+      s.exportMasks,
+      s.preserveFolders,
+      s.filenameTemplate,
+      s.enableWatermark,
+      s.watermarkPath,
+      s.watermarkAnchor,
+      s.watermarkScale,
+      s.watermarkSpacing,
+      s.watermarkOpacity,
+      s.colorSpace,
+      s.bitDepth,
     ],
   );
 
   return {
-    fileFormat,
-    setFileFormat,
-    jpegQuality,
-    setJpegQuality,
-    enableResize,
-    setEnableResize,
-    resizeMode,
-    setResizeMode,
-    resizeValue,
-    setResizeValue,
-    dontEnlarge,
-    setDontEnlarge,
-    keepMetadata,
-    setKeepMetadata,
-    preserveTimestamps,
-    setPreserveTimestamps,
-    stripGps,
-    setStripGps,
-    exportMasks,
-    setExportMasks,
-    preserveFolders,
-    setPreserveFolders,
-    filenameTemplate,
-    setFilenameTemplate,
-    enableWatermark,
-    setEnableWatermark,
-    watermarkPath,
-    setWatermarkPath,
-    watermarkAnchor,
-    setWatermarkAnchor,
-    watermarkScale,
-    setWatermarkScale,
-    watermarkSpacing,
-    setWatermarkSpacing,
-    watermarkOpacity,
-    setWatermarkOpacity,
-    colorSpace,
-    setColorSpace,
-    bitDepth,
-    setBitDepth,
-    handleApplyPreset,
+    fileFormat: s.fileFormat,
+    setFileFormat: (v: string) => s.updateSettings({ fileFormat: v }),
+    jpegQuality: s.jpegQuality,
+    setJpegQuality: (v: number) => s.updateSettings({ jpegQuality: v }),
+    enableResize: s.enableResize,
+    setEnableResize: (v: boolean) => s.updateSettings({ enableResize: v }),
+    resizeMode: s.resizeMode,
+    setResizeMode: (v: string) => s.updateSettings({ resizeMode: v }),
+    resizeValue: s.resizeValue,
+    setResizeValue: (v: number) => s.updateSettings({ resizeValue: v }),
+    dontEnlarge: s.dontEnlarge,
+    setDontEnlarge: (v: boolean) => s.updateSettings({ dontEnlarge: v }),
+    keepMetadata: s.keepMetadata,
+    setKeepMetadata: (v: boolean) => s.updateSettings({ keepMetadata: v }),
+    preserveTimestamps: s.preserveTimestamps,
+    setPreserveTimestamps: (v: boolean) => s.updateSettings({ preserveTimestamps: v }),
+    stripGps: s.stripGps,
+    setStripGps: (v: boolean) => s.updateSettings({ stripGps: v }),
+    exportMasks: s.exportMasks,
+    setExportMasks: (v: boolean) => s.updateSettings({ exportMasks: v }),
+    preserveFolders: s.preserveFolders,
+    setPreserveFolders: (v: boolean) => s.updateSettings({ preserveFolders: v }),
+    filenameTemplate: s.filenameTemplate,
+    setFilenameTemplate: (v: string) => s.updateSettings({ filenameTemplate: v }),
+    enableWatermark: s.enableWatermark,
+    setEnableWatermark: (v: boolean) => s.updateSettings({ enableWatermark: v }),
+    watermarkPath: s.watermarkPath,
+    setWatermarkPath: (v: string | null) => s.updateSettings({ watermarkPath: v }),
+    watermarkAnchor: s.watermarkAnchor,
+    setWatermarkAnchor: (v: any) => s.updateSettings({ watermarkAnchor: v }),
+    watermarkScale: s.watermarkScale,
+    setWatermarkScale: (v: number) => s.updateSettings({ watermarkScale: v }),
+    watermarkSpacing: s.watermarkSpacing,
+    setWatermarkSpacing: (v: number) => s.updateSettings({ watermarkSpacing: v }),
+    watermarkOpacity: s.watermarkOpacity,
+    setWatermarkOpacity: (v: number) => s.updateSettings({ watermarkOpacity: v }),
+    colorSpace: s.colorSpace,
+    setColorSpace: (v: any) => s.updateSettings({ colorSpace: v }),
+    bitDepth: s.bitDepth,
+    setBitDepth: (v: 8 | 16) => s.updateSettings({ bitDepth: v }),
+    handleApplyPreset: s.applyPreset,
     currentSettingsObject,
   };
 }

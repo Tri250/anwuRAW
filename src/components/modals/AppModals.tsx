@@ -109,6 +109,15 @@ export default function AppModals(props: AppModalsProps) {
     })),
   );
 
+  // W9-I1：合成处理状态单源自 useProcessStore.composeRuns（双入口清零）。
+  const composeRuns = useProcessStore(
+    useShallow((state) => ({
+      panorama: state.composeRuns.panorama,
+      hdr: state.composeRuns.hdr,
+      focusStack: state.composeRuns.focusStack,
+    })),
+  );
+
   const { selectedImage, finalPreviewUrl } = useEditorStore(
     useShallow((state) => ({
       selectedImage: state.selectedImage,
@@ -150,11 +159,11 @@ export default function AppModals(props: AppModalsProps) {
         }
       />
       <PanoramaModal
-        error={panoramaModalState.error}
+        error={composeRuns.panorama.error}
         finalImageBase64={panoramaModalState.finalImageBase64}
         imageCount={panoramaModalState.stitchingSourcePaths.length}
         isOpen={panoramaModalState.isOpen}
-        isProcessing={panoramaModalState.isProcessing}
+        isProcessing={composeRuns.panorama.phase === 'processing'}
         loadingImageUrl={
           panoramaModalState.stitchingSourcePaths.length > 0
             ? thumbnails[
@@ -162,29 +171,27 @@ export default function AppModals(props: AppModalsProps) {
               ] || null
             : null
         }
-        onClose={() =>
+        onClose={() => {
+          useProcessStore.getState().resetCompose('panorama');
           setUI({
             panoramaModalState: {
               isOpen: false,
-              isProcessing: false,
-              progressMessage: '',
               finalImageBase64: null,
-              error: null,
               stitchingSourcePaths: [],
             },
-          })
-        }
+          });
+        }}
         onOpenFile={(path: string) => props.handleImageSelect(path)}
         onSave={props.handleSavePanorama}
         onStitch={() => props.handleStartPanorama(panoramaModalState.stitchingSourcePaths)}
-        progressMessage={panoramaModalState.progressMessage}
+        progressMessage={composeRuns.panorama.message ?? ''}
       />
       <HdrModal
-        error={hdrModalState.error}
+        error={composeRuns.hdr.error}
         finalImageBase64={hdrModalState.finalImageBase64}
         imageCount={hdrModalState.stitchingSourcePaths.length}
         isOpen={hdrModalState.isOpen}
-        isProcessing={hdrModalState.isProcessing}
+        isProcessing={composeRuns.hdr.phase === 'processing'}
         loadingImageUrl={
           hdrModalState.stitchingSourcePaths.length > 0
             ? thumbnails[
@@ -192,29 +199,27 @@ export default function AppModals(props: AppModalsProps) {
               ] || null
             : null
         }
-        onClose={() =>
+        onClose={() => {
+          useProcessStore.getState().resetCompose('hdr');
           setUI({
             hdrModalState: {
               isOpen: false,
-              isProcessing: false,
-              progressMessage: '',
               finalImageBase64: null,
-              error: null,
               stitchingSourcePaths: [],
             },
-          })
-        }
+          });
+        }}
         onOpenFile={(path: string) => props.handleImageSelect(path)}
         onSave={props.handleSaveHdr}
         onMerge={() => props.handleStartHdr(hdrModalState.stitchingSourcePaths)}
-        progressMessage={hdrModalState.progressMessage}
+        progressMessage={composeRuns.hdr.message ?? ''}
       />
       <FocusStackModal
-        error={focusStackModalState.error}
+        error={composeRuns.focusStack.error}
         finalImageBase64={focusStackModalState.finalImageBase64}
         imageCount={focusStackModalState.sourcePaths.length}
         isOpen={focusStackModalState.isOpen}
-        isProcessing={focusStackModalState.isProcessing}
+        isProcessing={composeRuns.focusStack.phase === 'processing'}
         loadingImageUrl={
           focusStackModalState.sourcePaths.length > 0
             ? thumbnails[focusStackModalState.sourcePaths[Math.floor(focusStackModalState.sourcePaths.length / 2)]] ||
@@ -222,23 +227,21 @@ export default function AppModals(props: AppModalsProps) {
             : null
         }
         depthMapBase64={focusStackModalState.depthMapBase64}
-        onClose={() =>
+        onClose={() => {
+          useProcessStore.getState().resetCompose('focusStack');
           setUI({
             focusStackModalState: {
               isOpen: false,
-              isProcessing: false,
-              progressMessage: '',
               finalImageBase64: null,
               depthMapBase64: null,
-              error: null,
               sourcePaths: [],
             },
-          })
-        }
+          });
+        }}
         onOpenFile={(path: string) => props.handleImageSelect(path)}
         onSave={props.handleSaveFocusStack}
         onMerge={() => props.handleStartFocusStack(focusStackModalState.sourcePaths)}
-        progressMessage={focusStackModalState.progressMessage}
+        progressMessage={composeRuns.focusStack.message ?? ''}
       />
       <NegativeConversionModal
         isOpen={negativeModalState.isOpen}

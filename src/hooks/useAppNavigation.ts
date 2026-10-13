@@ -12,6 +12,7 @@ import { Invokes, LibraryViewMode, ImageFile } from '../components/ui/AppPropert
 import { INITIAL_ADJUSTMENTS, normalizeLoadedAdjustments } from '../utils/adjustments';
 import { globalImageCache } from '../utils/ImageLRUCache';
 import { debouncedSave, debouncedSetHistory } from './useEditorActions';
+import { alignRenderJobs, setCurrentRes, setPrevSyncSnapshot } from '../store/renderEngine';
 
 export interface AppNavigationProps {
   clearThumbnailQueue: () => void;
@@ -21,10 +22,6 @@ export interface AppNavigationProps {
     cachedEditStateRef: React.RefObject<any>;
     selectedImagePathRef: React.RefObject<string | null>;
     isBackendReadyRef: React.RefObject<boolean>;
-    latestRenderedJobIdRef: React.RefObject<number>;
-    previewJobIdRef: React.RefObject<number>;
-    currentResRef: React.RefObject<number>;
-    prevAdjustmentsRef: React.RefObject<any>;
   };
 }
 
@@ -35,10 +32,6 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
     cachedEditStateRef,
     selectedImagePathRef,
     isBackendReadyRef,
-    latestRenderedJobIdRef,
-    previewJobIdRef,
-    currentResRef,
-    prevAdjustmentsRef,
   } = refs;
 
   const handleGoHome = useCallback(() => {
@@ -161,26 +154,26 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
 
         setEditor({ adjustments: cached.adjustments });
         resetHistory(cached.adjustments);
-        prevAdjustmentsRef.current = { path, adjustments: cached.adjustments };
+        setPrevSyncSnapshot(path, cached.adjustments);
 
         setLibrary({ isViewLoading: false });
 
-        latestRenderedJobIdRef.current = previewJobIdRef.current;
+        alignRenderJobs();
         isBackendReadyRef.current = false;
-        currentResRef.current = Infinity;
+        setCurrentRes(Infinity);
 
         invoke(Invokes.LoadImage, { path })
           .then((_result: any) => {
             if (selectedImagePathRef.current !== path) return;
             isBackendReadyRef.current = true;
-            currentResRef.current = 0;
+            setCurrentRes(0);
             setEditor({ originalSize: { width: _result.width, height: _result.height } });
           })
           .catch((err: any) => {
             if (String(err).includes('cancelled')) return;
             console.error('Background load_image failed on cache hit:', err);
             isBackendReadyRef.current = true;
-            currentResRef.current = 0;
+            setCurrentRes(0);
           });
 
         invoke(Invokes.LoadMetadata, { path })
@@ -199,7 +192,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
             ) {
               setEditor({ adjustments: freshAdjustments });
               resetHistory(freshAdjustments);
-              prevAdjustmentsRef.current = { path, adjustments: freshAdjustments };
+              setPrevSyncSnapshot(path, freshAdjustments);
               globalImageCache.set(path, { ...cached, adjustments: freshAdjustments });
             }
           })

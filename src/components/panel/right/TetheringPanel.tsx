@@ -34,7 +34,6 @@ import Dropdown from '../../ui/Dropdown';
 import { TextVariants, TextColors, TextWeights } from '../../../types/typography';
 import { Invokes, Preset } from '../../ui/AppProperties';
 import { useLibraryStore } from '../../../store/useLibraryStore';
-import { useEditorStore } from '../../../store/useEditorStore';
 import { usePresets } from '../../../hooks/usePresets';
 import { useContextMenu } from '../../../context/ContextMenuContext';
 
@@ -200,8 +199,7 @@ interface TetheringPanelProps {
 export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: TetheringPanelProps) {
   const { t } = useTranslation();
   const currentFolderPath = useLibraryStore((s) => s.currentFolderPath);
-  const adjustments = useEditorStore((s) => s.adjustments);
-  const { presets } = usePresets(adjustments);
+  const { presets } = usePresets();
   const { showContextMenu } = useContextMenu();
 
   const [liveViewEnabled, setLiveViewEnabled] = useState(false);

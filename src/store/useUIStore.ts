@@ -32,31 +32,24 @@ interface CollageModalState {
   sourceImages: Array<Pick<ImageFile, 'path'>>;
 }
 
+// W9-I1：三个合成模态的 isProcessing/progressMessage/error 已单源化到
+// useProcessStore.composeRuns，此处只保留成果数据与开合状态。
 interface PanoramaModalState {
-  error: string | null;
   finalImageBase64: string | null;
   isOpen: boolean;
-  isProcessing: boolean;
-  progressMessage: string | null;
   stitchingSourcePaths: Array<string>;
 }
 
 interface FocusStackModalState {
-  error: string | null;
   finalImageBase64: string | null;
   depthMapBase64: string | null;
   isOpen: boolean;
-  isProcessing: boolean;
-  progressMessage: string | null;
   sourcePaths: Array<string>;
 }
 
 interface HdrModalState {
-  error: string | null;
   finalImageBase64: string | null;
   isOpen: boolean;
-  isProcessing: boolean;
-  progressMessage: string | null;
   stitchingSourcePaths: Array<string>;
 }
 
@@ -332,28 +325,19 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   confirmModalState: { isOpen: false },
   panoramaModalState: {
-    error: null,
     finalImageBase64: null,
     isOpen: false,
-    isProcessing: false,
-    progressMessage: '',
     stitchingSourcePaths: [],
   },
   focusStackModalState: {
-    error: null,
     finalImageBase64: null,
     depthMapBase64: null,
     isOpen: false,
-    isProcessing: false,
-    progressMessage: '',
     sourcePaths: [],
   },
   hdrModalState: {
-    error: null,
     finalImageBase64: null,
     isOpen: false,
-    isProcessing: false,
-    progressMessage: '',
     stitchingSourcePaths: [],
   },
   negativeModalState: { isOpen: false, targetPaths: [] },

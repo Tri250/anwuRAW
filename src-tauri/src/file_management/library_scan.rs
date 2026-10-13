@@ -42,6 +42,48 @@ fn make_group_key(source_path: &Path) -> String {
     format!("{}/{}", parent.to_string_lossy(), stem.to_string_lossy())
 }
 
+/// W9-I3 扫描落库：扫描结果后台 upsert 进图库索引（可牺牲性派生数据，失败仅记日志）。
+/// 独立线程执行，不阻塞扫描命令返回。
+fn spawn_index_upsert(app_handle: &AppHandle, files: &[ImageFile]) {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+
+    let records: Vec<crate::library_index::ImageIndexRecord> = files
+        .iter()
+        .map(|file| {
+            let (source_path, _) = parse_virtual_path(&file.path);
+            let folder = source_path
+                .parent()
+                .unwrap_or(Path::new(""))
+                .to_string_lossy()
+                .into_owned();
+            let filename = source_path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned();
+            crate::library_index::ImageIndexRecord {
+                path: file.path.clone(),
+                folder,
+                filename,
+                is_raw: file.is_raw,
+                rating: file.rating,
+                edited: file.is_edited,
+                mtime_secs: file.modified as i64,
+                tags: file.tags.clone().unwrap_or_default(),
+                indexed_at: now,
+            }
+        })
+        .collect();
+
+    let handle = app_handle.clone();
+    thread::spawn(move || {
+        let _ = crate::library_index::with_library_index(&handle, |index| index.upsert_images(&records));
+    });
+}
+
 fn assign_group_ids(files: &mut [ImageFile], settings: &crate::app_settings::AppSettings) {
     let require_matching_exif = settings.require_matching_exif.unwrap_or(false);
     let group_edited_files = settings.group_edited_files.unwrap_or(true);
@@ -302,6 +344,7 @@ pub fn list_images_in_dir(path: String, app_handle: AppHandle) -> Result<Vec<Ima
         .collect();
 
     assign_group_ids(&mut result_list, &settings);
+    spawn_index_upsert(&app_handle, &result_list);
     Ok(result_list)
 }
 
@@ -435,6 +478,7 @@ pub fn list_images_recursive(
         .collect();
 
     assign_group_ids(&mut result_list, &settings);
+    spawn_index_upsert(&app_handle, &result_list);
     Ok(result_list)
 }
 
@@ -703,6 +747,7 @@ pub fn get_album_images(
         .collect();
 
     assign_group_ids(&mut result_list, &settings);
+    spawn_index_upsert(&app_handle, &result_list);
     Ok(result_list)
 }
 

@@ -270,6 +270,7 @@ pub use crate::file_management::{
     handle_import_presets_from_file, handle_import_presets_from_files, list_images_in_dir,
     list_images_recursive, load_presets, save_albums, save_community_preset, save_presets,
 };
+pub use crate::library_index::{library_index_query, library_index_stats};
 pub use crate::lut_processing::{
     generate_lut_previews, import_luts, list_luts, load_and_parse_lut, remove_lut,
 };
@@ -301,6 +302,10 @@ pub use super::super::file_management::library_scan::{
     __tauri_command_name_list_images_in_dir, __tauri_command_name_list_images_recursive,
     __tauri_command_name_load_presets, __tauri_command_name_save_albums,
     __tauri_command_name_save_community_preset, __tauri_command_name_save_presets,
+};
+pub use super::super::library_index::{
+    __cmd__library_index_query, __cmd__library_index_stats,
+    __tauri_command_name_library_index_query, __tauri_command_name_library_index_stats,
 };
 pub use super::super::lut_processing::{
     __cmd__generate_lut_previews, __cmd__import_luts, __cmd__list_luts, __cmd__load_and_parse_lut,

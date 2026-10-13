@@ -1298,6 +1298,27 @@ pub async fn export_images(
     .await
 }
 
+/// W8-H2: CLI 无头导出参数构造（单一函数，供 run_headless_export 与测试共用）。
+/// CLI 与 GUI 共用 export_images_impl 同一 ExportJob 队列；
+/// 构造契约与 GUI 缺省语义对齐（浮点时间戳/保留目录结构/默认色空间与位深）。
+pub fn headless_export_settings(
+    session: &crate::launch_request::HeadlessExportSession,
+) -> ExportSettings {
+    ExportSettings {
+        jpeg_quality: session.quality,
+        resize: None,
+        keep_metadata: session.keep_metadata,
+        preserve_timestamps: true,
+        strip_gps: false,
+        filename_template: None,
+        watermark: None,
+        export_masks: false,
+        preserve_folders: true,
+        color_space: ExportColorSpace::default(),
+        bit_depth: default_bit_depth(),
+    }
+}
+
 pub async fn run_headless_export(
     session: crate::launch_request::HeadlessExportSession,
     app_handle: tauri::AppHandle,
@@ -1341,19 +1362,7 @@ pub async fn run_headless_export(
 
     println!("Found {} images to export. Processing...", paths.len());
 
-    let export_settings = ExportSettings {
-        jpeg_quality: session.quality,
-        resize: None,
-        keep_metadata: session.keep_metadata,
-        preserve_timestamps: true,
-        strip_gps: false,
-        filename_template: None,
-        watermark: None,
-        export_masks: false,
-        preserve_folders: true,
-        color_space: ExportColorSpace::default(),
-        bit_depth: default_bit_depth(),
-    };
+    let export_settings = headless_export_settings(&session);
 
     let mut custom_adjustments = None;
     if let Some(adj_path) = &session.adjustments_override {
@@ -1844,6 +1853,16 @@ pub fn export_with_icc_and_depth(
 ) -> Result<(), String> {
     let img = image::open(&input_path).map_err(|e| e.to_string())?;
 
+    // W8-H2: 扩展编码器（exr/dng）路由 —— 扩展格式不接收质量参数且不支持 ICC
+    if let Some(ext) = export_encoders::lookup_extended_encoder(&format) {
+        export_encoders::validate_extended_bit_depth(ext, bit_depth.unwrap_or_else(|| {
+            *ext.bit_depths.first().unwrap_or(&8)
+        }))?;
+        let bytes = (ext.encode)(&img)?;
+        fs::write(&output_path, bytes).map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
     // W8-H1: 注册表前置校验（格式 × 色深 × ICC），非法组合 fail fast
     let spec = export_encoders::validate_encode_request(
         &format,
@@ -1871,4 +1890,79 @@ pub fn export_with_icc_and_depth(
     fs::write(&output_path, bytes).map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::launch_request::HeadlessExportSession;
+
+    /// W8-H2: CLI 与 GUI 共用 export_images_impl 同一 ExportJob 队列；
+    /// 此处锁定 CLI 参数构造与 GUI 缺省契约的语义对齐。
+    #[test]
+    fn headless_settings_align_with_gui_contract() {
+        let session = HeadlessExportSession {
+            source: "/tmp/src".into(),
+            output: "/tmp/out".into(),
+            format: "jpg".into(),
+            quality: 92,
+            keep_metadata: true,
+            adjustments_override: None,
+        };
+        let s = headless_export_settings(&session);
+        assert_eq!(s.jpeg_quality, 92);
+        assert!(s.keep_metadata);
+        assert!(s.preserve_timestamps);
+        assert!(s.preserve_folders);
+        assert_eq!(s.bit_depth, default_bit_depth());
+        assert_eq!(s.color_space, ExportColorSpace::default());
+        assert!(s.resize.is_none());
+        assert!(s.watermark.is_none());
+        assert!(s.filename_template.is_none());
+        assert!(!s.export_masks);
+        assert!(!s.strip_gps);
+    }
+
+    /// GUI 命令与 CLI 均收敛到 export_images_impl 的同一 ExportAdjustmentsMode 语义：
+    /// UseSidecars{active_path} 命中当前编辑图，其余全部回读 sidecar —— 同一匹配逻辑。
+    #[test]
+    fn adjustments_mode_semantics_shared() {
+        let to_sidecar = |mode: &ExportAdjustmentsMode, source: &str| match mode {
+            ExportAdjustmentsMode::UseSidecars {
+                active_path,
+                active_adjustments,
+            } => {
+                if Some(&source.to_string()) == active_path.as_ref() {
+                    active_adjustments.clone()
+                } else {
+                    None
+                }
+            }
+            ExportAdjustmentsMode::GlobalOverride(adj) => Some(adj.clone()),
+        };
+
+        let gui_mode = ExportAdjustmentsMode::UseSidecars {
+            active_path: Some("/img/a.nef".into()),
+            active_adjustments: Some(serde_json::json!({"exposure": 0.3})),
+        };
+        let cli_override = ExportAdjustmentsMode::GlobalOverride(serde_json::json!({"exposure": -0.1}));
+        let cli_sidecar = ExportAdjustmentsMode::UseSidecars {
+            active_path: None,
+            active_adjustments: None,
+        };
+
+        // GUI 当前编辑图命中 active_adjustments
+        assert_eq!(
+            to_sidecar(&gui_mode, "/img/a.nef"),
+            Some(serde_json::json!({"exposure": 0.3}))
+        );
+        // GUI 非当前编辑图与 CLI 同为 sidecar 路径（None → 回读磁盘）
+        assert_eq!(to_sidecar(&gui_mode, "/img/b.nef"), None);
+        assert_eq!(to_sidecar(&cli_sidecar, "/img/a.nef"), None);
+        // CLI overrides 模式下所有图同一调整
+        assert_eq!(
+            to_sidecar(&cli_override, "/img/a.nef"),
+            Some(serde_json::json!({"exposure": -0.1}))
+        );
+    }
 }

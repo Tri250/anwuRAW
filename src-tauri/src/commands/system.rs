@@ -708,6 +708,7 @@ pub fn app_state() -> AppState {
             ai_init_lock: TokioMutex::new(()),
             export_task_token: Arc::new(Mutex::new(None)),
             export_job_manager: Arc::new(crate::export_queue::ExportJobManager::new()),
+            compose_job_manager: Arc::new(crate::compose_queue::ComposeJobManager::new()),
             hdr_result: Arc::new(Mutex::new(None)),
             panorama_result: Arc::new(Mutex::new(None)),
             focus_stack_result: Arc::new(Mutex::new(None)),
@@ -735,6 +736,7 @@ pub fn app_state() -> AppState {
             disks_cache: Mutex::new(None),
             disks_cache_refreshing: AtomicBool::new(false),
             camera_session: Mutex::new(camera_tethering::CameraSession::new()),
+            library_index: Mutex::new(None),
     }
 }
 

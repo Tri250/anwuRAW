@@ -77,6 +77,7 @@ import {
 } from './components/ui/AppProperties';
 
 import ImageProcessingManager from './components/managers/ImageProcessingManager';
+import { registerAppServices } from './services/appServiceRegistry';
 import ImageLoaderManager from './components/managers/ImageLoaderManager';
 
 const insertChildrenIntoTree = (node: any, targetPath: string, newChildren: any[]): any => {
@@ -230,8 +231,6 @@ function App() {
     selectedImagePathRef.current = selectedImage?.path ?? null;
   }, [selectedImage?.path]);
 
-  const prevAdjustmentsRef = useRef<any>(null);
-
   const [viewportSize, setViewportSize] = useState<ImageDimensions>(() => {
     if (typeof window === 'undefined') {
       return { width: 0, height: 0 };
@@ -244,9 +243,6 @@ function App() {
   });
 
   const isBackendReadyRef = useRef(true);
-  const previewJobIdRef = useRef<number>(0);
-  const latestRenderedJobIdRef = useRef<number>(0);
-  const currentResRef = useRef<number>(1280);
   const cachedEditStateRef = useRef<any | null>(null);
 
   const [libraryViewMode, setLibraryViewMode] = useState<LibraryViewMode>(defaultLibraryViewMode);
@@ -324,10 +320,6 @@ function App() {
     cachedEditStateRef,
     selectedImagePathRef,
     isBackendReadyRef,
-    latestRenderedJobIdRef,
-    previewJobIdRef,
-    currentResRef,
-    prevAdjustmentsRef,
   };
 
   const {
@@ -359,7 +351,7 @@ function App() {
     handleTogglePinFolder,
     handleCreateAlbumItem,
     handleRenameAlbumItem,
-  } = useLibraryActions(handleImageSelect);
+  } = useLibraryActions();
 
   const { displayList: sortedImageList, badges: groupBadgeInfo } = useSortedLibrary();
 
@@ -397,13 +389,7 @@ function App() {
     handleStartImport,
     handleImportClick,
     handlePasteFiles,
-  } = useFileOperations(
-    handleLibraryRefresh,
-    refreshAllFolderTrees,
-    handleImageSelect,
-    handleBackToLibrary,
-    sortedImageList,
-  );
+  } = useFileOperations();
 
   const {
     handleStartPanorama,
@@ -416,7 +402,16 @@ function App() {
     handleSaveCollage,
     handleStartFocusStack,
     handleSaveFocusStack,
-  } = useProductivityActions(handleLibraryRefresh);
+  } = useProductivityActions();
+
+  // W9-I2：服务层依赖注册（闭包每次渲染刷新，服务层调用时始终拿到最新值）
+  registerAppServices({
+    refreshImageList: handleLibraryRefresh,
+    refreshAllFolderTrees,
+    handleImageSelect,
+    handleBackToLibrary,
+    getSortedImageList: () => sortedImageList,
+  });
 
   const {
     handleEditorContextMenu,
@@ -838,13 +833,7 @@ function App() {
 
   return (
     <>
-      <ImageProcessingManager
-        transformWrapperRef={transformWrapperRef}
-        prevAdjustmentsRef={prevAdjustmentsRef}
-        previewJobIdRef={previewJobIdRef}
-        latestRenderedJobIdRef={latestRenderedJobIdRef}
-        currentResRef={currentResRef}
-      />
+      <ImageProcessingManager transformWrapperRef={transformWrapperRef} />
       <ImageLoaderManager cachedEditStateRef={cachedEditStateRef} />
       <div
         className={clsx(

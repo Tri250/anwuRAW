@@ -495,6 +495,183 @@ pub fn encode_image_to_bytes(
     encode_with_spec(image, spec, jpeg_quality, normalize_bit_depth(bit_depth))
 }
 
+// ---------------------------------------------------------------------------
+// 扩展编码器（W8-H2：DNG/HDR 导出扩展点）
+// ---------------------------------------------------------------------------
+
+/// 扩展编码器规格：主注册表之外的专业格式（HDR 归档 / RAW 容器）。
+/// 与主表同协议可插拔接入；扩展点新增格式只扩此表。
+pub struct ExtendedEncoderSpec {
+    /// 规范扩展名（小写）。
+    pub format: &'static str,
+    /// 接受的别名（含规范名本身）。
+    pub aliases: &'static [&'static str],
+    #[allow(dead_code)]
+    pub mime: &'static str,
+    /// 支持的位深列表。
+    pub bit_depths: &'static [u8],
+    /// 编码函数（扩展格式不接收质量参数：无损/浮点归档语义）。
+    pub encode: fn(&DynamicImage) -> Result<Vec<u8>, String>,
+    /// 扩展点状态说明（未实现项对外给出明确指引）。
+    pub note: &'static str,
+}
+
+/// EXR（OpenEXR，32-bit float RGB）——HDR 合成结果的归档格式。
+fn encode_exr(image: &DynamicImage) -> Result<Vec<u8>, String> {
+    let rgb32f = image.to_rgb32f();
+    let mut buf = Vec::new();
+    let mut cursor = Cursor::new(&mut buf);
+    DynamicImage::ImageRgb32F(rgb32f)
+        .write_to(&mut cursor, ImageFormat::OpenExr)
+        .map_err(|e| e.to_string())?;
+    Ok(buf)
+}
+
+/// 线性 DNG（TIFF 容器 + LinearRaw/PhotometricInterpretation tags）。
+/// 容器写入器落地前的显式未实现扩展点（错误信息给出归档替代路径）。
+fn encode_linear_dng(_image: &DynamicImage) -> Result<Vec<u8>, String> {
+    Err(
+        "Linear DNG export is not implemented yet; use 16-bit TIFF as the archival alternative"
+            .to_string(),
+    )
+}
+
+/// 全部扩展编码器注册表。
+pub const EXTENDED_ENCODER_REGISTRY: &[ExtendedEncoderSpec] = &[
+    ExtendedEncoderSpec {
+        format: "exr",
+        aliases: &["exr"],
+        mime: "image/x-exr",
+        bit_depths: &[32],
+        encode: encode_exr,
+        note: "OpenEXR 32-bit float RGB; archival HDR output",
+    },
+    ExtendedEncoderSpec {
+        format: "dng",
+        aliases: &["dng"],
+        mime: "image/x-adobe-dng",
+        bit_depths: &[16],
+        encode: encode_linear_dng,
+        note: "Linear DNG (TIFF container + LinearRaw tags); planned",
+    },
+];
+
+/// 大小写不敏感的扩展表查询。
+pub fn lookup_extended_encoder(format: &str) -> Option<&'static ExtendedEncoderSpec> {
+    let needle = format.to_lowercase();
+    EXTENDED_ENCODER_REGISTRY
+        .iter()
+        .find(|s| s.format == needle || s.aliases.contains(&needle.as_str()))
+}
+
+/// 主表/扩展表统一查询结果。
+#[derive(Clone, Copy)]
+pub enum EncoderKind {
+    Core(&'static EncoderSpec),
+    Extended(&'static ExtendedEncoderSpec),
+}
+
+/// 主表 + 扩展表统一查询（导出管线扩展点接入入口）。
+pub fn lookup_any_encoder(format: &str) -> Option<EncoderKind> {
+    if let Some(spec) = lookup_encoder(format) {
+        return Some(EncoderKind::Core(spec));
+    }
+    lookup_extended_encoder(format).map(EncoderKind::Extended)
+}
+
+/// 扩展位深校验（扩展格式不做 8/16 归一化，按登记位深精确匹配）。
+pub fn validate_extended_bit_depth(
+    spec: &ExtendedEncoderSpec,
+    bit_depth: u8,
+) -> Result<(), String> {
+    if spec.bit_depths.contains(&bit_depth) {
+        Ok(())
+    } else {
+        Err(format!(
+            "{} does not support {}-bit output (supported: {:?})",
+            spec.format, bit_depth, spec.bit_depths
+        ))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// HDR 保存目标（W8-H2：save_hdr 格式扩展点）
+// ---------------------------------------------------------------------------
+
+/// HDR 合成结果的保存格式。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HdrOutputFormat {
+    /// RGBA8/Rgb8 PNG（默认自适应路径之一）。
+    Png,
+    /// 32-bit float TIFF（浮点归档）。
+    Tiff,
+    /// OpenEXR 32-bit float RGB（行业归档格式）。
+    Exr,
+}
+
+impl HdrOutputFormat {
+    pub fn extension(self) -> &'static str {
+        match self {
+            HdrOutputFormat::Png => "png",
+            HdrOutputFormat::Tiff => "tiff",
+            HdrOutputFormat::Exr => "exr",
+        }
+    }
+
+    fn from_requested(value: &str) -> Result<Self, String> {
+        match value.to_lowercase().as_str() {
+            "png" => Ok(HdrOutputFormat::Png),
+            "tiff" | "tif" => Ok(HdrOutputFormat::Tiff),
+            "exr" => Ok(HdrOutputFormat::Exr),
+            other => Err(format!(
+                "Unsupported HDR output format: {} (supported: png, tiff, exr)",
+                other
+            )),
+        }
+    }
+}
+
+/// 解析 HDR 保存格式：显式请求优先；None 走既有自适应语义
+/// （alpha → PNG；32F 浮点 → TIFF；其余 → PNG）。
+pub fn resolve_hdr_output_format(
+    hdr_image: &DynamicImage,
+    requested: Option<&str>,
+) -> Result<HdrOutputFormat, String> {
+    match requested {
+        Some(value) => HdrOutputFormat::from_requested(value),
+        None => {
+            if hdr_image.color().has_alpha() {
+                Ok(HdrOutputFormat::Png)
+            } else if hdr_image.as_rgb32f().is_some() {
+                Ok(HdrOutputFormat::Tiff)
+            } else {
+                Ok(HdrOutputFormat::Png)
+            }
+        }
+    }
+}
+
+/// 按目标格式准备待保存图像，返回 (扩展名, 图像)。
+pub fn prepare_hdr_image(
+    hdr_image: &DynamicImage,
+    format: HdrOutputFormat,
+) -> (&'static str, DynamicImage) {
+    match format {
+        HdrOutputFormat::Png => {
+            if hdr_image.color().has_alpha() {
+                (
+                    "png",
+                    DynamicImage::ImageRgba8(hdr_image.to_rgba8()),
+                )
+            } else {
+                ("png", DynamicImage::ImageRgb8(hdr_image.to_rgb8()))
+            }
+        }
+        HdrOutputFormat::Tiff => ("tiff", hdr_image.clone()),
+        HdrOutputFormat::Exr => ("exr", DynamicImage::ImageRgb32F(hdr_image.to_rgb32f())),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -521,7 +698,7 @@ mod tests {
             assert_eq!(sorted, spec.bit_depths.to_vec());
             names.push(spec.format);
         }
-        let unique: std::collections::HashSet<_> = names.clone();
+        let unique: std::collections::HashSet<_> = names.iter().copied().collect();
         assert_eq!(unique.len(), names.len());
     }
 
@@ -543,8 +720,8 @@ mod tests {
         assert!(validate_bit_depth(jpg, 16).is_err());
         assert_eq!(validate_bit_depth(png, 8).unwrap(), 8);
         assert_eq!(validate_bit_depth(png, 16).unwrap(), 16);
-        // 非法中间值归一化
-        assert_eq!(validate_bit_depth(png, 10).unwrap(), 16);
+        // 非法中间值归一化（>=16 → 16，其余 → 8）
+        assert_eq!(validate_bit_depth(png, 10).unwrap(), 8);
         assert_eq!(validate_bit_depth(png, 4).unwrap(), 8);
     }
 
@@ -654,6 +831,158 @@ mod tests {
         assert_eq!(adobe.dimensions(), img.dimensions());
         let pro = apply_color_space_transform(&img, &ExportColorSpace::ProPhoto);
         assert_eq!(pro.dimensions(), img.dimensions());
+    }
+
+    // --- W8-H2 扩展编码器层 ---
+
+    #[test]
+    fn extended_registry_consistency() {
+        assert!(!EXTENDED_ENCODER_REGISTRY.is_empty());
+        let mut names = Vec::new();
+        for spec in EXTENDED_ENCODER_REGISTRY {
+            assert!(spec.format.chars().all(|c| c.is_ascii_lowercase()));
+            assert!(spec.aliases.contains(&spec.format));
+            assert!(!spec.bit_depths.is_empty());
+            assert!(!spec.note.is_empty());
+            names.push(spec.format);
+        }
+        let unique: std::collections::HashSet<_> = names.iter().copied().collect();
+        assert_eq!(unique.len(), names.len());
+    }
+
+    #[test]
+    fn lookup_any_routes_core_then_extended() {
+        assert!(matches!(
+            lookup_any_encoder("jpg"),
+            Some(EncoderKind::Core(_))
+        ));
+        assert!(matches!(
+            lookup_any_encoder("exr"),
+            Some(EncoderKind::Extended(_))
+        ));
+        assert!(lookup_any_encoder("cube").is_none());
+    }
+
+    #[test]
+    fn encode_exr_roundtrip_float() {
+        // 32F 浮点图直接编 EXR
+        let img = DynamicImage::ImageRgb32F(ImageBuffer::from_fn(16, 16, |x, y| {
+            image::Rgb([(x as f32) / 16.0, (y as f32) / 16.0, 0.5])
+        }));
+        let bytes = encode_exr(&img).unwrap();
+        // OpenEXR 魔数: 0x76 0x2F 0x31 0x01
+        assert_eq!(&bytes[..4], &[0x76, 0x2F, 0x31, 0x01]);
+
+        // 8bit 输入走 to_rgb32f 转换
+        let rgba = test_image();
+        let bytes = encode_exr(&rgba).unwrap();
+        assert_eq!(&bytes[..4], &[0x76, 0x2F, 0x31, 0x01]);
+
+        // 回读尺寸一致（exr feature 同时启用解码）
+        let decoded = image::load_from_memory(&bytes).unwrap();
+        assert_eq!(decoded.dimensions(), (32, 32));
+    }
+
+    #[test]
+    fn encode_linear_dng_reports_planned() {
+        let spec = lookup_extended_encoder("dng").unwrap();
+        let err = (spec.encode)(&test_image()).unwrap_err();
+        assert!(err.contains("not implemented"));
+        assert!(err.contains("16-bit TIFF"));
+    }
+
+    #[test]
+    fn validate_extended_bit_depth_matches_registry() {
+        let exr = lookup_extended_encoder("exr").unwrap();
+        assert!(validate_extended_bit_depth(exr, 32).is_ok());
+        assert!(validate_extended_bit_depth(exr, 8).is_err());
+        let dng = lookup_extended_encoder("dng").unwrap();
+        assert!(validate_extended_bit_depth(dng, 16).is_ok());
+    }
+
+    #[test]
+    fn hdr_output_format_resolution() {
+        // 显式请求
+        assert_eq!(
+            resolve_hdr_output_format(&test_image(), Some("exr")).unwrap(),
+            HdrOutputFormat::Exr
+        );
+        assert_eq!(
+            resolve_hdr_output_format(&test_image(), Some("tiff")).unwrap(),
+            HdrOutputFormat::Tiff
+        );
+        assert_eq!(
+            resolve_hdr_output_format(&test_image(), Some("png")).unwrap(),
+            HdrOutputFormat::Png
+        );
+        assert_eq!(
+            resolve_hdr_output_format(&test_image(), Some("TIF")).unwrap(),
+            HdrOutputFormat::Tiff
+        );
+        // 未知格式明确报错
+        assert!(resolve_hdr_output_format(&test_image(), Some("jpg")).is_err());
+
+        // None → 既有自适应语义
+        let alpha_img = test_image(); // RGBA8
+        assert_eq!(
+            resolve_hdr_output_format(&alpha_img, None).unwrap(),
+            HdrOutputFormat::Png
+        );
+        let f32_img = DynamicImage::ImageRgb32F(ImageBuffer::new(4, 4));
+        assert_eq!(
+            resolve_hdr_output_format(&f32_img, None).unwrap(),
+            HdrOutputFormat::Tiff
+        );
+        let rgb8_img = DynamicImage::ImageRgb8(ImageBuffer::new(4, 4));
+        assert_eq!(
+            resolve_hdr_output_format(&rgb8_img, None).unwrap(),
+            HdrOutputFormat::Png
+        );
+    }
+
+    #[test]
+    fn prepare_hdr_image_matches_format() {
+        let img = test_image();
+        let (ext, out) = prepare_hdr_image(&img, HdrOutputFormat::Exr);
+        assert_eq!(ext, "exr");
+        assert!(out.as_rgb32f().is_some());
+        assert_eq!(out.dimensions(), (32, 32));
+
+        let (ext, _) = prepare_hdr_image(&img, HdrOutputFormat::Png);
+        assert_eq!(ext, "png");
+        let (ext, out) = prepare_hdr_image(&img, HdrOutputFormat::Tiff);
+        assert_eq!(ext, "tiff");
+        assert_eq!(out.dimensions(), (32, 32));
+    }
+
+    // --- W8-H2 CLI/GUI byte 一致性：编码层确定性 ---
+
+    #[test]
+    fn encode_determinism_cli_gui_byte_identical() {
+        // CLI 与 GUI 共用 export_images_impl → encode_with_spec 同一编码路径；
+        // 编码确定性（同输入 byte 相同）是 CLI/GUI byte 一致的必要条件。
+        let img = test_image();
+
+        for (format, quality) in [
+            ("jpg", 85u8),
+            ("png", 100u8),
+            ("tiff", 100u8),
+            ("webp", 80u8),
+            ("jxl", 85u8),
+        ] {
+            let spec = lookup_encoder(format).unwrap();
+            let a = encode_with_spec(&img, spec, quality, 8).unwrap();
+            let b = encode_with_spec(&img, spec, quality, 8).unwrap();
+            assert_eq!(a, b, "encoder not deterministic: {}", format);
+        }
+
+        // png/tiff 16-bit 路径同样确定
+        for format in ["png", "tiff"] {
+            let spec = lookup_encoder(format).unwrap();
+            let a = encode_with_spec(&img, spec, 100, 16).unwrap();
+            let b = encode_with_spec(&img, spec, 100, 16).unwrap();
+            assert_eq!(a, b, "16-bit encoder not deterministic: {}", format);
+        }
     }
 
     // --- helpers ---

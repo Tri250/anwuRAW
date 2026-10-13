@@ -253,110 +253,71 @@ export function useTauriListeners({
       }),
       listen('panorama-progress', (event: any) => {
         if (isEffectActive) {
-          useUIStore.getState().setUI((state) => {
-            if (state.panoramaModalState.finalImageBase64 || state.panoramaModalState.error) return state;
-            return { panoramaModalState: { ...state.panoramaModalState, progressMessage: event.payload } };
-          });
+          // W9-I1：进度走 composeRuns 状态机（事件入口，phase 守卫）。
+          useProcessStore.getState().trackComposeMessage('panorama', null, event.payload as string);
         }
       }),
       listen('panorama-complete', (event: any) => {
         if (isEffectActive) {
+          useProcessStore.getState().composeSettled('panorama', null, { finalMessage: null });
           useUIStore.getState().setUI((state) => ({
-            panoramaModalState: {
-              ...state.panoramaModalState,
-              error: null,
-              finalImageBase64: event.payload.base64,
-              isProcessing: false,
-              progressMessage: null,
-            },
+            panoramaModalState: { ...state.panoramaModalState, finalImageBase64: event.payload.base64 },
           }));
         }
       }),
       listen('panorama-error', (event: any) => {
         if (isEffectActive) {
+          useProcessStore.getState().composeSettled('panorama', null, { error: String(event.payload) });
           useUIStore.getState().setUI((state) => ({
-            panoramaModalState: {
-              ...state.panoramaModalState,
-              error: String(event.payload),
-              finalImageBase64: null,
-              isProcessing: false,
-              progressMessage: null,
-            },
+            panoramaModalState: { ...state.panoramaModalState, finalImageBase64: null },
           }));
         }
       }),
       listen('hdr-progress', (event: any) => {
         if (isEffectActive) {
-          useUIStore.getState().setUI((state) => ({
-            hdrModalState: {
-              ...state.hdrModalState,
-              error: null,
-              finalImageBase64: null,
-              isOpen: true,
-              progressMessage: event.payload,
-            },
-          }));
+          useProcessStore.getState().trackComposeMessage('hdr', null, event.payload as string);
+          useUIStore.getState().setUI((state) => ({ hdrModalState: { ...state.hdrModalState, isOpen: true } }));
         }
       }),
       listen('hdr-complete', (event: any) => {
         if (isEffectActive) {
+          useProcessStore.getState().composeSettled('hdr', null, { finalMessage: 'Hdr Ready' });
           useUIStore.getState().setUI((state) => ({
-            hdrModalState: {
-              ...state.hdrModalState,
-              error: null,
-              finalImageBase64: event.payload.base64,
-              isProcessing: false,
-              progressMessage: 'Hdr Ready',
-            },
+            hdrModalState: { ...state.hdrModalState, finalImageBase64: event.payload.base64 },
           }));
         }
       }),
       listen('hdr-error', (event: any) => {
         if (isEffectActive) {
+          useProcessStore.getState().composeSettled('hdr', null, { error: String(event.payload) });
           useUIStore.getState().setUI((state) => ({
-            hdrModalState: {
-              ...state.hdrModalState,
-              error: String(event.payload),
-              finalImageBase64: null,
-              isProcessing: false,
-              progressMessage: 'An error occurred.',
-            },
+            hdrModalState: { ...state.hdrModalState, finalImageBase64: null },
           }));
         }
       }),
       listen('focus-stack-progress', (event: any) => {
         if (isEffectActive) {
-          useUIStore.getState().setUI((state) => {
-            if (state.focusStackModalState.finalImageBase64 || state.focusStackModalState.error) return state;
-            return { focusStackModalState: { ...state.focusStackModalState, progressMessage: event.payload } };
-          });
+          // W9-I1：进度走 composeRuns 状态机（事件入口，phase 守卫）。
+          useProcessStore.getState().trackComposeMessage('focusStack', null, event.payload as string);
         }
       }),
       listen('focus-stack-complete', (event: any) => {
         if (isEffectActive) {
+          useProcessStore.getState().composeSettled('focusStack', null, { finalMessage: null });
           useUIStore.getState().setUI((state) => ({
             focusStackModalState: {
               ...state.focusStackModalState,
-              error: null,
               finalImageBase64: event.payload.base64,
               depthMapBase64: event.payload.depthMap,
-              isProcessing: false,
-              progressMessage: null,
             },
           }));
         }
       }),
       listen('focus-stack-error', (event: any) => {
         if (isEffectActive) {
+          useProcessStore.getState().composeSettled('focusStack', null, { error: String(event.payload) });
           useUIStore.getState().setUI((state) => ({
-            focusStackModalState: {
-              ...state.focusStackModalState,
-              error: String(event.payload),
-              finalImageBase64: null,
-              depthMapBase64: null,
-              isProcessing: false,
-              progressMessage: null,
-            },
+            focusStackModalState: { ...state.focusStackModalState, finalImageBase64: null, depthMapBase64: null },
           }));
         }
       }),
