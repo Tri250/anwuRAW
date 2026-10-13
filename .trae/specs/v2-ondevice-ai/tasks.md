@@ -35,7 +35,7 @@
 
 ## Task 2: 模型 Manifest 数据结构
 
-- **Status**: `pending`
+- **Status**: `done`（2026-10-13 完成；Rust 78/78 测试全绿）
 - **Priority**: high
 - **Depends On**: None
 - **Description**:
@@ -44,9 +44,14 @@
   - sha256 校验接入现有下载链路（blake3/sha2 已在依赖）
 - **Acceptance Criteria Addressed**: AC-3 前置
 - **Test Requirements**:
-  - `rule` TR-2.1: manifest 解析单测；旧模型文件名兼容映射测试
-  - `rule` TR-2.2: sha256 校验对损坏文件报明确错误
+  - `rule` TR-2.1: manifest 解析单测；旧模型文件名兼容映射测试 ✅（model_manifest 3 例）
+  - `rule` TR-2.2: sha256 校验对损坏文件报明确错误 ✅（ai_processing ensure_model_hash）
 - **Notes**: 为 A1 模型管理器（另行立项）预留数据结构，本任务只做数据层不做管理 UI
+- **完成记录**:
+  - 新增 `src-tauri/src/model_manifest/`（mod.rs + models.json，9 资产含 tokenizer），`include_str!` 内嵌零 IO
+  - ai_processing.rs 硬编码常量全部移除，新增 download_entry/joined_model_path 统一走 manifest；tokenizer 纳入哈希校验（原缺口）
+  - **修复存量 bug**：`skyseg_u2net.onnx` 在 HF 仓库不存在（在线核实 404），真实名为 `skyseg-u2net.onnx` —— 1.6.x 新用户天空蒙版必 404，manifest 以仓库名为正名双向兼容（详见 spec Open Questions）
+  - 文件尺寸经 hf-mirror HEAD 逐个核实填入 size_bytes（Task 5 体积预估依赖此数据）
 
 ## Task 3: 模型量化工具链与 INT8 变体生产
 

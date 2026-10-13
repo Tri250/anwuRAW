@@ -36,6 +36,7 @@ mod lens_correction;
 mod luminance_range_mask;
 mod lut_processing;
 mod mask_generation;
+mod model_manifest;
 mod multi_exposure;
 mod negative_conversion;
 mod panorama_stitching;

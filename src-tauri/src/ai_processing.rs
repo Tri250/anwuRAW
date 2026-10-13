@@ -21,7 +21,6 @@ use tokio::sync::Mutex as TokioMutex;
 // --- 模型仓库端点（按「国内优先」排序） ---
 // hf-mirror.com 是官方 HuggingFace Hub API 兼容镜像，国内访问速度快
 // huggingface.co 是官方主站，作为降级后备
-const MODEL_REPO: &str = "CyberTimon/RapidRAW-Models";
 const HF_MIRROR_ENDPOINT: &str = "https://hf-mirror.com";
 const HF_OFFICIAL_ENDPOINT: &str = "https://huggingface.co";
 
@@ -29,7 +28,7 @@ fn build_hf_url(endpoint: &str, filename: &str) -> String {
     format!(
         "{}/{}/resolve/main/{}?download=true",
         endpoint.trim_end_matches('/'),
-        MODEL_REPO,
+        crate::model_manifest::ModelManifest::embedded().repo,
         filename
     )
 }
@@ -64,34 +63,12 @@ fn resolve_model_endpoints(user_setting: Option<&str>) -> Vec<String> {
 }
 
 // --- 模型文件元数据 ---
-const ENCODER_FILENAME: &str = "sam_vit_b_01ec64_encoder.onnx";
-const DECODER_FILENAME: &str = "sam_vit_b_01ec64_decoder.onnx";
+// 文件名/哈希/体积等数据已收敛至 model_manifest::embedded()（model_manifest/models.json），
+// 此处仅保留推理相关的输入尺寸等处理参数。
 const SAM_INPUT_SIZE: u32 = 1024;
-const ENCODER_SHA256: &str = "16ab73d9c824886f0de2938c19df22fb9ec3deebfd0de58e65177e479213d7d1";
-const DECODER_SHA256: &str = "85d0d672cf5b7fe763edcde429e5533e62f674af4b15c7d688b7673b0ef00bf7";
-
-const U2NETP_FILENAME: &str = "u2net.onnx";
 const U2NETP_INPUT_SIZE: u32 = 320;
-const U2NETP_SHA256: &str = "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491";
-
-const SKYSEG_FILENAME: &str = "skyseg_u2net.onnx";
-const SKYSEG_LEGACY_FILENAME: &str = "skyseg-u2net.onnx";
 const SKYSEG_INPUT_SIZE: u32 = 320;
-const SKYSEG_SHA256: &str = "ab9c34c64c3d821220a2886a4a06da4642ffa14d5b30e8d5339056a089aa1d39";
-
-const CLIP_MODEL_FILENAME: &str = "clip_model.onnx";
-const CLIP_TOKENIZER_FILENAME: &str = "clip_tokenizer.json";
-const CLIP_MODEL_SHA256: &str = "57879bb1c23cdeb350d23569dd251ed4b740a96d747c529e94a2bb8040ac5d00";
-
-const DENOISE_FILENAME: &str = "nind_denoise_utnet_684.onnx";
-const DENOISE_SHA256: &str = "ee3586279d514df557ff3f7dec6df37fafc51ba5d3a3435b2cc9ac2d9017e7fe";
-
-const LAMA_FILENAME: &str = "lama_fp16.onnx";
-const LAMA_SHA256: &str = "2d6be6277c400d6f1b91819737f7c3da935e5c63d1b521d393be1196a2bfa82c";
-
-const DEPTH_FILENAME: &str = "depth_anything_v2_vits.onnx";
 const DEPTH_INPUT_SIZE: u32 = 518;
-const DEPTH_SHA256: &str = "d2b11a11c1d4a12b47608fa65a17ee9a4c605b55ee1730c8e3b526304f2562be";
 
 pub struct AiModels {
     pub sam_encoder: Mutex<Session>,
@@ -382,6 +359,19 @@ fn promote_legacy_model_filename(
     Ok(())
 }
 
+/// 下载后哈希校验：损坏/被篡改的文件给出明确错误（TR-2.2）
+fn ensure_model_hash(path: &Path, expected_hash: &str, model_name: &str) -> Result<()> {
+    if verify_sha256(path, expected_hash)? {
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!(
+            "Model {} failed SHA-256 verification. The file may be corrupted or an incompatible version was downloaded. Expected sha256 {}.",
+            model_name,
+            expected_hash
+        ))
+    }
+}
+
 async fn download_and_verify_model(
     app_handle: &tauri::AppHandle,
     models_dir: &Path,
@@ -391,13 +381,12 @@ async fn download_and_verify_model(
     model_name: &str,
 ) -> Result<()> {
     let dest_path = models_dir.join(filename);
-    if filename == SKYSEG_FILENAME {
-        promote_legacy_model_filename(
-            models_dir,
-            SKYSEG_FILENAME,
-            SKYSEG_LEGACY_FILENAME,
-            SKYSEG_SHA256,
-        )?;
+    // 历史文件名兼容：把本地旧名文件晋升为当前名，已下载模型不重下（skyseg 双命名等）
+    let manifest = crate::model_manifest::ModelManifest::embedded();
+    if let Some(entry) = manifest.entry_by_filename(filename) {
+        for legacy_filename in &entry.legacy_filenames {
+            promote_legacy_model_filename(models_dir, filename, legacy_filename, expected_hash)?;
+        }
     }
     let is_valid = verify_sha256(&dest_path, expected_hash)?;
 
@@ -411,14 +400,40 @@ async fn download_and_verify_model(
         let _ = app_handle.emit("ai-model-download-finish", model_name);
         download_result?;
 
-        if !verify_sha256(&dest_path, expected_hash)? {
-            return Err(anyhow::anyhow!(
-                "Failed to verify model {} after download. Hash mismatch.",
-                model_name
-            ));
-        }
+        ensure_model_hash(&dest_path, expected_hash, model_name)?;
     }
     Ok(())
+}
+
+/// 按 manifest id 下载并校验默认变体：文件名/哈希/显示名全部由 manifest 提供
+async fn download_entry(
+    app_handle: &tauri::AppHandle,
+    models_dir: &Path,
+    endpoints: &[String],
+    id: &str,
+) -> Result<()> {
+    let entry = crate::model_manifest::require(id)?;
+    let variant = entry
+        .default_variant()
+        .ok_or_else(|| anyhow!("Model {} has no default variant in manifest", id))?;
+    download_and_verify_model(
+        app_handle,
+        models_dir,
+        &variant.filename,
+        endpoints,
+        &variant.sha256,
+        &entry.display_name,
+    )
+    .await
+}
+
+/// 按 manifest id 解析模型文件在 models_dir 下的完整路径
+fn joined_model_path(models_dir: &Path, id: &str) -> Result<PathBuf> {
+    let entry = crate::model_manifest::require(id)?;
+    entry
+        .filename()
+        .map(|f| models_dir.join(f))
+        .ok_or_else(|| anyhow!("Model {} has no default variant in manifest", id))
 }
 
 pub async fn get_or_init_ai_models(
@@ -449,59 +464,19 @@ pub async fn get_or_init_ai_models(
     let models_dir = get_models_dir(app_handle)?;
     let endpoints = endpoints_from_handle(app_handle);
 
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        ENCODER_FILENAME,
-        &endpoints,
-        ENCODER_SHA256,
-        "SAM Encoder",
-    )
-    .await?;
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        DECODER_FILENAME,
-        &endpoints,
-        DECODER_SHA256,
-        "SAM Decoder",
-    )
-    .await?;
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        U2NETP_FILENAME,
-        &endpoints,
-        U2NETP_SHA256,
-        "Foreground Model",
-    )
-    .await?;
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        SKYSEG_FILENAME,
-        &endpoints,
-        SKYSEG_SHA256,
-        "Sky Model",
-    )
-    .await?;
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        DEPTH_FILENAME,
-        &endpoints,
-        DEPTH_SHA256,
-        "Depth Model",
-    )
-    .await?;
+    download_entry(app_handle, &models_dir, &endpoints, "sam_encoder").await?;
+    download_entry(app_handle, &models_dir, &endpoints, "sam_decoder").await?;
+    download_entry(app_handle, &models_dir, &endpoints, "foreground_u2net").await?;
+    download_entry(app_handle, &models_dir, &endpoints, "sky_seg").await?;
+    download_entry(app_handle, &models_dir, &endpoints, "depth_anything").await?;
 
     let _ = ort::init().with_name("AI").commit();
 
-    let encoder_path = models_dir.join(ENCODER_FILENAME);
-    let decoder_path = models_dir.join(DECODER_FILENAME);
-    let u2netp_path = models_dir.join(U2NETP_FILENAME);
-    let sky_seg_path = models_dir.join(SKYSEG_FILENAME);
-    let depth_path = models_dir.join(DEPTH_FILENAME);
+    let encoder_path = joined_model_path(&models_dir, "sam_encoder")?;
+    let decoder_path = joined_model_path(&models_dir, "sam_decoder")?;
+    let u2netp_path = joined_model_path(&models_dir, "foreground_u2net")?;
+    let sky_seg_path = joined_model_path(&models_dir, "sky_seg")?;
+    let depth_path = joined_model_path(&models_dir, "depth_anything")?;
 
     let sam_encoder = Session::builder()?.commit_from_file(encoder_path)?;
     let sam_decoder = Session::builder()?.commit_from_file(decoder_path)?;
@@ -563,18 +538,10 @@ pub async fn get_or_init_denoise_model(
 
     let models_dir = get_models_dir(app_handle)?;
     let endpoints = endpoints_from_handle(app_handle);
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        DENOISE_FILENAME,
-        &endpoints,
-        DENOISE_SHA256,
-        "NIND Denoise Model",
-    )
-    .await?;
+    download_entry(app_handle, &models_dir, &endpoints, "denoise_nind").await?;
 
     let _ = ort::init().with_name("AI-Denoise").commit();
-    let model_path = models_dir.join(DENOISE_FILENAME);
+    let model_path = joined_model_path(&models_dir, "denoise_nind")?;
     let session = Session::builder()?.commit_from_file(model_path)?;
     let denoise_model = Arc::new(Mutex::new(session));
 
@@ -625,31 +592,13 @@ pub async fn get_or_init_clip_models(
     let models_dir = get_models_dir(app_handle)?;
     let endpoints = endpoints_from_handle(app_handle);
 
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        CLIP_MODEL_FILENAME,
-        &endpoints,
-        CLIP_MODEL_SHA256,
-        "CLIP Model",
-    )
-    .await?;
-
-    let clip_tokenizer_path = models_dir.join(CLIP_TOKENIZER_FILENAME);
-    if !clip_tokenizer_path.exists() {
-        let _ = app_handle.emit("ai-model-download-start", "CLIP Tokenizer");
-        let download_result = download_model_with_endpoints(
-            &endpoints,
-            CLIP_TOKENIZER_FILENAME,
-            &clip_tokenizer_path,
-        )
-        .await;
-        let _ = app_handle.emit("ai-model-download-finish", "CLIP Tokenizer");
-        download_result?;
-    }
+    download_entry(app_handle, &models_dir, &endpoints, "clip_model").await?;
+    // tokenizer 同样走 manifest 校验链路（历史上无哈希校验，为已知缺口）
+    download_entry(app_handle, &models_dir, &endpoints, "clip_tokenizer").await?;
 
     let _ = ort::init().with_name("AI-Tagging").commit();
-    let clip_model_path = models_dir.join(CLIP_MODEL_FILENAME);
+    let clip_model_path = joined_model_path(&models_dir, "clip_model")?;
+    let clip_tokenizer_path = joined_model_path(&models_dir, "clip_tokenizer")?;
     let model = Mutex::new(Session::builder()?.commit_from_file(clip_model_path)?);
     let tokenizer =
         Tokenizer::from_file(clip_tokenizer_path).map_err(|e| anyhow::anyhow!(e.to_string()))?;
@@ -702,18 +651,10 @@ pub async fn get_or_init_lama_model(
 
     let models_dir = get_models_dir(app_handle)?;
     let endpoints = endpoints_from_handle(app_handle);
-    download_and_verify_model(
-        app_handle,
-        &models_dir,
-        LAMA_FILENAME,
-        &endpoints,
-        LAMA_SHA256,
-        "Inpainting Model",
-    )
-    .await?;
+    download_entry(app_handle, &models_dir, &endpoints, "inpainting_lama").await?;
 
     let _ = ort::init().with_name("AI-Inpainting").commit();
-    let model_path = models_dir.join(LAMA_FILENAME);
+    let model_path = joined_model_path(&models_dir, "inpainting_lama")?;
     let session = Session::builder()?.commit_from_file(model_path)?;
     let lama_model = Arc::new(Mutex::new(session));
 
@@ -1711,4 +1652,47 @@ pub struct AiDepthMaskParameters {
     pub flip_vertical: Option<bool>,
     #[serde(default)]
     pub orientation_steps: Option<u8>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// TR-2.2: sha256 校验对损坏文件报明确错误（含模型名、算法名与期望哈希）
+    #[test]
+    fn test_ensure_model_hash_reports_corruption() {
+        let path = std::env::temp_dir().join(format!(
+            "rr_ai_hash_test_{}.bin",
+            std::process::id()
+        ));
+
+        let good = b"rapidraw model bytes";
+        fs::write(&path, good).unwrap();
+        let good_hash = {
+            let mut hasher = Sha256::new();
+            hasher.update(good);
+            hex::encode(hasher.finalize())
+        };
+
+        // 内容匹配 → 通过
+        assert!(ensure_model_hash(&path, &good_hash, "Test Model").is_ok());
+
+        // 内容被篡改 → 明确报错
+        fs::write(&path, b"corrupted content!").unwrap();
+        let err = ensure_model_hash(&path, &good_hash, "Test Model")
+            .expect_err("corrupted file must fail verification");
+        let msg = format!("{err:#}");
+        assert!(msg.contains("Test Model"), "error must name the model: {msg}");
+        assert!(msg.contains("SHA-256"), "error must mention SHA-256: {msg}");
+        assert!(msg.contains(&good_hash), "error must contain expected hash: {msg}");
+
+        // 文件不存在 → 校验失败但不 panic
+        let missing = std::env::temp_dir().join(format!(
+            "rr_ai_hash_missing_{}.bin",
+            std::process::id()
+        ));
+        assert!(ensure_model_hash(&missing, &good_hash, "Test Model").is_err());
+
+        fs::remove_file(&path).ok();
+    }
 }

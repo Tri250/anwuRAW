@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "repo": "CyberTimon/RapidRAW-Models",
+  "models": [
+    {
+      "id": "sam_encoder",
+      "display_name": "SAM Encoder",
+      "purpose": "subject_masking",
+      "legacy_filenames": [],
+      "variants": [
+        {
+          "precision": "fp32",
+          "filename": "sam_vit_b_01ec64_encoder.onnx",
+          "size_bytes": 100293382,
+          "sha256": "16ab73d9c824886f0de2938c19df22fb9ec3deebfd0de58e65177e479213d7d1",
+          "optional": false,
+          "default": true,
+          "recommended_ep": ["cpu"]
+        }
+      ]
+    },
+    {
+      "id": "sam_decoder",
+      "display_name": "SAM Decoder",
+      "purpose": "subject_masking",
+      "legacy_filenames": [],
+      "variants": [
+        {
+          "precision": "fp32",
+          "filename": "sam_vit_b_01ec64_decoder.onnx",
+          "size_bytes": 8751331,
+          "sha256": "85d0d672cf5b7fe763edcde429e5533e62f674af4b15c7d688b7673b0ef00bf7",
+          "optional": false,
+          "default": true,
+          "recommended_ep": ["cpu"]
+        }
+      ]
+    },
+    {
+      "id": "foreground_u2net",
+      "display_name": "Foreground Model",
+      "purpose": "foreground_masking",
+      "legacy_filenames": [],
+      "variants": [
+        {
+          "precision": "fp32",
+          "filename": "u2net.onnx",
+          "size_bytes": 175997641,
+          "sha256": "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491",
+          "optional": false,
+          "default": true,
+          "recommended_ep": ["cpu"]
+        }
+      ]
+    },
+    {
+      "id": "sky_seg",
+      "display_name": "Sky Model",
+      "purpose": "sky_masking",
+      "legacy_filenames": ["skyseg_u2net.onnx"],
+      "variants": [
+        {
+          "precision": "fp32",
+          "filename": "skyseg-u2net.onnx",
+          "size_bytes": 175997079,
+          "sha256": "ab9c34c64c3d821220a2886a4a06da4642ffa14d5b30e8d5339056a089aa1d39",
+          "optional": false,
+          "default": true,
+          "recommended_ep": ["cpu"]
+        }
+      ]
+    },
+    {
+      "id": "depth_anything",
+      "display_name": "Depth Model",
+      "purpose": "depth_masking",
+      "legacy_filenames": [],
+      "variants": [
+        {
+          "precision": "fp32",
+          "filename": "depth_anything_v2_vits.onnx",
+          "size_bytes": 99373606,
+          "sha256": "d2b11a11c1d4a12b47608fa65a17ee9a4c605b55ee1730c8e3b526304f2562be",
+          "optional": false,
+          "default": true,
+          "recommended_ep": ["cpu"]
+        }
+      ]
+    },
+    {
+      "id": "denoise_nind",
+      "display_name": "NIND Denoise Model",
+      "purpose": "denoising",
+      "legacy_filenames": [],
+      "variants": [
+        {
+          "precision": "fp32",
+          "filename": "nind_denoise_utnet_684.onnx",
+          "size_bytes": 124202581,
+          "sha256": "ee3586279d514df557ff3f7dec6df37fafc51ba5d3a3435b2cc9ac2d9017e7fe",
+          "optional": false,
+          "default": true,
+          "recommended_ep": ["cpu"]
+        }
+      ]
+    },
+    {
+      "id": "clip_model",
+      "display_name": "CLIP Model",
+      "purpose": "auto_tagging",
+      "legacy_filenames": [],
+      "variants": [
+        {
+          "precision": "fp32",
+          "filename": "clip_model.onnx",
+          "size_bytes": 605804513,
+          "sha256": "57879bb1c23cdeb350d23569dd251ed4b740a96d747c529e94a2bb8040ac5d00",
+          "optional": false,
+          "default": true,
+          "recommended_ep": ["cpu"]
+        }
+      ]
+    },
+    {
+      "id": "clip_tokenizer",
+      "display_name": "CLIP Tokenizer",
+      "purpose": "auto_tagging",
+      "legacy_filenames": [],
+      "variants": [
+        {
+          "precision": null,
+          "filename": "clip_tokenizer.json",
+          "size_bytes": 2224041,
+          "sha256": "b556ac8c99757ffb677208af34bc8c6721572114111a6e0aaf5fa69ff0b8d842",
+          "optional": false,
+          "default": true,
+          "recommended_ep": ["cpu"]
+        }
+      ]
+    },
+    {
+      "id": "inpainting_lama",
+      "display_name": "Inpainting Model",
+      "purpose": "inpainting",
+      "legacy_filenames": [],
+      "variants": [
+        {
+          "precision": "fp16",
+          "filename": "lama_fp16.onnx",
+          "size_bytes": 111545583,
+          "sha256": "2d6be6277c400d6f1b91819737f7c3da935e5c63d1b521d393be1196a2bfa82c",
+          "optional": false,
+          "default": true,
+          "recommended_ep": ["cpu"]
+        }
+      ]
+    }
+  ]
+}

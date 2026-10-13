@@ -130,3 +130,5 @@
 - [ ] ort rc.10 NNAPI EP 对 SAM/LaMa 算子覆盖率？PoC 结论决定 Android 端默认档位
 - [ ] INT8 量化对 LaMa 生成质量的退化可接受度？如超阈值则 LaMa 保持 fp16
 - [ ] CoreML EP 在 Intel Mac 的兼容性？（macos-15-intel 构建仍在发布矩阵）
+- [x] **[Task 2 发现的存量 bug]** `skyseg_u2net.onnx` 在 HF 仓库不存在（在线核实返回 "Entry not found"），真实文件名为 `skyseg-u2net.onnx` —— 1.6.x 代码对新用户的天空蒙版下载会 404，仅靠 legacy 晋级机制掩盖存量用户。已在 manifest 中以仓库名为正名、旧名为 legacy 双向兼容修复
+- [x] **[Task 2 修复的缺口]** `clip_tokenizer.json` 历史上下载后无哈希校验 —— 已在线获取真实 sha256（b556ac8c…，2,224,041 字节）并纳入统一校验链路
