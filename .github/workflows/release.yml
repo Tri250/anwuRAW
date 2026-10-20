@@ -136,18 +136,31 @@ jobs:
             echo "$changelog"
           } > /tmp/release_notes.md
 
-          id="$(fetch_release_id)"
+          # 解析已存在 release 的数字 database id
+          # （REST 端点直接返回数字 id，而非 GraphQL node_id；tauri-action 需要数字 id）
+          id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" -q '.id' 2>/dev/null || true)"
           if [[ -n "$id" ]]; then
             echo "✅ Release for tag $tag already exists (id=$id)."
           else
             echo "📝 Creating draft release for $tag ..."
-            # --target 指向当前 HEAD，确保新 tag 落在触发本次构建的提交上
-            gh release create "$tag" \
-              --title "$tag" \
-              --notes-file /tmp/release_notes.md \
-              --target "$GITHUB_SHA" \
-              --draft
-            id="$(fetch_release_id)"
+            # 用 gh api 直连 REST 创建，立即返回数字 id，避免新建后回查竞态
+            notes_body="$(cat /tmp/release_notes.md)"
+            id="$(gh api "repos/${GITHUB_REPOSITORY}/releases" \
+              -f tag_name="$tag" \
+              -f name="$tag" \
+              -f target_commitish="$GITHUB_SHA" \
+              -f draft=true \
+              -f "body=${notes_body}" \
+              -q '.id' 2>/dev/null || true)"
+            # 兜底：gh api 异常时退回 gh release create（带 apiUrl 回查）
+            if [[ -z "$id" ]]; then
+              gh release create "$tag" \
+                --title "$tag" \
+                --notes-file /tmp/release_notes.md \
+                --target "$GITHUB_SHA" \
+                --draft
+              id="$(fetch_release_id)"
+            fi
           fi
 
           if [[ -z "$id" ]]; then
