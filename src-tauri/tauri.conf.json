@@ -89,13 +89,16 @@
         "role": "Editor"
       }
     ],
-    "windows": {
+      "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico",
         "languages": ["SimpChinese", "English"],
-        "installMode": "currentUser"
+        "displayLanguageSelector": true,
+        "installMode": "currentUser",
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true
       }
     }
   },
-  "version": "1.6.14"
+  "version": "1.6.15"
 }

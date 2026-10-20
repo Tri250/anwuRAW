@@ -18,6 +18,12 @@ on:
     tags:
       - 'v*'
 
+# 防止同一 ref 上重叠触发多个发布流程（例如同时推送 tag 与手动 dispatch），
+# 避免重复创建 draft release 与并发上传导致资产冲突。
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   # ---------------------------------------------------------------------------
   # 触发适配：workflow_dispatch / push tags 路径下先创建一个 GitHub Release，
@@ -36,7 +42,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        # 用于读取 tauri.conf.json 版本号做 tag 兜底，并让 git ls-remote 沿用 runner 认证
+        with:
+          fetch-depth: 0
+        # 读取 tauri.conf.json 版本号做 tag 兜底，并让 git log 生成变更日志
 
       - name: Determine tag
         id: tag
@@ -110,6 +118,24 @@ jobs:
             return 1
           }
 
+          # 生成自上一个 tag 以来的变更日志（用于发行说明）
+          prev_tag="$(git tag --sort=-v:refname | grep -v "^${tag}$" | head -1 || true)"
+          if [[ -n "$prev_tag" ]]; then
+            changelog="$(git log --no-merges --pretty=format:'- %s (%h)' "${prev_tag}..HEAD" 2>/dev/null || true)"
+          else
+            changelog="$(git log --no-merges --pretty=format:'- %s (%h)' HEAD 2>/dev/null || true)"
+          fi
+          if [[ -z "$changelog" ]]; then
+            changelog="Automated release for $tag"
+          fi
+          {
+            echo "## anwuRAW $tag"
+            echo ""
+            echo "本版本包含以下变更（自 ${prev_tag:-初始版本} 起）："
+            echo ""
+            echo "$changelog"
+          } > /tmp/release_notes.md
+
           id="$(fetch_release_id)"
           if [[ -n "$id" ]]; then
             echo "✅ Release for tag $tag already exists (id=$id)."
@@ -118,7 +144,7 @@ jobs:
             # --target 指向当前 HEAD，确保新 tag 落在触发本次构建的提交上
             gh release create "$tag" \
               --title "$tag" \
-              --notes "Automated release for $tag" \
+              --notes-file /tmp/release_notes.md \
               --target "$GITHUB_SHA" \
               --draft
             id="$(fetch_release_id)"
