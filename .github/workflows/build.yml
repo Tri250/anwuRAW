@@ -103,6 +103,12 @@ jobs:
       - name: Setup Android SDK
         if: inputs.mobile == 'android'
         uses: android-actions/setup-android@v3
+        with:
+          # 注意：action 默认安装的 `tools` 包已从 Android SDK 仓库彻底移除
+          # （2024 年宣布弃用，2025 年起 sdkmanager 报
+          # "Failed to find package 'tools'" 并使任务失败）。
+          # 替代方案为 `cmdline-tools;latest`（sdkmanager 自身所在包）。
+          packages: 'cmdline-tools;latest platform-tools'
 
       - name: Setup Android NDK
         if: inputs.mobile == 'android'

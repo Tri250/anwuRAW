@@ -138,8 +138,19 @@ jobs:
 
           # 解析已存在 release 的数字 database id
           # （REST 端点直接返回数字 id，而非 GraphQL node_id；tauri-action 需要数字 id）
+          #
+          # 关键教训（v1.6.15 首次触发时踩坑）：REST 端点返回 404 时，`gh api`
+          # 会把错误 JSON（{"message":"Not Found",...}）打到 **stdout**，
+          # `2>/dev/null` 只能压掉 stderr，压不住它。若只用 `[[ -n "$id" ]]`
+          # 判非空，这段 404 JSON 就会被当成 release-id 往下传：
+          # ensure-release 走 "already exists" 分支且标记成功，但 release 从未
+          # 创建；下游 tauri-action 收到非数字 releaseId 后判定
+          # "No releaseId or tagName provided"，静默跳过全部资产上传，
+          # 最终产物为空。因此这里必须用正则强制校验「纯数字」。
+          is_numeric() { [[ "$1" =~ ^[0-9]+$ ]]; }
+
           id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" -q '.id' 2>/dev/null || true)"
-          if [[ -n "$id" ]]; then
+          if is_numeric "$id"; then
             echo "✅ Release for tag $tag already exists (id=$id)."
           else
             echo "📝 Creating draft release for $tag ..."
@@ -153,7 +164,7 @@ jobs:
               -f "body=${notes_body}" \
               -q '.id' 2>/dev/null || true)"
             # 兜底：gh api 异常时退回 gh release create（带 apiUrl 回查）
-            if [[ -z "$id" ]]; then
+            if ! is_numeric "$id"; then
               gh release create "$tag" \
                 --title "$tag" \
                 --notes-file /tmp/release_notes.md \
@@ -163,8 +174,8 @@ jobs:
             fi
           fi
 
-          if [[ -z "$id" ]]; then
-            echo "❌ Failed to resolve numeric release id for tag $tag."
+          if ! is_numeric "$id"; then
+            echo "❌ Failed to resolve numeric release id for tag $tag (got: ${id:-<empty>})."
             exit 1
           fi
           echo "Resolved numeric release id: $id"
@@ -230,8 +241,8 @@ jobs:
             build-args: '--features tethering'
             asset-prefix: '03_linux-x64_24.04_tethering'
 
-          # --- Android ARM64-v8a (Ubuntu runner 交叉编译) ---
-          - platform: 'ubuntu-latest'
+          # --- Android ARM64-v8a (Ubuntu 24.04 runner 交叉编译) ---
+          - platform: 'ubuntu-24.04'
             mobile: 'android'
             target: 'aarch64-linux-android'
             build-args: '--target aarch64'
