@@ -489,7 +489,10 @@ fn process_image_for_export_pipeline(
         },
         debug_tag,
     )?;
-    Ok(crate::image_processing::apply_post_gpu_adjustments(result, js_adjustments))
+    Ok(crate::image_processing::apply_post_gpu_adjustments(
+        result,
+        js_adjustments,
+    ))
 }
 
 fn set_timestamps_from_exif(src: &Path, dst: &Path) {
@@ -1658,8 +1661,10 @@ pub async fn estimate_export_sizes(
         )?;
 
         // [POST-GPU] channel_mixer + split_toning
-        let processed_preview =
-            crate::image_processing::apply_post_gpu_adjustments(processed_preview, &adjustments_clone);
+        let processed_preview = crate::image_processing::apply_post_gpu_adjustments(
+            processed_preview,
+            &adjustments_clone,
+        );
 
         let cs_preview =
             apply_color_space_transform(&processed_preview, &export_settings.color_space);

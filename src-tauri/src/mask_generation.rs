@@ -1644,9 +1644,18 @@ mod tests {
 
     #[test]
     fn tc_rust_01_sub_mask_mode_serialization_camel_case() {
-        assert_eq!(serde_json::to_string(&SubMaskMode::Additive).unwrap(), "\"additive\"");
-        assert_eq!(serde_json::to_string(&SubMaskMode::Subtractive).unwrap(), "\"subtractive\"");
-        assert_eq!(serde_json::to_string(&SubMaskMode::Intersect).unwrap(), "\"intersect\"");
+        assert_eq!(
+            serde_json::to_string(&SubMaskMode::Additive).unwrap(),
+            "\"additive\""
+        );
+        assert_eq!(
+            serde_json::to_string(&SubMaskMode::Subtractive).unwrap(),
+            "\"subtractive\""
+        );
+        assert_eq!(
+            serde_json::to_string(&SubMaskMode::Intersect).unwrap(),
+            "\"intersect\""
+        );
         // 反序列化也走 camelCase
         let m: SubMaskMode = serde_json::from_str("\"additive\"").unwrap();
         assert_eq!(m, SubMaskMode::Additive);
@@ -1710,14 +1719,16 @@ mod tests {
 
     #[test]
     fn tc_rust_06_brush_line_defaults() {
-        let line: BrushLine = serde_json::from_str(r#"{"tool":"brush","brushSize":10,"points":[]}"#).unwrap();
+        let line: BrushLine =
+            serde_json::from_str(r#"{"tool":"brush","brushSize":10,"points":[]}"#).unwrap();
         assert_eq!(line.feather, 0.5);
         assert_eq!(line.opacity, 1.0);
     }
 
     #[test]
     fn tc_rust_07_flow_line_default_flow_10() {
-        let line: FlowLine = serde_json::from_str(r#"{"tool":"brush","brushSize":10,"points":[]}"#).unwrap();
+        let line: FlowLine =
+            serde_json::from_str(r#"{"tool":"brush","brushSize":10,"points":[]}"#).unwrap();
         assert_eq!(line.flow, 10.0);
     }
 
@@ -1922,8 +1933,14 @@ mod tests {
     #[test]
     fn tc_rust_22_generate_ai_bitmap_from_base64_zero_size_returns_empty() {
         let tf = TransformParams {
-            rotation: 0.0, flip_horizontal: false, flip_vertical: false,
-            orientation_steps: 0, width: 0, height: 5, scale: 1.0, crop_offset: (0.0, 0.0),
+            rotation: 0.0,
+            flip_horizontal: false,
+            flip_vertical: false,
+            orientation_steps: 0,
+            width: 0,
+            height: 5,
+            scale: 1.0,
+            crop_offset: (0.0, 0.0),
         };
         let m = generate_ai_bitmap_from_base64("data:image/png;base64,xxx", &tf);
         assert!(m.is_some());
@@ -1933,8 +1950,14 @@ mod tests {
     #[test]
     fn tc_rust_23_generate_ai_bitmap_from_base64_invalid_returns_none() {
         let tf = TransformParams {
-            rotation: 0.0, flip_horizontal: false, flip_vertical: false,
-            orientation_steps: 0, width: 5, height: 5, scale: 1.0, crop_offset: (0.0, 0.0),
+            rotation: 0.0,
+            flip_horizontal: false,
+            flip_vertical: false,
+            orientation_steps: 0,
+            width: 5,
+            height: 5,
+            scale: 1.0,
+            crop_offset: (0.0, 0.0),
         };
         // 非法 base64
         let m = generate_ai_bitmap_from_base64("data:image/png;base64,@@@@", &tf);
@@ -1944,8 +1967,12 @@ mod tests {
     #[test]
     fn tc_rust_25_generate_sub_mask_bitmap_invisible_returns_none() {
         let sm = SubMask {
-            id: "x".into(), mask_type: "brush".into(), visible: false,
-            invert: false, opacity: 100.0, mode: SubMaskMode::Additive,
+            id: "x".into(),
+            mask_type: "brush".into(),
+            visible: false,
+            invert: false,
+            opacity: 100.0,
+            mode: SubMaskMode::Additive,
             parameters: serde_json::Value::Null,
         };
         let m = generate_sub_mask_bitmap(&sm, 10, 10, 1.0, (0.0, 0.0), None);
@@ -1955,8 +1982,12 @@ mod tests {
     #[test]
     fn tc_rust_26_generate_sub_mask_bitmap_unknown_type_returns_none() {
         let sm = SubMask {
-            id: "x".into(), mask_type: "unknown-type".into(), visible: true,
-            invert: false, opacity: 100.0, mode: SubMaskMode::Additive,
+            id: "x".into(),
+            mask_type: "unknown-type".into(),
+            visible: true,
+            invert: false,
+            opacity: 100.0,
+            mode: SubMaskMode::Additive,
             parameters: serde_json::Value::Null,
         };
         let m = generate_sub_mask_bitmap(&sm, 10, 10, 1.0, (0.0, 0.0), None);
@@ -1968,8 +1999,12 @@ mod tests {
         // 五种类型走 generate_brush_bitmap,空笔迹应返回全 0
         for t in ["brush", "clone", "heal", "liquify", "retouch"] {
             let sm = SubMask {
-                id: "x".into(), mask_type: t.into(), visible: true,
-                invert: false, opacity: 100.0, mode: SubMaskMode::Additive,
+                id: "x".into(),
+                mask_type: t.into(),
+                visible: true,
+                invert: false,
+                opacity: 100.0,
+                mode: SubMaskMode::Additive,
                 parameters: serde_json::json!({"lines": []}),
             };
             let m = generate_sub_mask_bitmap(&sm, 5, 5, 1.0, (0.0, 0.0), None);
@@ -1996,8 +2031,13 @@ mod tests {
     #[test]
     fn tc_rust_28_generate_mask_bitmap_empty_sub_masks_returns_none() {
         let def = MaskDefinition {
-            id: "m".into(), name: "n".into(), visible: true, invert: false,
-            opacity: 100.0, adjustments: serde_json::Value::Null, sub_masks: vec![],
+            id: "m".into(),
+            name: "n".into(),
+            visible: true,
+            invert: false,
+            opacity: 100.0,
+            adjustments: serde_json::Value::Null,
+            sub_masks: vec![],
         };
         let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None);
         assert!(m.is_none());
@@ -2006,8 +2046,12 @@ mod tests {
     #[test]
     fn tc_rust_29_generate_mask_bitmap_additive_takes_max() {
         let def = MaskDefinition {
-            id: "m".into(), name: "n".into(), visible: true, invert: false,
-            opacity: 100.0, adjustments: serde_json::Value::Null,
+            id: "m".into(),
+            name: "n".into(),
+            visible: true,
+            invert: false,
+            opacity: 100.0,
+            adjustments: serde_json::Value::Null,
             sub_masks: vec![visible_all_submask(SubMaskMode::Additive, 100.0, false)],
         };
         let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
@@ -2018,8 +2062,12 @@ mod tests {
     #[test]
     fn tc_rust_30_generate_mask_bitmap_subtractive_subtracts() {
         let def = MaskDefinition {
-            id: "m".into(), name: "n".into(), visible: true, invert: false,
-            opacity: 100.0, adjustments: serde_json::Value::Null,
+            id: "m".into(),
+            name: "n".into(),
+            visible: true,
+            invert: false,
+            opacity: 100.0,
+            adjustments: serde_json::Value::Null,
             sub_masks: vec![visible_all_submask(SubMaskMode::Subtractive, 100.0, false)],
         };
         let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
@@ -2030,8 +2078,12 @@ mod tests {
     #[test]
     fn tc_rust_31_generate_mask_bitmap_intersect_takes_min() {
         let def = MaskDefinition {
-            id: "m".into(), name: "n".into(), visible: true, invert: false,
-            opacity: 100.0, adjustments: serde_json::Value::Null,
+            id: "m".into(),
+            name: "n".into(),
+            visible: true,
+            invert: false,
+            opacity: 100.0,
+            adjustments: serde_json::Value::Null,
             sub_masks: vec![visible_all_sub_mask_zero(SubMaskMode::Intersect)],
         };
         let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
@@ -2043,8 +2095,12 @@ mod tests {
     fn visible_all_sub_mask_zero(mode: SubMaskMode) -> SubMask {
         // 用 all 类型但通过 invert 反选得到全 0
         SubMask {
-            id: "x".into(), mask_type: "all".into(), visible: true,
-            invert: true, opacity: 100.0, mode,
+            id: "x".into(),
+            mask_type: "all".into(),
+            visible: true,
+            invert: true,
+            opacity: 100.0,
+            mode,
             parameters: serde_json::Value::Null,
         }
     }
@@ -2052,7 +2108,9 @@ mod tests {
     #[test]
     fn tc_rust_32_generate_mask_bitmap_invert_flips_values() {
         let def = MaskDefinition {
-            id: "m".into(), name: "n".into(), visible: true,
+            id: "m".into(),
+            name: "n".into(),
+            visible: true,
             invert: true, // 末尾翻转
             opacity: 100.0,
             adjustments: serde_json::Value::Null,
@@ -2066,7 +2124,10 @@ mod tests {
     #[test]
     fn tc_rust_33_generate_mask_bitmap_opacity_scales() {
         let def = MaskDefinition {
-            id: "m".into(), name: "n".into(), visible: true, invert: false,
+            id: "m".into(),
+            name: "n".into(),
+            visible: true,
+            invert: false,
             opacity: 50.0, // 整体不透明度 50%
             adjustments: serde_json::Value::Null,
             sub_masks: vec![visible_all_submask(SubMaskMode::Additive, 100.0, false)],
@@ -2081,8 +2142,12 @@ mod tests {
     fn tc_rust_34_sub_mask_invert_flips_before_blend() {
         let sm = visible_all_submask(SubMaskMode::Additive, 100.0, true); // invert=true
         let def = MaskDefinition {
-            id: "m".into(), name: "n".into(), visible: true, invert: false,
-            opacity: 100.0, adjustments: serde_json::Value::Null,
+            id: "m".into(),
+            name: "n".into(),
+            visible: true,
+            invert: false,
+            opacity: 100.0,
+            adjustments: serde_json::Value::Null,
             sub_masks: vec![sm],
         };
         let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
@@ -2094,8 +2159,12 @@ mod tests {
     fn tc_rust_35_sub_mask_opacity_scales() {
         let sm = visible_all_submask(SubMaskMode::Additive, 50.0, false); // opacity=50
         let def = MaskDefinition {
-            id: "m".into(), name: "n".into(), visible: true, invert: false,
-            opacity: 100.0, adjustments: serde_json::Value::Null,
+            id: "m".into(),
+            name: "n".into(),
+            visible: true,
+            invert: false,
+            opacity: 100.0,
+            adjustments: serde_json::Value::Null,
             sub_masks: vec![sm],
         };
         let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None).unwrap();
@@ -2107,8 +2176,12 @@ mod tests {
     #[test]
     fn tc_rust_41_generate_mask_bitmap_invisible_mask_returns_none() {
         let def = MaskDefinition {
-            id: "m".into(), name: "n".into(), visible: false, invert: false,
-            opacity: 100.0, adjustments: serde_json::Value::Null,
+            id: "m".into(),
+            name: "n".into(),
+            visible: false,
+            invert: false,
+            opacity: 100.0,
+            adjustments: serde_json::Value::Null,
             sub_masks: vec![visible_all_submask(SubMaskMode::Additive, 100.0, false)],
         };
         let m = generate_mask_bitmap(&def, 5, 5, 1.0, (0.0, 0.0), None);
@@ -2183,7 +2256,13 @@ mod tests {
     #[test]
     fn tc_rust_48_stroke_bounds_out_of_canvas_returns_none() {
         // 所有点都在画布外
-        let pts = vec![Point { x: -100.0, y: -100.0 }, Point { x: -50.0, y: -50.0 }];
+        let pts = vec![
+            Point {
+                x: -100.0,
+                y: -100.0,
+            },
+            Point { x: -50.0, y: -50.0 },
+        ];
         let bounds = stroke_bounds(&pts, 10, 10, 5.0, 1.0, (0.0, 0.0));
         assert!(bounds.is_none());
     }
@@ -2227,8 +2306,12 @@ mod tests {
     fn tc_rust_36_hash_determinism_for_same_definition() {
         // 通过 serde 序列化相同 def 应得到相同字符串
         let def = MaskDefinition {
-            id: "m".into(), name: "n".into(), visible: true, invert: false,
-            opacity: 100.0, adjustments: serde_json::Value::Null,
+            id: "m".into(),
+            name: "n".into(),
+            visible: true,
+            invert: false,
+            opacity: 100.0,
+            adjustments: serde_json::Value::Null,
             sub_masks: vec![visible_all_submask(SubMaskMode::Additive, 100.0, false)],
         };
         let mut a = def.clone();
@@ -2242,4 +2325,3 @@ mod tests {
         );
     }
 }
-
