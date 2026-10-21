@@ -866,7 +866,7 @@
       }
     },
     "toolbar": {
-      "switchToVariant": "Switch to {{label}}",
+      "switchToVariant": "切换到 {{label}}",
       "tooltips": {
         "aperture": "光圈",
         "backToLibrary": "返回图库",
@@ -1129,12 +1129,12 @@
         "filterByEdited": "按编辑状态过滤",
         "filterByFileType": "按文件类型过滤",
         "filterByRating": "按评分过滤",
-        "groupEditedFiles": "Include edited files in groups",
-        "groupIgnoreMetadata": "Ignore mismatched EXIF dates",
-        "groupOff": "Off",
-        "groupPreferJpeg": "Prefer JPEG",
-        "groupPreferRaw": "Prefer RAW",
-        "groupRawJpeg": "Group RAW + JPEG",
+        "groupEditedFiles": "将已编辑文件归入同组",
+        "groupIgnoreMetadata": "忽略不匹配的 EXIF 日期",
+        "groupOff": "关闭",
+        "groupPreferJpeg": "优先 JPEG",
+        "groupPreferRaw": "优先 RAW",
+        "groupRawJpeg": "RAW + JPEG 归组",
         "metadataAlways": "始终",
         "metadataHover": "悬停时",
         "metadataOff": "关闭",
