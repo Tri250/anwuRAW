@@ -28,7 +28,69 @@
         "prototypePortrait": "Porträt",
         "prototypeLandscape": "Landschaft",
         "prototypeNight": "Nacht",
-        "prototypeWarmSunset": "Warmer Sonnenuntergang"
+        "prototypeWarmSunset": "Warmer Sonnenuntergang",
+        "masterRecipes": "Meisterrezepte",
+        "films": "Filme",
+        "filmsNeutral": "Neutral",
+        "recipeLutMissing": "Master-Rezept-Look-Datei nicht verfügbar",
+        "recipes": {
+          "hamada_daylight_v2": {
+            "subtitle": "Japanischer Blauhimmel · Hochkey-Licht",
+            "summary": "Hochkeyiges, transparentes Tageslicht, blaue Himmel in japanischem Cyan, weiche matte Schatten und cremig-pfirsichfarbene Hauttöne"
+          },
+          "takashi_yasui_zen": {
+            "subtitle": "Minimaler Zen · Japanische Straße",
+            "summary": "Starker Hell-Dunkel-Kontrast, tiefe kühl-cyane Schatten, zurückhaltende Schwärzen mit warmem Akzentlicht"
+          },
+          "takahiro_sakai_blue": {
+            "subtitle": "Luftige Klarheit · Zartes Blau",
+            "summary": "Transparenter japanischer Hautglanz, luftiges transparentes Cyanblau, weit angehobene Schatten und weiche Lichter"
+          },
+          "withluke_epic": {
+            "subtitle": "Epische Natur · Nebeliges Kalttürkis",
+            "summary": "Weite Berge und neblige Wälder, entfernt harte digitale Grüntöne, Tundra-Kaltgrün verwoben mit weichem Warmgold"
+          },
+          "daniel_casson_autumn": {
+            "subtitle": "Ländlicher Herbst · Klassisches Öl",
+            "summary": "Britische Landidyll-Herbstölmalerei, reiche Erdtöne, goldenes Heu und tiefes Waldgrün"
+          },
+          "billy_dinh_cinema": {
+            "subtitle": "NY-Kino · Dramatisches Licht",
+            "summary": "Cinemascope-Textur, starker Kontrast-Lichtschnitt, tiefe Schatten und Spotlight-Gold"
+          },
+          "rkrkrk_cyberpunk": {
+            "subtitle": "Cyberpunk · Maximaler Kontrast",
+            "summary": "Dichte urbane Textur, harte S-Kurve, sattes Orange-Teal und Violett-Gold-Kontrast"
+          },
+          "samalive_vintage": {
+            "subtitle": "Öliges Vintage · Stadtfilm",
+            "summary": "Warmer öliges Vintage-Stadtfilm, stabile saubere Schatten, warme goldene Lichter mit wanderndem Story-Gefühl"
+          },
+          "iwona_fairy_tale": {
+            "subtitle": "Märchenöl · Verträumtes Leuchten",
+            "summary": "Märchenbuch-Ölmalerei, tiefe ruhige Schatten, warmes goldenes Weichlicht und diffuses Leuchten"
+          },
+          "cinestill_800t": {
+            "subtitle": "Wolfram-Kino · Rot & Teal",
+            "summary": "Filmische Nachtfilmtöne, rote Lichter mit tiefen kühlen Cyan-Grün-Schatten"
+          },
+          "wilson_lee_golden": {
+            "subtitle": "Warm japanisch · Goldener Dunst",
+            "summary": "Kalifornisches Sonnenlicht trifft japanischen Film, stadtweiches diffuses Gold, transparenter warmer Glanz"
+          },
+          "luizclas_portrait": {
+            "subtitle": "Goldenes Licht · Feines Porträt",
+            "summary": "Porträts zur goldenen Stunde, leuchtende Haut bei großem Kontrast, tiefe Schatten und goldenes Haar-Kantenlicht"
+          },
+          "ivan_ivanchenko_twilight": {
+            "subtitle": "Dämmerung · Analoger Übergang",
+            "summary": "Weiches Dämmerungsleuchten, warme goldene Lichter mit sanften Cyanblau-Schatten, kontrastarme malerische Porträts"
+          },
+          "jungraphy_neon": {
+            "subtitle": "Neonstadt · Cyan & Pink",
+            "summary": "Seouler Neonnächte, kühle Cyan-Basis mit Pink-Violett-Lichtern, Reflexe auf regennassen Straßen"
+          }
+        }
       },
       "shadows": "Tiefen",
       "toneMapper": "Tonemapper",

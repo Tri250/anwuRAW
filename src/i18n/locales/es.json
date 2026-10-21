@@ -28,7 +28,69 @@
         "prototypePortrait": "Retrato",
         "prototypeLandscape": "Paisaje",
         "prototypeNight": "Noche",
-        "prototypeWarmSunset": "Atardecer cálido"
+        "prototypeWarmSunset": "Atardecer cálido",
+        "masterRecipes": "Recetas maestras",
+        "films": "Películas",
+        "filmsNeutral": "Neutro",
+        "recipeLutMissing": "Archivo de look de receta maestra no disponible",
+        "recipes": {
+          "hamada_daylight_v2": {
+            "subtitle": "Cielo azul japonés · Luz high-key",
+            "summary": "Luz diurna high-key y translúcida, cielos azules convertidos en cian japonés, sombras mates suaves y tonos de piel melocotón cremosos"
+          },
+          "takashi_yasui_zen": {
+            "subtitle": "Zen minimalista · Calle japonesa",
+            "summary": "Fuerte contraste luz-sombra, sombras frías y cian profundas, negros contenidos con luz cálida de acento"
+          },
+          "takahiro_sakai_blue": {
+            "subtitle": "Claridad etérea · Azul pálido",
+            "summary": "Brillo de piel japonés translúcido, cian-azul etéreo y transparente, sombras ampliamente elevadas y altas luces suaves"
+          },
+          "withluke_epic": {
+            "subtitle": "Naturaleza épica · Verde azulado frío brumoso",
+            "summary": "Montañas vastas y bosques brumosos, elimina verdes digitales duros, verdes fríos de tundra entretejidos con oro cálido suave"
+          },
+          "daniel_casson_autumn": {
+            "subtitle": "Otoño rural · Óleo clásico",
+            "summary": "Sensación de óleo otoñal del campo británico, ricos tonos tierra, heno dorado y verdes forestales profundos"
+          },
+          "billy_dinh_cinema": {
+            "subtitle": "Cine de NY · Luz dramática",
+            "summary": "Textura cinematográfica panorámica, corte de luz de alto contraste, sombras profundas y oro de foco"
+          },
+          "rkrkrk_cyberpunk": {
+            "subtitle": "Cyberpunk · Contraste máximo",
+            "summary": "Textura urbana densa, curva S dura, naranja-teal intenso y choque violeta-dorado"
+          },
+          "samalive_vintage": {
+            "subtitle": "Vintage oleoso · Película urbana",
+            "summary": "Película urbana vintage cálida y oleosa, sombras estables y limpias, altas luces doradas cálidas con sensación de historia errante"
+          },
+          "iwona_fairy_tale": {
+            "subtitle": "Óleo de cuento · Resplandor onírico",
+            "summary": "Sensación de óleo de libro de cuentos, sombras profundas y calmadas, luz dorada cálida y resplandor difuso"
+          },
+          "cinestill_800t": {
+            "subtitle": "Cine de tungsteno · Rojo y teal",
+            "summary": "Tonos fílmicos nocturnos cinematográficos, luces rojas con sombras frías cian-verde profundas"
+          },
+          "wilson_lee_golden": {
+            "subtitle": "Japonés cálido · Bruma dorada",
+            "summary": "La luz de California se encuentra con la película japonesa, oro difuso por la ciudad, resplandor cálido translúcido"
+          },
+          "luizclas_portrait": {
+            "subtitle": "Luz dorada · Retrato fino",
+            "summary": "Retratos artísticos en hora dorada, piel luminosa bajo gran contraste, sombras profundas y luz de contorno dorada en el cabello"
+          },
+          "ivan_ivanchenko_twilight": {
+            "subtitle": "Crepúsculo · Transición análoga",
+            "summary": "Resplandor crepuscular suave, altas luces doradas cálidas con suaves sombras cian-azul, retratos pictóricos de bajo contraste"
+          },
+          "jungraphy_neon": {
+            "subtitle": "Ciudad de neón · Cian y rosa",
+            "summary": "Noches de neón en Seúl, base cian fría que choca con altas luces rosa-violeta, reflejos en calles empapadas por la lluvia"
+          }
+        }
       },
       "shadows": "Sombras",
       "toneMapper": "Mapeador de tonos",

@@ -28,7 +28,69 @@
         "prototypePortrait": "人像",
         "prototypeLandscape": "風景",
         "prototypeNight": "夜景",
-        "prototypeWarmSunset": "暖陽"
+        "prototypeWarmSunset": "暖陽",
+        "masterRecipes": "大師配方",
+        "films": "底片",
+        "filmsNeutral": "中性",
+        "recipeLutMissing": "大師配方外觀檔案不可用",
+        "recipes": {
+          "hamada_daylight_v2": {
+            "subtitle": "日系青空 · 高調日光",
+            "summary": "高調通透日光，藍天轉日系天青色，柔和啞光暗部與奶油蜜桃膚色"
+          },
+          "takashi_yasui_zen": {
+            "subtitle": "極簡禪意 · 日系街拍",
+            "summary": "強明暗對比，深沉冷青暗部，大面積剋制黑階與點睛暖光"
+          },
+          "takahiro_sakai_blue": {
+            "subtitle": "空氣清透 · 少女淡藍",
+            "summary": "日系通透水光肌，空氣感透明青藍，暗部大面積展開與柔潤高光"
+          },
+          "withluke_epic": {
+            "subtitle": "史詩自然 · 霧氣冷青",
+            "summary": "蒼茫雪山與森林霧氣，去除數位刺眼生綠，苔原冷綠與柔和暖金交織"
+          },
+          "daniel_casson_autumn": {
+            "subtitle": "鄉村秋日 · 古典油畫",
+            "summary": "英國鄉村秋日油畫風，厚重大地色，枯草金黃與深林墨綠交織"
+          },
+          "billy_dinh_cinema": {
+            "subtitle": "紐約電影 · 戲劇光影",
+            "summary": "電影敘事寬畫幅質感，強反差光影切割，深邃暗部與聚光燈金光"
+          },
+          "rkrkrk_cyberpunk": {
+            "subtitle": "賽博龐克 · 極致反差",
+            "summary": "緻密城市肌理，硬朗大S曲線，濃郁橙青與紫金冷暖對撞"
+          },
+          "samalive_vintage": {
+            "subtitle": "油潤復古 · 城市底片",
+            "summary": "溫暖油潤復古城市底片，暗部沉穩不髒，溫潤暖金高光與漫遊故事感"
+          },
+          "iwona_fairy_tale": {
+            "subtitle": "童話油畫 · 夢幻微光",
+            "summary": "童話繪本油畫感，深邃沉靜暗部，暖金柔光包裹與漫反射微光"
+          },
+          "cinestill_800t": {
+            "subtitle": "鎢絲電影 · 紅燈冷青",
+            "summary": "電影夜景底片色調，紅色燈光與深邃冷青綠暗部"
+          },
+          "wilson_lee_golden": {
+            "subtitle": "暖調日系 · 漫射金光",
+            "summary": "加州陽光與日系底片融合，城市漫射金光，通透溫潤微光感"
+          },
+          "luizclas_portrait": {
+            "subtitle": "暖金光影 · 質感人像",
+            "summary": "黃金時刻質感大片，大光比下人物溫潤通透，深邃陰影與金黃髮絲輪廓"
+          },
+          "ivan_ivanchenko_twilight": {
+            "subtitle": "暮色黃昏 · 相鄰色過渡",
+            "summary": "黃昏柔和微光，暖金高光與柔和青藍暗部，低反差油畫人像與相鄰色呼應"
+          },
+          "jungraphy_neon": {
+            "subtitle": "霓虹都市 · 冷青粉紫",
+            "summary": "首爾都市霓虹夜景，冷青基底與粉紫高光對撞，雨夜路面反射倒影"
+          }
+        }
       },
       "shadows": "陰影",
       "toneMapper": "色調映射",

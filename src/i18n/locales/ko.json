@@ -28,7 +28,69 @@
         "prototypePortrait": "인물",
         "prototypeLandscape": "풍경",
         "prototypeNight": "야경",
-        "prototypeWarmSunset": "노을"
+        "prototypeWarmSunset": "노을",
+        "masterRecipes": "마스터 레시피",
+        "films": "필름",
+        "filmsNeutral": "중립",
+        "recipeLutMissing": "마스터 레시피 룩 파일을 사용할 수 없습니다",
+        "recipes": {
+          "hamada_daylight_v2": {
+            "subtitle": "일본의 푸른 하늘 · 하이키 주광",
+            "summary": "하이키의 투명한 일광, 푸른 하늘을 일본풍 시안으로, 부드러운 매트한 그림자와 크리미한 복숭아빛 피부톤"
+          },
+          "takashi_yasui_zen": {
+            "subtitle": "미니멀 절제 · 일본 거리 스냅",
+            "summary": "강한 명암 대비, 깊고 차가운 시안 그림자, 절제된 블랙과 포인트가 되는 따뜻한 빛"
+          },
+          "takahiro_sakai_blue": {
+            "subtitle": "공기감 청량 · 옅은 블루",
+            "summary": "투명감 있는 일본식 피부 윤기, 공기감 있는 투명한 시안 블루, 넓게 밝아진 그림자와 부드러운 하이라이트"
+          },
+          "withluke_epic": {
+            "subtitle": "웅장한 자연 · 안개 낀 차가운 틸",
+            "summary": "광활한 산과 안개 낀 숲, 디지털한 거친 녹색 제거, 툰드라의 차가운 녹색과 부드러운 웜골드가 어우러짐"
+          },
+          "daniel_casson_autumn": {
+            "subtitle": "시골 가을 · 클래식 유화",
+            "summary": "영국 시골 가을 유화 감성, 풍부한 어스 톤, 황금빛 건초와 깊은 숲의 녹색"
+          },
+          "billy_dinh_cinema": {
+            "subtitle": "뉴욕 시네마 · 드라마틱한 빛",
+            "summary": "시네마스코프 질감, 강한 대비의 빛의 커팅, 깊은 그림자와 스포트라이트 골드"
+          },
+          "rkrkrk_cyberpunk": {
+            "subtitle": "사이버펑크 · 극한 대비",
+            "summary": "촘촘한 도시 질감, 하드한 S커브, 짙은 오렌지틸과 바이올렛 골드의 충돌"
+          },
+          "samalive_vintage": {
+            "subtitle": "오일빈 빈티지 · 도시 필름",
+            "summary": "따뜻하고 오일한 빈티지 도시 필름, 안정적이고 깨끗한 그림자, 따뜻한 골드 하이라이트와 방황하는 스토리감"
+          },
+          "iwona_fairy_tale": {
+            "subtitle": "동화 유화 · 몽환적 빛",
+            "summary": "동화책 같은 유화 감성, 깊고 고요한 그림자, 따뜻한 골드 소프트라이트와 확산되는 빛"
+          },
+          "cinestill_800t": {
+            "subtitle": "텅스텐 시네마 · 레드와 틸",
+            "summary": "시네마틱한 야간 필름 톤, 붉은 조명과 깊은 차가운 시안 그린 그림자"
+          },
+          "wilson_lee_golden": {
+            "subtitle": "따뜻한 일본풍 · 골드 헤이즈",
+            "summary": "캘리포니아 햇살과 일본 필름의 만남, 도시 전체에 퍼지는 확산 골드, 투명한 온기의 빛"
+          },
+          "luizclas_portrait": {
+            "subtitle": "골든 라이트 · 감성 인물",
+            "summary": "골든아워의 감성 작품, 강한 대비 속 촉촉한 피부, 깊은 그림자와 황금빛 머리카락 윤곽광"
+          },
+          "ivan_ivanchenko_twilight": {
+            "subtitle": "황혼 · 인접색 전이",
+            "summary": "황혼의 부드러운 미광, 따뜻한 골드 하이라이트와 부드러운 시안 블루 그림자, 저대비 회화적 인물"
+          },
+          "jungraphy_neon": {
+            "subtitle": "네온 도시 · 시안과 핑크",
+            "summary": "서울 네온 야경, 차가운 시안 베이스와 핑크 퍼플 하이라이트의 충돌, 비에 젖은 노면 반사"
+          }
+        }
       },
       "shadows": "섀도우",
       "toneMapper": "톤 매퍼",

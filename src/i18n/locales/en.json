@@ -28,7 +28,69 @@
         "prototypePortrait": "Portrait",
         "prototypeLandscape": "Landscape",
         "prototypeNight": "Night",
-        "prototypeWarmSunset": "Warm Sunset"
+        "prototypeWarmSunset": "Warm Sunset",
+        "masterRecipes": "Master Recipes",
+        "films": "Film Looks",
+        "filmsNeutral": "Neutral",
+        "recipeLutMissing": "Master recipe look file unavailable",
+        "recipes": {
+          "hamada_daylight_v2": {
+            "subtitle": "Japanese blue sky · High-key daylight",
+            "summary": "High-key translucent daylight, blue skies turned Japanese cyan, soft matte shadows with creamy peach skin tones"
+          },
+          "takashi_yasui_zen": {
+            "subtitle": "Minimal zen · Japanese street",
+            "summary": "Strong light-dark contrast, deep cool-cyan shadows, restrained blacks with warm accent light"
+          },
+          "takahiro_sakai_blue": {
+            "subtitle": "Airy clarity · Pale blue",
+            "summary": "Translucent Japanese skin glow, airy transparent cyan-blue, broadly lifted shadows and soft highlights"
+          },
+          "withluke_epic": {
+            "subtitle": "Epic nature · Misty cold teal",
+            "summary": "Vast mountains and foggy forests, removes harsh digital greens, tundra cool greens woven with soft warm gold"
+          },
+          "daniel_casson_autumn": {
+            "subtitle": "Rural autumn · Classical oil",
+            "summary": "British countryside autumn oil-painting feel, rich earthy tones, golden hay and deep forest greens"
+          },
+          "billy_dinh_cinema": {
+            "subtitle": "NY cinema · Dramatic light",
+            "summary": "Cinematic widescreen texture, strong contrast light cutting, deep shadows and spotlight gold"
+          },
+          "rkrkrk_cyberpunk": {
+            "subtitle": "Cyberpunk · Max contrast",
+            "summary": "Dense urban texture, hard S-curve, rich orange-teal and violet-gold clash"
+          },
+          "samalive_vintage": {
+            "subtitle": "Oily vintage · City film",
+            "summary": "Warm oily vintage city film, stable clean shadows, warm golden highlights with a wandering story feel"
+          },
+          "iwona_fairy_tale": {
+            "subtitle": "Fairy-tale oil · Dreamy glow",
+            "summary": "Storybook oil-painting feel, deep calm shadows, warm golden soft light and diffuse glow"
+          },
+          "cinestill_800t": {
+            "subtitle": "Tungsten cinema · Red & teal",
+            "summary": "Cinematic night film tones, red lights with deep cool cyan-green shadows"
+          },
+          "wilson_lee_golden": {
+            "subtitle": "Warm Japanese · Golden haze",
+            "summary": "California sunlight meets Japanese film, citywide diffused gold, translucent warm glow"
+          },
+          "luizclas_portrait": {
+            "subtitle": "Golden light · Fine portrait",
+            "summary": "Golden-hour fine-art portraits, luminous skin under big contrast, deep shadows and golden hair rim light"
+          },
+          "ivan_ivanchenko_twilight": {
+            "subtitle": "Twilight · Analog transition",
+            "summary": "Soft dusk glow, warm golden highlights with gentle cyan-blue shadows, low-contrast oil-painting portraits"
+          },
+          "jungraphy_neon": {
+            "subtitle": "Neon city · Cyan & pink",
+            "summary": "Seoul neon nights, cool cyan base clashing with pink-purple highlights, rain-soaked street reflections"
+          }
+        }
       },
       "shadows": "Shadows",
       "toneMapper": "Tone Mapper",

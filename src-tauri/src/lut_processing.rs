@@ -67,6 +67,17 @@ fn film_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
         .map(|p| strip_verbatim(&p))
 }
 
+fn master_recipe_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
+    app_handle
+        .path()
+        .resolve(
+            "resources/master_recipe_luts",
+            tauri::path::BaseDirectory::Resource,
+        )
+        .ok()
+        .map(|p| strip_verbatim(&p))
+}
+
 pub fn get_luts_dir(app_data_dir: &Path) -> anyhow::Result<PathBuf> {
     let luts_dir = app_data_dir.join("luts");
     if !luts_dir.exists() {
@@ -565,6 +576,16 @@ fn list_luts_in_cache() -> anyhow::Result<Vec<LutEntry>> {
     }
     entries.sort_by_key(|a| a.name.to_lowercase());
     Ok(entries)
+}
+
+#[tauri::command]
+pub fn list_recipe_luts(app_handle: AppHandle) -> Result<Vec<LutEntry>, String> {
+    // 大师配方内置外观（display-referred LUT），仅供场景增强面板按配方定位文件路径；
+    // 不进入 list_luts 的胶片模拟网格，也不允许被用户删除。
+    let Some(resource_path) = master_recipe_luts_dir(&app_handle) else {
+        return Ok(Vec::new());
+    };
+    list_luts_in_dir(&resource_path, true).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

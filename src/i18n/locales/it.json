@@ -28,7 +28,69 @@
         "prototypePortrait": "Ritratto",
         "prototypeLandscape": "Paesaggio",
         "prototypeNight": "Notte",
-        "prototypeWarmSunset": "Tramonto caldo"
+        "prototypeWarmSunset": "Tramonto caldo",
+        "masterRecipes": "Ricette dei maestri",
+        "films": "Pellicole",
+        "filmsNeutral": "Neutro",
+        "recipeLutMissing": "File look della ricetta master non disponibile",
+        "recipes": {
+          "hamada_daylight_v2": {
+            "subtitle": "Cielo azzurro giapponese · Luce high-key",
+            "summary": "Luce diurna traslucida high-key, cieli azzurri virati al ciano giapponese, ombre matte morbide e carnazioni pesca cremose"
+          },
+          "takashi_yasui_zen": {
+            "subtitle": "Zen minimale · Strada giapponese",
+            "summary": "Forte contrasto chiaro-scuro, ombre fredde ciano profonde, neri trattenuti con luce d'accento calda"
+          },
+          "takahiro_sakai_blue": {
+            "subtitle": "Chiarezza ariosa · Azzurro pallido",
+            "summary": "Fulvore della pelle giapponese traslucida, ciano-azzurro arioso e trasparente, ombre ampiamente sollevate e luci morbide"
+          },
+          "withluke_epic": {
+            "subtitle": "Natura epica · Verde acqua fredda nebbiosa",
+            "summary": "Montagne vaste e foreste nebbiose, rimuove i verdi digitali duri, verdi freddi di tundra intrecciati con oro caldo morbido"
+          },
+          "daniel_casson_autumn": {
+            "subtitle": "Autunno rurale · Olio classico",
+            "summary": "Atmosfera a olio d'autunno di campagna britannica, ricchi toni terra, fieno dorato e verdi boschivi profondi"
+          },
+          "billy_dinh_cinema": {
+            "subtitle": "Cinema di NY · Luce drammatica",
+            "summary": "Texture cinematografica panoramica, taglio di luce ad alto contrasto, ombre profonde e oro da riflettore"
+          },
+          "rkrkrk_cyberpunk": {
+            "subtitle": "Cyberpunk · Contrasto massimo",
+            "summary": "Texture urbana densa, curva S dura, intenso arancio-teal e scontro viola-oro"
+          },
+          "samalive_vintage": {
+            "subtitle": "Vintage oleoso · Pellicola urbana",
+            "summary": "Pellicola urbana vintage calda e oleosa, ombre stabili e pulite, luci dorate calde con un senso di storia errante"
+          },
+          "iwona_fairy_tale": {
+            "subtitle": "Olio fiabesco · Bagno irreale",
+            "summary": "Atmosfera a olio da libro di fiabe, ombre profonde e calme, luce dorata calda e bagno diffuso"
+          },
+          "cinestill_800t": {
+            "subtitle": "Cinema al tungsteno · Rosso e teal",
+            "summary": "Tonalità notturne cinematografiche, luci rosse con ombre fredde ciano-verdi profonde"
+          },
+          "wilson_lee_golden": {
+            "subtitle": "Giapponese caldo · Foschia dorata",
+            "summary": "La luce californiana incontra la pellicola giapponese, oro diffuso in tutta la città, caldo bagno traslucido"
+          },
+          "luizclas_portrait": {
+            "subtitle": "Luce dorata · Ritratto raffinato",
+            "summary": "Ritratti d'arte in golden hour, pelle luminosa sotto grande contrasto, ombre profonde e controluce dorato nei capelli"
+          },
+          "ivan_ivanchenko_twilight": {
+            "subtitle": "Crepuscolo · Transizione analoga",
+            "summary": "Bagno crepuscolare morbido, luci dorate calde con delicate ombre ciano-azzurre, ritratti pittorici a basso contrasto"
+          },
+          "jungraphy_neon": {
+            "subtitle": "Città al neon · Ciano e rosa",
+            "summary": "Notti al neon di Seul, base ciano fredda in collisione con luci rosa-viola, riflessi su strade bagnate dalla pioggia"
+          }
+        }
       },
       "shadows": "Ombre",
       "toneMapper": "Tone Mapper",

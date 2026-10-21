@@ -28,7 +28,69 @@
         "prototypePortrait": "ポートレート",
         "prototypeLandscape": "風景",
         "prototypeNight": "夜景",
-        "prototypeWarmSunset": "夕焼け"
+        "prototypeWarmSunset": "夕焼け",
+        "masterRecipes": "マスターレシピ",
+        "films": "フィルム",
+        "filmsNeutral": "ニュートラル",
+        "recipeLutMissing": "マスターレシピのルックファイルが利用できません",
+        "recipes": {
+          "hamada_daylight_v2": {
+            "subtitle": "日本の青空 · ハイキー日光",
+            "summary": "ハイキーで透明感のある日光、青空を和風シアンへ、柔らかいマットな陰影とクリーミーな桃色肌"
+          },
+          "takashi_yasui_zen": {
+            "subtitle": "ミニマル禅 · 日本の街撮り",
+            "summary": "強い明暗コントラスト、深く冷えたシアンの影、抑えた黒階と差し色の暖光"
+          },
+          "takahiro_sakai_blue": {
+            "subtitle": "空気感の透明感 · 淡いブルー",
+            "summary": "透明感のある日本の肌艶、空気感のある透けたシアンブルー、大きく明るくなった陰影と柔らかなハイライト"
+          },
+          "withluke_epic": {
+            "subtitle": "壮大な自然 · 霧の冷たいティール",
+            "summary": "広大な山々と霧の森、デジタルな刺々しい緑を除去、ツンドラの冷緑と柔らかな暖金を織り交ぜる"
+          },
+          "daniel_casson_autumn": {
+            "subtitle": "田園の秋 · クラシック油彩",
+            "summary": "英国の田園風景の秋の油彩感、豊かなアースカラー、金色の干し草と深い森の緑"
+          },
+          "billy_dinh_cinema": {
+            "subtitle": "ニューヨーク映像 · ドラマチックな光",
+            "summary": "シネスコ的質感、強コントラストの光の切り取り、深い影とスポットライトの金色"
+          },
+          "rkrkrk_cyberpunk": {
+            "subtitle": "サイバーパンク · 極限コントラスト",
+            "summary": "緻密な都市の質感、ハードなSカーブ、濃厚なオレンジティールと紫金の衝突"
+          },
+          "samalive_vintage": {
+            "subtitle": "油分のあるヴィンテージ · 都市フィルム",
+            "summary": "温かく油分のあるヴィンテージ都市フィルム、安定したクリーンな影、温かい金色のハイライトと漂うストーリー感"
+          },
+          "iwona_fairy_tale": {
+            "subtitle": "童話油彩 · 夢見る輝き",
+            "summary": "絵本のような油彩感、深く静かな影、温かい金色の柔光と拡散する輝き"
+          },
+          "cinestill_800t": {
+            "subtitle": "タングステン映像 · 赤とティール",
+            "summary": "映画的な夜景フィルムトーン、赤い灯りと深く冷えたシアングリーンの影"
+          },
+          "wilson_lee_golden": {
+            "subtitle": "温かい和テイスト · 金色の霞",
+            "summary": "カリフォルニアの陽光と日本のフィルムの融合、街全体に広がる拡散金光、透明感のある温もりの輝き"
+          },
+          "luizclas_portrait": {
+            "subtitle": "金色の光 · 質感ポートレート",
+            "summary": "ゴールデンアワーの質感作品、大きなコントラストの中で潤いのある肌、深い影と金の髪の輪郭光"
+          },
+          "ivan_ivanchenko_twilight": {
+            "subtitle": "黄昏 · アナロガスな移行",
+            "summary": "黄昏の柔らかな微光、暖かい金色のハイライトと柔らかなシアンブルーの影、低コントラストの絵画的ポートレート"
+          },
+          "jungraphy_neon": {
+            "subtitle": "ネオン都市 · シアンとピンク",
+            "summary": "ソウルのネオン夜景、冷えたシアンの地にピンク紫のハイライトが衝突、雨に濡れた路面の反射"
+          }
+        }
       },
       "shadows": "シャドウ",
       "toneMapper": "トーンマッパー",
