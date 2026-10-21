@@ -162,6 +162,20 @@
       "roundness": "Rodonesa",
       "size": "Mida",
       "vignette": "Vinyetatge"
+    },
+    "channelMixer": {
+      "title": "Mesclador de canals",
+      "outputs": "Canals de sortida",
+      "reset": "Restableix",
+      "hint": "Ajusta el percentatge de cada canal de color d'entrada que contribueix al canal de sortida."
+    },
+    "splitToning": {
+      "title": "To dividit",
+      "enabled": "Activa",
+      "highlights": "Llums",
+      "shadows": "Ombres",
+      "saturation": "Saturació",
+      "balance": "Equilibri"
     }
   },
   "contextMenus": {
@@ -333,7 +347,9 @@
         "color": "Color",
         "curves": "Corbes",
         "details": "Detalls",
-        "effects": "Efectes"
+        "effects": "Efectes",
+        "channel_mixer": "Mesclador de canals",
+        "split_toning": "To dividit"
       },
       "title": "Ajustaments",
       "tooltips": {
@@ -563,7 +579,8 @@
         "switchOrientation": "Canviar d'orientació",
         "switchToLandscape": "Canviar a apaïsat",
         "switchToPortrait": "Canviar a vertical",
-        "transform": "Correcció de perspectiva i trapezi"
+        "transform": "Correcció de perspectiva i trapezi",
+        "aiStraighten": "Redreçament amb IA"
       }
     },
     "externalEdit": {
@@ -628,7 +645,8 @@
         "feather": "Esvaïment",
         "globalFeather": "Esvaïment global",
         "grow": "Expandir",
-        "tolerance": "Tolerància"
+        "tolerance": "Tolerància",
+        "decontaminate": "Neteja de vores"
       },
       "toolbar": {
         "title": "Edició de màscara",
@@ -1236,7 +1254,9 @@
         "tone": "Tons",
         "transformRotation": "Transformació i Rotació",
         "vignette": "Vinyetatge",
-        "whiteBalance": "Balanç de blancs"
+        "whiteBalance": "Balanç de blancs",
+        "channelMixer": "Mesclador de canals",
+        "splitToning": "To dividit"
       },
       "includedAdjustments": "Ajustaments inclosos",
       "modeMerge": "Fusionar",

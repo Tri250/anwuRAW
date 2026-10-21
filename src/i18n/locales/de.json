@@ -162,6 +162,20 @@
       "roundness": "Rundheit",
       "size": "Größe",
       "vignette": "Vignettierung"
+    },
+    "channelMixer": {
+      "title": "Kanalmixer",
+      "outputs": "Ausgabekanäle",
+      "reset": "Zurücksetzen",
+      "hint": "Passen Sie den prozentualen Anteil jedes Eingabefarbkanals am Ausgabekanal an."
+    },
+    "splitToning": {
+      "title": "Split-Toning",
+      "enabled": "Aktivieren",
+      "highlights": "Lichter",
+      "shadows": "Schatten",
+      "saturation": "Sättigung",
+      "balance": "Balance"
     }
   },
   "contextMenus": {
@@ -333,7 +347,9 @@
         "color": "Farbe",
         "curves": "Kurven",
         "details": "Details",
-        "effects": "Effekte"
+        "effects": "Effekte",
+        "channel_mixer": "Kanalmixer",
+        "split_toning": "Split-Toning"
       },
       "title": "Anpassungen",
       "tooltips": {
@@ -563,7 +579,8 @@
         "switchOrientation": "Ausrichtung wechseln",
         "switchToLandscape": "Zum Querformat wechseln",
         "switchToPortrait": "Zum Hochformat wechseln",
-        "transform": "Perspektiv- und Trapezkorrektur"
+        "transform": "Perspektiv- und Trapezkorrektur",
+        "aiStraighten": "KI-Ausrichten"
       }
     },
     "externalEdit": {
@@ -628,7 +645,8 @@
         "feather": "Weiche Kante",
         "globalFeather": "Globale weiche Kante",
         "grow": "Erweitern",
-        "tolerance": "Toleranz"
+        "tolerance": "Toleranz",
+        "decontaminate": "Kantenbereinigung"
       },
       "toolbar": {
         "title": "Maskenbearbeitung",
@@ -1236,7 +1254,9 @@
         "tone": "Tonwerte",
         "transformRotation": "Transformieren & Drehen",
         "vignette": "Vignettierung",
-        "whiteBalance": "Weißabgleich"
+        "whiteBalance": "Weißabgleich",
+        "channelMixer": "Kanalmixer",
+        "splitToning": "Split-Toning"
       },
       "includedAdjustments": "Einbezogene Anpassungen",
       "modeMerge": "Zusammenführen",

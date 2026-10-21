@@ -162,6 +162,20 @@
       "roundness": "圆度",
       "size": "大小",
       "vignette": "暗角"
+    },
+    "channelMixer": {
+      "title": "通道混合器",
+      "outputs": "输出通道",
+      "reset": "重置",
+      "hint": "调整各输入颜色通道对输出通道的贡献百分比。"
+    },
+    "splitToning": {
+      "title": "分离色调",
+      "enabled": "启用",
+      "highlights": "高光",
+      "shadows": "阴影",
+      "saturation": "饱和度",
+      "balance": "平衡"
     }
   },
   "contextMenus": {
@@ -333,7 +347,9 @@
         "color": "颜色",
         "curves": "曲线",
         "details": "细节",
-        "effects": "效果"
+        "effects": "效果",
+        "channel_mixer": "通道混合器",
+        "split_toning": "分离色调"
       },
       "title": "调整",
       "tooltips": {
@@ -569,7 +585,8 @@
         "switchOrientation": "切换方向",
         "switchToLandscape": "切换为横向",
         "switchToPortrait": "切换为纵向",
-        "transform": "透视和梯形校正"
+        "transform": "透视和梯形校正",
+        "aiStraighten": "AI 水平校正"
       },
       "autoCropAfterRotate": "旋转后自动裁剪黑边"
     },
@@ -635,7 +652,8 @@
         "feather": "羽化",
         "globalFeather": "全局羽化",
         "grow": "扩展",
-        "tolerance": "容差"
+        "tolerance": "容差",
+        "decontaminate": "边缘净化"
       },
       "patches": {
         "copyName": "{{name}} 副本",
@@ -1257,7 +1275,9 @@
         "tone": "色调",
         "transformRotation": "变换与旋转",
         "vignette": "暗角",
-        "whiteBalance": "白平衡"
+        "whiteBalance": "白平衡",
+        "channelMixer": "通道混合器",
+        "splitToning": "分离色调"
       },
       "includedAdjustments": "包含的调整",
       "modeMerge": "合并",

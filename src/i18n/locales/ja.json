@@ -162,6 +162,20 @@
       "roundness": "丸み",
       "size": "サイズ",
       "vignette": "周辺光量補正"
+    },
+    "channelMixer": {
+      "title": "チャンネルミキサー",
+      "outputs": "出力チャンネル",
+      "reset": "リセット",
+      "hint": "各入力カラーチャンネルが出力チャンネルに寄与する割合を調整します。"
+    },
+    "splitToning": {
+      "title": "セパレートトーン",
+      "enabled": "有効",
+      "highlights": "ハイライト",
+      "shadows": "シャドウ",
+      "saturation": "彩度",
+      "balance": "バランス"
     }
   },
   "contextMenus": {
@@ -333,7 +347,9 @@
         "color": "カラー",
         "curves": "トーンカーブ",
         "details": "ディテール",
-        "effects": "効果"
+        "effects": "効果",
+        "channel_mixer": "チャンネルミキサー",
+        "split_toning": "セパレートトーン"
       },
       "title": "補正",
       "tooltips": {
@@ -561,7 +577,8 @@
         "switchOrientation": "縦横比の向きを切り替え",
         "switchToLandscape": "横向きに切り替え",
         "switchToPortrait": "縦向きに切り替え",
-        "transform": "遠近歪みとあおり補正"
+        "transform": "遠近歪みとあおり補正",
+        "aiStraighten": "AI 水平補正"
       }
     },
     "externalEdit": {
@@ -626,7 +643,8 @@
         "feather": "ぼかし",
         "globalFeather": "全体のぼかし",
         "grow": "拡張",
-        "tolerance": "Tolerance"
+        "tolerance": "Tolerance",
+        "decontaminate": "エッジクリーンアップ"
       },
       "toolbar": {
         "title": "マスク編集",
@@ -1234,7 +1252,9 @@
         "tone": "トーン",
         "transformRotation": "変形と回転",
         "vignette": "周辺光量補正",
-        "whiteBalance": "ホワイトバランス"
+        "whiteBalance": "ホワイトバランス",
+        "channelMixer": "チャンネルミキサー",
+        "splitToning": "セパレートトーン"
       },
       "includedAdjustments": "対象の補正項目",
       "modeMerge": "マージ",

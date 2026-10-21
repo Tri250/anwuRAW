@@ -935,6 +935,8 @@ export const ADJUSTMENT_GROUPS: Record<string, AdjustmentGroup[]> = {
     },
   ],
   masks: [{ label: 'modals.copyPaste.groups.masks', keys: ['masks'] }],
+  channel_mixer: [{ label: 'modals.copyPaste.groups.channelMixer', keys: ['channelMixer'] }],
+  split_toning: [{ label: 'modals.copyPaste.groups.splitToning', keys: ['splitToning'] }],
 };
 
 export const COPYABLE_ADJUSTMENT_KEYS: string[] = Object.values(ADJUSTMENT_GROUPS)

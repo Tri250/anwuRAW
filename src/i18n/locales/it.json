@@ -162,6 +162,20 @@
       "roundness": "Rotondità",
       "size": "Dimensione",
       "vignette": "Vignettatura"
+    },
+    "channelMixer": {
+      "title": "Mixer canali",
+      "outputs": "Canali di uscita",
+      "reset": "Reimposta",
+      "hint": "Regola la percentuale di ciascun canale colore di ingresso che contribuisce al canale di uscita."
+    },
+    "splitToning": {
+      "title": "Tonalità divisa",
+      "enabled": "Attiva",
+      "highlights": "Alte luci",
+      "shadows": "Ombre",
+      "saturation": "Saturazione",
+      "balance": "Bilanciamento"
     }
   },
   "contextMenus": {
@@ -349,7 +363,9 @@
         "color": "Colore",
         "curves": "Curve",
         "details": "Dettagli",
-        "effects": "Effetti"
+        "effects": "Effetti",
+        "channel_mixer": "Mixer canali",
+        "split_toning": "Tonalità divisa"
       },
       "title": "Regolazioni",
       "tooltips": {
@@ -583,7 +599,8 @@
         "switchOrientation": "Cambia orientamento",
         "switchToLandscape": "Passa a paesaggio",
         "switchToPortrait": "Passa a ritratto",
-        "transform": "Correzione prospettiva e distorsione trapezoidale"
+        "transform": "Correzione prospettiva e distorsione trapezoidale",
+        "aiStraighten": "Raddrizza con IA"
       }
     },
     "externalEdit": {
@@ -648,7 +665,8 @@
         "feather": "Sfumatura",
         "globalFeather": "Sfumatura Globale",
         "grow": "Espandi",
-        "tolerance": "Tolleranza"
+        "tolerance": "Tolleranza",
+        "decontaminate": "Pulizia bordi"
       },
       "toolbar": {
         "title": "Modifica maschera",
@@ -1260,7 +1278,9 @@
         "tone": "Tono",
         "transformRotation": "Trasformazione e Rotazione",
         "vignette": "Vignettatura",
-        "whiteBalance": "Bilanciamento del Bianco"
+        "whiteBalance": "Bilanciamento del Bianco",
+        "channelMixer": "Mixer canali",
+        "splitToning": "Tonalità divisa"
       },
       "includedAdjustments": "Regolazioni Incluse",
       "modeMerge": "Unisci",

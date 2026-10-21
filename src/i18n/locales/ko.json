@@ -162,6 +162,20 @@
       "roundness": "둥글기",
       "size": "크기",
       "vignette": "비네트"
+    },
+    "channelMixer": {
+      "title": "채널 믹서",
+      "outputs": "출력 채널",
+      "reset": "초기화",
+      "hint": "각 입력 색상 채널이 출력 채널에 기여하는 비율을 조정합니다."
+    },
+    "splitToning": {
+      "title": "분리 토닝",
+      "enabled": "활성화",
+      "highlights": "하이라이트",
+      "shadows": "그림자",
+      "saturation": "채도",
+      "balance": "균형"
     }
   },
   "contextMenus": {
@@ -333,7 +347,9 @@
         "color": "색상",
         "curves": "커브",
         "details": "디테일",
-        "effects": "효과"
+        "effects": "효과",
+        "channel_mixer": "채널 믹서",
+        "split_toning": "분리 토닝"
       },
       "title": "조정",
       "tooltips": {
@@ -561,7 +577,8 @@
         "switchOrientation": "방향 전환",
         "switchToLandscape": "가로로 전환",
         "switchToPortrait": "세로로 전환",
-        "transform": "원근 및 키스톤 보정"
+        "transform": "원근 및 키스톤 보정",
+        "aiStraighten": "AI 수평 보정"
       }
     },
     "externalEdit": {
@@ -626,7 +643,8 @@
         "feather": "페더",
         "globalFeather": "전체 페더",
         "grow": "확장",
-        "tolerance": "허용 오차"
+        "tolerance": "허용 오차",
+        "decontaminate": "가장자리 정리"
       },
       "toolbar": {
         "title": "마스크 편집",
@@ -1234,7 +1252,9 @@
         "tone": "톤",
         "transformRotation": "변형 및 회전",
         "vignette": "비네트",
-        "whiteBalance": "화이트 밸런스"
+        "whiteBalance": "화이트 밸런스",
+        "channelMixer": "채널 믹서",
+        "splitToning": "분리 토닝"
       },
       "includedAdjustments": "포함된 조정값",
       "modeMerge": "병합",

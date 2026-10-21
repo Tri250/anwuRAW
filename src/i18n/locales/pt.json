@@ -162,6 +162,20 @@
       "roundness": "Arredondamento",
       "size": "Tamanho",
       "vignette": "Vinheta"
+    },
+    "channelMixer": {
+      "title": "Misturador de Canais",
+      "outputs": "Canais de Saída",
+      "reset": "Redefinir",
+      "hint": "Ajuste a porcentagem de cada canal de cor de entrada que contribui para o canal de saída."
+    },
+    "splitToning": {
+      "title": "Tonificação Dividida",
+      "enabled": "Ativar",
+      "highlights": "Realces",
+      "shadows": "Sombras",
+      "saturation": "Saturação",
+      "balance": "Equilíbrio"
     }
   },
   "contextMenus": {
@@ -349,7 +363,9 @@
         "color": "Cor",
         "curves": "Curvas",
         "details": "Detalhes",
-        "effects": "Efeitos"
+        "effects": "Efeitos",
+        "channel_mixer": "Misturador de Canais",
+        "split_toning": "Tonificação Dividida"
       },
       "title": "Ajustes",
       "tooltips": {
@@ -583,7 +599,8 @@
         "switchOrientation": "Mudar orientação",
         "switchToLandscape": "Mudar para paisagem",
         "switchToPortrait": "Mudar para retrato",
-        "transform": "Correção de perspectiva e keystone"
+        "transform": "Correção de perspectiva e keystone",
+        "aiStraighten": "Endireitar com IA"
       }
     },
     "externalEdit": {
@@ -648,7 +665,8 @@
         "feather": "Difusão",
         "globalFeather": "Difusão Global",
         "grow": "Expandir",
-        "tolerance": "Tolerância"
+        "tolerance": "Tolerância",
+        "decontaminate": "Limpeza de Bordas"
       },
       "toolbar": {
         "title": "Edição de máscara",
@@ -1260,7 +1278,9 @@
         "tone": "Tons",
         "transformRotation": "Transformação e Rotação",
         "vignette": "Vinheta",
-        "whiteBalance": "Balanço de Branco"
+        "whiteBalance": "Balanço de Branco",
+        "channelMixer": "Misturador de Canais",
+        "splitToning": "Tonificação Dividida"
       },
       "includedAdjustments": "Ajustes Incluídos",
       "modeMerge": "Mesclar",

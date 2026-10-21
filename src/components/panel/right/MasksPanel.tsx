@@ -44,8 +44,6 @@ import CurveGraph from '../../adjustments/Curves';
 import ColorPanel from '../../adjustments/Color';
 import DetailsPanel from '../../adjustments/Details';
 import EffectsPanel from '../../adjustments/Effects';
-import ChannelMixer from '../../adjustments/ChannelMixer';
-import SplitToning from '../../adjustments/SplitToning';
 import Waveform from '../editor/Waveform';
 import Resizer from '../../ui/Resizer';
 import { DepthRangePicker } from '../../ui/DepthRangePicker';
@@ -2294,15 +2292,16 @@ function SettingsPanel({
         onMouseLeave={() => setIsMaskControlHovered(false)}
         className="flex flex-col gap-2"
       >
-        {Object.keys(ADJUSTMENT_SECTIONS).map((sectionName) => {
+        {/* channel_mixer / split_toning 仅支持全局调整（CPU 后处理），蒙版局部渲染管线不支持，不在此渲染 */}
+        {Object.keys(ADJUSTMENT_SECTIONS)
+          .filter((sectionName) => sectionName !== 'channel_mixer' && sectionName !== 'split_toning')
+          .map((sectionName) => {
           const SectionComponent: any = {
             basic: BasicAdjustments,
             curves: CurveGraph,
             color: ColorPanel,
             details: DetailsPanel,
             effects: EffectsPanel,
-            channel_mixer: ChannelMixer,
-            split_toning: SplitToning,
           }[sectionName];
           const title = t(`editor.adjustments.sections.${sectionName}`);
           return (

@@ -162,6 +162,20 @@
       "roundness": "Roundness",
       "size": "Size",
       "vignette": "Vignette"
+    },
+    "channelMixer": {
+      "title": "Channel Mixer",
+      "outputs": "Output Channels",
+      "reset": "Reset",
+      "hint": "Adjust the percentage of each input color channel that contributes to the output channel."
+    },
+    "splitToning": {
+      "title": "Split Toning",
+      "enabled": "Enable",
+      "highlights": "Highlights",
+      "shadows": "Shadows",
+      "saturation": "Saturation",
+      "balance": "Balance"
     }
   },
   "contextMenus": {
@@ -333,7 +347,9 @@
         "color": "Color",
         "curves": "Curves",
         "details": "Details",
-        "effects": "Effects"
+        "effects": "Effects",
+        "channel_mixer": "Channel Mixer",
+        "split_toning": "Split Toning"
       },
       "title": "Adjustments",
       "tooltips": {
@@ -570,7 +586,8 @@
         "switchOrientation": "Switch orientation",
         "switchToLandscape": "Switch to landscape",
         "switchToPortrait": "Switch to portrait",
-        "transform": "Perspective and keystone correction"
+        "transform": "Perspective and keystone correction",
+        "aiStraighten": "AI Straighten"
       }
     },
     "externalEdit": {
@@ -635,7 +652,8 @@
         "feather": "Feather",
         "globalFeather": "Global Feather",
         "grow": "Grow",
-        "tolerance": "Tolerance"
+        "tolerance": "Tolerance",
+        "decontaminate": "Edge Cleanup"
       },
       "patches": {
         "copyName": "{{name}} Copy",
@@ -1257,7 +1275,9 @@
         "tone": "Tone",
         "transformRotation": "Transform & Rotation",
         "vignette": "Vignette",
-        "whiteBalance": "White Balance"
+        "whiteBalance": "White Balance",
+        "channelMixer": "Channel Mixer",
+        "splitToning": "Split Toning"
       },
       "includedAdjustments": "Included Adjustments",
       "modeMerge": "Merge",

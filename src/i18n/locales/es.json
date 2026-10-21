@@ -162,6 +162,20 @@
       "roundness": "Redondez",
       "size": "Tamaño",
       "vignette": "Viñeteado"
+    },
+    "channelMixer": {
+      "title": "Mezclador de canales",
+      "outputs": "Canales de salida",
+      "reset": "Restablecer",
+      "hint": "Ajusta el porcentaje de cada canal de color de entrada que contribuye al canal de salida."
+    },
+    "splitToning": {
+      "title": "Tono dividido",
+      "enabled": "Activar",
+      "highlights": "Altas luces",
+      "shadows": "Sombras",
+      "saturation": "Saturación",
+      "balance": "Equilibrio"
     }
   },
   "contextMenus": {
@@ -349,7 +363,9 @@
         "color": "Color",
         "curves": "Curvas",
         "details": "Detalles",
-        "effects": "Efectos"
+        "effects": "Efectos",
+        "channel_mixer": "Mezclador de canales",
+        "split_toning": "Tono dividido"
       },
       "title": "Ajustes",
       "tooltips": {
@@ -583,7 +599,8 @@
         "switchOrientation": "Cambiar orientación",
         "switchToLandscape": "Cambiar a horizontal",
         "switchToPortrait": "Cambiar a vertical",
-        "transform": "Corrección de perspectiva y distorsión trapezoidal"
+        "transform": "Corrección de perspectiva y distorsión trapezoidal",
+        "aiStraighten": "Enderezar con IA"
       }
     },
     "externalEdit": {
@@ -648,7 +665,8 @@
         "feather": "Desvanecimiento",
         "globalFeather": "Desvanecimiento global",
         "grow": "Expandir",
-        "tolerance": "Tolerancia"
+        "tolerance": "Tolerancia",
+        "decontaminate": "Limpieza de bordes"
       },
       "toolbar": {
         "title": "Edición de máscara",
@@ -1260,7 +1278,9 @@
         "tone": "Tonos",
         "transformRotation": "Transformación y Rotación",
         "vignette": "Viñeteado",
-        "whiteBalance": "Balance de blancos"
+        "whiteBalance": "Balance de blancos",
+        "channelMixer": "Mezclador de canales",
+        "splitToning": "Tono dividido"
       },
       "includedAdjustments": "Ajustes incluidos",
       "modeMerge": "Fusionar",

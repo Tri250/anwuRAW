@@ -162,6 +162,20 @@
       "roundness": "Arrondi",
       "size": "Taille",
       "vignette": "Vignettage"
+    },
+    "channelMixer": {
+      "title": "Mélangeur de couches",
+      "outputs": "Canaux de sortie",
+      "reset": "Réinitialiser",
+      "hint": "Ajustez le pourcentage de chaque canal de couleur d'entrée contribuant au canal de sortie."
+    },
+    "splitToning": {
+      "title": "Tonalité divisée",
+      "enabled": "Activer",
+      "highlights": "Hautes lumières",
+      "shadows": "Ombres",
+      "saturation": "Saturation",
+      "balance": "Balance"
     }
   },
   "contextMenus": {
@@ -349,7 +363,9 @@
         "color": "Couleur",
         "curves": "Courbes",
         "details": "Détails",
-        "effects": "Effets"
+        "effects": "Effets",
+        "channel_mixer": "Mélangeur de couches",
+        "split_toning": "Tonalité divisée"
       },
       "title": "Ajustements",
       "tooltips": {
@@ -585,7 +601,8 @@
         "switchOrientation": "Changer l'orientation",
         "switchToLandscape": "Basculer en paysage",
         "switchToPortrait": "Basculer en portrait",
-        "transform": "Correction de perspective et de trapèze"
+        "transform": "Correction de perspective et de trapèze",
+        "aiStraighten": "Redressement IA"
       },
       "autoCropAfterRotate": "Auto-crop black borders after rotation"
     },
@@ -651,7 +668,8 @@
         "feather": "Contour progressif",
         "globalFeather": "Contour progressif global",
         "grow": "Agrandir",
-        "tolerance": "Tolérance"
+        "tolerance": "Tolérance",
+        "decontaminate": "Nettoyage des bords"
       },
       "toolbar": {
         "title": "Édition du masque",
@@ -1278,7 +1296,9 @@
         "tone": "Tonalité",
         "transformRotation": "Transformation & Rotation",
         "vignette": "Vignettage",
-        "whiteBalance": "Balance des blancs"
+        "whiteBalance": "Balance des blancs",
+        "channelMixer": "Mélangeur de couches",
+        "splitToning": "Tonalité divisée"
       },
       "includedAdjustments": "Ajustements inclus",
       "modeMerge": "Fusionner",

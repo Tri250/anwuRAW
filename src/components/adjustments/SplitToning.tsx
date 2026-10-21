@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Slider from '../ui/Slider';
-import CollapsibleSection from '../ui/CollapsibleSection';
 import ColorWheel from '../ui/ColorWheel';
 import Switch from '../ui/Switch';
 import Text from '../ui/Text';
@@ -26,11 +24,9 @@ interface SplitToningProps {
 
 const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragStateChange }: SplitToningProps) => {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(true);
 
   const st: SplitToningSettings = adjustments.splitToning || defaultSplitToning;
-  const sectionVisible = adjustments.sectionVisibility?.split_toning !== false;
-  const contentVisible = st.enabled && sectionVisible;
+  const contentVisible = st.enabled;
 
   const handleToggleEnabled = () => {
     setAdjustments({ splitToning: { ...st, enabled: !st.enabled } });
@@ -83,19 +79,12 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
   };
 
   return (
-    <CollapsibleSection
-      title={t('adjustments.splitToning.title', 'Split Toning / 分离色调')}
-      isOpen={isOpen}
-      onToggle={() => setIsOpen(!isOpen)}
-      isContentVisible={contentVisible}
-      onToggleVisibility={handleToggleEnabled}
-      canToggleVisibility={true}
-    >
+    <>
       {/* enabled Switch */}
       <div className="mb-4">
         <Switch
           checked={st.enabled}
-          label={t('adjustments.splitToning.enabled', 'Enable / 启用')}
+          label={t('adjustments.splitToning.enabled')}
           onChange={handleToggleEnabled}
         />
       </div>
@@ -104,7 +93,7 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
         {/* 高光区域 */}
         <div className="mb-4">
           <Text variant={TextVariants.heading} className="mb-2 block">
-            {t('adjustments.splitToning.highlights', 'Highlights / 高光')}
+            {t('adjustments.splitToning.highlights')}
           </Text>
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 shrink-0">
@@ -119,7 +108,7 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
             <div className="flex-1 min-w-0">
               <Slider
                 defaultValue={defaultSplitToning.highlights_saturation}
-                label={t('adjustments.splitToning.saturation', 'Saturation')}
+                label={t('adjustments.splitToning.saturation')}
                 max={100}
                 min={0}
                 step={1}
@@ -136,7 +125,7 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
         {/* 阴影区域 */}
         <div className="mb-4">
           <Text variant={TextVariants.heading} className="mb-2 block">
-            {t('adjustments.splitToning.shadows', 'Shadows / 阴影')}
+            {t('adjustments.splitToning.shadows')}
           </Text>
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 shrink-0">
@@ -151,7 +140,7 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
             <div className="flex-1 min-w-0">
               <Slider
                 defaultValue={defaultSplitToning.shadows_saturation}
-                label={t('adjustments.splitToning.saturation', 'Saturation')}
+                label={t('adjustments.splitToning.saturation')}
                 max={100}
                 min={0}
                 step={1}
@@ -169,7 +158,7 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
         <div>
           <Slider
             defaultValue={defaultSplitToning.balance}
-            label={t('adjustments.splitToning.balance', 'Balance / 平衡')}
+            label={t('adjustments.splitToning.balance')}
             max={100}
             min={-100}
             step={1}
@@ -179,7 +168,7 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
           />
         </div>
       </div>
-    </CollapsibleSection>
+    </>
   );
 };
 

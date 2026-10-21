@@ -162,6 +162,20 @@
       "roundness": "Округлость",
       "size": "Размер",
       "vignette": "Виньетирование"
+    },
+    "channelMixer": {
+      "title": "Микшер каналов",
+      "outputs": "Выходные каналы",
+      "reset": "Сбросить",
+      "hint": "Настройте процентный вклад каждого входного цветового канала в выходной канал."
+    },
+    "splitToning": {
+      "title": "Раздельное тонирование",
+      "enabled": "Включить",
+      "highlights": "Света",
+      "shadows": "Тени",
+      "saturation": "Насыщенность",
+      "balance": "Баланс"
     }
   },
   "contextMenus": {
@@ -365,7 +379,9 @@
         "color": "Цвет",
         "curves": "Кривые",
         "details": "Детали",
-        "effects": "Эффекты"
+        "effects": "Эффекты",
+        "channel_mixer": "Микшер каналов",
+        "split_toning": "Раздельное тонирование"
       },
       "title": "Настройки",
       "tooltips": {
@@ -603,7 +619,8 @@
         "switchOrientation": "Сменить ориентацию",
         "switchToLandscape": "Переключить на альбомную",
         "switchToPortrait": "Переключить на портретную",
-        "transform": "Коррекция перспективы и искажений"
+        "transform": "Коррекция перспективы и искажений",
+        "aiStraighten": "ИИ-выравнивание"
       }
     },
     "externalEdit": {
@@ -668,7 +685,8 @@
         "feather": "Растушевка",
         "globalFeather": "Общая растушевка",
         "grow": "Расширение",
-        "tolerance": "Допуск"
+        "tolerance": "Допуск",
+        "decontaminate": "Очистка краёв"
       },
       "toolbar": {
         "title": "Редактирование маски",
@@ -1284,7 +1302,9 @@
         "tone": "Тональность",
         "transformRotation": "Трансформация и поворот",
         "vignette": "Виньетка",
-        "whiteBalance": "Баланс белого"
+        "whiteBalance": "Баланс белого",
+        "channelMixer": "Микшер каналов",
+        "splitToning": "Раздельное тонирование"
       },
       "includedAdjustments": "Включаемые настройки",
       "modeMerge": "Объединить",

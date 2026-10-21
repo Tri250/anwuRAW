@@ -162,6 +162,20 @@
       "roundness": "圓度",
       "size": "大小",
       "vignette": "暗角"
+    },
+    "channelMixer": {
+      "title": "通道混合器",
+      "outputs": "輸出通道",
+      "reset": "重設",
+      "hint": "調整各輸入顏色通道對輸出通道的貢獻百分比。"
+    },
+    "splitToning": {
+      "title": "分離色調",
+      "enabled": "啟用",
+      "highlights": "亮部",
+      "shadows": "陰影",
+      "saturation": "飽和度",
+      "balance": "平衡"
     }
   },
   "contextMenus": {
@@ -333,7 +347,9 @@
         "color": "顏色",
         "curves": "曲線",
         "details": "細節",
-        "effects": "效果"
+        "effects": "效果",
+        "channel_mixer": "通道混合器",
+        "split_toning": "分離色調"
       },
       "title": "調整",
       "tooltips": {
@@ -561,7 +577,8 @@
         "switchOrientation": "切換方向",
         "switchToLandscape": "切換為橫向",
         "switchToPortrait": "切換為縱向",
-        "transform": "透視和梯形校正"
+        "transform": "透視和梯形校正",
+        "aiStraighten": "AI 水平校正"
       }
     },
     "externalEdit": {
@@ -626,7 +643,8 @@
         "feather": "羽化",
         "globalFeather": "全域羽化",
         "grow": "擴張",
-        "tolerance": "容差"
+        "tolerance": "容差",
+        "decontaminate": "邊緣淨化"
       },
       "toolbar": {
         "title": "蒙版編輯",
@@ -1234,7 +1252,9 @@
         "tone": "色調",
         "transformRotation": "變換與旋轉",
         "vignette": "暗角",
-        "whiteBalance": "白平衡"
+        "whiteBalance": "白平衡",
+        "channelMixer": "通道混合器",
+        "splitToning": "分離色調"
       },
       "includedAdjustments": "包含的調整",
       "modeMerge": "合併",

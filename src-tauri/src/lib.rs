@@ -381,6 +381,23 @@ fn process_preview_job(
     #[cfg(any(target_os = "linux", target_os = "android"))]
     let use_wgpu_renderer = false;
 
+    // 通道混合器与分离色调是 CPU 后处理效果（apply_post_gpu_adjustments），
+    // WGPU 直通分支（emit "wgpu-frame-ready"）不执行该后处理。
+    // 两者任一激活时回退 CPU 渲染路径，保证编辑器预览与导出结果一致。
+    let channel_mixer_active = adjustments_clone
+        .get("channelMixer")
+        .and_then(|v| {
+            serde_json::from_value::<crate::channel_mixer::ChannelMixerSettings>(v.clone())
+                .ok()
+        })
+        .is_some_and(|cm| !cm.is_identity());
+    let split_toning_active = adjustments_clone
+        .get("splitToning")
+        .and_then(|v| v.get("enabled"))
+        .and_then(|e| e.as_bool())
+        .unwrap_or(false);
+    let use_wgpu_renderer = use_wgpu_renderer && !channel_mixer_active && !split_toning_active;
+
     let has_roi = roi.is_some();
     let (interactive_divisor, interactive_quality) = match live_quality {
         "full" => (1.0_f32, 85_u8),

@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Slider from '../ui/Slider';
-import CollapsibleSection from '../ui/CollapsibleSection';
 import Text from '../ui/Text';
 import { Adjustments, ChannelMixerSettings } from '../../utils/adjustments';
 import { TextVariants } from '../../types/typography';
@@ -68,10 +66,8 @@ export default function ChannelMixer({
   onDragStateChange,
 }: ChannelMixerProps) {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(true);
 
   const current: ChannelMixerSettings = adjustments.channelMixer || defaultIdentity;
-  const sectionVisible = adjustments.sectionVisibility?.channel_mixer !== false;
 
   const handleSliderChange = (key: keyof ChannelMixerSettings) => (e: { target: { value: string | number } }) => {
     setAdjustments({
@@ -88,31 +84,19 @@ export default function ChannelMixer({
     });
   };
 
-  // 与 SplitToning 保持一致：将 reset 按钮直接放在内容区顶部，不使用可切换可见性
-  const handleToggleVisibility = () => {
-    // sectionVisibility.channel 由父组件维护时可在此触发
-  };
-
   return (
-    <CollapsibleSection
-      title={t('adjustments.channelMixer.title', 'Channel Mixer / 通道混合器')}
-      isOpen={isOpen}
-      onToggle={() => setIsOpen(!isOpen)}
-      isContentVisible={sectionVisible}
-      onToggleVisibility={handleToggleVisibility}
-      canToggleVisibility={false}
-    >
+    <>
       <div className="flex items-center justify-between mb-3">
         <Text variant={TextVariants.heading}>
-          {t('adjustments.channelMixer.outputs', 'Output Channels / 输出通道')}
+          {t('adjustments.channelMixer.outputs')}
         </Text>
         <button
           type="button"
           onClick={handleReset}
           className="px-2.5 py-1 text-xs rounded-md bg-surface-secondary text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
-          title={t('adjustments.channelMixer.reset', 'Reset / 重置')}
+          title={t('adjustments.channelMixer.reset')}
         >
-          {t('adjustments.channelMixer.reset', 'Reset')}
+          {t('adjustments.channelMixer.reset')}
         </button>
       </div>
 
@@ -168,12 +152,9 @@ export default function ChannelMixer({
       {/* 辅助说明 */}
       <div className="mt-3 text-[11px] text-text-secondary/70 leading-tight px-1">
         <p>
-          {t(
-            'adjustments.channelMixer.hint',
-            'Adjust the percentage of each input color channel that contributes to the output channel.',
-          )}
+          {t('adjustments.channelMixer.hint')}
         </p>
       </div>
-    </CollapsibleSection>
+    </>
   );
 }
