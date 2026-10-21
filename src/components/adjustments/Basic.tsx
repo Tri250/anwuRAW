@@ -46,6 +46,22 @@ const SCENE_SCOPE_DEFAULTS: Partial<Adjustments> = {
 /** 场景预设写入的参数所属 section（与 SCENE_SCOPE_DEFAULTS 的键一一对应） */
 const SCENE_SECTIONS = ['basic', 'color', 'details'] as const;
 
+const SCENE_SCOPE_KEYS = Object.keys(SCENE_SCOPE_DEFAULTS) as Array<keyof typeof SCENE_SCOPE_DEFAULTS>;
+
+/**
+ * 判定当前调整状态是否与某个场景完全一致（治理域 14 键逐键比对）。
+ * 用于切换态高亮与「再次点击还原」：状态由值推导而非点击记忆，
+ * 撤销/重置/手动微调后高亮自然消失，手动调回场景值则自然恢复。
+ */
+export const getActiveSceneLabelKey = (adjustments: Partial<Adjustments>): string | null => {
+  for (const preset of SCENE_ENHANCE) {
+    const resolved = { ...SCENE_SCOPE_DEFAULTS, ...preset.values };
+    const isMatch = SCENE_SCOPE_KEYS.every((key) => adjustments[key] === resolved[key]);
+    if (isMatch) return preset.labelKey;
+  }
+  return null;
+};
+
 interface SceneEnhanceOptions {
   labelKey: string;
   /** 在治理域默认值之上叠加的场景校准参数（真实生效） */
@@ -284,8 +300,14 @@ export default function BasicAdjustments({
     }));
   };
 
+  // 当前激活的场景（由当前值推导），用于切换高亮与再次点击还原
+  const activeSceneLabelKey = useMemo(() => getActiveSceneLabelKey(adjustments), [adjustments]);
+
   const applySceneEnhance = (target: SceneEnhanceOptions) => {
-    if (!target.values) return;
+    const isActive = target.labelKey === activeSceneLabelKey;
+    // 切换语义：点不同场景 = 治理域归零后叠加新场景校准值；
+    // 再次点击已激活场景 = 退出场景，治理域回归中性（其余参数一律保留）
+    const sceneValues = isActive ? SCENE_SCOPE_DEFAULTS : { ...SCENE_SCOPE_DEFAULTS, ...target.values };
     setAdjustments((prev: Partial<Adjustments>) => {
       const prevVisibility = prev.sectionVisibility || INITIAL_ADJUSTMENTS.sectionVisibility;
       // 强制开启场景参数所属 section：被 eye 隐藏的 section 在后端 get_val 中会被归零，
@@ -296,8 +318,7 @@ export default function BasicAdjustments({
       }
       return {
         ...prev,
-        ...SCENE_SCOPE_DEFAULTS,
-        ...target.values,
+        ...sceneValues,
         sectionVisibility,
       };
     });
@@ -326,16 +347,24 @@ export default function BasicAdjustments({
                 {t('adjustments.basic.scene.auto')}
               </button>
             )}
-            {SCENE_ENHANCE.map((preset) => (
-              <button
-                key={preset.labelKey}
-                type="button"
-                onClick={() => applySceneEnhance(preset)}
-                className="px-2.5 py-1 text-xs rounded-md bg-surface-secondary text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
-              >
-                {t(preset.labelKey)}
-              </button>
-            ))}
+            {SCENE_ENHANCE.map((preset) => {
+              const isActive = preset.labelKey === activeSceneLabelKey;
+              return (
+                <button
+                  key={preset.labelKey}
+                  type="button"
+                  onClick={() => applySceneEnhance(preset)}
+                  className={clsx(
+                    'px-2.5 py-1 text-xs rounded-md transition-colors',
+                    isActive
+                      ? 'bg-accent text-button-text hover:opacity-90'
+                      : 'bg-surface-secondary text-text-secondary hover:bg-surface hover:text-text-primary',
+                  )}
+                >
+                  {t(preset.labelKey)}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

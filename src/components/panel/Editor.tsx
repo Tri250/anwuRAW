@@ -3,7 +3,6 @@ import { Crop, PercentCrop } from 'react-image-crop';
 import { Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { invoke } from '@tauri-apps/api/core';
-import debounce from 'lodash.debounce';
 
 import { ImageDimensions, RenderSize, useImageRenderSize } from '../../hooks/useImageRenderSize';
 import { Adjustments, AiPatch, MaskContainer, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
@@ -25,7 +24,7 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import { useUIStore } from '../../store/useUIStore';
 import { useLibraryStore } from '../../store/useLibraryStore';
 import { useAiMasking } from '../../hooks/useAiMasking';
-import { useEditorActions } from '../../hooks/useEditorActions';
+import { useEditorActions, debouncedSetHistory } from '../../hooks/useEditorActions';
 import { toast } from 'react-toastify';
 
 const parseRgb = (rgbStr: string): [number, number, number, number] => {
@@ -121,14 +120,14 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
   const goToHistoryIndex = useEditorStore((s) => s.goToHistoryIndex);
-  const pushHistory = useEditorStore((s) => s.pushHistory);
   const canUndo = adjustmentsHistoryIndex > 0;
   const canRedo = adjustmentsHistoryIndex < adjustmentsHistory.length - 1;
 
   const isAndroid = osPlatform === 'android';
 
-  const debouncedSetHistory = useMemo(() => debounce((newAdj: Adjustments) => pushHistory(newAdj), 500), [pushHistory]);
-
+  // 历史推送统一走 useEditorActions 的模块级防抖实例：
+  // 图片切换(useAppNavigation)会 cancel 该实例，避免旧图状态被压入新图历史栈；
+  // 此前的组件级重复防抖实例不受切换取消保护，存在跨图历史污染
   const setAdjustments = useCallback(
     (value: Partial<Adjustments> | ((prev: Adjustments) => Adjustments)) => {
       setEditor((state) => {
@@ -141,7 +140,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         };
       });
     },
-    [debouncedSetHistory, setEditor],
+    [setEditor],
   );
 
   const { handleGenerateAiMask, handleQuickErase, handleDirectPatch } = useAiMasking();
