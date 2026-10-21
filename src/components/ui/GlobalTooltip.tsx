@@ -78,6 +78,10 @@ export default function GlobalTooltip() {
     };
 
     const handleMouseOver = (e: MouseEvent) => {
+      // 触屏设备（Android/平板）不展示悬浮提示：tap 会合成 mouseover 且无对应 mouseout，
+      // 导致提示在点击后约 500ms 弹出并滞留 UI 之上（幽灵提示）；触屏下该信息不可达也无意义
+      if (window.matchMedia?.('(pointer: coarse)').matches) return;
+
       const el = (e.target as HTMLElement).closest?.('[data-tooltip]');
       if (!el || !(el instanceof HTMLElement)) return;
       if (el === targetRef.current) return;
@@ -131,6 +135,8 @@ export default function GlobalTooltip() {
     document.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('mouseout', handleMouseOut);
     document.addEventListener('mousedown', dismiss);
+    // 任何触摸立即收回提示（触屏笔记本/平板/Android 兜底）
+    document.addEventListener('touchstart', dismiss, { passive: true });
     document.addEventListener('scroll', dismiss, true);
     document.addEventListener('keydown', onKey);
 
@@ -138,6 +144,7 @@ export default function GlobalTooltip() {
       document.removeEventListener('mouseover', handleMouseOver);
       document.removeEventListener('mouseout', handleMouseOut);
       document.removeEventListener('mousedown', dismiss);
+      document.removeEventListener('touchstart', dismiss);
       document.removeEventListener('scroll', dismiss, true);
       document.removeEventListener('keydown', onKey);
       clearTimer();
@@ -184,7 +191,8 @@ export default function GlobalTooltip() {
             'fixed z-100 pointer-events-none',
             'bg-surface/80 backdrop-blur-xs',
             'border border-text-secondary/10 shadow-xl rounded-md',
-            'px-2.5 py-1.5 whitespace-nowrap',
+            // 限制最大宽度并允许换行：窄屏（手机竖屏）上中文长提示不再溢出视口
+            'px-2.5 py-1.5 max-w-[min(80vw,20rem)] whitespace-normal',
             tooltip.isAbove && '-translate-y-full',
           )}
         >

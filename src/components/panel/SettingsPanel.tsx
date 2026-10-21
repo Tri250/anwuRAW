@@ -31,7 +31,7 @@ import Dropdown, { OptionItem } from '../ui/Dropdown';
 import Switch from '../ui/Switch';
 import Input from '../ui/Input';
 import Slider from '../ui/Slider';
-import { ThemeProps, THEMES, DEFAULT_THEME_ID } from '../../utils/themes';
+import { ThemeProps, THEMES, DEFAULT_THEME_ID, THEME_EXPLICIT_KEY } from '../../utils/themes';
 import { useTranslation } from 'react-i18next';
 import { Invokes } from '../ui/AppProperties';
 import {
@@ -1105,7 +1105,15 @@ export default function SettingsPanel({
                     <div className="space-y-8">
                       <SettingItem label={t('settings.general.theme')} description={t('settings.general.themeDesc')}>
                         <Dropdown
-                          onChange={(value: any) => onSettingsChange({ ...appSettings, theme: value })}
+                          onChange={(value: any) => {
+                            // 显式选择主题：写入标记，Android 端此后不再跟随系统深浅色
+                            try {
+                              localStorage.setItem(THEME_EXPLICIT_KEY, '1');
+                            } catch (_err) {
+                              /* localStorage 不可用时忽略，仅失去跟随系统语义 */
+                            }
+                            onSettingsChange({ ...appSettings, theme: value });
+                          }}
                           options={THEMES.map((theme: ThemeProps) => ({
                             value: theme.id,
                             label: t(theme.name as any),

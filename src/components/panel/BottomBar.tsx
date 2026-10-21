@@ -66,7 +66,8 @@ const StarRating = ({ rating, onRate, disabled }: StarRatingProps) => {
         const starValue = index + 1;
         return (
           <button
-            className="disabled:cursor-not-allowed"
+            // p-1.5 扩大触控目标：18px 图标 → 30px 命中区（Android 触屏误触率显著降低）
+            className="p-1.5 disabled:cursor-not-allowed"
             disabled={disabled}
             key={starValue}
             onClick={() => !disabled && onRate(starValue === rating ? 0 : starValue)}
@@ -104,7 +105,8 @@ interface PanelToggleButtonProps {
 const PanelToggleButton = ({ onClick, Icon, tooltip, disabled = false }: PanelToggleButtonProps) => (
   <button
     className={clsx(
-      'p-1.5 rounded-md transition-colors',
+      // p-2 扩大触控目标：18px 图标 → 34px 命中区（触屏可达性）
+      'p-2 rounded-md transition-colors',
       disabled
         ? 'text-text-secondary opacity-40 cursor-not-allowed'
         : 'text-text-secondary hover:bg-surface hover:text-text-primary',

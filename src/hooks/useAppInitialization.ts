@@ -6,7 +6,7 @@ import { useUIStore, reconcileWorkspace } from '../store/useUIStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useEditorStore } from '../store/useEditorStore';
 import { useProcessStore } from '../store/useProcessStore';
-import { THEMES, DEFAULT_THEME_ID, ThemeProps } from '../utils/themes';
+import { THEMES, DEFAULT_THEME_ID, ThemeProps, THEME_EXPLICIT_KEY } from '../utils/themes';
 import { COPYABLE_ADJUSTMENT_KEYS } from '../utils/adjustments';
 import {
   FilterCriteria,
@@ -189,6 +189,8 @@ export const useAppInitialization = ({
 
         setAppSettings(settings);
         i18n.changeLanguage(settings.language);
+        // 同步 <html lang> 与界面语言：保证无障碍（读屏发音）与浏览器文本排版正确
+        document.documentElement.lang = settings.language || document.documentElement.lang;
 
         if (settings?.sortCriteria) setSortCriteria(settings.sortCriteria);
 
@@ -373,6 +375,10 @@ export const useAppInitialization = ({
     if (appSettings.language && appSettings.language !== i18n.language) {
       i18n.changeLanguage(appSettings.language);
     }
+    // 设置页切换语言后同步 <html lang>
+    if (appSettings.language) {
+      document.documentElement.lang = appSettings.language;
+    }
   }, [appSettings?.language, i18n.language]);
 
   useEffect(() => {
@@ -474,6 +480,27 @@ export const useAppInitialization = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appSettings?.enableFolderImageCounts, appSettings?.folderTreeSort?.key]);
+
+  // Android 主题跟随系统深浅色（仅当用户从未显式选择过主题时）。
+  // 必须等待 appSettings 加载完成后再执行：启动流程会用持久化的 settings.theme
+  // （默认 light）覆盖 store，先跑会被那次覆盖冲掉。显式选择由设置页主题
+  // 选择器写入 THEME_EXPLICIT_KEY 标记，此后尊重用户选择。
+  useEffect(() => {
+    if (osPlatform !== 'android' || !appSettings) return;
+    let isExplicitTheme = false;
+    try {
+      isExplicitTheme = localStorage.getItem(THEME_EXPLICIT_KEY) === '1';
+    } catch (_err) {
+      isExplicitTheme = false;
+    }
+    if (isExplicitTheme) return;
+
+    const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const applySystemTheme = () => setTheme(darkQuery.matches ? Theme.Dark : Theme.Light);
+    applySystemTheme();
+    darkQuery.addEventListener('change', applySystemTheme);
+    return () => darkQuery.removeEventListener('change', applySystemTheme);
+  }, [osPlatform, appSettings, setTheme]);
 
   useEffect(() => {
     const root = document.documentElement;

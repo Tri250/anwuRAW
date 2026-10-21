@@ -68,3 +68,11 @@ export const THEMES: Array<ThemeProps> = [
 ];
 
 export const DEFAULT_THEME_ID = Theme.Light;
+
+/**
+ * 用户在设置中显式选择过主题的标记（localStorage）。
+ * Android 端据此决定是否跟随系统深浅色：未显式选择 → 跟随系统；显式选择 → 尊重用户选择。
+ * 启动时 useAppInitialization 也会以 settings.theme 调用 setTheme（持久化默认值），
+ * 因此该标记只能由设置页的主题选择器写入，不能放进 store 的 setTheme。
+ */
+export const THEME_EXPLICIT_KEY = 'anwuRAW.theme.explicit';

@@ -4,13 +4,29 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-      rel="stylesheet"
-    />
     <title>anwuRAW</title>
+    <script>
+      (function () {
+        // 远程 Poppins 仅桌面端使用；Android 端使用系统字体栈（见 useAppInitialization 字体适配）。
+        // 国内网络下 fonts.googleapis.com 往往不可达，阻塞式样式表会显著拖慢 Android 冷启动甚至白屏，
+        // 故改为 UA 门控 + 异步注入（非阻塞），并跳过 Android。
+        if (/Android/i.test(navigator.userAgent)) return;
+        var preconnectGoogle = document.createElement('link');
+        preconnectGoogle.rel = 'preconnect';
+        preconnectGoogle.href = 'https://fonts.googleapis.com';
+        var preconnectGstatic = document.createElement('link');
+        preconnectGstatic.rel = 'preconnect';
+        preconnectGstatic.href = 'https://fonts.gstatic.com';
+        preconnectGstatic.crossOrigin = '';
+        var stylesheet = document.createElement('link');
+        stylesheet.rel = 'stylesheet';
+        stylesheet.href =
+          'https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap';
+        document.head.appendChild(preconnectGoogle);
+        document.head.appendChild(preconnectGstatic);
+        document.head.appendChild(stylesheet);
+      })();
+    </script>
   </head>
 
   <body>
