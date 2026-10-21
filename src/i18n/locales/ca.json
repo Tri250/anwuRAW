@@ -28,7 +28,69 @@
         "prototypePortrait": "Retrat",
         "prototypeLandscape": "Paisatge",
         "prototypeNight": "Nit",
-        "prototypeWarmSunset": "Posta de sol càlida"
+        "prototypeWarmSunset": "Posta de sol càlida",
+        "masterRecipes": "Receptes de mestres",
+        "films": "Pel·lícules",
+        "filmsNeutral": "Neutral",
+        "recipeLutMissing": "El fitxer d'estil de la recepta mestra no està disponible",
+        "recipes": {
+          "hamada_daylight_v2": {
+            "subtitle": "Cel blau japonès · Llum high-key",
+            "summary": "Llum diürna translúcida high-key, cels blaus convertits en cian japonès, ombres mates suaus i tons de pell préssec cremosos"
+          },
+          "takashi_yasui_zen": {
+            "subtitle": "Zen minimal · Carrer japonès",
+            "summary": "Fort contrast llum-ombra, ombres fredes cian profundes, negres continguts amb llum d'accent càlida"
+          },
+          "takahiro_sakai_blue": {
+            "subtitle": "Claritat etèria · Blau pàl·lid",
+            "summary": "Lluor translúcida de pell japonesa, cian-blau etèri i transparent, ombres àmpliament elevades i llums suaus"
+          },
+          "withluke_epic": {
+            "subtitle": "Natura èpica · Verd blavós fred boirós",
+            "summary": "Muntanyes vastes i boscos boirosos, elimina verds digitals durs, verds freds de tundra entreteixits amb or càlid suau"
+          },
+          "daniel_casson_autumn": {
+            "subtitle": "Tardor rural · Oli clàssic",
+            "summary": "Sensació d'oli tardorenc del camp britànic, rics tons terra, fenc daurat i verds forestals profunds"
+          },
+          "billy_dinh_cinema": {
+            "subtitle": "Cinema de NY · Llum dramàtica",
+            "summary": "Textura cinemascope, retall de llum d'alt contrast, ombres profundes i or de focus"
+          },
+          "rkrkrk_cyberpunk": {
+            "subtitle": "Cyberpunk · Contrast màxim",
+            "summary": "Textura urbana densa, corba S dura, taronja-teal intens i xoc violeta-or"
+          },
+          "samalive_vintage": {
+            "subtitle": "Vintage oleós · Pel·lícula urbana",
+            "summary": "Pel·lícula urbana vintage càlida i oleosa, ombres estables i netes, llums daurades càlides amb sensació d'història errant"
+          },
+          "iwona_fairy_tale": {
+            "subtitle": "Oli de conte · Lluentor onírica",
+            "summary": "Sensació d'oli de llibre de contes, ombres profundes i calmes, llum daurada càlida i lluentor difusa"
+          },
+          "cinestill_800t": {
+            "subtitle": "Cinema de tungstè · Vermell i teal",
+            "summary": "Tonalitats fílmiques nocturnes cinematogràfiques, llums vermelles amb ombres fredes cian-verd profundes"
+          },
+          "wilson_lee_golden": {
+            "subtitle": "Japonès càlid · Boira daurada",
+            "summary": "La llum californiana es troba amb la pel·lícula japonesa, or difús per la ciutat, lluor càlida translúcida"
+          },
+          "luizclas_portrait": {
+            "subtitle": "Llum daurada · Retrat refinat",
+            "summary": "Retrats artístics a l'hora daurada, pell lluminosa sota gran contrast, ombres profundes i llum de contorn daurada al cabell"
+          },
+          "ivan_ivanchenko_twilight": {
+            "subtitle": "Capvespre · Transició anàloga",
+            "summary": "Lluentor crepuscular suau, llums daurades càlides amb suaus ombres cian-blau, retrats pictòrics de baix contrast"
+          },
+          "jungraphy_neon": {
+            "subtitle": "Ciutat de neó · Cian i rosa",
+            "summary": "Nits de neó de Seül, base cian freda xocant amb llums rosa-violeta, reflexos als carrers xopats de pluja"
+          }
+        }
       },
       "shadows": "Ombres",
       "toneMapper": "Mapejador de tons",

@@ -28,7 +28,69 @@
         "prototypePortrait": "Portret",
         "prototypeLandscape": "Krajobraz",
         "prototypeNight": "Noc",
-        "prototypeWarmSunset": "Ciepły zachód słońca"
+        "prototypeWarmSunset": "Ciepły zachód słońca",
+        "masterRecipes": "Przepisy mistrzów",
+        "films": "Filmy",
+        "filmsNeutral": "Neutralny",
+        "recipeLutMissing": "Plik look przepisu mistrza niedostępny",
+        "recipes": {
+          "hamada_daylight_v2": {
+            "subtitle": "Japońskie błękitne niebo · Światło high-key",
+            "summary": "Wysokokluczowe, przejrzyste światło dzienne, błękitne nieba w japoński cyjan, miękkie matowe cienie i kremowe brzoskwiniowe tony skóry"
+          },
+          "takashi_yasui_zen": {
+            "subtitle": "Minimalistyczny zen · Japońska ulica",
+            "summary": "Silny kontrast światła i cienia, głębokie chłodne cyjanowe cienie, powściągliwe czernie z ciepłym światłem akcentowym"
+          },
+          "takahiro_sakai_blue": {
+            "subtitle": "Przejrzysta lekkość · Blade błękit",
+            "summary": "Przejrzysty japoński blask skóry, lekki przezroczysty cyjan-błękit, szeroko podniesione cienie i miękkie światła"
+          },
+          "withluke_epic": {
+            "subtitle": "Epicka natura · Mglista chłodna morska zieleń",
+            "summary": "Rozległe góry i mgliste lasy, usuwa ostre cyfrowe zielenie, chłodne zielenie tundry wplecione w miękkie ciepłe złoto"
+          },
+          "daniel_casson_autumn": {
+            "subtitle": "Wiejska jesień · Klasyczny olej",
+            "summary": "Nastrój jesiennego malarstwa olejnego brytyjskiej wsi, bogate ziemske tony, złote siano i głębokie leśne zielenie"
+          },
+          "billy_dinh_cinema": {
+            "subtitle": "Kino z NY · Dramatyczne światło",
+            "summary": "Panoramiczna kinowa tekstura, kontrastowe cięcie światła, głębokie cienie i złoto reflektora"
+          },
+          "rkrkrk_cyberpunk": {
+            "subtitle": "Cyberpunk · Maksymalny kontrast",
+            "summary": "Gęsta miejska tekstura, ostra krzywa S, bogaty pomarańcz-teal i zderzenie fioletu ze złotem"
+          },
+          "samalive_vintage": {
+            "subtitle": "Oleiste vintage · Miejski film",
+            "summary": "Ciepły oleisty vintage'owy film miejski, stabilne czyste cienie, ciepłe złote światła z wędrownym klimatem opowieści"
+          },
+          "iwona_fairy_tale": {
+            "subtitle": "Baśniowy olej · Marzycielska poświata",
+            "summary": "Klimat olejnej książki baśni, głębokie spokojne cienie, ciepłe złote miękkie światło i rozproszona poświata"
+          },
+          "cinestill_800t": {
+            "subtitle": "Kino wolframowe · Czerwień i teal",
+            "summary": "Filmowe nocne tony kinowe, czerwone światła z głębokimi chłodnymi cyjanowo-zielonymi cieniami"
+          },
+          "wilson_lee_golden": {
+            "subtitle": "Ciepły japoński · Złota mgiełka",
+            "summary": "Kalifornijskie światło spotyka japoński film, rozproszone złoto w całym mieście, przejrzysty ciepły blask"
+          },
+          "luizclas_portrait": {
+            "subtitle": "Złote światło · Wyrafinowany portret",
+            "summary": "Artystyczne portrety w złotej godzinie, świetlista skóra przy dużym kontraście, głębokie cienie i złota obwódka światła we włosach"
+          },
+          "ivan_ivanchenko_twilight": {
+            "subtitle": "Zmierzch · Analogowe przejście",
+            "summary": "Miękka zmierzchowa poświata, ciepłe złote światła z delikatnymi cyjanowo-błękitnymi cieniami, malarskie portrety o niskim kontraście"
+          },
+          "jungraphy_neon": {
+            "subtitle": "Neonowe miasto · Cyjan i róż",
+            "summary": "Neonowe noce Seulu, chłodna cyjanowa baza zderzająca się z różowo-fioletowymi światłami, odbicia na mokrych od deszczu ulicach"
+          }
+        }
       },
       "shadows": "Cienie",
       "toneMapper": "Mapowanie tonów",

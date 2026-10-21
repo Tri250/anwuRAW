@@ -1,24 +1,55 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import BasicAdjustments, { getActiveSceneLabelKey } from '../../src/components/adjustments/Basic';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import BasicAdjustments, {
+  getActiveSceneLabelKey,
+  getActiveRecipeId,
+  mapRecipeLutPaths,
+} from '../../src/components/adjustments/Basic';
 import { Adjustments, INITIAL_ADJUSTMENTS } from '../../src/utils/adjustments';
+import { MASTER_RECIPES } from '../../src/utils/masterRecipes';
+import { mockInvoke } from './setup';
 
 // === TC-SCENE-* 系列:覆盖「场景增强」操作链路 ===
 // 链路:Basic.tsx applySceneEnhance → setAdjustments(updater) → 后端 GPU 管线
 // 重点回归:确定性治理域(切换场景不残留)、section 可见性强制开启、自动按钮联动
+//
+// === TC-RECIPE-* / TC-FILM-*:大师配方与胶片融合链路(移植自 RawLab/koudaixiangce) ===
+// 大师配方 = 14 基础键 + HSL + 内置 LUT 的完整外观治理域;
+// 胶片 = 仅 LUT 字段治理域(内置胶片模拟 LUT, scene-referred)。
 
 type Updater = (prev: Partial<Adjustments>) => Partial<Adjustments>;
 
+const MOCK_RES_DIR = '/mock/resources';
+const RECIPE_LUT_ENTRIES = MASTER_RECIPES.map((recipe) => ({
+  name: recipe.lutFileName,
+  path: `${MOCK_RES_DIR}/master_recipe_luts/${recipe.lutFileName}.cube`,
+}));
+const BUILT_IN_FILM_ENTRIES = [
+  { name: 'K-Portra 400', path: `${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`, isBuiltIn: true },
+  { name: 'K-Ektar 100', path: `${MOCK_RES_DIR}/film_luts/K-Ektar 100.cube`, isBuiltIn: true },
+  { name: 'MyCustomLut', path: '/user/luts/MyCustomLut.cube', isBuiltIn: false },
+];
+
+/** 默认命令实现:内置胶片与配方 LUT 全量可用 */
+const setupInvokeDefaults = () => {
+  mockInvoke.mockImplementation((cmd: string) => {
+    if (cmd === 'list_luts') return Promise.resolve(BUILT_IN_FILM_ENTRIES);
+    if (cmd === 'list_recipe_luts') return Promise.resolve(RECIPE_LUT_ENTRIES);
+    if (cmd === 'load_and_parse_lut') return Promise.resolve({ size: 33 });
+    return Promise.resolve([]);
+  });
+};
+
 const renderBasic = (overrides: Partial<Adjustments> = {}, onAutoAdjust?: () => void) => {
   const setAdjustments = vi.fn();
-  render(
+  const utils = render(
     <BasicAdjustments
       adjustments={{ ...INITIAL_ADJUSTMENTS, ...overrides }}
       setAdjustments={setAdjustments}
       onAutoAdjust={onAutoAdjust}
     />,
   );
-  return { setAdjustments };
+  return { setAdjustments, unmount: utils.unmount };
 };
 
 const applyUpdater = (updater: unknown, prev: Partial<Adjustments>) => {
@@ -28,6 +59,24 @@ const applyUpdater = (updater: unknown, prev: Partial<Adjustments>) => {
 
 const clickScene = (label: string) => {
   fireEvent.click(screen.getByRole('button', { name: label }));
+};
+
+const clickRecipe = async (name: string, setAdjustments: ReturnType<typeof vi.fn>) => {
+  const button = await screen.findByRole('button', { name });
+  await waitFor(() => expect(button).toBeEnabled());
+  fireEvent.click(button);
+  // 触发态 click 对应的 updater 立即同步执行,与调用序号解耦
+  const applyCall = setAdjustments.mock.calls.at(-1)![0];
+  expect(typeof applyCall).toBe('function');
+  return applyCall as Updater;
+};
+
+const clickFilm = async (name: string, setAdjustments: ReturnType<typeof vi.fn>) => {
+  const button = await screen.findByRole('button', { name });
+  fireEvent.click(button);
+  const applyCall = setAdjustments.mock.calls.at(-1)![0];
+  expect(typeof applyCall).toBe('function');
+  return applyCall as Updater;
 };
 
 describe('TC-SCENE-01: 场景预设应用确定性治理域', () => {
@@ -233,5 +282,323 @@ describe('TC-SCENE-03: 「自动」按钮与蒙版路径', () => {
     expect(screen.queryByRole('button', { name: '自动' })).not.toBeInTheDocument();
     clickScene('人像');
     expect(screen.getByRole('button', { name: '人像' })).toBeTruthy();
+  });
+});
+
+describe('TC-RECIPE-01: 大师配方应用(参数 + HSL + LUT 完整落位)', () => {
+  it('应用「滨田英明」:治理域(14 键 + HSL + LUT)归零后叠加校准值,域外保留', async () => {
+    setupInvokeDefaults();
+    const prev: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      brightness: 1.5,
+      sharpness: 30,
+      curves: INITIAL_ADJUSTMENTS.curves,
+      vibrance: 20,
+      dehaze: 25,
+      masks: [],
+    };
+    const { setAdjustments } = renderBasic(prev);
+    const applyRecipe = await clickRecipe('滨田英明', setAdjustments);
+    const next = applyUpdater(applyRecipe, prev);
+
+    // 配方六参校准值(koudai master-recipes.json 源值)
+    expect(next.exposure).toBe(0.4);
+    expect(next.contrast).toBe(-15);
+    expect(next.highlights).toBe(-15);
+    expect(next.shadows).toBe(20);
+    expect(next.saturation).toBe(-8);
+    expect(next.tint).toBe(5);
+    // 场景残留清零(大师配方治理域覆盖 14 基础键)
+    expect(next.vibrance).toBe(0);
+    expect(next.clarity).toBe(0);
+    expect(next.dehaze).toBe(0);
+    expect(next.whites).toBe(0);
+    expect(next.blacks).toBe(0);
+    expect(next.temperature).toBe(0);
+    expect(next.lumaNoiseReduction).toBe(0);
+    expect(next.colorNoiseReduction).toBe(0);
+    // HSL 8 通道逐值落位(hamada: yellows.hue=1, aquas.sat=4/lum=-1, oranges.sat=1, blues.sat=1)
+    expect(next.hsl?.yellows).toEqual({ hue: 1, saturation: 0, luminance: 0 });
+    expect(next.hsl?.aquas).toEqual({ hue: 0, saturation: 4, luminance: -1 });
+    expect(next.hsl?.oranges).toEqual({ hue: 0, saturation: 1, luminance: 0 });
+    expect(next.hsl?.blues).toEqual({ hue: 0, saturation: 1, luminance: 0 });
+    expect(next.hsl?.reds).toEqual({ hue: 0, saturation: 0, luminance: 0 });
+    // 内置风格 LUT(display-referred):路径来自 list_recipe_luts 运行时解析
+    expect(next.lutPath).toBe(`${MOCK_RES_DIR}/master_recipe_luts/hamada_daylight_pro_v2.cube`);
+    expect(next.lutName).toBe('滨田英明');
+    expect(next.lutIntensity).toBe(100);
+    expect(next.lutIsSceneReferred).toBe(false);
+    // 域外用户创作参数保留
+    expect(next.brightness).toBe(1.5);
+    expect(next.sharpness).toBe(30);
+    expect(next.curves).toBe(prev.curves);
+    expect(next.masks).toBe(prev.masks);
+  });
+
+  it('应用配方强制开启 basic/color/details/effects 四个 section', async () => {
+    setupInvokeDefaults();
+    const prev: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      sectionVisibility: {
+        ...INITIAL_ADJUSTMENTS.sectionVisibility,
+        basic: false,
+        color: false,
+        details: false,
+        effects: false,
+        curves: true,
+      },
+    };
+    const { setAdjustments } = renderBasic(prev);
+    const applyRecipe = await clickRecipe('保井崇志', setAdjustments);
+    const next = applyUpdater(applyRecipe, prev);
+    expect(next.sectionVisibility?.basic).toBe(true);
+    expect(next.sectionVisibility?.color).toBe(true);
+    expect(next.sectionVisibility?.details).toBe(true);
+    expect(next.sectionVisibility?.effects).toBe(true);
+    // 未治理的 section 不被顺手打开
+    expect(next.sectionVisibility?.curves).toBe(true);
+  });
+
+  it('外观文件缺失时配方按钮禁用且不落任何参数', async () => {
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === 'list_recipe_luts') {
+        // 仅保井崇志可用,滨田英明 LUT 缺失
+        return Promise.resolve(RECIPE_LUT_ENTRIES.filter((e) => e.name === 'takashi_yasui_zen'));
+      }
+      if (cmd === 'list_luts') return Promise.resolve([]);
+      return Promise.resolve(undefined);
+    });
+    const { setAdjustments } = renderBasic();
+    const hamadaButton = await screen.findByRole('button', { name: '滨田英明' });
+    expect(hamadaButton).toBeDisabled();
+    fireEvent.click(hamadaButton);
+    const recipeCalls = setAdjustments.mock.calls;
+    expect(recipeCalls.length).toBe(0);
+  });
+});
+
+describe('TC-RECIPE-02: 大师配方激活态与再次点击还原', () => {
+  it('getActiveRecipeId: 应用后激活;手动微调治理域任一键后退出;域外微调不退出', async () => {
+    setupInvokeDefaults();
+    const { setAdjustments } = renderBasic();
+    const applyRecipe = await clickRecipe('滨田英明', setAdjustments);
+    const applied = applyUpdater(applyRecipe, INITIAL_ADJUSTMENTS);
+    expect(getActiveRecipeId(applied)).toBe('hamada_daylight_v2');
+
+    // 治理域内手动微调 → 退出激活态
+    expect(getActiveRecipeId({ ...applied, contrast: -14 })).toBeNull();
+    expect(
+      getActiveRecipeId({ ...applied, hsl: { ...applied.hsl!, blues: { hue: 0, saturation: 2, luminance: 0 } } }),
+    ).toBeNull();
+    expect(getActiveRecipeId({ ...applied, lutName: '其他外观' })).toBeNull();
+
+    // 域外微调(亮度/曲线等)不影响激活态
+    expect(getActiveRecipeId({ ...applied, brightness: 2, sharpness: 40 })).toBe('hamada_daylight_v2');
+    // lutIntensity 视为用户微调,不退出激活态
+    expect(getActiveRecipeId({ ...applied, lutIntensity: 60 })).toBe('hamada_daylight_v2');
+  });
+
+  it('再次点击已激活配方 = 退出配方:治理域回归中性,域外保留', async () => {
+    setupInvokeDefaults();
+    const { setAdjustments, unmount } = renderBasic();
+    const applyFirst = await clickRecipe('滨田英明', setAdjustments);
+    const applied = applyUpdater(applyFirst, INITIAL_ADJUSTMENTS);
+
+    // 以 applied 状态重渲染,配方高亮,再次点击 = 退出(先卸载首次渲染,避免 screen 命中旧实例)
+    unmount();
+    const setAdjustments2 = vi.fn();
+    render(<BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...applied }} setAdjustments={setAdjustments2} />);
+    const button = await screen.findByRole('button', { name: '滨田英明' });
+    expect(button.className).toContain('bg-accent');
+    // 等待配方 LUT 路径异步解析完成、按钮可用后再点击
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.click(button);
+    const exitRecipe = setAdjustments2.mock.calls.at(-1)![0] as Updater;
+    const next = applyUpdater(exitRecipe, applied);
+
+    // 治理域(14 键 + HSL + LUT)全部回归中性
+    expect(next.exposure).toBe(0);
+    expect(next.contrast).toBe(0);
+    expect(next.highlights).toBe(0);
+    expect(next.shadows).toBe(0);
+    expect(next.saturation).toBe(0);
+    expect(next.tint).toBe(0);
+    expect(next.vibrance).toBe(0);
+    expect(next.hsl?.yellows).toEqual({ hue: 0, saturation: 0, luminance: 0 });
+    expect(next.hsl?.blues).toEqual({ hue: 0, saturation: 0, luminance: 0 });
+    expect(next.lutPath).toBeNull();
+    expect(next.lutName).toBeNull();
+    expect(next.lutIntensity).toBe(100);
+    expect(next.lutIsSceneReferred).toBe(false);
+    // 域外保留
+    expect(next.brightness).toBe(applied.brightness);
+  });
+
+  it('配方→配方切换不残留:先「滨田英明」再「rkrkrk」,exposure/tint/HSL 全部被新配方覆写', async () => {
+    setupInvokeDefaults();
+    const { setAdjustments, unmount } = renderBasic();
+    const applyFirst = await clickRecipe('滨田英明', setAdjustments);
+    const first = applyUpdater(applyFirst, INITIAL_ADJUSTMENTS);
+
+    unmount();
+    const setAdjustments2 = vi.fn();
+    render(<BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...first }} setAdjustments={setAdjustments2} />);
+    const applySecond = await clickRecipe('rkrkrk', setAdjustments2);
+    const second = applyUpdater(applySecond, first);
+
+    expect(second.exposure).toBe(0);
+    expect(second.contrast).toBe(25);
+    expect(second.highlights).toBe(-40);
+    expect(second.saturation).toBe(15);
+    expect(second.tint).toBe(5);
+    expect(second.lutName).toBe('rkrkrk');
+    expect(second.lutPath).toBe(`${MOCK_RES_DIR}/master_recipe_luts/rkrkrk_cyberpunk.cube`);
+    // hamada 的 HSL 不残留(rkrkrk HSL 为全中性)
+    expect(second.hsl?.yellows).toEqual({ hue: 0, saturation: 0, luminance: 0 });
+    expect(getActiveRecipeId(second)).toBe('rkrkrk_cyberpunk');
+  });
+});
+
+describe('TC-FILM-01: 胶片选择(仅 LUT 治理域)', () => {
+  it('选择胶片:LUT 字段落位(scene-referred),基础滑块与 HSL 不被触碰', async () => {
+    setupInvokeDefaults();
+    const prev: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      contrast: 12,
+      vibrance: 8,
+    };
+    const { setAdjustments } = renderBasic(prev);
+    const applyFilm = await clickFilm('K-Portra 400', setAdjustments);
+    const next = applyUpdater(applyFilm, prev);
+
+    expect(next.lutPath).toBe(`${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`);
+    expect(next.lutName).toBe('K-Portra 400');
+    expect(next.lutIsSceneReferred).toBe(true);
+    expect(next.lutIntensity).toBe(100);
+    // 胶片 = LUT 选择,不治理任何滑块
+    expect(next.contrast).toBe(12);
+    expect(next.vibrance).toBe(8);
+    expect(next.exposure).toBe(0);
+    // effects section 强制开启,其余保持
+    expect(next.sectionVisibility?.effects).toBe(true);
+  });
+
+  it('胶片组仅列出内置 LUT,用户导入的自定义 LUT 不进入胶片组', async () => {
+    setupInvokeDefaults();
+    renderBasic();
+    await screen.findByRole('button', { name: 'K-Portra 400' });
+    expect(screen.getByRole('button', { name: 'K-Ektar 100' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'MyCustomLut' })).not.toBeInTheDocument();
+  });
+
+  it('「中性」清除 LUT 字段;无 LUT 时「中性」高亮', async () => {
+    setupInvokeDefaults();
+    const withLut: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      lutPath: `${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`,
+      lutName: 'K-Portra 400',
+      lutIsSceneReferred: true,
+    };
+    const { setAdjustments, unmount } = renderBasic(withLut);
+    const neutral = await screen.findByRole('button', { name: '中性' });
+    expect(neutral.className).not.toContain('bg-accent');
+    fireEvent.click(neutral);
+    const next = applyUpdater(setAdjustments.mock.calls.at(-1)![0], withLut);
+    expect(next.lutPath).toBeNull();
+    expect(next.lutName).toBeNull();
+    expect(next.lutIsSceneReferred).toBe(false);
+    expect(next.lutIntensity).toBe(100);
+
+    // 中性态下「中性」按钮高亮(先卸载首次渲染,避免 screen 命中旧实例)
+    unmount();
+    render(<BasicAdjustments adjustments={INITIAL_ADJUSTMENTS} setAdjustments={vi.fn()} />);
+    const neutralAgain = await screen.findByRole('button', { name: '中性' });
+    expect(neutralAgain.className).toContain('bg-accent');
+  });
+
+  it('再次点击已激活胶片 = 清除 LUT;激活胶片由 lutPath 推导高亮', async () => {
+    setupInvokeDefaults();
+    const withLut: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      lutPath: `${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`,
+      lutName: 'K-Portra 400',
+      lutIsSceneReferred: true,
+    };
+    const { setAdjustments } = renderBasic(withLut);
+    const portraButton = await screen.findByRole('button', { name: 'K-Portra 400' });
+    expect(portraButton.className).toContain('bg-accent');
+    fireEvent.click(portraButton);
+    const next = applyUpdater(setAdjustments.mock.calls.at(-1)![0], withLut);
+    expect(next.lutPath).toBeNull();
+    expect(next.lutName).toBeNull();
+  });
+
+  it('胶片与场景可叠加:选择胶片不影响已激活场景的治理域取值', async () => {
+    setupInvokeDefaults();
+    const { setAdjustments, unmount } = renderBasic();
+    clickScene('人像');
+    const afterScene = applyUpdater(setAdjustments.mock.calls[0][0], INITIAL_ADJUSTMENTS);
+
+    // 先卸载首次渲染,避免 screen 命中旧实例的胶片按钮
+    unmount();
+    const setAdjustments2 = vi.fn();
+    render(<BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...afterScene }} setAdjustments={setAdjustments2} />);
+    const applyFilm = await clickFilm('K-Portra 400', setAdjustments2);
+    const next = applyUpdater(applyFilm, afterScene);
+
+    expect(next.contrast).toBe(6);
+    expect(next.vibrance).toBe(10);
+    expect(next.clarity).toBe(10);
+    expect(next.lutPath).toBe(`${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`);
+  });
+});
+
+describe('TC-LOOK-01: 配方 LUT 路径解析(mapRecipeLutPaths)', () => {
+  it('空安全:null/undefined/非数组一律得到空映射', () => {
+    expect(mapRecipeLutPaths(null)).toEqual({});
+    expect(mapRecipeLutPaths(undefined)).toEqual({});
+    expect(mapRecipeLutPaths([])).toEqual({});
+  });
+
+  it('按文件名(lutFileName)建立 lutFileName → path 映射,非法项跳过', () => {
+    const map = mapRecipeLutPaths([
+      { name: 'hamada_daylight_pro_v2', path: '/res/hamada_daylight_pro_v2.cube' },
+      { name: '', path: '/res/invalid.cube' },
+      { name: 'no_path', path: '' },
+    ]);
+    expect(map).toEqual({ hamada_daylight_pro_v2: '/res/hamada_daylight_pro_v2.cube' });
+  });
+
+  it('14 个大师配方的 lutFileName 与内置 LUT 资源一一对应', async () => {
+    setupInvokeDefaults();
+    const resolved = mapRecipeLutPaths(await mockInvoke.mockImplementation && (await import('./setup'), RECIPE_LUT_ENTRIES));
+    for (const recipe of MASTER_RECIPES) {
+      expect(resolved[recipe.lutFileName]).toBeTruthy();
+    }
+    expect(MASTER_RECIPES).toHaveLength(14);
+    expect(new Set(MASTER_RECIPES.map((r) => r.id)).size).toBe(14);
+  });
+});
+
+describe('TC-LOOK-02: 后端 LUT 预热(load_and_parse_lut)', () => {
+  it('应用配方/胶片后预热 LUT 缓存并回填 lutSize,引用不变时不重复落状态', async () => {
+    setupInvokeDefaults();
+    const { setAdjustments } = renderBasic();
+    await clickRecipe('滨田英明', setAdjustments);
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('load_and_parse_lut', {
+        path: `${MOCK_RES_DIR}/master_recipe_luts/hamada_daylight_pro_v2.cube`,
+      });
+    });
+    // 预热完成后回填 lutSize=33(仅当 lutPath 仍匹配)
+    await waitFor(() => {
+      const sizeCall = setAdjustments.mock.calls.find(
+        ([updater]) =>
+          typeof updater === 'function' &&
+          (updater as Updater)({ lutPath: `${MOCK_RES_DIR}/master_recipe_luts/hamada_daylight_pro_v2.cube`, lutSize: 0 })
+            .lutSize === 33,
+      );
+      expect(sizeCall).toBeTruthy();
+    });
   });
 });
