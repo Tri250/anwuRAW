@@ -74,8 +74,16 @@ export function useEditorActions() {
   const handleAutoAdjustments = useCallback(async () => {
     const selectedImage = useEditorStore.getState().selectedImage;
     if (!selectedImage?.isReady) return;
+    const pathAtClick = selectedImage.path;
     try {
       const autoAdjustments: Adjustments = await invoke(Invokes.CalculateAutoAdjustments);
+      // 竞态防护：直方图分析期间用户可能已切换图片，
+      // 旧图的分析结果不能并入当前编辑器中的新图，改为写回原路径的 sidecar
+      if (useEditorStore.getState().selectedImage?.path !== pathAtClick) {
+        globalImageCache.delete(pathAtClick);
+        await invoke(Invokes.ApplyAdjustmentsToPaths, { paths: [pathAtClick], adjustments: autoAdjustments });
+        return;
+      }
       setAdjustments((prev: Adjustments) => ({
         ...prev,
         ...autoAdjustments,

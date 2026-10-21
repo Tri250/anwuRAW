@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import Slider from '../ui/Slider';
-import { Adjustments, BasicAdjustment } from '../../utils/adjustments';
+import { Adjustments, BasicAdjustment, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Text from '../ui/Text';
@@ -20,27 +20,48 @@ interface BasicAdjustmentsProps {
  * 一键场景/风格增强 —— 端侧真实实现。
  * 每个场景是一组经过校准的调整参数，直接经由现有调整管线实时作用于像素。
  * 「自动」复用后端 perform_auto_analysis 直方图自动分析。
+ *
+ * 确定性语义：场景预设共同治理的参数域（SCENE_SCOPE_DEFAULTS）在应用时先归零再叠加
+ * 校准值，保证「同一场景 = 同一结果」，切换场景不会残留上一场景的参数；
+ * 域外参数（亮度、结构、HSL、曲线、锐化、LUT、蒙版等用户创作意图）一律保留。
+ * 应用时同步强制开启参数所属 section，避免 section 被 eye 隐藏后写入管线时被归零失效。
  */
+const SCENE_SCOPE_DEFAULTS: Partial<Adjustments> = {
+  exposure: 0,
+  contrast: 0,
+  highlights: 0,
+  shadows: 0,
+  whites: 0,
+  blacks: 0,
+  temperature: 0,
+  tint: 0,
+  saturation: 0,
+  vibrance: 0,
+  clarity: 0,
+  dehaze: 0,
+  lumaNoiseReduction: 0,
+  colorNoiseReduction: 0,
+};
+
+/** 场景预设写入的参数所属 section（与 SCENE_SCOPE_DEFAULTS 的键一一对应） */
+const SCENE_SECTIONS = ['basic', 'color', 'details'] as const;
+
 interface SceneEnhanceOptions {
   labelKey: string;
-  /** 复用的调整参数组合（真实生效） */
-  values?: Partial<Adjustments>;
+  /** 在治理域默认值之上叠加的场景校准参数（真实生效） */
+  values: Partial<Adjustments>;
 }
 
 const SCENE_ENHANCE: SceneEnhanceOptions[] = [
   {
     labelKey: 'adjustments.basic.scene.prototypePortrait',
     values: {
-      exposure: 0,
       contrast: 6,
       highlights: -10,
       shadows: 14,
-      whites: 0,
-      blacks: 0,
       saturation: -4,
       vibrance: 10,
       clarity: 10,
-      temperature: 0,
     },
   },
   {
@@ -77,7 +98,6 @@ const SCENE_ENHANCE: SceneEnhanceOptions[] = [
       highlights: -12,
       shadows: 10,
       temperature: 16,
-      tint: 0,
       vibrance: 18,
       saturation: 8,
     },
@@ -151,7 +171,7 @@ const ToneMapperSwitch = ({
     if (isInitialAnimation.current) {
       let initialX;
       if (selectedMapper === 'agx') {
-        initialX = `${toneMapperOptions.length * 100}%`;
+        initialX = `${(toneMapperOptions.length - 1) * 100}%`;
       } else {
         initialX = '-25%';
       }
@@ -266,7 +286,21 @@ export default function BasicAdjustments({
 
   const applySceneEnhance = (target: SceneEnhanceOptions) => {
     if (!target.values) return;
-    setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, ...target.values }));
+    setAdjustments((prev: Partial<Adjustments>) => {
+      const prevVisibility = prev.sectionVisibility || INITIAL_ADJUSTMENTS.sectionVisibility;
+      // 强制开启场景参数所属 section：被 eye 隐藏的 section 在后端 get_val 中会被归零，
+      // 不开启会导致场景参数写入管线时静默失效
+      const sectionVisibility = { ...prevVisibility };
+      for (const section of SCENE_SECTIONS) {
+        sectionVisibility[section] = true;
+      }
+      return {
+        ...prev,
+        ...SCENE_SCOPE_DEFAULTS,
+        ...target.values,
+        sectionVisibility,
+      };
+    });
   };
 
   const hideTonemapper = isForMask || appSettings?.tonemapperOverrideEnabled;

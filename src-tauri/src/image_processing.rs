@@ -3456,6 +3456,9 @@ pub fn auto_results_to_json(results: &AutoAdjustmentResults) -> serde_json::Valu
         "sectionVisibility": {
             "basic": true,
             "color": true,
+            // clarity/dehaze/centré 属于 details 段，必须一并开启，
+            // 否则 details 段被隐藏时这批自动参数在后端 get_val 中会被归零
+            "details": true,
             "effects": true
         },
         "whites": results.whites,
