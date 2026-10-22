@@ -145,7 +145,7 @@ export default function ChannelMixer({ adjustments, setAdjustments, onDragStateC
       </div>
 
       {/* 辅助说明 */}
-      <div className="mt-3 text-[11px] text-text-secondary/70 leading-tight px-1">
+      <div className="mt-3 text-xs text-text-secondary leading-relaxed px-1">
         <p>
           {t(
             'adjustments.channelMixer.hint',

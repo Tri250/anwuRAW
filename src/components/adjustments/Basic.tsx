@@ -116,17 +116,22 @@ const SCENE_ENHANCE: SceneEnhanceOptions[] = [
   },
 ];
 
+/** 治理域键列表与各场景完整校准值（模块级预计算：激活态推导在滑块拖动时每帧执行） */
+const SCENE_SCOPE_KEYS = Object.keys(SCENE_SCOPE_DEFAULTS) as Array<keyof typeof SCENE_SCOPE_DEFAULTS>;
+const SCENE_RESOLVED = SCENE_ENHANCE.map((preset) => ({
+  labelKey: preset.labelKey,
+  resolved: { ...SCENE_SCOPE_DEFAULTS, ...preset.values },
+}));
+
 /**
  * 判定当前调整状态是否与某个场景完全一致（治理域 14 键逐键比对）。
  * 用于切换态高亮与「再次点击还原」：状态由值推导而非点击记忆，
  * 撤销/重置/手动微调后高亮自然消失，手动调回场景值则自然恢复。
  */
 export const getActiveSceneLabelKey = (adjustments: Partial<Adjustments>): string | null => {
-  const SCENE_SCOPE_KEYS = Object.keys(SCENE_SCOPE_DEFAULTS) as Array<keyof typeof SCENE_SCOPE_DEFAULTS>;
-  for (const preset of SCENE_ENHANCE) {
-    const resolved = { ...SCENE_SCOPE_DEFAULTS, ...preset.values };
+  for (const { labelKey, resolved } of SCENE_RESOLVED) {
     const isMatch = SCENE_SCOPE_KEYS.every((key) => adjustments[key] === resolved[key]);
-    if (isMatch) return preset.labelKey;
+    if (isMatch) return labelKey;
   }
   return null;
 };
@@ -472,7 +477,7 @@ export default function BasicAdjustments({
 
   const chipClass = (isActive: boolean) =>
     clsx(
-      'px-2.5 py-1 text-xs rounded-md transition-colors',
+      'px-2.5 py-1 text-xs rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95',
       isActive
         ? 'bg-accent text-button-text hover:opacity-90'
         : 'bg-surface-secondary text-text-secondary hover:bg-surface hover:text-text-primary',
