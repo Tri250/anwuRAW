@@ -33,6 +33,7 @@
         "films": "フィルム",
         "filmsNeutral": "ニュートラル",
         "recipeLutMissing": "マスターレシピのルックファイルが利用できません",
+        "recipeActiveHint": "有効 — もう一度クリックでレシピを解除",
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "日本の青空 · ハイキー日光",
@@ -96,6 +97,15 @@
       "toneMapper": "トーンマッパー",
       "whites": "白レベル"
     },
+    "channelMixer": {
+      "title": "チャンネルミキサー",
+      "outputs": "出力チャンネル",
+      "reset": "リセット",
+      "hint": "各入力カラーチャンネルが出力チャンネルに寄与する割合を調整します。",
+      "red": "赤",
+      "green": "緑",
+      "blue": "青"
+    },
     "color": {
       "ariaSelectColor": "{{name}}色を選択",
       "calibration": {
@@ -121,6 +131,8 @@
         "midtones": "中間調",
         "shadows": "シャドウ"
       },
+      "hslPickActive": "画像をクリックして対象の色を取得",
+      "hslPickTooltip": "画像から色を取得",
       "hue": "色相",
       "localHue": "ローカル色相",
       "luminance": "輝度",
@@ -224,6 +236,14 @@
       "roundness": "丸み",
       "size": "サイズ",
       "vignette": "周辺光量補正"
+    },
+    "splitToning": {
+      "title": "セパレートトーン",
+      "enabled": "有効",
+      "highlights": "ハイライト",
+      "saturation": "彩度",
+      "shadows": "シャドウ",
+      "balance": "バランス"
     }
   },
   "contextMenus": {
@@ -291,6 +311,10 @@
       "ratingLabel_other": "{{count}} つ星",
       "redo": "やり直し",
       "resetAdjustments": "補正設定をリセット",
+      "resetConfirmMessage_one": "すべてのローカル調整（露出、トーン、カラー、マスク、トリミングなど）を削除し、デフォルトに戻します。\n\n直後であれば Ctrl+Z で元に戻せます。",
+      "resetConfirmMessage_other": "選択した {{count}} 枚の画像のすべてのローカル調整を削除し、デフォルトに戻します。\n\nリセット後、画像を切り替えなければ各画像を Ctrl+Z で元に戻せます。",
+      "resetConfirmTitle_one": "調整をリセット",
+      "resetConfirmTitle_other": "調整をリセット（{{count}} 枚）",
       "stitchPanorama": "パノラマ写真を作成",
       "tagging": "タグ付け",
       "undo": "元に戻す"
@@ -372,6 +396,7 @@
       "failedApplyAuto": "自動補正の適用に失敗しました: {{err}}",
       "failedChangeIcon": "アイコンの変更に失敗しました: {{err}}",
       "failedCopy": "ファイルのコピーに失敗しました: {{err}}",
+      "failedCopyMetadata": "コピー用メタデータの読み込みに失敗しました: {{err}}",
       "failedCreateVirtualCopy": "仮想コピーの作成に失敗しました: {{err}}",
       "failedDelete": "削除に失敗しました: {{err}}",
       "failedDeleteFolder": "フォルダの削除に失敗しました: {{err}}",
@@ -379,7 +404,9 @@
       "failedMove": "ファイルの移動に失敗しました: {{err}}",
       "failedMoveError": "移動に失敗しました: {{err}}",
       "failedMoveInvalid": "移動に失敗しました: 対象グループが見つからないか無効です。",
-      "failedRemoveImages": "画像の削除に失敗しました: {{err}}"
+      "failedPaste": "調整の貼り付けに失敗しました: {{err}}",
+      "failedRemoveImages": "画像の削除に失敗しました: {{err}}",
+      "failedResetAdjustments": "調整のリセットに失敗しました: {{err}}"
     }
   },
   "editor": {
@@ -392,10 +419,12 @@
       },
       "sections": {
         "basic": "基本",
+        "channel_mixer": "チャンネルミキサー",
         "color": "カラー",
         "curves": "トーンカーブ",
         "details": "ディテール",
-        "effects": "効果"
+        "effects": "効果",
+        "split_toning": "セパレートトーン"
       },
       "title": "補正",
       "tooltips": {

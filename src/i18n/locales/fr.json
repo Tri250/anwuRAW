@@ -33,6 +33,7 @@
         "films": "Pellicules",
         "filmsNeutral": "Neutre",
         "recipeLutMissing": "Fichier de look de recette de maître indisponible",
+        "recipeActiveHint": "Actif — cliquez à nouveau pour quitter la recette",
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "Ciel bleu japonais · Lumière haute clé",
@@ -96,6 +97,15 @@
       "toneMapper": "Mappeur de tons",
       "whites": "Blancs"
     },
+    "channelMixer": {
+      "title": "Mélangeur de canaux",
+      "outputs": "Canaux de sortie",
+      "reset": "Réinitialiser",
+      "hint": "Ajustez le pourcentage de chaque canal de couleur d'entrée contribuant au canal de sortie.",
+      "red": "Rouge",
+      "green": "Vert",
+      "blue": "Bleu"
+    },
     "color": {
       "ariaSelectColor": "Sélectionner la couleur {{name}}",
       "calibration": {
@@ -121,6 +131,8 @@
         "midtones": "Tons moyens",
         "shadows": "Ombres"
       },
+      "hslPickActive": "Cliquez sur l'image pour prélever la couleur cible",
+      "hslPickTooltip": "Prélever une couleur dans l'image",
       "hue": "Teinte",
       "localHue": "Teinte locale",
       "luminance": "Luminance",
@@ -224,6 +236,14 @@
       "roundness": "Arrondi",
       "size": "Taille",
       "vignette": "Vignettage"
+    },
+    "splitToning": {
+      "title": "Tonalité divisée",
+      "enabled": "Activer",
+      "highlights": "Tons clairs",
+      "saturation": "Saturation",
+      "shadows": "Tons foncés",
+      "balance": "Balance"
     }
   },
   "contextMenus": {
@@ -292,6 +312,10 @@
       "ratingLabel_other": "{{count}} Étoiles",
       "redo": "Rétablir",
       "resetAdjustments": "Réinitialiser les ajustements",
+      "resetConfirmMessage_one": "Cette action supprimera tous les ajustements locaux (exposition, tonalité, couleur, masques, recadrage, etc.) et rétablira les valeurs par défaut.\n\nAnnulable immédiatement après avec Ctrl+Z.",
+      "resetConfirmMessage_other": "Cette action supprimera tous les ajustements locaux des {{count}} images sélectionnées et rétablira les valeurs par défaut.\n\nAprès la réinitialisation, chaque image peut encore être annulée avec Ctrl+Z tant que l'on ne change pas d'image.",
+      "resetConfirmTitle_one": "Réinitialiser les ajustements",
+      "resetConfirmTitle_other": "Réinitialiser les ajustements ({{count}} images)",
       "stitchPanorama": "Assembler le panorama",
       "tagging": "Marquage",
       "undo": "Annuler"
@@ -388,6 +412,7 @@
       "failedApplyAuto": "Échec de l'ajustement automatique : {{err}}",
       "failedChangeIcon": "Échec de la modification de l'icône : {{err}}",
       "failedCopy": "Échec de la copie des fichiers : {{err}}",
+      "failedCopyMetadata": "Échec du chargement des métadonnées pour copie : {{err}}",
       "failedCreateVirtualCopy": "Échec de la création de la copie virtuelle : {{err}}",
       "failedDelete": "Échec de la suppression : {{err}}",
       "failedDeleteFolder": "Échec de la suppression du dossier : {{err}}",
@@ -395,7 +420,9 @@
       "failedMove": "Échec du déplacement des fichiers : {{err}}",
       "failedMoveError": "Échec du déplacement : {{err}}",
       "failedMoveInvalid": "Échec du déplacement : Groupe cible introuvable ou invalide.",
-      "failedRemoveImages": "Échec de la suppression des images : {{err}}"
+      "failedPaste": "Échec du collage des ajustements : {{err}}",
+      "failedRemoveImages": "Échec de la suppression des images : {{err}}",
+      "failedResetAdjustments": "Échec de la réinitialisation des ajustements : {{err}}"
     }
   },
   "editor": {
@@ -408,10 +435,12 @@
       },
       "sections": {
         "basic": "Basique",
+        "channel_mixer": "Mélangeur de canaux",
         "color": "Couleur",
         "curves": "Courbes",
         "details": "Détails",
-        "effects": "Effets"
+        "effects": "Effets",
+        "split_toning": "Tonalité divisée"
       },
       "title": "Ajustements",
       "tooltips": {

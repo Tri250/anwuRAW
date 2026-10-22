@@ -570,7 +570,9 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
                     error: null,
                     targetPaths: finalSelection,
                     progressMessage: null,
-                    isRaw: selectedImage?.isRaw || false,
+                    // 批量场景下以所选图像集合中是否含 RAW 决定默认降噪方法，
+                    // 而非当前编辑器选中图（可能与所选集合无关）
+                    isRaw: imageList.some((img) => finalSelection.includes(img.path) && img.is_raw),
                   },
                 });
               },

@@ -33,6 +33,7 @@
         "films": "胶片",
         "filmsNeutral": "中性",
         "recipeLutMissing": "大师配方外观文件不可用",
+        "recipeActiveHint": "已激活，再次点击退出配方",
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "日系青空 · 高调日光",
@@ -96,6 +97,15 @@
       "toneMapper": "色调映射",
       "whites": "白色"
     },
+    "channelMixer": {
+      "title": "通道混合器",
+      "outputs": "输出通道",
+      "reset": "重置",
+      "hint": "调整各输入颜色通道对输出通道的贡献百分比。",
+      "red": "红",
+      "green": "绿",
+      "blue": "蓝"
+    },
     "color": {
       "ariaSelectColor": "选择 {{name}} 颜色",
       "calibration": {
@@ -121,6 +131,8 @@
         "midtones": "中间调",
         "shadows": "阴影"
       },
+      "hslPickActive": "点击图像以选取目标颜色",
+      "hslPickTooltip": "从图像中选取颜色",
       "hue": "色相",
       "localHue": "局部色调",
       "luminance": "亮度",
@@ -224,6 +236,14 @@
       "roundness": "圆度",
       "size": "大小",
       "vignette": "暗角"
+    },
+    "splitToning": {
+      "title": "分离色调",
+      "enabled": "启用",
+      "highlights": "高光",
+      "saturation": "饱和度",
+      "shadows": "阴影",
+      "balance": "平衡"
     }
   },
   "contextMenus": {
@@ -291,6 +311,10 @@
       "ratingLabel_other": "{{count}} 星",
       "redo": "重做",
       "resetAdjustments": "重置调整",
+      "resetConfirmMessage_one": "这将移除所有局部调整（曝光、色调、颜色、蒙版、裁剪等）并恢复默认值。\n\n操作后可立即用 Ctrl+Z 撤销。",
+      "resetConfirmMessage_other": "这将移除所选 {{count}} 张图像的所有局部调整并恢复默认值。\n\n重置后，若未切换图像，仍可对单张图像使用 Ctrl+Z 撤销。",
+      "resetConfirmTitle_one": "重置调整",
+      "resetConfirmTitle_other": "重置调整（{{count}} 张图像）",
       "stitchPanorama": "拼接全景图",
       "tagging": "标签",
       "undo": "撤销"
@@ -372,6 +396,7 @@
       "failedApplyAuto": "应用自动调整失败：{{err}}",
       "failedChangeIcon": "更换图标失败：{{err}}",
       "failedCopy": "复制文件失败：{{err}}",
+      "failedCopyMetadata": "加载元数据以复制失败：{{err}}",
       "failedCreateVirtualCopy": "创建虚拟副本失败：{{err}}",
       "failedDelete": "删除失败：{{err}}",
       "failedDeleteFolder": "删除文件夹失败：{{err}}",
@@ -379,7 +404,9 @@
       "failedMove": "移动文件失败：{{err}}",
       "failedMoveError": "移动失败：{{err}}",
       "failedMoveInvalid": "移动失败：未找到目标组或目标组无效。",
-      "failedRemoveImages": "移除图像失败：{{err}}"
+      "failedPaste": "粘贴调整失败：{{err}}",
+      "failedRemoveImages": "移除图像失败：{{err}}",
+      "failedResetAdjustments": "重置调整失败：{{err}}"
     }
   },
   "editor": {
@@ -392,10 +419,12 @@
       },
       "sections": {
         "basic": "基础",
+        "channel_mixer": "通道混合器",
         "color": "颜色",
         "curves": "曲线",
         "details": "细节",
-        "effects": "效果"
+        "effects": "效果",
+        "split_toning": "分离色调"
       },
       "title": "调整",
       "tooltips": {
@@ -697,7 +726,8 @@
         "feather": "羽化",
         "globalFeather": "全局羽化",
         "grow": "扩展",
-        "tolerance": "容差"
+        "tolerance": "容差",
+        "decontaminate": "去除杂色"
       },
       "patches": {
         "copyName": "{{name}} 副本",

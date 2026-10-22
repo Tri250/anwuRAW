@@ -33,6 +33,7 @@
         "films": "Pel·lícules",
         "filmsNeutral": "Neutral",
         "recipeLutMissing": "El fitxer d'estil de la recepta mestra no està disponible",
+        "recipeActiveHint": "Actiu — torna a fer clic per sortir de la recepta",
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "Cel blau japonès · Llum high-key",
@@ -96,6 +97,15 @@
       "toneMapper": "Mapejador de tons",
       "whites": "Blancs"
     },
+    "channelMixer": {
+      "title": "Mesclador de canals",
+      "outputs": "Canals de sortida",
+      "reset": "Restableix",
+      "hint": "Ajusta el percentatge de cada canal d'entrada de color que contribueix al canal de sortida.",
+      "red": "Vermell",
+      "green": "Verd",
+      "blue": "Blau"
+    },
     "color": {
       "ariaSelectColor": "Seleccionar el color {{name}}",
       "calibration": {
@@ -121,6 +131,8 @@
         "midtones": "Tons mitjans",
         "shadows": "Ombres"
       },
+      "hslPickActive": "Feu clic a la imatge per triar el color objectiu",
+      "hslPickTooltip": "Trieu un color de la imatge",
       "hue": "To",
       "localHue": "To local",
       "luminance": "Luminància",
@@ -224,6 +236,14 @@
       "roundness": "Rodonesa",
       "size": "Mida",
       "vignette": "Vinyetatge"
+    },
+    "splitToning": {
+      "title": "Tons dividits",
+      "enabled": "Habilita",
+      "highlights": "Llums",
+      "saturation": "Saturació",
+      "shadows": "Ombres",
+      "balance": "Equilibri"
     }
   },
   "contextMenus": {
@@ -291,6 +311,10 @@
       "ratingLabel_other": "{{count}} Estrelles",
       "redo": "Refer",
       "resetAdjustments": "Restablir ajustaments",
+      "resetConfirmMessage_one": "Això eliminarà tots els ajustos locals (exposició, to, color, màscares, retall, etc.) i restaurarà els valors predeterminats.\n\nEs pot desfer amb Ctrl+Z immediatament després.",
+      "resetConfirmMessage_other": "Això eliminarà tots els ajustos locals de {{count}} imatges seleccionades i restaurarà els valors predeterminats.\n\nDesprés del restabliment, cada imatge encara es pot desfer amb Ctrl+Z si no s'ha canviat d'imatge.",
+      "resetConfirmTitle_one": "Restableix els ajustos",
+      "resetConfirmTitle_other": "Restableix els ajustos ({{count}} imatges)",
       "stitchPanorama": "Unir panorama",
       "tagging": "Etiquetatge",
       "undo": "Desfer"
@@ -372,6 +396,7 @@
       "failedApplyAuto": "No s'han pogut aplicar els ajustaments automàtics: {{err}}",
       "failedChangeIcon": "No s'ha pogut canviar la icona: {{err}}",
       "failedCopy": "No s'han pogut copiar els fitxers: {{err}}",
+      "failedCopyMetadata": "Error en carregar les metadades per copiar: {{err}}",
       "failedCreateVirtualCopy": "No s'ha pogut crear la còpia virtual: {{err}}",
       "failedDelete": "No s'ha pogut eliminar: {{err}}",
       "failedDeleteFolder": "No s'ha pogut eliminar la carpeta: {{err}}",
@@ -379,7 +404,9 @@
       "failedMove": "No s'han pogut moure els fitxers: {{err}}",
       "failedMoveError": "No s'ha pogut moure: {{err}}",
       "failedMoveInvalid": "No s'ha pogut moure: el grup de destinació no s'ha trobat o no és vàlid.",
-      "failedRemoveImages": "No s'han pogut treure les imatges: {{err}}"
+      "failedPaste": "Error en enganxar els ajustos: {{err}}",
+      "failedRemoveImages": "No s'han pogut treure les imatges: {{err}}",
+      "failedResetAdjustments": "Error en restablir els ajustos: {{err}}"
     }
   },
   "editor": {
@@ -392,10 +419,12 @@
       },
       "sections": {
         "basic": "Bàsic",
+        "channel_mixer": "Mesclador de canals",
         "color": "Color",
         "curves": "Corbes",
         "details": "Detalls",
-        "effects": "Efectes"
+        "effects": "Efectes",
+        "split_toning": "Tons dividits"
       },
       "title": "Ajustaments",
       "tooltips": {

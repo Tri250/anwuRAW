@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import debounce from 'lodash.debounce';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../store/useEditorStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
@@ -16,6 +17,7 @@ import {
   normalizeLoadedAdjustments,
 } from '../utils/adjustments';
 import { calculateCenteredCrop } from '../utils/cropUtils';
+import { getActiveRecipeId, RECIPE_PARAMETER_RESET } from '../utils/masterRecipes';
 import { Invokes } from '../components/ui/AppProperties';
 import { globalImageCache } from '../utils/ImageLRUCache';
 
@@ -31,6 +33,7 @@ export const debouncedSave = debounce((path: string, adjustmentsToSave: Adjustme
 }, 300);
 
 export function useEditorActions() {
+  const { t } = useTranslation();
   const setEditor = useEditorStore((s) => s.setEditor);
 
   const setAdjustments = useCallback(
@@ -90,9 +93,9 @@ export function useEditorActions() {
         sectionVisibility: { ...prev.sectionVisibility, ...autoAdjustments.sectionVisibility },
       }));
     } catch (err) {
-      toast.error(`Failed to apply auto adjustments: ${err}`);
+      toast.error(t('contextMenus.toasts.failedApplyAuto', { err }));
     }
-  }, [setAdjustments]);
+  }, [setAdjustments, t]);
 
   const toggleShowOriginal = useCallback(() => {
     setEditor((state) => {
@@ -148,6 +151,9 @@ export function useEditorActions() {
             : path.split(/[\\/]/).pop() || 'LUT';
         setAdjustments((prev: Adjustments) => ({
           ...prev,
+          // 跨组切换：配方完整激活时从 Effects 面板选 LUT = 完全退出配方，
+          // 清除配方参数 + HSL（LUT 字段由下方覆写），与场景增强面板的胶片切换语义一致
+          ...(getActiveRecipeId(prev) ? RECIPE_PARAMETER_RESET : {}),
           lutPath: path,
           lutName: name,
           lutSize: result.size,
@@ -192,11 +198,8 @@ export function useEditorActions() {
       if (pathsToReset.length === 0) return;
 
       const count = pathsToReset.length;
-      const title = count === 1 ? 'Reset Adjustments' : `Reset Adjustments (${count} images)`;
-      const message =
-        count === 1
-          ? 'This will remove all local adjustments (exposure, tone, color, masks, crop, etc.) and restore defaults.\n\nThis can be undone with Ctrl+Z right after.'
-          : `This will remove all local adjustments for ${count} selected images and restore defaults.\n\nAfter reset, individual images can still be undone with Ctrl+Z if not switched away.`;
+      const title = t('contextMenus.editor.resetConfirmTitle', { count });
+      const message = t('contextMenus.editor.resetConfirmMessage', { count });
 
       const doReset = () => {
         pathsToReset.forEach((p) => globalImageCache.delete(p));
@@ -214,7 +217,7 @@ export function useEditorActions() {
               setEditor({ adjustments: resetData });
             }
           })
-          .catch((err) => toast.error(`Failed to reset adjustments: ${err}`));
+          .catch((err) => toast.error(t('contextMenus.toasts.failedResetAdjustments', { err })));
       };
 
       // 弹二次确认
@@ -223,52 +226,55 @@ export function useEditorActions() {
           isOpen: true,
           title,
           message,
-          confirmText: 'Reset',
+          confirmText: t('contextMenus.editor.confirmReset'),
           confirmVariant: 'danger',
           onConfirm: doReset,
         },
       });
     },
-    [setEditor],
+    [setEditor, t],
   );
 
-  const handleCopyAdjustments = useCallback(async (pathOrEvent?: string | any) => {
-    const pathOverride = typeof pathOrEvent === 'string' ? pathOrEvent : undefined;
-    const { selectedImage, adjustments } = useEditorStore.getState();
-    const { libraryActivePath, multiSelectedPaths } = useLibraryStore.getState();
-    let sourceAdjustments: any = null;
+  const handleCopyAdjustments = useCallback(
+    async (pathOrEvent?: string | any) => {
+      const pathOverride = typeof pathOrEvent === 'string' ? pathOrEvent : undefined;
+      const { selectedImage, adjustments } = useEditorStore.getState();
+      const { libraryActivePath, multiSelectedPaths } = useLibraryStore.getState();
+      let sourceAdjustments: any = null;
 
-    const pathToCopyFrom =
-      pathOverride || (selectedImage ? selectedImage.path : libraryActivePath || multiSelectedPaths[0]);
+      const pathToCopyFrom =
+        pathOverride || (selectedImage ? selectedImage.path : libraryActivePath || multiSelectedPaths[0]);
 
-    if (selectedImage && pathToCopyFrom === selectedImage.path) {
-      sourceAdjustments = adjustments;
-    } else if (pathToCopyFrom) {
-      try {
-        const meta: any = await invoke(Invokes.LoadMetadata, { path: pathToCopyFrom });
-        if (meta?.adjustments && !meta.adjustments.is_null) {
-          sourceAdjustments = normalizeLoadedAdjustments(meta.adjustments);
-        } else {
-          sourceAdjustments = INITIAL_ADJUSTMENTS;
+      if (selectedImage && pathToCopyFrom === selectedImage.path) {
+        sourceAdjustments = adjustments;
+      } else if (pathToCopyFrom) {
+        try {
+          const meta: any = await invoke(Invokes.LoadMetadata, { path: pathToCopyFrom });
+          if (meta?.adjustments && !meta.adjustments.is_null) {
+            sourceAdjustments = normalizeLoadedAdjustments(meta.adjustments);
+          } else {
+            sourceAdjustments = INITIAL_ADJUSTMENTS;
+          }
+        } catch (err) {
+          toast.error(t('contextMenus.toasts.failedCopyMetadata', { err }));
+          return;
         }
-      } catch (err) {
-        toast.error(`Failed to load metadata for copying: ${err}`);
-        return;
       }
-    }
 
-    if (!sourceAdjustments) return;
+      if (!sourceAdjustments) return;
 
-    const adjustmentsToCopy: any = {};
+      const adjustmentsToCopy: any = {};
 
-    for (const key of COPYABLE_ADJUSTMENT_KEYS) {
-      if (Object.prototype.hasOwnProperty.call(sourceAdjustments, key)) {
-        adjustmentsToCopy[key] = structuredClone(sourceAdjustments[key]);
+      for (const key of COPYABLE_ADJUSTMENT_KEYS) {
+        if (Object.prototype.hasOwnProperty.call(sourceAdjustments, key)) {
+          adjustmentsToCopy[key] = structuredClone(sourceAdjustments[key]);
+        }
       }
-    }
-    useEditorStore.getState().setEditor({ copiedAdjustments: adjustmentsToCopy });
-    useProcessStore.getState().setProcess({ isCopied: true });
-  }, []);
+      useEditorStore.getState().setEditor({ copiedAdjustments: adjustmentsToCopy });
+      useProcessStore.getState().setProcess({ isCopied: true });
+    },
+    [t],
+  );
 
   const handlePasteAdjustments = useCallback(
     (paths?: string[]) => {
@@ -331,11 +337,11 @@ export function useEditorActions() {
             });
           }
         })
-        .catch((err) => toast.error(`Failed to paste adjustments: ${err}`));
+        .catch((err) => toast.error(t('contextMenus.toasts.failedPaste', { err })));
 
       setProcess({ isPasted: true });
     },
-    [setAdjustments],
+    [setAdjustments, t],
   );
 
   const handleZoomChange = useCallback((zoomValue: number, fitToWindow: boolean = false) => {

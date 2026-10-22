@@ -36,6 +36,39 @@ on:
         type: string
         default: ''
 
+  # 支持手动单独触发单平台构建（例如 release matrix 中某个 job 因
+  # Maven Central 403 / runner 网络抖动等间歇性原因失败时，精准补跑，
+  # 避免全 matrix 重跑造成的资产冲突与时间浪费）。
+  workflow_dispatch:
+    inputs:
+      platform:
+        required: true
+        type: string
+      target:
+        required: false
+        type: string
+      build-args:
+        required: false
+        type: string
+      release-id:
+        required: false
+        type: string
+      asset-prefix:
+        required: false
+        type: string
+      asset-name-pattern:
+        required: false
+        type: string
+      repository:
+        required: false
+        type: string
+      ref:
+        required: false
+        type: string
+      mobile:
+        required: false
+        type: string
+
 jobs:
   build:
     runs-on: ${{ inputs.platform }}

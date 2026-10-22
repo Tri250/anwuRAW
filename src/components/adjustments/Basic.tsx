@@ -3,12 +3,18 @@ import clsx from 'clsx';
 import Slider from '../ui/Slider';
 import { Adjustments, BasicAdjustment, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
 import {
-  createIdentityHsl,
-  isHslEqual,
+  FILM_SCOPE_DEFAULTS,
+  getActiveRecipeId,
   MASTER_RECIPES,
   MasterRecipeDef,
   recipeToAdjustmentValues,
+  RECIPE_PARAMETER_RESET,
+  RECIPE_SCOPE_DEFAULTS,
+  SCENE_SCOPE_DEFAULTS,
 } from '../../utils/masterRecipes';
+
+// 保持既有导入路径兼容：测试与外部模块从 Basic 导入 getActiveRecipeId
+export { getActiveRecipeId };
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
@@ -39,23 +45,10 @@ interface BasicAdjustmentsProps {
  * 切换外观不会残留上一外观的参数；域外参数（亮度、结构、曲线、锐化、蒙版等用户创作
  * 意图）一律保留。应用时同步强制开启参数所属 section，避免 section 被 eye 隐藏后
  * 写入管线时被归零失效。激活态由当前值推导而非点击记忆。
+ *
+ * 治理域常量（SCENE/FILM/RECIPE_SCOPE_DEFAULTS、RECIPE_PARAMETER_RESET、getActiveRecipeId）
+ * 定义于 utils/masterRecipes.ts 数据层，此处与 useEditorActions/Effects 链路共用。
  */
-const SCENE_SCOPE_DEFAULTS: Partial<Adjustments> = {
-  exposure: 0,
-  contrast: 0,
-  highlights: 0,
-  shadows: 0,
-  whites: 0,
-  blacks: 0,
-  temperature: 0,
-  tint: 0,
-  saturation: 0,
-  vibrance: 0,
-  clarity: 0,
-  dehaze: 0,
-  lumaNoiseReduction: 0,
-  colorNoiseReduction: 0,
-};
 
 /** 场景预设写入的参数所属 section（与 SCENE_SCOPE_DEFAULTS 的键一一对应） */
 const SCENE_SECTIONS = ['basic', 'color', 'details'] as const;
@@ -64,28 +57,6 @@ const SCENE_SECTIONS = ['basic', 'color', 'details'] as const;
 const RECIPE_SECTIONS = ['basic', 'color', 'details', 'effects'] as const;
 /** 胶片仅写入 LUT 字段（effects） */
 const FILM_SECTIONS = ['effects'] as const;
-
-const SCENE_SCOPE_KEYS = Object.keys(SCENE_SCOPE_DEFAULTS) as Array<keyof typeof SCENE_SCOPE_DEFAULTS>;
-
-/** 胶片治理域：仅 LUT 字段（胶片 = 内置 LUT 选择，不触碰任何滑块） */
-const FILM_SCOPE_DEFAULTS: Partial<Adjustments> = {
-  lutPath: null,
-  lutName: null,
-  lutData: null,
-  lutSize: 0,
-  lutIntensity: 100,
-  lutIsSceneReferred: false,
-};
-
-/** 大师配方治理域：场景 14 基础键 + HSL + LUT 字段（完整外观） */
-const RECIPE_SCOPE_DEFAULTS: Partial<Adjustments> = {
-  ...SCENE_SCOPE_DEFAULTS,
-  hsl: createIdentityHsl(),
-  ...FILM_SCOPE_DEFAULTS,
-};
-
-/** 大师配方激活态比对键：14 基础键 + hsl（逐值）+ lutName（配方名作为稳定标识） */
-const RECIPE_MATCH_KEYS = [...SCENE_SCOPE_KEYS, 'hsl', 'lutName'] as const;
 
 interface SceneEnhanceOptions {
   labelKey: string;
@@ -151,27 +122,11 @@ const SCENE_ENHANCE: SceneEnhanceOptions[] = [
  * 撤销/重置/手动微调后高亮自然消失，手动调回场景值则自然恢复。
  */
 export const getActiveSceneLabelKey = (adjustments: Partial<Adjustments>): string | null => {
+  const SCENE_SCOPE_KEYS = Object.keys(SCENE_SCOPE_DEFAULTS) as Array<keyof typeof SCENE_SCOPE_DEFAULTS>;
   for (const preset of SCENE_ENHANCE) {
     const resolved = { ...SCENE_SCOPE_DEFAULTS, ...preset.values };
     const isMatch = SCENE_SCOPE_KEYS.every((key) => adjustments[key] === resolved[key]);
     if (isMatch) return preset.labelKey;
-  }
-  return null;
-};
-
-/**
- * 判定当前调整状态是否与某个大师配方完全一致：
- * 14 基础键逐键 + HSL 8 通道逐值 + lutName 必须等于配方名。
- * lutPath 由运行时资源解析，不参与比对；lutIntensity 视为用户微调不退出激活态。
- */
-export const getActiveRecipeId = (adjustments: Partial<Adjustments>): string | null => {
-  for (const recipe of MASTER_RECIPES) {
-    const resolved = { ...RECIPE_SCOPE_DEFAULTS, ...recipeToAdjustmentValues(recipe) };
-    const isMatch = RECIPE_MATCH_KEYS.every((key) => {
-      if (key === 'hsl') return isHslEqual(adjustments.hsl, resolved.hsl);
-      return adjustments[key] === resolved[key];
-    });
-    if (isMatch) return recipe.id;
   }
   return null;
 };
@@ -316,6 +271,7 @@ const ToneMapperSwitch = ({
           {toneMapperOptions.map((mapper) => (
             <button
               key={mapper.id}
+              type="button"
               data-tooltip={mapper.title}
               onClick={() => onMapperChange(mapper.id)}
               className={clsx(
@@ -390,9 +346,7 @@ export default function BasicAdjustments({
         if (!isActive) return;
         const entries = Array.isArray(list) ? list : [];
         setBuiltInFilms(
-          entries
-            .filter((entry) => entry.isBuiltIn)
-            .map((entry) => ({ name: entry.name, path: entry.path })),
+          entries.filter((entry) => entry.isBuiltIn).map((entry) => ({ name: entry.name, path: entry.path })),
         );
       })
       .catch((err) => console.error('Failed to list built-in films:', err));
@@ -405,6 +359,21 @@ export default function BasicAdjustments({
       isActive = false;
     };
   }, [isForMask]);
+
+  /**
+   * 配方 LUT 路径自愈：内置资源路径依赖安装位置（如 AppImage 挂载点每次启动都会变化），
+   * 旧会话持久化的绝对路径在新会话可能失效，渲染管线会静默跳过 LUT。
+   * 配方以 lutName 作为稳定标识，运行时重新解析到有效路径时回写 lutPath，
+   * 保证「同一配方 = 同一外观」跨会话成立。
+   */
+  useEffect(() => {
+    if (isForMask || !adjustments.lutName) return;
+    const recipe = MASTER_RECIPES.find((item) => item.name === adjustments.lutName);
+    if (!recipe) return;
+    const resolvedPath = recipeLutPaths[recipe.lutFileName];
+    if (!resolvedPath || resolvedPath === adjustments.lutPath) return;
+    setAdjustments((prev: Partial<Adjustments>) => (prev.lutName === recipe.name ? { lutPath: resolvedPath } : {}));
+  }, [adjustments.lutName, adjustments.lutPath, isForMask, recipeLutPaths, setAdjustments]);
 
   /** 预热后端 LUT 缓存并回填 lutSize（渲染管线亦可按需加载，此处仅加速与补元数据） */
   const warmLutCache = (path: string) => {
@@ -433,8 +402,16 @@ export default function BasicAdjustments({
     // 切换语义：点不同场景 = 治理域归零后叠加新场景校准值；
     // 再次点击已激活场景 = 退出场景，治理域回归中性（其余参数一律保留）
     const sceneValues = isActive ? SCENE_SCOPE_DEFAULTS : { ...SCENE_SCOPE_DEFAULTS, ...target.values };
+    // 跨组切换：配方完整激活时点场景 = 完全退出配方，额外清除配方超集部分（HSL + LUT 字段），
+    // 否则场景高亮但配方 LUT/HSL 仍在渲染，违反「同一场景 = 同一结果」。
+    // 胶片 LUT 与场景治理域不相交（可叠加），一律保留；配方 tint 恒非零、场景 tint 恒为零，
+    // 两激活态互斥，不会误清用户叠加的胶片。
+    const recipeSuperset: Partial<Adjustments> = activeRecipeId
+      ? { ...RECIPE_PARAMETER_RESET, ...FILM_SCOPE_DEFAULTS }
+      : {};
     setAdjustments((prev: Partial<Adjustments>) => ({
       ...prev,
+      ...recipeSuperset,
       ...sceneValues,
       sectionVisibility: forceSections(prev, SCENE_SECTIONS),
     }));
@@ -442,29 +419,47 @@ export default function BasicAdjustments({
 
   const applyMasterRecipe = (recipe: MasterRecipeDef) => {
     const lutPath = recipeLutPaths[recipe.lutFileName];
+    const isActive = recipe.id === activeRecipeId;
+    // 退出语义：再次点击已激活配方 = 治理域回归中性（域外参数保留）。
+    // 即使外观文件缺失也允许退出，避免卡在无法取消的激活态
+    if (isActive) {
+      setAdjustments((prev: Partial<Adjustments>) => ({
+        ...prev,
+        ...RECIPE_SCOPE_DEFAULTS,
+        sectionVisibility: forceSections(prev, RECIPE_SECTIONS),
+      }));
+      return;
+    }
+    // 应用语义：治理域（14 基础键 + HSL + LUT）归零后叠加新配方。
     // 外观文件缺失（未随包/加载失败）时不落参数，保持「配方 = 完整外观」的保真语义
     if (!lutPath) return;
-    const isActive = recipe.id === activeRecipeId;
-    // 切换语义：点不同配方 = 治理域（14 基础键 + HSL + LUT）归零后叠加新配方；
-    // 再次点击已激活配方 = 退出配方，治理域回归中性（域外参数保留）
-    const recipeValues = isActive
-      ? RECIPE_SCOPE_DEFAULTS
-      : { ...RECIPE_SCOPE_DEFAULTS, ...recipeToAdjustmentValues(recipe), lutPath };
     setAdjustments((prev: Partial<Adjustments>) => ({
       ...prev,
-      ...recipeValues,
+      ...RECIPE_SCOPE_DEFAULTS,
+      ...recipeToAdjustmentValues(recipe),
+      lutPath,
       sectionVisibility: forceSections(prev, RECIPE_SECTIONS),
     }));
-    if (!isActive) warmLutCache(lutPath);
+    warmLutCache(lutPath);
   };
 
   const applyFilm = (film: BuiltInLut | null) => {
     // null = 「中性」：清除 LUT 回归无外观
     const isActive = film ? adjustments.lutPath === film.path : !hasActiveLut;
+    // 跨组切换：配方完整激活时选胶片（含「中性」）= 完全退出配方，额外清除配方参数与 HSL，
+    // 否则胶片 LUT 叠在配方参数上的混合残留违反确定性；
+    // 场景与胶片治理域不相交（可叠加），场景参数一律保留
+    const recipeOverride: Partial<Adjustments> = activeRecipeId && !isActive ? RECIPE_PARAMETER_RESET : {};
     const filmValues: Partial<Adjustments> =
       film && !isActive
-        ? { ...FILM_SCOPE_DEFAULTS, lutPath: film.path, lutName: film.name, lutIsSceneReferred: true }
-        : { ...FILM_SCOPE_DEFAULTS };
+        ? {
+            ...recipeOverride,
+            ...FILM_SCOPE_DEFAULTS,
+            lutPath: film.path,
+            lutName: film.name,
+            lutIsSceneReferred: true,
+          }
+        : { ...recipeOverride, ...FILM_SCOPE_DEFAULTS };
     setAdjustments((prev: Partial<Adjustments>) => ({
       ...prev,
       ...filmValues,
@@ -508,6 +503,7 @@ export default function BasicAdjustments({
                   <button
                     key={preset.labelKey}
                     type="button"
+                    aria-pressed={isActive}
                     onClick={() => applySceneEnhance(preset)}
                     className={chipClass(isActive)}
                   >
@@ -529,18 +525,26 @@ export default function BasicAdjustments({
                 const isAvailable = Boolean(lutPath);
                 const subtitle = t(`adjustments.basic.scene.recipes.${recipe.id}.subtitle`);
                 const summary = t(`adjustments.basic.scene.recipes.${recipe.id}.summary`);
+                // disabled 表单元素不派发 mouseover，data-tooltip 会永不可见，
+                // 用户无从得知缺失原因——改用 aria-disabled + 点击守卫，tooltip 正常弹出
                 return (
                   <button
                     key={recipe.id}
                     type="button"
-                    onClick={() => applyMasterRecipe(recipe)}
-                    disabled={!isAvailable}
+                    aria-pressed={isActive}
+                    aria-disabled={!isAvailable && !isActive}
+                    onClick={() => {
+                      if (!isAvailable && !isActive) return;
+                      applyMasterRecipe(recipe);
+                    }}
                     data-tooltip={
-                      isAvailable
-                        ? `${recipe.name} · ${subtitle}\n${summary}`
-                        : `${recipe.name} · ${t('adjustments.basic.scene.recipeLutMissing')}`
+                      isActive
+                        ? `${recipe.name} · ${t('adjustments.basic.scene.recipeActiveHint')}`
+                        : isAvailable
+                          ? `${recipe.name} · ${subtitle}\n${summary}`
+                          : `${recipe.name} · ${t('adjustments.basic.scene.recipeLutMissing')}`
                     }
-                    className={clsx(chipClass(isActive), !isAvailable && 'opacity-50 cursor-not-allowed')}
+                    className={clsx(chipClass(isActive), !isAvailable && !isActive && 'opacity-50 cursor-not-allowed')}
                   >
                     {recipe.name}
                   </button>
@@ -557,6 +561,7 @@ export default function BasicAdjustments({
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
+                  aria-pressed={!hasActiveLut}
                   onClick={() => applyFilm(null)}
                   className={chipClass(!hasActiveLut)}
                 >
@@ -568,6 +573,7 @@ export default function BasicAdjustments({
                     <button
                       key={film.path}
                       type="button"
+                      aria-pressed={isActive}
                       onClick={() => applyFilm(film)}
                       data-tooltip={film.name}
                       className={chipClass(isActive)}

@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Slider from '../ui/Slider';
-import CollapsibleSection from '../ui/CollapsibleSection';
 import ColorWheel from '../ui/ColorWheel';
 import Switch from '../ui/Switch';
 import Text from '../ui/Text';
@@ -24,9 +22,8 @@ interface SplitToningProps {
   onDragStateChange?: (isDragging: boolean) => void;
 }
 
-const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragStateChange }: SplitToningProps) => {
+const SplitToning = ({ adjustments, setAdjustments, onDragStateChange }: SplitToningProps) => {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(true);
 
   const st: SplitToningSettings = adjustments.splitToning || defaultSplitToning;
   const sectionVisible = adjustments.sectionVisibility?.split_toning !== false;
@@ -83,14 +80,7 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
   };
 
   return (
-    <CollapsibleSection
-      title={t('adjustments.splitToning.title', 'Split Toning / 分离色调')}
-      isOpen={isOpen}
-      onToggle={() => setIsOpen(!isOpen)}
-      isContentVisible={contentVisible}
-      onToggleVisibility={handleToggleEnabled}
-      canToggleVisibility={true}
-    >
+    <div>
       {/* enabled Switch */}
       <div className="mb-4">
         <Switch
@@ -179,7 +169,7 @@ const SplitToning = ({ adjustments, setAdjustments, isForMask = false, onDragSta
           />
         </div>
       </div>
-    </CollapsibleSection>
+    </div>
   );
 };
 

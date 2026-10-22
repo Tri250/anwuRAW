@@ -6,6 +6,7 @@ import { Loader2, Circle, Hexagon, Octagon, Aperture } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import Slider from '../ui/Slider';
+import { getActiveRecipeId, RECIPE_PARAMETER_RESET } from '../../utils/masterRecipes';
 import Switch from '../ui/Switch';
 import { Adjustments, Effect, CreativeAdjustment } from '../../utils/adjustments';
 import LUTControl from '../ui/LUTControl';
@@ -177,6 +178,9 @@ export default function EffectsPanel({
   const handleLutClear = () => {
     setAdjustments((prev: Partial<Adjustments>) => ({
       ...prev,
+      // 跨组切换：配方完整激活时清除 LUT（Effects 面板 X / LUTControl onClear）=
+      // 完全退出配方，同时清除配方参数 + HSL，与场景增强面板「中性」语义一致
+      ...(getActiveRecipeId(prev) ? RECIPE_PARAMETER_RESET : {}),
       lutPath: null,
       lutName: null,
       lutData: null,

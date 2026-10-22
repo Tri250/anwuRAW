@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Slider from '../ui/Slider';
-import CollapsibleSection from '../ui/CollapsibleSection';
 import Text from '../ui/Text';
 import { Adjustments, ChannelMixerSettings } from '../../utils/adjustments';
 import { TextVariants } from '../../types/typography';
@@ -61,17 +59,10 @@ const CHANNEL_ROWS: ChannelRow[] = [
   },
 ];
 
-export default function ChannelMixer({
-  adjustments,
-  setAdjustments,
-  isForMask = false,
-  onDragStateChange,
-}: ChannelMixerProps) {
+export default function ChannelMixer({ adjustments, setAdjustments, onDragStateChange }: ChannelMixerProps) {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(true);
 
   const current: ChannelMixerSettings = adjustments.channelMixer || defaultIdentity;
-  const sectionVisible = adjustments.sectionVisibility?.channel_mixer !== false;
 
   const handleSliderChange = (key: keyof ChannelMixerSettings) => (e: { target: { value: string | number } }) => {
     setAdjustments({
@@ -88,20 +79,8 @@ export default function ChannelMixer({
     });
   };
 
-  // 与 SplitToning 保持一致：将 reset 按钮直接放在内容区顶部，不使用可切换可见性
-  const handleToggleVisibility = () => {
-    // sectionVisibility.channel 由父组件维护时可在此触发
-  };
-
   return (
-    <CollapsibleSection
-      title={t('adjustments.channelMixer.title', 'Channel Mixer / 通道混合器')}
-      isOpen={isOpen}
-      onToggle={() => setIsOpen(!isOpen)}
-      isContentVisible={sectionVisible}
-      onToggleVisibility={handleToggleVisibility}
-      canToggleVisibility={false}
-    >
+    <div>
       <div className="flex items-center justify-between mb-3">
         <Text variant={TextVariants.heading}>
           {t('adjustments.channelMixer.outputs', 'Output Channels / 输出通道')}
@@ -174,6 +153,6 @@ export default function ChannelMixer({
           )}
         </p>
       </div>
-    </CollapsibleSection>
+    </div>
   );
 }

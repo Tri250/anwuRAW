@@ -33,6 +33,7 @@
         "films": "底片",
         "filmsNeutral": "中性",
         "recipeLutMissing": "大師配方外觀檔案不可用",
+        "recipeActiveHint": "已啟用，再次點擊退出配方",
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "日系青空 · 高調日光",
@@ -96,6 +97,15 @@
       "toneMapper": "色調映射",
       "whites": "白色"
     },
+    "channelMixer": {
+      "title": "通道混合器",
+      "outputs": "輸出通道",
+      "reset": "重置",
+      "hint": "調整各輸入顏色通道對輸出通道的貢獻百分比。",
+      "red": "紅",
+      "green": "綠",
+      "blue": "藍"
+    },
     "color": {
       "ariaSelectColor": "選擇 {{name}} 顏色",
       "calibration": {
@@ -121,6 +131,8 @@
         "midtones": "中間調",
         "shadows": "陰影"
       },
+      "hslPickActive": "點擊影像以選取目標顏色",
+      "hslPickTooltip": "從影像中選取顏色",
       "hue": "色相",
       "localHue": "局部色調",
       "luminance": "亮度",
@@ -224,6 +236,14 @@
       "roundness": "圓度",
       "size": "大小",
       "vignette": "暗角"
+    },
+    "splitToning": {
+      "title": "分割色調",
+      "enabled": "啟用",
+      "highlights": "亮部",
+      "saturation": "飽和度",
+      "shadows": "陰影",
+      "balance": "平衡"
     }
   },
   "contextMenus": {
@@ -291,6 +311,10 @@
       "ratingLabel_other": "{{count}} 星",
       "redo": "重做",
       "resetAdjustments": "重置調整",
+      "resetConfirmMessage_one": "這將移除所有局部調整（曝光、色調、顏色、遮色片、裁剪等）並恢復預設值。\n\n操作後可立即用 Ctrl+Z 復原。",
+      "resetConfirmMessage_other": "這將移除所選 {{count}} 張影像的所有局部調整並恢復預設值。\n\n重置後，若未切換影像，仍可對單張影像使用 Ctrl+Z 復原。",
+      "resetConfirmTitle_one": "重置調整",
+      "resetConfirmTitle_other": "重置調整（{{count}} 張影像）",
       "stitchPanorama": "拼接全景圖",
       "tagging": "標籤",
       "undo": "復原"
@@ -372,6 +396,7 @@
       "failedApplyAuto": "應用自動調整失敗：{{err}}",
       "failedChangeIcon": "更換圖示失敗：{{err}}",
       "failedCopy": "複製檔案失敗：{{err}}",
+      "failedCopyMetadata": "載入中繼資料以複製失敗：{{err}}",
       "failedCreateVirtualCopy": "建立虛擬副本失敗：{{err}}",
       "failedDelete": "刪除失敗：{{err}}",
       "failedDeleteFolder": "刪除資料夾失敗：{{err}}",
@@ -379,7 +404,9 @@
       "failedMove": "移動檔案失敗：{{err}}",
       "failedMoveError": "移動失敗：{{err}}",
       "failedMoveInvalid": "移動失敗：未找到目標組或目標組無效。",
-      "failedRemoveImages": "移除影像失敗：{{err}}"
+      "failedPaste": "貼上調整失敗：{{err}}",
+      "failedRemoveImages": "移除影像失敗：{{err}}",
+      "failedResetAdjustments": "重置調整失敗：{{err}}"
     }
   },
   "editor": {
@@ -392,10 +419,12 @@
       },
       "sections": {
         "basic": "基礎",
+        "channel_mixer": "通道混合器",
         "color": "顏色",
         "curves": "曲線",
         "details": "細節",
-        "effects": "效果"
+        "effects": "效果",
+        "split_toning": "分離色調"
       },
       "title": "調整",
       "tooltips": {
@@ -688,7 +717,8 @@
         "feather": "羽化",
         "globalFeather": "全域羽化",
         "grow": "擴張",
-        "tolerance": "容差"
+        "tolerance": "容差",
+        "decontaminate": "去除雜色"
       },
       "toolbar": {
         "title": "蒙版編輯",

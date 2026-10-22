@@ -33,6 +33,7 @@
         "films": "Filmy",
         "filmsNeutral": "Neutralny",
         "recipeLutMissing": "Plik look przepisu mistrza niedostępny",
+        "recipeActiveHint": "Aktywny — kliknij ponownie, aby wyjść z przepisu",
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "Japońskie błękitne niebo · Światło high-key",
@@ -96,6 +97,15 @@
       "toneMapper": "Mapowanie tonów",
       "whites": "Biele"
     },
+    "channelMixer": {
+      "title": "Mikser kanałów",
+      "outputs": "Kanały wyjściowe",
+      "reset": "Resetuj",
+      "hint": "Dostosuj procentowy udział każdego wejściowego kanału koloru w kanale wyjściowym.",
+      "red": "Czerwony",
+      "green": "Zielony",
+      "blue": "Niebieski"
+    },
     "color": {
       "ariaSelectColor": "Wybierz kolor {{name}}",
       "calibration": {
@@ -121,6 +131,8 @@
         "midtones": "Półtony",
         "shadows": "Cienie"
       },
+      "hslPickActive": "Kliknij obraz, aby pobrać kolor docelowy",
+      "hslPickTooltip": "Pobierz kolor z obrazu",
       "hue": "Odcień",
       "localHue": "Lokalny odcień",
       "luminance": "Luminancja",
@@ -224,6 +236,14 @@
       "roundness": "Zaokrąglenie",
       "size": "Rozmiar",
       "vignette": "Winieta"
+    },
+    "splitToning": {
+      "title": "Rozdzielone tonowanie",
+      "enabled": "Włącz",
+      "highlights": "Światła",
+      "saturation": "Nasycenie",
+      "shadows": "Cienie",
+      "balance": "Balans"
     }
   },
   "contextMenus": {
@@ -293,6 +313,10 @@
       "ratingLabel_other": "{{count}} Gwiazdek",
       "redo": "Ponów",
       "resetAdjustments": "Resetuj ustawienia",
+      "resetConfirmMessage_one": "Spowoduje to usunięcie wszystkich lokalnych korekt (ekspozycja, tonacja, kolor, maski, kadrowanie itd.) i przywrócenie wartości domyślnych.\n\nMożna to cofnąć skrótem Ctrl+Z bezpośrednio po operacji.",
+      "resetConfirmMessage_other": "Spowoduje to usunięcie wszystkich lokalnych korekt z {{count}} zaznaczonych obrazów i przywrócenie wartości domyślnych.\n\nPo resecie poszczególne obrazy można nadal cofnąć skrótem Ctrl+Z, o ile nie przełączono na inny obraz.",
+      "resetConfirmTitle_one": "Resetuj korekty",
+      "resetConfirmTitle_other": "Resetuj korekty ({{count}} obrazów)",
       "stitchPanorama": "Złóż panoramę",
       "tagging": "Tagowanie",
       "undo": "Cofnij"
@@ -404,6 +428,7 @@
       "failedApplyAuto": "Nie udało się zastosować auto-korekty: {{err}}",
       "failedChangeIcon": "Nie udało się zmienić ikony: {{err}}",
       "failedCopy": "Nie udało się skopiować plików: {{err}}",
+      "failedCopyMetadata": "Nie udało się wczytać metadanych do kopiowania: {{err}}",
       "failedCreateVirtualCopy": "Nie udało się utworzyć wirtualnej kopii: {{err}}",
       "failedDelete": "Nie udało się usunąć: {{err}}",
       "failedDeleteFolder": "Nie udało się usunąć folderu: {{err}}",
@@ -411,7 +436,9 @@
       "failedMove": "Nie udało się przenieść plików: {{err}}",
       "failedMoveError": "Nie udało się przenieść: {{err}}",
       "failedMoveInvalid": "Nie udało się przenieść: Grupa docelowa nie znaleziona lub nieprawidłowa.",
-      "failedRemoveImages": "Nie udało się usunąć obrazów: {{err}}"
+      "failedPaste": "Nie udało się wkleić korekt: {{err}}",
+      "failedRemoveImages": "Nie udało się usunąć obrazów: {{err}}",
+      "failedResetAdjustments": "Nie udało się zresetować korekt: {{err}}"
     }
   },
   "editor": {
@@ -424,10 +451,12 @@
       },
       "sections": {
         "basic": "Podstawowe",
+        "channel_mixer": "Mikser kanałów",
         "color": "Kolor",
         "curves": "Krzywe",
         "details": "Detale",
-        "effects": "Efekty"
+        "effects": "Efekty",
+        "split_toning": "Rozdzielone tonowanie"
       },
       "title": "Ustawienia",
       "tooltips": {

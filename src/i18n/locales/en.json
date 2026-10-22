@@ -33,6 +33,7 @@
         "films": "Film Looks",
         "filmsNeutral": "Neutral",
         "recipeLutMissing": "Master recipe look file unavailable",
+        "recipeActiveHint": "Active — click again to exit the recipe",
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "Japanese blue sky · High-key daylight",
@@ -96,6 +97,15 @@
       "toneMapper": "Tone Mapper",
       "whites": "Whites"
     },
+    "channelMixer": {
+      "title": "Channel Mixer",
+      "outputs": "Output Channels",
+      "reset": "Reset",
+      "hint": "Adjust the percentage of each input color channel that contributes to the output channel.",
+      "red": "Red",
+      "green": "Green",
+      "blue": "Blue"
+    },
     "color": {
       "ariaSelectColor": "Select {{name}} color",
       "calibration": {
@@ -121,6 +131,8 @@
         "midtones": "Midtones",
         "shadows": "Shadows"
       },
+      "hslPickActive": "Click the image to pick the target color",
+      "hslPickTooltip": "Pick a color from the image",
       "hue": "Hue",
       "localHue": "Local Hue",
       "luminance": "Luminance",
@@ -224,6 +236,14 @@
       "roundness": "Roundness",
       "size": "Size",
       "vignette": "Vignette"
+    },
+    "splitToning": {
+      "title": "Split Toning",
+      "enabled": "Enable",
+      "highlights": "Highlights",
+      "saturation": "Saturation",
+      "shadows": "Shadows",
+      "balance": "Balance"
     }
   },
   "contextMenus": {
@@ -291,6 +311,10 @@
       "ratingLabel_other": "{{count}} Stars",
       "redo": "Redo",
       "resetAdjustments": "Reset Adjustments",
+      "resetConfirmMessage_one": "This will remove all local adjustments (exposure, tone, color, masks, crop, etc.) and restore defaults.\n\nThis can be undone with Ctrl+Z right after.",
+      "resetConfirmMessage_other": "This will remove all local adjustments for {{count}} selected images and restore defaults.\n\nAfter reset, individual images can still be undone with Ctrl+Z if not switched away.",
+      "resetConfirmTitle_one": "Reset Adjustments",
+      "resetConfirmTitle_other": "Reset Adjustments ({{count}} images)",
       "stitchPanorama": "Stitch Panorama",
       "tagging": "Tagging",
       "undo": "Undo"
@@ -372,6 +396,7 @@
       "failedApplyAuto": "Failed to apply auto adjustments: {{err}}",
       "failedChangeIcon": "Failed to change icon: {{err}}",
       "failedCopy": "Failed to copy files: {{err}}",
+      "failedCopyMetadata": "Failed to load metadata for copying: {{err}}",
       "failedCreateVirtualCopy": "Failed to create virtual copy: {{err}}",
       "failedDelete": "Failed to delete: {{err}}",
       "failedDeleteFolder": "Failed to delete folder: {{err}}",
@@ -379,7 +404,9 @@
       "failedMove": "Failed to move files: {{err}}",
       "failedMoveError": "Failed to move: {{err}}",
       "failedMoveInvalid": "Failed to move: Target group not found or invalid.",
-      "failedRemoveImages": "Failed to remove images: {{err}}"
+      "failedPaste": "Failed to paste adjustments: {{err}}",
+      "failedRemoveImages": "Failed to remove images: {{err}}",
+      "failedResetAdjustments": "Failed to reset adjustments: {{err}}"
     }
   },
   "editor": {
@@ -392,10 +419,12 @@
       },
       "sections": {
         "basic": "Basic",
+        "channel_mixer": "Channel Mixer",
         "color": "Color",
         "curves": "Curves",
         "details": "Details",
-        "effects": "Effects"
+        "effects": "Effects",
+        "split_toning": "Split Toning"
       },
       "title": "Adjustments",
       "tooltips": {
@@ -697,7 +726,8 @@
         "feather": "Feather",
         "globalFeather": "Global Feather",
         "grow": "Grow",
-        "tolerance": "Tolerance"
+        "tolerance": "Tolerance",
+        "decontaminate": "Decontaminate Colors"
       },
       "patches": {
         "copyName": "{{name}} Copy",

@@ -33,6 +33,7 @@
         "films": "Filme",
         "filmsNeutral": "Neutral",
         "recipeLutMissing": "Master-Rezept-Look-Datei nicht verfügbar",
+        "recipeActiveHint": "Aktiv – zum Verlassen erneut klicken",
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "Japanischer Blauhimmel · Hochkey-Licht",
@@ -96,6 +97,15 @@
       "toneMapper": "Tonemapper",
       "whites": "Weiß"
     },
+    "channelMixer": {
+      "title": "Kanalmixer",
+      "outputs": "Ausgangskanäle",
+      "reset": "Zurücksetzen",
+      "hint": "Passe den prozentualen Anteil jedes Eingangsfarbkanals am Ausgangskanal an.",
+      "red": "Rot",
+      "green": "Grün",
+      "blue": "Blau"
+    },
     "color": {
       "ariaSelectColor": "{{name}}-Farbe auswählen",
       "calibration": {
@@ -121,6 +131,8 @@
         "midtones": "Mitteltöne",
         "shadows": "Tiefen"
       },
+      "hslPickActive": "Klicken Sie auf das Bild, um die Zielfarbe aufzunehmen",
+      "hslPickTooltip": "Farbe aus dem Bild aufnehmen",
       "hue": "Farbton",
       "localHue": "Lokaler Farbton",
       "luminance": "Luminanz",
@@ -224,6 +236,14 @@
       "roundness": "Rundheit",
       "size": "Größe",
       "vignette": "Vignettierung"
+    },
+    "splitToning": {
+      "title": "Split-Toning",
+      "enabled": "Aktivieren",
+      "highlights": "Lichter",
+      "saturation": "Sättigung",
+      "shadows": "Tiefen",
+      "balance": "Balance"
     }
   },
   "contextMenus": {
@@ -291,6 +311,10 @@
       "ratingLabel_other": "{{count}} Sterne",
       "redo": "Wiederholen",
       "resetAdjustments": "Einstellungen zurücksetzen",
+      "resetConfirmMessage_one": "Alle lokalen Anpassungen (Belichtung, Tonung, Farbe, Masken, Zuschnitt usw.) werden entfernt und die Standardwerte wiederhergestellt.\n\nKann direkt danach mit Ctrl+Z rückgängig gemacht werden.",
+      "resetConfirmMessage_other": "Alle lokalen Anpassungen für {{count}} ausgewählte Bilder werden entfernt und die Standardwerte wiederhergestellt.\n\nNach dem Zurücksetzen kann jedes Bild weiterhin mit Ctrl+Z rückgängig gemacht werden, solange nicht zu einem anderen Bild gewechselt wurde.",
+      "resetConfirmTitle_one": "Anpassungen zurücksetzen",
+      "resetConfirmTitle_other": "Anpassungen zurücksetzen ({{count}} Bilder)",
       "stitchPanorama": "Panorama zusammenfügen",
       "tagging": "Tagging",
       "undo": "Rückgängig"
@@ -372,6 +396,7 @@
       "failedApplyAuto": "Fehler bei der autom. Anpassung: {{err}}",
       "failedChangeIcon": "Fehler beim Ändern des Symbols: {{err}}",
       "failedCopy": "Dateien kopieren fehlgeschlagen: {{err}}",
+      "failedCopyMetadata": "Laden der Metadaten zum Kopieren fehlgeschlagen: {{err}}",
       "failedCreateVirtualCopy": "Virtuelle Kopie fehlgeschlagen: {{err}}",
       "failedDelete": "Löschen fehlgeschlagen: {{err}}",
       "failedDeleteFolder": "Ordner löschen fehlgeschlagen: {{err}}",
@@ -379,7 +404,9 @@
       "failedMove": "Dateien verschieben fehlgeschlagen: {{err}}",
       "failedMoveError": "Verschieben fehlgeschlagen: {{err}}",
       "failedMoveInvalid": "Verschieben fehlgeschlagen: Zielgruppe nicht gefunden oder ungültig.",
-      "failedRemoveImages": "Bilder entfernen fehlgeschlagen: {{err}}"
+      "failedPaste": "Einfügen der Anpassungen fehlgeschlagen: {{err}}",
+      "failedRemoveImages": "Bilder entfernen fehlgeschlagen: {{err}}",
+      "failedResetAdjustments": "Zurücksetzen der Anpassungen fehlgeschlagen: {{err}}"
     }
   },
   "editor": {
@@ -392,10 +419,12 @@
       },
       "sections": {
         "basic": "Basis",
+        "channel_mixer": "Kanalmixer",
         "color": "Farbe",
         "curves": "Kurven",
         "details": "Details",
-        "effects": "Effekte"
+        "effects": "Effekte",
+        "split_toning": "Split-Toning"
       },
       "title": "Anpassungen",
       "tooltips": {

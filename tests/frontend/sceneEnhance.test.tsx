@@ -6,7 +6,7 @@ import BasicAdjustments, {
   mapRecipeLutPaths,
 } from '../../src/components/adjustments/Basic';
 import { Adjustments, INITIAL_ADJUSTMENTS } from '../../src/utils/adjustments';
-import { MASTER_RECIPES } from '../../src/utils/masterRecipes';
+import { MASTER_RECIPES, recipeToAdjustmentValues, RECIPE_PARAMETER_RESET } from '../../src/utils/masterRecipes';
 import { mockInvoke } from './setup';
 
 // === TC-SCENE-* 系列:覆盖「场景增强」操作链路 ===
@@ -359,7 +359,7 @@ describe('TC-RECIPE-01: 大师配方应用(参数 + HSL + LUT 完整落位)', ()
     expect(next.sectionVisibility?.curves).toBe(true);
   });
 
-  it('外观文件缺失时配方按钮禁用且不落任何参数', async () => {
+  it('外观文件缺失时配方按钮标记不可用(aria-disabled)且不落任何参数', async () => {
     mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === 'list_recipe_luts') {
         // 仅保井崇志可用,滨田英明 LUT 缺失
@@ -370,7 +370,12 @@ describe('TC-RECIPE-01: 大师配方应用(参数 + HSL + LUT 完整落位)', ()
     });
     const { setAdjustments } = renderBasic();
     const hamadaButton = await screen.findByRole('button', { name: '滨田英明' });
-    expect(hamadaButton).toBeDisabled();
+    // aria-disabled 而非原生 disabled：disabled 表单元素不派发 mouseover，
+    // data-tooltip(缺失原因提示)会永不可见
+    expect(hamadaButton).toBeEnabled();
+    expect(hamadaButton).toHaveAttribute('aria-disabled', 'true');
+    // 悬停可见缺失原因提示
+    expect(hamadaButton).toHaveAttribute('data-tooltip', expect.stringContaining('滨田英明'));
     fireEvent.click(hamadaButton);
     const recipeCalls = setAdjustments.mock.calls;
     expect(recipeCalls.length).toBe(0);
@@ -542,7 +547,9 @@ describe('TC-FILM-01: 胶片选择(仅 LUT 治理域)', () => {
     // 先卸载首次渲染,避免 screen 命中旧实例的胶片按钮
     unmount();
     const setAdjustments2 = vi.fn();
-    render(<BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...afterScene }} setAdjustments={setAdjustments2} />);
+    render(
+      <BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...afterScene }} setAdjustments={setAdjustments2} />,
+    );
     const applyFilm = await clickFilm('K-Portra 400', setAdjustments2);
     const next = applyUpdater(applyFilm, afterScene);
 
@@ -571,12 +578,192 @@ describe('TC-LOOK-01: 配方 LUT 路径解析(mapRecipeLutPaths)', () => {
 
   it('14 个大师配方的 lutFileName 与内置 LUT 资源一一对应', async () => {
     setupInvokeDefaults();
-    const resolved = mapRecipeLutPaths(await mockInvoke.mockImplementation && (await import('./setup'), RECIPE_LUT_ENTRIES));
+    const resolved = mapRecipeLutPaths(
+      (await mockInvoke.mockImplementation) && (await import('./setup'), RECIPE_LUT_ENTRIES),
+    );
     for (const recipe of MASTER_RECIPES) {
       expect(resolved[recipe.lutFileName]).toBeTruthy();
     }
     expect(MASTER_RECIPES).toHaveLength(14);
     expect(new Set(MASTER_RECIPES.map((r) => r.id)).size).toBe(14);
+  });
+});
+
+describe('TC-RECIPE-03: 配方 LUT 路径跨会话自愈', () => {
+  const RECIPE = MASTER_RECIPES.find((r) => r.id === 'hamada_daylight_v2')!;
+  const RESOLVED_PATH = `${MOCK_RES_DIR}/master_recipe_luts/hamada_daylight_pro_v2.cube`;
+
+  it('旧会话失效的绝对路径在运行时解析后被回写为当前资源路径', async () => {
+    setupInvokeDefaults();
+    const stale: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      ...recipeToAdjustmentValues(RECIPE),
+      lutPath: '/old/install/Resources/master_recipe_luts/hamada_daylight_pro_v2.cube',
+    };
+    const setAdjustments = vi.fn();
+    render(<BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...stale }} setAdjustments={setAdjustments} />);
+
+    await waitFor(() => expect(setAdjustments).toHaveBeenCalled());
+    const updater = setAdjustments.mock.calls.at(-1)![0] as Updater;
+    const next = updater(stale);
+    // 仅回写 lutPath(部分更新),配方其余治理域不变
+    expect(next).toEqual({ lutPath: RESOLVED_PATH });
+    // 若期间外观已被切换(lutName 不再指向该配方),自愈不得覆盖
+    expect(updater({ ...stale, lutName: '其他外观' })).toEqual({});
+  });
+
+  it('已激活配方即使外观文件缺失也允许点击退出', async () => {
+    mockInvoke.mockImplementation(() => Promise.resolve([]));
+    const applied: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      ...recipeToAdjustmentValues(RECIPE),
+      lutPath: '/missing/hamada_daylight_pro_v2.cube',
+    };
+    const setAdjustments = vi.fn();
+    render(<BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...applied }} setAdjustments={setAdjustments} />);
+
+    const button = await screen.findByRole('button', { name: RECIPE.name });
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+
+    const updater = setAdjustments.mock.calls.at(-1)![0] as Updater;
+    const next = updater(applied);
+    // 退出配方:治理域回归中性,不因文件缺失而卡在激活态
+    expect(next.lutPath).toBeNull();
+    expect(next.lutName).toBeNull();
+    expect(next.contrast).toBe(0);
+    expect(next.exposure).toBe(0);
+  });
+
+  it('激活态 UI 语义:aria-pressed 正确反映推导态,激活 chip 悬停提示退出', async () => {
+    setupInvokeDefaults();
+    const applied: Partial<Adjustments> = { ...INITIAL_ADJUSTMENTS, ...recipeToAdjustmentValues(RECIPE) };
+    const setAdjustments = vi.fn();
+    const { unmount } = render(
+      <BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...applied }} setAdjustments={setAdjustments} />,
+    );
+
+    const button = await screen.findByRole('button', { name: RECIPE.name });
+    // 激活态由当前值推导:应用态 → aria-pressed=true,tooltip 提示再次点击退出
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(button.getAttribute('data-tooltip')).toContain('退出');
+    unmount();
+
+    // 治理域手动微调 → 推导退出激活态(aria-pressed=false,tooltip 恢复配方介绍)
+    const tweaked: Partial<Adjustments> = { ...INITIAL_ADJUSTMENTS, ...recipeToAdjustmentValues(RECIPE), contrast: 42 };
+    render(<BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...tweaked }} setAdjustments={vi.fn()} />);
+    const tweakedButton = await screen.findByRole('button', { name: RECIPE.name });
+    expect(tweakedButton).toHaveAttribute('aria-pressed', 'false');
+    expect(tweakedButton.getAttribute('data-tooltip')).not.toContain('退出');
+  });
+});
+
+describe('TC-LOOK-03: 跨组切换确定性(配方 ↔ 场景/胶片)', () => {
+  const RECIPE = MASTER_RECIPES.find((r) => r.id === 'hamada_daylight_v2')!;
+
+  /** 渲染处于配方激活态的面板,返回 setAdjustments */
+  const renderWithRecipe = async () => {
+    setupInvokeDefaults();
+    const applied: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      ...recipeToAdjustmentValues(RECIPE),
+      lutPath: `${MOCK_RES_DIR}/master_recipe_luts/hamada_daylight_pro_v2.cube`,
+    };
+    const setAdjustments = vi.fn();
+    const { unmount } = render(
+      <BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...applied }} setAdjustments={setAdjustments} />,
+    );
+    await waitFor(() => expect(screen.getByRole('button', { name: RECIPE.name }).className).toContain('bg-accent'));
+    return { applied, setAdjustments, unmount };
+  };
+
+  it('配方 → 场景:配方超集(HSL + LUT)随场景切换一并清除,不留混合态', async () => {
+    const { applied, setAdjustments } = await renderWithRecipe();
+    clickScene('人像');
+
+    const next = applyUpdater(setAdjustments.mock.calls.at(-1)![0], applied);
+    // 场景校准值落位
+    expect(next.contrast).toBe(6);
+    expect(next.vibrance).toBe(10);
+    // 配方超集不残留:hamada 的 HSL 与 LUT 全部清除
+    expect(next.hsl?.yellows).toEqual({ hue: 0, saturation: 0, luminance: 0 });
+    expect(next.hsl?.aquas).toEqual({ hue: 0, saturation: 0, luminance: 0 });
+    expect(next.lutPath).toBeNull();
+    expect(next.lutName).toBeNull();
+    expect(getActiveRecipeId(next)).toBeNull();
+    expect(getActiveSceneLabelKey(next)).toBe('adjustments.basic.scene.prototypePortrait');
+  });
+
+  it('配方 → 胶片:配方参数与 HSL 清除,胶片 LUT 落位', async () => {
+    const { applied, setAdjustments, unmount } = await renderWithRecipe();
+    unmount();
+    const setAdjustments2 = vi.fn();
+    render(<BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...applied }} setAdjustments={setAdjustments2} />);
+    const applyFilm = await clickFilm('K-Portra 400', setAdjustments2);
+
+    const next = applyUpdater(applyFilm, applied);
+    // 配方 14 键 + HSL 全部归零
+    expect(next.exposure).toBe(0);
+    expect(next.contrast).toBe(0);
+    expect(next.saturation).toBe(0);
+    expect(next.tint).toBe(0);
+    expect(next.hsl?.yellows).toEqual({ hue: 0, saturation: 0, luminance: 0 });
+    // 胶片 LUT 落位(scene-referred)
+    expect(next.lutPath).toBe(`${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`);
+    expect(next.lutName).toBe('K-Portra 400');
+    expect(next.lutIsSceneReferred).toBe(true);
+    expect(getActiveRecipeId(next)).toBeNull();
+  });
+
+  it('配方 → 中性:完整退出配方(参数 + HSL + LUT 全部归零)', async () => {
+    const { applied, setAdjustments } = await renderWithRecipe();
+    const neutral = screen.getByRole('button', { name: '中性' });
+    fireEvent.click(neutral);
+
+    const next = applyUpdater(setAdjustments.mock.calls.at(-1)![0], applied);
+    expect(next.lutPath).toBeNull();
+    expect(next.lutName).toBeNull();
+    expect(next.exposure).toBe(0);
+    expect(next.contrast).toBe(0);
+    expect(next.hsl?.yellows).toEqual({ hue: 0, saturation: 0, luminance: 0 });
+  });
+
+  it('Effects 链路共用语义:配方态经 RECIPE_PARAMETER_RESET 清理后激活态自然退出', () => {
+    const RECIPE = MASTER_RECIPES[0];
+    const recipeState: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      ...recipeToAdjustmentValues(RECIPE),
+      lutPath: `${MOCK_RES_DIR}/master_recipe_luts/${RECIPE.lutFileName}.cube`,
+    };
+    expect(getActiveRecipeId(recipeState)).toBe(RECIPE.id);
+
+    // handleLutSelect / Effects.handleLutClear 与 Basic.applyFilm 共用同一判定与重置常量
+    const cleared = { ...recipeState, ...RECIPE_PARAMETER_RESET };
+    expect(getActiveRecipeId(cleared)).toBeNull();
+    expect(cleared.contrast).toBe(0);
+    expect(cleared.tint).toBe(0);
+    expect(cleared.hsl?.yellows).toEqual({ hue: 0, saturation: 0, luminance: 0 });
+    // LUT 字段由调用方覆写,重置常量本身不包含 lutPath(避免误清场景叠加的胶片)
+    expect('lutPath' in RECIPE_PARAMETER_RESET).toBe(false);
+  });
+
+  it('胶片 → 场景:叠加语义保持,胶片 LUT 不被场景切换清除', async () => {
+    setupInvokeDefaults();
+    const withFilm: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      lutPath: `${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`,
+      lutName: 'K-Portra 400',
+      lutIsSceneReferred: true,
+    };
+    const { setAdjustments } = renderBasic(withFilm);
+    clickScene('人像');
+
+    const next = applyUpdater(setAdjustments.mock.calls.at(-1)![0], withFilm);
+    // 场景参数落位,胶片 LUT 保留(可叠加)
+    expect(next.contrast).toBe(6);
+    expect(next.vibrance).toBe(10);
+    expect(next.lutPath).toBe(`${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`);
+    expect(next.lutName).toBe('K-Portra 400');
   });
 });
 
@@ -595,8 +782,10 @@ describe('TC-LOOK-02: 后端 LUT 预热(load_and_parse_lut)', () => {
       const sizeCall = setAdjustments.mock.calls.find(
         ([updater]) =>
           typeof updater === 'function' &&
-          (updater as Updater)({ lutPath: `${MOCK_RES_DIR}/master_recipe_luts/hamada_daylight_pro_v2.cube`, lutSize: 0 })
-            .lutSize === 33,
+          (updater as Updater)({
+            lutPath: `${MOCK_RES_DIR}/master_recipe_luts/hamada_daylight_pro_v2.cube`,
+            lutSize: 0,
+          }).lutSize === 33,
       );
       expect(sizeCall).toBeTruthy();
     });

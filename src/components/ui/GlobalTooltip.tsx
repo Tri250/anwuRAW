@@ -191,8 +191,9 @@ export default function GlobalTooltip() {
             'fixed z-100 pointer-events-none',
             'bg-surface/80 backdrop-blur-xs',
             'border border-text-secondary/10 shadow-xl rounded-md',
-            // 限制最大宽度并允许换行：窄屏（手机竖屏）上中文长提示不再溢出视口
-            'px-2.5 py-1.5 max-w-[min(80vw,20rem)] whitespace-normal',
+            // 限制最大宽度并允许换行：窄屏（手机竖屏）上中文长提示不再溢出视口；
+            // pre-line 保留内容中的 \n（如大师配方 chip 的「名称 · 副标题\n摘要」多行提示）
+            'px-2.5 py-1.5 max-w-[min(80vw,20rem)] whitespace-pre-line',
             tooltip.isAbove && '-translate-y-full',
           )}
         >

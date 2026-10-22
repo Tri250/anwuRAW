@@ -18,10 +18,7 @@ export interface MasterRecipeDef {
   /** 内置 LUT 文件名(不含扩展名, 由 list_recipe_luts 在运行时解析为绝对路径) */
   lutFileName: string;
   /** 治理域内叠加的校准参数(在 RECIPE_SCOPE_DEFAULTS 之上) */
-  values: Pick<
-    Adjustments,
-    'exposure' | 'contrast' | 'highlights' | 'shadows' | 'saturation' | 'tint'
-  >;
+  values: Pick<Adjustments, 'exposure' | 'contrast' | 'highlights' | 'shadows' | 'saturation' | 'tint'>;
   hsl: Adjustments['hsl'];
 }
 
@@ -42,6 +39,71 @@ const neutralChannel = (): HueSatLum => ({ hue: 0, saturation: 0, luminance: 0 }
 
 export const createIdentityHsl = (): Adjustments['hsl'] =>
   Object.fromEntries(HSL_CHANNELS.map((name) => [name, neutralChannel()])) as Adjustments['hsl'];
+
+/* ============ 治理域定义（从 Basic.tsx 下沉到数据层，供面板与 hooks 共用） ============ */
+
+/** 场景治理域：14 基础键中性值（场景切换的归零基准，域外参数一律保留） */
+export const SCENE_SCOPE_DEFAULTS: Partial<Adjustments> = {
+  exposure: 0,
+  contrast: 0,
+  highlights: 0,
+  shadows: 0,
+  whites: 0,
+  blacks: 0,
+  temperature: 0,
+  tint: 0,
+  saturation: 0,
+  vibrance: 0,
+  clarity: 0,
+  dehaze: 0,
+  lumaNoiseReduction: 0,
+  colorNoiseReduction: 0,
+};
+
+/** 胶片治理域：仅 LUT 字段（胶片 = 内置 LUT 选择，不触碰任何滑块） */
+export const FILM_SCOPE_DEFAULTS: Partial<Adjustments> = {
+  lutPath: null,
+  lutName: null,
+  lutData: null,
+  lutSize: 0,
+  lutIntensity: 100,
+  lutIsSceneReferred: false,
+};
+
+/** 大师配方治理域：场景 14 基础键 + HSL + LUT 字段（完整外观） */
+export const RECIPE_SCOPE_DEFAULTS: Partial<Adjustments> = {
+  ...SCENE_SCOPE_DEFAULTS,
+  hsl: createIdentityHsl(),
+  ...FILM_SCOPE_DEFAULTS,
+};
+
+/**
+ * 配方参数超集清理（跨组切换共用）：14 基础键归零 + HSL 回归中性。
+ * 语义：配方完整外观 = 14 基础键 + HSL + LUT；切换到场景/胶片/其他 LUT 时，
+ * 配方超出目标治理域的部分（至少 HSL）由调用方用此常量清除，LUT 字段由调用方覆写。
+ * 用于 Basic 面板互斥切换、Effects 面板 handleLutSelect/handleLutClear 三条链路，
+ * 保证「配方 → 任意其他外观」不留参数混合残留。
+ */
+export const RECIPE_PARAMETER_RESET: Partial<Adjustments> = {
+  ...SCENE_SCOPE_DEFAULTS,
+  hsl: createIdentityHsl(),
+};
+
+/** 大师配方激活态比对键：14 基础键 + hsl（逐值）+ lutName（配方名作为稳定标识） */
+const RECIPE_MATCH_KEYS = [...Object.keys(SCENE_SCOPE_DEFAULTS), 'hsl', 'lutName'] as const;
+
+/** 由当前调整值实时推导激活的配方 id（撤销/手动微调会自动退出激活态，调回自动恢复） */
+export const getActiveRecipeId = (adjustments: Partial<Adjustments>): string | null => {
+  for (const recipe of MASTER_RECIPES) {
+    const resolved = { ...RECIPE_SCOPE_DEFAULTS, ...recipeToAdjustmentValues(recipe) };
+    const isMatch = RECIPE_MATCH_KEYS.every((key) => {
+      if (key === 'hsl') return isHslEqual(adjustments.hsl, resolved.hsl);
+      return adjustments[key] === resolved[key];
+    });
+    if (isMatch) return recipe.id;
+  }
+  return null;
+};
 
 type HslPatch = Partial<Record<HslChannelName, Partial<HueSatLum>>>;
 
@@ -190,16 +252,9 @@ export const recipeToAdjustmentValues = (recipe: MasterRecipeDef): Partial<Adjus
 });
 
 /** 逐值比较两份 HSL(引用不同但值一致视为相等) */
-export const isHslEqual = (
-  a: Adjustments['hsl'] | undefined,
-  b: Adjustments['hsl'] | undefined,
-): boolean =>
+export const isHslEqual = (a: Adjustments['hsl'] | undefined, b: Adjustments['hsl'] | undefined): boolean =>
   HSL_CHANNELS.every((channel) => {
     const left = a?.[channel];
     const right = b?.[channel];
-    return (
-      left?.hue === right?.hue &&
-      left?.saturation === right?.saturation &&
-      left?.luminance === right?.luminance
-    );
+    return left?.hue === right?.hue && left?.saturation === right?.saturation && left?.luminance === right?.luminance;
   });
