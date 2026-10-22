@@ -3,13 +3,7 @@ import { RotateCcw, Copy, ClipboardPaste, Aperture, ChartArea } from 'lucide-rea
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
-import BasicAdjustments from '../../adjustments/Basic';
-import CurveGraph from '../../adjustments/Curves';
-import ColorPanel from '../../adjustments/Color';
-import DetailsPanel from '../../adjustments/Details';
-import EffectsPanel from '../../adjustments/Effects';
-import ChannelMixer from '../../adjustments/ChannelMixer';
-import SplitToning from '../../adjustments/SplitToning';
+import { ADJUSTMENT_SECTION_COMPONENTS } from '../../adjustments/sectionRegistry';
 import CollapsibleSection from '../../ui/CollapsibleSection';
 import Waveform, { HISTOGRAM_ZONES, type HistogramZone } from '../editor/Waveform';
 import Resizer from '../../ui/Resizer';
@@ -319,15 +313,7 @@ export default function Controls() {
       <div className="grow overflow-y-auto p-3 flex flex-col gap-2">
         {selectedImage ? (
           Object.keys(ADJUSTMENT_SECTIONS).map((sectionName: string) => {
-            const SectionComponent: any = {
-              basic: BasicAdjustments,
-              curves: CurveGraph,
-              color: ColorPanel,
-              details: DetailsPanel,
-              effects: EffectsPanel,
-              channel_mixer: ChannelMixer,
-              split_toning: SplitToning,
-            }[sectionName];
+            const SectionComponent: any = ADJUSTMENT_SECTION_COMPONENTS[sectionName];
 
             const title = t(`editor.adjustments.sections.${sectionName}`);
             const sectionVisibility = adjustments.sectionVisibility || INITIAL_ADJUSTMENTS.sectionVisibility;

@@ -187,7 +187,7 @@ export default function MaskEditingToolbar({
               t('editor.masks.toolbar.brushSize'),
               brushSize,
               (v) => onBrushSettingsChange({ size: v }),
-              400,
+              200,
             )}
             {rangeControl(
               <Feather size={14} />,

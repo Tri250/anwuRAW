@@ -12,6 +12,7 @@ import {
   RECIPE_SCOPE_DEFAULTS,
   SCENE_SCOPE_DEFAULTS,
 } from '../../utils/masterRecipes';
+import { getLutDisplayName } from '../../utils/lutDisplayNames';
 
 // 保持既有导入路径兼容：测试与外部模块从 Basic 导入 getActiveRecipeId
 export { getActiveRecipeId };
@@ -35,11 +36,13 @@ interface BasicAdjustmentsProps {
  * 每个场景是一组经过校准的调整参数，直接经由现有调整管线实时作用于像素。
  * 「自动」复用后端 perform_auto_analysis 直方图自动分析。
  *
- * 本面板由三组「外观」构成（融合自 RawLab/koudaixiangce 的大师配方与胶片坞）：
+ * 本面板由两组「外观」构成（融合自 RawLab/koudaixiangce 的大师配方与胶片坞）：
  * - 场景：4 组校准参数预设，治理域仅覆盖 14 个基础键；
  * - 大师配方：14 组完整摄影风格（参数 + 8 通道 HSL + 内置风格 LUT），治理域覆盖
- *   14 基础键 + HSL + LUT 字段（完整外观，保证「同一配方 = 同一结果」）；
- * - 胶片：内置胶片模拟 LUT（display 网格之外的 scene-referred 内置片装），仅治理 LUT 字段。
+ *   14 基础键 + HSL + LUT 字段（完整外观，保证「同一配方 = 同一结果」）。
+ *
+ * 胶片模拟 LUT 的唯一入口在 Effects 面板 LUTControl（含强度滑杆、预览与自定义导入），
+ * 此处不再重复内置胶片选择（v1.6.19 功能整合去重）。
  *
  * 确定性语义：各治理域在应用时先归零再叠加校准值，保证「同一外观 = 同一结果」，
  * 切换外观不会残留上一外观的参数；域外参数（亮度、结构、曲线、锐化、蒙版等用户创作
@@ -55,8 +58,6 @@ const SCENE_SECTIONS = ['basic', 'color', 'details'] as const;
 
 /** 大师配方额外写入 HSL（color）与 LUT（effects） */
 const RECIPE_SECTIONS = ['basic', 'color', 'details', 'effects'] as const;
-/** 胶片仅写入 LUT 字段（effects） */
-const FILM_SECTIONS = ['effects'] as const;
 
 interface SceneEnhanceOptions {
   labelKey: string;
@@ -146,11 +147,6 @@ export const mapRecipeLutPaths = (entries: Array<{ name: string; path: string }>
   }
   return map;
 };
-
-interface BuiltInLut {
-  name: string;
-  path: string;
-}
 
 interface ToneMapperSwitchProps {
   selectedMapper: string;
@@ -336,25 +332,13 @@ export default function BasicAdjustments({
   // 当前激活的外观（由当前值推导），用于切换高亮与再次点击还原
   const activeSceneLabelKey = useMemo(() => getActiveSceneLabelKey(adjustments), [adjustments]);
   const activeRecipeId = useMemo(() => getActiveRecipeId(adjustments), [adjustments]);
-  const hasActiveLut = Boolean(adjustments.lutPath);
 
-  // 胶片组 = 后端内置胶片模拟 LUT（与 Effects 面板 filmEmulations 同源）
-  const [builtInFilms, setBuiltInFilms] = useState<BuiltInLut[]>([]);
   // 大师配方 LUT 文件运行时路径（lutFileName → 绝对路径）
   const [recipeLutPaths, setRecipeLutPaths] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (isForMask) return;
     let isActive = true;
-    invoke<Array<{ name: string; path: string; isBuiltIn: boolean }>>('list_luts')
-      .then((list) => {
-        if (!isActive) return;
-        const entries = Array.isArray(list) ? list : [];
-        setBuiltInFilms(
-          entries.filter((entry) => entry.isBuiltIn).map((entry) => ({ name: entry.name, path: entry.path })),
-        );
-      })
-      .catch((err) => console.error('Failed to list built-in films:', err));
     invoke<Array<{ name: string; path: string }>>('list_recipe_luts')
       .then((list) => {
         if (isActive) setRecipeLutPaths(mapRecipeLutPaths(list));
@@ -448,31 +432,6 @@ export default function BasicAdjustments({
     warmLutCache(lutPath);
   };
 
-  const applyFilm = (film: BuiltInLut | null) => {
-    // null = 「中性」：清除 LUT 回归无外观
-    const isActive = film ? adjustments.lutPath === film.path : !hasActiveLut;
-    // 跨组切换：配方完整激活时选胶片（含「中性」）= 完全退出配方，额外清除配方参数与 HSL，
-    // 否则胶片 LUT 叠在配方参数上的混合残留违反确定性；
-    // 场景与胶片治理域不相交（可叠加），场景参数一律保留
-    const recipeOverride: Partial<Adjustments> = activeRecipeId && !isActive ? RECIPE_PARAMETER_RESET : {};
-    const filmValues: Partial<Adjustments> =
-      film && !isActive
-        ? {
-            ...recipeOverride,
-            ...FILM_SCOPE_DEFAULTS,
-            lutPath: film.path,
-            lutName: film.name,
-            lutIsSceneReferred: true,
-          }
-        : { ...recipeOverride, ...FILM_SCOPE_DEFAULTS };
-    setAdjustments((prev: Partial<Adjustments>) => ({
-      ...prev,
-      ...filmValues,
-      sectionVisibility: forceSections(prev, FILM_SECTIONS),
-    }));
-    if (film && !isActive) warmLutCache(film.path);
-  };
-
   const hideTonemapper = isForMask || appSettings?.tonemapperOverrideEnabled;
 
   const chipClass = (isActive: boolean) =>
@@ -544,52 +503,19 @@ export default function BasicAdjustments({
                     }}
                     data-tooltip={
                       isActive
-                        ? `${recipe.name} · ${t('adjustments.basic.scene.recipeActiveHint')}`
+                        ? `${getLutDisplayName(recipe.name)} · ${t('adjustments.basic.scene.recipeActiveHint')}`
                         : isAvailable
-                          ? `${recipe.name} · ${subtitle}\n${summary}`
-                          : `${recipe.name} · ${t('adjustments.basic.scene.recipeLutMissing')}`
+                          ? `${getLutDisplayName(recipe.name)} · ${subtitle}\n${summary}`
+                          : `${getLutDisplayName(recipe.name)} · ${t('adjustments.basic.scene.recipeLutMissing')}`
                     }
                     className={clsx(chipClass(isActive), !isAvailable && !isActive && 'opacity-50 cursor-not-allowed')}
                   >
-                    {recipe.name}
+                    {getLutDisplayName(recipe.name)}
                   </button>
                 );
               })}
             </div>
           </div>
-
-          {builtInFilms.length > 0 && (
-            <div>
-              <Text variant={TextVariants.heading} className="mb-2">
-                {t('adjustments.basic.scene.films')}
-              </Text>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  aria-pressed={!hasActiveLut}
-                  onClick={() => applyFilm(null)}
-                  className={chipClass(!hasActiveLut)}
-                >
-                  {t('adjustments.basic.scene.filmsNeutral')}
-                </button>
-                {builtInFilms.map((film) => {
-                  const isActive = adjustments.lutPath === film.path;
-                  return (
-                    <button
-                      key={film.path}
-                      type="button"
-                      aria-pressed={isActive}
-                      onClick={() => applyFilm(film)}
-                      data-tooltip={film.name}
-                      className={chipClass(isActive)}
-                    >
-                      {film.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       )}
       {hideTonemapper ? (

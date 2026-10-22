@@ -37,59 +37,73 @@
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "Cel blau japonès · Llum high-key",
-            "summary": "Llum diürna translúcida high-key, cels blaus convertits en cian japonès, ombres mates suaus i tons de pell préssec cremosos"
+            "summary": "Llum diürna translúcida high-key, cels blaus convertits en cian japonès, ombres mates suaus i tons de pell préssec cremosos",
+            "name": "Hamada Hideaki"
           },
           "takashi_yasui_zen": {
             "subtitle": "Zen minimal · Carrer japonès",
-            "summary": "Fort contrast llum-ombra, ombres fredes cian profundes, negres continguts amb llum d'accent càlida"
+            "summary": "Fort contrast llum-ombra, ombres fredes cian profundes, negres continguts amb llum d'accent càlida",
+            "name": "Takashi Yasui"
           },
           "takahiro_sakai_blue": {
             "subtitle": "Claritat etèria · Blau pàl·lid",
-            "summary": "Lluor translúcida de pell japonesa, cian-blau etèri i transparent, ombres àmpliament elevades i llums suaus"
+            "summary": "Lluor translúcida de pell japonesa, cian-blau etèri i transparent, ombres àmpliament elevades i llums suaus",
+            "name": "Takahiro Sakai"
           },
           "withluke_epic": {
             "subtitle": "Natura èpica · Verd blavós fred boirós",
-            "summary": "Muntanyes vastes i boscos boirosos, elimina verds digitals durs, verds freds de tundra entreteixits amb or càlid suau"
+            "summary": "Muntanyes vastes i boscos boirosos, elimina verds digitals durs, verds freds de tundra entreteixits amb or càlid suau",
+            "name": "Withluke"
           },
           "daniel_casson_autumn": {
             "subtitle": "Tardor rural · Oli clàssic",
-            "summary": "Sensació d'oli tardorenc del camp britànic, rics tons terra, fenc daurat i verds forestals profunds"
+            "summary": "Sensació d'oli tardorenc del camp britànic, rics tons terra, fenc daurat i verds forestals profunds",
+            "name": "Daniel Casson"
           },
           "billy_dinh_cinema": {
             "subtitle": "Cinema de NY · Llum dramàtica",
-            "summary": "Textura cinemascope, retall de llum d'alt contrast, ombres profundes i or de focus"
+            "summary": "Textura cinemascope, retall de llum d'alt contrast, ombres profundes i or de focus",
+            "name": "Billy Dinh"
           },
           "rkrkrk_cyberpunk": {
             "subtitle": "Cyberpunk · Contrast màxim",
-            "summary": "Textura urbana densa, corba S dura, taronja-teal intens i xoc violeta-or"
+            "summary": "Textura urbana densa, corba S dura, taronja-teal intens i xoc violeta-or",
+            "name": "Rkrkrk"
           },
           "samalive_vintage": {
             "subtitle": "Vintage oleós · Pel·lícula urbana",
-            "summary": "Pel·lícula urbana vintage càlida i oleosa, ombres estables i netes, llums daurades càlides amb sensació d'història errant"
+            "summary": "Pel·lícula urbana vintage càlida i oleosa, ombres estables i netes, llums daurades càlides amb sensació d'història errant",
+            "name": "Samalive"
           },
           "iwona_fairy_tale": {
             "subtitle": "Oli de conte · Lluentor onírica",
-            "summary": "Sensació d'oli de llibre de contes, ombres profundes i calmes, llum daurada càlida i lluentor difusa"
+            "summary": "Sensació d'oli de llibre de contes, ombres profundes i calmes, llum daurada càlida i lluentor difusa",
+            "name": "Iwona"
           },
           "cinestill_800t": {
             "subtitle": "Cinema de tungstè · Vermell i teal",
-            "summary": "Tonalitats fílmiques nocturnes cinematogràfiques, llums vermelles amb ombres fredes cian-verd profundes"
+            "summary": "Tonalitats fílmiques nocturnes cinematogràfiques, llums vermelles amb ombres fredes cian-verd profundes",
+            "name": "CineStill 800T"
           },
           "wilson_lee_golden": {
             "subtitle": "Japonès càlid · Boira daurada",
-            "summary": "La llum californiana es troba amb la pel·lícula japonesa, or difús per la ciutat, lluor càlida translúcida"
+            "summary": "La llum californiana es troba amb la pel·lícula japonesa, or difús per la ciutat, lluor càlida translúcida",
+            "name": "Wilson Lee"
           },
           "luizclas_portrait": {
             "subtitle": "Llum daurada · Retrat refinat",
-            "summary": "Retrats artístics a l'hora daurada, pell lluminosa sota gran contrast, ombres profundes i llum de contorn daurada al cabell"
+            "summary": "Retrats artístics a l'hora daurada, pell lluminosa sota gran contrast, ombres profundes i llum de contorn daurada al cabell",
+            "name": "Luiz Clas"
           },
           "ivan_ivanchenko_twilight": {
             "subtitle": "Capvespre · Transició anàloga",
-            "summary": "Lluentor crepuscular suau, llums daurades càlides amb suaus ombres cian-blau, retrats pictòrics de baix contrast"
+            "summary": "Lluentor crepuscular suau, llums daurades càlides amb suaus ombres cian-blau, retrats pictòrics de baix contrast",
+            "name": "Ivan Ivanchenko"
           },
           "jungraphy_neon": {
             "subtitle": "Ciutat de neó · Cian i rosa",
-            "summary": "Nits de neó de Seül, base cian freda xocant amb llums rosa-violeta, reflexos als carrers xopats de pluja"
+            "summary": "Nits de neó de Seül, base cian freda xocant amb llums rosa-violeta, reflexos als carrers xopats de pluja",
+            "name": "Jungraphy"
           }
         }
       },
@@ -504,7 +518,9 @@
         "feather": "Esvaïment",
         "grow": "Expandir",
         "intensity": "Intensitat",
-        "pressure": "Pressió"
+        "pressure": "Pressió",
+        "decontaminate": "Edge Cleanup",
+        "sensitivity": "Sensitivity"
       },
       "patches": {
         "aiEdit": "Edició IA {{count}}",
@@ -523,7 +539,10 @@
         "quickErase": "Esborrat ràpid {{count}}",
         "quickErase_one": "Esborrat ràpid {{count}}",
         "quickErase_other": "Esborrat ràpid {{count}}",
-        "retouch": "Retoc {{count}}"
+        "retouch": "Retoc {{count}}",
+        "autoErase": "Auto Erase {{count}}",
+        "autoErase_one": "Auto Erase {{count}}",
+        "autoErase_other": "Auto Erase {{count}}"
       },
       "resetInpaintingTooltip": "Restablir Inpainting",
       "settings": {
@@ -543,7 +562,8 @@
         "placeholder": "p. ex., un camp de flors",
         "quickEraseDesc": "Omplir la selecció per eliminar l'objecte.",
         "selectionPropertiesTitle": "Propietats de selecció",
-        "useBasicInpaint": "Utilitzar inpainting bàsic"
+        "useBasicInpaint": "Utilitzar inpainting bàsic",
+        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
       "touchUpTitle": "Retocs"
     },
@@ -654,8 +674,10 @@
         "switchOrientation": "Canviar d'orientació",
         "switchToLandscape": "Canviar a apaïsat",
         "switchToPortrait": "Canviar a vertical",
-        "transform": "Correcció de perspectiva i trapezi"
-      }
+        "transform": "Correcció de perspectiva i trapezi",
+        "aiStraighten": "AI Auto-Straighten"
+      },
+      "autoCropAfterRotate": "Auto-crop black borders after rotation"
     },
     "externalEdit": {
       "done": "Fet",
@@ -719,7 +741,8 @@
         "feather": "Esvaïment",
         "globalFeather": "Esvaïment global",
         "grow": "Expandir",
-        "tolerance": "Tolerància"
+        "tolerance": "Tolerància",
+        "decontaminate": "Decontaminate Colors"
       },
       "toolbar": {
         "title": "Edició de màscara",
@@ -803,7 +826,9 @@
         "clickToOpenTooltip": "Feu clic per obrir el mapa en una pestanya nova",
         "latitude": "Latitud",
         "longitude": "Longitud",
-        "title": "Ubicació GPS"
+        "title": "Ubicació GPS",
+        "offlineMapLabel": "Offline world map with photo location marker",
+        "openOnlineMap": "Open online map"
       },
       "iptc": {
         "batchHint": "Amb diverses imatges seleccionades, desar s'aplica a totes.",
@@ -997,7 +1022,8 @@
       "fileSettings": "Configuració del fitxer",
       "imageSizing": "Mida de la imatge",
       "metadata": "Metadades",
-      "watermark": "Marca d'aigua"
+      "watermark": "Marca d'aigua",
+      "color": "Color Output"
     },
     "status": {
       "cancelExport": "Cancel·lar exportació",
@@ -1016,7 +1042,8 @@
       "failed": "L'exportació ha fallat",
       "noImageSelected": "No s'ha seleccionat cap imatge per exportar.",
       "noImagesSelected": "No s'han seleccionat imatges.",
-      "success": "Exportació correcta!"
+      "success": "Exportació correcta!",
+      "completed": "Export completed: {{name}}"
     },
     "title": "Exportar",
     "watermark": {
@@ -1038,6 +1065,17 @@
       "scale": "Escala",
       "spacing": "Espaiat",
       "watermarkImage": "Imatge de la marca d'aigua"
+    },
+    "color": {
+      "bitDepth": "Bit Depth",
+      "bitDepth8Desc": "Smaller files, standard display",
+      "bitDepth16Desc": "Larger files, posterization-free editing",
+      "colorSpace": "Color Space",
+      "colorSpaceDesc_srgb": "Standard for the web and most screens",
+      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
+      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
+      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
+      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
     }
   },
   "library": {
@@ -1259,6 +1297,11 @@
       "communityPresets": "Ajustos preestablerts de la comunitat",
       "goHome": "Anar a l'inici",
       "importImages": "Importar imatges"
+    },
+    "viewMode": {
+      "grid": "Grid View",
+      "list": "List View",
+      "culling": "Culling View"
     }
   },
   "masks": {
@@ -1911,7 +1954,10 @@
         "title": "Preprocessament d'imatges",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "Bàsic"
+          "basic": "Bàsic",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "Sobreescriptura global del mapejador de tons",
         "tonemapperOverrideDesc": "Força un mapejador de tons específic globalment per a totes les imatges, amagant l'interruptor del mapejador del tauler d'ajustaments."
@@ -2126,7 +2172,15 @@
       "removeLut": "Eliminar LUT",
       "select": "Seleccionar",
       "selectLutFile": "Seleccionar un fitxer LUT",
-      "unsupportedFormat": "S'ha(n) detectat format(s) de fitxer no compatible(s): .{{ext}}"
+      "unsupportedFormat": "S'ha(n) detectat format(s) de fitxer no compatible(s): .{{ext}}",
+      "builtInNames": {
+        "fPro400H": "F-Pro 400H",
+        "kEktar100": "K-Ektar 100",
+        "kGold200": "K-Gold 200",
+        "kPortra400": "K-Portra 400",
+        "kVision250DCinematic": "K-Vision 250D Cinematic",
+        "kVision500TCinematic": "K-Vision 500T Cinematic"
+      }
     },
     "slider": {
       "clickToEdit": "Feu clic per editar",

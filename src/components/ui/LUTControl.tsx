@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import Slider from './Slider';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { getLutDisplayName } from '../../utils/lutDisplayNames';
 
 interface LutEntry {
   name: string;
@@ -224,19 +225,19 @@ export default function LUTControl({
         className={`relative aspect-square rounded-md overflow-hidden bg-bg-tertiary border-2 transition-colors ${
           isSelected ? 'border-accent' : 'border-transparent hover:border-surface'
         }`}
-        data-tooltip={entry.name}
+        data-tooltip={getLutDisplayName(entry.name)}
       >
         {isLoadingPreviews && thumb === undefined ? (
           <div className="w-full h-full animate-pulse bg-surface" />
         ) : thumb ? (
-          <img src={thumb} alt={entry.name} className="w-full h-full object-cover" draggable={false} />
+          <img src={thumb} alt={getLutDisplayName(entry.name)} className="w-full h-full object-cover" draggable={false} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-text-secondary">
             <ImageOff size={18} />
           </div>
         )}
         <span className="absolute inset-x-0 bottom-0 px-1 py-0.5 text-[10px] text-white bg-black/60 truncate text-left backdrop-blur-xs">
-          {entry.name}
+          {getLutDisplayName(entry.name)}
         </span>
       </button>
     );
@@ -259,9 +260,9 @@ export default function LUTControl({
           <button
             onClick={() => setIsExpanded((value) => !value)}
             className="flex items-center gap-1 text-sm text-text-secondary select-none cursor-pointer hover:text-accent transition-colors"
-            data-tooltip={lutName || t('ui.lut.selectLutFile')}
+            data-tooltip={lutName ? getLutDisplayName(lutName) : t('ui.lut.selectLutFile')}
           >
-            <span className="truncate max-w-35 text-right">{lutName || t('ui.lut.select')}</span>
+            <span className="truncate max-w-35 text-right">{getLutDisplayName(lutName) || t('ui.lut.select')}</span>
             <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
           </button>
         </div>

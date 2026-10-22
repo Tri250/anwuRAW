@@ -37,59 +37,73 @@
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "Японское голубое небо · Высокий ключ",
-            "summary": "Прозрачный высокий ключ, синие небеса в японский циан, мягкие матовые тени и кремовые персиковые тона кожи"
+            "summary": "Прозрачный высокий ключ, синие небеса в японский циан, мягкие матовые тени и кремовые персиковые тона кожи",
+            "name": "Hamada Hideaki"
           },
           "takashi_yasui_zen": {
             "subtitle": "Минималистичный дзен · Японская улица",
-            "summary": "Сильный светотеневой контраст, глубокие холодные циановые тени, сдержанные черни с тёплым акцентным светом"
+            "summary": "Сильный светотеневой контраст, глубокие холодные циановые тени, сдержанные черни с тёплым акцентным светом",
+            "name": "Takashi Yasui"
           },
           "takahiro_sakai_blue": {
             "subtitle": "Воздушная ясность · Бледно-голубой",
-            "summary": "Прозрачное японское сияние кожи, воздушный прозрачный сине-циановый, широко приподнятые тени и мягкие света"
+            "summary": "Прозрачное японское сияние кожи, воздушный прозрачный сине-циановый, широко приподнятые тени и мягкие света",
+            "name": "Takahiro Sakai"
           },
           "withluke_epic": {
             "subtitle": "Эпичная природа · Туманный холодный бирюзовый",
-            "summary": "Обширные горы и туманные леса, убирает резкие цифровые зелёные, холодные зелёные тундры вплетены в мягкое тёплое золото"
+            "summary": "Обширные горы и туманные леса, убирает резкие цифровые зелёные, холодные зелёные тундры вплетены в мягкое тёплое золото",
+            "name": "Withluke"
           },
           "daniel_casson_autumn": {
             "subtitle": "Деревенская осень · Классическая масляная живопись",
-            "summary": "Ощущение осенней масляной живописи британской деревни, богатые землистые тона, золотое сено и глубокие лесные зелёные"
+            "summary": "Ощущение осенней масляной живописи британской деревни, богатые землистые тона, золотое сено и глубокие лесные зелёные",
+            "name": "Daniel Casson"
           },
           "billy_dinh_cinema": {
             "subtitle": "Нью-Йоркский кинематограф · Драматичный свет",
-            "summary": "Панорамная киношная текстура, контрастная световая лепка, глубокие тени и прожекторное золото"
+            "summary": "Панорамная киношная текстура, контрастная световая лепка, глубокие тени и прожекторное золото",
+            "name": "Billy Dinh"
           },
           "rkrkrk_cyberpunk": {
             "subtitle": "Киберпанк · Максимальный контраст",
-            "summary": "Плотная городская фактура, жёсткая S-кривая, насыщенный оранжево-бирюзовый и столкновение фиолетового с золотом"
+            "summary": "Плотная городская фактура, жёсткая S-кривая, насыщенный оранжево-бирюзовый и столкновение фиолетового с золотом",
+            "name": "Rkrkrk"
           },
           "samalive_vintage": {
             "subtitle": "Маслянистый винтаж · Городская плёнка",
-            "summary": "Тёплая маслянистая винтажная городская плёнка, стабильные чистые тени, тёплые золотые света с ощущением блуждающей истории"
+            "summary": "Тёплая маслянистая винтажная городская плёнка, стабильные чистые тени, тёплые золотые света с ощущением блуждающей истории",
+            "name": "Samalive"
           },
           "iwona_fairy_tale": {
             "subtitle": "Сказочный масляный · Мечтательное свечение",
-            "summary": "Ощущение масляной книги сказок, глубокие спокойные тени, тёплый золотой мягкий свет и рассеянное свечение"
+            "summary": "Ощущение масляной книги сказок, глубокие спокойные тени, тёплый золотой мягкий свет и рассеянное свечение",
+            "name": "Iwona"
           },
           "cinestill_800t": {
             "subtitle": "Вольфрамовый кинематограф · Красный и бирюза",
-            "summary": "Киношные ночные плёночные тона, красные огни с глубокими холодными сине-зелёными тенями"
+            "summary": "Киношные ночные плёночные тона, красные огни с глубокими холодными сине-зелёными тенями",
+            "name": "CineStill 800T"
           },
           "wilson_lee_golden": {
             "subtitle": "Тёплая Япония · Золотая дымка",
-            "summary": "Калифорнийский солнечный свет встречается с японской плёнкой, рассеянное золото по всему городу, прозрачное тёплое свечение"
+            "summary": "Калифорнийский солнечный свет встречается с японской плёнкой, рассеянное золото по всему городу, прозрачное тёплое свечение",
+            "name": "Wilson Lee"
           },
           "luizclas_portrait": {
             "subtitle": "Золотой свет · Утончённый портрет",
-            "summary": "Художественные портреты в золотой час, сияющая кожа при высоком контрасте, глубокие тени и золотой контровой свет в волосах"
+            "summary": "Художественные портреты в золотой час, сияющая кожа при высоком контрасте, глубокие тени и золотой контровой свет в волосах",
+            "name": "Luiz Clas"
           },
           "ivan_ivanchenko_twilight": {
             "subtitle": "Сумерки · Аналоговый переход",
-            "summary": "Мягкое сумеречное свечение, тёплые золотые света с нежными сине-циановыми тенями, живописные портреты с низким контрастом"
+            "summary": "Мягкое сумеречное свечение, тёплые золотые света с нежными сине-циановыми тенями, живописные портреты с низким контрастом",
+            "name": "Ivan Ivanchenko"
           },
           "jungraphy_neon": {
             "subtitle": "Неоновый город · Циан и розовый",
-            "summary": "Неоновые ночи Сеула, холодная циановая база сталкивается с розово-фиолетовыми светами, отражения на залитых дождём улицах"
+            "summary": "Неоновые ночи Сеула, холодная циановая база сталкивается с розово-фиолетовыми светами, отражения на залитых дождём улицах",
+            "name": "Jungraphy"
           }
         }
       },
@@ -536,7 +550,9 @@
         "feather": "Растушевка",
         "grow": "Расширение",
         "intensity": "Интенсивность",
-        "pressure": "Нажим"
+        "pressure": "Нажим",
+        "decontaminate": "Edge Cleanup",
+        "sensitivity": "Sensitivity"
       },
       "patches": {
         "aiEdit": "ИИ-правка {{count}}",
@@ -563,7 +579,10 @@
         "quickErase_many": "Быстрое стирание {{count}}",
         "quickErase_one": "Быстрое стирание {{count}}",
         "quickErase_other": "Быстрое стирание {{count}}",
-        "retouch": "Ретушь {{count}}"
+        "retouch": "Ретушь {{count}}",
+        "autoErase": "Auto Erase {{count}}",
+        "autoErase_one": "Auto Erase {{count}}",
+        "autoErase_other": "Auto Erase {{count}}"
       },
       "resetInpaintingTooltip": "Сбросить восстановление",
       "settings": {
@@ -583,7 +602,8 @@
         "placeholder": "например, поле цветов",
         "quickEraseDesc": "Заполнить выделение, чтобы удалить объект.",
         "selectionPropertiesTitle": "Свойства выделения",
-        "useBasicInpaint": "Использовать простое восстановление"
+        "useBasicInpaint": "Использовать простое восстановление",
+        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
       "touchUpTitle": "Ретушь"
     },
@@ -694,8 +714,10 @@
         "switchOrientation": "Сменить ориентацию",
         "switchToLandscape": "Переключить на альбомную",
         "switchToPortrait": "Переключить на портретную",
-        "transform": "Коррекция перспективы и искажений"
-      }
+        "transform": "Коррекция перспективы и искажений",
+        "aiStraighten": "AI Auto-Straighten"
+      },
+      "autoCropAfterRotate": "Auto-crop black borders after rotation"
     },
     "externalEdit": {
       "done": "Готово",
@@ -759,7 +781,8 @@
         "feather": "Растушевка",
         "globalFeather": "Общая растушевка",
         "grow": "Расширение",
-        "tolerance": "Допуск"
+        "tolerance": "Допуск",
+        "decontaminate": "Decontaminate Colors"
       },
       "toolbar": {
         "title": "Редактирование маски",
@@ -845,7 +868,9 @@
         "clickToOpenTooltip": "Нажмите, чтобы открыть карту в новой вкладке",
         "latitude": "Широта",
         "longitude": "Долгота",
-        "title": "Координаты GPS"
+        "title": "Координаты GPS",
+        "offlineMapLabel": "Offline world map with photo location marker",
+        "openOnlineMap": "Open online map"
       },
       "iptc": {
         "batchHint": "При выборе нескольких изображений сохранение применяется ко всем.",
@@ -1041,7 +1066,8 @@
       "fileSettings": "Параметры файла",
       "imageSizing": "Размер изображения",
       "metadata": "Метаданные",
-      "watermark": "Водяной знак"
+      "watermark": "Водяной знак",
+      "color": "Color Output"
     },
     "status": {
       "cancelExport": "Отменить экспорт",
@@ -1062,7 +1088,8 @@
       "failed": "Экспорт не удался",
       "noImageSelected": "Не выбрано изображение для экспорта.",
       "noImagesSelected": "Изображения не выбраны.",
-      "success": "Экспорт успешно завершен!"
+      "success": "Экспорт успешно завершен!",
+      "completed": "Export completed: {{name}}"
     },
     "title": "Экспорт",
     "watermark": {
@@ -1084,6 +1111,17 @@
       "scale": "Масштаб",
       "spacing": "Отступы",
       "watermarkImage": "Изображение водяного знака"
+    },
+    "color": {
+      "bitDepth": "Bit Depth",
+      "bitDepth8Desc": "Smaller files, standard display",
+      "bitDepth16Desc": "Larger files, posterization-free editing",
+      "colorSpace": "Color Space",
+      "colorSpaceDesc_srgb": "Standard for the web and most screens",
+      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
+      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
+      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
+      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
     }
   },
   "library": {
@@ -1307,6 +1345,11 @@
       "communityPresets": "Пресеты сообщества",
       "goHome": "На главную",
       "importImages": "Импортировать изображения"
+    },
+    "viewMode": {
+      "grid": "Grid View",
+      "list": "List View",
+      "culling": "Culling View"
     }
   },
   "masks": {
@@ -1979,7 +2022,10 @@
         "title": "Предварительная обработка снимков",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "Стандартный"
+          "basic": "Стандартный",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "Глобальный принудительный тон-маппер",
         "tonemapperOverrideDesc": "Принудительно задействовать выбранный тип тонального отображения для всех снимков, скрыв переключатель тон-маппера на боковой панели настроек."
@@ -2196,7 +2242,15 @@
       "removeLut": "Удалить LUT",
       "select": "Выбрать",
       "selectLutFile": "Выберите файл таблицы цветов LUT",
-      "unsupportedFormat": "Обнаружены неподдерживаемые форматы файлов: .{{ext}}"
+      "unsupportedFormat": "Обнаружены неподдерживаемые форматы файлов: .{{ext}}",
+      "builtInNames": {
+        "fPro400H": "F-Pro 400H",
+        "kEktar100": "K-Ektar 100",
+        "kGold200": "K-Gold 200",
+        "kPortra400": "K-Portra 400",
+        "kVision250DCinematic": "K-Vision 250D Cinematic",
+        "kVision500TCinematic": "K-Vision 500T Cinematic"
+      }
     },
     "slider": {
       "clickToEdit": "Нажмите для точного ввода",

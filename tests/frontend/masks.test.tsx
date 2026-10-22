@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, fireEvent } from '@testing-library/react';
 import {
   Mask,
   SubMaskMode,
@@ -19,6 +20,11 @@ import {
   type MaskType,
   type SubMask,
 } from '../../src/components/panel/right/Masks';
+import MasksPanel from '../../src/components/panel/right/MasksPanel';
+import { useEditorStore } from '../../src/store/useEditorStore';
+
+// MasksPanel 顶部波形图依赖 canvas,jsdom 无 2D context,mock 掉以聚焦面板逻辑
+vi.mock('../../src/components/panel/editor/Waveform', () => ({ default: () => null }));
 
 // === TC-MASK-* 系列:覆盖 Masks.tsx 的枚举与命名函数 ===
 
@@ -235,5 +241,77 @@ describe('TC-PANEL-04 / TC-PANEL-05: Mask 类型分组合集', () => {
 
   it('TC-PANEL-05: AI_SUB_MASK_COMPONENT_TYPES = 直接修复 + 触点修饰 + 生成创建', () => {
     expect(AI_SUB_MASK_COMPONENT_TYPES).toHaveLength(3 + 2 + 6);
+  });
+});
+
+// === TC-PANEL-06: v1.6.19 深度自检 — 「重置蒙版」全量清理链路 ===
+// 修复背景:handleResetAllMasks 此前只清 masks 不清 aiPatches,
+// 残留的 AI 修复补丁仍参与渲染且激活态引用已删除对象。
+describe('TC-PANEL-06: 重置蒙版同步清理 AI 修复补丁(MasksPanel.handleResetAllMasks)', () => {
+  const makeAiPatch = (id: string) => ({
+    id,
+    name: `Patch ${id}`,
+    visible: true,
+    invert: false,
+    prompt: '',
+    opacity: 100,
+    patchData: null,
+    isLoading: false,
+    subMasks: [
+      {
+        id: `${id}-sm`,
+        type: Mask.AiSubject,
+        visible: true,
+        invert: false,
+        opacity: 100,
+        mode: SubMaskMode.Additive,
+        parameters: {},
+      },
+    ],
+  });
+
+  beforeEach(() => {
+    useEditorStore.setState({
+      selectedImage: { path: '/tmp/test.dng', isReady: true, width: 1000, height: 1000 },
+      activeMaskContainerId: 'c-1',
+      activeMaskId: 'm-1',
+      activeAiPatchContainerId: 'patch-1',
+      activeAiSubMaskId: 'patch-1-sm',
+      adjustments: {
+        ...useEditorStore.getState().adjustments,
+        masks: [{ id: 'c-1', name: 'C1', visible: true, invert: false, opacity: 100, adjustments: {}, subMasks: [] }],
+        aiPatches: [makeAiPatch('patch-1'), makeAiPatch('patch-2')],
+      },
+    } as never);
+    useEditorStore.getState().patchesSentToBackend.add('patch-1-sm');
+  });
+
+  it('点击重置按钮:masks/aiPatches 清空、后端脏区记录清空、AI 激活态复位', () => {
+    const { container } = render(<MasksPanel />);
+    const resetButton = container.querySelector('button[data-tooltip="重置蒙版"]') as HTMLButtonElement;
+    expect(resetButton).not.toBeNull();
+
+    fireEvent.click(resetButton);
+
+    const s = useEditorStore.getState();
+    expect(s.adjustments.masks).toHaveLength(0);
+    expect(s.adjustments.aiPatches).toHaveLength(0);
+    expect(s.patchesSentToBackend.size).toBe(0);
+    expect(s.activeAiPatchContainerId).toBeNull();
+    expect(s.activeAiSubMaskId).toBeNull();
+    expect(s.activeMaskContainerId).toBeNull();
+    expect(s.activeMaskId).toBeNull();
+  });
+
+  it('重置可重复执行且幂等(空状态下再次点击不抛错)', () => {
+    const { container } = render(<MasksPanel />);
+    const resetButton = container.querySelector('button[data-tooltip="重置蒙版"]') as HTMLButtonElement;
+    expect(() => {
+      fireEvent.click(resetButton);
+      fireEvent.click(resetButton);
+    }).not.toThrow();
+    const s = useEditorStore.getState();
+    expect(s.adjustments.masks).toHaveLength(0);
+    expect(s.adjustments.aiPatches).toHaveLength(0);
   });
 });

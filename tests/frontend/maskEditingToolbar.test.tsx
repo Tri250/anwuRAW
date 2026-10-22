@@ -68,7 +68,7 @@ describe('TC-TB-01 ~ TC-TB-06: showMaskEditingToolbar 与常量行为', () => {
 });
 
 describe('TC-TB-07 ~ TC-TB-17: 渲染与交互', () => {
-  it('TC-TB-07: Brush 显示笔刷大小滑杆且 max=400', () => {
+  it('TC-TB-07: Brush 显示笔刷大小滑杆且 max=200(与 BrushTools/键盘快捷键上限统一)', () => {
     const onBrushSettingsChange = vi.fn();
     render(
       <MaskEditingToolbar
@@ -86,7 +86,7 @@ describe('TC-TB-07 ~ TC-TB-17: 渲染与交互', () => {
     );
     // title 在 <label> 上,max 在内部 <input type="range"> 上
     const sizeSlider = screen.getByTitle('笔刷大小').querySelector('input[type="range"]') as HTMLInputElement;
-    expect(sizeSlider).toHaveAttribute('max', '400');
+    expect(sizeSlider).toHaveAttribute('max', '200');
     // 拖动触发 onBrushSettingsChange
     fireEvent.change(sizeSlider, { target: { value: '200' } });
     expect(onBrushSettingsChange).toHaveBeenCalledWith({ size: 200 });

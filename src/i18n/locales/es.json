@@ -37,59 +37,73 @@
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "Cielo azul japonés · Luz high-key",
-            "summary": "Luz diurna high-key y translúcida, cielos azules convertidos en cian japonés, sombras mates suaves y tonos de piel melocotón cremosos"
+            "summary": "Luz diurna high-key y translúcida, cielos azules convertidos en cian japonés, sombras mates suaves y tonos de piel melocotón cremosos",
+            "name": "Hamada Hideaki"
           },
           "takashi_yasui_zen": {
             "subtitle": "Zen minimalista · Calle japonesa",
-            "summary": "Fuerte contraste luz-sombra, sombras frías y cian profundas, negros contenidos con luz cálida de acento"
+            "summary": "Fuerte contraste luz-sombra, sombras frías y cian profundas, negros contenidos con luz cálida de acento",
+            "name": "Takashi Yasui"
           },
           "takahiro_sakai_blue": {
             "subtitle": "Claridad etérea · Azul pálido",
-            "summary": "Brillo de piel japonés translúcido, cian-azul etéreo y transparente, sombras ampliamente elevadas y altas luces suaves"
+            "summary": "Brillo de piel japonés translúcido, cian-azul etéreo y transparente, sombras ampliamente elevadas y altas luces suaves",
+            "name": "Takahiro Sakai"
           },
           "withluke_epic": {
             "subtitle": "Naturaleza épica · Verde azulado frío brumoso",
-            "summary": "Montañas vastas y bosques brumosos, elimina verdes digitales duros, verdes fríos de tundra entretejidos con oro cálido suave"
+            "summary": "Montañas vastas y bosques brumosos, elimina verdes digitales duros, verdes fríos de tundra entretejidos con oro cálido suave",
+            "name": "Withluke"
           },
           "daniel_casson_autumn": {
             "subtitle": "Otoño rural · Óleo clásico",
-            "summary": "Sensación de óleo otoñal del campo británico, ricos tonos tierra, heno dorado y verdes forestales profundos"
+            "summary": "Sensación de óleo otoñal del campo británico, ricos tonos tierra, heno dorado y verdes forestales profundos",
+            "name": "Daniel Casson"
           },
           "billy_dinh_cinema": {
             "subtitle": "Cine de NY · Luz dramática",
-            "summary": "Textura cinematográfica panorámica, corte de luz de alto contraste, sombras profundas y oro de foco"
+            "summary": "Textura cinematográfica panorámica, corte de luz de alto contraste, sombras profundas y oro de foco",
+            "name": "Billy Dinh"
           },
           "rkrkrk_cyberpunk": {
             "subtitle": "Cyberpunk · Contraste máximo",
-            "summary": "Textura urbana densa, curva S dura, naranja-teal intenso y choque violeta-dorado"
+            "summary": "Textura urbana densa, curva S dura, naranja-teal intenso y choque violeta-dorado",
+            "name": "Rkrkrk"
           },
           "samalive_vintage": {
             "subtitle": "Vintage oleoso · Película urbana",
-            "summary": "Película urbana vintage cálida y oleosa, sombras estables y limpias, altas luces doradas cálidas con sensación de historia errante"
+            "summary": "Película urbana vintage cálida y oleosa, sombras estables y limpias, altas luces doradas cálidas con sensación de historia errante",
+            "name": "Samalive"
           },
           "iwona_fairy_tale": {
             "subtitle": "Óleo de cuento · Resplandor onírico",
-            "summary": "Sensación de óleo de libro de cuentos, sombras profundas y calmadas, luz dorada cálida y resplandor difuso"
+            "summary": "Sensación de óleo de libro de cuentos, sombras profundas y calmadas, luz dorada cálida y resplandor difuso",
+            "name": "Iwona"
           },
           "cinestill_800t": {
             "subtitle": "Cine de tungsteno · Rojo y teal",
-            "summary": "Tonos fílmicos nocturnos cinematográficos, luces rojas con sombras frías cian-verde profundas"
+            "summary": "Tonos fílmicos nocturnos cinematográficos, luces rojas con sombras frías cian-verde profundas",
+            "name": "CineStill 800T"
           },
           "wilson_lee_golden": {
             "subtitle": "Japonés cálido · Bruma dorada",
-            "summary": "La luz de California se encuentra con la película japonesa, oro difuso por la ciudad, resplandor cálido translúcido"
+            "summary": "La luz de California se encuentra con la película japonesa, oro difuso por la ciudad, resplandor cálido translúcido",
+            "name": "Wilson Lee"
           },
           "luizclas_portrait": {
             "subtitle": "Luz dorada · Retrato fino",
-            "summary": "Retratos artísticos en hora dorada, piel luminosa bajo gran contraste, sombras profundas y luz de contorno dorada en el cabello"
+            "summary": "Retratos artísticos en hora dorada, piel luminosa bajo gran contraste, sombras profundas y luz de contorno dorada en el cabello",
+            "name": "Luiz Clas"
           },
           "ivan_ivanchenko_twilight": {
             "subtitle": "Crepúsculo · Transición análoga",
-            "summary": "Resplandor crepuscular suave, altas luces doradas cálidas con suaves sombras cian-azul, retratos pictóricos de bajo contraste"
+            "summary": "Resplandor crepuscular suave, altas luces doradas cálidas con suaves sombras cian-azul, retratos pictóricos de bajo contraste",
+            "name": "Ivan Ivanchenko"
           },
           "jungraphy_neon": {
             "subtitle": "Ciudad de neón · Cian y rosa",
-            "summary": "Noches de neón en Seúl, base cian fría que choca con altas luces rosa-violeta, reflejos en calles empapadas por la lluvia"
+            "summary": "Noches de neón en Seúl, base cian fría que choca con altas luces rosa-violeta, reflejos en calles empapadas por la lluvia",
+            "name": "Jungraphy"
           }
         }
       },
@@ -520,7 +534,9 @@
         "feather": "Desvanecimiento",
         "grow": "Expandir",
         "intensity": "Intensidad",
-        "pressure": "Presión"
+        "pressure": "Presión",
+        "decontaminate": "Edge Cleanup",
+        "sensitivity": "Sensitivity"
       },
       "patches": {
         "aiEdit": "Edición IA {{count}}",
@@ -543,7 +559,10 @@
         "quickErase_many": "Borrado rápido {{count}}",
         "quickErase_one": "Borrado rápido {{count}}",
         "quickErase_other": "Borrado rápido {{count}}",
-        "retouch": "Retoque {{count}}"
+        "retouch": "Retoque {{count}}",
+        "autoErase": "Auto Erase {{count}}",
+        "autoErase_one": "Auto Erase {{count}}",
+        "autoErase_other": "Auto Erase {{count}}"
       },
       "resetInpaintingTooltip": "Restablecer Inpainting",
       "settings": {
@@ -563,7 +582,8 @@
         "placeholder": "ej., un campo de flores",
         "quickEraseDesc": "Rellenar la selección para eliminar el objeto.",
         "selectionPropertiesTitle": "Propiedades de la selección",
-        "useBasicInpaint": "Usar Inpainting básico"
+        "useBasicInpaint": "Usar Inpainting básico",
+        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
       "touchUpTitle": "Retoques"
     },
@@ -674,8 +694,10 @@
         "switchOrientation": "Cambiar orientación",
         "switchToLandscape": "Cambiar a horizontal",
         "switchToPortrait": "Cambiar a vertical",
-        "transform": "Corrección de perspectiva y distorsión trapezoidal"
-      }
+        "transform": "Corrección de perspectiva y distorsión trapezoidal",
+        "aiStraighten": "AI Auto-Straighten"
+      },
+      "autoCropAfterRotate": "Auto-crop black borders after rotation"
     },
     "externalEdit": {
       "done": "Listo",
@@ -739,7 +761,8 @@
         "feather": "Desvanecimiento",
         "globalFeather": "Desvanecimiento global",
         "grow": "Expandir",
-        "tolerance": "Tolerancia"
+        "tolerance": "Tolerancia",
+        "decontaminate": "Decontaminate Colors"
       },
       "toolbar": {
         "title": "Edición de máscara",
@@ -824,7 +847,9 @@
         "clickToOpenTooltip": "Haz clic para abrir el mapa en una nueva pestaña",
         "latitude": "Latitud",
         "longitude": "Longitud",
-        "title": "Ubicación GPS"
+        "title": "Ubicación GPS",
+        "offlineMapLabel": "Offline world map with photo location marker",
+        "openOnlineMap": "Open online map"
       },
       "iptc": {
         "batchHint": "Con varias imágenes seleccionadas, guardar se aplica a todas.",
@@ -1019,7 +1044,8 @@
       "fileSettings": "Ajustes de archivo",
       "imageSizing": "Tamaño de imagen",
       "metadata": "Metadatos",
-      "watermark": "Marca de agua"
+      "watermark": "Marca de agua",
+      "color": "Color Output"
     },
     "status": {
       "cancelExport": "Cancelar exportación",
@@ -1039,7 +1065,8 @@
       "failed": "Exportación fallida",
       "noImageSelected": "No se seleccionó ninguna imagen para exportar.",
       "noImagesSelected": "No se seleccionaron imágenes.",
-      "success": "¡Exportación exitosa!"
+      "success": "¡Exportación exitosa!",
+      "completed": "Export completed: {{name}}"
     },
     "title": "Exportar",
     "watermark": {
@@ -1061,6 +1088,17 @@
       "scale": "Escala",
       "spacing": "Espaciado",
       "watermarkImage": "Imagen de la marca de agua"
+    },
+    "color": {
+      "bitDepth": "Bit Depth",
+      "bitDepth8Desc": "Smaller files, standard display",
+      "bitDepth16Desc": "Larger files, posterization-free editing",
+      "colorSpace": "Color Space",
+      "colorSpaceDesc_srgb": "Standard for the web and most screens",
+      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
+      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
+      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
+      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
     }
   },
   "library": {
@@ -1283,6 +1321,11 @@
       "communityPresets": "Ajustes de la comunidad",
       "goHome": "Ir al Inicio",
       "importImages": "Importar imágenes"
+    },
+    "viewMode": {
+      "grid": "Grid View",
+      "list": "List View",
+      "culling": "Culling View"
     }
   },
   "masks": {
@@ -1944,7 +1987,10 @@
         "title": "Preprocesamiento de imágenes",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "Básico"
+          "basic": "Básico",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "Anulación global del mapeador de tonos",
         "tonemapperOverrideDesc": "Forzar un mapeador de tonos específico a nivel global para todas las imágenes, ocultando el interruptor del mapeador del panel de ajustes."
@@ -2160,7 +2206,15 @@
       "removeLut": "Eliminar LUT",
       "select": "Seleccionar",
       "selectLutFile": "Seleccionar un archivo LUT",
-      "unsupportedFormat": "Formato(s) de archivo no compatible(s) detectado(s): .{{ext}}"
+      "unsupportedFormat": "Formato(s) de archivo no compatible(s) detectado(s): .{{ext}}",
+      "builtInNames": {
+        "fPro400H": "F-Pro 400H",
+        "kEktar100": "K-Ektar 100",
+        "kGold200": "K-Gold 200",
+        "kPortra400": "K-Portra 400",
+        "kVision250DCinematic": "K-Vision 250D Cinematic",
+        "kVision500TCinematic": "K-Vision 500T Cinematic"
+      }
     },
     "slider": {
       "clickToEdit": "Haz clic para editar",

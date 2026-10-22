@@ -37,59 +37,73 @@
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "Ciel bleu japonais · Lumière haute clé",
-            "summary": "Lumière diurne translucide haute clé, ciels bleus virant au cyan japonais, ombres mates douces et carnations pêche crémeuses"
+            "summary": "Lumière diurne translucide haute clé, ciels bleus virant au cyan japonais, ombres mates douces et carnations pêche crémeuses",
+            "name": "Hamada Hideaki"
           },
           "takashi_yasui_zen": {
             "subtitle": "Zen minimal · Rue japonaise",
-            "summary": "Fort contraste ombre-lumière, ombres froides cyan profondes, noirs retenus avec lumière d'accent chaude"
+            "summary": "Fort contraste ombre-lumière, ombres froides cyan profondes, noirs retenus avec lumière d'accent chaude",
+            "name": "Takashi Yasui"
           },
           "takahiro_sakai_blue": {
             "subtitle": "Clarté aérienne · Bleu pâle",
-            "summary": "Éclat de peau japonais translucide, cyan-bleu aérien et transparent, ombres largement relevées et hautes lumières douces"
+            "summary": "Éclat de peau japonais translucide, cyan-bleu aérien et transparent, ombres largement relevées et hautes lumières douces",
+            "name": "Takahiro Sakai"
           },
           "withluke_epic": {
             "subtitle": "Nature épique · Sarcelle froide brumeuse",
-            "summary": "Montagnes vastes et forêts brumeuses, supprime les verts numériques durs, verts froids de toundra tissés d'or chaud doux"
+            "summary": "Montagnes vastes et forêts brumeuses, supprime les verts numériques durs, verts froids de toundra tissés d'or chaud doux",
+            "name": "Withluke"
           },
           "daniel_casson_autumn": {
             "subtitle": "Automne rural · Huile classique",
-            "summary": "Ambiance huile d'automne de campagne britannique, tons terre riches, foin doré et verts forestiers profonds"
+            "summary": "Ambiance huile d'automne de campagne britannique, tons terre riches, foin doré et verts forestiers profonds",
+            "name": "Daniel Casson"
           },
           "billy_dinh_cinema": {
             "subtitle": "Cinéma new-yorkais · Lumière dramatique",
-            "summary": "Texture cinémascope, découpe lumineuse à fort contraste, ombres profondes et or de projecteur"
+            "summary": "Texture cinémascope, découpe lumineuse à fort contraste, ombres profondes et or de projecteur",
+            "name": "Billy Dinh"
           },
           "rkrkrk_cyberpunk": {
             "subtitle": "Cyberpunk · Contraste maximal",
-            "summary": "Texture urbaine dense, courbe S dure, orange-sarcelle riche et heurt violet-or"
+            "summary": "Texture urbaine dense, courbe S dure, orange-sarcelle riche et heurt violet-or",
+            "name": "Rkrkrk"
           },
           "samalive_vintage": {
             "subtitle": "Vintage huilé · Film urbain",
-            "summary": "Film urbain vintage chaud et huilé, ombres stables et propres, hautes lumières dorées chaudes avec une sensation d'errance narrative"
+            "summary": "Film urbain vintage chaud et huilé, ombres stables et propres, hautes lumières dorées chaudes avec une sensation d'errance narrative",
+            "name": "Samalive"
           },
           "iwona_fairy_tale": {
             "subtitle": "Huile de conte · Lueur onirique",
-            "summary": "Ambiance huile de livre de contes, ombres profondes et calmes, lumière dorée chaude et lueur diffuse"
+            "summary": "Ambiance huile de livre de contes, ombres profondes et calmes, lumière dorée chaude et lueur diffuse",
+            "name": "Iwona"
           },
           "cinestill_800t": {
             "subtitle": "Cinéma tungstène · Rouge et sarcelle",
-            "summary": "Tonalités argentiques nocturnes cinématographiques, lumières rouges avec ombres froides cyan-vert profondes"
+            "summary": "Tonalités argentiques nocturnes cinématographiques, lumières rouges avec ombres froides cyan-vert profondes",
+            "name": "CineStill 800T"
           },
           "wilson_lee_golden": {
             "subtitle": "Japonais chaud · Brume dorée",
-            "summary": "La lumière californienne rencontre le film japonais, or diffus dans toute la ville, chaleureuse lueur translucide"
+            "summary": "La lumière californienne rencontre le film japonais, or diffus dans toute la ville, chaleureuse lueur translucide",
+            "name": "Wilson Lee"
           },
           "luizclas_portrait": {
             "subtitle": "Lumière dorée · Portrait raffiné",
-            "summary": "Portraits artistiques à l'heure dorée, peau lumineuse sous fort contraste, ombres profondes et liseré doré dans les cheveux"
+            "summary": "Portraits artistiques à l'heure dorée, peau lumineuse sous fort contraste, ombres profondes et liseré doré dans les cheveux",
+            "name": "Luiz Clas"
           },
           "ivan_ivanchenko_twilight": {
             "subtitle": "Crépuscule · Transition analogue",
-            "summary": "Douce lueur crépusculaire, hautes lumières dorées chaudes avec ombres cyan-bleu tendres, portraits picturaux à faible contraste"
+            "summary": "Douce lueur crépusculaire, hautes lumières dorées chaudes avec ombres cyan-bleu tendres, portraits picturaux à faible contraste",
+            "name": "Ivan Ivanchenko"
           },
           "jungraphy_neon": {
             "subtitle": "Ville néon · Cyan et rose",
-            "summary": "Nuits néon de Séoul, base cyan froide heurtant des hautes lumières rose-violet, reflets de rues trempées de pluie"
+            "summary": "Nuits néon de Séoul, base cyan froide heurtant des hautes lumières rose-violet, reflets de rues trempées de pluie",
+            "name": "Jungraphy"
           }
         }
       },
@@ -521,7 +535,8 @@
         "grow": "Agrandir",
         "intensity": "Intensité",
         "pressure": "Pression",
-        "decontaminate": "Edge Cleanup"
+        "decontaminate": "Edge Cleanup",
+        "sensitivity": "Sensitivity"
       },
       "patches": {
         "aiEdit": "Retouche IA {{count}}",
@@ -544,7 +559,10 @@
         "quickErase_many": "Gommage rapide {{count}}",
         "quickErase_one": "Gommage rapide {{count}}",
         "quickErase_other": "Gommages rapides {{count}}",
-        "retouch": "Retouche {{count}}"
+        "retouch": "Retouche {{count}}",
+        "autoErase": "Auto Erase {{count}}",
+        "autoErase_one": "Auto Erase {{count}}",
+        "autoErase_other": "Auto Erase {{count}}"
       },
       "resetInpaintingTooltip": "Réinitialiser l'Inpainting",
       "settings": {
@@ -676,7 +694,8 @@
         "switchOrientation": "Changer l'orientation",
         "switchToLandscape": "Basculer en paysage",
         "switchToPortrait": "Basculer en portrait",
-        "transform": "Correction de perspective et de trapèze"
+        "transform": "Correction de perspective et de trapèze",
+        "aiStraighten": "AI Auto-Straighten"
       },
       "autoCropAfterRotate": "Auto-crop black borders after rotation"
     },
@@ -742,7 +761,8 @@
         "feather": "Contour progressif",
         "globalFeather": "Contour progressif global",
         "grow": "Agrandir",
-        "tolerance": "Tolérance"
+        "tolerance": "Tolérance",
+        "decontaminate": "Decontaminate Colors"
       },
       "toolbar": {
         "title": "Édition du masque",
@@ -1045,7 +1065,8 @@
       "failed": "Échec de l'exportation",
       "noImageSelected": "Aucune image sélectionnée pour l'exportation.",
       "noImagesSelected": "Aucune image sélectionnée.",
-      "success": "Exportation réussie !"
+      "success": "Exportation réussie !",
+      "completed": "Export completed: {{name}}"
     },
     "title": "Exporter",
     "watermark": {
@@ -1301,6 +1322,11 @@
       "communityPresets": "Paramètres prédéfinis de la communauté",
       "goHome": "Aller à l'accueil",
       "importImages": "Importer des images"
+    },
+    "viewMode": {
+      "grid": "Grid View",
+      "list": "List View",
+      "culling": "Culling View"
     }
   },
   "masks": {
@@ -2181,7 +2207,15 @@
       "removeLut": "Supprimer la LUT",
       "select": "Sélectionner",
       "selectLutFile": "Sélectionner un fichier LUT",
-      "unsupportedFormat": "Format(s) de fichier non pris en charge détecté(s) : .{{ext}}"
+      "unsupportedFormat": "Format(s) de fichier non pris en charge détecté(s) : .{{ext}}",
+      "builtInNames": {
+        "fPro400H": "F-Pro 400H",
+        "kEktar100": "K-Ektar 100",
+        "kGold200": "K-Gold 200",
+        "kPortra400": "K-Portra 400",
+        "kVision250DCinematic": "K-Vision 250D Cinematic",
+        "kVision500TCinematic": "K-Vision 500T Cinematic"
+      }
     },
     "slider": {
       "clickToEdit": "Cliquer pour modifier",

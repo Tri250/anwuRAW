@@ -520,7 +520,6 @@ export const INITIAL_MASK_ADJUSTMENTS: MaskAdjustments = {
     details: true,
     effects: true,
     channel_mixer: true,
-    split_toning: true,
   },
   shadows: 0,
   sharpness: 0,
@@ -637,7 +636,6 @@ export const INITIAL_ADJUSTMENTS: Adjustments = {
     details: true,
     effects: true,
     channel_mixer: true,
-    split_toning: true,
   },
   shadows: 0,
   sharpness: 0,
@@ -1002,5 +1000,7 @@ export const ADJUSTMENT_SECTIONS: Sections = {
     Effect.LensBlurMaxFade,
   ],
   channel_mixer: ['channelMixer'],
-  split_toning: ['splitToning'],
+  // split_toning 已于 v1.6.19 移除：功能与 colorGrading 三色轮完全重复
+  // （XMP 导入侧 preset_converter 亦将 SplitToning* 映射进 colorGrading）。
+  // Adjustments.splitToning 字段与后端处理保留，仅兼容旧会话，不再提供 UI。
 };

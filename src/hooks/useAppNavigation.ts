@@ -136,6 +136,10 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         activeMaskContainerId: null,
         activeAiPatchContainerId: null,
         activeAiSubMaskId: null,
+        // 切图统一复位 AI 生成标志位:在途任务结果因 path 变化会被丢弃,
+        // 若不复位,蒙版/修复面板的 loading 态会跨图残留直至卡死
+        isGeneratingAi: false,
+        isGeneratingAiMask: false,
         isWbPickerActive: false,
         previewOverride: null,
       });

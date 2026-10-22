@@ -39,16 +39,10 @@ import {
 import CollapsibleSection from '../../ui/CollapsibleSection';
 import Switch from '../../ui/Switch';
 import Slider from '../../ui/Slider';
-import BasicAdjustments from '../../adjustments/Basic';
-import CurveGraph from '../../adjustments/Curves';
-import ColorPanel from '../../adjustments/Color';
-import DetailsPanel from '../../adjustments/Details';
-import EffectsPanel from '../../adjustments/Effects';
-import ChannelMixer from '../../adjustments/ChannelMixer';
-import SplitToning from '../../adjustments/SplitToning';
 import Waveform from '../editor/Waveform';
 import Resizer from '../../ui/Resizer';
 import { DepthRangePicker } from '../../ui/DepthRangePicker';
+import { ADJUSTMENT_SECTION_COMPONENTS } from '../../adjustments/sectionRegistry';
 
 import {
   Mask,
@@ -484,7 +478,11 @@ export default function MasksPanel() {
 
   const handleResetAllMasks = () => {
     handleDeselect();
-    setAdjustments((prev: any) => ({ ...prev, masks: [] }));
+    // 重置全部蒙版时同步清理 AI 修复补丁与后端脏区记录,避免残留不可见但仍在参与渲染的 aiPatches
+    useEditorStore.getState().patchesSentToBackend.clear();
+    setAdjustments((prev: any) => ({ ...prev, masks: [], aiPatches: [] }));
+    // 复位 AI 补丁激活态,避免引用已删除的 patch
+    setEditor({ activeAiPatchContainerId: null, activeAiSubMaskId: null });
   };
 
   const createMaskLogic = (type: Mask, mode: SubMaskMode = SubMaskMode.Additive) => {
@@ -2295,15 +2293,7 @@ function SettingsPanel({
         className="flex flex-col gap-2"
       >
         {Object.keys(ADJUSTMENT_SECTIONS).map((sectionName) => {
-          const SectionComponent: any = {
-            basic: BasicAdjustments,
-            curves: CurveGraph,
-            color: ColorPanel,
-            details: DetailsPanel,
-            effects: EffectsPanel,
-            channel_mixer: ChannelMixer,
-            split_toning: SplitToning,
-          }[sectionName];
+          const SectionComponent: any = ADJUSTMENT_SECTION_COMPONENTS[sectionName];
           const title = t(`editor.adjustments.sections.${sectionName}`);
           return (
             <CollapsibleSection

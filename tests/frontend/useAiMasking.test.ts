@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useEditorStore } from '../../src/store/useEditorStore';
 import { useAiMasking } from '../../src/hooks/useAiMasking';
+import { useAppNavigation } from '../../src/hooks/useAppNavigation';
 import { Invokes } from '../../src/components/ui/AppProperties';
 import { Mask, SubMaskMode, ToolType } from '../../src/components/panel/right/Masks';
 import { toast } from 'react-toastify';
@@ -446,5 +447,139 @@ describe('TC-AI-验收: 全部导出函数在无 selectedImage 时安全返回',
       ]);
     });
     expect(mockInvoke).not.toHaveBeenCalled();
+  });
+});
+
+// === TC-AI-16 ~ TC-AI-17: v1.6.19 深度自检 — AI 生成并发守卫 ===
+describe('TC-AI-16 ~ TC-AI-17: AI 生成并发守卫', () => {
+  /** AI 修复两阶段 mock:阶段 1 返回蒙版参数对象,阶段 2 返回 patch JSON */
+  const setupTwoPhaseMock = () => {
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === Invokes.GenerateAiSubjectMask) return Promise.resolve({ grow: 60 });
+      return Promise.resolve(JSON.stringify({ color: '#fff', mask: 'data:image/png;base64,qe' }));
+    });
+  };
+
+  it('TC-AI-16: isGeneratingAiMask 在途时,四个 AI 蒙版 handler 均被并发守卫阻断(双击防护)', async () => {
+    useEditorStore.setState({ isGeneratingAiMask: true } as never);
+    const { result } = renderHook(() => useAiMasking());
+    await act(async () => {
+      await Promise.all([
+        result.current.handleGenerateAiMask('sm-1', { x: 0, y: 0 }, { x: 1, y: 1 }),
+        result.current.handleGenerateAiSkyMask('sm-1'),
+        result.current.handleGenerateAiForegroundMask('sm-1'),
+        result.current.handleGenerateAiDepthMask('sm-1', {}),
+      ]);
+    });
+    expect(mockInvoke).not.toHaveBeenCalled();
+    // 守卫早退不得篡改在途标志位
+    expect(useEditorStore.getState().isGeneratingAiMask).toBe(true);
+  });
+
+  it('TC-AI-17a: isGeneratingAi 在途时,AI 蒙版 handler 被交叉并发守卫阻断', async () => {
+    useEditorStore.setState({ isGeneratingAi: true } as never);
+    const { result } = renderHook(() => useAiMasking());
+    await act(async () => {
+      await result.current.handleGenerateAiSkyMask('sm-1');
+    });
+    expect(mockInvoke).not.toHaveBeenCalled();
+    expect(useEditorStore.getState().isGeneratingAiMask).toBe(false);
+  });
+
+  it('TC-AI-17b: isGeneratingAiMask 在途时,handleGenerativeReplace / handleQuickErase 被阻断', async () => {
+    useEditorStore.setState({ isGeneratingAiMask: true } as never);
+    const { result } = renderHook(() => useAiMasking());
+    await act(async () => {
+      await result.current.handleGenerativeReplace('patch-1', 'p', true);
+      await result.current.handleQuickErase('sm-1', { x: 0, y: 0 }, { x: 1, y: 1 });
+    });
+    expect(mockInvoke).not.toHaveBeenCalled();
+    // 守卫早退发生在设置 isLoading 之前,patch 状态不被污染
+    const patch = useEditorStore.getState().adjustments.aiPatches.find((p) => p.id === 'patch-1');
+    expect(patch.isLoading).toBe(false);
+  });
+
+  it('TC-AI-17c: 串行重复调用不受守卫影响 — 上一个任务完成后可再次发起', async () => {
+    mockInvoke.mockResolvedValue(JSON.stringify({ color: '#fff', mask: 'data:image/png;base64,x' }));
+    const { result } = renderHook(() => useAiMasking());
+    await act(async () => {
+      await result.current.handleGenerativeReplace('patch-1', 'p1', true);
+    });
+    await act(async () => {
+      await result.current.handleGenerativeReplace('patch-1', 'p2', true);
+    });
+    expect(mockInvoke).toHaveBeenCalledTimes(2);
+    expect(useEditorStore.getState().isGeneratingAi).toBe(false);
+  });
+
+  it('TC-AI-16b: handleQuickErase 快速连点仅发起一次任务(第二击被守卫拦截)', async () => {
+    setupTwoPhaseMock();
+    const { result } = renderHook(() => useAiMasking());
+    await act(async () => {
+      await Promise.all([
+        result.current.handleQuickErase('sm-1', { x: 0, y: 0 }, { x: 1, y: 1 }),
+        result.current.handleQuickErase('sm-1', { x: 2, y: 2 }, { x: 3, y: 3 }),
+      ]);
+    });
+    const subjectCalls = mockInvoke.mock.calls.filter(([cmd]) => cmd === Invokes.GenerateAiSubjectMask);
+    expect(subjectCalls).toHaveLength(1);
+    expect(useEditorStore.getState().isGeneratingAi).toBe(false);
+  });
+});
+
+// === TC-NAV-01: v1.6.19 深度自检 — 切图统一复位 AI 生成标志位 ===
+// 修复背景:在途 AI 任务在切图后结果被丢弃,但 isGeneratingAi/isGeneratingAiMask 残留 true,
+// 导致新图的蒙版/修复面板 loading 卡死。复位点统一收敛到 handleImageSelect。
+describe('TC-NAV-01: 切图复位 AI 生成标志位(useAppNavigation.handleImageSelect)', () => {
+  const makeRefs = () => ({
+    transformWrapperRef: { current: null },
+    preloadedDataRef: { current: null },
+    cachedEditStateRef: { current: null },
+    selectedImagePathRef: { current: null },
+    isBackendReadyRef: { current: false },
+    latestRenderedJobIdRef: { current: 0 },
+    previewJobIdRef: { current: 0 },
+    currentResRef: { current: Infinity },
+    prevAdjustmentsRef: { current: null },
+  });
+
+  it('常规切图(无前端缓存):两个 AI 标志位与 AI 激活态全部复位', async () => {
+    useEditorStore.setState({
+      selectedImage: { path: '/tmp/a.dng', isReady: true },
+      isGeneratingAi: true,
+      isGeneratingAiMask: true,
+      activeAiPatchContainerId: 'patch-1',
+      activeAiSubMaskId: 'sm-1',
+    } as never);
+    const { result } = renderHook(() =>
+      useAppNavigation({ clearThumbnailQueue: () => {}, refs: makeRefs() }),
+    );
+    await act(async () => {
+      await result.current.handleImageSelect('/tmp/b.dng');
+    });
+    const s = useEditorStore.getState();
+    expect(s.selectedImage?.path).toBe('/tmp/b.dng');
+    expect(s.isGeneratingAi).toBe(false);
+    expect(s.isGeneratingAiMask).toBe(false);
+    expect(s.activeAiPatchContainerId).toBeNull();
+    expect(s.activeAiSubMaskId).toBeNull();
+  });
+
+  it('切图复位后,新图上的 AI 生成可立即发起(不被残留标志位卡死)', async () => {
+    useEditorStore.setState({
+      selectedImage: { path: '/tmp/a.dng', isReady: true },
+      isGeneratingAiMask: true,
+    } as never);
+    const nav = renderHook(() => useAppNavigation({ clearThumbnailQueue: () => {}, refs: makeRefs() }));
+    await act(async () => {
+      await nav.result.current.handleImageSelect('/tmp/b.dng');
+    });
+    mockInvoke.mockResolvedValueOnce({ maskDataBase64: 'sky-data' });
+    const masking = renderHook(() => useAiMasking());
+    await act(async () => {
+      await masking.result.current.handleGenerateAiSkyMask('sm-1');
+    });
+    expect(mockInvoke).toHaveBeenCalledWith(Invokes.GenerateAiSkyMask, expect.any(Object));
+    expect(useEditorStore.getState().isGeneratingAiMask).toBe(false);
   });
 });

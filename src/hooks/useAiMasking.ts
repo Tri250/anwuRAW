@@ -160,8 +160,10 @@ export function useAiMasking() {
 
   const handleGenerativeReplace = useCallback(
     async (patchId: string, prompt: string, useFastInpaint: boolean) => {
-      const { selectedImage, adjustments, isGeneratingAi, patchesSentToBackend } = useEditorStore.getState();
-      if (!selectedImage?.path || isGeneratingAi) return;
+      const { selectedImage, adjustments, isGeneratingAi, isGeneratingAiMask, patchesSentToBackend } =
+        useEditorStore.getState();
+      // 并发守卫:同时阻断与 AI 蒙版生成的交叉并发,避免两个 AI 模型同时驻留内存
+      if (!selectedImage?.path || isGeneratingAi || isGeneratingAiMask) return;
       const startPath = selectedImage.path;
 
       const patch: AiPatch | undefined = adjustments.aiPatches.find((p: AiPatch) => p.id === patchId);
@@ -229,8 +231,10 @@ export function useAiMasking() {
 
   const handleQuickErase = useCallback(
     async (subMaskId: string | null, startPoint: Coord, endPoint: Coord) => {
-      const { selectedImage, adjustments, isGeneratingAi, patchesSentToBackend } = useEditorStore.getState();
-      if (!selectedImage?.path || isGeneratingAi) return;
+      const { selectedImage, adjustments, isGeneratingAi, isGeneratingAiMask, patchesSentToBackend } =
+        useEditorStore.getState();
+      // 并发守卫:同时阻断与 AI 蒙版生成的交叉并发,避免两个 AI 模型同时驻留内存
+      if (!selectedImage?.path || isGeneratingAi || isGeneratingAiMask) return;
       const startPath = selectedImage.path;
 
       const patchId = adjustments.aiPatches.find((p: AiPatch) =>
@@ -319,7 +323,7 @@ export function useAiMasking() {
         setEditor({ isGeneratingAi: false });
       }
     },
-    [setAdjustments, setEditor, getToken],
+    [setAdjustments, setEditor, updateSubMask],
   );
 
   const handleDeleteMaskContainer = useCallback(
@@ -361,8 +365,10 @@ export function useAiMasking() {
   );
 
   const handleGenerateAiMask = async (subMaskId: string, startPoint: Coord, endPoint: Coord) => {
-    const { selectedImage, adjustments, patchesSentToBackend } = useEditorStore.getState();
-    if (!selectedImage?.path) return;
+    const { selectedImage, adjustments, patchesSentToBackend, isGeneratingAiMask, isGeneratingAi } =
+      useEditorStore.getState();
+    // 并发守卫:已有 AI 生成任务在途时忽略重复触发(双击/跨蒙版类型/跨修复类型),避免并发调用 AI 模型
+    if (!selectedImage?.path || isGeneratingAiMask || isGeneratingAi) return;
     const startPath = selectedImage.path;
     setEditor({ isGeneratingAiMask: true });
 
@@ -394,8 +400,10 @@ export function useAiMasking() {
   };
 
   const handleGenerateAiDepthMask = async (subMaskId: string, parameters: any) => {
-    const { selectedImage, adjustments, patchesSentToBackend } = useEditorStore.getState();
-    if (!selectedImage?.path) return;
+    const { selectedImage, adjustments, patchesSentToBackend, isGeneratingAiMask, isGeneratingAi } =
+      useEditorStore.getState();
+    // 并发守卫:已有 AI 生成任务在途时忽略重复触发(双击/跨蒙版类型/跨修复类型),避免并发调用 AI 模型
+    if (!selectedImage?.path || isGeneratingAiMask || isGeneratingAi) return;
     const startPath = selectedImage.path;
     setEditor({ isGeneratingAiMask: true });
 
@@ -430,8 +438,10 @@ export function useAiMasking() {
   };
 
   const handleGenerateAiForegroundMask = async (subMaskId: string) => {
-    const { selectedImage, adjustments, patchesSentToBackend } = useEditorStore.getState();
-    if (!selectedImage?.path) return;
+    const { selectedImage, adjustments, patchesSentToBackend, isGeneratingAiMask, isGeneratingAi } =
+      useEditorStore.getState();
+    // 并发守卫:已有 AI 生成任务在途时忽略重复触发(双击/跨蒙版类型/跨修复类型),避免并发调用 AI 模型
+    if (!selectedImage?.path || isGeneratingAiMask || isGeneratingAi) return;
     const startPath = selectedImage.path;
     setEditor({ isGeneratingAiMask: true });
 
@@ -460,8 +470,10 @@ export function useAiMasking() {
   };
 
   const handleGenerateAiSkyMask = async (subMaskId: string) => {
-    const { selectedImage, adjustments, patchesSentToBackend } = useEditorStore.getState();
-    if (!selectedImage?.path) return;
+    const { selectedImage, adjustments, patchesSentToBackend, isGeneratingAiMask, isGeneratingAi } =
+      useEditorStore.getState();
+    // 并发守卫:已有 AI 生成任务在途时忽略重复触发(双击/跨蒙版类型/跨修复类型),避免并发调用 AI 模型
+    if (!selectedImage?.path || isGeneratingAiMask || isGeneratingAi) return;
     const startPath = selectedImage.path;
     setEditor({ isGeneratingAiMask: true });
 

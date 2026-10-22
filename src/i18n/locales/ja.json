@@ -37,59 +37,73 @@
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "日本の青空 · ハイキー日光",
-            "summary": "ハイキーで透明感のある日光、青空を和風シアンへ、柔らかいマットな陰影とクリーミーな桃色肌"
+            "summary": "ハイキーで透明感のある日光、青空を和風シアンへ、柔らかいマットな陰影とクリーミーな桃色肌",
+            "name": "Hamada Hideaki"
           },
           "takashi_yasui_zen": {
             "subtitle": "ミニマル禅 · 日本の街撮り",
-            "summary": "強い明暗コントラスト、深く冷えたシアンの影、抑えた黒階と差し色の暖光"
+            "summary": "強い明暗コントラスト、深く冷えたシアンの影、抑えた黒階と差し色の暖光",
+            "name": "Takashi Yasui"
           },
           "takahiro_sakai_blue": {
             "subtitle": "空気感の透明感 · 淡いブルー",
-            "summary": "透明感のある日本の肌艶、空気感のある透けたシアンブルー、大きく明るくなった陰影と柔らかなハイライト"
+            "summary": "透明感のある日本の肌艶、空気感のある透けたシアンブルー、大きく明るくなった陰影と柔らかなハイライト",
+            "name": "Takahiro Sakai"
           },
           "withluke_epic": {
             "subtitle": "壮大な自然 · 霧の冷たいティール",
-            "summary": "広大な山々と霧の森、デジタルな刺々しい緑を除去、ツンドラの冷緑と柔らかな暖金を織り交ぜる"
+            "summary": "広大な山々と霧の森、デジタルな刺々しい緑を除去、ツンドラの冷緑と柔らかな暖金を織り交ぜる",
+            "name": "Withluke"
           },
           "daniel_casson_autumn": {
             "subtitle": "田園の秋 · クラシック油彩",
-            "summary": "英国の田園風景の秋の油彩感、豊かなアースカラー、金色の干し草と深い森の緑"
+            "summary": "英国の田園風景の秋の油彩感、豊かなアースカラー、金色の干し草と深い森の緑",
+            "name": "Daniel Casson"
           },
           "billy_dinh_cinema": {
             "subtitle": "ニューヨーク映像 · ドラマチックな光",
-            "summary": "シネスコ的質感、強コントラストの光の切り取り、深い影とスポットライトの金色"
+            "summary": "シネスコ的質感、強コントラストの光の切り取り、深い影とスポットライトの金色",
+            "name": "Billy Dinh"
           },
           "rkrkrk_cyberpunk": {
             "subtitle": "サイバーパンク · 極限コントラスト",
-            "summary": "緻密な都市の質感、ハードなSカーブ、濃厚なオレンジティールと紫金の衝突"
+            "summary": "緻密な都市の質感、ハードなSカーブ、濃厚なオレンジティールと紫金の衝突",
+            "name": "Rkrkrk"
           },
           "samalive_vintage": {
             "subtitle": "油分のあるヴィンテージ · 都市フィルム",
-            "summary": "温かく油分のあるヴィンテージ都市フィルム、安定したクリーンな影、温かい金色のハイライトと漂うストーリー感"
+            "summary": "温かく油分のあるヴィンテージ都市フィルム、安定したクリーンな影、温かい金色のハイライトと漂うストーリー感",
+            "name": "Samalive"
           },
           "iwona_fairy_tale": {
             "subtitle": "童話油彩 · 夢見る輝き",
-            "summary": "絵本のような油彩感、深く静かな影、温かい金色の柔光と拡散する輝き"
+            "summary": "絵本のような油彩感、深く静かな影、温かい金色の柔光と拡散する輝き",
+            "name": "Iwona"
           },
           "cinestill_800t": {
             "subtitle": "タングステン映像 · 赤とティール",
-            "summary": "映画的な夜景フィルムトーン、赤い灯りと深く冷えたシアングリーンの影"
+            "summary": "映画的な夜景フィルムトーン、赤い灯りと深く冷えたシアングリーンの影",
+            "name": "CineStill 800T"
           },
           "wilson_lee_golden": {
             "subtitle": "温かい和テイスト · 金色の霞",
-            "summary": "カリフォルニアの陽光と日本のフィルムの融合、街全体に広がる拡散金光、透明感のある温もりの輝き"
+            "summary": "カリフォルニアの陽光と日本のフィルムの融合、街全体に広がる拡散金光、透明感のある温もりの輝き",
+            "name": "Wilson Lee"
           },
           "luizclas_portrait": {
             "subtitle": "金色の光 · 質感ポートレート",
-            "summary": "ゴールデンアワーの質感作品、大きなコントラストの中で潤いのある肌、深い影と金の髪の輪郭光"
+            "summary": "ゴールデンアワーの質感作品、大きなコントラストの中で潤いのある肌、深い影と金の髪の輪郭光",
+            "name": "Luiz Clas"
           },
           "ivan_ivanchenko_twilight": {
             "subtitle": "黄昏 · アナロガスな移行",
-            "summary": "黄昏の柔らかな微光、暖かい金色のハイライトと柔らかなシアンブルーの影、低コントラストの絵画的ポートレート"
+            "summary": "黄昏の柔らかな微光、暖かい金色のハイライトと柔らかなシアンブルーの影、低コントラストの絵画的ポートレート",
+            "name": "Ivan Ivanchenko"
           },
           "jungraphy_neon": {
             "subtitle": "ネオン都市 · シアンとピンク",
-            "summary": "ソウルのネオン夜景、冷えたシアンの地にピンク紫のハイライトが衝突、雨に濡れた路面の反射"
+            "summary": "ソウルのネオン夜景、冷えたシアンの地にピンク紫のハイライトが衝突、雨に濡れた路面の反射",
+            "name": "Jungraphy"
           }
         }
       },
@@ -504,7 +518,9 @@
         "feather": "ぼかし",
         "grow": "拡張",
         "intensity": "強度",
-        "pressure": "圧力"
+        "pressure": "圧力",
+        "decontaminate": "Edge Cleanup",
+        "sensitivity": "Sensitivity"
       },
       "patches": {
         "aiEdit": "AI編集 {{count}}",
@@ -521,7 +537,12 @@
         "quickErase": "クイック消去 {{count}}",
         "quickErase_one": "クイック消去 {{count}}",
         "quickErase_other": "クイック消去 {{count}}",
-        "retouch": "レタッチ {{count}}"
+        "retouch": "レタッチ {{count}}",
+        "clone_one": "Clone {{count}}",
+        "heal_one": "Heal {{count}}",
+        "autoErase": "Auto Erase {{count}}",
+        "autoErase_one": "Auto Erase {{count}}",
+        "autoErase_other": "Auto Erase {{count}}"
       },
       "resetInpaintingTooltip": "インペインティングをリセット",
       "settings": {
@@ -541,7 +562,8 @@
         "placeholder": "例: お花畑",
         "quickEraseDesc": "選択範囲を塗りつぶしてオブジェクトを削除します。",
         "selectionPropertiesTitle": "選択範囲のプロパティ",
-        "useBasicInpaint": "簡易インペインティングを使用"
+        "useBasicInpaint": "簡易インペインティングを使用",
+        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
       "touchUpTitle": "タッチアップ"
     },
@@ -652,8 +674,10 @@
         "switchOrientation": "縦横比の向きを切り替え",
         "switchToLandscape": "横向きに切り替え",
         "switchToPortrait": "縦向きに切り替え",
-        "transform": "遠近歪みとあおり補正"
-      }
+        "transform": "遠近歪みとあおり補正",
+        "aiStraighten": "AI Auto-Straighten"
+      },
+      "autoCropAfterRotate": "Auto-crop black borders after rotation"
     },
     "externalEdit": {
       "done": "完了",
@@ -717,7 +741,8 @@
         "feather": "ぼかし",
         "globalFeather": "全体のぼかし",
         "grow": "拡張",
-        "tolerance": "Tolerance"
+        "tolerance": "Tolerance",
+        "decontaminate": "Decontaminate Colors"
       },
       "toolbar": {
         "title": "マスク編集",
@@ -801,7 +826,9 @@
         "clickToOpenTooltip": "クリックして新しいタブで地図を表示",
         "latitude": "緯度",
         "longitude": "経度",
-        "title": "GPS位置情報"
+        "title": "GPS位置情報",
+        "offlineMapLabel": "Offline world map with photo location marker",
+        "openOnlineMap": "Open online map"
       },
       "iptc": {
         "batchHint": "複数選択時は保存がすべての選択画像に適用されます。",
@@ -995,7 +1022,8 @@
       "fileSettings": "ファイル設定",
       "imageSizing": "画像サイズ",
       "metadata": "メタデータ",
-      "watermark": "ウォーターマーク"
+      "watermark": "ウォーターマーク",
+      "color": "Color Output"
     },
     "status": {
       "cancelExport": "書き出しをキャンセル",
@@ -1014,7 +1042,8 @@
       "failed": "書き出しに失敗しました",
       "noImageSelected": "書き出す画像が選択されていません。",
       "noImagesSelected": "画像が選択されていません。",
-      "success": "書き出しが成功しました！"
+      "success": "書き出しが成功しました！",
+      "completed": "Export completed: {{name}}"
     },
     "title": "エクスポート",
     "watermark": {
@@ -1036,6 +1065,17 @@
       "scale": "倍率",
       "spacing": "間隔",
       "watermarkImage": "ウォーターマーク画像"
+    },
+    "color": {
+      "bitDepth": "Bit Depth",
+      "bitDepth8Desc": "Smaller files, standard display",
+      "bitDepth16Desc": "Larger files, posterization-free editing",
+      "colorSpace": "Color Space",
+      "colorSpaceDesc_srgb": "Standard for the web and most screens",
+      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
+      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
+      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
+      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
     }
   },
   "library": {
@@ -1257,6 +1297,11 @@
       "communityPresets": "コミュニティプリセット",
       "goHome": "ホームへ移動",
       "importImages": "画像をインポート"
+    },
+    "viewMode": {
+      "grid": "Grid View",
+      "list": "List View",
+      "culling": "Culling View"
     }
   },
   "masks": {
@@ -1909,7 +1954,10 @@
         "title": "画像の事前処理",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "標準"
+          "basic": "標準",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "グローバルトーンマッパー上書き",
         "tonemapperOverrideDesc": "すべての画像に対して指定したトーンマッパーを強制適用し、調整パネル内の切り替えスイッチを非表示にします。"
@@ -2124,7 +2172,15 @@
       "removeLut": "LUTを削除",
       "select": "選択",
       "selectLutFile": "LUTファイルを選択",
-      "unsupportedFormat": "未対応のファイル形式が検出されました: .{{ext}}"
+      "unsupportedFormat": "未対応のファイル形式が検出されました: .{{ext}}",
+      "builtInNames": {
+        "fPro400H": "F-Pro 400H",
+        "kEktar100": "K-Ektar 100",
+        "kGold200": "K-Gold 200",
+        "kPortra400": "K-Portra 400",
+        "kVision250DCinematic": "K-Vision 250D Cinematic",
+        "kVision500TCinematic": "K-Vision 500T Cinematic"
+      }
     },
     "slider": {
       "clickToEdit": "クリックして編集",

@@ -44,6 +44,7 @@
 | TC-PANEL-03 | 范围与全局分组(rangeTitle) | 同上 | 查看"范围与全局"分组 | 显示 3 项:颜色 / 亮度 / 整个图像 | `MASK_RANGE_TYPES` 长度 === 3;`Mask.All` 在 UI 文案显示为"整个图像" |
 | TC-PANEL-04 | 全部蒙版常量合集 | 无 | 静态导入 `ALL_MASK_TYPES` | 数量 === 11(AI 4 + 基础 4 + 范围 3) | 与 `AI_SUB_MASK_COMPONENT_TYPES` 一起覆盖全部 17 种 `Mask` 枚举值 |
 | TC-PANEL-05 | 子蒙版类型分组 | 进入"添加新组件"流程 | 查看可添加的子蒙版类型 | 显示 AI 直接修复(克隆/修复/自动消除)、AI 触点修饰(液化/修饰)、AI 生成创建(快速擦除/主体/前景/画笔/线性/径向)、其他(深度/颜色/亮度/画笔/流线/整个图像) | `AI_DIRECT_PATCH_TYPES.length === 3`、`AI_TOUCH_UP_TYPES.length === 2`、`AI_GENERATIVE_CREATION_TYPES.length === 6`、`OTHERS_MASK_TYPES.length === 6` |
+| TC-PANEL-06 | 重置蒙版全量清理 | 存在 masks + aiPatches + 后端脏区记录 + AI 激活态 | 点击工具栏「重置蒙版」按钮 | masks 与 aiPatches 同时清空;`patchesSentToBackend` 清空;activeMask*/activeAiPatch* 全部复位 null | v1.6.19 修复:此前只清 masks 不清 aiPatches;空状态下重复点击幂等不抛错 |
 
 **验收标准(模块级)**:
 - 三大分组共渲染 11 个 DraggableGridItem,顺序与 `MASK_AI_TYPES / MASK_BASIC_TYPES / MASK_RANGE_TYPES` 一致。
@@ -131,7 +132,7 @@
 | TC-TB-04 | `STANDALONE_REPAIR` | 无 | 静态断言 | 5 个独立修复类型(Clone/Heal/AutoErase/Liquify/Retouch) | 这些类型不显示反选按钮 |
 | TC-TB-05 | `STRENGTH_PARAM_KEY` 映射 | 无 | 调用函数(Liquify) | 返回 'pressure' | 调用(Retouch) → 'intensity';调用(AutoErase) → 'sensitivity';其他 → null |
 | TC-TB-06 | `CLEAR_TYPES` | 无 | 静态断言 | 7 个类型(Brush/Flow/QuickEraser/Color/Luminance/AiSubject/AiForeground) | 仅这些类型显示"清除蒙版"按钮 |
-| TC-TB-07 | 笔刷大小滑杆 | 渲染 Brush 子蒙版 | 拖动 brushSize 滑杆 | `onBrushSettingsChange({size: v})` 被调用,max=400 | 与 `BrushTools` 滑杆 max=200 不一致(画布工具条上限更高) |
+| TC-TB-07 | 笔刷大小滑杆 | 渲染 Brush 子蒙版 | 拖动 brushSize 滑杆 | `onBrushSettingsChange({size: v})` 被调用,max=200 | v1.6.19 起与 `BrushTools` 滑杆及键盘快捷键钳制统一为 200(此前工具条为 400,已修复不一致) |
 | TC-TB-08 | 柔软度滑杆 | 同上 | 拖动 brushFeather 滑杆 | `onBrushSettingsChange({feather: v})` 被调用,max=100 | 与 `SUB_MASK_CONFIG` feather 范围一致 |
 | TC-TB-09 | 强度滑杆 Liquify | 渲染 Liquify | 调整强度 | `onStrengthChange` 被调用,读取 `subMask.parameters.pressure` | 默认值回退到 40 |
 | TC-TB-10 | 强度滑杆 Retouch | 渲染 Retouch | 同上 | 读取 `parameters.intensity` | 同上 |
@@ -171,11 +172,15 @@
 | TC-AI-13 | `handleDeleteAiPatch` | 同上但作用于 aiPatches | 调用 | aiPatches 过滤,activeAiPatchContainerId/activeAiSubMaskId 复位 | 同上 |
 | TC-AI-14 | `handleToggleAiPatchVisibility` | 任一 patch | 调用 | visible 字段翻转 | 仅目标 patch 改变 |
 | TC-AI-15 | 预计算副作用 | activeSubMask.type === 'ai-subject' 且 selectedImagePath 已设置 | useEffect 触发 | 调用 `precompute_ai_subject_mask` 命令 | 失败仅 console.error 不抛 |
+| TC-AI-16 | AI 蒙版并发守卫 | isGeneratingAiMask=true | 四个 AI 蒙版 handler 全部调用 | 全部被阻断,不发起 invoke;标志位不被篡改 | 双击/跨蒙版类型连点只允许一个任务在途 |
+| TC-AI-16b | 快速擦除连点守卫 | 初始标志位均为 false | `Promise.all` 并发调用两次 handleQuickErase | 阶段 1 `GenerateAiSubjectMask` 仅调用一次 | 完成后 isGeneratingAi 复位 false |
+| TC-AI-17 | 交叉并发守卫 | isGeneratingAi=true(或 isGeneratingAiMask=true) | 互调另一类 handler | AI 蒙版/快速擦除/生成替换互相阻断 | 避免两个 AI 模型同时驻留内存;串行调用不受影响(TC-AI-17c) |
 
 **验收标准(模块级)**:
 - 全部 11 个导出函数在 selectedImage.path 为空时立即 return 不抛错。
 - 切图保护(startPath 比对)覆盖全部带 invoke 的函数。
 - AI 命令名与后端 `#[tauri::command]` 函数名(或 Invokes 常量)严格一致。
+- v1.6.19:全部 AI 生成入口具备并发守卫;守卫早退发生在任何 setState 之前,不污染在途状态。
 
 ---
 
@@ -333,6 +338,7 @@
 | TC-CROSS-06 | 性能基准 | 1000x1000 图 + 全红 + select_red | 调用 `generate_mask` | < 100ms(CPU 单线程基线) | rayon 并行生效 |
 | TC-CROSS-07 | 缓存命中性能 | 同一 mask_def 二次调用 | 调用 `get_cached_or_generate_mask` | < 1ms | hash 命中 |
 | TC-CROSS-08 | AI 命令名一致 | 无 | 对照 `Invokes` 常量与后端 `#[tauri::command]` 名 | 全部匹配 | 防止 invoke 找不到命令 |
+| TC-NAV-01 | 切图复位 AI 标志位 | selectedImage 已加载且 isGeneratingAi/isGeneratingAiMask=true(模拟在途任务卡死) | 调用 `useAppNavigation.handleImageSelect`(覆盖缓存命中与常规加载两条路径,复位点为二者必经的统一 setEditor) | 两个标志位复位 false;activeAiPatchContainerId/activeAiSubMaskId 复位 null;新图上可立即发起 AI 生成 | v1.6.19 修复:在途任务结果因 path 变化被丢弃后,loading 标志位不再跨图残留卡死蒙版/修复面板 |
 
 ---
 

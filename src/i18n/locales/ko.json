@@ -37,59 +37,73 @@
         "recipes": {
           "hamada_daylight_v2": {
             "subtitle": "일본의 푸른 하늘 · 하이키 주광",
-            "summary": "하이키의 투명한 일광, 푸른 하늘을 일본풍 시안으로, 부드러운 매트한 그림자와 크리미한 복숭아빛 피부톤"
+            "summary": "하이키의 투명한 일광, 푸른 하늘을 일본풍 시안으로, 부드러운 매트한 그림자와 크리미한 복숭아빛 피부톤",
+            "name": "Hamada Hideaki"
           },
           "takashi_yasui_zen": {
             "subtitle": "미니멀 절제 · 일본 거리 스냅",
-            "summary": "강한 명암 대비, 깊고 차가운 시안 그림자, 절제된 블랙과 포인트가 되는 따뜻한 빛"
+            "summary": "강한 명암 대비, 깊고 차가운 시안 그림자, 절제된 블랙과 포인트가 되는 따뜻한 빛",
+            "name": "Takashi Yasui"
           },
           "takahiro_sakai_blue": {
             "subtitle": "공기감 청량 · 옅은 블루",
-            "summary": "투명감 있는 일본식 피부 윤기, 공기감 있는 투명한 시안 블루, 넓게 밝아진 그림자와 부드러운 하이라이트"
+            "summary": "투명감 있는 일본식 피부 윤기, 공기감 있는 투명한 시안 블루, 넓게 밝아진 그림자와 부드러운 하이라이트",
+            "name": "Takahiro Sakai"
           },
           "withluke_epic": {
             "subtitle": "웅장한 자연 · 안개 낀 차가운 틸",
-            "summary": "광활한 산과 안개 낀 숲, 디지털한 거친 녹색 제거, 툰드라의 차가운 녹색과 부드러운 웜골드가 어우러짐"
+            "summary": "광활한 산과 안개 낀 숲, 디지털한 거친 녹색 제거, 툰드라의 차가운 녹색과 부드러운 웜골드가 어우러짐",
+            "name": "Withluke"
           },
           "daniel_casson_autumn": {
             "subtitle": "시골 가을 · 클래식 유화",
-            "summary": "영국 시골 가을 유화 감성, 풍부한 어스 톤, 황금빛 건초와 깊은 숲의 녹색"
+            "summary": "영국 시골 가을 유화 감성, 풍부한 어스 톤, 황금빛 건초와 깊은 숲의 녹색",
+            "name": "Daniel Casson"
           },
           "billy_dinh_cinema": {
             "subtitle": "뉴욕 시네마 · 드라마틱한 빛",
-            "summary": "시네마스코프 질감, 강한 대비의 빛의 커팅, 깊은 그림자와 스포트라이트 골드"
+            "summary": "시네마스코프 질감, 강한 대비의 빛의 커팅, 깊은 그림자와 스포트라이트 골드",
+            "name": "Billy Dinh"
           },
           "rkrkrk_cyberpunk": {
             "subtitle": "사이버펑크 · 극한 대비",
-            "summary": "촘촘한 도시 질감, 하드한 S커브, 짙은 오렌지틸과 바이올렛 골드의 충돌"
+            "summary": "촘촘한 도시 질감, 하드한 S커브, 짙은 오렌지틸과 바이올렛 골드의 충돌",
+            "name": "Rkrkrk"
           },
           "samalive_vintage": {
             "subtitle": "오일빈 빈티지 · 도시 필름",
-            "summary": "따뜻하고 오일한 빈티지 도시 필름, 안정적이고 깨끗한 그림자, 따뜻한 골드 하이라이트와 방황하는 스토리감"
+            "summary": "따뜻하고 오일한 빈티지 도시 필름, 안정적이고 깨끗한 그림자, 따뜻한 골드 하이라이트와 방황하는 스토리감",
+            "name": "Samalive"
           },
           "iwona_fairy_tale": {
             "subtitle": "동화 유화 · 몽환적 빛",
-            "summary": "동화책 같은 유화 감성, 깊고 고요한 그림자, 따뜻한 골드 소프트라이트와 확산되는 빛"
+            "summary": "동화책 같은 유화 감성, 깊고 고요한 그림자, 따뜻한 골드 소프트라이트와 확산되는 빛",
+            "name": "Iwona"
           },
           "cinestill_800t": {
             "subtitle": "텅스텐 시네마 · 레드와 틸",
-            "summary": "시네마틱한 야간 필름 톤, 붉은 조명과 깊은 차가운 시안 그린 그림자"
+            "summary": "시네마틱한 야간 필름 톤, 붉은 조명과 깊은 차가운 시안 그린 그림자",
+            "name": "CineStill 800T"
           },
           "wilson_lee_golden": {
             "subtitle": "따뜻한 일본풍 · 골드 헤이즈",
-            "summary": "캘리포니아 햇살과 일본 필름의 만남, 도시 전체에 퍼지는 확산 골드, 투명한 온기의 빛"
+            "summary": "캘리포니아 햇살과 일본 필름의 만남, 도시 전체에 퍼지는 확산 골드, 투명한 온기의 빛",
+            "name": "Wilson Lee"
           },
           "luizclas_portrait": {
             "subtitle": "골든 라이트 · 감성 인물",
-            "summary": "골든아워의 감성 작품, 강한 대비 속 촉촉한 피부, 깊은 그림자와 황금빛 머리카락 윤곽광"
+            "summary": "골든아워의 감성 작품, 강한 대비 속 촉촉한 피부, 깊은 그림자와 황금빛 머리카락 윤곽광",
+            "name": "Luiz Clas"
           },
           "ivan_ivanchenko_twilight": {
             "subtitle": "황혼 · 인접색 전이",
-            "summary": "황혼의 부드러운 미광, 따뜻한 골드 하이라이트와 부드러운 시안 블루 그림자, 저대비 회화적 인물"
+            "summary": "황혼의 부드러운 미광, 따뜻한 골드 하이라이트와 부드러운 시안 블루 그림자, 저대비 회화적 인물",
+            "name": "Ivan Ivanchenko"
           },
           "jungraphy_neon": {
             "subtitle": "네온 도시 · 시안과 핑크",
-            "summary": "서울 네온 야경, 차가운 시안 베이스와 핑크 퍼플 하이라이트의 충돌, 비에 젖은 노면 반사"
+            "summary": "서울 네온 야경, 차가운 시안 베이스와 핑크 퍼플 하이라이트의 충돌, 비에 젖은 노면 반사",
+            "name": "Jungraphy"
           }
         }
       },
@@ -504,7 +518,9 @@
         "feather": "페더",
         "grow": "확장",
         "intensity": "강도",
-        "pressure": "압력"
+        "pressure": "압력",
+        "decontaminate": "Edge Cleanup",
+        "sensitivity": "Sensitivity"
       },
       "patches": {
         "aiEdit": "AI 편집 {{count}}",
@@ -521,7 +537,12 @@
         "quickErase": "빠른 지우기 {{count}}",
         "quickErase_one": "빠른 지우기 {{count}}",
         "quickErase_other": "빠른 지우기 {{count}}",
-        "retouch": "리터칭 {{count}}"
+        "retouch": "리터칭 {{count}}",
+        "clone_one": "Clone {{count}}",
+        "heal_one": "Heal {{count}}",
+        "autoErase": "Auto Erase {{count}}",
+        "autoErase_one": "Auto Erase {{count}}",
+        "autoErase_other": "Auto Erase {{count}}"
       },
       "resetInpaintingTooltip": "인페인팅 초기화",
       "settings": {
@@ -541,7 +562,8 @@
         "placeholder": "예: 꽃밭",
         "quickEraseDesc": "선택 영역을 채워 객체를 제거합니다.",
         "selectionPropertiesTitle": "선택 영역 속성",
-        "useBasicInpaint": "기본 인페인팅 사용"
+        "useBasicInpaint": "기본 인페인팅 사용",
+        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
       "touchUpTitle": "터치업"
     },
@@ -652,8 +674,10 @@
         "switchOrientation": "방향 전환",
         "switchToLandscape": "가로로 전환",
         "switchToPortrait": "세로로 전환",
-        "transform": "원근 및 키스톤 보정"
-      }
+        "transform": "원근 및 키스톤 보정",
+        "aiStraighten": "AI Auto-Straighten"
+      },
+      "autoCropAfterRotate": "Auto-crop black borders after rotation"
     },
     "externalEdit": {
       "done": "완료",
@@ -717,7 +741,8 @@
         "feather": "페더",
         "globalFeather": "전체 페더",
         "grow": "확장",
-        "tolerance": "허용 오차"
+        "tolerance": "허용 오차",
+        "decontaminate": "Decontaminate Colors"
       },
       "toolbar": {
         "title": "마스크 편집",
@@ -801,7 +826,9 @@
         "clickToOpenTooltip": "클릭하여 새 탭에서 지도 열기",
         "latitude": "위도",
         "longitude": "경도",
-        "title": "GPS 위치"
+        "title": "GPS 위치",
+        "offlineMapLabel": "Offline world map with photo location marker",
+        "openOnlineMap": "Open online map"
       },
       "iptc": {
         "batchHint": "여러 이미지를 선택하면 저장 시 모든 선택 이미지에 적용됩니다.",
@@ -995,7 +1022,8 @@
       "fileSettings": "파일 설정",
       "imageSizing": "이미지 크기",
       "metadata": "메타데이터",
-      "watermark": "워터마크"
+      "watermark": "워터마크",
+      "color": "Color Output"
     },
     "status": {
       "cancelExport": "내보내기 취소",
@@ -1014,7 +1042,8 @@
       "failed": "내보내기 실패",
       "noImageSelected": "내보낼 이미지가 선택되지 않았습니다.",
       "noImagesSelected": "선택된 이미지가 없습니다.",
-      "success": "내보내기 성공!"
+      "success": "내보내기 성공!",
+      "completed": "Export completed: {{name}}"
     },
     "title": "내보내기",
     "watermark": {
@@ -1036,6 +1065,17 @@
       "scale": "크기",
       "spacing": "간격",
       "watermarkImage": "워터마크 이미지"
+    },
+    "color": {
+      "bitDepth": "Bit Depth",
+      "bitDepth8Desc": "Smaller files, standard display",
+      "bitDepth16Desc": "Larger files, posterization-free editing",
+      "colorSpace": "Color Space",
+      "colorSpaceDesc_srgb": "Standard for the web and most screens",
+      "colorSpaceDesc_displayP3": "Wide-gamut — ideal for Apple / HDR displays",
+      "colorSpaceDesc_adobeRgb": "Widely used in print and photography",
+      "colorSpaceDesc_proPhoto": "Largest gamut — for professional archival",
+      "jpgIccWarning": "JPEG embeds ICC profile for non-sRGB spaces. Some viewers may still show sRGB."
     }
   },
   "library": {
@@ -1257,6 +1297,11 @@
       "communityPresets": "커뮤니티 프리셋",
       "goHome": "홈으로 이동",
       "importImages": "이미지 가져오기"
+    },
+    "viewMode": {
+      "grid": "Grid View",
+      "list": "List View",
+      "culling": "Culling View"
     }
   },
   "masks": {
@@ -1909,7 +1954,10 @@
         "title": "이미지 전처리",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "기본"
+          "basic": "기본",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "전역 톤매퍼 재정의",
         "tonemapperOverrideDesc": "모든 이미지에 특정 톤매퍼를 전역으로 강제 적용하고, 조정 패널에서 톤매퍼 전환을 숨깁니다."
@@ -2124,7 +2172,15 @@
       "removeLut": "LUT 제거",
       "select": "선택",
       "selectLutFile": "LUT 파일 선택",
-      "unsupportedFormat": "지원되지 않는 파일 형식이 감지되었습니다: .{{ext}}"
+      "unsupportedFormat": "지원되지 않는 파일 형식이 감지되었습니다: .{{ext}}",
+      "builtInNames": {
+        "fPro400H": "F-Pro 400H",
+        "kEktar100": "K-Ektar 100",
+        "kGold200": "K-Gold 200",
+        "kPortra400": "K-Portra 400",
+        "kVision250DCinematic": "K-Vision 250D Cinematic",
+        "kVision500TCinematic": "K-Vision 500T Cinematic"
+      }
     },
     "slider": {
       "clickToEdit": "클릭하여 편집",

@@ -45,6 +45,16 @@ vi.mock('react-toastify', () => ({
   ToastContainer: () => null,
 }));
 
+// jsdom 未实现 ResizeObserver(CollapsibleSection/dnd-kit 等折叠测量需要)
+if (!('ResizeObserver' in globalThis)) {
+  class ResizeObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  (globalThis as any).ResizeObserver = ResizeObserverStub;
+}
+
 beforeEach(() => {
   mockInvoke.mockReset();
   // mockReset 会清空 mockResolvedValue(undefined),这里重新设置默认返回值
