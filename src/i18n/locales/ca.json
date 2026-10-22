@@ -21,8 +21,7 @@
       },
       "reset": "Restablir",
       "scene": {
-        "title": "Millora d'escena",
-        "desc": "Gradació de color professional amb un toc",
+        "title": "Estil d'escena",
         "auto": "Auto",
         "autoDesc": "Millora intel·ligent d'escena",
         "prototypePortrait": "Retrat",
@@ -30,8 +29,6 @@
         "prototypeNight": "Nit",
         "prototypeWarmSunset": "Posta de sol càlida",
         "masterRecipes": "Receptes de mestres",
-        "films": "Pel·lícules",
-        "filmsNeutral": "Neutral",
         "recipeLutMissing": "El fitxer d'estil de la recepta mestra no està disponible",
         "recipeActiveHint": "Actiu — torna a fer clic per sortir de la recepta",
         "recipes": {
@@ -317,7 +314,10 @@
       "resetConfirmTitle_other": "Restableix els ajustos ({{count}} imatges)",
       "stitchPanorama": "Unir panorama",
       "tagging": "Etiquetatge",
-      "undo": "Desfer"
+      "undo": "Desfer",
+      "ratingLabel_many": "{{count}} Estrelles",
+      "resetConfirmMessage_many": "Això eliminarà tots els ajustos locals de {{count}} imatges seleccionades i restaurarà els valors predeterminats.\n\nDesprés del restabliment, cada imatge encara es pot desfer amb Ctrl+Z si no s'ha canviat d'imatge.",
+      "resetConfirmTitle_many": "Restableix els ajustos ({{count}} imatges)"
     },
     "folders": {
       "changeIcon": "Canviar icona",
@@ -335,12 +335,15 @@
       "removeRoot": "Treure carpeta arrel",
       "renameFolder": "Reanomenar carpeta",
       "showExplorer": "Mostrar a l'Explorador de fitxers",
-      "unpin": "Desfixar carpeta"
+      "unpin": "Desfixar carpeta",
+      "copyHere_many": "Copiar {{count}} imatges aquí",
+      "moveHere_many": "Moure {{count}} imatges aquí"
     },
     "library": {
       "addCopiedToAlbum_one": "Afegir imatge copiada a l'àlbum",
       "addCopiedToAlbum_other": "Afegir {{count}} imatges copiades a l'àlbum",
-      "refreshView": "Actualitzar vista"
+      "refreshView": "Actualitzar vista",
+      "addCopiedToAlbum_many": "Afegir {{count}} imatges copiades a l'àlbum"
     },
     "merge": {
       "focusStack": "Apilament d'enfocament",
@@ -387,7 +390,19 @@
       "resetAdjustments_one": "Restablir ajustaments",
       "resetAdjustments_other": "Restablir ajustaments a {{count}} imatges",
       "showExplorer": "Mostrar a l'Explorador de fitxers",
-      "virtualCopy": "Còpia virtual"
+      "virtualCopy": "Còpia virtual",
+      "autoAdjust_many": "Ajustament automàtic de les imatges",
+      "collage_many": "Crear collage",
+      "convertNegative_many": "Convertir negatius",
+      "copyImage_many": "Copiar {{count}} imatges",
+      "cullImage_many": "Cribrar imatges",
+      "deleteImage_many": "Eliminar {{count}} imatges",
+      "denoise_many": "Reduir soroll de les imatges",
+      "exportImage_many": "Exportar {{count}} imatges",
+      "pasteAdjustments_many": "Enganxar ajustaments a {{count}} imatges",
+      "removeFromAlbum_many": "Treure {{count}} imatges de l'àlbum",
+      "renameImage_many": "Reanomenar {{count}} imatges",
+      "resetAdjustments_many": "Restablir ajustaments a {{count}} imatges"
     },
     "toasts": {
       "couldNotShowExplorer": "No s'ha pogut mostrar el fitxer a l'explorador: {{err}}",
@@ -428,7 +443,6 @@
       },
       "title": "Ajustaments",
       "tooltips": {
-        "autoAdjust": "Ajustament automàtic de la imatge",
         "resetAdjustments": "Restablir ajustaments",
         "toggleAnalytics": "Alternar visualització d'anàlisi"
       }
@@ -504,7 +518,9 @@
         "feather": "Esvaïment",
         "grow": "Expandir",
         "intensity": "Intensitat",
-        "pressure": "Pressió"
+        "pressure": "Pressió",
+        "decontaminate": "Neteja de vores",
+        "sensitivity": "Sensibilitat"
       },
       "patches": {
         "aiEdit": "Edició IA {{count}}",
@@ -523,7 +539,16 @@
         "quickErase": "Esborrat ràpid {{count}}",
         "quickErase_one": "Esborrat ràpid {{count}}",
         "quickErase_other": "Esborrat ràpid {{count}}",
-        "retouch": "Retoc {{count}}"
+        "retouch": "Retoc {{count}}",
+        "autoErase": "Esborrat automàtic {{count}}",
+        "autoErase_one": "Esborrat automàtic {{count}}",
+        "autoErase_other": "Esborrat automàtic {{count}}",
+        "aiEdit_many": "Edició IA {{count}}",
+        "clone_many": "Clonar {{count}}",
+        "heal_many": "Corregir {{count}}",
+        "liquify_many": "Liquar {{count}}",
+        "quickErase_many": "Esborrat ràpid {{count}}",
+        "autoErase_many": "Esborrat automàtic {{count}}"
       },
       "resetInpaintingTooltip": "Restablir Inpainting",
       "settings": {
@@ -543,9 +568,18 @@
         "placeholder": "p. ex., un camp de flors",
         "quickEraseDesc": "Omplir la selecció per eliminar l'objecte.",
         "selectionPropertiesTitle": "Propietats de selecció",
-        "useBasicInpaint": "Utilitzar inpainting bàsic"
+        "useBasicInpaint": "Utilitzar inpainting bàsic",
+        "inpaintName": "Inpainting",
+        "onDeviceNotice": "Reparació amb IA al dispositiu. Funciona sense connexió: la foto mai no surt d'aquest dispositiu."
       },
-      "touchUpTitle": "Retocs"
+      "touchUpTitle": "Retocs",
+      "toasts": {
+        "patchFailed": "Error en generar el pegat: {{err}}",
+        "replaceFailed": "Error en la substitució amb IA: {{err}}",
+        "quickEraseFailed": "Error en l'esborrat ràpid: {{err}}",
+        "maskFailed": "Error en generar la màscara d'IA: {{err}}",
+        "depthMaskFailed": "Error en generar la màscara de profunditat d'IA: {{err}}"
+      }
     },
     "crop": {
       "aspectRatioHeading": "Relació d'aspecte",
@@ -655,7 +689,8 @@
         "switchToLandscape": "Canviar a apaïsat",
         "switchToPortrait": "Canviar a vertical",
         "transform": "Correcció de perspectiva i trapezi"
-      }
+      },
+      "autoCropAfterRotate": "Escapça automàticament les vores negres després de girar"
     },
     "externalEdit": {
       "done": "Fet",
@@ -719,7 +754,8 @@
         "feather": "Esvaïment",
         "globalFeather": "Esvaïment global",
         "grow": "Expandir",
-        "tolerance": "Tolerància"
+        "tolerance": "Tolerància",
+        "decontaminate": "Descontamina els colors"
       },
       "toolbar": {
         "title": "Edició de màscara",
@@ -737,7 +773,8 @@
         "invertedName": "{{name}} Invertida",
         "maskName": "Màscara {{count}}",
         "maskName_one": "Màscara {{count}}",
-        "maskName_other": "Màscara {{count}}"
+        "maskName_other": "Màscara {{count}}",
+        "maskName_many": "Màscara {{count}}"
       },
       "rangeTitle": "Rangs i global",
       "resetMaskingTooltip": "Restablir emmascarament",
@@ -763,7 +800,8 @@
         "addToCurrent": "Afegir {{name}} a la màscara actual o crear-ne una de nova (Clic dret)",
         "createNew": "Crear nova màscara de {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Clic per seleccionar un nou punt d'origen"
-      }
+      },
+      "resetMaskingConfirm": "Feu clic de nou per confirmar"
     },
     "metadata": {
       "author": {
@@ -803,7 +841,9 @@
         "clickToOpenTooltip": "Feu clic per obrir el mapa en una pestanya nova",
         "latitude": "Latitud",
         "longitude": "Longitud",
-        "title": "Ubicació GPS"
+        "title": "Ubicació GPS",
+        "offlineMapLabel": "Mapa mundial fora de línia amb marcador de la ubicació de la foto",
+        "openOnlineMap": "Obre el mapa en línia"
       },
       "iptc": {
         "batchHint": "Amb diverses imatges seleccionades, desar s'aplica a totes.",
@@ -964,7 +1004,8 @@
       "saveEditedImageTitle": "Desar imatge editada",
       "selectFolderTitle": "Seleccioneu la carpeta per exportar {{count}} imatge/s",
       "selectFolderTitle_one": "Seleccioneu la carpeta per exportar {{count}} imatge",
-      "selectFolderTitle_other": "Seleccioneu la carpeta per exportar {{count}} imatges"
+      "selectFolderTitle_other": "Seleccioneu la carpeta per exportar {{count}} imatges",
+      "selectFolderTitle_many": "Seleccioneu la carpeta per exportar {{count}} imatge/s"
     },
     "file": {
       "quality": "Qualitat",
@@ -997,7 +1038,8 @@
       "fileSettings": "Configuració del fitxer",
       "imageSizing": "Mida de la imatge",
       "metadata": "Metadades",
-      "watermark": "Marca d'aigua"
+      "watermark": "Marca d'aigua",
+      "color": "Sortida de color"
     },
     "status": {
       "cancelExport": "Cancel·lar exportació",
@@ -1016,7 +1058,8 @@
       "failed": "L'exportació ha fallat",
       "noImageSelected": "No s'ha seleccionat cap imatge per exportar.",
       "noImagesSelected": "No s'han seleccionat imatges.",
-      "success": "Exportació correcta!"
+      "success": "Exportació correcta!",
+      "exportMultiple_many": "Exportar {{count}} {{label}}"
     },
     "title": "Exportar",
     "watermark": {
@@ -1038,6 +1081,17 @@
       "scale": "Escala",
       "spacing": "Espaiat",
       "watermarkImage": "Imatge de la marca d'aigua"
+    },
+    "color": {
+      "bitDepth": "Profunditat de bits",
+      "bitDepth8Desc": "Fitxers més petits, visualització estàndard",
+      "bitDepth16Desc": "Fitxers més grans, edició sense posterització",
+      "colorSpace": "Espai de color",
+      "colorSpaceDesc_srgb": "Estàndard per a la web i la majoria de pantalles",
+      "colorSpaceDesc_displayP3": "Gama àmplia — ideal per a pantalles Apple / HDR",
+      "colorSpaceDesc_adobeRgb": "Àmpliament utilitzat en impressió i fotografia",
+      "colorSpaceDesc_proPhoto": "La gamma més àmplia — per a arxivat professional",
+      "jpgIccWarning": "JPEG incrusta el perfil ICC per a espais no sRGB. Alguns visors encara poden mostrar sRGB."
     }
   },
   "library": {
@@ -1203,7 +1257,8 @@
       "tooltipFocalLength": "Distància focal",
       "tooltipIso": "ISO",
       "tooltipShutterSpeed": "Velocitat d'obturació",
-      "tooltipVirtualCopy": "Còpia virtual"
+      "tooltipVirtualCopy": "Còpia virtual",
+      "imagesCount_many": "{{count}} imatges"
     },
     "search": {
       "noResults": "No s'han trobat resultats",
@@ -1410,7 +1465,9 @@
       "similarityThresholdDesc": "Més baix és més estricte (duplicats exactes). Més alt és més flexible (gairebé duplicats). Es recomana un valor de 24 a 32.",
       "startCulling": "Iniciar cribratge",
       "starting": "S'està iniciant...",
-      "title": "Cribrar imatges"
+      "title": "Cribrar imatges",
+      "applyButton_many": "Aplicar a {{count}} imatges",
+      "duplicatesHeader_many": "Duplicats ({{count}})"
     },
     "denoise": {
       "batchProgressText": "S'està reduint el soroll de {{current}} de {{total}}...",
@@ -1456,7 +1513,8 @@
       "savedSuccess": "L'apilament d'enfocament s'ha desat correctament!",
       "stacking": "Apilant enfocament",
       "start": "Inicia",
-      "title": "Apilament d'enfocament"
+      "title": "Apilament d'enfocament",
+      "descriptionWithCount_many": "Combina {{count}} imatges amb diferents distàncies d'enfocament en una sola imatge perfectament nítida."
     },
     "hdr": {
       "cancel": "Cancel·lar",
@@ -1474,7 +1532,8 @@
       "savedSuccess": "HDR desat correctament!",
       "speedNotice": "Això pot trigar uns minuts depenent del nombre i la mida de les vostres exposicions.",
       "start": "Iniciar",
-      "title": "Fusionar a HDR"
+      "title": "Fusionar a HDR",
+      "descriptionWithCount_many": "Combineu {{count}} exposicions bràqueting en una única imatge d'Alt Rang Dinàmic."
     },
     "importSettings": {
       "cancel": "Cancel·lar",
@@ -1544,7 +1603,8 @@
       "resetViewTooltip": "Restablir visualització",
       "title": "Conversió de negatiu",
       "zoomInTooltip": "Apropar",
-      "zoomOutTooltip": "Allunyar"
+      "zoomOutTooltip": "Allunyar",
+      "convertAndSaveAll_many": "Convertir i desar-ho tot ({{count}})"
     },
     "panorama": {
       "cancel": "Cancel·lar",
@@ -1562,7 +1622,8 @@
       "speedNotice": "Això pot trigar uns minuts depenent del nombre i la mida de les imatges.",
       "start": "Iniciar",
       "stitchingProgress": "S'està unint el panorama",
-      "title": "Unir panorama"
+      "title": "Unir panorama",
+      "descCount_many": "Combineu {{count}} imatges superposades en un panorama perfecte."
     },
     "renameAlbum": {
       "placeholder": "Introduïu el nou nom de l'àlbum..."
@@ -1575,7 +1636,8 @@
       "titleMultiple": "Reanomenar {{count}} imatges",
       "titleMultiple_one": "Reanomenar {{count}} imatge",
       "titleMultiple_other": "Reanomenar {{count}} imatges",
-      "titleSingle": "Reanomenar imatge"
+      "titleSingle": "Reanomenar imatge",
+      "titleMultiple_many": "Reanomenar {{count}} imatges"
     },
     "renameFolder": {
       "cancel": "Cancel·lar",
@@ -1693,7 +1755,10 @@
         "resettingLayout": "Restablint l'espai de treball...",
         "sidecarSuccess": "{{count}} fitxers sidecar eliminats correctament.",
         "sidecarSuccess_one": "{{count}} fitxer sidecar eliminat correctament.",
-        "sidecarSuccess_other": "{{count}} fitxers sidecar eliminats correctament."
+        "sidecarSuccess_other": "{{count}} fitxers sidecar eliminats correctament.",
+        "aiSuccess_many": "{{count}} fitxers actualitzats. S'han eliminat les etiquetes d'IA.",
+        "allSuccess_many": "{{count}} fitxers actualitzats. S'han eliminat totes les etiquetes no relacionades amb el color.",
+        "sidecarSuccess_many": "{{count}} fitxers sidecar eliminats correctament."
       },
       "title": "Gestió de dades"
     },
@@ -1911,7 +1976,10 @@
         "title": "Preprocessament d'imatges",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "Bàsic"
+          "basic": "Bàsic",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "Sobreescriptura global del mapejador de tons",
         "tonemapperOverrideDesc": "Força un mapejador de tons específic globalment per a totes les imatges, amagant l'interruptor del mapejador del tauler d'ajustaments."
@@ -2074,7 +2142,8 @@
         "rateStars_one": "Puntuar amb 1 estrella",
         "rateStars_other": "Puntuar amb {{count}} estrelles",
         "resetZoom": "Restablir zoom per ajustar a la finestra",
-        "selectToRate": "Seleccioneu una imatge per puntuar"
+        "selectToRate": "Seleccioneu una imatge per puntuar",
+        "rateStars_many": "Puntuar amb {{count}} estrelles"
       },
       "zoomLabel": "Zoom",
       "zoomLabelReset": "Restablir zoom"
@@ -2142,6 +2211,13 @@
         "showClipping": "Mostrar advertiments de retall",
         "vectorscope": "Vectorscopi"
       }
+    },
+    "toasts": {
+      "saveFailed": "Error en desar els canvis: {{err}}",
+      "lutLoadFailed": "Error en carregar el LUT: {{err}}",
+      "depthMapFailed": "Error en generar el mapa de profunditat: {{err}}",
+      "lutRemoveFailed": "Error en eliminar el LUT: {{err}}",
+      "comparePreviewFailed": "Error en generar la previsualització comparativa: {{err}}"
     }
   }
 }

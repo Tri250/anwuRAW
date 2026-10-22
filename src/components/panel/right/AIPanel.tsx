@@ -755,13 +755,13 @@ export default function AIPanel() {
   const updatePatch = (id: string, data: any) =>
     setAdjustments((prev: Adjustments) => ({
       ...prev,
-      aiPatches: prev.aiPatches.map((p) => (p.id === id ? { ...p, ...data } : p)),
+      aiPatches: (prev.aiPatches || []).map((p) => (p.id === id ? { ...p, ...data } : p)),
     }));
 
   const updateSubMask = (id: string, data: any) =>
     setAdjustments((prev: Adjustments) => ({
       ...prev,
-      aiPatches: prev.aiPatches.map((p) => ({
+      aiPatches: (prev.aiPatches || []).map((p) => ({
         ...p,
         subMasks: p.subMasks.map((sm) => (sm.id === id ? { ...sm, ...data } : sm)),
       })),
@@ -776,7 +776,7 @@ export default function AIPanel() {
     if (activeSubMaskId === subMaskId) onSelectSubMask(null);
     setAdjustments((prev: Adjustments) => ({
       ...prev,
-      aiPatches: prev.aiPatches.map((p) =>
+      aiPatches: (prev.aiPatches || []).map((p) =>
         p.id === containerId ? { ...p, subMasks: p.subMasks.filter((sm) => sm.id !== subMaskId) } : p,
       ),
     }));
@@ -788,7 +788,8 @@ export default function AIPanel() {
     clonedContainer.id = uuidv4();
     clonedContainer.invert = options.invert ? !clonedContainer.invert : clonedContainer.invert;
     clonedContainer.isLoading = false;
-    clonedContainer.name = options.rename === false ? clonedContainer.name : `${container.name} Copy`;
+    clonedContainer.name =
+      options.rename === false ? clonedContainer.name : t('editor.masks.patches.copyName', { name: container.name });
     clonedContainer.patchData = null;
     clonedContainer.subMasks = clonedContainer.subMasks.map((subMask: SubMask) => ({
       ...subMask,
@@ -803,7 +804,10 @@ export default function AIPanel() {
 
     clonedSubMask.id = uuidv4();
     clonedSubMask.invert = options.invert ? !clonedSubMask.invert : clonedSubMask.invert;
-    clonedSubMask.name = options.rename === false ? clonedSubMask.name : `${getSubMaskName(subMask)} Copy`;
+    clonedSubMask.name =
+      options.rename === false
+        ? clonedSubMask.name
+        : t('editor.masks.patches.copyName', { name: getSubMaskName(subMask) });
 
     return clonedSubMask;
   };
@@ -1084,7 +1088,7 @@ export default function AIPanel() {
 
       if (targetContainerId) {
         setAdjustments((prev: Adjustments) => {
-          const newPatches = prev.aiPatches.map((p) => ({ ...p, subMasks: [...p.subMasks] }));
+          const newPatches = (prev.aiPatches || []).map((p) => ({ ...p, subMasks: [...p.subMasks] }));
           const sourceContainer = newPatches.find((p) => p.id === sourceContainerId);
           const targetContainer = newPatches.find((p) => p.id === targetContainerId);
           if (!sourceContainer || !targetContainer) return prev;

@@ -21,8 +21,7 @@
       },
       "reset": "Сбросить",
       "scene": {
-        "title": "Улучшение сцены",
-        "desc": "Профессиональная цветокоррекция в одно касание",
+        "title": "Стиль сцены",
         "auto": "Авто",
         "autoDesc": "Умное улучшение сцены",
         "prototypePortrait": "Портрет",
@@ -30,8 +29,6 @@
         "prototypeNight": "Ночь",
         "prototypeWarmSunset": "Тёплый закат",
         "masterRecipes": "Рецепты мастеров",
-        "films": "Плёнка",
-        "filmsNeutral": "Нейтрально",
         "recipeLutMissing": "Файл стиля мастер-рецепта недоступен",
         "recipeActiveHint": "Активен — нажмите ещё раз, чтобы выйти из рецепта",
         "recipes": {
@@ -319,7 +316,11 @@
       "resetConfirmTitle_other": "Сбросить корректировки ({{count}} изобр.)",
       "stitchPanorama": "Сшить панораму",
       "tagging": "Теги",
-      "undo": "Отменить"
+      "undo": "Отменить",
+      "resetConfirmMessage_few": "Все локальные корректировки {{count}} выбранных изображений будут удалены, значения по умолчанию восстановлены.\n\nПосле сброса отдельные изображения можно отменить с помощью Ctrl+Z, если не переходить к другому изображению.",
+      "resetConfirmMessage_many": "Все локальные корректировки {{count}} выбранных изображений будут удалены, значения по умолчанию восстановлены.\n\nПосле сброса отдельные изображения можно отменить с помощью Ctrl+Z, если не переходить к другому изображению.",
+      "resetConfirmTitle_few": "Сбросить корректировки ({{count}} изобр.)",
+      "resetConfirmTitle_many": "Сбросить корректировки ({{count}} изобр.)"
     },
     "folders": {
       "changeIcon": "Изменить значок",
@@ -460,7 +461,6 @@
       },
       "title": "Настройки",
       "tooltips": {
-        "autoAdjust": "Автонастройка изображения",
         "resetAdjustments": "Сбросить настройки",
         "toggleAnalytics": "Показать/скрыть панель гистограммы"
       }
@@ -536,7 +536,9 @@
         "feather": "Растушевка",
         "grow": "Расширение",
         "intensity": "Интенсивность",
-        "pressure": "Нажим"
+        "pressure": "Нажим",
+        "decontaminate": "Очистка краёв",
+        "sensitivity": "Чувствительность"
       },
       "patches": {
         "aiEdit": "ИИ-правка {{count}}",
@@ -563,7 +565,14 @@
         "quickErase_many": "Быстрое стирание {{count}}",
         "quickErase_one": "Быстрое стирание {{count}}",
         "quickErase_other": "Быстрое стирание {{count}}",
-        "retouch": "Ретушь {{count}}"
+        "retouch": "Ретушь {{count}}",
+        "autoErase": "Автоматическое стирание {{count}}",
+        "autoErase_one": "Автоматическое стирание {{count}}",
+        "autoErase_few": "Автоматическое стирание {{count}}",
+        "autoErase_many": "Автоматическое стирание {{count}}",
+        "autoErase_other": "Автоматическое стирание {{count}}",
+        "liquify_few": "Пластика {{count}}",
+        "liquify_many": "Пластика {{count}}"
       },
       "resetInpaintingTooltip": "Сбросить восстановление",
       "settings": {
@@ -583,9 +592,18 @@
         "placeholder": "например, поле цветов",
         "quickEraseDesc": "Заполнить выделение, чтобы удалить объект.",
         "selectionPropertiesTitle": "Свойства выделения",
-        "useBasicInpaint": "Использовать простое восстановление"
+        "useBasicInpaint": "Использовать простое восстановление",
+        "inpaintName": "Восстановление",
+        "onDeviceNotice": "ИИ-восстановление на устройстве. Работает офлайн — фотография не покидает это устройство."
       },
-      "touchUpTitle": "Ретушь"
+      "touchUpTitle": "Ретушь",
+      "toasts": {
+        "patchFailed": "Не удалось создать заплатку: {{err}}",
+        "replaceFailed": "Ошибка ИИ-замены: {{err}}",
+        "quickEraseFailed": "Ошибка быстрого стирания: {{err}}",
+        "maskFailed": "Не удалось создать ИИ-маску: {{err}}",
+        "depthMaskFailed": "Не удалось создать ИИ-маску глубины: {{err}}"
+      }
     },
     "crop": {
       "aspectRatioHeading": "Соотношение сторон",
@@ -695,7 +713,8 @@
         "switchToLandscape": "Переключить на альбомную",
         "switchToPortrait": "Переключить на портретную",
         "transform": "Коррекция перспективы и искажений"
-      }
+      },
+      "autoCropAfterRotate": "Автоматически обрезать чёрные поля после поворота"
     },
     "externalEdit": {
       "done": "Готово",
@@ -759,7 +778,8 @@
         "feather": "Растушевка",
         "globalFeather": "Общая растушевка",
         "grow": "Расширение",
-        "tolerance": "Допуск"
+        "tolerance": "Допуск",
+        "decontaminate": "Деконтаминация цветов"
       },
       "toolbar": {
         "title": "Редактирование маски",
@@ -805,7 +825,8 @@
         "addToCurrent": "Добавить {{name}} к текущей маске или создать новую (правый клик)",
         "createNew": "Создать новую маску: {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Кликните, чтобы выбрать новую исходную точку"
-      }
+      },
+      "resetMaskingConfirm": "Нажмите ещё раз для подтверждения"
     },
     "metadata": {
       "author": {
@@ -845,7 +866,9 @@
         "clickToOpenTooltip": "Нажмите, чтобы открыть карту в новой вкладке",
         "latitude": "Широта",
         "longitude": "Долгота",
-        "title": "Координаты GPS"
+        "title": "Координаты GPS",
+        "offlineMapLabel": "Офлайн-карта мира с маркером места съёмки",
+        "openOnlineMap": "Открыть онлайн-карту"
       },
       "iptc": {
         "batchHint": "При выборе нескольких изображений сохранение применяется ко всем.",
@@ -1041,7 +1064,8 @@
       "fileSettings": "Параметры файла",
       "imageSizing": "Размер изображения",
       "metadata": "Метаданные",
-      "watermark": "Водяной знак"
+      "watermark": "Водяной знак",
+      "color": "Цветовой вывод"
     },
     "status": {
       "cancelExport": "Отменить экспорт",
@@ -1084,6 +1108,17 @@
       "scale": "Масштаб",
       "spacing": "Отступы",
       "watermarkImage": "Изображение водяного знака"
+    },
+    "color": {
+      "bitDepth": "Разрядность",
+      "bitDepth8Desc": "Меньшие файлы, стандартный показ",
+      "bitDepth16Desc": "Большие файлы, правка без бандинга",
+      "colorSpace": "Цветовое пространство",
+      "colorSpaceDesc_srgb": "Стандарт для веба и большинства экранов",
+      "colorSpaceDesc_displayP3": "Широкий охват — идеален для дисплеев Apple / HDR",
+      "colorSpaceDesc_adobeRgb": "Широко используется в печати и фотографии",
+      "colorSpaceDesc_proPhoto": "Максимальный охват — для профессионального архива",
+      "jpgIccWarning": "JPEG встраивает ICC-профиль для пространств, отличных от sRGB. Некоторые просмотрщики могут показывать sRGB."
     }
   },
   "library": {
@@ -1979,7 +2014,10 @@
         "title": "Предварительная обработка снимков",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "Стандартный"
+          "basic": "Стандартный",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "Глобальный принудительный тон-маппер",
         "tonemapperOverrideDesc": "Принудительно задействовать выбранный тип тонального отображения для всех снимков, скрыв переключатель тон-маппера на боковой панели настроек."
@@ -2212,6 +2250,13 @@
         "showClipping": "Показать предупреждения о переэкспозиции",
         "vectorscope": "Вектороскоп"
       }
+    },
+    "toasts": {
+      "saveFailed": "Не удалось сохранить изменения: {{err}}",
+      "lutLoadFailed": "Не удалось загрузить LUT: {{err}}",
+      "depthMapFailed": "Не удалось создать карту глубины: {{err}}",
+      "lutRemoveFailed": "Не удалось удалить LUT: {{err}}",
+      "comparePreviewFailed": "Не удалось создать сравнительный предпросмотр: {{err}}"
     }
   }
 }

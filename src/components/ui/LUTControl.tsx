@@ -82,7 +82,7 @@ export default function LUTControl({
             }
           } catch (err) {
             console.error('Failed to remove LUT:', err);
-            toast.error(String(err));
+            toast.error(t('ui.toasts.lutRemoveFailed', { err: String(err) }));
           }
         },
       },

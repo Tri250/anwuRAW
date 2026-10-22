@@ -385,6 +385,9 @@ export default function MasksPanel() {
   const prevImagePathRef = useRef<string | null | undefined>(undefined);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [analyzingSubMaskId, setAnalyzingSubMaskId] = useState<string | null>(null);
+  // 「重置全部蒙版」二次确认状态
+  const [isResetConfirming, setIsResetConfirming] = useState(false);
+  const resetConfirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { showContextMenu } = useContextMenu();
   const { presets } = usePresets(adjustments);
@@ -483,19 +486,41 @@ export default function MasksPanel() {
   };
 
   const handleResetAllMasks = () => {
+    // 危险操作二次确认：首次点击进入确认态，3 秒内再次点击才执行，超时自动撤销
+    if (!isResetConfirming) {
+      setIsResetConfirming(true);
+      if (resetConfirmTimer.current) clearTimeout(resetConfirmTimer.current);
+      resetConfirmTimer.current = setTimeout(() => setIsResetConfirming(false), 3000);
+      return;
+    }
+    if (resetConfirmTimer.current) clearTimeout(resetConfirmTimer.current);
+    setIsResetConfirming(false);
     handleDeselect();
     setAdjustments((prev: any) => ({ ...prev, masks: [] }));
   };
 
   const createMaskLogic = (type: Mask, mode: SubMaskMode = SubMaskMode.Additive) => {
     const defaultDimensions = { width: 1000, height: 1000 };
-    if (!selectedImage) return createSubMask(type, defaultDimensions, mode);
-    const subMask = createSubMask(type, selectedImage, mode);
+    const dims = selectedImage || defaultDimensions;
+    const subMask = createSubMask(type, dims, mode);
+
+    // 应用 SUB_MASK_CONFIG 参数默认值（仅填充 createSubMask 未设置的键，不覆盖已有值），
+    // 保证 Linear feather、AiSky grow/feather/decontaminate 等初始值与设置面板滑杆一致
+    const maskConfig = SUB_MASK_CONFIG[type];
+    if (maskConfig?.parameters?.length) {
+      const maskParams = { ...((subMask.parameters || {}) as Record<string, number>) };
+      for (const param of maskConfig.parameters) {
+        if (param.defaultValue !== undefined && maskParams[param.key] === undefined) {
+          maskParams[param.key] = param.defaultValue / (param.multiplier || 1);
+        }
+      }
+      subMask.parameters = maskParams;
+    }
 
     const steps = adjustments?.orientationSteps || 0;
     const isRotated = steps === 1 || steps === 3;
-    const imgW = isRotated ? selectedImage.height || 1000 : selectedImage.width || 1000;
-    const imgH = isRotated ? selectedImage.width || 1000 : selectedImage.height || 1000;
+    const imgW = isRotated ? dims.height || 1000 : dims.width || 1000;
+    const imgH = isRotated ? dims.width || 1000 : dims.height || 1000;
 
     const params = subMask.parameters as Record<string, number>;
 
@@ -518,10 +543,7 @@ export default function MasksPanel() {
       } else {
         (subMask.parameters as Record<string, number>).targetX = -10000;
         (subMask.parameters as Record<string, number>).targetY = -10000;
-        (subMask.parameters as Record<string, number>).tolerance = 20;
-        (subMask.parameters as Record<string, number>).grow = 0;
-        (subMask.parameters as Record<string, number>).feather = 35;
-        (subMask.parameters as Record<string, number>).decontaminate = 0;
+        // tolerance/grow/feather/decontaminate 默认值已由 SUB_MASK_CONFIG 统一填充
       }
     }
 
@@ -531,8 +553,7 @@ export default function MasksPanel() {
       (subMask.parameters as Record<string, number>).maxDepth = 80;
       (subMask.parameters as Record<string, number>).minFade = 15;
       (subMask.parameters as Record<string, number>).maxFade = 15;
-      (subMask.parameters as Record<string, number>).feather = 15;
-      (subMask.parameters as Record<string, number>).decontaminate = 0;
+      // feather/decontaminate 默认值已由 SUB_MASK_CONFIG 统一填充
     }
     return subMask;
   };
@@ -663,12 +684,12 @@ export default function MasksPanel() {
   const updateContainer = (id: string, data: any) =>
     setAdjustments((prev: Adjustments) => ({
       ...prev,
-      masks: prev.masks.map((m) => (m.id === id ? { ...m, ...data } : m)),
+      masks: (prev.masks || []).map((m) => (m.id === id ? { ...m, ...data } : m)),
     }));
   const updateSubMask = (id: string, data: any) =>
     setAdjustments((prev: Adjustments) => ({
       ...prev,
-      masks: prev.masks.map((m) => ({
+      masks: (prev.masks || []).map((m) => ({
         ...m,
         subMasks: m.subMasks.map((sm) => (sm.id === id ? { ...sm, ...data } : sm)),
       })),
@@ -676,14 +697,14 @@ export default function MasksPanel() {
 
   const handleDeleteContainer = (id: string) => {
     if (activeMaskContainerId === id) handleDeselect();
-    setAdjustments((prev: Adjustments) => ({ ...prev, masks: prev.masks.filter((m) => m.id !== id) }));
+    setAdjustments((prev: Adjustments) => ({ ...prev, masks: (prev.masks || []).filter((m) => m.id !== id) }));
   };
 
   const handleDeleteSubMask = (containerId: string, subMaskId: string) => {
     if (activeMaskId === subMaskId) onSelectMask(null);
     setAdjustments((prev: Adjustments) => ({
       ...prev,
-      masks: prev.masks.map((m) =>
+      masks: (prev.masks || []).map((m) =>
         m.id === containerId ? { ...m, subMasks: m.subMasks.filter((sm) => sm.id !== subMaskId) } : m,
       ),
     }));
@@ -1033,9 +1054,13 @@ export default function MasksPanel() {
               <ChartArea size={18} />
             </button>
             <button
-              className="p-2 rounded-full hover:bg-surface transition-colors"
+              className={`p-2 rounded-full transition-colors ${
+                isResetConfirming ? 'bg-accent text-button-text' : 'hover:bg-surface'
+              }`}
               onClick={handleResetAllMasks}
-              data-tooltip={t('editor.masks.resetMaskingTooltip')}
+              data-tooltip={t(
+                isResetConfirming ? 'editor.masks.resetMaskingConfirm' : 'editor.masks.resetMaskingTooltip',
+              )}
             >
               <RotateCcw size={18} />
             </button>

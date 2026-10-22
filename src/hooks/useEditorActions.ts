@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import debounce from 'lodash.debounce';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import { useEditorStore } from '../store/useEditorStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
@@ -28,7 +29,8 @@ export const debouncedSetHistory = debounce((newAdj: Adjustments) => {
 export const debouncedSave = debounce((path: string, adjustmentsToSave: Adjustments) => {
   invoke(Invokes.SaveMetadataAndUpdateThumbnail, { path, adjustments: adjustmentsToSave }).catch((err) => {
     console.error('Auto-save failed:', err);
-    toast.error(`Failed to save changes: ${err}`);
+    // 模块级函数无 React 上下文，直接使用 i18n 单例取当前语言文案
+    toast.error(i18n.t('ui.toasts.saveFailed', { err: String(err) }));
   });
 }, 300);
 
@@ -165,10 +167,10 @@ export function useEditorActions() {
           },
         }));
       } catch (err) {
-        toast.error(`Failed to load LUT: ${err}`);
+        toast.error(t('ui.toasts.lutLoadFailed', { err: String(err) }));
       }
     },
-    [setAdjustments],
+    [setAdjustments, t],
   );
 
   const setLutPreviewOverride = useCallback(

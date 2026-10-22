@@ -21,8 +21,7 @@
       },
       "reset": "Reset",
       "scene": {
-        "title": "Scene Enhance",
-        "desc": "One-tap professional color grading",
+        "title": "Scene Style",
         "auto": "Auto",
         "autoDesc": "Smart scene enhancement",
         "prototypePortrait": "Portrait",
@@ -30,8 +29,6 @@
         "prototypeNight": "Night",
         "prototypeWarmSunset": "Warm Sunset",
         "masterRecipes": "Master Recipes",
-        "films": "Film Looks",
-        "filmsNeutral": "Neutral",
         "recipeLutMissing": "Master recipe look file unavailable",
         "recipeActiveHint": "Active — click again to exit the recipe",
         "recipes": {
@@ -428,7 +425,6 @@
       },
       "title": "Adjustments",
       "tooltips": {
-        "autoAdjust": "Auto Adjust Image",
         "resetAdjustments": "Reset Adjustments",
         "toggleAnalytics": "Toggle Analytics Display"
       }
@@ -549,9 +545,17 @@
         "placeholder": "e.g., a field of flowers",
         "quickEraseDesc": "Fill selection to remove the object.",
         "selectionPropertiesTitle": "Selection Properties",
-        "useBasicInpaint": "Use basic inpainting"
+        "useBasicInpaint": "Use basic inpainting",
+        "inpaintName": "Inpaint"
       },
-      "touchUpTitle": "Touch Up"
+      "touchUpTitle": "Touch Up",
+      "toasts": {
+        "patchFailed": "Patch generation failed: {{err}}",
+        "replaceFailed": "AI replace failed: {{err}}",
+        "quickEraseFailed": "Quick erase failed: {{err}}",
+        "maskFailed": "Failed to generate AI mask: {{err}}",
+        "depthMaskFailed": "Failed to generate AI depth mask: {{err}}"
+      }
     },
     "crop": {
       "aspectRatioHeading": "Aspect Ratio",
@@ -771,7 +775,8 @@
         "strength": "Strength",
         "brushSize": "Brush Size",
         "brushFeather": "Softness"
-      }
+      },
+      "resetMaskingConfirm": "Click again to confirm"
     },
     "metadata": {
       "author": {
@@ -2167,6 +2172,13 @@
         "showClipping": "Show Clipping Warnings",
         "vectorscope": "Vectorscope"
       }
+    },
+    "toasts": {
+      "saveFailed": "Failed to save changes: {{err}}",
+      "lutLoadFailed": "Failed to load LUT: {{err}}",
+      "depthMapFailed": "Failed to generate depth map: {{err}}",
+      "lutRemoveFailed": "Failed to remove LUT: {{err}}",
+      "comparePreviewFailed": "Failed to generate comparison preview: {{err}}"
     }
   }
 }

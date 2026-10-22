@@ -26,6 +26,7 @@ import { useLibraryStore } from '../../store/useLibraryStore';
 import { useAiMasking } from '../../hooks/useAiMasking';
 import { useEditorActions, debouncedSetHistory } from '../../hooks/useEditorActions';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 
 const parseRgb = (rgbStr: string): [number, number, number, number] => {
   const match = rgbStr.match(/[\d.]+/g);
@@ -83,6 +84,7 @@ interface EditorProps {
 }
 
 export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, transformWrapperRef }: EditorProps) {
+  const { t } = useTranslation();
   const appSettings = useSettingsStore((s) => s.appSettings);
   const osPlatform = useSettingsStore((s) => s.osPlatform);
   const isFullScreen = useUIStore((s) => s.isFullScreen);
@@ -320,7 +322,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         setBeforeOriginalUrl(url);
       } catch (err) {
         console.error('Failed to generate before-original preview:', err);
-        toast.error(`Failed to generate comparison preview: ${err instanceof Error ? err.message : String(err)}`);
+        toast.error(t('ui.toasts.comparePreviewFailed', { err: err instanceof Error ? err.message : String(err) }));
         return;
       }
     }
@@ -845,7 +847,16 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         },
       });
     } else if (type === Mask.Color || type === Mask.Luminance) {
-      updateSubMaskLocal(activeId, { parameters: {} });
+      // 清除取样结果但保留用户微调参数（tolerance/grow/feather/decontaminate），
+      // 并复位取样坐标避免残留取样点标记
+      updateSubMaskLocal(activeId, {
+        parameters: {
+          ...toolbarSubMask.parameters,
+          maskDataBase64: null,
+          targetX: -10000,
+          targetY: -10000,
+        },
+      });
     }
   }, [toolbarSubMask, isMasking, activeMaskId, activeAiSubMaskId, updateSubMaskLocal]);
 

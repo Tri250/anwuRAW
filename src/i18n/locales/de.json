@@ -21,8 +21,7 @@
       },
       "reset": "Zurücksetzen",
       "scene": {
-        "title": "Szene verbessern",
-        "desc": "Professionelle Farbkorrektur mit einem Klick",
+        "title": "Szenen-Stil",
         "auto": "Auto",
         "autoDesc": "Intelligente Szenenverbesserung",
         "prototypePortrait": "Porträt",
@@ -30,8 +29,6 @@
         "prototypeNight": "Nacht",
         "prototypeWarmSunset": "Warmer Sonnenuntergang",
         "masterRecipes": "Meisterrezepte",
-        "films": "Filme",
-        "filmsNeutral": "Neutral",
         "recipeLutMissing": "Master-Rezept-Look-Datei nicht verfügbar",
         "recipeActiveHint": "Aktiv – zum Verlassen erneut klicken",
         "recipes": {
@@ -428,7 +425,6 @@
       },
       "title": "Anpassungen",
       "tooltips": {
-        "autoAdjust": "Bild autom. anpassen",
         "resetAdjustments": "Anpassungen zurücksetzen",
         "toggleAnalytics": "Analyseanzeige umschalten"
       }
@@ -504,7 +500,9 @@
         "feather": "Weiche Kante",
         "grow": "Erweitern",
         "intensity": "Intensität",
-        "pressure": "Druck"
+        "pressure": "Druck",
+        "decontaminate": "Kantenbereinigung",
+        "sensitivity": "Empfindlichkeit"
       },
       "patches": {
         "aiEdit": "KI-Bearbeitung {{count}}",
@@ -523,7 +521,10 @@
         "quickErase": "Schnelles Löschen {{count}}",
         "quickErase_one": "Schnelles Löschen {{count}}",
         "quickErase_other": "Schnelles Löschen {{count}}",
-        "retouch": "Retusche {{count}}"
+        "retouch": "Retusche {{count}}",
+        "autoErase": "Automatisches Löschen {{count}}",
+        "autoErase_one": "Automatisches Löschen {{count}}",
+        "autoErase_other": "Automatisches Löschen {{count}}"
       },
       "resetInpaintingTooltip": "Reparieren zurücksetzen",
       "settings": {
@@ -543,9 +544,18 @@
         "placeholder": "z. B. ein Blumenfeld",
         "quickEraseDesc": "Auswahl füllen, um das Objekt zu entfernen.",
         "selectionPropertiesTitle": "Auswahleigenschaften",
-        "useBasicInpaint": "Einfaches Reparieren verwenden"
+        "useBasicInpaint": "Einfaches Reparieren verwenden",
+        "inpaintName": "Inpainting",
+        "onDeviceNotice": "KI-Reparatur auf dem Gerät. Funktioniert offline — Ihr Foto verlässt dieses Gerät nie."
       },
-      "touchUpTitle": "Ausbessern"
+      "touchUpTitle": "Ausbessern",
+      "toasts": {
+        "patchFailed": "Patch-Erzeugung fehlgeschlagen: {{err}}",
+        "replaceFailed": "KI-Ersetzen fehlgeschlagen: {{err}}",
+        "quickEraseFailed": "Schnelles Löschen fehlgeschlagen: {{err}}",
+        "maskFailed": "KI-Maske konnte nicht erzeugt werden: {{err}}",
+        "depthMaskFailed": "KI-Tiefenmaske konnte nicht erzeugt werden: {{err}}"
+      }
     },
     "crop": {
       "aspectRatioHeading": "Seitenverhältnis",
@@ -655,7 +665,8 @@
         "switchToLandscape": "Zum Querformat wechseln",
         "switchToPortrait": "Zum Hochformat wechseln",
         "transform": "Perspektiv- und Trapezkorrektur"
-      }
+      },
+      "autoCropAfterRotate": "Schwarze Ränder nach Drehung automatisch zuschneiden"
     },
     "externalEdit": {
       "done": "Fertig",
@@ -719,7 +730,8 @@
         "feather": "Weiche Kante",
         "globalFeather": "Globale weiche Kante",
         "grow": "Erweitern",
-        "tolerance": "Toleranz"
+        "tolerance": "Toleranz",
+        "decontaminate": "Farben dekontaminieren"
       },
       "toolbar": {
         "title": "Maskenbearbeitung",
@@ -763,7 +775,8 @@
         "addToCurrent": "{{name}} zur aktuellen Maske hinzufügen oder neu erstellen (Rechtsklick)",
         "createNew": "Neue {{name}}-Maske erstellen",
         "selectNewSourcePoint": "{{modifier}} + Klicken, um einen neuen Quellpunkt auszuwählen"
-      }
+      },
+      "resetMaskingConfirm": "Zum Bestätigen erneut klicken"
     },
     "metadata": {
       "author": {
@@ -803,7 +816,9 @@
         "clickToOpenTooltip": "Klicken, um die Karte in neuem Tab zu öffnen",
         "latitude": "Breitengrad",
         "longitude": "Längengrad",
-        "title": "GPS-Standort"
+        "title": "GPS-Standort",
+        "offlineMapLabel": "Offline-Weltkarte mit Marker am Aufnahmeort",
+        "openOnlineMap": "Online-Karte öffnen"
       },
       "iptc": {
         "batchHint": "Bei Mehrfachauswahl wird das Speichern auf alle ausgewählten Bilder angewendet.",
@@ -997,7 +1012,8 @@
       "fileSettings": "Dateieinstellungen",
       "imageSizing": "Bildgröße",
       "metadata": "Metadaten",
-      "watermark": "Wasserzeichen"
+      "watermark": "Wasserzeichen",
+      "color": "Farbausgabe"
     },
     "status": {
       "cancelExport": "Export abbrechen",
@@ -1038,6 +1054,17 @@
       "scale": "Skalierung",
       "spacing": "Abstand",
       "watermarkImage": "Wasserzeichen-Bild"
+    },
+    "color": {
+      "bitDepth": "Bittiefe",
+      "bitDepth8Desc": "Kleinere Dateien, Standardanzeige",
+      "bitDepth16Desc": "Größere Dateien, Bearbeiten ohne Banding",
+      "colorSpace": "Farbraum",
+      "colorSpaceDesc_srgb": "Standard für Web und die meisten Bildschirme",
+      "colorSpaceDesc_displayP3": "Weitfarbraum — ideal für Apple-/HDR-Displays",
+      "colorSpaceDesc_adobeRgb": "Weit verbreitet in Druck und Fotografie",
+      "colorSpaceDesc_proPhoto": "Größter Farbraum — für professionelle Archivierung",
+      "jpgIccWarning": "JPEG bettet ICC-Profile für Nicht-sRGB-Farbräume ein. Einige Viewer zeigen möglicherweise weiterhin sRGB an."
     }
   },
   "library": {
@@ -1911,7 +1938,10 @@
         "title": "Bildvorverarbeitung",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "Standard"
+          "basic": "Standard",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "Globaler Tonemapper-Override",
         "tonemapperOverrideDesc": "Erzwingt einen spezifischen Tonemapper global für alle Bilder."
@@ -2142,6 +2172,13 @@
         "showClipping": "Clipping-Warnungen anzeigen",
         "vectorscope": "Vektorskop"
       }
+    },
+    "toasts": {
+      "saveFailed": "Änderungen konnten nicht gespeichert werden: {{err}}",
+      "lutLoadFailed": "LUT konnte nicht geladen werden: {{err}}",
+      "depthMapFailed": "Tiefenkarte konnte nicht erzeugt werden: {{err}}",
+      "lutRemoveFailed": "LUT konnte nicht entfernt werden: {{err}}",
+      "comparePreviewFailed": "Vergleichsvorschau konnte nicht erzeugt werden: {{err}}"
     }
   }
 }

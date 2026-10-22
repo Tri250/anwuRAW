@@ -21,8 +21,7 @@
       },
       "reset": "リセット",
       "scene": {
-        "title": "シーン強調",
-        "desc": "ワンタップでプロのカラーグレーディング",
+        "title": "シーンスタイル",
         "auto": "自動",
         "autoDesc": "スマートなシーン強調",
         "prototypePortrait": "ポートレート",
@@ -30,8 +29,6 @@
         "prototypeNight": "夜景",
         "prototypeWarmSunset": "夕焼け",
         "masterRecipes": "マスターレシピ",
-        "films": "フィルム",
-        "filmsNeutral": "ニュートラル",
         "recipeLutMissing": "マスターレシピのルックファイルが利用できません",
         "recipeActiveHint": "有効 — もう一度クリックでレシピを解除",
         "recipes": {
@@ -428,7 +425,6 @@
       },
       "title": "補正",
       "tooltips": {
-        "autoAdjust": "画像を自動補正",
         "resetAdjustments": "補正設定をリセット",
         "toggleAnalytics": "アナリティクス表示の切り替え"
       }
@@ -504,7 +500,9 @@
         "feather": "ぼかし",
         "grow": "拡張",
         "intensity": "強度",
-        "pressure": "圧力"
+        "pressure": "圧力",
+        "decontaminate": "エッジクリーンアップ",
+        "sensitivity": "感度"
       },
       "patches": {
         "aiEdit": "AI編集 {{count}}",
@@ -521,7 +519,12 @@
         "quickErase": "クイック消去 {{count}}",
         "quickErase_one": "クイック消去 {{count}}",
         "quickErase_other": "クイック消去 {{count}}",
-        "retouch": "レタッチ {{count}}"
+        "retouch": "レタッチ {{count}}",
+        "clone_one": "クローン {{count}}",
+        "heal_one": "修復 {{count}}",
+        "autoErase": "自動消去 {{count}}",
+        "autoErase_one": "自動消去 {{count}}",
+        "autoErase_other": "自動消去 {{count}}"
       },
       "resetInpaintingTooltip": "インペインティングをリセット",
       "settings": {
@@ -541,9 +544,18 @@
         "placeholder": "例: お花畑",
         "quickEraseDesc": "選択範囲を塗りつぶしてオブジェクトを削除します。",
         "selectionPropertiesTitle": "選択範囲のプロパティ",
-        "useBasicInpaint": "簡易インペインティングを使用"
+        "useBasicInpaint": "簡易インペインティングを使用",
+        "inpaintName": "インペイント",
+        "onDeviceNotice": "デバイス上で AI 修復。オフラインで動作し、写真がこのデバイスの外に出ることはありません。"
       },
-      "touchUpTitle": "タッチアップ"
+      "touchUpTitle": "タッチアップ",
+      "toasts": {
+        "patchFailed": "パッチの生成に失敗しました: {{err}}",
+        "replaceFailed": "AI置換に失敗しました: {{err}}",
+        "quickEraseFailed": "クイック消去に失敗しました: {{err}}",
+        "maskFailed": "AIマスクの生成に失敗しました: {{err}}",
+        "depthMaskFailed": "AI深度マスクの生成に失敗しました: {{err}}"
+      }
     },
     "crop": {
       "aspectRatioHeading": "アスペクト比",
@@ -653,7 +665,8 @@
         "switchToLandscape": "横向きに切り替え",
         "switchToPortrait": "縦向きに切り替え",
         "transform": "遠近歪みとあおり補正"
-      }
+      },
+      "autoCropAfterRotate": "回転後に黒い余白を自動クロップ"
     },
     "externalEdit": {
       "done": "完了",
@@ -717,7 +730,8 @@
         "feather": "ぼかし",
         "globalFeather": "全体のぼかし",
         "grow": "拡張",
-        "tolerance": "Tolerance"
+        "tolerance": "Tolerance",
+        "decontaminate": "色のにじみ除去"
       },
       "toolbar": {
         "title": "マスク編集",
@@ -761,7 +775,8 @@
         "addToCurrent": "{{name}}を現在のマスクに追加、または新規作成 (右クリック)",
         "createNew": "新規の {{name}} マスクを作成",
         "selectNewSourcePoint": "{{modifier}} + クリックで新しいソースポイントを選択"
-      }
+      },
+      "resetMaskingConfirm": "もう一度クリックでリセット"
     },
     "metadata": {
       "author": {
@@ -801,7 +816,9 @@
         "clickToOpenTooltip": "クリックして新しいタブで地図を表示",
         "latitude": "緯度",
         "longitude": "経度",
-        "title": "GPS位置情報"
+        "title": "GPS位置情報",
+        "offlineMapLabel": "撮影位置マーカー付きのオフライン世界地図",
+        "openOnlineMap": "オンラインマップを開く"
       },
       "iptc": {
         "batchHint": "複数選択時は保存がすべての選択画像に適用されます。",
@@ -995,7 +1012,8 @@
       "fileSettings": "ファイル設定",
       "imageSizing": "画像サイズ",
       "metadata": "メタデータ",
-      "watermark": "ウォーターマーク"
+      "watermark": "ウォーターマーク",
+      "color": "カラー出力"
     },
     "status": {
       "cancelExport": "書き出しをキャンセル",
@@ -1036,6 +1054,17 @@
       "scale": "倍率",
       "spacing": "間隔",
       "watermarkImage": "ウォーターマーク画像"
+    },
+    "color": {
+      "bitDepth": "ビット深度",
+      "bitDepth8Desc": "ファイルは小さめ、標準表示向け",
+      "bitDepth16Desc": "ファイルは大きめ、階調飛びなしで編集",
+      "colorSpace": "カラースペース",
+      "colorSpaceDesc_srgb": "Web とほとんどの画面の標準",
+      "colorSpaceDesc_displayP3": "広色域 — Apple / HDR ディスプレイに最適",
+      "colorSpaceDesc_adobeRgb": "印刷・写真で広く使用",
+      "colorSpaceDesc_proPhoto": "最大の色域 — プロ用アーカイブ向け",
+      "jpgIccWarning": "JPEG は sRGB 以外のカラースペースに ICC プロファイルを埋め込みます。ビューアによっては sRGB で表示される場合があります。"
     }
   },
   "library": {
@@ -1909,7 +1938,10 @@
         "title": "画像の事前処理",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "標準"
+          "basic": "標準",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "グローバルトーンマッパー上書き",
         "tonemapperOverrideDesc": "すべての画像に対して指定したトーンマッパーを強制適用し、調整パネル内の切り替えスイッチを非表示にします。"
@@ -2140,6 +2172,13 @@
         "showClipping": "白とび・黒つぶれ警告を表示",
         "vectorscope": "ベクトルスコープ"
       }
+    },
+    "toasts": {
+      "saveFailed": "変更の保存に失敗しました: {{err}}",
+      "lutLoadFailed": "LUTの読み込みに失敗しました: {{err}}",
+      "depthMapFailed": "デプスマップの生成に失敗しました: {{err}}",
+      "lutRemoveFailed": "LUTの削除に失敗しました: {{err}}",
+      "comparePreviewFailed": "比較プレビューの生成に失敗しました: {{err}}"
     }
   }
 }

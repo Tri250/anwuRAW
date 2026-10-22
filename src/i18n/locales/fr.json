@@ -21,8 +21,7 @@
       },
       "reset": "Réinitialiser",
       "scene": {
-        "title": "Amélioration de scène",
-        "desc": "Étalonnage professionnel en un geste",
+        "title": "Style de scène",
         "auto": "Auto",
         "autoDesc": "Amélioration intelligente de la scène",
         "prototypePortrait": "Portrait",
@@ -30,8 +29,6 @@
         "prototypeNight": "Nuit",
         "prototypeWarmSunset": "Coucher de soleil chaud",
         "masterRecipes": "Recettes de maître",
-        "films": "Pellicules",
-        "filmsNeutral": "Neutre",
         "recipeLutMissing": "Fichier de look de recette de maître indisponible",
         "recipeActiveHint": "Actif — cliquez à nouveau pour quitter la recette",
         "recipes": {
@@ -318,7 +315,9 @@
       "resetConfirmTitle_other": "Réinitialiser les ajustements ({{count}} images)",
       "stitchPanorama": "Assembler le panorama",
       "tagging": "Marquage",
-      "undo": "Annuler"
+      "undo": "Annuler",
+      "resetConfirmMessage_many": "Cette action supprimera tous les ajustements locaux des {{count}} images sélectionnées et rétablira les valeurs par défaut.\n\nAprès la réinitialisation, chaque image peut encore être annulée avec Ctrl+Z tant que l'on ne change pas d'image.",
+      "resetConfirmTitle_many": "Réinitialiser les ajustements ({{count}} images)"
     },
     "folders": {
       "changeIcon": "Changer l'icône",
@@ -444,7 +443,6 @@
       },
       "title": "Ajustements",
       "tooltips": {
-        "autoAdjust": "Ajustement auto de l'image",
         "resetAdjustments": "Réinitialiser les ajustements",
         "toggleAnalytics": "Basculer l'affichage des analyses"
       }
@@ -521,7 +519,8 @@
         "grow": "Agrandir",
         "intensity": "Intensité",
         "pressure": "Pression",
-        "decontaminate": "Edge Cleanup"
+        "decontaminate": "Edge Cleanup",
+        "sensitivity": "Sensibilité"
       },
       "patches": {
         "aiEdit": "Retouche IA {{count}}",
@@ -544,7 +543,12 @@
         "quickErase_many": "Gommage rapide {{count}}",
         "quickErase_one": "Gommage rapide {{count}}",
         "quickErase_other": "Gommages rapides {{count}}",
-        "retouch": "Retouche {{count}}"
+        "retouch": "Retouche {{count}}",
+        "autoErase": "Effacement automatique {{count}}",
+        "autoErase_one": "Effacement automatique {{count}}",
+        "autoErase_many": "Effacement automatique {{count}}",
+        "autoErase_other": "Effacement automatique {{count}}",
+        "liquify_many": "Fluidité {{count}}"
       },
       "resetInpaintingTooltip": "Réinitialiser l'Inpainting",
       "settings": {
@@ -565,9 +569,17 @@
         "quickEraseDesc": "Remplir la sélection pour supprimer l'objet.",
         "selectionPropertiesTitle": "Propriétés de sélection",
         "useBasicInpaint": "Utiliser l'inpainting simple",
-        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
+        "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device.",
+        "inpaintName": "Inpainting"
       },
-      "touchUpTitle": "Retouches"
+      "touchUpTitle": "Retouches",
+      "toasts": {
+        "patchFailed": "Échec de la génération du patch : {{err}}",
+        "replaceFailed": "Échec du remplacement IA : {{err}}",
+        "quickEraseFailed": "Échec du gommage rapide : {{err}}",
+        "maskFailed": "Échec de la génération du masque IA : {{err}}",
+        "depthMaskFailed": "Échec de la génération du masque de profondeur IA : {{err}}"
+      }
     },
     "crop": {
       "aspectRatioHeading": "Rapport d'aspect",
@@ -742,7 +754,8 @@
         "feather": "Contour progressif",
         "globalFeather": "Contour progressif global",
         "grow": "Agrandir",
-        "tolerance": "Tolérance"
+        "tolerance": "Tolérance",
+        "decontaminate": "Décontaminer les couleurs"
       },
       "toolbar": {
         "title": "Édition du masque",
@@ -787,7 +800,8 @@
         "addToCurrent": "Ajouter {{name}} au masque actuel ou en créer un nouveau (Clic-droit)",
         "createNew": "Créer un nouveau masque {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Clic pour sélectionner un nouveau point source"
-      }
+      },
+      "resetMaskingConfirm": "Cliquez à nouveau pour confirmer"
     },
     "metadata": {
       "author": {
@@ -1500,7 +1514,8 @@
       "savedSuccess": "Empilement de mise au point enregistré avec succès !",
       "stacking": "Empilement de la mise au point",
       "start": "Démarrer",
-      "title": "Empilement de mise au point"
+      "title": "Empilement de mise au point",
+      "descriptionWithCount_many": "Combinez {{count}} images avec des distances de mise au point variables en une seule image parfaitement nette."
     },
     "hdr": {
       "cancel": "Annuler",
@@ -2197,6 +2212,13 @@
         "showClipping": "Afficher les avertissements d'écrêtage",
         "vectorscope": "Vecteurscope"
       }
+    },
+    "toasts": {
+      "saveFailed": "Échec de l'enregistrement des modifications : {{err}}",
+      "lutLoadFailed": "Échec du chargement du LUT : {{err}}",
+      "depthMapFailed": "Échec de la génération de la carte de profondeur : {{err}}",
+      "lutRemoveFailed": "Échec de la suppression du LUT : {{err}}",
+      "comparePreviewFailed": "Échec de la génération de l'aperçu comparatif : {{err}}"
     }
   }
 }

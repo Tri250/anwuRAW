@@ -21,8 +21,7 @@
       },
       "reset": "Ripristina",
       "scene": {
-        "title": "Miglioramento scena",
-        "desc": "Color grading professionale con un tocco",
+        "title": "Stile di scena",
         "auto": "Auto",
         "autoDesc": "Miglioramento intelligente della scena",
         "prototypePortrait": "Ritratto",
@@ -30,8 +29,6 @@
         "prototypeNight": "Notte",
         "prototypeWarmSunset": "Tramonto caldo",
         "masterRecipes": "Ricette dei maestri",
-        "films": "Pellicole",
-        "filmsNeutral": "Neutro",
         "recipeLutMissing": "File look della ricetta master non disponibile",
         "recipeActiveHint": "Attiva — clicca di nuovo per uscire dalla ricetta",
         "recipes": {
@@ -318,7 +315,9 @@
       "resetConfirmTitle_other": "Reimposta regolazioni ({{count}} immagini)",
       "stitchPanorama": "Unisci Panorama",
       "tagging": "Tagging",
-      "undo": "Annulla"
+      "undo": "Annulla",
+      "resetConfirmMessage_many": "Verranno rimossi tutti gli aggiustamenti locali delle {{count}} immagini selezionate e verranno ripristinati i valori predefiniti.\n\nDopo il ripristino, ogni immagine può ancora essere annullata con Ctrl+Z se non si cambia immagine.",
+      "resetConfirmTitle_many": "Reimposta regolazioni ({{count}} immagini)"
     },
     "folders": {
       "changeIcon": "Cambia Icona",
@@ -444,7 +443,6 @@
       },
       "title": "Regolazioni",
       "tooltips": {
-        "autoAdjust": "Regolazione Automatica Immagine",
         "resetAdjustments": "Ripristina Regolazioni",
         "toggleAnalytics": "Attiva/Disattiva Visualizzazione Analitiche"
       }
@@ -520,7 +518,9 @@
         "feather": "Sfumatura",
         "grow": "Espandi",
         "intensity": "Intensità",
-        "pressure": "Pressione"
+        "pressure": "Pressione",
+        "decontaminate": "Pulizia dei bordi",
+        "sensitivity": "Sensibilità"
       },
       "patches": {
         "aiEdit": "Modifica AI {{count}}",
@@ -543,7 +543,12 @@
         "quickErase_many": "Cancellazione Rapida {{count}}",
         "quickErase_one": "Cancellazione Rapida {{count}}",
         "quickErase_other": "Cancellazione Rapida {{count}}",
-        "retouch": "Ritocco {{count}}"
+        "retouch": "Ritocco {{count}}",
+        "autoErase": "Cancellazione automatica {{count}}",
+        "autoErase_one": "Cancellazione automatica {{count}}",
+        "autoErase_many": "Cancellazione automatica {{count}}",
+        "autoErase_other": "Cancellazione automatica {{count}}",
+        "liquify_many": "Fluidifica {{count}}"
       },
       "resetInpaintingTooltip": "Ripristina Inpainting",
       "settings": {
@@ -563,9 +568,18 @@
         "placeholder": "es. un campo di fiori",
         "quickEraseDesc": "Riempi la selezione per rimuovere l'oggetto.",
         "selectionPropertiesTitle": "Proprietà Selezione",
-        "useBasicInpaint": "Usa inpainting semplice"
+        "useBasicInpaint": "Usa inpainting semplice",
+        "inpaintName": "Inpainting",
+        "onDeviceNotice": "Riparazione AI sul dispositivo. Funziona offline: la foto non lascia mai questo dispositivo."
       },
-      "touchUpTitle": "Ritocchi"
+      "touchUpTitle": "Ritocchi",
+      "toasts": {
+        "patchFailed": "Generazione della patch non riuscita: {{err}}",
+        "replaceFailed": "Sostituzione AI non riuscita: {{err}}",
+        "quickEraseFailed": "Cancellazione rapida non riuscita: {{err}}",
+        "maskFailed": "Generazione della maschera AI non riuscita: {{err}}",
+        "depthMaskFailed": "Generazione della maschera di profondità AI non riuscita: {{err}}"
+      }
     },
     "crop": {
       "aspectRatioHeading": "Proporzioni",
@@ -675,7 +689,8 @@
         "switchToLandscape": "Passa a paesaggio",
         "switchToPortrait": "Passa a ritratto",
         "transform": "Correzione prospettiva e distorsione trapezoidale"
-      }
+      },
+      "autoCropAfterRotate": "Ritaglia automaticamente i bordi neri dopo la rotazione"
     },
     "externalEdit": {
       "done": "Fatto",
@@ -739,7 +754,8 @@
         "feather": "Sfumatura",
         "globalFeather": "Sfumatura Globale",
         "grow": "Espandi",
-        "tolerance": "Tolleranza"
+        "tolerance": "Tolleranza",
+        "decontaminate": "Decontamina i colori"
       },
       "toolbar": {
         "title": "Modifica maschera",
@@ -784,7 +800,8 @@
         "addToCurrent": "Aggiungi {{name}} alla Maschera Attuale o Crea Nuova (Tasto Destro)",
         "createNew": "Crea Nuova Maschera {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Clic per selezionare un nuovo punto di origine"
-      }
+      },
+      "resetMaskingConfirm": "Fai di nuovo clic per confermare"
     },
     "metadata": {
       "author": {
@@ -824,7 +841,9 @@
         "clickToOpenTooltip": "Clicca per aprire la mappa in una nuova scheda",
         "latitude": "Latitudine",
         "longitude": "Longitudine",
-        "title": "Posizione GPS"
+        "title": "Posizione GPS",
+        "offlineMapLabel": "Mappa mondiale offline con indicatore della posizione della foto",
+        "openOnlineMap": "Apri mappa online"
       },
       "iptc": {
         "batchHint": "Con più immagini selezionate, il salvataggio si applica a tutte.",
@@ -1019,7 +1038,8 @@
       "fileSettings": "Impostazioni File",
       "imageSizing": "Dimensionamento Immagine",
       "metadata": "Metadati",
-      "watermark": "Filigrana"
+      "watermark": "Filigrana",
+      "color": "Uscita colore"
     },
     "status": {
       "cancelExport": "Annulla Esportazione",
@@ -1061,6 +1081,17 @@
       "scale": "Scala",
       "spacing": "Spaziatura",
       "watermarkImage": "Immagine Filigrana"
+    },
+    "color": {
+      "bitDepth": "Profondità in bit",
+      "bitDepth8Desc": "File più piccoli, visualizzazione standard",
+      "bitDepth16Desc": "File più grandi, modifica senza posterizzazione",
+      "colorSpace": "Spazio colore",
+      "colorSpaceDesc_srgb": "Standard per il web e la maggior parte degli schermi",
+      "colorSpaceDesc_displayP3": "Ampia gamma — ideale per display Apple / HDR",
+      "colorSpaceDesc_adobeRgb": "Ampiamente usato in stampa e fotografia",
+      "colorSpaceDesc_proPhoto": "La gamma più ampia — per l'archiviazione professionale",
+      "jpgIccWarning": "JPEG incorpora il profilo ICC per spazi non sRGB. Alcuni visualizzatori potrebbero mostrare comunque sRGB."
     }
   },
   "library": {
@@ -1482,7 +1513,8 @@
       "savedSuccess": "Focus Stack salvato con successo!",
       "stacking": "Unione messa a fuoco in corso",
       "start": "Avvia",
-      "title": "Focus Stacking"
+      "title": "Focus Stacking",
+      "descriptionWithCount_many": "Combina {{count}} immagini con diverse distanze di messa a fuoco in un'unica immagine perfettamente nitida."
     },
     "hdr": {
       "cancel": "Annulla",
@@ -1944,7 +1976,10 @@
         "title": "Pre-elaborazione Immagine",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "Base"
+          "basic": "Base",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "Sovrascrittura Tonemapper Globale",
         "tonemapperOverrideDesc": "Forza un tonemapper specifico globalmente per tutte le immagini, nascondendo il selettore del tonemapper dal pannello delle regolazioni."
@@ -2176,6 +2211,13 @@
         "showClipping": "Mostra Avvisi di Ritaglio",
         "vectorscope": "Vettorscopio"
       }
+    },
+    "toasts": {
+      "saveFailed": "Salvataggio delle modifiche non riuscito: {{err}}",
+      "lutLoadFailed": "Caricamento del LUT non riuscito: {{err}}",
+      "depthMapFailed": "Generazione della mappa di profondità non riuscita: {{err}}",
+      "lutRemoveFailed": "Rimozione del LUT non riuscita: {{err}}",
+      "comparePreviewFailed": "Generazione dell'anteprima comparativa non riuscita: {{err}}"
     }
   }
 }

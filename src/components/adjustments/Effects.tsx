@@ -159,7 +159,7 @@ export default function EffectsPanel({
         lensBlurDepthMap: b64,
       }));
     } catch (e: any) {
-      toast.error(`Failed to generate depth map: ${e}`);
+      toast.error(t('ui.toasts.depthMapFailed', { err: String(e) }));
       setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, lensBlurEnabled: false }));
     } finally {
       setIsGeneratingDepth(false);

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, renderHook, act } from '@testing-library/react';
 import BasicAdjustments, {
   getActiveSceneLabelKey,
   getActiveRecipeId,
@@ -7,15 +7,18 @@ import BasicAdjustments, {
 } from '../../src/components/adjustments/Basic';
 import { Adjustments, INITIAL_ADJUSTMENTS } from '../../src/utils/adjustments';
 import { MASTER_RECIPES, recipeToAdjustmentValues, RECIPE_PARAMETER_RESET } from '../../src/utils/masterRecipes';
+import { useEditorActions } from '../../src/hooks/useEditorActions';
+import { useEditorStore } from '../../src/store/useEditorStore';
 import { mockInvoke } from './setup';
 
-// === TC-SCENE-* 系列:覆盖「场景增强」操作链路 ===
+// === TC-SCENE-* 系列:覆盖「场景风格」操作链路 ===
 // 链路:Basic.tsx applySceneEnhance → setAdjustments(updater) → 后端 GPU 管线
 // 重点回归:确定性治理域(切换场景不残留)、section 可见性强制开启、自动按钮联动
 //
 // === TC-RECIPE-* / TC-FILM-*:大师配方与胶片融合链路(移植自 RawLab/koudaixiangce) ===
 // 大师配方 = 14 基础键 + HSL + 内置 LUT 的完整外观治理域;
-// 胶片 = 仅 LUT 字段治理域(内置胶片模拟 LUT, scene-referred)。
+// 胶片(内置胶片模拟 LUT)自 v1.6.19 起整合进「特效」面板 LUT 管理器,
+// 经 useEditorActions.handleLutSelect 落 LUT 字段(仅 LUT 治理域),Basic 不再重复提供入口。
 
 type Updater = (prev: Partial<Adjustments>) => Partial<Adjustments>;
 
@@ -24,16 +27,11 @@ const RECIPE_LUT_ENTRIES = MASTER_RECIPES.map((recipe) => ({
   name: recipe.lutFileName,
   path: `${MOCK_RES_DIR}/master_recipe_luts/${recipe.lutFileName}.cube`,
 }));
-const BUILT_IN_FILM_ENTRIES = [
-  { name: 'K-Portra 400', path: `${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`, isBuiltIn: true },
-  { name: 'K-Ektar 100', path: `${MOCK_RES_DIR}/film_luts/K-Ektar 100.cube`, isBuiltIn: true },
-  { name: 'MyCustomLut', path: '/user/luts/MyCustomLut.cube', isBuiltIn: false },
-];
+const FILM_LUT_PATH = `${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`;
 
-/** 默认命令实现:内置胶片与配方 LUT 全量可用 */
+/** 默认命令实现:配方 LUT 全量可用(胶片 LUT 列表由特效面板 LUTControl 自行拉取) */
 const setupInvokeDefaults = () => {
   mockInvoke.mockImplementation((cmd: string) => {
-    if (cmd === 'list_luts') return Promise.resolve(BUILT_IN_FILM_ENTRIES);
     if (cmd === 'list_recipe_luts') return Promise.resolve(RECIPE_LUT_ENTRIES);
     if (cmd === 'load_and_parse_lut') return Promise.resolve({ size: 33 });
     return Promise.resolve([]);
@@ -66,14 +64,6 @@ const clickRecipe = async (name: string, setAdjustments: ReturnType<typeof vi.fn
   await waitFor(() => expect(button).toBeEnabled());
   fireEvent.click(button);
   // 触发态 click 对应的 updater 立即同步执行,与调用序号解耦
-  const applyCall = setAdjustments.mock.calls.at(-1)![0];
-  expect(typeof applyCall).toBe('function');
-  return applyCall as Updater;
-};
-
-const clickFilm = async (name: string, setAdjustments: ReturnType<typeof vi.fn>) => {
-  const button = await screen.findByRole('button', { name });
-  fireEvent.click(button);
   const applyCall = setAdjustments.mock.calls.at(-1)![0];
   expect(typeof applyCall).toBe('function');
   return applyCall as Updater;
@@ -273,7 +263,7 @@ describe('TC-SCENE-03: 「自动」按钮与蒙版路径', () => {
         onAutoAdjust={() => {}}
       />,
     );
-    expect(screen.queryByText('场景增强')).not.toBeInTheDocument();
+    expect(screen.queryByText('场景风格')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '人像' })).not.toBeInTheDocument();
   });
 
@@ -464,99 +454,89 @@ describe('TC-RECIPE-02: 大师配方激活态与再次点击还原', () => {
   });
 });
 
-describe('TC-FILM-01: 胶片选择(仅 LUT 治理域)', () => {
-  it('选择胶片:LUT 字段落位(scene-referred),基础滑块与 HSL 不被触碰', async () => {
-    setupInvokeDefaults();
-    const prev: Partial<Adjustments> = {
-      ...INITIAL_ADJUSTMENTS,
-      contrast: 12,
-      vibrance: 8,
-    };
-    const { setAdjustments } = renderBasic(prev);
-    const applyFilm = await clickFilm('K-Portra 400', setAdjustments);
-    const next = applyUpdater(applyFilm, prev);
+describe('TC-FILM-01: 胶片链路(入口唯一化到特效面板 LUTControl)', () => {
+  /** 将 store 重置为干净编辑态(handleLutSelect 经真实 store 链路验证) */
+  const resetEditorStore = (overrides: Partial<Adjustments> = {}) => {
+    useEditorStore.setState({ adjustments: { ...INITIAL_ADJUSTMENTS, ...overrides } } as never);
+  };
 
-    expect(next.lutPath).toBe(`${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`);
-    expect(next.lutName).toBe('K-Portra 400');
+  it('整合回归:Basic 面板不再渲染胶片组,list_luts 不再被 Basic 调用', async () => {
+    setupInvokeDefaults();
+    renderBasic();
+    await screen.findByRole('button', { name: '人像' }); // 场景组正常渲染
+    await waitFor(() => expect(mockInvoke).toHaveBeenCalledWith('list_recipe_luts'));
+    // 内置胶片按钮与「中性」按钮已从调整面板移除
+    expect(screen.queryByRole('button', { name: 'K-Portra 400' })).not.toBeInTheDocument();
+    expect(screen.queryByText('中性')).not.toBeInTheDocument();
+    // 重复入口已移除:Basic 不再拉取内置 LUT 列表(由特效面板 LUTControl 拉取)
+    expect(mockInvoke).not.toHaveBeenCalledWith('list_luts');
+  });
+
+  it('选择内置胶片:LUT 字段落位(scene-referred),基础滑块与 HSL 不被触碰', async () => {
+    setupInvokeDefaults();
+    resetEditorStore({ contrast: 12, vibrance: 8 });
+    const { result } = renderHook(() => useEditorActions());
+    await act(async () => {
+      await result.current.handleLutSelect(FILM_LUT_PATH, true);
+    });
+
+    const next = useEditorStore.getState().adjustments;
+    expect(next.lutPath).toBe(FILM_LUT_PATH);
+    // 名称由路径文件名推导(含扩展名),与 Effects 面板链路一致
+    expect(next.lutName).toBe('K-Portra 400.cube');
     expect(next.lutIsSceneReferred).toBe(true);
     expect(next.lutIntensity).toBe(100);
+    expect(next.lutSize).toBe(33);
     // 胶片 = LUT 选择,不治理任何滑块
     expect(next.contrast).toBe(12);
     expect(next.vibrance).toBe(8);
     expect(next.exposure).toBe(0);
-    // effects section 强制开启,其余保持
+    // effects section 强制开启
     expect(next.sectionVisibility?.effects).toBe(true);
   });
 
-  it('胶片组仅列出内置 LUT,用户导入的自定义 LUT 不进入胶片组', async () => {
+  it('选择用户导入的自定义 LUT:display-referred(lutIsSceneReferred=false)', async () => {
     setupInvokeDefaults();
-    renderBasic();
-    await screen.findByRole('button', { name: 'K-Portra 400' });
-    expect(screen.getByRole('button', { name: 'K-Ektar 100' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'MyCustomLut' })).not.toBeInTheDocument();
-  });
+    resetEditorStore();
+    const { result } = renderHook(() => useEditorActions());
+    await act(async () => {
+      await result.current.handleLutSelect('/user/luts/MyCustomLut.cube', false);
+    });
 
-  it('「中性」清除 LUT 字段;无 LUT 时「中性」高亮', async () => {
-    setupInvokeDefaults();
-    const withLut: Partial<Adjustments> = {
-      ...INITIAL_ADJUSTMENTS,
-      lutPath: `${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`,
-      lutName: 'K-Portra 400',
-      lutIsSceneReferred: true,
-    };
-    const { setAdjustments, unmount } = renderBasic(withLut);
-    const neutral = await screen.findByRole('button', { name: '中性' });
-    expect(neutral.className).not.toContain('bg-accent');
-    fireEvent.click(neutral);
-    const next = applyUpdater(setAdjustments.mock.calls.at(-1)![0], withLut);
-    expect(next.lutPath).toBeNull();
-    expect(next.lutName).toBeNull();
+    const next = useEditorStore.getState().adjustments;
+    expect(next.lutPath).toBe('/user/luts/MyCustomLut.cube');
+    expect(next.lutName).toBe('MyCustomLut.cube');
     expect(next.lutIsSceneReferred).toBe(false);
-    expect(next.lutIntensity).toBe(100);
-
-    // 中性态下「中性」按钮高亮(先卸载首次渲染,避免 screen 命中旧实例)
-    unmount();
-    render(<BasicAdjustments adjustments={INITIAL_ADJUSTMENTS} setAdjustments={vi.fn()} />);
-    const neutralAgain = await screen.findByRole('button', { name: '中性' });
-    expect(neutralAgain.className).toContain('bg-accent');
   });
 
-  it('再次点击已激活胶片 = 清除 LUT;激活胶片由 lutPath 推导高亮', async () => {
-    setupInvokeDefaults();
-    const withLut: Partial<Adjustments> = {
-      ...INITIAL_ADJUSTMENTS,
-      lutPath: `${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`,
-      lutName: 'K-Portra 400',
-      lutIsSceneReferred: true,
-    };
-    const { setAdjustments } = renderBasic(withLut);
-    const portraButton = await screen.findByRole('button', { name: 'K-Portra 400' });
-    expect(portraButton.className).toContain('bg-accent');
-    fireEvent.click(portraButton);
-    const next = applyUpdater(setAdjustments.mock.calls.at(-1)![0], withLut);
+  it('LUT 解析失败时 toast 提示且不落任何 LUT 字段', async () => {
+    mockInvoke.mockRejectedValue(new Error('boom'));
+    resetEditorStore();
+    const { result } = renderHook(() => useEditorActions());
+    await act(async () => {
+      await result.current.handleLutSelect(FILM_LUT_PATH, true);
+    });
+
+    const next = useEditorStore.getState().adjustments;
     expect(next.lutPath).toBeNull();
     expect(next.lutName).toBeNull();
   });
 
-  it('胶片与场景可叠加:选择胶片不影响已激活场景的治理域取值', async () => {
+  it('胶片与场景可叠加:已激活场景的治理域取值不被胶片选择触碰', async () => {
     setupInvokeDefaults();
-    const { setAdjustments, unmount } = renderBasic();
-    clickScene('人像');
-    const afterScene = applyUpdater(setAdjustments.mock.calls[0][0], INITIAL_ADJUSTMENTS);
+    // 人像场景治理域完整校准值(激活态由全部 14 键推导)
+    resetEditorStore({ contrast: 6, highlights: -10, shadows: 14, saturation: -4, vibrance: 10, clarity: 10 });
+    const { result } = renderHook(() => useEditorActions());
+    await act(async () => {
+      await result.current.handleLutSelect(FILM_LUT_PATH, true);
+    });
 
-    // 先卸载首次渲染,避免 screen 命中旧实例的胶片按钮
-    unmount();
-    const setAdjustments2 = vi.fn();
-    render(
-      <BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...afterScene }} setAdjustments={setAdjustments2} />,
-    );
-    const applyFilm = await clickFilm('K-Portra 400', setAdjustments2);
-    const next = applyUpdater(applyFilm, afterScene);
-
+    const next = useEditorStore.getState().adjustments;
     expect(next.contrast).toBe(6);
     expect(next.vibrance).toBe(10);
     expect(next.clarity).toBe(10);
-    expect(next.lutPath).toBe(`${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`);
+    expect(next.lutPath).toBe(FILM_LUT_PATH);
+    expect(getActiveSceneLabelKey(next)).toBe('adjustments.basic.scene.prototypePortrait');
   });
 });
 
@@ -694,14 +674,20 @@ describe('TC-LOOK-03: 跨组切换确定性(配方 ↔ 场景/胶片)', () => {
     expect(getActiveSceneLabelKey(next)).toBe('adjustments.basic.scene.prototypePortrait');
   });
 
-  it('配方 → 胶片:配方参数与 HSL 清除,胶片 LUT 落位', async () => {
-    const { applied, setAdjustments, unmount } = await renderWithRecipe();
-    unmount();
-    const setAdjustments2 = vi.fn();
-    render(<BasicAdjustments adjustments={{ ...INITIAL_ADJUSTMENTS, ...applied }} setAdjustments={setAdjustments2} />);
-    const applyFilm = await clickFilm('K-Portra 400', setAdjustments2);
+  it('配方 → 胶片(经特效面板选 LUT):配方参数与 HSL 清除,胶片 LUT 落位', async () => {
+    setupInvokeDefaults();
+    const applied: Partial<Adjustments> = {
+      ...INITIAL_ADJUSTMENTS,
+      ...recipeToAdjustmentValues(RECIPE),
+      lutPath: `${MOCK_RES_DIR}/master_recipe_luts/hamada_daylight_pro_v2.cube`,
+    };
+    useEditorStore.setState({ adjustments: { ...INITIAL_ADJUSTMENTS, ...applied } } as never);
+    const { result } = renderHook(() => useEditorActions());
+    await act(async () => {
+      await result.current.handleLutSelect(FILM_LUT_PATH, true);
+    });
 
-    const next = applyUpdater(applyFilm, applied);
+    const next = useEditorStore.getState().adjustments;
     // 配方 14 键 + HSL 全部归零
     expect(next.exposure).toBe(0);
     expect(next.contrast).toBe(0);
@@ -709,24 +695,14 @@ describe('TC-LOOK-03: 跨组切换确定性(配方 ↔ 场景/胶片)', () => {
     expect(next.tint).toBe(0);
     expect(next.hsl?.yellows).toEqual({ hue: 0, saturation: 0, luminance: 0 });
     // 胶片 LUT 落位(scene-referred)
-    expect(next.lutPath).toBe(`${MOCK_RES_DIR}/film_luts/K-Portra 400.cube`);
-    expect(next.lutName).toBe('K-Portra 400');
+    expect(next.lutPath).toBe(FILM_LUT_PATH);
+    expect(next.lutName).toBe('K-Portra 400.cube');
     expect(next.lutIsSceneReferred).toBe(true);
     expect(getActiveRecipeId(next)).toBeNull();
   });
 
-  it('配方 → 中性:完整退出配方(参数 + HSL + LUT 全部归零)', async () => {
-    const { applied, setAdjustments } = await renderWithRecipe();
-    const neutral = screen.getByRole('button', { name: '中性' });
-    fireEvent.click(neutral);
-
-    const next = applyUpdater(setAdjustments.mock.calls.at(-1)![0], applied);
-    expect(next.lutPath).toBeNull();
-    expect(next.lutName).toBeNull();
-    expect(next.exposure).toBe(0);
-    expect(next.contrast).toBe(0);
-    expect(next.hsl?.yellows).toEqual({ hue: 0, saturation: 0, luminance: 0 });
-  });
+  // 「配方 → 中性」用例已随胶片组整合移除:Basic 面板不再提供「中性」入口,
+  // 完整退出配方 = 再次点击已激活配方(TC-RECIPE-02)或特效面板清除 LUT(TC-LOOK-03 重置常量用例)。
 
   it('Effects 链路共用语义:配方态经 RECIPE_PARAMETER_RESET 清理后激活态自然退出', () => {
     const RECIPE = MASTER_RECIPES[0];
@@ -737,7 +713,7 @@ describe('TC-LOOK-03: 跨组切换确定性(配方 ↔ 场景/胶片)', () => {
     };
     expect(getActiveRecipeId(recipeState)).toBe(RECIPE.id);
 
-    // handleLutSelect / Effects.handleLutClear 与 Basic.applyFilm 共用同一判定与重置常量
+    // useEditorActions.handleLutSelect / Effects.handleLutClear 共用同一判定与重置常量
     const cleared = { ...recipeState, ...RECIPE_PARAMETER_RESET };
     expect(getActiveRecipeId(cleared)).toBeNull();
     expect(cleared.contrast).toBe(0);

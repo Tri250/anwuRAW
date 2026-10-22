@@ -21,8 +21,7 @@
       },
       "reset": "초기화",
       "scene": {
-        "title": "장면 강화",
-        "desc": "원터치 전문 컬러 그레이딩",
+        "title": "장면 스타일",
         "auto": "자동",
         "autoDesc": "스마트 장면 강화",
         "prototypePortrait": "인물",
@@ -30,8 +29,6 @@
         "prototypeNight": "야경",
         "prototypeWarmSunset": "노을",
         "masterRecipes": "마스터 레시피",
-        "films": "필름",
-        "filmsNeutral": "중립",
         "recipeLutMissing": "마스터 레시피 룩 파일을 사용할 수 없습니다",
         "recipeActiveHint": "활성화됨 — 다시 클릭하면 레시피 해제",
         "recipes": {
@@ -428,7 +425,6 @@
       },
       "title": "조정",
       "tooltips": {
-        "autoAdjust": "이미지 자동 조정",
         "resetAdjustments": "조정값 초기화",
         "toggleAnalytics": "분석 표시 전환"
       }
@@ -504,7 +500,9 @@
         "feather": "페더",
         "grow": "확장",
         "intensity": "강도",
-        "pressure": "압력"
+        "pressure": "압력",
+        "decontaminate": "가장자리 정리",
+        "sensitivity": "감도"
       },
       "patches": {
         "aiEdit": "AI 편집 {{count}}",
@@ -521,7 +519,12 @@
         "quickErase": "빠른 지우기 {{count}}",
         "quickErase_one": "빠른 지우기 {{count}}",
         "quickErase_other": "빠른 지우기 {{count}}",
-        "retouch": "리터칭 {{count}}"
+        "retouch": "리터칭 {{count}}",
+        "clone_one": "복제 {{count}}",
+        "heal_one": "복구 {{count}}",
+        "autoErase": "자동 지우기 {{count}}",
+        "autoErase_one": "자동 지우기 {{count}}",
+        "autoErase_other": "자동 지우기 {{count}}"
       },
       "resetInpaintingTooltip": "인페인팅 초기화",
       "settings": {
@@ -541,9 +544,18 @@
         "placeholder": "예: 꽃밭",
         "quickEraseDesc": "선택 영역을 채워 객체를 제거합니다.",
         "selectionPropertiesTitle": "선택 영역 속성",
-        "useBasicInpaint": "기본 인페인팅 사용"
+        "useBasicInpaint": "기본 인페인팅 사용",
+        "inpaintName": "인페인트",
+        "onDeviceNotice": "기기 내 AI 복구. 오프라인으로 작동하며 사진은 이 기기를 벗어나지 않습니다."
       },
-      "touchUpTitle": "터치업"
+      "touchUpTitle": "터치업",
+      "toasts": {
+        "patchFailed": "패치 생성 실패: {{err}}",
+        "replaceFailed": "AI 교체 실패: {{err}}",
+        "quickEraseFailed": "빠른 지우기 실패: {{err}}",
+        "maskFailed": "AI 마스크 생성 실패: {{err}}",
+        "depthMaskFailed": "AI 깊이 마스크 생성 실패: {{err}}"
+      }
     },
     "crop": {
       "aspectRatioHeading": "종횡비",
@@ -653,7 +665,8 @@
         "switchToLandscape": "가로로 전환",
         "switchToPortrait": "세로로 전환",
         "transform": "원근 및 키스톤 보정"
-      }
+      },
+      "autoCropAfterRotate": "회전 후 검은 여백 자동 자르기"
     },
     "externalEdit": {
       "done": "완료",
@@ -717,7 +730,8 @@
         "feather": "페더",
         "globalFeather": "전체 페더",
         "grow": "확장",
-        "tolerance": "허용 오차"
+        "tolerance": "허용 오차",
+        "decontaminate": "색상 오염 제거"
       },
       "toolbar": {
         "title": "마스크 편집",
@@ -761,7 +775,8 @@
         "addToCurrent": "{{name}}을(를) 현재 마스크에 추가하거나 새로 만들기 (우클릭)",
         "createNew": "새 {{name}} 마스크 만들기",
         "selectNewSourcePoint": "{{modifier}} + 클릭하여 새 소스 포인트 선택"
-      }
+      },
+      "resetMaskingConfirm": "다시 클릭하여 초기화"
     },
     "metadata": {
       "author": {
@@ -801,7 +816,9 @@
         "clickToOpenTooltip": "클릭하여 새 탭에서 지도 열기",
         "latitude": "위도",
         "longitude": "경도",
-        "title": "GPS 위치"
+        "title": "GPS 위치",
+        "offlineMapLabel": "사진 위치 마커가 표시된 오프라인 세계 지도",
+        "openOnlineMap": "온라인 지도 열기"
       },
       "iptc": {
         "batchHint": "여러 이미지를 선택하면 저장 시 모든 선택 이미지에 적용됩니다.",
@@ -995,7 +1012,8 @@
       "fileSettings": "파일 설정",
       "imageSizing": "이미지 크기",
       "metadata": "메타데이터",
-      "watermark": "워터마크"
+      "watermark": "워터마크",
+      "color": "색상 출력"
     },
     "status": {
       "cancelExport": "내보내기 취소",
@@ -1036,6 +1054,17 @@
       "scale": "크기",
       "spacing": "간격",
       "watermarkImage": "워터마크 이미지"
+    },
+    "color": {
+      "bitDepth": "비트 깊이",
+      "bitDepth8Desc": "파일이 작고 표준 화면 표시용",
+      "bitDepth16Desc": "파일이 크고 밴딩 없이 편집",
+      "colorSpace": "색 공간",
+      "colorSpaceDesc_srgb": "웹과 대부분의 화면 표준",
+      "colorSpaceDesc_displayP3": "넓은 색역 — Apple / HDR 디스플레이에 적합",
+      "colorSpaceDesc_adobeRgb": "인쇄 및 사진 분야에서 널리 사용",
+      "colorSpaceDesc_proPhoto": "가장 넓은 색역 — 전문 아카이빙용",
+      "jpgIccWarning": "JPEG는 sRGB가 아닌 색 공간에 ICC 프로파일을 내장합니다. 일부 뷰어에서는 sRGB로 표시될 수 있습니다."
     }
   },
   "library": {
@@ -1909,7 +1938,10 @@
         "title": "이미지 전처리",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "기본"
+          "basic": "기본",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "전역 톤매퍼 재정의",
         "tonemapperOverrideDesc": "모든 이미지에 특정 톤매퍼를 전역으로 강제 적용하고, 조정 패널에서 톤매퍼 전환을 숨깁니다."
@@ -2140,6 +2172,13 @@
         "showClipping": "클리핑 경고 표시",
         "vectorscope": "벡터스코프"
       }
+    },
+    "toasts": {
+      "saveFailed": "변경 사항 저장 실패: {{err}}",
+      "lutLoadFailed": "LUT 로드 실패: {{err}}",
+      "depthMapFailed": "뎁스 맵 생성 실패: {{err}}",
+      "lutRemoveFailed": "LUT 제거 실패: {{err}}",
+      "comparePreviewFailed": "비교 미리보기 생성 실패: {{err}}"
     }
   }
 }

@@ -21,8 +21,7 @@
       },
       "reset": "Redefinir",
       "scene": {
-        "title": "Aprimoramento de cena",
-        "desc": "Graduação de cor profissional em um toque",
+        "title": "Estilo de cena",
         "auto": "Auto",
         "autoDesc": "Aprimoramento inteligente de cena",
         "prototypePortrait": "Retrato",
@@ -30,8 +29,6 @@
         "prototypeNight": "Noite",
         "prototypeWarmSunset": "Pôr do sol quente",
         "masterRecipes": "Receitas mestres",
-        "films": "Filmes",
-        "filmsNeutral": "Neutro",
         "recipeLutMissing": "Arquivo de look da receita mestre indisponível",
         "recipeActiveHint": "Ativa — clique novamente para sair da receita",
         "recipes": {
@@ -318,7 +315,9 @@
       "resetConfirmTitle_other": "Repor ajustes ({{count}} imagens)",
       "stitchPanorama": "Montar Panorama",
       "tagging": "Etiquetas",
-      "undo": "Desfazer"
+      "undo": "Desfazer",
+      "resetConfirmMessage_many": "Isto removerá todos os ajustes locais das {{count}} imagens selecionadas e restaurará os valores predefinidos.\n\nApós a reposição, cada imagem ainda pode ser desfeita com Ctrl+Z se não mudar de imagem.",
+      "resetConfirmTitle_many": "Repor ajustes ({{count}} imagens)"
     },
     "folders": {
       "changeIcon": "Alterar Ícone",
@@ -444,7 +443,6 @@
       },
       "title": "Ajustes",
       "tooltips": {
-        "autoAdjust": "Ajuste Automático de Imagem",
         "resetAdjustments": "Redefinir Ajustes",
         "toggleAnalytics": "Alternar Exibição de Análises"
       }
@@ -520,7 +518,9 @@
         "feather": "Difusão",
         "grow": "Expandir",
         "intensity": "Intensidade",
-        "pressure": "Pressão"
+        "pressure": "Pressão",
+        "decontaminate": "Limpeza de bordas",
+        "sensitivity": "Sensibilidade"
       },
       "patches": {
         "aiEdit": "Edição de IA {{count}}",
@@ -543,7 +543,12 @@
         "quickErase_many": "Apagamento Rápido {{count}}",
         "quickErase_one": "Apagamento Rápido {{count}}",
         "quickErase_other": "Apagamento Rápido {{count}}",
-        "retouch": "Retoque {{count}}"
+        "retouch": "Retoque {{count}}",
+        "autoErase": "Apagamento automático {{count}}",
+        "autoErase_one": "Apagamento automático {{count}}",
+        "autoErase_many": "Apagamento automático {{count}}",
+        "autoErase_other": "Apagamento automático {{count}}",
+        "liquify_many": "Dissolver {{count}}"
       },
       "resetInpaintingTooltip": "Redefinir Preenchimento",
       "settings": {
@@ -563,9 +568,18 @@
         "placeholder": "ex.: um campo de flores",
         "quickEraseDesc": "Preencher seleção para remover o objeto.",
         "selectionPropertiesTitle": "Propriedades da Seleção",
-        "useBasicInpaint": "Usar preenchimento básico"
+        "useBasicInpaint": "Usar preenchimento básico",
+        "inpaintName": "Inpainting",
+        "onDeviceNotice": "Reparação com IA no dispositivo. Funciona offline — a sua foto nunca sai deste dispositivo."
       },
-      "touchUpTitle": "Retoques"
+      "touchUpTitle": "Retoques",
+      "toasts": {
+        "patchFailed": "Falha ao gerar o patch: {{err}}",
+        "replaceFailed": "Falha na substituição por IA: {{err}}",
+        "quickEraseFailed": "Falha no apagamento rápido: {{err}}",
+        "maskFailed": "Falha ao gerar a máscara de IA: {{err}}",
+        "depthMaskFailed": "Falha ao gerar a máscara de profundidade de IA: {{err}}"
+      }
     },
     "crop": {
       "aspectRatioHeading": "Proporção de Tela",
@@ -675,7 +689,8 @@
         "switchToLandscape": "Mudar para paisagem",
         "switchToPortrait": "Mudar para retrato",
         "transform": "Correção de perspectiva e keystone"
-      }
+      },
+      "autoCropAfterRotate": "Recortar automaticamente bordas pretas após rotação"
     },
     "externalEdit": {
       "done": "Concluído",
@@ -739,7 +754,8 @@
         "feather": "Difusão",
         "globalFeather": "Difusão Global",
         "grow": "Expandir",
-        "tolerance": "Tolerância"
+        "tolerance": "Tolerância",
+        "decontaminate": "Descontaminar cores"
       },
       "toolbar": {
         "title": "Edição de máscara",
@@ -784,7 +800,8 @@
         "addToCurrent": "Adicionar {{name}} à Máscara Atual ou Criar Nova (Botão Direito)",
         "createNew": "Criar Nova Máscara de {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Clique para selecionar um novo ponto de origem"
-      }
+      },
+      "resetMaskingConfirm": "Clique novamente para confirmar"
     },
     "metadata": {
       "author": {
@@ -824,7 +841,9 @@
         "clickToOpenTooltip": "Clique para abrir o mapa em uma nova guia",
         "latitude": "Latitude",
         "longitude": "Longitude",
-        "title": "Localização GPS"
+        "title": "Localização GPS",
+        "offlineMapLabel": "Mapa-múndi offline com marcador da localização da foto",
+        "openOnlineMap": "Abrir mapa online"
       },
       "iptc": {
         "batchHint": "Com várias imagens selecionadas, guardar aplica-se a todas.",
@@ -1019,7 +1038,8 @@
       "fileSettings": "Configurações de Arquivo",
       "imageSizing": "Dimensionamento de Imagem",
       "metadata": "Metadados",
-      "watermark": "Marca D'água"
+      "watermark": "Marca D'água",
+      "color": "Saída de cor"
     },
     "status": {
       "cancelExport": "Cancelar Exportação",
@@ -1061,6 +1081,17 @@
       "scale": "Escala",
       "spacing": "Espaçamento",
       "watermarkImage": "Imagem da Marca D'água"
+    },
+    "color": {
+      "bitDepth": "Profundidade de bits",
+      "bitDepth8Desc": "Arquivos menores, exibição padrão",
+      "bitDepth16Desc": "Arquivos maiores, edição sem posterização",
+      "colorSpace": "Espaço de cor",
+      "colorSpaceDesc_srgb": "Padrão para a web e a maioria das telas",
+      "colorSpaceDesc_displayP3": "Gama ampla — ideal para telas Apple / HDR",
+      "colorSpaceDesc_adobeRgb": "Amplamente usado em impressão e fotografia",
+      "colorSpaceDesc_proPhoto": "Maior gama — para arquivamento profissional",
+      "jpgIccWarning": "O JPEG incorpora o perfil ICC para espaços não sRGB. Alguns visualizadores ainda podem exibir sRGB."
     }
   },
   "library": {
@@ -1945,7 +1976,10 @@
         "title": "Pré-processamento de Imagem",
         "tonemapperOptions": {
           "agx": "AgX",
-          "basic": "Básico"
+          "basic": "Básico",
+          "reinhard": "Reinhard",
+          "filmic": "Filmic Pro",
+          "gamma": "Gamma 2.2"
         },
         "tonemapperOverride": "Substituição Global de Mapeador de Tons",
         "tonemapperOverrideDesc": "Força um mapeador de tons específico globalmente para todas as imagens, ocultando a opção do mapeador de tons do painel de ajustes."
@@ -2177,6 +2211,13 @@
         "showClipping": "Mostrar Avisos de Clipping",
         "vectorscope": "Vetorscópio"
       }
+    },
+    "toasts": {
+      "saveFailed": "Falha ao salvar alterações: {{err}}",
+      "lutLoadFailed": "Falha ao carregar o LUT: {{err}}",
+      "depthMapFailed": "Falha ao gerar o mapa de profundidade: {{err}}",
+      "lutRemoveFailed": "Falha ao remover o LUT: {{err}}",
+      "comparePreviewFailed": "Falha ao gerar a pré-visualização comparativa: {{err}}"
     }
   }
 }

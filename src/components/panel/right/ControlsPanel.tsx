@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { RotateCcw, Copy, ClipboardPaste, Aperture, ChartArea } from 'lucide-react';
+import { RotateCcw, Copy, ClipboardPaste, ChartArea } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -254,14 +254,6 @@ export default function Controls() {
       <div className="p-3 flex justify-between items-center shrink-0 border-b border-surface">
         <Text variant={TextVariants.title}>{t('editor.adjustments.title')}</Text>
         <div className="flex items-center gap-1">
-          <button
-            className="p-2 rounded-full hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            disabled={!selectedImage}
-            onClick={handleAutoAdjustments}
-            data-tooltip={t('editor.adjustments.tooltips.autoAdjust')}
-          >
-            <Aperture size={18} />
-          </button>
           <button
             className={clsx(
               'p-2 rounded-full transition-colors',
