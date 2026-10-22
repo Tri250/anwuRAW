@@ -372,7 +372,26 @@ const Slider = ({
     const thumbX = rect.left + Math.max(0, Math.min(1, fraction)) * rect.width;
 
     if (Math.abs(touch.clientX - thumbX) > TOUCH_THUMB_HIT_RADIUS_PX) {
+      // 触点不在滑块拇指附近：若落在轨道横向范围内，点击直接跳值（与桌面点击行为一致，
+      // 也符合国内主流修图 App 手感）。不 preventDefault，保持 pan-y —— 纵向滑动仍可滚动页面。
+      const inTrackRange =
+        touch.clientX >= rect.left - TOUCH_THUMB_HIT_RADIUS_PX &&
+        touch.clientX <= rect.right + TOUCH_THUMB_HIT_RADIUS_PX;
+      if (!inTrackRange) {
+        pendingTouchRef.current = null;
+        return;
+      }
+      const trackFraction = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+      const rawTrackValue = min + trackFraction * (max - min);
+      const snappedTrackValue = snapToStep(rawTrackValue);
+
+      accumulatedValueRef.current = rawTrackValue;
+      lastPointerXRef.current = touch.clientX;
       pendingTouchRef.current = null;
+
+      setIsDragging(true);
+      setDisplayValue(snappedTrackValue);
+      onChange({ target: { value: snappedTrackValue } });
       return;
     }
 

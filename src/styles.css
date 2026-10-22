@@ -493,6 +493,23 @@ html[data-platform='android'] [contenteditable] {
   user-select: text;
 }
 
+/* Android 全面屏安全区适配：
+   viewport-fit=cover 后 100vh 为物理全屏高，底部手势条/打孔会遮挡内容。
+   body 承担 env(safe-area-inset) 内边距并固定为动态视口高，
+   根 .h-screen 容器改为 height:100% 跟随 body 内容盒，BottomBar 不再被手势条压住。 */
+html[data-platform='android'] body {
+  height: 100dvh;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+html[data-platform='android'] .h-screen {
+  height: 100%;
+}
+
 /* 全局动效降级：当系统开启"减少动态效果"时，收敛所有 CSS 动画/过渡与平滑滚动。
    framer-motion 方向的降级由 App.tsx 顶部 <MotionConfig reducedMotion="user"> 负责。 */
 @media (prefers-reduced-motion: reduce) {

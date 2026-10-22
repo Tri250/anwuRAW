@@ -99,10 +99,13 @@ const ColorWheel = ({
     if (isWheelDragging) {
       window.addEventListener('mouseup', handleInteractionEnd);
       window.addEventListener('touchend', handleInteractionEnd);
+      // 触摸被系统打断（来电、通知手势等）时同样结束拖拽，避免指针状态卡住
+      window.addEventListener('touchcancel', handleInteractionEnd);
     }
     return () => {
       window.removeEventListener('mouseup', handleInteractionEnd);
       window.removeEventListener('touchend', handleInteractionEnd);
+      window.removeEventListener('touchcancel', handleInteractionEnd);
     };
   }, [isWheelDragging, isSliderDragging, onDragStateChange]);
 

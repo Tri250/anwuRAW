@@ -32,6 +32,14 @@ export default function CollapsibleSection({
   const [isHovering, setIsHovering] = useState(false);
   const hoverTimeoutRef = useRef<any>(null);
 
+  // 触屏设备（无 hover 能力）上 isHovering 永远不会变为 true，
+  // 眼睛按钮将永久不可见导致分区启用/禁用无法触达——此处对纯触屏环境常显按钮
+  const isHoverUnavailable =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(hover: none)').matches;
+  const showEyeButton = isHoverUnavailable || isHovering || !isContentVisible;
+
   useEffect(() => {
     const wrapper = wrapperRef.current;
     const content = contentRef.current;
@@ -95,7 +103,7 @@ export default function CollapsibleSection({
               <button
                 className={clsx(
                   'p-1 rounded-full text-text-secondary hover:bg-bg-primary z-10 transition-opacity duration-300',
-                  isHovering || !isContentVisible ? 'opacity-100' : 'opacity-0 pointer-events-none',
+                  showEyeButton ? 'opacity-100' : 'opacity-0 pointer-events-none',
                 )}
                 onClick={handleVisibilityClick}
                 data-tooltip={

@@ -90,6 +90,30 @@ export function useAndroidBackHandler() {
         ui.setUI({ collageModalState: { isOpen: false, sourceImages: [] } });
         return;
       }
+      if (ui.focusStackModalState.isOpen) {
+        ui.setUI({
+          focusStackModalState: {
+            isOpen: false,
+            isProcessing: false,
+            progressMessage: '',
+            finalImageBase64: null,
+            depthMapBase64: null,
+            error: null,
+            sourcePaths: [],
+          },
+        });
+        return;
+      }
+
+      // 模态弹窗全部关闭后，再依次收起 Android 端全屏浮层面板（设置 / 库导出）
+      if (ui.isSettingsOpen) {
+        ui.setUI({ isSettingsOpen: false });
+        return;
+      }
+      if (ui.isLibraryExportPanelVisible) {
+        ui.setUI({ isLibraryExportPanelVisible: false });
+        return;
+      }
 
       window.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true }),
