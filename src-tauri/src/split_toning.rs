@@ -210,3 +210,92 @@ pub async fn apply_split_toning_command(
         .map_err(|e| e.to_string())?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use image::{Rgb, RgbImage};
+
+    #[test]
+    fn tc_st_disabled_is_pixel_exact() {
+        // 未启用：必须逐像素不变
+        let img = DynamicImage::ImageRgb8(RgbImage::from_fn(8, 8, |x, y| {
+            Rgb([(x * 32) as u8, (y * 32) as u8, ((x + y) * 16) as u8])
+        }));
+        let out = apply_to_dynamic(&img, &SplitToningSettings::disabled());
+        assert_eq!(out.to_rgb8().as_raw(), img.to_rgb8().as_raw());
+    }
+
+    #[test]
+    fn tc_st_zero_saturation_is_pixel_exact() {
+        // 启用但饱和度全 0：不应产生任何染色（OKLab a/b 偏移为零）
+        let img = DynamicImage::ImageRgb8(RgbImage::from_fn(8, 8, |x, y| {
+            Rgb([(x * 32) as u8, (y * 32) as u8, ((x + y) * 16) as u8])
+        }));
+        let settings = SplitToningSettings {
+            shadows_hue: 30.0,
+            shadows_saturation: 0.0,
+            highlights_hue: 200.0,
+            highlights_saturation: 0.0,
+            balance: 0.0,
+            enabled: true,
+        };
+        let out = apply_to_dynamic(&img, &settings);
+        let (a, b) = (out.to_rgb8().into_raw(), img.to_rgb8().into_raw());
+        let max_diff = a
+            .iter()
+            .zip(b.iter())
+            .map(|(x, y)| (*x as i32 - *y as i32).abs())
+            .max()
+            .unwrap();
+        assert!(max_diff <= 1, "zero-saturation drift: {}", max_diff);
+    }
+
+    #[test]
+    fn tc_st_highlight_tint_affected_by_luma() {
+        // balance=0 时高光染色：亮像素受影响程度应显著大于暗像素
+        let img = DynamicImage::ImageRgb8(RgbImage::from_fn(2, 1, |x, _| {
+            if x == 0 {
+                Rgb([250, 250, 250])
+            } else {
+                Rgb([10, 10, 10])
+            }
+        }));
+        let settings = SplitToningSettings {
+            shadows_hue: 0.0,
+            shadows_saturation: 0.0,
+            highlights_hue: 0.0,
+            highlights_saturation: 100.0,
+            balance: 0.0,
+            enabled: true,
+        };
+        let out = apply_to_dynamic(&img, &settings);
+        let out_rgb = out.to_rgb8();
+        let in_rgb = img.to_rgb8();
+        let bright = out_rgb.get_pixel(0, 0);
+        let dark = out_rgb.get_pixel(1, 0);
+        let dark_in = in_rgb.get_pixel(1, 0);
+        let bright_in = in_rgb.get_pixel(0, 0);
+        let bright_diff =
+            (bright.0[0] as i32 - bright_in.0[0] as i32).abs() + (bright.0[1] as i32 - bright_in.0[1] as i32).abs() + (bright.0[2] as i32 - bright_in.0[2] as i32).abs();
+        let dark_diff = (dark.0[0] as i32 - dark_in.0[0] as i32).abs() + (dark.0[1] as i32 - dark_in.0[1] as i32).abs() + (dark.0[2] as i32 - dark_in.0[2] as i32).abs();
+        assert!(
+            bright_diff > dark_diff * 4 && bright_diff > 6,
+            "bright_diff={}, dark_diff={}",
+            bright_diff,
+            dark_diff
+        );
+    }
+
+    #[test]
+    fn tc_st_highlight_weight_threshold_mapping() {
+        // balance 映射：0 → 分界 0.5（中灰权重恰为 0.5）；+100 → 分界 0.25，中灰明显偏向高光；
+        // -100 → 分界 0.75，中灰明显偏向阴影（sigmoid 过渡带宽 8 → 权重非满值）
+        let s0 = SplitToningSettings { balance: 0.0, ..Default::default() };
+        let s_pos = SplitToningSettings { balance: 100.0, ..Default::default() };
+        let s_neg = SplitToningSettings { balance: -100.0, ..Default::default() };
+        assert!((s0.highlight_weight(0.5) - 0.5).abs() < 1e-3, "balance=0 neutral");
+        assert!(s_pos.highlight_weight(0.5) > 0.85, "positive balance -> highlight: {}", s_pos.highlight_weight(0.5));
+        assert!(s_neg.highlight_weight(0.5) < 0.15, "negative balance -> shadow: {}", s_neg.highlight_weight(0.5));
+    }
+}

@@ -3522,3 +3522,142 @@ pub fn apply_post_gpu_adjustments(
     }
     img
 }
+
+#[cfg(test)]
+mod algorithm_tests {
+    use super::*;
+
+    /// 构造 Rgba32F 图像（管线核心工作格式）
+    fn rgba32f_image(pixels: &[(f32, f32, f32)]) -> DynamicImage {
+        let w = pixels.len() as u32;
+        let mut buf = image::Rgba32FImage::new(w, 1);
+        for (x, (r, g, b)) in pixels.iter().enumerate() {
+            buf.put_pixel(x as u32, 0, image::Rgba([*r, *g, *b, 1.0]));
+        }
+        DynamicImage::ImageRgba32F(buf)
+    }
+
+    #[test]
+    fn tc_algo_srgb_linear_roundtrip_precision() {
+        // 全亮度采样 sRGB → linear → sRGB，往返误差必须低于 1 个 8bit 量化步长
+        let samples: Vec<f32> = (0..=100).map(|i| i as f32 / 100.0).collect();
+        let img = rgba32f_image(&samples.iter().map(|v| (*v, *v, *v)).collect::<Vec<_>>());
+        let roundtrip = apply_linear_to_srgb(apply_srgb_to_linear(img));
+        if let DynamicImage::ImageRgba32F(buf) = &roundtrip {
+            for (i, v0) in samples.iter().enumerate() {
+                let px = buf.get_pixel(i as u32, 0);
+                assert!((px[0] - v0).abs() < 1.0 / 255.0, "roundtrip drift at {}: {} vs {}", v0, px[0], v0);
+            }
+        } else {
+            panic!("expected Rgba32F");
+        }
+    }
+
+    #[test]
+    fn tc_algo_srgb_to_linear_known_values() {
+        // IEC 61966-2-1 已知值：sRGB 0.5 → linear ≈ 0.21404
+        let img = rgba32f_image(&[(0.5, 0.0, 1.0)]);
+        let lin = apply_srgb_to_linear(img);
+        if let DynamicImage::ImageRgba32F(buf) = &lin {
+            let px = buf.get_pixel(0, 0);
+            assert!((px[0] - 0.21404).abs() < 1e-4, "srgb 0.5 -> {}", px[0]);
+            // 纯黑/纯白边界不变
+            assert_eq!(px[2], 1.0);
+        } else {
+            panic!("expected Rgba32F");
+        }
+    }
+
+    #[test]
+    fn tc_algo_agx_output_bounded_and_monotonic() {
+        // AGX 色调映射：输出必须落在 [0,1] 且对亮度 ramp 保持单调（不产生反转）。
+        // 注：apply_cpu_agx_tonemap 内部经 to_rgb32f() 写回，输出为 ImageRgb32F。
+        let ramp: Vec<(f32, f32, f32)> = (0..=64).map(|i| i as f32 / 64.0).map(|v| (v, v, v)).collect();
+        let mut img = rgba32f_image(&ramp);
+        apply_cpu_agx_tonemap(&mut img);
+        if let DynamicImage::ImageRgb32F(buf) = &img {
+            let mut prev = -1.0f32;
+            for i in 0..=64 {
+                let px = buf.get_pixel(i as u32, 0);
+                for c in px.0.iter() {
+                    assert!((0.0..=1.0).contains(c), "agx out of range: {}", c);
+                }
+                let lum = 0.2126 * px.0[0] + 0.7152 * px.0[1] + 0.0722 * px.0[2];
+                assert!(lum >= prev - 1e-4, "agx not monotonic at step {}: {} < {}", i, lum, prev);
+                prev = lum;
+            }
+        } else {
+            panic!("expected Rgb32F after tonemap");
+        }
+    }
+
+    #[test]
+    fn tc_algo_geometry_identity_default_params() {
+        // 默认几何参数必须是恒等（不触发任何 warp）
+        let params = GeometryParams::default();
+        assert!(is_geometry_identity(&params));
+    }
+
+    #[test]
+    fn tc_algo_auto_analysis_flat_midgray_neutral() {
+        // 平坦中灰图：自动分析不应建议明显的曝光改动（画面无欠曝/过曝迹象），
+        // 且所有建议值必须落在 UI 滑块语义范围内（有界）
+        let img = DynamicImage::ImageRgb8(image::RgbImage::from_fn(64, 64, |_, _| image::Rgb([128u8, 128, 128])));
+        let results = perform_auto_analysis(&img);
+        assert!(results.exposure.abs() < 0.25, "flat midgray exposure: {}", results.exposure);
+        assert!((-100.0..=100.0).contains(&results.contrast), "contrast bounded: {}", results.contrast);
+    }
+
+    #[test]
+    fn tc_algo_auto_analysis_dark_image_boosts_exposure() {
+        // 严重欠曝图：自动分析应建议正向曝光补偿
+        let img = DynamicImage::ImageRgb8(image::RgbImage::from_fn(64, 64, |_, _| image::Rgb([24u8, 24, 26])));
+        let results = perform_auto_analysis(&img);
+        assert!(results.exposure > 0.0, "dark image exposure: {}", results.exposure);
+    }
+
+    #[test]
+    fn tc_algo_post_gpu_identity_sections_noop() {
+        // section 全部可见但 channelMixer/splitToning 为中性值时输出逐像素不变
+        let img = rgba32f_image(&[(0.25, 0.5, 0.75), (0.1, 0.2, 0.3), (0.9, 0.8, 0.7)]);
+        let js = serde_json::json!({
+            "channelMixer": {
+                "red_from_red": 100, "red_from_green": 0, "red_from_blue": 0,
+                "green_from_red": 0, "green_from_green": 100, "green_from_blue": 0,
+                "blue_from_red": 0, "blue_from_green": 0, "blue_from_blue": 100
+            },
+            "splitToning": { "enabled": false, "highlights_hue": 0, "highlights_saturation": 0, "shadows_hue": 0, "shadows_saturation": 0, "balance": 0 },
+            "sectionVisibility": { "channel_mixer": true, "split_toning": true }
+        });
+        let out = apply_post_gpu_adjustments(img.clone(), &js);
+        assert_eq!(out.to_rgb32f().as_raw(), img.to_rgb32f().as_raw());
+    }
+
+    #[test]
+    fn tc_algo_post_gpu_channel_mixer_effective() {
+        // 非恒等混合必须真实生效：red_from_red=200 → 纯红像素 R 通道翻倍（并 clamp），同时验证
+        // 前端 snake_case 键（red_from_red 等）能被后端反序列化——区分「恒等跳过」与「解析失败跳过」
+        let img = rgba32f_image(&[(0.5, 0.0, 0.0), (0.1, 0.2, 0.3)]);
+        let js = serde_json::json!({
+            "channelMixer": {
+                "red_from_red": 200, "red_from_green": 0, "red_from_blue": 0,
+                "green_from_red": 0, "green_from_green": 100, "green_from_blue": 0,
+                "blue_from_red": 0, "blue_from_green": 0, "blue_from_blue": 100
+            },
+            "sectionVisibility": { "channel_mixer": true, "split_toning": true }
+        });
+        let out = apply_post_gpu_adjustments(img.clone(), &js);
+        if let DynamicImage::ImageRgb8(buf) = &out {
+            let px0 = buf.get_pixel(0, 0);
+            assert_eq!(px0[0], 255, "0.5*200% = 1.0 -> 255 (clamp)");
+            assert_eq!(px0[1], 0);
+            let px1 = buf.get_pixel(1, 0);
+            // 0.1*200% = 0.2 (R), G/B 不变（u8 量化容差 1）
+            assert!((px1[0] as i32 - 51).abs() <= 1, "R = {}", px1[0]);
+            assert!((px1[1] as i32 - 51).abs() <= 1, "G = {}", px1[1]);
+            assert!((px1[2] as i32 - 77).abs() <= 1, "B = {}", px1[2]);
+        } else {
+            panic!("expected Rgb8 output");
+        }
+    }
+}

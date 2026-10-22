@@ -201,3 +201,72 @@ pub async fn apply_channel_mixer_command(
         .map_err(|e| e.to_string())?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use image::{Rgb, RgbImage};
+
+    fn gradient_image() -> DynamicImage {
+        DynamicImage::ImageRgb8(RgbImage::from_fn(16, 16, |x, y| {
+            Rgb([(x * 16) as u8, (y * 16) as u8, ((x + y) * 8) as u8])
+        }))
+    }
+
+    /// 显式恒等矩阵（注意：Rust 的 Default 派生是全 0，仅用于 serde 兜底，
+    /// 前端初始值恒为 identity——此处模拟前端真实输入）
+    fn identity_settings() -> ChannelMixerSettings {
+        ChannelMixerSettings {
+            red_from_red: 100.0,
+            red_from_green: 0.0,
+            red_from_blue: 0.0,
+            green_from_red: 0.0,
+            green_from_green: 100.0,
+            green_from_blue: 0.0,
+            blue_from_red: 0.0,
+            blue_from_green: 0.0,
+            blue_from_blue: 100.0,
+        }
+    }
+
+    #[test]
+    fn tc_cm_identity_is_pixel_exact() {
+        // 恒等矩阵必须逐像素不变（含早退路径）
+        let img = gradient_image();
+        let out = apply_to_dynamic(&img, &identity_settings());
+        assert_eq!(out.to_rgb8().as_raw(), img.to_rgb8().as_raw());
+    }
+
+    #[test]
+    fn tc_cm_red_boost_doubles_red_channel() {
+        // red_from_red=200%：红输入的 R 线性放大 2 倍，G/B 通道不受影响
+        let img = DynamicImage::ImageRgb8(RgbImage::from_fn(1, 1, |_, _| Rgb([100, 40, 20])));
+        let settings = ChannelMixerSettings { red_from_red: 200.0, ..identity_settings() };
+        let out = apply_to_dynamic(&img, &settings);
+        let px = *out.to_rgb8().get_pixel(0, 0);
+        assert_eq!(px.0[0], 200, "R: 100 * 200%");
+        assert_eq!(px.0[1], 40, "G unchanged");
+        assert_eq!(px.0[2], 20, "B unchanged");
+    }
+
+    #[test]
+    fn tc_cm_clamp_upper_bound() {
+        // 多通道正贡献叠加不得溢出 u8（clamp 到 255）
+        let img = DynamicImage::ImageRgb8(RgbImage::from_fn(1, 1, |_, _| Rgb([200, 100, 50])));
+        let settings =
+            ChannelMixerSettings { red_from_red: 200.0, red_from_green: 200.0, red_from_blue: 200.0, ..identity_settings() };
+        let out = apply_to_dynamic(&img, &settings);
+        let px = *out.to_rgb8().get_pixel(0, 0);
+        assert_eq!(px.0[0], 255, "200*2 + 100*2 + 50*2 = 700 -> clamp 255");
+    }
+
+    #[test]
+    fn tc_cm_cross_channel_mix() {
+        // red_from_green=100 + red_from_red=0：输出 R 完全来自输入 G
+        let img = DynamicImage::ImageRgb8(RgbImage::from_fn(1, 1, |_, _| Rgb([10, 90, 30])));
+        let settings = ChannelMixerSettings { red_from_red: 0.0, red_from_green: 100.0, ..identity_settings() };
+        let out = apply_to_dynamic(&img, &settings);
+        let px = *out.to_rgb8().get_pixel(0, 0);
+        assert_eq!(px.0[0], 90, "R = input G");
+    }
+}

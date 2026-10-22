@@ -776,3 +776,90 @@ pub fn load_and_parse_lut(path: String, state: State<AppState>) -> Result<LutPar
 
     Ok(LutParseResult { size: lut_size })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 生成 2³ 恒等 cube 文本（.cube 数据序：R 最快变化）
+    fn identity_cube_text(size: u32) -> String {
+        let mut s = format!("TITLE Identity\nLUT_3D_SIZE {}\n\n", size);
+        for b in 0..size {
+            for g in 0..size {
+                for r in 0..size {
+                    let n = (size - 1) as f32;
+                    s.push_str(&format!(
+                        "{:.6} {:.6} {:.6}\n",
+                        r as f32 / n,
+                        g as f32 / n,
+                        b as f32 / n
+                    ));
+                }
+            }
+        }
+        s
+    }
+
+    #[test]
+    fn tc_lut_parse_cube_identity_values() {
+        // 恒等 LUT：data[0]=(0,0,0) 且 R 最快变化，data[1]=(1,0,0)
+        let lut = parse_cube(std::io::Cursor::new(identity_cube_text(2))).expect("parse ok");
+        assert_eq!(lut.size, 2);
+        assert_eq!(lut.data.len(), 8 * 3);
+        assert_eq!(lut.data[0], 0.0);
+        assert_eq!(lut.data[1], 0.0);
+        assert_eq!(lut.data[2], 0.0);
+        assert_eq!(lut.data[3], 1.0, "R fastest varying");
+        assert_eq!(lut.data[4], 0.0);
+        // 末点 = (1,1,1)
+        let last = &lut.data[21..24];
+        assert_eq!(last, [1.0, 1.0, 1.0]);
+    }
+
+    #[test]
+    fn tc_lut_parse_cube_rejects_size_mismatch() {
+        // 声明 2³ 但只给 4 行数据：必须报错（防止半截 LUT 进入渲染管线）
+        let mut text = String::from("LUT_3D_SIZE 2\n");
+        for _ in 0..4 {
+            text.push_str("0.5 0.5 0.5\n");
+        }
+        assert!(parse_cube(std::io::Cursor::new(text)).is_err());
+    }
+
+    #[test]
+    fn tc_lut_parse_cube_rejects_size_before_data() {
+        // 数据行出现在 LUT_3D_SIZE 之前：必须报错
+        let text = "0.5 0.5 0.5\nLUT_3D_SIZE 2\n0.5 0.5 0.5\n";
+        assert!(parse_cube(std::io::Cursor::new(text)).is_err());
+    }
+
+    #[test]
+    fn tc_lut_parse_cube_tolerates_comments_and_domain() {
+        // 注释/TITLE/DOMAIN 行被忽略
+        let text_body = identity_cube_text(2);
+        let data_lines = text_body.splitn(3, '\n').last().unwrap().to_string();
+        let text = "# comment\nTITLE t\nDOMAIN_MIN 0.0 0.0 0.0\nDOMAIN_MAX 1.0 1.0 1.0\nLUT_3D_SIZE 2\n".to_string() + &data_lines;
+        let lut = parse_cube(std::io::Cursor::new(text)).expect("parse ok");
+        assert_eq!(lut.size, 2);
+    }
+
+    #[test]
+    fn tc_lut_identity_image_roundtrip() {
+        // generate_identity_lut_image → convert_image_to_cube_lut 应产出恒等映射
+        let img = generate_identity_lut_image(4);
+        let bytes = convert_image_to_cube_lut(&img, 4).expect("convert ok");
+        let text = String::from_utf8(bytes).expect("utf8");
+        let lut = parse_cube(std::io::Cursor::new(text)).expect("parse ok");
+        assert_eq!(lut.size, 4);
+        assert_eq!(lut.data.len(), 64 * 3);
+        // 抽查角落：首条目 = (0,0,0)；(b=3,g=3,r=0) 条目 = (0,1,1)；末条目 = (1,1,1)
+        assert_eq!(lut.data[0], 0.0);
+        assert_eq!(lut.data[1], 0.0);
+        let idx = |r: u32, g: u32, b: u32| ((b * 16 + g * 4 + r) * 3) as usize;
+        let bg_corner = idx(0, 3, 3);
+        assert!((lut.data[bg_corner] - 0.0).abs() < 1e-5);
+        assert!((lut.data[bg_corner + 1] - 1.0).abs() < 1e-5, "G=1 at g_idx=3");
+        assert!((lut.data[bg_corner + 2] - 1.0).abs() < 1e-5, "B=1 at b_idx=3");
+        assert!((lut.data[63 * 3] - 1.0).abs() < 1e-5, "last entry R");
+    }
+}

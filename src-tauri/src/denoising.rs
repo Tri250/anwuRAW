@@ -436,6 +436,63 @@ fn ycbcr_to_rgb(y: &[f32], cb: &[f32], cr: &[f32]) -> (Vec<f32>, Vec<f32>, Vec<f
     (r, g, b)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tc_dn_ycbcr_roundtrip_precision() {
+        // BT.601 YCbCr 往返精度：全色域采样误差 < 1e-3（远低于 8bit 量化步长）
+        let n = 64;
+        let r: Vec<f32> = (0..n).map(|i| i as f32 / (n - 1) as f32 * 255.0).collect();
+        let g: Vec<f32> = (0..n).map(|i| ((i * 7) % n) as f32 / (n - 1) as f32 * 255.0).collect();
+        let b: Vec<f32> = (0..n).map(|i| ((i * 13) % n) as f32 / (n - 1) as f32 * 255.0).collect();
+        let (y, cb, cr) = rgb_to_ycbcr(&r, &g, &b);
+        let (r2, g2, b2) = ycbcr_to_rgb(&y, &cb, &cr);
+        for i in 0..n {
+            assert!((r[i] - r2[i]).abs() < 1e-3, "R roundtrip {}: {} vs {}", i, r[i], r2[i]);
+            assert!((g[i] - g2[i]).abs() < 1e-3, "G roundtrip {}: {} vs {}", i, g[i], g2[i]);
+            assert!((b[i] - b2[i]).abs() < 1e-3, "B roundtrip {}: {} vs {}", i, b[i], b2[i]);
+        }
+    }
+
+    #[test]
+    fn tc_dn_ycbcr_gray_is_zero_chroma() {
+        // 中性灰（R=G=B）必须产生零色度偏移：Cb=Cr=128（保证 BM3D 亮度/色度分离语义正确）
+        let v = vec![128.0f32; 4];
+        let (y, cb, cr) = rgb_to_ycbcr(&v, &v, &v);
+        for i in 0..4 {
+            assert!((y[i] - 128.0).abs() < 1e-3);
+            assert!((cb[i] - 128.0).abs() < 1e-3);
+            assert!((cr[i] - 128.0).abs() < 1e-3);
+        }
+    }
+
+    #[test]
+    fn tc_dn_hard_threshold_sparsifies() {
+        // 硬阈值：|v| < th 置零；返回值为「保留系数计数」（DC 分量 i==0 永不置零且计入保留）——
+        // 这是 BM3D 块匹配硬阈值的标准语义（防止整体亮度塌陷）
+        let mut stack = vec![0.01f32, -0.02, 0.5, -0.6, 0.0];
+        let kept = hard_threshold(&mut stack, 0.1);
+        assert_eq!(stack[0], 0.01, "DC (i==0) must be preserved");
+        assert_eq!(kept, 3, "kept: DC + 0.5 + -0.6");
+        assert_eq!(stack[1], 0.0, "below threshold zeroed");
+        assert_eq!(stack[2], 0.5, "significant kept");
+        assert_eq!(stack[3], -0.6, "significant kept");
+        assert_eq!(stack[4], 0.0, "zero stays zero");
+    }
+
+    #[test]
+    fn tc_dn_hard_threshold_zero_th_keeps_all() {
+        // th=0：任何非零系数都保留（|v| >= th 不置零）
+        let mut stack = vec![0.001f32, -0.001];
+        let kept = hard_threshold(&mut stack, 0.0);
+        assert_eq!(kept, 2, "DC + -0.001 both kept");
+        assert_eq!(stack[0], 0.001);
+        assert_eq!(stack[1], -0.001);
+    }
+}
+
 fn bm3d_process_joint(
     noisy_channels: &[Vec<f32>],
     width: u32,
