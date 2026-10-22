@@ -804,6 +804,32 @@
         "longitude": "經度",
         "title": "GPS 位置"
       },
+      "iptc": {
+        "batchHint": "多選影像時，儲存將批次套用到全部所選影像。",
+        "emptyPlaceholder": "未填寫",
+        "fields": {
+          "caption": "說明",
+          "city": "城市",
+          "copyright": "版權聲明",
+          "country": "國家",
+          "creator": "創作者",
+          "creatorTitle": "創作者職稱",
+          "credit": "署名",
+          "headline": "標題",
+          "keywords": "關鍵字（逗號分隔）",
+          "province": "省/州",
+          "source": "來源",
+          "specialInstructions": "特別指示"
+        },
+        "onlyJpeg": "僅 JPEG 影像支援 IPTC 中繼資料讀寫。",
+        "partialFailed": "IPTC 儲存：成功 {{success}} 張，失敗 {{failed}} 張",
+        "save": "儲存 IPTC",
+        "saveFailed": "儲存 IPTC 中繼資料失敗：{{err}}",
+        "saved": "IPTC 中繼資料已儲存",
+        "saving": "儲存中…",
+        "sectionLabel": "版權與描述（IPTC-IIM）",
+        "title": "IPTC 中繼資料"
+      },
       "organization": {
         "addTagPlaceholder": "新增標籤...",
         "colorLabel": "顏色標籤",
@@ -814,7 +840,11 @@
         "tags": "標籤",
         "title": "組織"
       },
-      "title": "後設資料"
+      "title": "後設資料",
+      "toasts": {
+        "failedAddTag": "新增標籤失敗：{{err}}",
+        "failedRemoveTag": "移除標籤失敗：{{err}}"
+      }
     },
     "presets": {
       "amount": "數量",

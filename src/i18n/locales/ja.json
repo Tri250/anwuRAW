@@ -803,6 +803,32 @@
         "longitude": "経度",
         "title": "GPS位置情報"
       },
+      "iptc": {
+        "batchHint": "複数選択時は保存がすべての選択画像に適用されます。",
+        "emptyPlaceholder": "未設定",
+        "fields": {
+          "caption": "説明",
+          "city": "都市",
+          "copyright": "著作権表示",
+          "country": "国",
+          "creator": "作成者",
+          "creatorTitle": "作成者の役職",
+          "credit": "クレジット",
+          "headline": "見出し",
+          "keywords": "キーワード（カンマ区切り）",
+          "province": "都道府県/州",
+          "source": "ソース",
+          "specialInstructions": "特記事項"
+        },
+        "onlyJpeg": "IPTC メタデータは JPEG 画像のみ対応しています。",
+        "partialFailed": "IPTC 保存：{{success}} 件成功、{{failed}} 件失敗",
+        "save": "IPTC を保存",
+        "saveFailed": "IPTC メタデータの保存に失敗しました：{{err}}",
+        "saved": "IPTC メタデータを保存しました",
+        "saving": "保存中…",
+        "sectionLabel": "権利と説明（IPTC-IIM）",
+        "title": "IPTC メタデータ"
+      },
       "organization": {
         "addTagPlaceholder": "タグを追加...",
         "colorLabel": "カラーラベル",
@@ -813,7 +839,11 @@
         "tags": "タグ",
         "title": "整理"
       },
-      "title": "メタデータ"
+      "title": "メタデータ",
+      "toasts": {
+        "failedAddTag": "タグの追加に失敗しました：{{err}}",
+        "failedRemoveTag": "タグの削除に失敗しました：{{err}}"
+      }
     },
     "presets": {
       "amount": "適用量",

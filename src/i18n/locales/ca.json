@@ -805,6 +805,32 @@
         "longitude": "Longitud",
         "title": "Ubicació GPS"
       },
+      "iptc": {
+        "batchHint": "Amb diverses imatges seleccionades, desar s'aplica a totes.",
+        "emptyPlaceholder": "No establert",
+        "fields": {
+          "caption": "Peu de foto",
+          "city": "Ciutat",
+          "copyright": "Avís de drets d'autor",
+          "country": "País",
+          "creator": "Creador",
+          "creatorTitle": "Càrrec del creador",
+          "credit": "Crèdit",
+          "headline": "Titular",
+          "keywords": "Paraules clau (separades per comes)",
+          "province": "Estat/Província",
+          "source": "Font",
+          "specialInstructions": "Instruccions especials"
+        },
+        "onlyJpeg": "Les metadades IPTC només són compatibles amb imatges JPEG.",
+        "partialFailed": "Desat IPTC: {{success}} correctes, {{failed}} incorrectes",
+        "save": "Desa IPTC",
+        "saveFailed": "No s'han pogut desar les metadades IPTC: {{err}}",
+        "saved": "Metadades IPTC desades",
+        "saving": "S'està desant…",
+        "sectionLabel": "Drets i descripció (IPTC-IIM)",
+        "title": "Metadades IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Afegir etiqueta...",
         "colorLabel": "Etiqueta de color",
@@ -815,7 +841,11 @@
         "tags": "Etiquetes",
         "title": "Organització"
       },
-      "title": "Metadades"
+      "title": "Metadades",
+      "toasts": {
+        "failedAddTag": "No s'ha pogut afegir l'etiqueta: {{err}}",
+        "failedRemoveTag": "No s'ha pogut suprimir l'etiqueta: {{err}}"
+      }
     },
     "presets": {
       "amount": "Quantitat",

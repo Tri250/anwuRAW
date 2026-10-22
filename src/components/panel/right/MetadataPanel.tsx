@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Check, ChevronDown, ChevronRight, Plus, Star, Tag, X, User } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Plus, Star, Tag, X, User, Copyright } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
@@ -44,6 +44,27 @@ interface MetaDataItemProps {
 
 const USER_TAG_PREFIX = 'user:';
 const EMPTY_TAGS: string[] = [];
+
+/**
+ * IPTC-IIM 元数据字段（key 与后端 iptc_processing 的 "record:dataSet" 键一致）。
+ * 后端已实现 JPEG APP13/IIM 读写（含批量），此处为其唯一前端入口。
+ */
+const IPTC_FIELDS = [
+  { key: '2:105', label: 'headline', multiline: false },
+  { key: '2:120', label: 'caption', multiline: true },
+  { key: '2:25', label: 'keywords', multiline: false },
+  { key: '2:80', label: 'creator', multiline: false },
+  { key: '2:85', label: 'creatorTitle', multiline: false },
+  { key: '2:116', label: 'copyright', multiline: false },
+  { key: '2:110', label: 'credit', multiline: false },
+  { key: '2:115', label: 'source', multiline: false },
+  { key: '2:90', label: 'city', multiline: false },
+  { key: '2:95', label: 'province', multiline: false },
+  { key: '2:101', label: 'country', multiline: false },
+  { key: '2:40', label: 'specialInstructions', multiline: false },
+] as const;
+
+const IPTC_KEYWORD_SEPARATOR = '\u001C';
 
 function formatExifTag(str: string) {
   if (!str) return '';
@@ -364,7 +385,7 @@ export default function MetadataPanel() {
         handleTagsChanged(targetPaths, newTags);
         setTagInputValue('');
       } catch (err) {
-        toast.error(`添加标签失败: ${err}`);
+        toast.error(t('editor.metadata.toasts.failedAddTag', { err }));
       }
     }
   };
@@ -378,7 +399,7 @@ export default function MetadataPanel() {
       const newTags = currentTags.filter((t) => t.tag !== tagToRemove.tag);
       handleTagsChanged(targetPaths, newTags);
     } catch (err) {
-      toast.error(`移除标签失败: ${err}`);
+      toast.error(t('editor.metadata.toasts.failedRemoveTag', { err }));
     }
   };
 
@@ -391,6 +412,81 @@ export default function MetadataPanel() {
   };
 
   const LensIcon = CAMERA_ICONS['LensModel'];
+
+  // ---- IPTC 元数据（后端 JPEG APP13/IIM 读写链路的唯一前端入口） ----
+  const [isIptcExpanded, setIsIptcExpanded] = useState(false);
+  const [iptcValues, setIptcValues] = useState<Record<string, string>>({});
+  const [iptcSavedValues, setIptcSavedValues] = useState<Record<string, string>>({});
+  const [isIptcSupported, setIsIptcSupported] = useState(true);
+  const [isIptcSaving, setIsIptcSaving] = useState(false);
+  const isIptcDirty = useMemo(
+    () => IPTC_FIELDS.some((f) => (iptcValues[f.key] || '') !== (iptcSavedValues[f.key] || '')),
+    [iptcValues, iptcSavedValues],
+  );
+
+  useEffect(() => {
+    if (!isIptcExpanded || !basePath) return;
+    let isActive = true;
+    invoke<Record<string, string>>(Invokes.ReadIptcMetadata, { path: basePath })
+      .then((data) => {
+        if (!isActive) return;
+        setIsIptcSupported(true);
+        const values: Record<string, string> = {};
+        for (const f of IPTC_FIELDS) values[f.key] = data?.[f.key] || '';
+        setIptcValues(values);
+        setIptcSavedValues(values);
+      })
+      .catch(() => {
+        // RAW/非 JPEG 容器无 APP13 段：降级为「不支持」提示而非报错
+        if (isActive) {
+          setIsIptcSupported(false);
+          setIptcValues({});
+          setIptcSavedValues({});
+        }
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [isIptcExpanded, basePath]);
+
+  const handleSaveIptc = async () => {
+    if (!isIptcDirty || isIptcSaving) return;
+    setIsIptcSaving(true);
+    try {
+      const fields: Record<string, string> = {};
+      for (const f of IPTC_FIELDS) {
+        let value = (iptcValues[f.key] || '').trim();
+        // 关键词：逗号/分号分隔 → IPTC-IIM 0x1C 分隔（后端约定）
+        if (f.label === 'keywords') {
+          value = value
+            .split(/[,，;；]/)
+            .map((k) => k.trim())
+            .filter(Boolean)
+            .join(IPTC_KEYWORD_SEPARATOR);
+        }
+        fields[f.key] = value;
+      }
+      const physicalPaths = Array.from(new Set(getPathsToUpdate().map((p) => p.split('?vc=')[0])));
+      const result = await invoke<{ success: number; failed: number; total: number }>(Invokes.BatchUpdateIptcMetadata, {
+        paths: physicalPaths,
+        fields,
+      });
+      if (result.failed > 0) {
+        toast.error(t('editor.metadata.iptc.partialFailed', { success: result.success, failed: result.failed }));
+      } else {
+        toast.success(t('editor.metadata.iptc.saved'));
+      }
+      // keywords 回读时按分隔符还原为可读形式
+      const normalized = { ...fields };
+      normalized['2:25'] = (fields['2:25'] || '').split(IPTC_KEYWORD_SEPARATOR).filter(Boolean).join(', ');
+      setIptcSavedValues(normalized);
+      setIptcValues(normalized);
+    } catch (err) {
+      toast.error(t('editor.metadata.iptc.saveFailed', { err }));
+    } finally {
+      setIsIptcSaving(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -557,6 +653,104 @@ export default function MetadataPanel() {
                             />
                           );
                         })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            <div>
+              <Text variant={TextVariants.heading} className="mb-3">
+                {t('editor.metadata.iptc.title')}
+              </Text>
+              <div className="bg-surface rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setIsIptcExpanded(!isIptcExpanded)}
+                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors"
+                >
+                  <Text
+                    as="span"
+                    variant={TextVariants.label}
+                    color={TextColors.primary}
+                    className="flex items-center gap-2"
+                  >
+                    <Copyright size={16} /> {t('editor.metadata.iptc.sectionLabel')}
+                    {isIptcDirty && <span className="w-1.5 h-1.5 rounded-full bg-accent" aria-hidden />}
+                  </Text>
+                  <Text color={TextColors.secondary}>
+                    {isIptcExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </Text>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {isIptcExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 pt-2 border-t border-surface/50 flex flex-col gap-2.5">
+                        {!isIptcSupported ? (
+                          <Text variant={TextVariants.small} color={TextColors.secondary}>
+                            {t('editor.metadata.iptc.onlyJpeg')}
+                          </Text>
+                        ) : (
+                          <>
+                            {IPTC_FIELDS.map((field) => (
+                              <div key={field.key} className="flex flex-col gap-1">
+                                <Text
+                                  as="span"
+                                  variant={TextVariants.small}
+                                  color={TextColors.secondary}
+                                  className="shrink-0"
+                                >
+                                  {t(`editor.metadata.iptc.fields.${field.label}`)}
+                                </Text>
+                                {field.multiline ? (
+                                  <textarea
+                                    rows={3}
+                                    value={iptcValues[field.key] || ''}
+                                    onChange={(e) =>
+                                      setIptcValues((prev) => ({ ...prev, [field.key]: e.target.value }))
+                                    }
+                                    placeholder={t('editor.metadata.iptc.emptyPlaceholder')}
+                                    className="bg-bg-secondary border border-surface/50 rounded-md px-2 py-1.5 text-xs text-text-primary outline-hidden resize-y focus:border-accent/60 focus:ring-1 focus:ring-accent/30 w-full"
+                                  />
+                                ) : (
+                                  <input
+                                    type="text"
+                                    value={iptcValues[field.key] || ''}
+                                    onChange={(e) =>
+                                      setIptcValues((prev) => ({ ...prev, [field.key]: e.target.value }))
+                                    }
+                                    placeholder={t('editor.metadata.iptc.emptyPlaceholder')}
+                                    className="bg-bg-secondary border border-surface/50 rounded-md px-2 py-1.5 text-xs text-text-primary outline-hidden focus:border-accent/60 focus:ring-1 focus:ring-accent/30 w-full"
+                                  />
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={handleSaveIptc}
+                              disabled={!isIptcDirty || isIptcSaving}
+                              className={clsx(
+                                'mt-1 w-full py-1.5 text-xs rounded-md transition-colors flex items-center justify-center gap-1.5',
+                                isIptcDirty && !isIptcSaving
+                                  ? 'bg-accent text-button-text hover:opacity-90'
+                                  : 'bg-surface-secondary text-text-tertiary cursor-not-allowed',
+                              )}
+                            >
+                              <Check size={14} />
+                              {isIptcSaving ? t('editor.metadata.iptc.saving') : t('editor.metadata.iptc.save')}
+                            </button>
+                            <Text variant={TextVariants.small} color={TextColors.secondary}>
+                              {t('editor.metadata.iptc.batchHint')}
+                            </Text>
+                          </>
+                        )}
                       </div>
                     </motion.div>
                   )}

@@ -805,6 +805,32 @@
         "longitude": "Längengrad",
         "title": "GPS-Standort"
       },
+      "iptc": {
+        "batchHint": "Bei Mehrfachauswahl wird das Speichern auf alle ausgewählten Bilder angewendet.",
+        "emptyPlaceholder": "Nicht gesetzt",
+        "fields": {
+          "caption": "Beschreibung",
+          "city": "Stadt",
+          "copyright": "Copyright-Hinweis",
+          "country": "Land",
+          "creator": "Ersteller",
+          "creatorTitle": "Berufsbezeichnung",
+          "credit": "Credit",
+          "headline": "Schlagzeile",
+          "keywords": "Stichwörter (kommagetrennt)",
+          "province": "Bundesland/Provinz",
+          "source": "Quelle",
+          "specialInstructions": "Besondere Hinweise"
+        },
+        "onlyJpeg": "IPTC-Metadaten werden nur für JPEG-Bilder unterstützt.",
+        "partialFailed": "IPTC-Speichern: {{success}} erfolgreich, {{failed}} fehlgeschlagen",
+        "save": "IPTC speichern",
+        "saveFailed": "IPTC-Metadaten konnten nicht gespeichert werden: {{err}}",
+        "saved": "IPTC-Metadaten gespeichert",
+        "saving": "Speichern…",
+        "sectionLabel": "Rechte & Beschreibung (IPTC-IIM)",
+        "title": "IPTC-Metadaten"
+      },
       "organization": {
         "addTagPlaceholder": "Tag hinzufügen...",
         "colorLabel": "Farbmarkierung",
@@ -815,7 +841,11 @@
         "tags": "Tags",
         "title": "Organisation"
       },
-      "title": "Metadaten"
+      "title": "Metadaten",
+      "toasts": {
+        "failedAddTag": "Tag konnte nicht hinzugefügt werden: {{err}}",
+        "failedRemoveTag": "Tag konnte nicht entfernt werden: {{err}}"
+      }
     },
     "presets": {
       "amount": "Stärke",

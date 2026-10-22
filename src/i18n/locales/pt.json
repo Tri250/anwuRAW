@@ -826,6 +826,32 @@
         "longitude": "Longitude",
         "title": "Localização GPS"
       },
+      "iptc": {
+        "batchHint": "Com várias imagens selecionadas, guardar aplica-se a todas.",
+        "emptyPlaceholder": "Não definido",
+        "fields": {
+          "caption": "Legenda",
+          "city": "Cidade",
+          "copyright": "Aviso de direitos autorais",
+          "country": "País",
+          "creator": "Criador",
+          "creatorTitle": "Cargo do criador",
+          "credit": "Crédito",
+          "headline": "Título",
+          "keywords": "Palavras-chave (separadas por vírgulas)",
+          "province": "Estado/Província",
+          "source": "Fonte",
+          "specialInstructions": "Instruções especiais"
+        },
+        "onlyJpeg": "Os metadados IPTC só são suportados em imagens JPEG.",
+        "partialFailed": "Guardar IPTC: {{success}} com sucesso, {{failed}} falharam",
+        "save": "Guardar IPTC",
+        "saveFailed": "Falha ao guardar metadados IPTC: {{err}}",
+        "saved": "Metadados IPTC guardados",
+        "saving": "A guardar…",
+        "sectionLabel": "Direitos e descrição (IPTC-IIM)",
+        "title": "Metadados IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Adicionar etiqueta...",
         "colorLabel": "Rótulo de Cor",
@@ -836,7 +862,11 @@
         "tags": "Etiquetas",
         "title": "Organização"
       },
-      "title": "Metadados"
+      "title": "Metadados",
+      "toasts": {
+        "failedAddTag": "Falha ao adicionar etiqueta: {{err}}",
+        "failedRemoveTag": "Falha ao remover etiqueta: {{err}}"
+      }
     },
     "presets": {
       "amount": "Intensidade",

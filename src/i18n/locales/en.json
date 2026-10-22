@@ -815,6 +815,32 @@
         "openOnlineMap": "Open online map",
         "title": "GPS Location"
       },
+      "iptc": {
+        "batchHint": "When multiple images are selected, saving applies to all of them.",
+        "emptyPlaceholder": "Not set",
+        "fields": {
+          "caption": "Caption",
+          "city": "City",
+          "copyright": "Copyright Notice",
+          "country": "Country",
+          "creator": "Creator",
+          "creatorTitle": "Creator's Job Title",
+          "credit": "Credit",
+          "headline": "Headline",
+          "keywords": "Keywords (comma-separated)",
+          "province": "State/Province",
+          "source": "Source",
+          "specialInstructions": "Special Instructions"
+        },
+        "onlyJpeg": "IPTC metadata is only supported for JPEG images.",
+        "partialFailed": "IPTC save: {{success}} succeeded, {{failed}} failed",
+        "save": "Save IPTC",
+        "saveFailed": "Failed to save IPTC metadata: {{err}}",
+        "saved": "IPTC metadata saved",
+        "saving": "Saving…",
+        "sectionLabel": "Rights & Description (IPTC-IIM)",
+        "title": "IPTC Metadata"
+      },
       "organization": {
         "addTagPlaceholder": "Add tag...",
         "colorLabel": "Color Label",
@@ -825,7 +851,11 @@
         "tags": "Tags",
         "title": "Organization"
       },
-      "title": "Metadata"
+      "title": "Metadata",
+      "toasts": {
+        "failedAddTag": "Failed to add tag: {{err}}",
+        "failedRemoveTag": "Failed to remove tag: {{err}}"
+      }
     },
     "presets": {
       "amount": "Amount",

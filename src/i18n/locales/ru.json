@@ -847,6 +847,32 @@
         "longitude": "Долгота",
         "title": "Координаты GPS"
       },
+      "iptc": {
+        "batchHint": "При выборе нескольких изображений сохранение применяется ко всем.",
+        "emptyPlaceholder": "Не задано",
+        "fields": {
+          "caption": "Описание",
+          "city": "Город",
+          "copyright": "Уведомление об авторских правах",
+          "country": "Страна",
+          "creator": "Автор",
+          "creatorTitle": "Должность автора",
+          "credit": "Подпись",
+          "headline": "Заголовок",
+          "keywords": "Ключевые слова (через запятую)",
+          "province": "Штат/Провинция",
+          "source": "Источник",
+          "specialInstructions": "Особые указания"
+        },
+        "onlyJpeg": "Метаданные IPTC поддерживаются только для изображений JPEG.",
+        "partialFailed": "Сохранение IPTC: успешно {{success}}, с ошибками {{failed}}",
+        "save": "Сохранить IPTC",
+        "saveFailed": "Не удалось сохранить метаданные IPTC: {{err}}",
+        "saved": "Метаданные IPTC сохранены",
+        "saving": "Сохранение…",
+        "sectionLabel": "Права и описание (IPTC-IIM)",
+        "title": "Метаданные IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Добавить тег...",
         "colorLabel": "Цветовая метка",
@@ -857,7 +883,11 @@
         "tags": "Теги",
         "title": "Организация"
       },
-      "title": "Метаданные"
+      "title": "Метаданные",
+      "toasts": {
+        "failedAddTag": "Не удалось добавить тег: {{err}}",
+        "failedRemoveTag": "Не удалось удалить тег: {{err}}"
+      }
     },
     "presets": {
       "amount": "Интенсивность",

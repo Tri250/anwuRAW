@@ -811,9 +811,35 @@
         "clickToOpenTooltip": "点击在新标签页中打开地图",
         "latitude": "纬度",
         "longitude": "经度",
-        "title": "GPS 位置",
         "offlineMapLabel": "离线世界地图，显示照片定位标记",
-        "openOnlineMap": "打开在线地图"
+        "openOnlineMap": "打开在线地图",
+        "title": "GPS 位置"
+      },
+      "iptc": {
+        "batchHint": "多选图像时，保存将批量应用到全部所选图像。",
+        "emptyPlaceholder": "未填写",
+        "fields": {
+          "caption": "说明",
+          "city": "城市",
+          "copyright": "版权声明",
+          "country": "国家",
+          "creator": "创作者",
+          "creatorTitle": "创作者职位",
+          "credit": "署名",
+          "headline": "标题",
+          "keywords": "关键词（逗号分隔）",
+          "province": "省/州",
+          "source": "来源",
+          "specialInstructions": "特别指示"
+        },
+        "onlyJpeg": "仅 JPEG 图像支持 IPTC 元数据读写。",
+        "partialFailed": "IPTC 保存：成功 {{success}} 张，失败 {{failed}} 张",
+        "save": "保存 IPTC",
+        "saveFailed": "保存 IPTC 元数据失败：{{err}}",
+        "saved": "IPTC 元数据已保存",
+        "saving": "保存中…",
+        "sectionLabel": "版权与描述（IPTC-IIM）",
+        "title": "IPTC 元数据"
       },
       "organization": {
         "addTagPlaceholder": "添加标签...",
@@ -825,7 +851,11 @@
         "tags": "标签",
         "title": "组织"
       },
-      "title": "元数据"
+      "title": "元数据",
+      "toasts": {
+        "failedAddTag": "添加标签失败：{{err}}",
+        "failedRemoveTag": "移除标签失败：{{err}}"
+      }
     },
     "presets": {
       "amount": "数量",

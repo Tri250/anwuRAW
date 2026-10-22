@@ -847,6 +847,32 @@
         "longitude": "Długość geograficzna",
         "title": "Lokalizacja GPS"
       },
+      "iptc": {
+        "batchHint": "Przy wielu zaznaczonych obrazach zapis obejmuje wszystkie.",
+        "emptyPlaceholder": "Nie ustawiono",
+        "fields": {
+          "caption": "Opis",
+          "city": "Miasto",
+          "copyright": "Informacja o prawach autorskich",
+          "country": "Kraj",
+          "creator": "Twórca",
+          "creatorTitle": "Stanowisko twórcy",
+          "credit": "Podziękowanie",
+          "headline": "Nagłówek",
+          "keywords": "Słowa kluczowe (oddzielone przecinkami)",
+          "province": "Stan/Prowincja",
+          "source": "Źródło",
+          "specialInstructions": "Instrukcje specjalne"
+        },
+        "onlyJpeg": "Metadane IPTC są obsługiwane tylko dla obrazów JPEG.",
+        "partialFailed": "Zapis IPTC: {{success}} powiodło się, {{failed}} nie powiodło się",
+        "save": "Zapisz IPTC",
+        "saveFailed": "Nie udało się zapisać metadanych IPTC: {{err}}",
+        "saved": "Metadane IPTC zapisane",
+        "saving": "Zapisywanie…",
+        "sectionLabel": "Prawa i opis (IPTC-IIM)",
+        "title": "Metadane IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Dodaj tag...",
         "colorLabel": "Etykieta koloru",
@@ -857,7 +883,11 @@
         "tags": "Tagi",
         "title": "Organizacja"
       },
-      "title": "Metadane"
+      "title": "Metadane",
+      "toasts": {
+        "failedAddTag": "Nie udało się dodać tagu: {{err}}",
+        "failedRemoveTag": "Nie udało się usunąć tagu: {{err}}"
+      }
     },
     "presets": {
       "amount": "Siła",

@@ -827,9 +827,35 @@
         "clickToOpenTooltip": "Cliquer pour ouvrir la carte dans un nouvel onglet",
         "latitude": "Latitude",
         "longitude": "Longitude",
-        "title": "Localisation GPS",
         "offlineMapLabel": "Offline world map with photo location marker",
-        "openOnlineMap": "Open online map"
+        "openOnlineMap": "Open online map",
+        "title": "Localisation GPS"
+      },
+      "iptc": {
+        "batchHint": "Avec plusieurs images sélectionnées, l'enregistrement s'applique à toutes.",
+        "emptyPlaceholder": "Non défini",
+        "fields": {
+          "caption": "Légende",
+          "city": "Ville",
+          "copyright": "Mention de copyright",
+          "country": "Pays",
+          "creator": "Créateur",
+          "creatorTitle": "Fonction du créateur",
+          "credit": "Crédit",
+          "headline": "Titre",
+          "keywords": "Mots-clés (séparés par des virgules)",
+          "province": "État/Province",
+          "source": "Source",
+          "specialInstructions": "Instructions spéciales"
+        },
+        "onlyJpeg": "Les métadonnées IPTC ne sont prises en charge que pour les images JPEG.",
+        "partialFailed": "Enregistrement IPTC : {{success}} réussies, {{failed}} échouées",
+        "save": "Enregistrer IPTC",
+        "saveFailed": "Échec de l'enregistrement des métadonnées IPTC : {{err}}",
+        "saved": "Métadonnées IPTC enregistrées",
+        "saving": "Enregistrement…",
+        "sectionLabel": "Droits et description (IPTC-IIM)",
+        "title": "Métadonnées IPTC"
       },
       "organization": {
         "addTagPlaceholder": "Ajouter une étiquette...",
@@ -841,7 +867,11 @@
         "tags": "Étiquettes",
         "title": "Organisation"
       },
-      "title": "Métadonnées"
+      "title": "Métadonnées",
+      "toasts": {
+        "failedAddTag": "Échec de l'ajout du tag : {{err}}",
+        "failedRemoveTag": "Échec de la suppression du tag : {{err}}"
+      }
     },
     "presets": {
       "amount": "Quantité",

@@ -826,6 +826,32 @@
         "longitude": "Longitudine",
         "title": "Posizione GPS"
       },
+      "iptc": {
+        "batchHint": "Con più immagini selezionate, il salvataggio si applica a tutte.",
+        "emptyPlaceholder": "Non impostato",
+        "fields": {
+          "caption": "Didascalia",
+          "city": "Città",
+          "copyright": "Avviso di copyright",
+          "country": "Paese",
+          "creator": "Creatore",
+          "creatorTitle": "Ruolo del creatore",
+          "credit": "Crediti",
+          "headline": "Titolo",
+          "keywords": "Parole chiave (separate da virgole)",
+          "province": "Stato/Provincia",
+          "source": "Fonte",
+          "specialInstructions": "Istruzioni speciali"
+        },
+        "onlyJpeg": "I metadati IPTC sono supportati solo per immagini JPEG.",
+        "partialFailed": "Salvataggio IPTC: {{success}} riuscite, {{failed}} non riuscite",
+        "save": "Salva IPTC",
+        "saveFailed": "Salvataggio dei metadati IPTC non riuscito: {{err}}",
+        "saved": "Metadati IPTC salvati",
+        "saving": "Salvataggio…",
+        "sectionLabel": "Diritti e descrizione (IPTC-IIM)",
+        "title": "Metadati IPTC"
+      },
       "organization": {
         "addTagPlaceholder": "Aggiungi tag...",
         "colorLabel": "Etichetta Colore",
@@ -836,7 +862,11 @@
         "tags": "Tag",
         "title": "Organizzazione"
       },
-      "title": "Metadati"
+      "title": "Metadati",
+      "toasts": {
+        "failedAddTag": "Aggiunta del tag non riuscita: {{err}}",
+        "failedRemoveTag": "Rimozione del tag non riuscita: {{err}}"
+      }
     },
     "presets": {
       "amount": "Quantità",

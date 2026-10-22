@@ -803,6 +803,32 @@
         "longitude": "경도",
         "title": "GPS 위치"
       },
+      "iptc": {
+        "batchHint": "여러 이미지를 선택하면 저장 시 모든 선택 이미지에 적용됩니다.",
+        "emptyPlaceholder": "설정 안 됨",
+        "fields": {
+          "caption": "설명",
+          "city": "도시",
+          "copyright": "저작권 표기",
+          "country": "국가",
+          "creator": "만든 사람",
+          "creatorTitle": "만든 사람 직함",
+          "credit": "크레딧",
+          "headline": "헤드라인",
+          "keywords": "키워드(쉼표로 구분)",
+          "province": "시/도",
+          "source": "출처",
+          "specialInstructions": "특별 지시 사항"
+        },
+        "onlyJpeg": "IPTC 메타데이터는 JPEG 이미지만 지원합니다.",
+        "partialFailed": "IPTC 저장: {{success}}개 성공, {{failed}}개 실패",
+        "save": "IPTC 저장",
+        "saveFailed": "IPTC 메타데이터 저장 실패: {{err}}",
+        "saved": "IPTC 메타데이터가 저장되었습니다",
+        "saving": "저장 중…",
+        "sectionLabel": "저작권 및 설명(IPTC-IIM)",
+        "title": "IPTC 메타데이터"
+      },
       "organization": {
         "addTagPlaceholder": "태그 추가...",
         "colorLabel": "색상 레이블",
@@ -813,7 +839,11 @@
         "tags": "태그",
         "title": "정리"
       },
-      "title": "메타데이터"
+      "title": "메타데이터",
+      "toasts": {
+        "failedAddTag": "태그 추가 실패: {{err}}",
+        "failedRemoveTag": "태그 제거 실패: {{err}}"
+      }
     },
     "presets": {
       "amount": "양",
