@@ -370,7 +370,7 @@ pub async fn generate_auto_erase_patch(
     let crop_h = (max_y - min_y + 1) as u32;
 
     // 3) 重绘：优先端侧 Lama，失败降级到泊松扩散
-    let lama_patch: Option<image::RgbaImage> = (|| async {
+    let lama_patch: Option<image::RgbaImage> = async {
         let lama_model = ai_processing::get_or_init_lama_model(
             &app_handle,
             &state.ai_state,
@@ -379,7 +379,7 @@ pub async fn generate_auto_erase_patch(
         .await
         .ok()?;
         ai_processing::run_lama_inpainting(&source_image, &mask_bitmap, &lama_model).ok()
-    })()
+    }
     .await;
 
     if let Some(lama_patch) = lama_patch {
@@ -497,7 +497,7 @@ pub async fn invoke_generative_replace_with_mask_def(
 
     let patch_rgba = if use_fast_inpaint {
         // 优先尝试端侧 Lama ONNX 模型；不可用时降级到泊松融合
-        match (|| async {
+        match async {
             let lama_model = ai_processing::get_or_init_lama_model(
                 &app_handle,
                 &state.ai_state,
@@ -508,7 +508,7 @@ pub async fn invoke_generative_replace_with_mask_def(
 
             ai_processing::run_lama_inpainting(&source_image, &mask_bitmap, &lama_model)
                 .map_err(|e| e.to_string())
-        })()
+        }
         .await
         {
             Ok(img) => img,

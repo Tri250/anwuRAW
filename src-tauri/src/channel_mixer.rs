@@ -241,7 +241,10 @@ mod tests {
     fn tc_cm_red_boost_doubles_red_channel() {
         // red_from_red=200%：红输入的 R 线性放大 2 倍，G/B 通道不受影响
         let img = DynamicImage::ImageRgb8(RgbImage::from_fn(1, 1, |_, _| Rgb([100, 40, 20])));
-        let settings = ChannelMixerSettings { red_from_red: 200.0, ..identity_settings() };
+        let settings = ChannelMixerSettings {
+            red_from_red: 200.0,
+            ..identity_settings()
+        };
         let out = apply_to_dynamic(&img, &settings);
         let px = *out.to_rgb8().get_pixel(0, 0);
         assert_eq!(px.0[0], 200, "R: 100 * 200%");
@@ -253,8 +256,12 @@ mod tests {
     fn tc_cm_clamp_upper_bound() {
         // 多通道正贡献叠加不得溢出 u8（clamp 到 255）
         let img = DynamicImage::ImageRgb8(RgbImage::from_fn(1, 1, |_, _| Rgb([200, 100, 50])));
-        let settings =
-            ChannelMixerSettings { red_from_red: 200.0, red_from_green: 200.0, red_from_blue: 200.0, ..identity_settings() };
+        let settings = ChannelMixerSettings {
+            red_from_red: 200.0,
+            red_from_green: 200.0,
+            red_from_blue: 200.0,
+            ..identity_settings()
+        };
         let out = apply_to_dynamic(&img, &settings);
         let px = *out.to_rgb8().get_pixel(0, 0);
         assert_eq!(px.0[0], 255, "200*2 + 100*2 + 50*2 = 700 -> clamp 255");
@@ -264,7 +271,11 @@ mod tests {
     fn tc_cm_cross_channel_mix() {
         // red_from_green=100 + red_from_red=0：输出 R 完全来自输入 G
         let img = DynamicImage::ImageRgb8(RgbImage::from_fn(1, 1, |_, _| Rgb([10, 90, 30])));
-        let settings = ChannelMixerSettings { red_from_red: 0.0, red_from_green: 100.0, ..identity_settings() };
+        let settings = ChannelMixerSettings {
+            red_from_red: 0.0,
+            red_from_green: 100.0,
+            ..identity_settings()
+        };
         let out = apply_to_dynamic(&img, &settings);
         let px = *out.to_rgb8().get_pixel(0, 0);
         assert_eq!(px.0[0], 90, "R = input G");

@@ -3546,7 +3546,13 @@ mod algorithm_tests {
         if let DynamicImage::ImageRgba32F(buf) = &roundtrip {
             for (i, v0) in samples.iter().enumerate() {
                 let px = buf.get_pixel(i as u32, 0);
-                assert!((px[0] - v0).abs() < 1.0 / 255.0, "roundtrip drift at {}: {} vs {}", v0, px[0], v0);
+                assert!(
+                    (px[0] - v0).abs() < 1.0 / 255.0,
+                    "roundtrip drift at {}: {} vs {}",
+                    v0,
+                    px[0],
+                    v0
+                );
             }
         } else {
             panic!("expected Rgba32F");
@@ -3572,7 +3578,10 @@ mod algorithm_tests {
     fn tc_algo_agx_output_bounded_and_monotonic() {
         // AGX 色调映射：输出必须落在 [0,1] 且对亮度 ramp 保持单调（不产生反转）。
         // 注：apply_cpu_agx_tonemap 内部经 to_rgb32f() 写回，输出为 ImageRgb32F。
-        let ramp: Vec<(f32, f32, f32)> = (0..=64).map(|i| i as f32 / 64.0).map(|v| (v, v, v)).collect();
+        let ramp: Vec<(f32, f32, f32)> = (0..=64)
+            .map(|i| i as f32 / 64.0)
+            .map(|v| (v, v, v))
+            .collect();
         let mut img = rgba32f_image(&ramp);
         apply_cpu_agx_tonemap(&mut img);
         if let DynamicImage::ImageRgb32F(buf) = &img {
@@ -3583,7 +3592,13 @@ mod algorithm_tests {
                     assert!((0.0..=1.0).contains(c), "agx out of range: {}", c);
                 }
                 let lum = 0.2126 * px.0[0] + 0.7152 * px.0[1] + 0.0722 * px.0[2];
-                assert!(lum >= prev - 1e-4, "agx not monotonic at step {}: {} < {}", i, lum, prev);
+                assert!(
+                    lum >= prev - 1e-4,
+                    "agx not monotonic at step {}: {} < {}",
+                    i,
+                    lum,
+                    prev
+                );
                 prev = lum;
             }
         } else {
@@ -3602,18 +3617,34 @@ mod algorithm_tests {
     fn tc_algo_auto_analysis_flat_midgray_neutral() {
         // 平坦中灰图：自动分析不应建议明显的曝光改动（画面无欠曝/过曝迹象），
         // 且所有建议值必须落在 UI 滑块语义范围内（有界）
-        let img = DynamicImage::ImageRgb8(image::RgbImage::from_fn(64, 64, |_, _| image::Rgb([128u8, 128, 128])));
+        let img = DynamicImage::ImageRgb8(image::RgbImage::from_fn(64, 64, |_, _| {
+            image::Rgb([128u8, 128, 128])
+        }));
         let results = perform_auto_analysis(&img);
-        assert!(results.exposure.abs() < 0.25, "flat midgray exposure: {}", results.exposure);
-        assert!((-100.0..=100.0).contains(&results.contrast), "contrast bounded: {}", results.contrast);
+        assert!(
+            results.exposure.abs() < 0.25,
+            "flat midgray exposure: {}",
+            results.exposure
+        );
+        assert!(
+            (-100.0..=100.0).contains(&results.contrast),
+            "contrast bounded: {}",
+            results.contrast
+        );
     }
 
     #[test]
     fn tc_algo_auto_analysis_dark_image_boosts_exposure() {
         // 严重欠曝图：自动分析应建议正向曝光补偿
-        let img = DynamicImage::ImageRgb8(image::RgbImage::from_fn(64, 64, |_, _| image::Rgb([24u8, 24, 26])));
+        let img = DynamicImage::ImageRgb8(image::RgbImage::from_fn(64, 64, |_, _| {
+            image::Rgb([24u8, 24, 26])
+        }));
         let results = perform_auto_analysis(&img);
-        assert!(results.exposure > 0.0, "dark image exposure: {}", results.exposure);
+        assert!(
+            results.exposure > 0.0,
+            "dark image exposure: {}",
+            results.exposure
+        );
     }
 
     #[test]

@@ -4,8 +4,8 @@ use crate::android_integration::{
     get_android_cached_lut_path, read_android_content_uri, resolve_android_content_uri_name,
 };
 use anyhow::anyhow;
-use include_dir::{Dir, include_dir};
 use image::{DynamicImage, GenericImageView, Rgb, Rgb32FImage};
+use include_dir::{Dir, include_dir};
 use serde::{Deserialize, Serialize};
 use std::fs::{File, copy, create_dir_all, read_dir};
 use std::io::{BufRead, BufReader, Cursor};
@@ -117,7 +117,12 @@ fn list_luts_in_embedded(dir: &Dir<'_>, scheme_dir: &str) -> Vec<LutEntry> {
             .to_string();
         entries.push(LutEntry {
             name,
-            path: format!("{}{}/{}", BUILTIN_LUT_PREFIX, scheme_dir, file.path().display()),
+            path: format!(
+                "{}{}/{}",
+                BUILTIN_LUT_PREFIX,
+                scheme_dir,
+                file.path().display()
+            ),
             is_built_in: true,
         });
     }
@@ -590,11 +595,11 @@ pub fn get_or_load_lut(state: &State<AppState>, path: &str) -> Result<Arc<Lut>, 
         path.to_string()
     };
 
-    if resolved != path {
-        if let Some(lut) = cache.get(&resolved).cloned() {
-            cache.insert(path.to_string(), lut.clone());
-            return Ok(lut);
-        }
+    if resolved != path
+        && let Some(lut) = cache.get(&resolved).cloned()
+    {
+        cache.insert(path.to_string(), lut.clone());
+        return Ok(lut);
     }
 
     let lut = parse_lut_file(&resolved).map_err(|e| e.to_string())?;
@@ -693,7 +698,10 @@ pub fn list_recipe_luts(_app_handle: AppHandle) -> Result<Vec<LutEntry>, String>
     // 大师配方内置外观（display-referred LUT），仅供场景增强面板按配方定位文件路径；
     // 不进入 list_luts 的胶片模拟网格，也不允许被用户删除。
     // 编译期内嵌列举：Android APK assets 无法用 std::fs 枚举，fs 版在 Android 恒为空
-    Ok(list_luts_in_embedded(&EMBEDDED_RECIPE_LUTS, "master_recipe_luts"))
+    Ok(list_luts_in_embedded(
+        &EMBEDDED_RECIPE_LUTS,
+        "master_recipe_luts",
+    ))
 }
 
 #[tauri::command]
@@ -917,7 +925,10 @@ mod tests {
         // 注释/TITLE/DOMAIN 行被忽略
         let text_body = identity_cube_text(2);
         let data_lines = text_body.splitn(3, '\n').last().unwrap().to_string();
-        let text = "# comment\nTITLE t\nDOMAIN_MIN 0.0 0.0 0.0\nDOMAIN_MAX 1.0 1.0 1.0\nLUT_3D_SIZE 2\n".to_string() + &data_lines;
+        let text =
+            "# comment\nTITLE t\nDOMAIN_MIN 0.0 0.0 0.0\nDOMAIN_MAX 1.0 1.0 1.0\nLUT_3D_SIZE 2\n"
+                .to_string()
+                + &data_lines;
         let lut = parse_cube(std::io::Cursor::new(text)).expect("parse ok");
         assert_eq!(lut.size, 2);
     }
@@ -937,8 +948,14 @@ mod tests {
         let idx = |r: u32, g: u32, b: u32| ((b * 16 + g * 4 + r) * 3) as usize;
         let bg_corner = idx(0, 3, 3);
         assert!((lut.data[bg_corner] - 0.0).abs() < 1e-5);
-        assert!((lut.data[bg_corner + 1] - 1.0).abs() < 1e-5, "G=1 at g_idx=3");
-        assert!((lut.data[bg_corner + 2] - 1.0).abs() < 1e-5, "B=1 at b_idx=3");
+        assert!(
+            (lut.data[bg_corner + 1] - 1.0).abs() < 1e-5,
+            "G=1 at g_idx=3"
+        );
+        assert!(
+            (lut.data[bg_corner + 2] - 1.0).abs() < 1e-5,
+            "B=1 at b_idx=3"
+        );
         assert!((lut.data[63 * 3] - 1.0).abs() < 1e-5, "last entry R");
     }
 
@@ -956,7 +973,10 @@ mod tests {
         assert_eq!(films.len(), 6);
         assert!(films.iter().all(|e| e.path.ends_with(".cube")));
         // 列表按名排序（大小写不敏感），与 fs 版 list_luts_in_dir 语义一致
-        let names = films.iter().map(|e| e.name.to_lowercase()).collect::<Vec<_>>();
+        let names = films
+            .iter()
+            .map(|e| e.name.to_lowercase())
+            .collect::<Vec<_>>();
         let mut sorted = names.clone();
         sorted.sort();
         assert_eq!(names, sorted);
@@ -965,11 +985,17 @@ mod tests {
     #[test]
     fn tc_lut_builtin_parse_roundtrip() {
         // 内嵌虚拟路径可直接解析（渲染/导出/预热全链路共用 parse_lut_file）
-        let recipe_path = format!("{}master_recipe_luts/hamada_daylight_pro_v2.cube", BUILTIN_LUT_PREFIX);
+        let recipe_path = format!(
+            "{}master_recipe_luts/hamada_daylight_pro_v2.cube",
+            BUILTIN_LUT_PREFIX
+        );
         assert!(is_builtin_lut_path(&recipe_path));
         let lut = parse_lut_file(&recipe_path).expect("embedded recipe lut parses");
         assert!(lut.size >= 2);
-        assert_eq!(lut.data.len(), (lut.size * lut.size * lut.size * 3) as usize);
+        assert_eq!(
+            lut.data.len(),
+            (lut.size * lut.size * lut.size * 3) as usize
+        );
 
         let film_path = format!("{}film_luts/K-Portra 400.cube", BUILTIN_LUT_PREFIX);
         let film_lut = parse_lut_file(&film_path).expect("embedded film lut parses");
@@ -990,6 +1016,12 @@ mod tests {
         assert!(builtin_lut_bytes("builtin://film_luts/../master_recipe_luts/x.cube").is_none());
         assert!(builtin_lut_bytes("builtin://master_recipe_luts/../../../etc/passwd").is_none());
         // 内嵌中不存在的文件名：解析报错（回退 fs 分支 File::open 失败）
-        assert!(parse_lut_file(&format!("{}master_recipe_luts/not_exist.cube", BUILTIN_LUT_PREFIX)).is_err());
+        assert!(
+            parse_lut_file(&format!(
+                "{}master_recipe_luts/not_exist.cube",
+                BUILTIN_LUT_PREFIX
+            ))
+            .is_err()
+        );
     }
 }

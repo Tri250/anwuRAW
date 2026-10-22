@@ -276,9 +276,12 @@ mod tests {
         let dark = out_rgb.get_pixel(1, 0);
         let dark_in = in_rgb.get_pixel(1, 0);
         let bright_in = in_rgb.get_pixel(0, 0);
-        let bright_diff =
-            (bright.0[0] as i32 - bright_in.0[0] as i32).abs() + (bright.0[1] as i32 - bright_in.0[1] as i32).abs() + (bright.0[2] as i32 - bright_in.0[2] as i32).abs();
-        let dark_diff = (dark.0[0] as i32 - dark_in.0[0] as i32).abs() + (dark.0[1] as i32 - dark_in.0[1] as i32).abs() + (dark.0[2] as i32 - dark_in.0[2] as i32).abs();
+        let bright_diff = (bright.0[0] as i32 - bright_in.0[0] as i32).abs()
+            + (bright.0[1] as i32 - bright_in.0[1] as i32).abs()
+            + (bright.0[2] as i32 - bright_in.0[2] as i32).abs();
+        let dark_diff = (dark.0[0] as i32 - dark_in.0[0] as i32).abs()
+            + (dark.0[1] as i32 - dark_in.0[1] as i32).abs()
+            + (dark.0[2] as i32 - dark_in.0[2] as i32).abs();
         assert!(
             bright_diff > dark_diff * 4 && bright_diff > 6,
             "bright_diff={}, dark_diff={}",
@@ -291,11 +294,31 @@ mod tests {
     fn tc_st_highlight_weight_threshold_mapping() {
         // balance 映射：0 → 分界 0.5（中灰权重恰为 0.5）；+100 → 分界 0.25，中灰明显偏向高光；
         // -100 → 分界 0.75，中灰明显偏向阴影（sigmoid 过渡带宽 8 → 权重非满值）
-        let s0 = SplitToningSettings { balance: 0.0, ..Default::default() };
-        let s_pos = SplitToningSettings { balance: 100.0, ..Default::default() };
-        let s_neg = SplitToningSettings { balance: -100.0, ..Default::default() };
-        assert!((s0.highlight_weight(0.5) - 0.5).abs() < 1e-3, "balance=0 neutral");
-        assert!(s_pos.highlight_weight(0.5) > 0.85, "positive balance -> highlight: {}", s_pos.highlight_weight(0.5));
-        assert!(s_neg.highlight_weight(0.5) < 0.15, "negative balance -> shadow: {}", s_neg.highlight_weight(0.5));
+        let s0 = SplitToningSettings {
+            balance: 0.0,
+            ..Default::default()
+        };
+        let s_pos = SplitToningSettings {
+            balance: 100.0,
+            ..Default::default()
+        };
+        let s_neg = SplitToningSettings {
+            balance: -100.0,
+            ..Default::default()
+        };
+        assert!(
+            (s0.highlight_weight(0.5) - 0.5).abs() < 1e-3,
+            "balance=0 neutral"
+        );
+        assert!(
+            s_pos.highlight_weight(0.5) > 0.85,
+            "positive balance -> highlight: {}",
+            s_pos.highlight_weight(0.5)
+        );
+        assert!(
+            s_neg.highlight_weight(0.5) < 0.15,
+            "negative balance -> shadow: {}",
+            s_neg.highlight_weight(0.5)
+        );
     }
 }

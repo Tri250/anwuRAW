@@ -445,14 +445,36 @@ mod tests {
         // BT.601 YCbCr 往返精度：全色域采样误差 < 1e-3（远低于 8bit 量化步长）
         let n = 64;
         let r: Vec<f32> = (0..n).map(|i| i as f32 / (n - 1) as f32 * 255.0).collect();
-        let g: Vec<f32> = (0..n).map(|i| ((i * 7) % n) as f32 / (n - 1) as f32 * 255.0).collect();
-        let b: Vec<f32> = (0..n).map(|i| ((i * 13) % n) as f32 / (n - 1) as f32 * 255.0).collect();
+        let g: Vec<f32> = (0..n)
+            .map(|i| ((i * 7) % n) as f32 / (n - 1) as f32 * 255.0)
+            .collect();
+        let b: Vec<f32> = (0..n)
+            .map(|i| ((i * 13) % n) as f32 / (n - 1) as f32 * 255.0)
+            .collect();
         let (y, cb, cr) = rgb_to_ycbcr(&r, &g, &b);
         let (r2, g2, b2) = ycbcr_to_rgb(&y, &cb, &cr);
         for i in 0..n {
-            assert!((r[i] - r2[i]).abs() < 1e-3, "R roundtrip {}: {} vs {}", i, r[i], r2[i]);
-            assert!((g[i] - g2[i]).abs() < 1e-3, "G roundtrip {}: {} vs {}", i, g[i], g2[i]);
-            assert!((b[i] - b2[i]).abs() < 1e-3, "B roundtrip {}: {} vs {}", i, b[i], b2[i]);
+            assert!(
+                (r[i] - r2[i]).abs() < 1e-3,
+                "R roundtrip {}: {} vs {}",
+                i,
+                r[i],
+                r2[i]
+            );
+            assert!(
+                (g[i] - g2[i]).abs() < 1e-3,
+                "G roundtrip {}: {} vs {}",
+                i,
+                g[i],
+                g2[i]
+            );
+            assert!(
+                (b[i] - b2[i]).abs() < 1e-3,
+                "B roundtrip {}: {} vs {}",
+                i,
+                b[i],
+                b2[i]
+            );
         }
     }
 
