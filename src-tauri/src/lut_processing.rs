@@ -67,7 +67,7 @@ fn film_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
         .map(|p| strip_verbatim(&p))
 }
 
-fn master_recipe_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
+pub(crate) fn master_recipe_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
     app_handle
         .path()
         .resolve(
@@ -489,9 +489,43 @@ pub fn get_or_load_lut(state: &State<AppState>, path: &str) -> Result<Arc<Lut>, 
         return Ok(lut.clone());
     }
 
-    let lut = parse_lut_file(path).map_err(|e| e.to_string())?;
+    // 路径自愈：跨会话安装位置变化（如 AppImage 挂载点每次启动都不同）会让旧会话
+    // 持久化的配方 LUT 绝对路径失效，渲染/导出/预览等所有消费链路都会静默丢 LUT。
+    // 失效路径的文件名若命中内置大师配方资源目录中的同名文件，回退到当前安装位置，
+    // 与前端 Basic.tsx 的运行时自愈等价（此处覆盖不经前端面板的批量导出等链路）。
+    let resolved = if !std::path::Path::new(path).exists() {
+        std::path::Path::new(path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .and_then(|name| {
+                state
+                    .recipe_luts_dir
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .as_ref()
+                    .map(|dir| dir.join(name))
+            })
+            .filter(|candidate| candidate.exists())
+            .map(|candidate| candidate.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.to_string())
+    } else {
+        path.to_string()
+    };
+
+    if resolved != path {
+        if let Some(lut) = cache.get(&resolved).cloned() {
+            cache.insert(path.to_string(), lut.clone());
+            return Ok(lut);
+        }
+    }
+
+    let lut = parse_lut_file(&resolved).map_err(|e| e.to_string())?;
     let arc_lut = Arc::new(lut);
-    cache.insert(path.to_string(), arc_lut.clone());
+    cache.insert(resolved.clone(), arc_lut.clone());
+    if resolved != path {
+        // 以旧路径为别名再缓存一份，避免每次调用都重复 exists() 探测
+        cache.insert(path.to_string(), arc_lut.clone());
+    }
     Ok(arc_lut)
 }
 

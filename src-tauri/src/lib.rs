@@ -2057,6 +2057,13 @@ pub fn run() {
 
             let app_handle = app.handle().clone();
 
+            // 缓存内置大师配方 LUT 资源目录，供 get_or_load_lut 路径自愈使用
+            {
+                let state = app_handle.state::<AppState>();
+                *state.recipe_luts_dir.lock().unwrap_or_else(|e| e.into_inner()) =
+                    lut_processing::master_recipe_luts_dir(&app_handle);
+            }
+
             {
                 let disks_app_handle = app_handle.clone();
                 std::thread::spawn(move || {
@@ -2353,6 +2360,7 @@ pub fn run() {
             denoise_result: Arc::new(Mutex::new(None)),
             indexing_task_handle: Mutex::new(None),
             lut_cache: Mutex::new(HashMap::new()),
+            recipe_luts_dir: Mutex::new(None),
             initial_file_path: Mutex::new(None),
             pending_edit_session: Mutex::new(None),
             thumbnail_cancellation_token: Arc::new(AtomicBool::new(false)),

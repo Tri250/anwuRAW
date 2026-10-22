@@ -154,6 +154,9 @@ pub struct AppState {
     pub denoise_result: Arc<Mutex<Option<DynamicImage>>>,
     pub indexing_task_handle: Mutex<Option<JoinHandle<()>>>,
     pub lut_cache: Mutex<HashMap<String, Arc<Lut>>>,
+    /// 内置大师配方 LUT 资源目录（setup 时解析填充）。
+    /// 供 get_or_load_lut 对失效的旧持久化路径做同名回退自愈（跨会话安装位置变化）。
+    pub recipe_luts_dir: Mutex<Option<std::path::PathBuf>>,
     pub initial_file_path: Mutex<Option<String>>,
     pub pending_edit_session: Mutex<Option<ExternalEditSession>>,
     pub thumbnail_cancellation_token: Arc<AtomicBool>,
