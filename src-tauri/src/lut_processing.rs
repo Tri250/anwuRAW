@@ -4,6 +4,7 @@ use crate::android_integration::{
     get_android_cached_lut_path, read_android_content_uri, resolve_android_content_uri_name,
 };
 use anyhow::anyhow;
+use include_dir::{Dir, include_dir};
 use image::{DynamicImage, GenericImageView, Rgb, Rgb32FImage};
 use serde::{Deserialize, Serialize};
 use std::fs::{File, copy, create_dir_all, read_dir};
@@ -57,6 +58,71 @@ pub struct LutPreview {
 fn strip_verbatim(path: &Path) -> PathBuf {
     let s = path.to_string_lossy();
     PathBuf::from(s.strip_prefix(r"\\?\").unwrap_or(&s).to_string())
+}
+
+// 内置 LUT 编译期内嵌：Android 上 bundle.resources 被打进 APK assets（虚拟路径），
+// std::fs::read_dir / File::open 无法访问，导致 list_recipe_luts / 内置胶片列表恒为空，
+// 场景增强面板的大师配方芯片全部呈禁用态（v1.6.18 Android 实测回归）。
+// 与 lens_correction.rs 的 lensfun_db 采用同一 include_dir 方案，保证全平台一致；
+// 桌面端同时消除 AppImage 挂载点漂移导致的资源路径问题。
+static EMBEDDED_FILM_LUTS: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/film_luts");
+static EMBEDDED_RECIPE_LUTS: Dir<'_> =
+    include_dir!("$CARGO_MANIFEST_DIR/resources/master_recipe_luts");
+
+/// 内嵌 LUT 的虚拟路径前缀：`builtin://<scheme_dir>/<file_name>`，
+/// 作为稳定标识持久化到会话（lutPath），跨会话/跨安装位置永远有效。
+pub const BUILTIN_LUT_PREFIX: &str = "builtin://";
+
+pub fn is_builtin_lut_path(path: &str) -> bool {
+    path.starts_with(BUILTIN_LUT_PREFIX)
+}
+
+/// 从内嵌资源读取 LUT 字节。仅接受 `builtin://film_luts/...` 与
+/// `builtin://master_recipe_luts/...` 两种白名单目录，文件名精确匹配（无遍历风险）。
+fn builtin_lut_bytes(path: &str) -> Option<&'static [u8]> {
+    let rest = path.strip_prefix(BUILTIN_LUT_PREFIX)?;
+    let (scheme_dir, file_name) = rest.split_once('/')?;
+    if file_name.is_empty() {
+        return None;
+    }
+    let dir = match scheme_dir {
+        "film_luts" => &EMBEDDED_FILM_LUTS,
+        "master_recipe_luts" => &EMBEDDED_RECIPE_LUTS,
+        _ => return None,
+    };
+    dir.get_file(file_name).map(|f| f.contents())
+}
+
+/// 枚举内嵌 LUT 目录为 LutEntry 列表（与 list_luts_in_dir 同构：仅受支持扩展名、按名排序）
+fn list_luts_in_embedded(dir: &Dir<'_>, scheme_dir: &str) -> Vec<LutEntry> {
+    let mut entries: Vec<LutEntry> = Vec::new();
+    for file in dir.files() {
+        let file_path = Path::new(file.path());
+        let extension = file_path
+            .extension()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+        let is_supported = matches!(
+            extension.as_str(),
+            "cube" | "3dl" | "png" | "jpg" | "jpeg" | "tiff"
+        );
+        if !is_supported {
+            continue;
+        }
+        let name = file_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("LUT")
+            .to_string();
+        entries.push(LutEntry {
+            name,
+            path: format!("{}{}/{}", BUILTIN_LUT_PREFIX, scheme_dir, file.path().display()),
+            is_built_in: true,
+        });
+    }
+    entries.sort_by_key(|a| a.name.to_lowercase());
+    entries
 }
 
 fn film_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
@@ -383,7 +449,16 @@ pub fn parse_lut_file(path_str: &str) -> anyhow::Result<Lut> {
     }
 
     let (extension, bytes): (String, Option<Vec<u8>>) =
-        if cfg!(target_os = "android") && is_android_content_uri(path_str) {
+        if let Some(embedded) = builtin_lut_bytes(normalized_path_str) {
+            // 内嵌虚拟路径（builtin://film_luts/...、builtin://master_recipe_luts/...）：
+            // 直接从编译期内嵌资源读取，不触达文件系统
+            let ext = Path::new(normalized_path_str)
+                .extension()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_lowercase();
+            (ext, Some(embedded.to_vec()))
+        } else if cfg!(target_os = "android") && is_android_content_uri(path_str) {
             #[cfg(target_os = "android")]
             {
                 let resolved_name = resolve_android_content_uri_name(path_str)
@@ -493,7 +568,10 @@ pub fn get_or_load_lut(state: &State<AppState>, path: &str) -> Result<Arc<Lut>, 
     // 持久化的配方 LUT 绝对路径失效，渲染/导出/预览等所有消费链路都会静默丢 LUT。
     // 失效路径的文件名若命中内置大师配方资源目录中的同名文件，回退到当前安装位置，
     // 与前端 Basic.tsx 的运行时自愈等价（此处覆盖不经前端面板的批量导出等链路）。
-    let resolved = if !std::path::Path::new(path).exists() {
+    // 内嵌虚拟路径（builtin://）本身稳定存在，直接短路，无需自愈。
+    let resolved = if is_builtin_lut_path(path) {
+        path.to_string()
+    } else if !std::path::Path::new(path).exists() {
         std::path::Path::new(path)
             .file_name()
             .and_then(|n| n.to_str())
@@ -533,11 +611,9 @@ pub fn get_or_load_lut(state: &State<AppState>, path: &str) -> Result<Arc<Lut>, 
 pub fn list_luts(app_handle: AppHandle) -> Result<Vec<LutEntry>, String> {
     let mut all_luts = Vec::new();
 
-    if let Some(resource_path) = film_luts_dir(&app_handle)
-        && let Ok(built_in) = list_luts_in_dir(&resource_path, true)
-    {
-        all_luts.extend(built_in);
-    }
+    // 内置胶片模拟：编译期内嵌资源（Android APK assets 无法用 std::fs 枚举，
+    // 资源目录路径在 AppImage 下也会漂移；内嵌列表全平台一致且不可被用户删除）
+    all_luts.extend(list_luts_in_embedded(&EMBEDDED_FILM_LUTS, "film_luts"));
 
     let data_dir = app_handle
         .path()
@@ -613,13 +689,11 @@ fn list_luts_in_cache() -> anyhow::Result<Vec<LutEntry>> {
 }
 
 #[tauri::command]
-pub fn list_recipe_luts(app_handle: AppHandle) -> Result<Vec<LutEntry>, String> {
+pub fn list_recipe_luts(_app_handle: AppHandle) -> Result<Vec<LutEntry>, String> {
     // 大师配方内置外观（display-referred LUT），仅供场景增强面板按配方定位文件路径；
     // 不进入 list_luts 的胶片模拟网格，也不允许被用户删除。
-    let Some(resource_path) = master_recipe_luts_dir(&app_handle) else {
-        return Ok(Vec::new());
-    };
-    list_luts_in_dir(&resource_path, true).map_err(|e| e.to_string())
+    // 编译期内嵌列举：Android APK assets 无法用 std::fs 枚举，fs 版在 Android 恒为空
+    Ok(list_luts_in_embedded(&EMBEDDED_RECIPE_LUTS, "master_recipe_luts"))
 }
 
 #[tauri::command]
@@ -645,6 +719,11 @@ pub fn remove_lut(app_handle: AppHandle, path: String) -> Result<Vec<LutEntry>, 
         .map_err(|e| e.to_string())?;
     let luts_dir = strip_verbatim(&get_luts_dir(&data_dir).map_err(|e| e.to_string())?);
     let target_path = strip_verbatim(Path::new(&path));
+
+    // 内嵌虚拟路径不存在于文件系统，且内置外观不允许被删除
+    if is_builtin_lut_path(&path) {
+        return Err("Cannot delete built-in film emulations".to_string());
+    }
 
     if let Some(resource_path) = film_luts_dir(&app_handle)
         && target_path.starts_with(&resource_path)
@@ -861,5 +940,56 @@ mod tests {
         assert!((lut.data[bg_corner + 1] - 1.0).abs() < 1e-5, "G=1 at g_idx=3");
         assert!((lut.data[bg_corner + 2] - 1.0).abs() < 1e-5, "B=1 at b_idx=3");
         assert!((lut.data[63 * 3] - 1.0).abs() < 1e-5, "last entry R");
+    }
+
+    #[test]
+    fn tc_lut_builtin_lists_all_recipes_and_films() {
+        // 内嵌列举：14 个大师配方 + 6 枚内置胶片（license txt 不进入列表）
+        let recipes = list_luts_in_embedded(&EMBEDDED_RECIPE_LUTS, "master_recipe_luts");
+        assert_eq!(recipes.len(), 14);
+        for entry in &recipes {
+            assert!(entry.is_built_in);
+            assert!(entry.path.starts_with(BUILTIN_LUT_PREFIX));
+            assert!(!entry.name.is_empty());
+        }
+        let films = list_luts_in_embedded(&EMBEDDED_FILM_LUTS, "film_luts");
+        assert_eq!(films.len(), 6);
+        assert!(films.iter().all(|e| e.path.ends_with(".cube")));
+        // 列表按名排序（大小写不敏感），与 fs 版 list_luts_in_dir 语义一致
+        let names = films.iter().map(|e| e.name.to_lowercase()).collect::<Vec<_>>();
+        let mut sorted = names.clone();
+        sorted.sort();
+        assert_eq!(names, sorted);
+    }
+
+    #[test]
+    fn tc_lut_builtin_parse_roundtrip() {
+        // 内嵌虚拟路径可直接解析（渲染/导出/预热全链路共用 parse_lut_file）
+        let recipe_path = format!("{}master_recipe_luts/hamada_daylight_pro_v2.cube", BUILTIN_LUT_PREFIX);
+        assert!(is_builtin_lut_path(&recipe_path));
+        let lut = parse_lut_file(&recipe_path).expect("embedded recipe lut parses");
+        assert!(lut.size >= 2);
+        assert_eq!(lut.data.len(), (lut.size * lut.size * lut.size * 3) as usize);
+
+        let film_path = format!("{}film_luts/K-Portra 400.cube", BUILTIN_LUT_PREFIX);
+        let film_lut = parse_lut_file(&film_path).expect("embedded film lut parses");
+        assert_eq!(
+            film_lut.data.len(),
+            (film_lut.size * film_lut.size * film_lut.size * 3) as usize
+        );
+    }
+
+    #[test]
+    fn tc_lut_builtin_scheme_guard() {
+        // 非内嵌路径不误判
+        assert!(!is_builtin_lut_path("/usr/share/luts/x.cube"));
+        assert!(!is_builtin_lut_path("C:\\luts\\x.cube"));
+        // 白名单目录之外 / 空文件名 / 目录遍历一律不命中
+        assert!(builtin_lut_bytes("builtin://unknown_dir/x.cube").is_none());
+        assert!(builtin_lut_bytes("builtin://film_luts/").is_none());
+        assert!(builtin_lut_bytes("builtin://film_luts/../master_recipe_luts/x.cube").is_none());
+        assert!(builtin_lut_bytes("builtin://master_recipe_luts/../../../etc/passwd").is_none());
+        // 内嵌中不存在的文件名：解析报错（回退 fs 分支 File::open 失败）
+        assert!(parse_lut_file(&format!("{}master_recipe_luts/not_exist.cube", BUILTIN_LUT_PREFIX)).is_err());
     }
 }
