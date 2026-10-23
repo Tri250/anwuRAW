@@ -344,9 +344,10 @@ function App() {
     compactEditorPanelMinHeight,
     Math.min(compactEditorPanelHeightOverride ?? compactEditorPanelDefaultHeight, compactEditorPanelMaxHeight),
   );
-  // 折叠态高度须装下内部固定控件：MobilePanelSwitcher(60px, Android 44px 按钮+16px 内边距)
-  // + BottomBar(48px) + 边框余量。旧值 96px 会导致折叠态 BottomBar 被裁剪约 12px
-  const compactEditorPanelCollapsedHeight = 112;
+  // 折叠态高度须装下内部固定控件：MobilePanelSwitcher(60px, 44px 图标+标签按钮+16px 内边距)
+  // + BottomBar(48px) + 边框与系统字体缩放余量。旧值 112px 在 Android 字体放大时会
+  // 裁剪 BottomBar 底缘，120px 提供 ~11px 安全余量
+  const compactEditorPanelCollapsedHeight = 120;
 
   const { handleCopyAdjustments, handlePasteAdjustments, handleResetAdjustments, handleZoomChange } =
     useEditorActions();

@@ -67,7 +67,7 @@ const StarRating = ({ rating, onRate, disabled }: StarRatingProps) => {
         return (
           <button
             // p-1.5 扩大触控目标：18px 图标 → 30px 命中区（Android 触屏误触率显著降低）
-            className="p-1.5 disabled:cursor-not-allowed"
+            className="p-1.5 transition-transform duration-150 active:scale-90 disabled:cursor-not-allowed"
             disabled={disabled}
             key={starValue}
             onClick={() => !disabled && onRate(starValue === rating ? 0 : starValue)}
@@ -106,7 +106,7 @@ const PanelToggleButton = ({ onClick, Icon, tooltip, disabled = false }: PanelTo
   <button
     className={clsx(
       // p-2 扩大触控目标：18px 图标 → 34px 命中区（触屏可达性）
-      'p-2 rounded-md transition-colors',
+      'p-2 rounded-md transition-[color,background-color,transform] duration-150 active:scale-90',
       disabled
         ? 'text-text-secondary opacity-40 cursor-not-allowed'
         : 'text-text-secondary hover:bg-surface hover:text-text-primary',
@@ -370,7 +370,7 @@ export default function BottomBar({
           <div className="h-5 w-px bg-surface"></div>
           <div className="flex items-center gap-2">
             <button
-              className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+              className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
               disabled={isCopyDisabled}
               onClick={onCopy}
               data-tooltip={t('ui.bottomBar.tooltips.copySettings')}
@@ -403,7 +403,7 @@ export default function BottomBar({
             </button>
 
             <button
-              className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+              className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
               disabled={isPasteDisabled}
               onClick={onPaste}
               data-tooltip={t('ui.bottomBar.tooltips.pasteSettings')}
@@ -436,7 +436,7 @@ export default function BottomBar({
             </button>
 
             <button
-              className="w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90"
               onClick={onOpenCopyPasteSettings}
               data-tooltip={t('ui.bottomBar.tooltips.copyPasteSettings')}
             >
@@ -454,7 +454,7 @@ export default function BottomBar({
           >
             <button
               className={clsx(
-                'relative w-8 h-8 flex items-center justify-center rounded-md transition-colors shrink-0',
+                'relative w-8 h-8 flex items-center justify-center rounded-md transition-[color,background-color,transform] duration-150 active:scale-90 shrink-0',
                 isFilterExpanded ? 'text-text-primary' : 'text-text-secondary hover:bg-surface hover:text-text-primary',
               )}
               onClick={() => setIsFilterExpanded(!isFilterExpanded)}

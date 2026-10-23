@@ -20,7 +20,9 @@ const Button = ({
     flex items-center justify-center gap-2
     font-semibold py-2 px-4 rounded-md
     text-button-text text-md
-    disabled:opacity-50 disabled:cursor-not-allowed
+    transition-[filter,transform] duration-150
+    hover:brightness-110 active:scale-[0.98] active:brightness-95
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:brightness-100 disabled:active:scale-100
   `;
 
   const hasSurfaceBg = className.includes('bg-surface');

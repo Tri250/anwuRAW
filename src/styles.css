@@ -523,11 +523,28 @@ html[data-platform='android'] button[data-tooltip]::after {
   inset: -4px;
 }
 
-/* 移动端面板切换器是 Android 端主导航,直接放大按钮至 44px 命中 */
+/* 移动端面板切换器是 Android 端主导航：图标 + 短标签双层按钮(44px 触控目标)。
+   不再覆盖 padding(与按钮自身 p-1.5 冲突会撑高折叠态容器)，仅保证最小触控面积 */
 html[data-platform='android'] [data-mobile-panel-switcher] button {
-  padding: 10px;
   min-width: 44px;
   min-height: 44px;
+}
+
+/* Android 滑块拇指视觉放大：16px → 20px，与国内主流修图 App 手感一致。
+   触控命中仍由 Slider 自定义触摸逻辑(24px 拇指命中半径 + 28px 输入高度)保证 */
+html[data-platform='android'] .slider-input::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+}
+
+html[data-platform='android'] .slider-input::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+}
+
+/* Dropdown 下拉列表项触控加高至 40px(国内 App 列表项标准高度) */
+html[data-platform='android'] [role='listbox'] button {
+  min-height: 40px;
 }
 
 /* Toast 定位修正：position:fixed 相对视口定位,不受 body 安全区内边距影响,
