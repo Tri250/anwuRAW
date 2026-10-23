@@ -88,7 +88,9 @@ function PanelTab({ panel, region, side }: { panel: Panel; region: PanelRegion; 
       {isActive && (
         <motion.div
           layoutId={`active-indicator-${region}`}
-          className="absolute inset-0 bg-surface rounded-md"
+          // pointer-events-none：active indicator 仅做视觉反馈，不拦截按钮本身的点击/touch 事件；
+          // Android WebView 中 absolute inset-0 的 div 默认会消费 pointer 事件，导致 onClick 不触发
+          className="absolute inset-0 bg-surface rounded-md pointer-events-none"
           transition={isInstantTransition ? { duration: 0 } : { type: 'spring', bounce: 0.2, duration: 0.4 }}
         />
       )}
@@ -274,9 +276,9 @@ export function MobilePanelSwitcher({
             aria-label={t(PANEL_TITLES[id])}
             aria-pressed={isActive}
             className={clsx(
-              // 图标 + 短标签双层结构(国内主流修图 App 导航样式)：44px 触控目标,
-              // 按压缩放反馈,active 弹簧指示器随选中项平滑滑动
-              'relative flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg shrink-0',
+              // 图标 + 短标签双层结构：触控目标从 36~40px 提升到 48×56px（iOS/Android HIG 标准），
+              // 确保大字体/粗手指也能可靠点击；active 弹簧指示器 + 按压缩放反馈保留
+              'relative flex flex-col items-center justify-center gap-1 py-2.5 px-3 rounded-xl shrink-0',
               'transition-[color,transform] duration-150 active:scale-95',
               isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary',
             )}
@@ -284,7 +286,9 @@ export function MobilePanelSwitcher({
             {isActive && (
               <motion.div
                 layoutId="mobile-panel-indicator"
-                className="absolute inset-0 bg-surface rounded-lg"
+                // pointer-events-none：与 PanelTab 保持一致，active indicator 只做视觉背景，
+                // 不拦截按钮点击/touch 事件（Android WebView 中 absolute 覆盖层会消费 pointer）
+                className="absolute inset-0 bg-surface rounded-lg pointer-events-none"
                 transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
               />
             )}
