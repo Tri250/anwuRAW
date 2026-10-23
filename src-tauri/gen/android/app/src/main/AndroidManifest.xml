@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- 触觉反馈：前端长按菜单等操作调用 navigator.vibrate()，
+         Android WebView 要求应用持有 VIBRATE 权限，缺失时静默失败 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- 媒体访问权限：Android 13+ (API 33+) 细粒度媒体权限 -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <!-- 兼容 Android 12 及以下：读取外部存储 -->
