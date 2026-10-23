@@ -908,6 +908,11 @@ export default function MetadataPanel() {
                           >
                             <input
                               type="text"
+                              // 软键盘优化：标签不需要自动大写/纠错
+                              autoCapitalize="off"
+                              autoCorrect="off"
+                              spellCheck={false}
+                              enterKeyHint="done"
                               value={tagInputValue}
                               onChange={(e) => setTagInputValue(e.target.value)}
                               onKeyDown={handleTagInputKeyDown}

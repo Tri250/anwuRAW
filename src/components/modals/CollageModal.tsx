@@ -723,6 +723,11 @@ export default function CollageModal({ isOpen, onClose, onSave, sourceImages }: 
           />
           <input
             type="text"
+            // 软键盘优化：十六进制色值不需要自动大写/纠错
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="done"
             value={backgroundColor}
             onChange={(e) => setBackgroundColor(e.target.value)}
             className="w-full bg-bg-primary text-center rounded-md p-1 border border-surface focus:border-accent focus:ring-accent"

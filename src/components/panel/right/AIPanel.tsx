@@ -1649,6 +1649,11 @@ function ContainerRow({
           {renamingId === container.id ? (
             <input
               autoFocus
+              // 软键盘优化：名称不需要自动大写/纠错
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="done"
               className="bg-bg-primary text-sm w-full rounded-sm px-1 outline-hidden border border-accent"
               value={tempName}
               onChange={(e) => setTempName(e.target.value)}
@@ -1951,6 +1956,11 @@ function SubMaskRow({
       {renamingId === subMask.id ? (
         <input
           autoFocus
+          // 软键盘优化：名称不需要自动大写/纠错
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="done"
           className="bg-bg-primary text-sm w-full rounded px-1 outline-none border border-accent"
           value={tempName}
           onChange={(e) => setTempName(e.target.value)}

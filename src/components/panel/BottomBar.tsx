@@ -628,6 +628,8 @@ export default function BottomBar({
                     <input
                       ref={percentInputRef}
                       type="text"
+                      // 软键盘优化：缩放百分比用数字键盘
+                      inputMode="decimal"
                       value={percentInputValue}
                       onChange={(e) => setPercentInputValue(e.target.value)}
                       onKeyDown={handlePercentKeyDown}

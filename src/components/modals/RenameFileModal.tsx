@@ -122,6 +122,11 @@ export default function RenameFileModal({ filesToRename, isOpen, onClose, onSave
             </Text>
             <input
               autoFocus
+              // 软键盘优化：文件名不需要自动大写/纠错
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="done"
               className="w-full bg-bg-primary border border-surface rounded-md p-2 text-sm text-text-primary focus:ring-accent focus:border-accent"
               onChange={(e: any) => setNameTemplate(e.target.value)}
               onKeyDown={handleKeyDown}

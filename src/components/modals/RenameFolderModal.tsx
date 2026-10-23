@@ -95,6 +95,11 @@ export default function RenameFolderModal({
         </Text>
         <input
           autoFocus
+          // 软键盘优化：文件夹名不需要自动大写/纠错
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="done"
           className="w-full bg-bg-primary text-text-primary border border-border rounded-md px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-accent"
           onChange={(e: any) => setName(e.target.value)}
           onKeyDown={handleKeyDown}

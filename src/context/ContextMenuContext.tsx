@@ -210,9 +210,14 @@ function MenuItem({ option, path, hideContextMenu }: MenuItemProps) {
             hideContextMenu();
           }
           // 触屏没有 hover：点击带子菜单的父项也必须展开子菜单，
-          // 否则 Android 上「删除 → 删除关联文件」等多级操作完全无法到达
+          // 否则 Android 上「删除 → 删除关联文件」等多级操作完全无法到达。
+          // 再次点击已展开的父项应收起（toggle），否则子菜单无法收回
           if (!option.disabled && option.submenu) {
-            openSubmenu(path);
+            if (isSubmenuOpen) {
+              closeSubmenu(path);
+            } else {
+              openSubmenu(path);
+            }
           }
         }}
         onMouseDown={(event) => {

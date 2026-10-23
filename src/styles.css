@@ -626,6 +626,18 @@ html[data-platform='android'] .context-menu-item {
   min-height: 44px;
 }
 
+/* 触屏没有 hover：为所有可点按钮提供统一的按下视觉反馈（微变暗），
+   避免「点了没反应」的失控感；与组件自身的 active:scale/背景态叠加不冲突 */
+html[data-platform='android'] button:not(:disabled):active {
+  filter: brightness(0.85);
+}
+
+/* Toast 位于屏幕右下角：Android 端 WebView 全屏延伸到系统导航栏后方，
+   底部 toast 会被导航栏遮挡，按注入的 inset 上移避让 */
+html[data-platform='android'] .Toastify__toast-container--bottom-right {
+  bottom: calc(1em + var(--android-inset-bottom, 0px));
+}
+
 
 /* 纯触屏设备没有 hover：所有「悬浮才显示」的操作按钮（蒙版/图像修补的删除与可见性、
    水印图片清除、全景/联机拍摄预览控制条等）必须常显，否则触屏用户完全无法触达。 */

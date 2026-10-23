@@ -900,6 +900,11 @@ export default function FolderTree({
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
               <input
                 type="text"
+                // 软键盘优化：文件/文件夹搜索不需要自动大写与纠错
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="search"
                 placeholder={t('library.folders.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

@@ -115,6 +115,11 @@ export default function ImportSettingsModal({ fileCount, isOpen, onClose, onSave
             </Text>
             <input
               autoFocus
+              // 软键盘优化：命名模板不需要自动大写/纠错
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="done"
               className="w-full bg-bg-primary border border-surface rounded-md p-2 text-sm text-text-primary focus:ring-accent focus:border-accent"
               onChange={(e: any) => setFilenameTemplate(e.target.value)}
               ref={filenameInputRef}
@@ -149,6 +154,11 @@ export default function ImportSettingsModal({ fileCount, isOpen, onClose, onSave
                   {t('modals.importSettings.dateFormat')}
                 </Text>
                 <input
+                  // 软键盘优化：日期格式模板不需要自动大写/纠错
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="done"
                   className="w-full bg-bg-primary border border-surface rounded-md p-2 text-sm text-text-primary focus:ring-accent focus:border-accent"
                   onChange={(e: any) => setDateFolderFormat(e.target.value)}
                   placeholder={t('modals.importSettings.dateFormatPlaceholder')}

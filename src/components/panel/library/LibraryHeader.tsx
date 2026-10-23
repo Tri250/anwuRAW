@@ -277,9 +277,12 @@ export function SearchInput({ indexingProgress, isIndexing, isAndroid = false, o
         setIsSearchActive(false);
       }
     }
+    // touchstart：触屏没有 mousedown，缺失会导致点外部无法收起搜索框
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [tags, text]);
 
@@ -433,6 +436,11 @@ export function SearchInput({ indexingProgress, isIndexing, isAndroid = false, o
               'grow w-full h-full bg-transparent text-text-primary placeholder-text-secondary border-none focus:outline-hidden',
               isAndroid ? 'min-w-[60px]' : 'min-w-[150px]',
             )}
+            // 软键盘优化：文件名/标签搜索不需要自动大写与纠错，回车键显示「搜索」
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="search"
             disabled={isIndexing}
             onBlur={() => {
               if (tags.length === 0 && !text) setIsSearchActive(false);
