@@ -638,6 +638,23 @@ html[data-platform='android'] .Toastify__toast-container--bottom-right {
   bottom: calc(1em + var(--android-inset-bottom, 0px));
 }
 
+/* 裁剪手柄触屏扩容：react-image-crop 默认手柄约 10px，手指无法抓取。
+   视觉本体保持不变，用 ::after 透明层把 8 个手柄的命中区扩到 ~42px。
+   仅 Android 生效，桌面保留原精确操作手感。 */
+html[data-platform='android'] .ReactCrop__handle::after {
+  content: '';
+  position: absolute;
+  inset: -16px;
+}
+
+/* Before/After 对比分割线触屏扩容：白线仅 2px 宽，触屏无法抓取，
+   透明命中区四向各扩 12px（视觉不变，中间 32px 圆钮本来就可抓） */
+html[data-platform='android'] .compare-divider::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+}
+
 
 /* 纯触屏设备没有 hover：所有「悬浮才显示」的操作按钮（蒙版/图像修补的删除与可见性、
    水印图片清除、全景/联机拍摄预览控制条等）必须常显，否则触屏用户完全无法触达。 */

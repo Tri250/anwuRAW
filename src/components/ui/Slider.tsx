@@ -572,6 +572,11 @@ const Slider = ({
           {isEditing ? (
             <input
               className="w-full text-sm text-right bg-card-active border border-gray-500 rounded-sm px-1 py-0 outline-none focus:ring-1 focus:ring-blue-500 text-text-primary"
+              // 软键盘优化：数值编辑用数字键盘，且不需要自动大写/纠错
+              inputMode="decimal"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               disabled={disabled}
               max={max}
               min={min}

@@ -33,7 +33,9 @@ export default function BeforeAfterCompare({ beforeUrl, afterUrl, onClose }: Bef
   useEffect(() => {
     if (!isPanning && !isResizing) return;
 
-    const handleMove = (e: MouseEvent) => {
+    // Pointer Events：同一套代码同时覆盖鼠标与触屏
+    // （原实现只挂 mousemove/mouseup，触屏拖不动分割线也无法平移）
+    const handleMove = (e: PointerEvent) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
 
@@ -56,22 +58,24 @@ export default function BeforeAfterCompare({ beforeUrl, afterUrl, onClose }: Bef
       setIsResizing(false);
     };
 
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleUp);
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
     return () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleUp);
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
     };
   }, [isPanning, isResizing, splitHorizontal]);
 
-  const handlePanStart = (e: React.MouseEvent) => {
+  const handlePanStart = (e: React.PointerEvent) => {
     if (isResizing) return;
     e.preventDefault();
     setIsPanning(true);
     lastMousePos.current = { x: e.clientX, y: e.clientY };
   };
 
-  const handleDividerDown = (e: React.MouseEvent) => {
+  const handleDividerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
     e.preventDefault();
     setIsResizing(true);
@@ -172,7 +176,10 @@ export default function BeforeAfterCompare({ beforeUrl, afterUrl, onClose }: Bef
         <div
           ref={containerRef}
           className="flex-1 relative overflow-hidden rounded-xl border border-border-color bg-black cursor-grab active:cursor-grabbing select-none"
-          onMouseDown={handlePanStart}
+          // touch-action: none：对比浮层自身全屏无页面滚动需求，
+          // 放行所有方向的指针拖动（平移图像 + 拖分割线）
+          style={{ touchAction: 'none' }}
+          onPointerDown={handlePanStart}
           onWheel={handleWheel}
         >
           {canCompare ? (
@@ -203,9 +210,9 @@ export default function BeforeAfterCompare({ beforeUrl, afterUrl, onClose }: Bef
 
               {/* 中缝分隔线 */}
               <div
-                className="absolute bg-white z-10 shadow-[0_0_8px_rgba(0,0,0,0.8)]"
+                className="compare-divider absolute bg-white z-10 shadow-[0_0_8px_rgba(0,0,0,0.8)]"
                 style={dividerStyle}
-                onMouseDown={handleDividerDown}
+                onPointerDown={handleDividerDown}
               >
                 <div
                   className={`absolute bg-white rounded-full shadow-lg flex items-center justify-center gap-1 ${
