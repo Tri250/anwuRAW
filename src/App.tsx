@@ -303,25 +303,12 @@ function App() {
       : 520;
 
   const getDynamicCompactPanelHeight = () => {
-    const { originalSize, adjustments } = useEditorStore.getState();
-    const halfScreenHeight = viewportSize.height > 0 ? Math.round(viewportSize.height * 0.5) : 340;
-
-    if (!selectedImage || originalSize.width === 0 || originalSize.height === 0 || viewportSize.width === 0) {
-      return halfScreenHeight;
-    }
-    let effectiveRatio = originalSize.width / originalSize.height;
-    const orientationSteps = adjustments?.orientationSteps || 0;
-    if (orientationSteps % 2 !== 0) {
-      effectiveRatio = originalSize.height / originalSize.width;
-    }
-    if (adjustments?.aspectRatio && adjustments.aspectRatio > 0) {
-      effectiveRatio = adjustments.aspectRatio;
-    }
-    const desiredImageHeight = viewportSize.width / effectiveRatio;
-    const topUiEstimation = !appSettings?.decorations && !isWindowFullScreen ? 110 : 60;
-    const totalDesiredTopHeight = desiredImageHeight + topUiEstimation;
-    const calculatedBottomHeight = Math.round(viewportSize.height - totalDesiredTopHeight);
-    return Math.max(halfScreenHeight, calculatedBottomHeight);
+    // 预览优先(v1.6.20 反馈：编辑预览区太小)：面板默认高度固定为视口 45%，
+    // 画布始终保留 ≥55% 视口高度。旧逻辑 max(50% vh, 图片适配剩余高度) 会让
+    // 面板默认占据半屏以上(横图场景可达 ~62%)，画布被压缩得过小。
+    // 用户仍可通过面板顶部拖拽手柄自行调整(上限 85% vh)。
+    if (viewportSize.height <= 0) return 340;
+    return Math.round(viewportSize.height * 0.45);
   };
 
   const compactEditorPanelDefaultHeight = getDynamicCompactPanelHeight();
