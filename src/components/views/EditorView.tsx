@@ -122,6 +122,7 @@ export default function EditorView({
       isRatingDisabled={!selectedImage}
       isResizing={isResizing}
       multiSelectedPaths={multiSelectedPaths}
+      showQuickFilter={!isCompactPortrait}
       onClearSelection={handleClearSelection}
       onContextMenu={handleThumbnailContextMenu}
       onEmptyAreaContextMenu={handleMainLibraryContextMenu}

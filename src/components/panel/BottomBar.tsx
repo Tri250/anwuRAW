@@ -46,6 +46,7 @@ interface BottomBarProps {
   selectedImage?: SelectedImage;
   setIsFilmstripVisible?(isVisible: boolean): void;
   showFilmstrip?: boolean;
+  showQuickFilter?: boolean;
   showZoomControls?: boolean;
   thumbnailAspectRatio: ThumbnailAspectRatio;
   totalImages?: number;
@@ -148,6 +149,7 @@ export default function BottomBar({
   selectedImage,
   setIsFilmstripVisible,
   showFilmstrip = true,
+  showQuickFilter = true,
   showZoomControls = true,
   thumbnailAspectRatio,
   totalImages,
@@ -444,14 +446,18 @@ export default function BottomBar({
             </button>
           </div>
 
-          <div className="h-5 w-px bg-surface"></div>
+          {/* Android 紧凑编辑器隐藏快速过滤：过滤作用于图库筛选,编辑视图中无意义,
+              且展开态 400px 宽在 ≤360px 小屏会挤爆底栏 */}
+          {showQuickFilter && (
+            <>
+              <div className="h-5 w-px bg-surface"></div>
 
-          <div
-            className={clsx(
-              'flex items-center transition-all duration-300',
-              isFilterExpanded ? 'bg-surface rounded-md' : 'bg-transparent',
-            )}
-          >
+              <div
+                className={clsx(
+                  'flex items-center transition-all duration-300',
+                  isFilterExpanded ? 'bg-surface rounded-md' : 'bg-transparent',
+                )}
+              >
             <button
               className={clsx(
                 'relative w-8 h-8 flex items-center justify-center rounded-md transition-[color,background-color,transform] duration-150 active:scale-90 shrink-0',
@@ -534,6 +540,8 @@ export default function BottomBar({
               </div>
             </div>
           </div>
+              </>
+          )}
 
           <div
             className={clsx(
