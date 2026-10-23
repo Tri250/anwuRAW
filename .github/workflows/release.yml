@@ -150,6 +150,17 @@ jobs:
           is_numeric() { [[ "$1" =~ ^[0-9]+$ ]]; }
 
           id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" -q '.id' 2>/dev/null || true)"
+          if ! is_numeric "$id"; then
+            # tag 被删除后重推（如 force-push tag 重新构建）时，旧 release 会转为
+            # draft 且 releases/tags/{tag} 查询 404，但 REST 列表仍能按 tag_name
+            # 找到它。必须复用旧 release，而不是再创建一个新 draft——否则会出现
+            # 两个同 tag_name 的 release，资产经兜底解析落到旧草稿，新草稿为空，
+            # 且发布状态中断（教训：v1.6.20 重推 tag 时踩坑）。
+            id="$(gh api "repos/${GITHUB_REPOSITORY}/releases" \
+              --paginate \
+              --jq ".[] | select(.tag_name == \"$tag\") | .id" 2>/dev/null \
+              | head -1 || true)"
+          fi
           if is_numeric "$id"; then
             echo "✅ Release for tag $tag already exists (id=$id)."
           else

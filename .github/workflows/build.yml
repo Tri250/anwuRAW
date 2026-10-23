@@ -259,9 +259,24 @@ jobs:
         run: |
           set -euo pipefail
 
-          tag_ref="${{ inputs.ref }}"
-          tag_name="${tag_ref#refs/tags/}"
-          gh release upload "$tag_name" "$RUNNER_TEMP"/android-release-assets/* --clobber
+          # 按数字 release id 精确上传（ensure-release 透传），不再按 tag 名解析：
+          # 当存在多个同 tag_name 的 release（如 tag 被强推重建后的旧草稿）时，
+          # `gh release upload <tag>` 会命中错误对象导致资产落到错误 release。
+          # 先删除同名旧资产再上传，等价于 --clobber 且保持可重跑幂等。
+          release_id="${{ inputs.release-id }}"
+          for f in "$RUNNER_TEMP"/android-release-assets/*; do
+            name="$(basename "$f")"
+            stale_ids="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets" \
+              --jq ".[] | select(.name == \"${name}\") | .id" 2>/dev/null || true)"
+            for eid in $stale_ids; do
+              gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/assets/${eid}" 2>/dev/null || true
+            done
+            gh api --method POST \
+              "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?name=${name}" \
+              -H "Content-Type: application/octet-stream" \
+              --input "$f" >/dev/null
+            echo "uploaded: ${name}"
+          done
 
       - name: Upload Android Artifacts
         if: ${{ inputs.mobile == 'android' && inputs.release-id == '' }}
