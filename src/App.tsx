@@ -304,10 +304,14 @@ function App() {
 
   const getDynamicCompactPanelHeight = () => {
     const { originalSize, adjustments } = useEditorStore.getState();
-    const halfScreenHeight = viewportSize.height > 0 ? Math.round(viewportSize.height * 0.5) : 340;
+    // 面板默认下限取 40% 视口(旧值 50% 半屏):半屏下限会让面板恒占一半高度,
+    // 竖拍照片(无法完整显示)时预览区被挤压至约 40%(v1.6.20 反馈「预览太小、面板太高」);
+    // 横图场景仍由下方按「图片完整显示后的剩余空间」计算,不受此下限影响
+    const minPanelHeight =
+      viewportSize.height > 0 ? Math.max(160, Math.round(viewportSize.height * 0.4)) : 320;
 
     if (!selectedImage || originalSize.width === 0 || originalSize.height === 0 || viewportSize.width === 0) {
-      return halfScreenHeight;
+      return minPanelHeight;
     }
     let effectiveRatio = originalSize.width / originalSize.height;
     const orientationSteps = adjustments?.orientationSteps || 0;
@@ -321,7 +325,7 @@ function App() {
     const topUiEstimation = !appSettings?.decorations && !isWindowFullScreen ? 110 : 60;
     const totalDesiredTopHeight = desiredImageHeight + topUiEstimation;
     const calculatedBottomHeight = Math.round(viewportSize.height - totalDesiredTopHeight);
-    return Math.max(halfScreenHeight, calculatedBottomHeight);
+    return Math.max(minPanelHeight, calculatedBottomHeight);
   };
 
   const compactEditorPanelDefaultHeight = getDynamicCompactPanelHeight();
