@@ -486,6 +486,9 @@ html[data-platform='android'] body {
   /* 触屏下避免长按误选中（输入区域除外） */
   -webkit-user-select: none;
   user-select: none;
+
+  /* 防滚动链：面板滚动到边界后带动整个应用回弹（WebView 过度滚动效果） */
+  overscroll-behavior: none;
 }
 
 html[data-platform='android'] input,

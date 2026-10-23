@@ -410,6 +410,8 @@ function DraggablePresetItem({
   onDragStateChange,
   onToggleFavorite,
 }: DraggablePresetItemProps) {
+  // Android 触屏禁用 dnd 拖拽：与列表滚动/长按菜单互斥
+  const isAndroid = useOsPlatform() === 'android';
   const {
     attributes,
     listeners,
@@ -418,6 +420,9 @@ function DraggablePresetItem({
   } = useDraggable({
     id: preset.id,
     data: { type: PresetListType.Preset, preset },
+    // Android 触屏：touchAction none 会让预设列表无法从项目上滑动滚动，
+    // 且拖拽与长按菜单互斥；排序/移动由长按菜单与文件夹拖放替代
+    disabled: isAndroid,
   });
 
   const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
@@ -438,7 +443,6 @@ function DraggablePresetItem({
     opacity: isDragging ? 0.4 : 1,
     outline: isOver ? '2px solid var(--color-primary)' : '2px solid transparent',
     outlineOffset: '-2px',
-    touchAction: 'none',
   };
 
   // Android 无右键：长按预设打开上下文菜单（重命名/删除/导出）
@@ -503,6 +507,8 @@ function DraggablePresetItem({
 }
 
 function DroppableFolderItem({ folder, onContextMenu, children, onToggle, isExpanded }: DroppableFolderItemProps) {
+  // Android 触屏禁用 dnd 拖拽：与长按菜单互斥
+  const isAndroid = useOsPlatform() === 'android';
   const {
     attributes,
     listeners,
@@ -511,6 +517,8 @@ function DroppableFolderItem({ folder, onContextMenu, children, onToggle, isExpa
   } = useDraggable({
     data: { type: PresetListType.Folder, folder },
     id: folder.id,
+    // Android 触屏：与长按菜单互斥，文件夹操作由长按菜单承接
+    disabled: isAndroid,
   });
 
   const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
@@ -520,7 +528,6 @@ function DroppableFolderItem({ folder, onContextMenu, children, onToggle, isExpa
 
   const style = {
     opacity: isDragging ? 0.4 : 1,
-    touchAction: 'none',
   };
 
   const hasChildren = folder.children && folder.children.length > 0;

@@ -30,6 +30,24 @@ describe('useLongPressMenu', () => {
     expect(result.current.triggeredRef.current).toBe(true);
   });
 
+  it('TC-M-LP-05 触发时给出触觉反馈(navigator.vibrate)', () => {
+    const vibrate = vi.fn();
+    (globalThis as any).navigator.vibrate = vibrate;
+    const onContextMenu = vi.fn();
+    const { result } = renderHook(() => useLongPressMenu('a.jpg', onContextMenu));
+
+    act(() => result.current.onPointerDown(pointer('touch', 0, 0)));
+    act(() => vi.advanceTimersByTime(500));
+    expect(vibrate).toHaveBeenCalledWith(10);
+
+    // 鼠标路径不触发,也不振动
+    vibrate.mockClear();
+    act(() => result.current.onPointerDown(pointer('mouse', 0, 0)));
+    act(() => vi.advanceTimersByTime(500));
+    expect(vibrate).not.toHaveBeenCalled();
+    delete (globalThis as any).navigator.vibrate;
+  });
+
   it('TC-M-LP-02 手指移动超过 10px 视为滚动,取消长按', () => {
     const onContextMenu = vi.fn();
     const { result } = renderHook(() => useLongPressMenu('a.jpg', onContextMenu));

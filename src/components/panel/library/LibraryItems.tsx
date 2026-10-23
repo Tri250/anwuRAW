@@ -48,6 +48,7 @@ const ThumbnailComponent = ({
   const data = useProcessStore((s) => s.thumbnails[path]);
   const exifOverlay = useSettingsStore((s) => s.appSettings?.exifOverlay || ExifOverlay.Off);
   const displayEditIcon = useSettingsStore((s) => s.appSettings?.displayEditIcon ?? true);
+  const isAndroid = useSettingsStore((s) => s.osPlatform === 'android');
   const showEditIcon = isEdited && displayEditIcon;
 
   const [showPlaceholder, setShowPlaceholder] = useState(false);
@@ -70,6 +71,9 @@ const ThumbnailComponent = ({
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `image-${path}`,
     data: { type: 'library-image', path },
+    // Android 触屏：拖拽与列表滚动冲突（distance 5px 即劫持手势），
+    // 且与长按菜单（500ms）互斥；移动/复制操作由长按菜单承接
+    disabled: isAndroid,
   });
   const longPress = useLongPressMenu(path, onContextMenu);
 
@@ -157,7 +161,6 @@ const ThumbnailComponent = ({
 
   // Android 触屏没有 hover：「悬浮显示 EXIF」永远无法触发，
   // 因此移动端把 Hover 视为 Always，否则用户设置后缩略图上完全看不到参数。
-  const isAndroid = useSettingsStore((s) => s.osPlatform === 'android');
   const isAlways = exifOverlay === ExifOverlay.Always || (isAndroid && exifOverlay === ExifOverlay.Hover);
   const isHover = exifOverlay === ExifOverlay.Hover && !isAndroid;
 
@@ -511,6 +514,7 @@ const ListItemComponent = ({
   const { t } = useTranslation();
   const data = useProcessStore((s) => s.thumbnails[path]);
   const exifOverlay = useSettingsStore((s) => s.appSettings?.exifOverlay || ExifOverlay.Off);
+  const isAndroid = useSettingsStore((s) => s.osPlatform === 'android');
 
   const [showPlaceholder, setShowPlaceholder] = useState(false);
   const [layers, setLayers] = useState<ImageLayer[]>([]);
@@ -532,6 +536,9 @@ const ListItemComponent = ({
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `image-${path}`,
     data: { type: 'library-image', path },
+    // Android 触屏：拖拽与列表滚动冲突（distance 5px 即劫持手势），
+    // 且与长按菜单（500ms）互斥；移动/复制操作由长按菜单承接
+    disabled: isAndroid,
   });
   const longPress = useLongPressMenu(path, onContextMenu);
 

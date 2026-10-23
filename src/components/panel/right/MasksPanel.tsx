@@ -75,6 +75,7 @@ import Text from '../../ui/Text';
 import { TEXT_COLOR_KEYS, TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
+import { useLongPressMenu } from '../../../hooks/useLongPressMenu';
 import { useProcessStore } from '../../../store/useProcessStore';
 import { useAiMasking } from '../../../hooks/useAiMasking';
 import { useEditorActions } from '../../../hooks/useEditorActions';
@@ -1323,10 +1324,12 @@ export default function MasksPanel() {
 
 function DraggableGridItem({ maskType, onClick, onRightClick, activeMaskContainerId }: any) {
   const { t } = useTranslation();
+  // Android 触屏禁用拖拽：点击创建已可用，拖入容器由容器内「添加组件」承接
+  const isAndroid = useSettingsStore((s) => s.osPlatform === 'android');
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `create-${maskType.type}`,
     data: { type: 'Creation', maskType: maskType.type },
-    disabled: maskType.disabled,
+    disabled: maskType.disabled || isAndroid,
   });
 
   const tooltip = maskType.disabled
@@ -1414,8 +1417,15 @@ function ContainerRow({
     listeners,
     setNodeRef: setDraggableRef,
     isDragging,
-  } = useDraggable({ id: container.id, data: { type: 'Container', item: container } });
+  } = useDraggable({
+    id: container.id,
+    data: { type: 'Container', item: container },
+    // Android 触屏禁用拖拽：与列表滚动/长按菜单互斥
+    disabled: useSettingsStore((s) => s.osPlatform === 'android'),
+  });
   const { showContextMenu } = useContextMenu();
+  // Android 无右键：长按容器行打开上下文菜单（重命名/复制/粘贴/应用预设等）
+  const longPress = useLongPressMenu(container.id, (e: any) => onContextMenu(e as any));
 
   const setCombinedRef = (node: HTMLElement | null) => {
     setDroppableRef(node);
@@ -1535,11 +1545,32 @@ function ContainerRow({
       <div
         {...listeners}
         {...attributes}
+        onPointerDown={(e: any) => {
+          (listeners as any)?.onPointerDown?.(e);
+          longPress.onPointerDown(e);
+        }}
+        onPointerMove={(e: any) => {
+          (listeners as any)?.onPointerMove?.(e);
+          longPress.onPointerMove(e);
+        }}
+        onPointerUp={(e: any) => {
+          (listeners as any)?.onPointerUp?.(e);
+          longPress.onPointerUp();
+        }}
+        onPointerCancel={(e: any) => {
+          (listeners as any)?.onPointerCancel?.(e);
+          longPress.onPointerCancel();
+        }}
         className={`flex items-center gap-2 p-2 rounded-md transition-colors group
              ${isSelected ? 'bg-surface' : 'hover:bg-card-active'}
              ${borderClass}`}
         onClick={(e) => {
           e.stopPropagation();
+          // 长按已弹出菜单：吞掉这次 click，避免顺带选中容器
+          if (longPress.triggeredRef.current) {
+            longPress.triggeredRef.current = false;
+            return;
+          }
           onSelect();
         }}
         onContextMenu={onContextMenu}
@@ -1703,9 +1734,12 @@ function SubMaskRow({
 }: any) {
   const typedSubMask = subMask as SubMask;
   const { t } = useTranslation();
+  // Android 触屏禁用拖拽：与列表滚动/长按菜单互斥
+  const isAndroid = useSettingsStore((s) => s.osPlatform === 'android');
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: subMask.id,
     data: { type: 'SubMask', item: subMask, parentId: containerId },
+    disabled: isAndroid,
   });
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({
     id: subMask.id,
@@ -1717,6 +1751,8 @@ function SubMaskRow({
   };
   const MaskIcon = MASK_ICON_MAP[typedSubMask.type] || Circle;
   const { showContextMenu } = useContextMenu();
+  // Android 无右键：长按组件行打开上下文菜单（重命名/复制/粘贴等）
+  const longPress = useLongPressMenu(subMask.id, (e: any) => onContextMenu(e as any));
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -1792,6 +1828,22 @@ function SubMaskRow({
       ref={setCombinedRef}
       {...attributes}
       {...listeners}
+      onPointerDown={(e: any) => {
+        (listeners as any)?.onPointerDown?.(e);
+        longPress.onPointerDown(e);
+      }}
+      onPointerMove={(e: any) => {
+        (listeners as any)?.onPointerMove?.(e);
+        longPress.onPointerMove(e);
+      }}
+      onPointerUp={(e: any) => {
+        (listeners as any)?.onPointerUp?.(e);
+        longPress.onPointerUp();
+      }}
+      onPointerCancel={(e: any) => {
+        (listeners as any)?.onPointerCancel?.(e);
+        longPress.onPointerCancel();
+      }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={`flex items-center gap-2 p-2 rounded-md transition-colors group cursor-pointer
@@ -1803,6 +1855,11 @@ function SubMaskRow({
             transition-opacity duration-300`}
       onClick={(e) => {
         e.stopPropagation();
+        // 长按已弹出菜单：吞掉这次 click，避免顺带选中组件
+        if (longPress.triggeredRef.current) {
+          longPress.triggeredRef.current = false;
+          return;
+        }
         onSelect();
       }}
       onContextMenu={onContextMenu}

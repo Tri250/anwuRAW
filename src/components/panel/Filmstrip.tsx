@@ -82,9 +82,13 @@ const FilmstripThumbnail = memo(
 
     const { path, tags, is_edited: isEdited } = imageFile;
 
+    const isAndroid = useSettingsStore((s) => s.osPlatform === 'android');
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
       id: `filmstrip-image-${path}`,
       data: { type: 'library-image', path },
+      // Android 触屏：胶片栏横向滚动是高频操作，拖拽重排会劫持手势并与
+      // 长按菜单互斥；重排等操作由长按菜单承接
+      disabled: isAndroid,
     });
 
     // 平板/横屏 Android 没有鼠标右键：长按缩略图打开上下文菜单（与图库缩略图一致）
