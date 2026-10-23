@@ -510,6 +510,34 @@ html[data-platform='android'] .h-screen {
   height: 100%;
 }
 
+/* 触控目标扩容：为 data-tooltip 标记的图标按钮(命中区普遍 30-34px)扩展命中范围,
+   视觉尺寸不变。inset -4px 后 32px 按钮 → 40px、16px 色点 → 24px,
+   达到 WCAG 2.2 (24px) 下限并逼近 Material 48dp 理想值,同时避免密集工具栏重叠误触 */
+html[data-platform='android'] button[data-tooltip] {
+  position: relative;
+}
+
+html[data-platform='android'] button[data-tooltip]::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
+/* 移动端面板切换器是 Android 端主导航,直接放大按钮至 44px 命中 */
+html[data-platform='android'] [data-mobile-panel-switcher] button {
+  padding: 10px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Toast 定位修正：position:fixed 相对视口定位,不受 body 安全区内边距影响,
+   bottom-right 默认会压在底部手势条与 BottomBar 之上。
+   抬高至 BottomBar(48px) + 容器留白(约 28px) 之上,并叠加底部安全区 */
+html[data-platform='android'] .Toastify__toast-container--bottom-right {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+  right: 0.75rem;
+}
+
 /* 全局动效降级：当系统开启"减少动态效果"时，收敛所有 CSS 动画/过渡与平滑滚动。
    framer-motion 方向的降级由 App.tsx 顶部 <MotionConfig reducedMotion="user"> 负责。 */
 @media (prefers-reduced-motion: reduce) {

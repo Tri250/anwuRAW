@@ -14,6 +14,7 @@ import {
   calculateStraightenAngle,
   calculateAutoCropForRotation,
 } from '../../utils/cropUtils';
+import { isDoubleTap } from '../../utils/touchUtils';
 import EditorToolbar from './editor/EditorToolbar';
 import ImageCanvas from './editor/ImageCanvas';
 import BeforeAfterCompare from './editor/BeforeAfterCompare';
@@ -183,6 +184,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   const zoomDebounceTimeoutRef = useRef<number | null>(null);
   const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
   const savedZoomState = useRef<{ scale: number; positionX: number; positionY: number } | null>(null);
+  // Android 双击检测：记录上一次触点 tap 的时间与屏幕坐标
+  const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null);
   const focalPointRef = useRef({ x: 0.5, y: 0.5 });
   const isTransitioningRef = useRef(false);
   const [toolbarOverflowVisible, setToolbarOverflowVisible] = useState(!isFullScreen);
@@ -1195,6 +1198,41 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
 
       const currentScale = transformStateRef.current.scale;
 
+      // Android 触屏：单击不缩放（避免误触），双击在「适配 ⇄ 放大」间切换（移动端标准手势）
+      if (isAndroid) {
+        if (isClickAnimating.current) return;
+        const now = performance.now();
+        const currentTap = { time: now, x: e.clientX, y: e.clientY };
+        if (isDoubleTap(lastTapRef.current, currentTap)) {
+          lastTapRef.current = null;
+          const container = imageContainerRef.current;
+          if (!container) return;
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          const currentPositionX = transformStateRef.current.positionX;
+          const currentPositionY = transformStateRef.current.positionY;
+
+          if (currentScale > 1.01) {
+            // 已放大 → 动画回到适配视图
+            animateTransform(0, 0, 1, clickAnimationTime);
+          } else {
+            // 适配视图 → 以触点为中心放大 2 倍
+            const zoomTarget = Math.min(currentScale * 2, maxScaleRef.current);
+            const ratio = zoomTarget / currentScale;
+            animateTransform(
+              mouseX - (mouseX - currentPositionX) * ratio,
+              mouseY - (mouseY - currentPositionY) * ratio,
+              zoomTarget,
+              clickAnimationTime,
+            );
+          }
+        } else {
+          lastTapRef.current = currentTap;
+        }
+        return;
+      }
+
       if (isClickAnimating.current || currentScale > 1.01) {
         if (!isClickAnimating.current && currentScale > 1.01) {
           savedZoomState.current = {
@@ -1232,7 +1270,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         animateTransform(newPositionX, newPositionY, zoomTarget, clickAnimationTime);
       }
     },
-    [isCropping, isMasking, isAiEditing, isWbPickerActive, animateTransform, straightenDragLine],
+    [isAndroid, isCropping, isMasking, isAiEditing, isWbPickerActive, animateTransform, straightenDragLine],
   );
 
   useEffect(() => {

@@ -146,6 +146,9 @@ function ImageDragOverlayNode({ activeItem }: { activeItem: { path: string; path
 function App() {
   const COMPACT_EDITOR_MAX_WIDTH = 900;
   const ANDROID_PHONE_MAX_WIDTH = 600;
+  // Android 手机横屏(视口高 ≤500px)同样走紧凑移动布局:
+  // 桌面三栏(350+350 面板)会把手持横屏的画布挤压到不可用
+  const ANDROID_PHONE_MAX_HEIGHT = 500;
 
   const [activeImageDragItem, setActiveImageDragItem] = useState<{ path: string; paths: string[] } | null>(null);
 
@@ -280,11 +283,20 @@ function App() {
 
   const isAndroid = osPlatform === 'android';
   const isPortraitViewport = viewportSize.width > 0 && viewportSize.height > viewportSize.width;
+  const isAndroidLandscapePhone =
+    isAndroid && viewportSize.height > 0 && viewportSize.height <= ANDROID_PHONE_MAX_HEIGHT;
   const compactEditorMaxWidth = isAndroid ? ANDROID_PHONE_MAX_WIDTH : COMPACT_EDITOR_MAX_WIDTH;
-  const isCompactPortrait = viewportSize.width > 0 && viewportSize.width <= compactEditorMaxWidth && isPortraitViewport;
+  const isCompactPortrait =
+    viewportSize.width > 0 &&
+    ((isPortraitViewport && viewportSize.width <= compactEditorMaxWidth) || isAndroidLandscapePhone);
   const useCompactAndroidPanels = isAndroid && isCompactPortrait;
 
-  const compactEditorPanelMinHeight = 220;
+  // 紧凑面板最小高度：小视口(如 Android 手机横屏 ~360px 高)按视口比例收缩,
+  // 否则固定 220px 下限会让横屏下面板始终占据过半屏幕且无法拖小
+  const compactEditorPanelMinHeight = Math.min(
+    220,
+    viewportSize.height > 0 ? Math.max(120, Math.round(viewportSize.height * 0.35)) : 220,
+  );
   const compactEditorPanelMaxHeight =
     viewportSize.height > 0
       ? Math.max(compactEditorPanelMinHeight, Math.min(Math.round(viewportSize.height * 0.85), 850))
@@ -317,7 +329,9 @@ function App() {
     compactEditorPanelMinHeight,
     Math.min(compactEditorPanelHeightOverride ?? compactEditorPanelDefaultHeight, compactEditorPanelMaxHeight),
   );
-  const compactEditorPanelCollapsedHeight = 96;
+  // 折叠态高度须装下内部固定控件：MobilePanelSwitcher(60px, Android 44px 按钮+16px 内边距)
+  // + BottomBar(48px) + 边框余量。旧值 96px 会导致折叠态 BottomBar 被裁剪约 12px
+  const compactEditorPanelCollapsedHeight = 112;
 
   const { handleCopyAdjustments, handlePasteAdjustments, handleResetAdjustments, handleZoomChange } =
     useEditorActions();
@@ -665,11 +679,16 @@ function App() {
   }, [setUI]);
 
   const handlePanelSelect = useCallback(
-    (panelId: Panel) => {
+    (panelId: Panel | null) => {
+      // 移动端紧凑面板:点击已激活面板图标收起(activePanel=null → 面板回落到折叠高度)
+      if (!panelId) {
+        setUI({ activePanel: null });
+        return;
+      }
       setPanel(panelId);
       setEditor({ activeMaskId: null, activeAiSubMaskId: null, isWbPickerActive: false });
     },
-    [setPanel, setEditor],
+    [setPanel, setEditor, setUI],
   );
 
   const handleToggleFolder = useCallback(

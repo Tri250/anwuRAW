@@ -245,8 +245,9 @@ export function MobilePanelSwitcher({
   onPanelSelect,
 }: {
   activePanel: Panel | null;
-  onPanelSelect: (id: Panel) => void;
+  onPanelSelect: (id: Panel | null) => void;
 }) {
+  const { t } = useTranslation();
   const MOBILE_PANELS = [
     Panel.Metadata,
     Panel.Adjustments,
@@ -258,7 +259,10 @@ export function MobilePanelSwitcher({
   ];
 
   return (
-    <div className="flex items-center gap-2 p-2 overflow-x-auto border-t border-surface shrink-0 custom-scrollbar">
+    <div
+      data-mobile-panel-switcher
+      className="flex items-center gap-2 p-2 overflow-x-auto border-t border-surface shrink-0 custom-scrollbar"
+    >
       {MOBILE_PANELS.map((id) => {
         const Icon = PANEL_ICONS[id];
         const isActive = activePanel === id;
@@ -266,7 +270,9 @@ export function MobilePanelSwitcher({
         return (
           <button
             key={id}
-            onClick={() => onPanelSelect(id)}
+            onClick={() => onPanelSelect(isActive ? null : id)}
+            aria-label={t(PANEL_TITLES[id])}
+            aria-pressed={isActive}
             className={clsx(
               'p-2 rounded-md shrink-0 transition-colors',
               isActive
