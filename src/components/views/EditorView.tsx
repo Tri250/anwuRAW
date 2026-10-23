@@ -109,6 +109,7 @@ export default function EditorView({
 
   const editorBottomBarComponent = (
     <BottomBar
+      avoidBottomInset={!isCompactPortrait}
       filmstripHeight={bottomPanelHeight}
       imageList={sortedImageList}
       imageRatings={imageRatings}
@@ -170,11 +171,19 @@ export default function EditorView({
   const editorMobilePanelNode = isCompactPortrait ? (
     <div
       className={clsx(
-        'flex overflow-hidden shrink-0 flex-col bg-bg-secondary rounded-lg',
+        // bottom-inset-safe：面板背景延伸到屏幕最底部，系统导航栏浮于其上，
+        // 消除 WebView 被原生 insets 收缩后面板与屏幕底之间的灰带空隙
+        'flex overflow-hidden shrink-0 flex-col bg-bg-secondary rounded-lg bottom-inset-safe',
         !isResizing && !isInstantTransition && 'transition-all duration-300 ease-in-out',
       )}
       style={{
-        height: isFullScreen ? 0 : activePanel ? compactEditorPanelHeight : compactEditorPanelCollapsedHeight,
+        // 折叠态高度叠加底部 inset：保证切换器(60px)+底栏(48px)完整不被系统栏裁切；
+        // 展开态总高不变，由 border-box 的 padding 从内容区挤出 inset（内容区可滚动，无感）
+        height: isFullScreen
+          ? 0
+          : activePanel
+            ? compactEditorPanelHeight
+            : `calc(${compactEditorPanelCollapsedHeight}px + var(--android-inset-bottom, 0px))`,
         opacity: isFullScreen ? 0 : 1,
       }}
     >

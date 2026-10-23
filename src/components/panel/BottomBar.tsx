@@ -14,6 +14,7 @@ import { useUIStore } from '../../store/useUIStore';
 import { COLOR_LABELS } from '../../utils/adjustments';
 
 interface BottomBarProps {
+  avoidBottomInset?: boolean;
   filmstripHeight?: number;
   imageList?: Array<ImageFile>;
   imageRatings?: Record<string, number> | null;
@@ -121,6 +122,7 @@ const PanelToggleButton = ({ onClick, Icon, tooltip, disabled = false }: PanelTo
 );
 
 export default function BottomBar({
+  avoidBottomInset = false,
   filmstripHeight,
   imageList = [],
   imageRatings,
@@ -326,7 +328,14 @@ export default function BottomBar({
   };
 
   return (
-    <div className="shrink-0 bg-bg-secondary rounded-lg flex flex-col">
+    <div
+      className={clsx(
+        'shrink-0 bg-bg-secondary rounded-lg flex flex-col',
+        // 独立底部容器(图库/非紧凑编辑器)：背景延伸至屏幕最底部避让系统导航栏；
+        // 紧凑编辑器内嵌于面板容器时由父级负责避让，不重复设置
+        avoidBottomInset && 'bottom-inset-safe',
+      )}
+    >
       {!isLibraryView && showFilmstrip && (
         <div
           className={clsx(
