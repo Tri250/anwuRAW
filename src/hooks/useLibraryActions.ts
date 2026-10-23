@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import i18n from 'i18next';
 import { toast } from 'react-toastify';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useEditorStore } from '../store/useEditorStore';
@@ -35,7 +36,7 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
         return { imageRatings: newRatings };
       });
     } catch (err) {
-      toast.error(`评分失败: ${err}`);
+      toast.error(i18n.t('toasts.ratingFailed', { error: String(err) }));
     }
   }, []);
 
@@ -72,7 +73,7 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
         }),
       }));
     } catch (err) {
-      toast.error(`Failed to set color label: ${err}`);
+      toast.error(i18n.t('toasts.colorLabelFailed', { error: String(err) }));
     }
   }, []);
 
@@ -138,7 +139,7 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
         }
       });
     } catch (err) {
-      toast.error(`Failed to update metadata: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(i18n.t('toasts.metadataUpdateFailed', { error: err instanceof Error ? err.message : String(err) }));
     }
   }, []);
 
@@ -332,7 +333,7 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
       })) as any[];
       setLibrary({ pinnedFolderTrees: trees });
     } catch (err) {
-      toast.error(`Failed to refresh pinned folders: ${err}`);
+      toast.error(i18n.t('toasts.pinnedFoldersRefreshFailed', { error: String(err) }));
     }
   }, []);
 
@@ -400,7 +401,7 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
         const sortedTree = await invoke(Invokes.GetAlbums);
         setLibrary({ albumTree: sortedTree as AlbumItem[] });
       } catch (err) {
-        toast.error(`Failed to create: ${err}`);
+        toast.error(i18n.t('toasts.albumCreateFailed', { error: String(err) }));
       }
     }
   }, []);
@@ -429,7 +430,7 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
         const sortedTree = await invoke(Invokes.GetAlbums);
         setLibrary({ albumTree: sortedTree as AlbumItem[] });
       } catch (err) {
-        toast.error(`Failed to rename: ${err}`);
+        toast.error(i18n.t('toasts.albumRenameFailed', { error: String(err) }));
       }
     }
   }, []);

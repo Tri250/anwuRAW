@@ -1166,6 +1166,20 @@
       "toggleFit": "Przełącz 1:1 / Dopasuj",
       "vc": "KW"
     },
+    "deleteModal": {
+      "title": "Usunąć wybrane?",
+      "titleWithVirtualCopies": "Usunąć zdjęcie wraz z kopiami wirtualnymi?",
+      "messageWithVirtualCopies": "To zdjęcie ma kopie wirtualne. Usunięcie trwale usunie oryginał i wszystkie kopie wirtualne z dysku. Tej operacji nie można cofnąć.",
+      "messageSingle": "Wybrane zdjęcie zostanie trwale usunięte z dysku. Tej operacji nie można cofnąć.",
+      "messagePlural": "Zostanie trwale usunięte {{count}} wybranych zdjęć z dysku. Tej operacji nie można cofnąć.",
+      "messagePlural_one": "Zostanie trwale usunięte {{count}} wybrane zdjęcie z dysku. Tej operacji nie można cofnąć.",
+      "messagePlural_few": "Zostaną trwale usunięte {{count}} wybrane zdjęcia z dysku. Tej operacji nie można cofnąć.",
+      "messagePlural_many": "Zostanie trwale usunięte {{count}} wybranych zdjęć z dysku. Tej operacji nie można cofnąć.",
+      "messagePlural_other": "Zostanie trwale usunięte {{count}} wybranych zdjęć z dysku. Tej operacji nie można cofnąć.",
+      "delete": "Usuń",
+      "deleteAll": "Usuń wszystko",
+      "deleteSelectedOnly": "Usuń tylko wybrane"
+    },
     "filters": {
       "edited": {
         "all": "Wszystkie obrazy",
@@ -1275,6 +1289,13 @@
       "complete": "Import zakończony!",
       "failed": "Import nie powiódł się!",
       "progress": "Importowanie... ({{current}}/{{total}})"
+    },
+    "importDialog": {
+      "title": "Importuj zdjęcia",
+      "allSupported": "Wszystkie obsługiwane zdjęcia",
+      "rawImages": "Zdjęcia RAW",
+      "standardImages": "Zdjęcia standardowe",
+      "allFiles": "Wszystkie pliki"
     },
     "items": {
       "cloudPlaceholder": "Przechowywane w iCloud — niepobrane",
@@ -1551,6 +1572,7 @@
       "result": "Wynik",
       "save": "Zapisz",
       "savedSuccess": "Stos ostrości zapisany pomyślnie!",
+      "sourcePathsMissing": "Nie znaleziono ścieżek źródłowych dla stackingu ostrości.",
       "stacking": "Składanie ostrości",
       "start": "Rozpocznij",
       "title": "Stosowanie ostrości"
@@ -1571,6 +1593,7 @@
       "retry": "Spróbuj ponownie",
       "save": "Zapisz",
       "savedSuccess": "HDR zapisano pomyślnie!",
+      "sourcePathsMissing": "Nie znaleziono ścieżek źródłowych dla zdjęcia HDR.",
       "speedNotice": "To może potrwać kilka minut w zależności od liczby i rozmiaru Twoich ujęć.",
       "start": "Start",
       "title": "Scal do HDR"
@@ -1662,6 +1685,7 @@
       "retry": "Spróbuj ponownie",
       "save": "Zapisz",
       "savedSuccess": "Panorama zapisana pomyślnie!",
+      "sourcePathsMissing": "Nie znaleziono ścieżek źródłowych dla panoramy.",
       "speedNotice": "Może to potrwać kilka minut w zależności od liczby i rozmiaru obrazów.",
       "start": "Rozpocznij",
       "stitchingProgress": "Składanie panoramy",
@@ -2169,6 +2193,38 @@
     "wbTempPlaceholder": "np. 5600",
     "whiteBalance": "Balans bieli"
   },
+  "toasts": {
+    "addImageToAlbumFailed": "Dodawanie do albumu nie powiodło się: {{error}}",
+    "aiDepthMaskFailed": "Maska głębi AI nie powiodła się: {{error}}",
+    "aiMaskFailed": "Maska AI nie powiodła się: {{error}}",
+    "aiReplaceFailed": "Zamiana AI nie powiodła się: {{error}}",
+    "albumCreateFailed": "Tworzenie albumu nie powiodło się: {{error}}",
+    "albumLoadFailed": "Wczytywanie albumu nie powiodło się: {{error}}",
+    "albumRenameFailed": "Zmiana nazwy albumu nie powiodła się: {{error}}",
+    "colorLabelFailed": "Ustawianie etykiety koloru nie powiodło się: {{error}}",
+    "comparisonPreviewFailed": "Generowanie podglądu porównawczego nie powiodło się: {{error}}",
+    "copyFilesFailed": "Kopiowanie plików nie powiodło się: {{error}}",
+    "copyPathFailed": "Kopiowanie ścieżki nie powiodło się: {{error}}",
+    "createFolderFailed": "Tworzenie folderu nie powiodło się: {{error}}",
+    "deleteFilesFailed": "Usuwanie plików nie powiodło się: {{error}}",
+    "depthMapFailed": "Generowanie mapy głębi nie powiodło się: {{error}}",
+    "folderLoadFailed": "Wczytywanie folderu nie powiodło się: {{error}}",
+    "folderTreeLoadFailed": "Wczytywanie drzewa folderów nie powiodło się: {{error}}",
+    "imageLoadFailed": "Wczytywanie zdjęcia nie powiodło się: {{error}}",
+    "imagesLoadFailed": "Nie można wczytać zdjęć z wybranego folderu.",
+    "lutLoadFailed": "Wczytywanie LUT nie powiodło się: {{error}}",
+    "metadataUpdateFailed": "Aktualizacja metadanych nie powiodła się: {{error}}",
+    "moveFilesFailed": "Przenoszenie plików nie powiodło się: {{error}}",
+    "patchGenerationFailed": "Generowanie łatki nie powiodło się: {{error}}",
+    "pinnedFoldersRefreshFailed": "Odświeżanie przypiętych folderów nie powiodło się: {{error}}",
+    "quickEraseFailed": "Szybkie wymazywanie nie powiodło się: {{error}}",
+    "ratingFailed": "Aktualizacja oceny nie powiodła się: {{error}}",
+    "renameFilesFailed": "Zmiana nazw plików nie powiodła się: {{error}}",
+    "renameFolderFailed": "Zmiana nazwy folderu nie powiodła się: {{error}}",
+    "restoreSessionFailed": "Przywracanie sesji nie powiodło się. Folder mógł zostać przeniesiony lub usunięty.",
+    "saveChangesFailed": "Zapisywanie zmian nie powiodło się: {{error}}",
+    "unsupportedFormat": "Wykryto nieobsługiwane formaty plików: {{formats}}"
+  },
   "ui": {
     "bottomBar": {
       "imagesSelected": "Zaznaczono {{current}} z {{total}} obrazów",
@@ -2206,6 +2262,10 @@
       "reset": "Resetuj",
       "saturation": "Nasycenie",
       "saturationAbbreviation": "S:"
+    },
+    "dropdown": {
+      "placeholder": "Wybierz opcję",
+      "searchPlaceholder": "Filtruj opcje..."
     },
     "exportPresets": {
       "deleteTooltip": "Usuń preset",

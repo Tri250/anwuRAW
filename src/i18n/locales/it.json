@@ -1143,6 +1143,16 @@
       "toggleFit": "Alterna 1:1 / Adatta",
       "vc": "CV"
     },
+    "deleteModal": {
+      "title": "Eliminare la selezione?",
+      "titleWithVirtualCopies": "Eliminare l’immagine con le copie virtuali?",
+      "messageWithVirtualCopies": "Questa immagine ha copie virtuali. L’eliminazione rimuoverà in modo permanente l’originale e tutte le copie virtuali dal disco. L’operazione non può essere annullata.",
+      "messageSingle": "L’immagine selezionata verrà rimossa in modo permanente dal disco. L’operazione non può essere annullata.",
+      "messagePlural": "Le {{count}} immagini selezionate verranno rimosse in modo permanente dal disco. L’operazione non può essere annullata.",
+      "delete": "Elimina",
+      "deleteAll": "Elimina tutto",
+      "deleteSelectedOnly": "Elimina solo la selezione"
+    },
     "filters": {
       "edited": {
         "all": "Tutte le Immagini",
@@ -1252,6 +1262,13 @@
       "complete": "Importazione Completata!",
       "failed": "Importazione Fallita!",
       "progress": "Importazione in corso... ({{current}}/{{total}})"
+    },
+    "importDialog": {
+      "title": "Importa immagini",
+      "allSupported": "Tutte le immagini supportate",
+      "rawImages": "Immagini RAW",
+      "standardImages": "Immagini standard",
+      "allFiles": "Tutti i file"
     },
     "items": {
       "cloudPlaceholder": "Archiviato in iCloud — non scaricato",
@@ -1523,6 +1540,7 @@
       "result": "Risultato",
       "save": "Salva",
       "savedSuccess": "Focus Stack salvato con successo!",
+      "sourcePathsMissing": "Percorsi di origine per lo stacking a fuoco non trovati.",
       "stacking": "Unione messa a fuoco in corso",
       "start": "Avvia",
       "title": "Focus Stacking"
@@ -1542,6 +1560,7 @@
       "retry": "Riprova",
       "save": "Salva",
       "savedSuccess": "HDR Salvato con Successo!",
+      "sourcePathsMissing": "Percorsi di origine per l’immagine HDR non trovati.",
       "speedNotice": "L'operazione potrebbe richiedere alcuni minuti a seconda del numero e delle dimensioni delle tue esposizioni.",
       "start": "Avvia",
       "title": "Unisci in HDR"
@@ -1631,6 +1650,7 @@
       "retry": "Riprova",
       "save": "Salva",
       "savedSuccess": "Panorama Salvato con Successo!",
+      "sourcePathsMissing": "Percorsi di origine per il panorama non trovati.",
       "speedNotice": "L'operazione potrebbe richiedere alcuni minuti a seconda del numero e delle dimensioni delle immagini.",
       "start": "Avvia",
       "stitchingProgress": "Unione Panorama in corso",
@@ -2134,6 +2154,38 @@
     "wbTempPlaceholder": "es. 5600",
     "whiteBalance": "Bilanciamento del bianco"
   },
+  "toasts": {
+    "addImageToAlbumFailed": "Aggiunta all’album non riuscita: {{error}}",
+    "aiDepthMaskFailed": "Maschera di profondità IA non riuscita: {{error}}",
+    "aiMaskFailed": "Maschera IA non riuscita: {{error}}",
+    "aiReplaceFailed": "Sostituzione IA non riuscita: {{error}}",
+    "albumCreateFailed": "Creazione dell’album non riuscita: {{error}}",
+    "albumLoadFailed": "Caricamento dell’album non riuscito: {{error}}",
+    "albumRenameFailed": "Ridenominazione dell’album non riuscita: {{error}}",
+    "colorLabelFailed": "Impostazione dell’etichetta colore non riuscita: {{error}}",
+    "comparisonPreviewFailed": "Generazione dell’anteprima comparativa non riuscita: {{error}}",
+    "copyFilesFailed": "Copia dei file non riuscita: {{error}}",
+    "copyPathFailed": "Copia del percorso non riuscita: {{error}}",
+    "createFolderFailed": "Creazione della cartella non riuscita: {{error}}",
+    "deleteFilesFailed": "Eliminazione dei file non riuscita: {{error}}",
+    "depthMapFailed": "Generazione della mappa di profondità non riuscita: {{error}}",
+    "folderLoadFailed": "Caricamento della cartella non riuscito: {{error}}",
+    "folderTreeLoadFailed": "Caricamento dell’albero delle cartelle non riuscito: {{error}}",
+    "imageLoadFailed": "Caricamento dell’immagine non riuscito: {{error}}",
+    "imagesLoadFailed": "Impossibile caricare le immagini dalla cartella selezionata.",
+    "lutLoadFailed": "Caricamento del LUT non riuscito: {{error}}",
+    "metadataUpdateFailed": "Aggiornamento dei metadati non riuscito: {{error}}",
+    "moveFilesFailed": "Spostamento dei file non riuscito: {{error}}",
+    "patchGenerationFailed": "Generazione della correzione non riuscita: {{error}}",
+    "pinnedFoldersRefreshFailed": "Aggiornamento delle cartelle fissate non riuscito: {{error}}",
+    "quickEraseFailed": "Gomma rapida non riuscita: {{error}}",
+    "ratingFailed": "Aggiornamento della valutazione non riuscito: {{error}}",
+    "renameFilesFailed": "Ridenominazione dei file non riuscita: {{error}}",
+    "renameFolderFailed": "Ridenominazione della cartella non riuscita: {{error}}",
+    "restoreSessionFailed": "Ripristino della sessione non riuscito. Una cartella potrebbe essere stata spostata o eliminata.",
+    "saveChangesFailed": "Salvataggio delle modifiche non riuscito: {{error}}",
+    "unsupportedFormat": "Rilevati formati di file non supportati: {{formats}}"
+  },
   "ui": {
     "bottomBar": {
       "imagesSelected": "{{current}} di {{total}} immagini selezionate",
@@ -2170,6 +2222,10 @@
       "reset": "Ripristina",
       "saturation": "Saturazione",
       "saturationAbbreviation": "S:"
+    },
+    "dropdown": {
+      "placeholder": "Seleziona un'opzione",
+      "searchPlaceholder": "Filtra opzioni..."
     },
     "exportPresets": {
       "deleteTooltip": "Elimina predefinito",

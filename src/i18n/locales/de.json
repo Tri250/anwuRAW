@@ -1120,6 +1120,16 @@
       "toggleFit": "1:1 / Einpassen umschalten",
       "vc": "VK"
     },
+    "deleteModal": {
+      "title": "Auswahl löschen?",
+      "titleWithVirtualCopies": "Bild mit virtuellen Kopien löschen?",
+      "messageWithVirtualCopies": "Dieses Bild enthält virtuelle Kopien. Beim Löschen werden das Original und alle virtuellen Kopien dauerhaft von der Festplatte entfernt. Dies kann nicht rückgängig gemacht werden.",
+      "messageSingle": "Das ausgewählte Bild wird dauerhaft von der Festplatte entfernt. Dies kann nicht rückgängig gemacht werden.",
+      "messagePlural": "{{count}} ausgewählte Bilder werden dauerhaft von der Festplatte entfernt. Dies kann nicht rückgängig gemacht werden.",
+      "delete": "Löschen",
+      "deleteAll": "Alles löschen",
+      "deleteSelectedOnly": "Nur Auswahl löschen"
+    },
     "filters": {
       "edited": {
         "all": "Alle Bilder",
@@ -1229,6 +1239,13 @@
       "complete": "Import abgeschlossen!",
       "failed": "Import fehlgeschlagen!",
       "progress": "Wird importiert... ({{current}}/{{total}})"
+    },
+    "importDialog": {
+      "title": "Bilder importieren",
+      "allSupported": "Alle unterstützten Bilder",
+      "rawImages": "RAW-Bilder",
+      "standardImages": "Standardbilder",
+      "allFiles": "Alle Dateien"
     },
     "items": {
       "cloudPlaceholder": "In iCloud gespeichert — nicht heruntergeladen",
@@ -1497,6 +1514,7 @@
       "result": "Ergebnis",
       "save": "Speichern",
       "savedSuccess": "Fokus-Stack erfolgreich gespeichert!",
+      "sourcePathsMissing": "Quellpfade für den Fokus-Stack wurden nicht gefunden.",
       "stacking": "Fokus wird gestapelt",
       "start": "Start",
       "title": "Fokus-Stacking"
@@ -1515,6 +1533,7 @@
       "retry": "Wiederholen",
       "save": "Speichern",
       "savedSuccess": "HDR erfolgreich gespeichert!",
+      "sourcePathsMissing": "Quellpfade für das HDR-Bild wurden nicht gefunden.",
       "speedNotice": "Dies kann je nach Anzahl und Größe Ihrer Belichtungen einige Minuten dauern.",
       "start": "Start",
       "title": "Zu HDR zusammenfügen"
@@ -1602,6 +1621,7 @@
       "retry": "Wiederholen",
       "save": "Speichern",
       "savedSuccess": "Panorama erfolgreich gespeichert!",
+      "sourcePathsMissing": "Quellpfade für das Panorama wurden nicht gefunden.",
       "speedNotice": "Dies kann je nach Anzahl und Größe der Bilder einige Minuten dauern.",
       "start": "Start",
       "stitchingProgress": "Panorama wird zusammengefügt",
@@ -2101,6 +2121,38 @@
     "wbTempPlaceholder": "z. B. 5600",
     "whiteBalance": "Weißabgleich"
   },
+  "toasts": {
+    "addImageToAlbumFailed": "Fehler beim Hinzufügen zum Album: {{error}}",
+    "aiDepthMaskFailed": "KI-Tiefenmaske fehlgeschlagen: {{error}}",
+    "aiMaskFailed": "KI-Maske fehlgeschlagen: {{error}}",
+    "aiReplaceFailed": "KI-Ersetzen fehlgeschlagen: {{error}}",
+    "albumCreateFailed": "Fehler beim Erstellen des Albums: {{error}}",
+    "albumLoadFailed": "Fehler beim Laden des Albums: {{error}}",
+    "albumRenameFailed": "Fehler beim Umbenennen des Albums: {{error}}",
+    "colorLabelFailed": "Fehler beim Festlegen der Farbetikette: {{error}}",
+    "comparisonPreviewFailed": "Fehler beim Erzeugen der Vergleichsvorschau: {{error}}",
+    "copyFilesFailed": "Fehler beim Kopieren der Dateien: {{error}}",
+    "copyPathFailed": "Fehler beim Kopieren des Pfads: {{error}}",
+    "createFolderFailed": "Fehler beim Erstellen des Ordners: {{error}}",
+    "deleteFilesFailed": "Fehler beim Löschen der Dateien: {{error}}",
+    "depthMapFailed": "Fehler beim Erzeugen der Tiefenkarte: {{error}}",
+    "folderLoadFailed": "Fehler beim Laden des Ordners: {{error}}",
+    "folderTreeLoadFailed": "Fehler beim Laden des Ordnerbaums: {{error}}",
+    "imageLoadFailed": "Fehler beim Laden des Bilds: {{error}}",
+    "imagesLoadFailed": "Bilder aus dem ausgewählten Ordner konnten nicht geladen werden.",
+    "lutLoadFailed": "Fehler beim Laden des LUT: {{error}}",
+    "metadataUpdateFailed": "Fehler beim Aktualisieren der Metadaten: {{error}}",
+    "moveFilesFailed": "Fehler beim Verschieben der Dateien: {{error}}",
+    "patchGenerationFailed": "Flickenerzeugung fehlgeschlagen: {{error}}",
+    "pinnedFoldersRefreshFailed": "Fehler beim Aktualisieren der angepinnten Ordner: {{error}}",
+    "quickEraseFailed": "Schnelles Radieren fehlgeschlagen: {{error}}",
+    "ratingFailed": "Fehler beim Aktualisieren der Bewertung: {{error}}",
+    "renameFilesFailed": "Fehler beim Umbenennen der Dateien: {{error}}",
+    "renameFolderFailed": "Fehler beim Umbenennen des Ordners: {{error}}",
+    "restoreSessionFailed": "Sitzung konnte nicht wiederhergestellt werden. Ein Ordner wurde möglicherweise verschoben oder gelöscht.",
+    "saveChangesFailed": "Fehler beim Speichern der Änderungen: {{error}}",
+    "unsupportedFormat": "Nicht unterstützte Dateiformate erkannt: {{formats}}"
+  },
   "ui": {
     "bottomBar": {
       "imagesSelected": "{{current}} von {{total}} Bildern ausgewählt",
@@ -2136,6 +2188,10 @@
       "reset": "Zurücksetzen",
       "saturation": "Sättigung",
       "saturationAbbreviation": "S:"
+    },
+    "dropdown": {
+      "placeholder": "Option auswählen",
+      "searchPlaceholder": "Optionen filtern..."
     },
     "exportPresets": {
       "deleteTooltip": "Vorgabe löschen",

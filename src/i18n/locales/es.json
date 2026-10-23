@@ -1143,6 +1143,16 @@
       "toggleFit": "Alternar 1:1 / Ajustar",
       "vc": "CV"
     },
+    "deleteModal": {
+      "title": "¿Eliminar la selección?",
+      "titleWithVirtualCopies": "¿Eliminar la imagen con copias virtuales?",
+      "messageWithVirtualCopies": "Esta imagen tiene copias virtuales. Al eliminarla se quitarán de forma permanente el original y todas sus copias virtuales del disco. No se puede deshacer.",
+      "messageSingle": "La imagen seleccionada se eliminará de forma permanente del disco. No se puede deshacer.",
+      "messagePlural": "Las {{count}} imágenes seleccionadas se eliminarán de forma permanente del disco. No se puede deshacer.",
+      "delete": "Eliminar",
+      "deleteAll": "Eliminar todo",
+      "deleteSelectedOnly": "Eliminar solo la selección"
+    },
     "filters": {
       "edited": {
         "all": "Todas las imágenes",
@@ -1252,6 +1262,13 @@
       "complete": "¡Importación completada!",
       "failed": "¡Importación fallida!",
       "progress": "Importando... ({{current}}/{{total}})"
+    },
+    "importDialog": {
+      "title": "Importar imágenes",
+      "allSupported": "Todas las imágenes compatibles",
+      "rawImages": "Imágenes RAW",
+      "standardImages": "Imágenes estándar",
+      "allFiles": "Todos los archivos"
     },
     "items": {
       "cloudPlaceholder": "Almacenado en iCloud — no descargado",
@@ -1523,6 +1540,7 @@
       "result": "Resultado",
       "save": "Guardar",
       "savedSuccess": "¡Apilamiento de enfoque guardado con éxito!",
+      "sourcePathsMissing": "No se encontraron las rutas de origen para el apilado de enfoque.",
       "stacking": "Apilando enfoque",
       "start": "Iniciar",
       "title": "Apilamiento de enfoque"
@@ -1542,6 +1560,7 @@
       "retry": "Reintentar",
       "save": "Guardar",
       "savedSuccess": "¡HDR guardado con éxito!",
+      "sourcePathsMissing": "No se encontraron las rutas de origen para la imagen HDR.",
       "speedNotice": "Esto puede tardar unos minutos dependiendo del número y tamaño de tus exposiciones.",
       "start": "Iniciar",
       "title": "Combinar en HDR"
@@ -1631,6 +1650,7 @@
       "retry": "Reintentar",
       "save": "Guardar",
       "savedSuccess": "¡Panorama guardado con éxito!",
+      "sourcePathsMissing": "No se encontraron las rutas de origen para la panorámica.",
       "speedNotice": "Esto puede tardar unos minutos dependiendo del número y tamaño de las imágenes.",
       "start": "Iniciar",
       "stitchingProgress": "Uniendo panorama",
@@ -2134,6 +2154,38 @@
     "wbTempPlaceholder": "ej. 5600",
     "whiteBalance": "Balance de blancos"
   },
+  "toasts": {
+    "addImageToAlbumFailed": "Error al añadir al álbum: {{error}}",
+    "aiDepthMaskFailed": "Error en la máscara de profundidad con IA: {{error}}",
+    "aiMaskFailed": "Error en la máscara con IA: {{error}}",
+    "aiReplaceFailed": "Error en el reemplazo con IA: {{error}}",
+    "albumCreateFailed": "Error al crear el álbum: {{error}}",
+    "albumLoadFailed": "Error al cargar el álbum: {{error}}",
+    "albumRenameFailed": "Error al renombrar el álbum: {{error}}",
+    "colorLabelFailed": "Error al establecer la etiqueta de color: {{error}}",
+    "comparisonPreviewFailed": "Error al generar la vista previa comparativa: {{error}}",
+    "copyFilesFailed": "Error al copiar archivos: {{error}}",
+    "copyPathFailed": "Error al copiar la ruta: {{error}}",
+    "createFolderFailed": "Error al crear la carpeta: {{error}}",
+    "deleteFilesFailed": "Error al eliminar archivos: {{error}}",
+    "depthMapFailed": "Error al generar el mapa de profundidad: {{error}}",
+    "folderLoadFailed": "Error al cargar la carpeta: {{error}}",
+    "folderTreeLoadFailed": "Error al cargar el árbol de carpetas: {{error}}",
+    "imageLoadFailed": "Error al cargar la imagen: {{error}}",
+    "imagesLoadFailed": "No se pudieron cargar las imágenes de la carpeta seleccionada.",
+    "lutLoadFailed": "Error al cargar el LUT: {{error}}",
+    "metadataUpdateFailed": "Error al actualizar los metadatos: {{error}}",
+    "moveFilesFailed": "Error al mover archivos: {{error}}",
+    "patchGenerationFailed": "Error en la generación del parche: {{error}}",
+    "pinnedFoldersRefreshFailed": "Error al actualizar las carpetas fijadas: {{error}}",
+    "quickEraseFailed": "Error en el borrado rápido: {{error}}",
+    "ratingFailed": "Error al actualizar la valoración: {{error}}",
+    "renameFilesFailed": "Error al renombrar archivos: {{error}}",
+    "renameFolderFailed": "Error al renombrar la carpeta: {{error}}",
+    "restoreSessionFailed": "No se pudo restaurar la sesión. Es posible que una carpeta se haya movido o eliminado.",
+    "saveChangesFailed": "Error al guardar los cambios: {{error}}",
+    "unsupportedFormat": "Formatos de archivo no compatibles detectados: {{formats}}"
+  },
   "ui": {
     "bottomBar": {
       "imagesSelected": "{{current}} de {{total}} imágenes seleccionadas",
@@ -2170,6 +2222,10 @@
       "reset": "Restablecer",
       "saturation": "Saturación",
       "saturationAbbreviation": "S:"
+    },
+    "dropdown": {
+      "placeholder": "Selecciona una opción",
+      "searchPlaceholder": "Filtrar opciones..."
     },
     "exportPresets": {
       "deleteTooltip": "Eliminar ajuste preestablecido",

@@ -1,5 +1,6 @@
 import { type PointerEvent as ReactPointerEvent, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import i18n from 'i18next';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { ClerkProvider } from '@clerk/react';
@@ -697,7 +698,7 @@ function App() {
           pinnedFolderTrees: state.pinnedFolderTrees.map((tree) => insertChildrenIntoTree(tree, path, newChildren)),
         }));
       } catch (err) {
-        toast.error(`Failed to load folder: ${err}`);
+        toast.error(i18n.t('toasts.folderLoadFailed', { error: String(err) }));
       }
     },
     [expandedFolders, appSettings?.enableFolderImageCounts, setLibrary],
@@ -815,7 +816,7 @@ function App() {
           useLibraryStore.getState().setLibrary({ multiSelectedPaths: [] });
         })
         .catch((err) => {
-          toast.error(`Failed to move files: ${err}`);
+          toast.error(i18n.t('toasts.moveFilesFailed', { error: String(err) }));
         });
     }
 
@@ -830,7 +831,7 @@ function App() {
           handleLibraryRefresh();
         })
         .catch((err) => {
-          toast.error(`Failed to add to album: ${err}`);
+          toast.error(i18n.t('toasts.addImageToAlbumFailed', { error: String(err) }));
         });
     }
   };

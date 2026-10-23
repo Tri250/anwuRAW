@@ -145,9 +145,6 @@ export const useAppInitialization = ({
     })),
   );
 
-  const isAndroid = osPlatform === 'android';
-  const defaultThumbnailSize = isAndroid ? ThumbnailSize.Small : ThumbnailSize.Medium;
-  const defaultLibraryViewMode = isAndroid ? LibraryViewMode.Recursive : LibraryViewMode.Flat;
   const prevImageCountsNeed = useRef<boolean | undefined>(undefined);
 
   useEffect(() => {
@@ -161,6 +158,14 @@ export const useAppInitialization = ({
   }, [setSupportedTypes]);
 
   useEffect(() => {
+    // 平台默认值在 effect 内经 getState() 实时读取:initPlatform effect 声明在前、
+    // 同一轮提交中先执行,此时平台已同步就绪。
+    // 若改为依赖外层 isAndroid 派生值,Android 首轮会以桌面默认值跑一次、
+    // 平台就绪后再跑一次,导致 LoadSettings/frontend_ready 双跑(启动竞态来源)。
+    const platformIsAndroid = useSettingsStore.getState().osPlatform === 'android';
+    const fallbackThumbnailSize = platformIsAndroid ? ThumbnailSize.Small : ThumbnailSize.Medium;
+    const fallbackLibraryViewMode = platformIsAndroid ? LibraryViewMode.Recursive : LibraryViewMode.Flat;
+
     Promise.all([invoke(Invokes.LoadSettings), invoke<boolean>(Invokes.IsTetheringSupported).catch(() => false)])
       .then(async ([settings, isTetheringSupported]: [any, boolean]) => {
         if (
@@ -224,8 +229,8 @@ export const useAppInitialization = ({
         if (settings?.activeWaveformChannel) setEditor({ activeWaveformChannel: settings.activeWaveformChannel });
         if (typeof settings?.waveformHeight === 'number') setEditor({ waveformHeight: settings.waveformHeight });
 
-        setLibraryViewMode(settings?.libraryViewMode ?? defaultLibraryViewMode);
-        setThumbnailSize(settings?.thumbnailSize ?? defaultThumbnailSize);
+        setLibraryViewMode(settings?.libraryViewMode ?? fallbackLibraryViewMode);
+        setThumbnailSize(settings?.thumbnailSize ?? fallbackThumbnailSize);
         if (settings?.thumbnailAspectRatio) setThumbnailAspectRatio(settings.thumbnailAspectRatio);
 
         if (settings?.pinnedFolders && settings.pinnedFolders.length > 0) {
@@ -247,7 +252,7 @@ export const useAppInitialization = ({
             ? [settings.lastRootPath]
             : [];
 
-        if (!isAndroid && rootFolders.length > 0) {
+        if (!platformIsAndroid && rootFolders.length > 0) {
           const currentPath = settings.lastFolderState?.currentFolderPath || rootFolders[0];
           const isAlbum = currentPath.startsWith('Album: ');
           const command =
@@ -289,20 +294,17 @@ export const useAppInitialization = ({
         setAppSettings({
           lastRootPath: null,
           theme: DEFAULT_THEME_ID as Theme,
-          thumbnailSize: defaultThumbnailSize,
-          libraryViewMode: defaultLibraryViewMode,
+          thumbnailSize: fallbackThumbnailSize,
+          libraryViewMode: fallbackLibraryViewMode,
         });
       })
       .finally(() => {
         isInitialMount.current = false;
       });
   }, [
-    isAndroid,
     setAppSettings,
     setTheme,
     setUI,
-    defaultLibraryViewMode,
-    defaultThumbnailSize,
     setSortCriteria,
     setFilterCriteria,
     setEditor,

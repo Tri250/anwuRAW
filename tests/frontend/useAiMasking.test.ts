@@ -102,7 +102,7 @@ describe('TC-AI-02 ~ TC-AI-03: handleGenerateAiMask 成功/失败', () => {
       await result.current.handleGenerateAiMask('sm-1', { x: 0, y: 0 }, { x: 1, y: 1 });
     });
 
-    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('AI Mask Failed'));
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('AI 蒙版失败'));
     expect(useEditorStore.getState().isGeneratingAiMask).toBe(false);
   });
 

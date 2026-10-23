@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import i18n from 'i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { homeDir } from '@tauri-apps/api/path';
 import { toast } from 'react-toastify';
@@ -409,7 +410,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         }
       } catch (err) {
         console.error('Failed to load folder contents:', err);
-        toast.error('Failed to load images from the selected folder.');
+        toast.error(i18n.t('toasts.imagesLoadFailed'));
       } finally {
         useLibraryStore.getState().setLibrary({ isViewLoading: false });
       }
@@ -451,7 +452,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         });
       } catch (err) {
         console.error('Failed to load album images:', err);
-        toast.error(`Failed to load album: ${err}`);
+        toast.error(i18n.t('toasts.albumLoadFailed', { error: String(err) }));
       } finally {
         setLibrary({ isViewLoading: false });
       }
@@ -494,7 +495,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
             });
             setLibrary({ folderTrees: [...folderTrees, newTree] });
           } catch (e) {
-            toast.error(`Failed to load folder tree: ${e}`);
+            toast.error(i18n.t('toasts.folderTreeLoadFailed', { error: String(e) }));
           } finally {
             setLibrary({ isTreeLoading: false });
           }
@@ -603,7 +604,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
 
     restore().catch((err) => {
       console.error('Failed to restore session:', err);
-      toast.error('Failed to restore session. A folder may have been moved or deleted.');
+      toast.error(i18n.t('toasts.restoreSessionFailed'));
       handleGoHome();
       useLibraryStore.getState().setLibrary({ isTreeLoading: false });
     });

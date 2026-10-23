@@ -3,6 +3,7 @@ import { Crop, PercentCrop } from 'react-image-crop';
 import { Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { invoke } from '@tauri-apps/api/core';
+import i18n from 'i18next';
 
 import { ImageDimensions, RenderSize, useImageRenderSize } from '../../hooks/useImageRenderSize';
 import { Adjustments, AiPatch, MaskContainer, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
@@ -320,7 +321,9 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         setBeforeOriginalUrl(url);
       } catch (err) {
         console.error('Failed to generate before-original preview:', err);
-        toast.error(`Failed to generate comparison preview: ${err instanceof Error ? err.message : String(err)}`);
+        toast.error(
+          i18n.t('toasts.comparisonPreviewFailed', { error: err instanceof Error ? err.message : String(err) }),
+        );
         return;
       }
     }

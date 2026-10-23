@@ -1137,12 +1137,21 @@
       "rateAndLabel": "Noter et Étiqueter",
       "rating": "Note",
       "selectImagesToCompare": "Sélectionnez des images à comparer",
-      "shutterSpeed:": "Vitesse d'obturation",
+      "shutterSpeed": "Vitesse d'obturation",
       "syncZoomAndPan": "Synchroniser le zoom et le panoramique",
       "tags": "Tags",
       "toggleFit": "Basculer 1:1 / Ajuster",
-      "vc": "CV",
-      "shutterSpeed": "Shutter Speed"
+      "vc": "CV"
+    },
+    "deleteModal": {
+      "title": "Supprimer la sélection ?",
+      "titleWithVirtualCopies": "Supprimer l’image et ses copies virtuelles ?",
+      "messageWithVirtualCopies": "Cette image possède des copies virtuelles. La suppression retirera définitivement l’original et toutes ses copies virtuelles du disque. Cette action est irréversible.",
+      "messageSingle": "L’image sélectionnée sera définitivement supprimée du disque. Cette action est irréversible.",
+      "messagePlural": "Les {{count}} images sélectionnées seront définitivement supprimées du disque. Cette action est irréversible.",
+      "delete": "Supprimer",
+      "deleteAll": "Tout supprimer",
+      "deleteSelectedOnly": "Supprimer uniquement la sélection"
     },
     "filters": {
       "edited": {
@@ -1253,6 +1262,13 @@
       "complete": "Importation terminée !",
       "failed": "Échec de l'importation !",
       "progress": "Importation... ({{current}}/{{total}})"
+    },
+    "importDialog": {
+      "title": "Importer des images",
+      "allSupported": "Toutes les images prises en charge",
+      "rawImages": "Images RAW",
+      "standardImages": "Images standard",
+      "allFiles": "Tous les fichiers"
     },
     "items": {
       "cloudPlaceholder": "Stocké dans iCloud — non téléchargé",
@@ -1524,6 +1540,7 @@
       "result": "Résultat",
       "save": "Enregistrer",
       "savedSuccess": "Empilement de mise au point enregistré avec succès !",
+      "sourcePathsMissing": "Chemins sources introuvables pour l’empilement de mise au point.",
       "stacking": "Empilement de la mise au point",
       "start": "Démarrer",
       "title": "Empilement de mise au point"
@@ -1543,6 +1560,7 @@
       "retry": "Réessayer",
       "save": "Enregistrer",
       "savedSuccess": "HDR enregistré avec succès !",
+      "sourcePathsMissing": "Chemins sources introuvables pour l’image HDR.",
       "speedNotice": "Cela peut prendre quelques minutes selon le nombre et la taille de vos expositions.",
       "start": "Démarrer",
       "title": "Fusionner en HDR"
@@ -1632,6 +1650,7 @@
       "retry": "Réessayer",
       "save": "Enregistrer",
       "savedSuccess": "Panorama enregistré avec succès !",
+      "sourcePathsMissing": "Chemins sources introuvables pour le panorama.",
       "speedNotice": "Cela peut prendre quelques minutes selon le nombre et la taille des images.",
       "start": "Démarrer",
       "stitchingProgress": "Assemblage du panorama",
@@ -2135,6 +2154,38 @@
     "wbTempPlaceholder": "ex. 5600",
     "whiteBalance": "Balance des blancs"
   },
+  "toasts": {
+    "addImageToAlbumFailed": "Échec de l’ajout à l’album : {{error}}",
+    "aiDepthMaskFailed": "Échec du masque de profondeur IA : {{error}}",
+    "aiMaskFailed": "Échec du masque IA : {{error}}",
+    "aiReplaceFailed": "Échec du remplacement IA : {{error}}",
+    "albumCreateFailed": "Échec de la création de l’album : {{error}}",
+    "albumLoadFailed": "Échec du chargement de l’album : {{error}}",
+    "albumRenameFailed": "Échec du renommage de l’album : {{error}}",
+    "colorLabelFailed": "Échec de la définition de l’étiquette de couleur : {{error}}",
+    "comparisonPreviewFailed": "Échec de la génération de l’aperçu comparatif : {{error}}",
+    "copyFilesFailed": "Échec de la copie des fichiers : {{error}}",
+    "copyPathFailed": "Échec de la copie du chemin : {{error}}",
+    "createFolderFailed": "Échec de la création du dossier : {{error}}",
+    "deleteFilesFailed": "Échec de la suppression des fichiers : {{error}}",
+    "depthMapFailed": "Échec de la génération de la carte de profondeur : {{error}}",
+    "folderLoadFailed": "Échec du chargement du dossier : {{error}}",
+    "folderTreeLoadFailed": "Échec du chargement de l’arborescence des dossiers : {{error}}",
+    "imageLoadFailed": "Échec du chargement de l’image : {{error}}",
+    "imagesLoadFailed": "Impossible de charger les images du dossier sélectionné.",
+    "lutLoadFailed": "Échec du chargement du LUT : {{error}}",
+    "metadataUpdateFailed": "Échec de la mise à jour des métadonnées : {{error}}",
+    "moveFilesFailed": "Échec du déplacement des fichiers : {{error}}",
+    "patchGenerationFailed": "Échec de la génération du correctif : {{error}}",
+    "pinnedFoldersRefreshFailed": "Échec de l’actualisation des dossiers épinglés : {{error}}",
+    "quickEraseFailed": "Échec de la gomme rapide : {{error}}",
+    "ratingFailed": "Échec de la mise à jour de la note : {{error}}",
+    "renameFilesFailed": "Échec du renommage des fichiers : {{error}}",
+    "renameFolderFailed": "Échec du renommage du dossier : {{error}}",
+    "restoreSessionFailed": "Échec de la restauration de session. Un dossier a peut-être été déplacé ou supprimé.",
+    "saveChangesFailed": "Échec de l’enregistrement des modifications : {{error}}",
+    "unsupportedFormat": "Formats de fichiers non pris en charge détectés : {{formats}}"
+  },
   "ui": {
     "bottomBar": {
       "imagesSelected": "{{current}} sur {{total}} images sélectionnées",
@@ -2171,6 +2222,10 @@
       "reset": "Réinitialiser",
       "saturation": "Saturation",
       "saturationAbbreviation": "S :"
+    },
+    "dropdown": {
+      "placeholder": "Sélectionnez une option",
+      "searchPlaceholder": "Filtrer les options..."
     },
     "exportPresets": {
       "deleteTooltip": "Supprimer le paramètre prédéfini",

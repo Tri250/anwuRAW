@@ -1,7 +1,9 @@
 import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import i18n from 'i18next';
 import { open } from '@tauri-apps/plugin-dialog';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
@@ -17,6 +19,7 @@ export function useFileOperations(
   handleBackToLibrary: () => void,
   sortedImageList: any[],
 ) {
+  const { t } = useTranslation();
   const getParentDir = (filePath: string): string => {
     const separator = filePath.includes('/') ? '/' : '\\';
     const lastSeparatorIndex = filePath.lastIndexOf(separator);
@@ -70,6 +73,14 @@ export function useFileOperations(
         await invoke(command, { paths: pathsToDelete });
         await refreshImageList();
 
+        // 切图竞态守卫:删除期间(await 窗口)用户可能已切换编辑器选中图或库激活图,
+        // 若选中状况已变化,不得用删除前 activePath 的导航决策覆盖用户的新选择
+        const endView = useUIStore.getState().activeView;
+        const endSelected = useEditorStore.getState().selectedImage;
+        const endActivePath =
+          endSelected && endView === 'editor' ? endSelected.path : useLibraryStore.getState().libraryActivePath;
+        if (endActivePath !== activePath) return;
+
         if (selectedImage && activeView === 'editor') {
           const physicalPath = selectedImage.path.split('?vc=')[0];
           const isFileBeingEditedDeleted = pathsToDelete.some((p) => p === selectedImage.path || p === physicalPath);
@@ -97,7 +108,7 @@ export function useFileOperations(
         }
       } catch (err) {
         console.error('Failed to delete files:', err);
-        toast.error(`Failed to delete files: ${err}`);
+        toast.error(i18n.t('toasts.deleteFilesFailed', { error: String(err) }));
       }
     },
     [refreshImageList, handleBackToLibrary, sortedImageList, handleImageSelect],
@@ -119,20 +130,20 @@ export function useFileOperations(
       !pathsToDelete[0].includes('?vc=') &&
       imageList.some((image) => image.path.startsWith(`${pathsToDelete[0]}?vc=`));
 
-    let modalTitle = 'Confirm Delete';
+    let modalTitle = t('library.deleteModal.title');
     let modalMessage = '';
-    let confirmText = 'Delete';
+    let confirmText = t('library.deleteModal.delete');
 
     if (selectionHasVirtualCopies) {
-      modalTitle = 'Delete Image and All Virtual Copies?';
-      modalMessage = `Are you sure you want to permanently delete this image and all of its virtual copies? This action cannot be undone.`;
-      confirmText = 'Delete All';
+      modalTitle = t('library.deleteModal.titleWithVirtualCopies');
+      modalMessage = t('library.deleteModal.messageWithVirtualCopies');
+      confirmText = t('library.deleteModal.deleteAll');
     } else if (isSingle) {
-      modalMessage = `Are you sure you want to permanently delete this image? This action cannot be undone. Right-click for more options (e.g., deleting associated files).`;
-      confirmText = 'Delete Selected Only';
+      modalMessage = t('library.deleteModal.messageSingle');
+      confirmText = t('library.deleteModal.deleteSelectedOnly');
     } else {
-      modalMessage = `Are you sure you want to permanently delete these ${pathsToDelete.length} images? This action cannot be undone. Right-click for more options (e.g., deleting associated files).`;
-      confirmText = 'Delete Selected Only';
+      modalMessage = t('library.deleteModal.messagePlural', { count: pathsToDelete.length });
+      confirmText = t('library.deleteModal.deleteSelectedOnly');
     }
 
     setUI({
@@ -145,7 +156,7 @@ export function useFileOperations(
         title: modalTitle,
       },
     });
-  }, [executeDelete]);
+  }, [executeDelete, t]);
 
   const handleCreateFolder = useCallback(
     async (folderName: string) => {
@@ -156,7 +167,7 @@ export function useFileOperations(
           await invoke(Invokes.CreateFolder, { path: `${folderActionTarget}/${folderName.trim()}` });
           await refreshAllFolderTrees();
         } catch (err) {
-          toast.error(`Failed to create folder: ${err}`);
+          toast.error(i18n.t('toasts.createFolderFailed', { error: String(err) }));
         }
       }
     },
@@ -209,7 +220,7 @@ export function useFileOperations(
 
           await refreshAllFolderTrees();
         } catch (err) {
-          toast.error(`Failed to rename folder: ${err}`);
+          toast.error(i18n.t('toasts.renameFolderFailed', { error: String(err) }));
         }
       }
     },
@@ -251,7 +262,7 @@ export function useFileOperations(
 
           setLibrary({ multiSelectedPaths: newPaths });
         } catch (err) {
-          toast.error(`Failed to rename files: ${err}`);
+          toast.error(i18n.t('toasts.renameFilesFailed', { error: String(err) }));
         }
       }
       setUI({ renameTargetPaths: [] });
@@ -308,16 +319,16 @@ export function useFileOperations(
         const typeFilters = isAndroid
           ? []
           : [
-              { name: 'All Supported Images', extensions: allImageExtensions },
-              { name: 'RAW Images', extensions: processedRaw },
-              { name: 'Standard Images (JPEG, PNG, etc.)', extensions: processedNonRaw },
-              { name: 'All Files', extensions: ['*'] },
+              { name: t('library.importDialog.allSupported'), extensions: allImageExtensions },
+              { name: t('library.importDialog.rawImages'), extensions: processedRaw },
+              { name: t('library.importDialog.standardImages'), extensions: processedNonRaw },
+              { name: t('library.importDialog.allFiles'), extensions: ['*'] },
             ];
 
         const selected = await open({
           filters: typeFilters,
           multiple: true,
-          title: 'Select files to import',
+          title: t('library.importDialog.title'),
         });
 
         if (Array.isArray(selected) && selected.length > 0) {
@@ -351,7 +362,7 @@ export function useFileOperations(
 
           if (invalidExtensions.size > 0) {
             const extList = Array.from(invalidExtensions).join(', ');
-            toast.error(`Unsupported file format(s) detected: ${extList}`);
+            toast.error(i18n.t('toasts.unsupportedFormat', { formats: extList }));
             return;
           }
 
@@ -393,7 +404,9 @@ export function useFileOperations(
         }
         await refreshImageList();
       } catch (err) {
-        toast.error(`Failed to ${mode} files: ${err}`);
+        toast.error(
+          i18n.t(mode === 'copy' ? 'toasts.copyFilesFailed' : 'toasts.moveFilesFailed', { error: String(err) }),
+        );
       }
     },
     [refreshImageList, refreshAllFolderTrees],

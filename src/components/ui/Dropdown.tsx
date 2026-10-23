@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Input from './Input';
 import Text from './Text';
 import { TEXT_COLOR_KEYS, TextColors, TextVariants, TextWeights } from '../../types/typography';
@@ -26,12 +27,16 @@ const Dropdown = <T extends React.Key>({
   className = '',
   onChange,
   options,
-  placeholder = 'Select an option',
-  searchPlaceholder = 'Filter options...',
+  placeholder,
+  searchPlaceholder,
   value,
   disabled = false,
   triggerClassName = '',
 }: DropdownProps<T>) => {
+  const { t } = useTranslation();
+  // i18n 兜底:调用点未传文案时使用本地化默认值,避免硬编码英文
+  const resolvedPlaceholder = placeholder ?? t('ui.dropdown.placeholder');
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t('ui.dropdown.searchPlaceholder');
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -116,7 +121,7 @@ const Dropdown = <T extends React.Key>({
         type="button"
       >
         <Text as="span" variant={TextVariants.label} color={TextColors.primary}>
-          {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption ? selectedOption.label : resolvedPlaceholder}
         </Text>
         <ChevronDown
           className={`${TEXT_COLOR_KEYS[TextColors.secondary]} transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
@@ -143,7 +148,7 @@ const Dropdown = <T extends React.Key>({
                   ref={searchInputRef}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={searchPlaceholder}
+                  placeholder={resolvedSearchPlaceholder}
                   autoFocus={true}
                   className="mb-2"
                 />

@@ -1143,6 +1143,16 @@
       "toggleFit": "Alternar 1:1 / Ajustar",
       "vc": "CV"
     },
+    "deleteModal": {
+      "title": "Eliminar a seleção?",
+      "titleWithVirtualCopies": "Eliminar a imagem com cópias virtuais?",
+      "messageWithVirtualCopies": "Esta imagem tem cópias virtuais. Eliminar irá remover permanentemente o original e todas as cópias virtuais do disco. Esta ação não pode ser revertida.",
+      "messageSingle": "A imagem selecionada será removida permanentemente do disco. Esta ação não pode ser revertida.",
+      "messagePlural": "As {{count}} imagens selecionadas serão removidas permanentemente do disco. Esta ação não pode ser revertida.",
+      "delete": "Eliminar",
+      "deleteAll": "Eliminar tudo",
+      "deleteSelectedOnly": "Eliminar apenas a seleção"
+    },
     "filters": {
       "edited": {
         "all": "Todas as Imagens",
@@ -1252,6 +1262,13 @@
       "complete": "Importação Concluída!",
       "failed": "Falha na Importação!",
       "progress": "Importando... ({{current}}/{{total}})"
+    },
+    "importDialog": {
+      "title": "Importar imagens",
+      "allSupported": "Todas as imagens suportadas",
+      "rawImages": "Imagens RAW",
+      "standardImages": "Imagens padrão",
+      "allFiles": "Todos os ficheiros"
     },
     "items": {
       "cloudPlaceholder": "Armazenado no iCloud — não baixado",
@@ -1524,6 +1541,7 @@
       "result": "Resultado",
       "save": "Salvar",
       "savedSuccess": "Empilhamento de foco salvo com sucesso!",
+      "sourcePathsMissing": "Caminhos de origem para o focus stacking não encontrados.",
       "stacking": "Empilhando Foco",
       "start": "Iniciar",
       "title": "Empilhamento de Foco"
@@ -1543,6 +1561,7 @@
       "retry": "Tentar Novamente",
       "save": "Salvar",
       "savedSuccess": "HDR Salvo com Sucesso!",
+      "sourcePathsMissing": "Caminhos de origem para a imagem HDR não encontrados.",
       "speedNotice": "Isso pode levar alguns minutos, dependendo do número e tamanho das suas exposições.",
       "start": "Iniciar",
       "title": "Mesclar para HDR"
@@ -1632,6 +1651,7 @@
       "retry": "Tentar Novamente",
       "save": "Salvar",
       "savedSuccess": "Panorama Salvo com Sucesso!",
+      "sourcePathsMissing": "Caminhos de origem para a panorâmica não encontrados.",
       "speedNotice": "Isso pode levar alguns minutos dependendo do número e tamanho das imagens.",
       "start": "Iniciar",
       "stitchingProgress": "Montando Panorama",
@@ -2135,6 +2155,38 @@
     "wbTempPlaceholder": "ex. 5600",
     "whiteBalance": "Balanço de Branco"
   },
+  "toasts": {
+    "addImageToAlbumFailed": "Falha ao adicionar ao álbum: {{error}}",
+    "aiDepthMaskFailed": "Falha na máscara de profundidade com IA: {{error}}",
+    "aiMaskFailed": "Falha na máscara com IA: {{error}}",
+    "aiReplaceFailed": "Falha na substituição com IA: {{error}}",
+    "albumCreateFailed": "Falha ao criar o álbum: {{error}}",
+    "albumLoadFailed": "Falha ao carregar o álbum: {{error}}",
+    "albumRenameFailed": "Falha ao renomear o álbum: {{error}}",
+    "colorLabelFailed": "Falha ao definir a etiqueta de cor: {{error}}",
+    "comparisonPreviewFailed": "Falha ao gerar a pré-visualização comparativa: {{error}}",
+    "copyFilesFailed": "Falha ao copiar ficheiros: {{error}}",
+    "copyPathFailed": "Falha ao copiar o caminho: {{error}}",
+    "createFolderFailed": "Falha ao criar a pasta: {{error}}",
+    "deleteFilesFailed": "Falha ao eliminar ficheiros: {{error}}",
+    "depthMapFailed": "Falha ao gerar o mapa de profundidade: {{error}}",
+    "folderLoadFailed": "Falha ao carregar a pasta: {{error}}",
+    "folderTreeLoadFailed": "Falha ao carregar a árvore de pastas: {{error}}",
+    "imageLoadFailed": "Falha ao carregar a imagem: {{error}}",
+    "imagesLoadFailed": "Não foi possível carregar as imagens da pasta selecionada.",
+    "lutLoadFailed": "Falha ao carregar o LUT: {{error}}",
+    "metadataUpdateFailed": "Falha ao atualizar os metadados: {{error}}",
+    "moveFilesFailed": "Falha ao mover ficheiros: {{error}}",
+    "patchGenerationFailed": "Falha na geração da correção: {{error}}",
+    "pinnedFoldersRefreshFailed": "Falha ao atualizar as pastas fixadas: {{error}}",
+    "quickEraseFailed": "Falha na remoção rápida: {{error}}",
+    "ratingFailed": "Falha ao atualizar a classificação: {{error}}",
+    "renameFilesFailed": "Falha ao renomear ficheiros: {{error}}",
+    "renameFolderFailed": "Falha ao renomear a pasta: {{error}}",
+    "restoreSessionFailed": "Falha ao restaurar a sessão. Uma pasta pode ter sido movida ou eliminada.",
+    "saveChangesFailed": "Falha ao guardar as alterações: {{error}}",
+    "unsupportedFormat": "Formatos de ficheiro não suportados detetados: {{formats}}"
+  },
   "ui": {
     "bottomBar": {
       "imagesSelected": "{{current}} de {{total}} imagens selecionadas",
@@ -2171,6 +2223,10 @@
       "reset": "Redefinir",
       "saturation": "Saturação",
       "saturationAbbreviation": "S:"
+    },
+    "dropdown": {
+      "placeholder": "Selecione uma opção",
+      "searchPlaceholder": "Filtrar opções..."
     },
     "exportPresets": {
       "deleteTooltip": "Excluir predefinição",

@@ -1120,6 +1120,16 @@
       "toggleFit": "1:1 / 맞춤 전환",
       "vc": "VC"
     },
+    "deleteModal": {
+      "title": "선택 항목을 삭제하시겠습니까?",
+      "titleWithVirtualCopies": "가상 복사본과 함께 이미지를 삭제하시겠습니까?",
+      "messageWithVirtualCopies": "이 이미지에는 가상 복사본이 있습니다. 삭제하면 원본과 모든 가상 복사본이 디스크에서 영구적으로 제거됩니다. 되돌릴 수 없습니다.",
+      "messageSingle": "선택한 이미지는 디스크에서 영구적으로 제거됩니다. 되돌릴 수 없습니다.",
+      "messagePlural": "선택한 {{count}}개의 이미지는 디스크에서 영구적으로 제거됩니다. 되돌릴 수 없습니다.",
+      "delete": "삭제",
+      "deleteAll": "모두 삭제",
+      "deleteSelectedOnly": "선택 항목만 삭제"
+    },
     "filters": {
       "edited": {
         "all": "모든 이미지",
@@ -1229,6 +1239,13 @@
       "complete": "가져오기 완료!",
       "failed": "가져오기 실패!",
       "progress": "가져오는 중... ({{current}}/{{total}})"
+    },
+    "importDialog": {
+      "title": "이미지 가져오기",
+      "allSupported": "지원되는 모든 이미지",
+      "rawImages": "RAW 이미지",
+      "standardImages": "일반 이미지",
+      "allFiles": "모든 파일"
     },
     "items": {
       "cloudPlaceholder": "iCloud에 저장됨 — 다운로드되지 않음",
@@ -1497,6 +1514,7 @@
       "result": "결과",
       "save": "저장",
       "savedSuccess": "포커스 스택이 성공적으로 저장되었습니다!",
+      "sourcePathsMissing": "포커스 스태킹의 원본 경로를 찾을 수 없습니다.",
       "stacking": "포커스 스태킹 중",
       "start": "시작",
       "title": "포커스 스태킹"
@@ -1515,6 +1533,7 @@
       "retry": "다시 시도",
       "save": "저장",
       "savedSuccess": "HDR이 성공적으로 저장되었습니다!",
+      "sourcePathsMissing": "HDR의 원본 경로를 찾을 수 없습니다.",
       "speedNotice": "노출의 개수와 크기에 따라 몇 분이 걸릴 수 있습니다.",
       "start": "시작",
       "title": "HDR로 병합"
@@ -1602,6 +1621,7 @@
       "retry": "다시 시도",
       "save": "저장",
       "savedSuccess": "파노라마가 성공적으로 저장되었습니다!",
+      "sourcePathsMissing": "파노라마의 원본 경로를 찾을 수 없습니다.",
       "speedNotice": "이미지의 개수와 크기에 따라 몇 분이 걸릴 수 있습니다.",
       "start": "시작",
       "stitchingProgress": "파노라마 스티칭 중",
@@ -2101,6 +2121,38 @@
     "wbTempPlaceholder": "예: 5600",
     "whiteBalance": "화이트 밸런스"
   },
+  "toasts": {
+    "addImageToAlbumFailed": "앨범에 추가 실패: {{error}}",
+    "aiDepthMaskFailed": "AI 깊이 마스크 실패: {{error}}",
+    "aiMaskFailed": "AI 마스크 실패: {{error}}",
+    "aiReplaceFailed": "AI 바꾸기 실패: {{error}}",
+    "albumCreateFailed": "앨범 생성 실패: {{error}}",
+    "albumLoadFailed": "앨범 로드 실패: {{error}}",
+    "albumRenameFailed": "앨범 이름 바꾸기 실패: {{error}}",
+    "colorLabelFailed": "색상 라벨 설정 실패: {{error}}",
+    "comparisonPreviewFailed": "비교 미리보기 생성 실패: {{error}}",
+    "copyFilesFailed": "파일 복사 실패: {{error}}",
+    "copyPathFailed": "경로 복사 실패: {{error}}",
+    "createFolderFailed": "폴더 생성 실패: {{error}}",
+    "deleteFilesFailed": "파일 삭제 실패: {{error}}",
+    "depthMapFailed": "깊이 맵 생성 실패: {{error}}",
+    "folderLoadFailed": "폴더 로드 실패: {{error}}",
+    "folderTreeLoadFailed": "폴더 트리 로드 실패: {{error}}",
+    "imageLoadFailed": "이미지 로드 실패: {{error}}",
+    "imagesLoadFailed": "선택한 폴더에서 이미지를 불러오지 못했습니다.",
+    "lutLoadFailed": "LUT 로드 실패: {{error}}",
+    "metadataUpdateFailed": "메타데이터 업데이트 실패: {{error}}",
+    "moveFilesFailed": "파일 이동 실패: {{error}}",
+    "patchGenerationFailed": "패치 생성 실패: {{error}}",
+    "pinnedFoldersRefreshFailed": "고정 폴더 새로 고침 실패: {{error}}",
+    "quickEraseFailed": "빠른 지우기 실패: {{error}}",
+    "ratingFailed": "별점 업데이트 실패: {{error}}",
+    "renameFilesFailed": "파일 이름 바꾸기 실패: {{error}}",
+    "renameFolderFailed": "폴더 이름 바꾸기 실패: {{error}}",
+    "restoreSessionFailed": "세션 복원에 실패했습니다. 폴더가 이동되었거나 삭제되었을 수 있습니다.",
+    "saveChangesFailed": "변경 사항 저장 실패: {{error}}",
+    "unsupportedFormat": "지원되지 않는 파일 형식이 감지되었습니다: {{formats}}"
+  },
   "ui": {
     "bottomBar": {
       "imagesSelected": "이미지 {{total}}개 중 {{current}}개 선택됨",
@@ -2136,6 +2188,10 @@
       "reset": "초기화",
       "saturation": "채도",
       "saturationAbbreviation": "S:"
+    },
+    "dropdown": {
+      "placeholder": "옵션 선택",
+      "searchPlaceholder": "옵션 필터링..."
     },
     "exportPresets": {
       "deleteTooltip": "프리셋 삭제",

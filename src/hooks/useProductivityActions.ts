@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import i18n from 'i18next';
 import { useUIStore } from '../store/useUIStore';
 import { Invokes } from '../components/ui/AppProperties';
 
@@ -29,7 +30,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
   const handleSavePanorama = useCallback(async (): Promise<string> => {
     const { panoramaModalState } = useUIStore.getState();
     if (panoramaModalState.stitchingSourcePaths.length === 0) {
-      const err = 'Source paths for panorama not found.';
+      const err = i18n.t('modals.panorama.sourcePathsMissing');
       setUI((state) => ({ panoramaModalState: { ...state.panoramaModalState, error: err } }));
       throw new Error(err);
     }
@@ -70,7 +71,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
   const handleSaveFocusStack = useCallback(async (): Promise<string> => {
     const { focusStackModalState } = useUIStore.getState();
     if (focusStackModalState.sourcePaths.length === 0) {
-      const err = 'Source paths for focus stack not found.';
+      const err = i18n.t('modals.focusStack.sourcePathsMissing');
       setUI((state) => ({ focusStackModalState: { ...state.focusStackModalState, error: err } }));
       throw new Error(err);
     }
@@ -108,7 +109,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
   const handleSaveHdr = useCallback(async (): Promise<string> => {
     const { hdrModalState } = useUIStore.getState();
     if (hdrModalState.stitchingSourcePaths.length === 0) {
-      const err = 'Source paths for HDR not found.';
+      const err = i18n.t('modals.hdr.sourcePathsMissing');
       setUI((state) => ({ hdrModalState: { ...state.hdrModalState, error: err } }));
       throw new Error(err);
     }

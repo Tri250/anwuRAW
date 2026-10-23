@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import i18n from 'i18next';
 import { toast } from 'react-toastify';
 import { ImageFile, Panel, ExifOverlay } from '../components/ui/AppProperties';
 import { KEYBIND_DEFINITIONS, normalizeCombo } from '../utils/keyboardUtils';
@@ -48,7 +49,7 @@ export const useKeyboardShortcuts = ({
       await navigator.clipboard.writeText(physicalPaths.join('\n'));
     } catch (err) {
       console.error('Failed to copy image path to clipboard', err);
-      toast.error(`Failed to copy path: ${err}`);
+      toast.error(i18n.t('toasts.copyPathFailed', { error: String(err) }));
     }
   }, []);
 

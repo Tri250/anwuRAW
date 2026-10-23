@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import i18n from 'i18next';
 import { toast } from 'react-toastify';
 import { useEditorStore } from '../store/useEditorStore';
 import { useEditorActions } from './useEditorActions';
@@ -148,7 +149,7 @@ export function useAiMasking() {
       } catch (err: any) {
         // 如果切了图，不要重置新图的 isLoading 状态
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;
-        toast.error(`Patch Generation Failed: ${err.message || String(err)}`);
+        toast.error(i18n.t('toasts.patchGenerationFailed', { error: err.message || String(err) }));
         setAdjustments((prev: Partial<Adjustments>) => ({
           ...prev,
           aiPatches: prev.aiPatches?.map((p: AiPatch) => (p.id === patchId ? { ...p, isLoading: false } : p)),
@@ -218,7 +219,7 @@ export function useAiMasking() {
         setEditor({ activeAiPatchContainerId: null, activeAiSubMaskId: null, isGeneratingAi: false });
       } catch (err) {
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;
-        toast.error(`AI Replace Failed: ${err}`);
+        toast.error(i18n.t('toasts.aiReplaceFailed', { error: String(err) }));
         setAdjustments((prev: Adjustments) => ({
           ...prev,
           aiPatches: prev.aiPatches.map((p: AiPatch) => (p.id === patchId ? { ...p, isLoading: false } : p)),
@@ -315,7 +316,7 @@ export function useAiMasking() {
         setEditor({ activeAiPatchContainerId: null, activeAiSubMaskId: null, isGeneratingAi: false });
       } catch (err: any) {
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;
-        toast.error(`Quick Erase Failed: ${err.message || String(err)}`);
+        toast.error(i18n.t('toasts.quickEraseFailed', { error: err.message || String(err) }));
         setAdjustments((prev: Partial<Adjustments>) => ({
           ...prev,
           aiPatches: prev.aiPatches?.map((p: AiPatch) => (p.id === patchId ? { ...p, isLoading: false } : p)),
@@ -394,7 +395,7 @@ export function useAiMasking() {
       setEditor({ isGeneratingAiMask: false });
     } catch (error) {
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
-      toast.error(`AI Mask Failed: ${error}`);
+      toast.error(i18n.t('toasts.aiMaskFailed', { error: String(error) }));
       setEditor({ isGeneratingAiMask: false });
     }
   };
@@ -432,7 +433,7 @@ export function useAiMasking() {
       setEditor({ isGeneratingAiMask: false });
     } catch (error) {
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
-      toast.error(`AI Depth Mask Failed: ${error}`);
+      toast.error(i18n.t('toasts.aiDepthMaskFailed', { error: String(error) }));
       setEditor({ isGeneratingAiMask: false });
     }
   };
@@ -464,7 +465,7 @@ export function useAiMasking() {
       setEditor({ isGeneratingAiMask: false });
     } catch (error) {
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
-      toast.error(`AI Mask Failed: ${error}`);
+      toast.error(i18n.t('toasts.aiMaskFailed', { error: String(error) }));
       setEditor({ isGeneratingAiMask: false });
     }
   };
@@ -496,7 +497,7 @@ export function useAiMasking() {
       setEditor({ isGeneratingAiMask: false });
     } catch (error) {
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
-      toast.error(`AI Mask Failed: ${error}`);
+      toast.error(i18n.t('toasts.aiMaskFailed', { error: String(error) }));
       setEditor({ isGeneratingAiMask: false });
     }
   };

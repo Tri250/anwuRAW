@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
@@ -29,12 +29,16 @@ export default function ConfirmModal({
   const { t } = useTranslation();
   const [isMounted, setIsMounted] = useState(false);
   const [show, setShow] = useState(false);
+  // 防双击竞态:退场动画(300ms)期间确认按钮仍可点击,
+  // 不加守卫会导致 onConfirm(删除/保存等 invoke 操作)被重复触发
+  const hasConfirmedRef = useRef(false);
 
   const resolvedCancelText = cancelText || t('modals.confirm.cancel');
   const resolvedConfirmText = confirmText || t('modals.confirm.confirm');
 
   useEffect(() => {
     if (isOpen) {
+      hasConfirmedRef.current = false;
       setIsMounted(true);
       const timer = setTimeout(() => {
         setShow(true);
@@ -50,6 +54,8 @@ export default function ConfirmModal({
   }, [isOpen]);
 
   const handleConfirm = useCallback(() => {
+    if (hasConfirmedRef.current) return;
+    hasConfirmedRef.current = true;
     if (onConfirm) {
       onConfirm();
     }

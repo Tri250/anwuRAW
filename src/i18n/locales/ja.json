@@ -1120,6 +1120,16 @@
       "toggleFit": "1:1 / 全体表示の切り替え",
       "vc": "VC"
     },
+    "deleteModal": {
+      "title": "選択項目を削除しますか？",
+      "titleWithVirtualCopies": "仮想コピーと共に画像を削除しますか？",
+      "messageWithVirtualCopies": "この画像には仮想コピーがあります。削除すると、元画像とすべての仮想コピーがディスクから完全に削除されます。この操作は元に戻せません。",
+      "messageSingle": "選択した画像はディスクから完全に削除されます。この操作は元に戻せません。",
+      "messagePlural": "選択した {{count}} 枚の画像はディスクから完全に削除されます。この操作は元に戻せません。",
+      "delete": "削除",
+      "deleteAll": "すべて削除",
+      "deleteSelectedOnly": "選択項目のみ削除"
+    },
     "filters": {
       "edited": {
         "all": "すべての画像",
@@ -1229,6 +1239,13 @@
       "complete": "インポート完了！",
       "failed": "インポートに失敗しました！",
       "progress": "インポート中... ({{current}}/{{total}})"
+    },
+    "importDialog": {
+      "title": "画像を読み込む",
+      "allSupported": "サポートされるすべての画像",
+      "rawImages": "RAW 画像",
+      "standardImages": "標準画像",
+      "allFiles": "すべてのファイル"
     },
     "items": {
       "cloudPlaceholder": "iCloudに保存されています — 未ダウンロード",
@@ -1497,6 +1514,7 @@
       "result": "結果",
       "save": "保存",
       "savedSuccess": "フォーカススタックを正常に保存しました！",
+      "sourcePathsMissing": "フォーカススタックのソースパスが見つかりません。",
       "stacking": "フォーカスをスタック中",
       "start": "開始",
       "title": "フォーカススタッキング"
@@ -1515,6 +1533,7 @@
       "retry": "再試行",
       "save": "保存",
       "savedSuccess": "HDRを正常に保存しました！",
+      "sourcePathsMissing": "HDR のソースパスが見つかりません。",
       "speedNotice": "露出数や画像サイズによって、数分かかる場合があります。",
       "start": "開始",
       "title": "HDRに統合"
@@ -1602,6 +1621,7 @@
       "retry": "再試行",
       "save": "保存",
       "savedSuccess": "パノラマを正常に保存しました！",
+      "sourcePathsMissing": "パノラマのソースパスが見つかりません。",
       "speedNotice": "画像枚数や画像サイズによって、数分かかる場合があります。",
       "start": "開始",
       "stitchingProgress": "パノラマ写真を作成中",
@@ -2101,6 +2121,38 @@
     "wbTempPlaceholder": "例: 5600",
     "whiteBalance": "ホワイトバランス"
   },
+  "toasts": {
+    "addImageToAlbumFailed": "アルバムへの追加に失敗しました：{{error}}",
+    "aiDepthMaskFailed": "AI 深度マスクに失敗しました：{{error}}",
+    "aiMaskFailed": "AI マスクに失敗しました：{{error}}",
+    "aiReplaceFailed": "AI 置換に失敗しました：{{error}}",
+    "albumCreateFailed": "アルバムの作成に失敗しました：{{error}}",
+    "albumLoadFailed": "アルバムの読み込みに失敗しました：{{error}}",
+    "albumRenameFailed": "アルバム名の変更に失敗しました：{{error}}",
+    "colorLabelFailed": "カラーラベルの設定に失敗しました：{{error}}",
+    "comparisonPreviewFailed": "比較プレビューの生成に失敗しました：{{error}}",
+    "copyFilesFailed": "ファイルのコピーに失敗しました：{{error}}",
+    "copyPathFailed": "パスのコピーに失敗しました：{{error}}",
+    "createFolderFailed": "フォルダの作成に失敗しました：{{error}}",
+    "deleteFilesFailed": "ファイルの削除に失敗しました：{{error}}",
+    "depthMapFailed": "深度マップの生成に失敗しました：{{error}}",
+    "folderLoadFailed": "フォルダの読み込みに失敗しました：{{error}}",
+    "folderTreeLoadFailed": "フォルダツリーの読み込みに失敗しました：{{error}}",
+    "imageLoadFailed": "画像の読み込みに失敗しました：{{error}}",
+    "imagesLoadFailed": "選択したフォルダから画像を読み込めませんでした。",
+    "lutLoadFailed": "LUT の読み込みに失敗しました：{{error}}",
+    "metadataUpdateFailed": "メタデータの更新に失敗しました：{{error}}",
+    "moveFilesFailed": "ファイルの移動に失敗しました：{{error}}",
+    "patchGenerationFailed": "パッチ生成に失敗しました：{{error}}",
+    "pinnedFoldersRefreshFailed": "ピン留めフォルダの更新に失敗しました：{{error}}",
+    "quickEraseFailed": "クイック消去に失敗しました：{{error}}",
+    "ratingFailed": "評価の更新に失敗しました：{{error}}",
+    "renameFilesFailed": "ファイル名の変更に失敗しました：{{error}}",
+    "renameFolderFailed": "フォルダ名の変更に失敗しました：{{error}}",
+    "restoreSessionFailed": "セッションの復元に失敗しました。フォルダが移動または削除された可能性があります。",
+    "saveChangesFailed": "変更の保存に失敗しました：{{error}}",
+    "unsupportedFormat": "サポートされていないファイル形式が検出されました：{{formats}}"
+  },
   "ui": {
     "bottomBar": {
       "imagesSelected": "{{total}}枚中 {{current}}枚の画像を選択中",
@@ -2136,6 +2188,10 @@
       "reset": "リセット",
       "saturation": "彩度",
       "saturationAbbreviation": "S:"
+    },
+    "dropdown": {
+      "placeholder": "オプションを選択",
+      "searchPlaceholder": "オプションを絞り込む..."
     },
     "exportPresets": {
       "deleteTooltip": "プリセットを削除",

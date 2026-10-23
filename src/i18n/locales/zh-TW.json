@@ -1120,6 +1120,16 @@
       "toggleFit": "切換 1:1 / 適應",
       "vc": "VC"
     },
+    "deleteModal": {
+      "title": "刪除所選圖像？",
+      "titleWithVirtualCopies": "刪除圖像及其虛擬副本？",
+      "messageWithVirtualCopies": "此圖像包含虛擬副本。刪除作業將從磁碟永久移除原圖及全部虛擬副本，且無法復原。",
+      "messageSingle": "所選圖像將從磁碟永久移除，且無法復原。",
+      "messagePlural": "所選的 {{count}} 張圖像將從磁碟永久移除，且無法復原。",
+      "delete": "刪除",
+      "deleteAll": "全部刪除",
+      "deleteSelectedOnly": "僅刪除所選"
+    },
     "filters": {
       "edited": {
         "all": "所有影像",
@@ -1229,6 +1239,13 @@
       "complete": "匯入完成！",
       "failed": "匯入失敗！",
       "progress": "匯入中...（{{current}}/{{total}}）"
+    },
+    "importDialog": {
+      "title": "匯入圖像",
+      "allSupported": "所有支援的圖像",
+      "rawImages": "RAW 圖像",
+      "standardImages": "標準圖像",
+      "allFiles": "所有檔案"
     },
     "items": {
       "cloudPlaceholder": "儲存在 iCloud 中 — 未下載",
@@ -1497,6 +1514,7 @@
       "result": "結果",
       "save": "儲存",
       "savedSuccess": "焦距合成已成功儲存！",
+      "sourcePathsMissing": "找不到焦點堆疊的來源圖像路徑。",
       "stacking": "正在合成焦距",
       "start": "開始",
       "title": "焦距合成"
@@ -1515,6 +1533,7 @@
       "retry": "重試",
       "save": "儲存",
       "savedSuccess": "HDR 儲存成功！",
+      "sourcePathsMissing": "找不到 HDR 合成的來源圖像路徑。",
       "speedNotice": "這可能需要幾分鐘，具體取決於曝光影像的數量和大小。",
       "start": "開始",
       "title": "合併為 HDR"
@@ -1602,6 +1621,7 @@
       "retry": "重試",
       "save": "儲存",
       "savedSuccess": "全景圖儲存成功！",
+      "sourcePathsMissing": "找不到全景拼接的來源圖像路徑。",
       "speedNotice": "這可能需要幾分鐘，具體取決於影像的數量和大小。",
       "start": "開始",
       "stitchingProgress": "拼接全景圖中",
@@ -2101,6 +2121,38 @@
     "wbTempPlaceholder": "例如 5600",
     "whiteBalance": "白平衡"
   },
+  "toasts": {
+    "addImageToAlbumFailed": "加入相簿失敗：{{error}}",
+    "aiDepthMaskFailed": "AI 景深蒙版失敗：{{error}}",
+    "aiMaskFailed": "AI 蒙版失敗：{{error}}",
+    "aiReplaceFailed": "AI 取代失敗：{{error}}",
+    "albumCreateFailed": "建立相簿失敗：{{error}}",
+    "albumLoadFailed": "載入相簿失敗：{{error}}",
+    "albumRenameFailed": "重新命名相簿失敗：{{error}}",
+    "colorLabelFailed": "設定顏色標籤失敗：{{error}}",
+    "comparisonPreviewFailed": "產生對比預覽失敗：{{error}}",
+    "copyFilesFailed": "複製檔案失敗：{{error}}",
+    "copyPathFailed": "複製路徑失敗：{{error}}",
+    "createFolderFailed": "建立資料夾失敗：{{error}}",
+    "deleteFilesFailed": "刪除檔案失敗：{{error}}",
+    "depthMapFailed": "產生景深圖失敗：{{error}}",
+    "folderLoadFailed": "載入資料夾失敗：{{error}}",
+    "folderTreeLoadFailed": "載入資料夾樹失敗：{{error}}",
+    "imageLoadFailed": "載入圖像失敗：{{error}}",
+    "imagesLoadFailed": "無法從所選資料夾載入圖像。",
+    "lutLoadFailed": "載入 LUT 失敗：{{error}}",
+    "metadataUpdateFailed": "更新中繼資料失敗：{{error}}",
+    "moveFilesFailed": "移動檔案失敗：{{error}}",
+    "patchGenerationFailed": "修補產生失敗：{{error}}",
+    "pinnedFoldersRefreshFailed": "重新整理釘選資料夾失敗：{{error}}",
+    "quickEraseFailed": "快速擦除失敗：{{error}}",
+    "ratingFailed": "更新評分失敗：{{error}}",
+    "renameFilesFailed": "重新命名檔案失敗：{{error}}",
+    "renameFolderFailed": "重新命名資料夾失敗：{{error}}",
+    "restoreSessionFailed": "還原工作階段失敗。資料夾可能已被移動或刪除。",
+    "saveChangesFailed": "儲存修改失敗：{{error}}",
+    "unsupportedFormat": "偵測到不支援的檔案格式：{{formats}}"
+  },
   "ui": {
     "bottomBar": {
       "imagesSelected": "已選擇 {{current}} / {{total}} 張影像",
@@ -2136,6 +2188,10 @@
       "reset": "重置",
       "saturation": "飽和度",
       "saturationAbbreviation": "S:"
+    },
+    "dropdown": {
+      "placeholder": "選擇一個選項",
+      "searchPlaceholder": "篩選選項..."
     },
     "exportPresets": {
       "deleteTooltip": "刪除預設",

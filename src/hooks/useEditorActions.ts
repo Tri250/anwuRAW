@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import i18n from 'i18next';
 import debounce from 'lodash.debounce';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +29,7 @@ export const debouncedSetHistory = debounce((newAdj: Adjustments) => {
 export const debouncedSave = debounce((path: string, adjustmentsToSave: Adjustments) => {
   invoke(Invokes.SaveMetadataAndUpdateThumbnail, { path, adjustments: adjustmentsToSave }).catch((err) => {
     console.error('Auto-save failed:', err);
-    toast.error(`Failed to save changes: ${err}`);
+    toast.error(i18n.t('toasts.saveChangesFailed', { error: String(err) }));
   });
 }, 300);
 
@@ -165,7 +166,7 @@ export function useEditorActions() {
           },
         }));
       } catch (err) {
-        toast.error(`Failed to load LUT: ${err}`);
+        toast.error(i18n.t('toasts.lutLoadFailed', { error: String(err) }));
       }
     },
     [setAdjustments],
