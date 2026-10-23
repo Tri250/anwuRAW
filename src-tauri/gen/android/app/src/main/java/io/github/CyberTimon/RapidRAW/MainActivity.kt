@@ -59,7 +59,23 @@ class MainActivity : TauriActivity() {
 
     onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
       override fun handleOnBackPressed() {
-        this@MainActivity.webView?.evaluateJavascript("window.__handleAndroidBack()", null)
+        val webView = this@MainActivity.webView
+        if (webView == null) {
+          // WebView 尚未就绪（启动极早期）：无任何前端层级可退出，按标准行为退至后台
+          this@MainActivity.moveTaskToBack(true)
+          return
+        }
+        // JS 侧 __handleAndroidBack 返回 false 表示已无可退出层级（应用主页等），
+        // 此时 moveTaskToBack 将应用退至后台（标准 Android 返回行为）；
+        // 返回 true 表示事件已被消费（关闭弹窗/面板/返回图库等）。
+        webView.evaluateJavascript(
+          "(window.__handleAndroidBack ? (window.__handleAndroidBack() === false) : true) ? 'exit' : 'handled'",
+          android.webkit.ValueCallback<String> { result ->
+            if (result == "\"exit\"") {
+              this@MainActivity.moveTaskToBack(true)
+            }
+          }
+        )
       }
     })
   }

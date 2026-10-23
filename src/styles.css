@@ -538,6 +538,21 @@ html[data-platform='android'] .Toastify__toast-container--bottom-right {
   right: 0.75rem;
 }
 
+/* 弹窗小屏适配：全部模态共用 "fixed inset-0 flex items-center justify-center" 背景层 +
+   直子元素 bg-surface 卡片的结构。
+   1) 背景层加内边距：w-full 卡片不再贴满屏幕边缘；
+   2) 卡片限高 + 内部滚动：HDR/全景/降噪等含 500px 预览的高弹窗在竖屏/横屏手机上
+      不再被上下裁剪，底部操作按钮始终可达。 */
+html[data-platform='android'] .fixed.inset-0.flex.items-center.justify-center {
+  padding: 0.75rem;
+}
+
+html[data-platform='android'] .fixed.inset-0.flex.items-center.justify-center > .bg-surface {
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 /* 全局动效降级：当系统开启"减少动态效果"时，收敛所有 CSS 动画/过渡与平滑滚动。
    framer-motion 方向的降级由 App.tsx 顶部 <MotionConfig reducedMotion="user"> 负责。 */
 @media (prefers-reduced-motion: reduce) {
