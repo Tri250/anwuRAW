@@ -304,14 +304,18 @@ function App() {
 
   const getDynamicCompactPanelHeight = () => {
     const { originalSize, adjustments } = useEditorStore.getState();
-    // 面板默认下限取 40% 视口(旧值 50% 半屏):半屏下限会让面板恒占一半高度,
-    // 竖拍照片(无法完整显示)时预览区被挤压至约 40%(v1.6.20 反馈「预览太小、面板太高」);
-    // 横图场景仍由下方按「图片完整显示后的剩余空间」计算,不受此下限影响
-    const minPanelHeight =
-      viewportSize.height > 0 ? Math.max(160, Math.round(viewportSize.height * 0.4)) : 320;
+    // 可用下限：保证滑杆等控件可操作的最低高度(按视口收缩 160~220px)
+    const usabilityFloor =
+      viewportSize.height > 0
+        ? Math.max(160, Math.min(220, Math.round(viewportSize.height * 0.25)))
+        : 220;
+    // 默认封顶 45% 视口：横图完整显示后剩余空间可达 55%+，不封顶会被面板全部吃掉
+    // (v1.6.20 反馈「面板太高、预览太小」的主因)；预览区因此始终保有约一半屏幕
+    const defaultCap =
+      viewportSize.height > 0 ? Math.round(viewportSize.height * 0.45) : 420;
 
     if (!selectedImage || originalSize.width === 0 || originalSize.height === 0 || viewportSize.width === 0) {
-      return minPanelHeight;
+      return Math.min(defaultCap, Math.max(usabilityFloor, Math.round(viewportSize.height * 0.4)));
     }
     let effectiveRatio = originalSize.width / originalSize.height;
     const orientationSteps = adjustments?.orientationSteps || 0;
@@ -322,10 +326,17 @@ function App() {
       effectiveRatio = adjustments.aspectRatio;
     }
     const desiredImageHeight = viewportSize.width / effectiveRatio;
-    const topUiEstimation = !appSettings?.decorations && !isWindowFullScreen ? 110 : 60;
+    // Android 紧凑布局顶部实际高度：p-2(8) + 工具栏 h-12(48) + gap-2(8) + p-2(8) = 72
+    const topUiEstimation = isCompactPortrait
+      ? 72
+      : !appSettings?.decorations && !isWindowFullScreen
+        ? 110
+        : 60;
     const totalDesiredTopHeight = desiredImageHeight + topUiEstimation;
     const calculatedBottomHeight = Math.round(viewportSize.height - totalDesiredTopHeight);
-    return Math.max(minPanelHeight, calculatedBottomHeight);
+    // 剩余空间充足(横图) → 面板封顶，多余空间让给预览区；
+    // 剩余不足(竖图) → 面板取可用下限，预览尽量显示完整画面
+    return Math.min(defaultCap, Math.max(usabilityFloor, calculatedBottomHeight));
   };
 
   const compactEditorPanelDefaultHeight = getDynamicCompactPanelHeight();
