@@ -566,6 +566,10 @@ export const useKeyboardShortcuts = ({
         execute: (e: KeyboardEvent, s: any) => {
           e.preventDefault();
           if (s.editor.isStraightenActive) s.editor.setEditor({ isStraightenActive: false });
+          // 取色器是最外层的瞬时模式,优先退出:否则 WB 取色器会禁用平移且拦截画布点击,
+          // 用户按 Esc/返回键后仍无法拖动图片(Space/方向键操作全部失效)
+          else if (s.editor.isWbPickerActive || s.editor.isHslPickerActive)
+            s.editor.setEditor({ isWbPickerActive: false, isHslPickerActive: false });
           else if (s.ui.customEscapeHandler) s.ui.customEscapeHandler();
           else if (s.editor.activeAiSubMaskId) s.editor.setEditor({ activeAiSubMaskId: null });
           else if (s.editor.activeAiPatchContainerId) s.editor.setEditor({ activeAiPatchContainerId: null });

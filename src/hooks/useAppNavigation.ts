@@ -72,6 +72,12 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
       zoom: 1,
       showOriginal: false,
       previewOverride: null,
+      // 返回图库时退出所有瞬时工具模式:否则再次进入编辑器会带着上次的
+      // 取色器/拉直状态,画布点击行为与用户预期不符(取色器会拦截点击并禁用平移)
+      isWbPickerActive: false,
+      isHslPickerActive: false,
+      isStraightenActive: false,
+      isSliderDragging: false,
     });
 
     debouncedSave.flush();
@@ -141,7 +147,13 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         // 若不复位,蒙版/修复面板的 loading 态会跨图残留直至卡死
         isGeneratingAi: false,
         isGeneratingAiMask: false,
+        // 瞬时工具模式必须随图复位,否则新图会继承上一张的取色器/拉直状态:
+        // 取色器激活时画布点击被拦截、平移被禁用,用户会误以为新图无法拖动
         isWbPickerActive: false,
+        isHslPickerActive: false,
+        isStraightenActive: false,
+        // 拖拽中切图(键盘/触摸边缘情况)时若不复位,预览渲染会永久停留在拖动分支
+        isSliderDragging: false,
         previewOverride: null,
       });
 

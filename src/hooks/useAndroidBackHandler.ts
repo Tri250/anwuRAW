@@ -149,6 +149,8 @@ export function useAndroidBackHandler() {
       const editorState = useEditorStore.getState();
       const hasEscapeSelectionState =
         editorState.isStraightenActive ||
+        editorState.isWbPickerActive ||
+        editorState.isHslPickerActive ||
         ui.customEscapeHandler ||
         editorState.activeAiSubMaskId ||
         editorState.activeAiPatchContainerId ||
@@ -177,7 +179,14 @@ export function useAndroidBackHandler() {
       const isInputFocused =
         document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
       if (isInputFocused) return true;
-      if (editor.isStraightenActive || ui.customEscapeHandler) return true;
+      if (
+        editor.isStraightenActive ||
+        editor.isWbPickerActive ||
+        editor.isHslPickerActive ||
+        ui.customEscapeHandler
+      ) {
+        return true;
+      }
       if (
         editor.activeAiSubMaskId ||
         editor.activeAiPatchContainerId ||

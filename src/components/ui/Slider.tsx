@@ -113,6 +113,12 @@ const Slider = ({
 
   useEffect(() => {
     onDragStateChangeRef.current(isDragging);
+    // 卸载兜底：拖拽过程中若滑杆随面板收起/切换而卸载，外部全局状态会永久停留在
+    // 「拖拽中」，实时预览渲染分支被锁死（关闭实时预览时表现为画面不再更新）。
+    // 此处保证卸载时一定复位。
+    return () => {
+      if (isDragging) onDragStateChangeRef.current(false);
+    };
   }, [isDragging]);
 
   useEffect(() => {

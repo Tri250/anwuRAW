@@ -702,7 +702,16 @@ function App() {
         return;
       }
       setPanel(panelId);
-      setEditor({ activeMaskId: null, activeAiSubMaskId: null, isWbPickerActive: false });
+      // 切换面板即退出瞬时工具模式:取色器(白平衡/HSL)激活时会拦截画布点击并禁用平移,
+      // 若随面板隐藏而残留,用户在其他面板下点击/拖动图片会毫无反应(模式陷阱);
+      // 拉直模式同理,离开裁剪面板后不应继续占用画布拖拽手势
+      setEditor({
+        activeMaskId: null,
+        activeAiSubMaskId: null,
+        isWbPickerActive: false,
+        isHslPickerActive: false,
+        isStraightenActive: false,
+      });
     },
     [setPanel, setEditor, setUI],
   );

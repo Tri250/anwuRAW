@@ -433,7 +433,10 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     [setAdjustments],
   );
 
-  const handleWbPicked = useCallback(() => {}, []);
+  // 白平衡取样完成后自动退出取色器：取色器激活期间平移/缩放被禁用且画布点击被拦截，
+  // 若保持激活，移动端用户取样后无法拖动图片，必须再找到面板里的开关才能退出（模式陷阱）。
+  // 与 HSL 取色器（handleHslPicked 内复位）保持「单次取样即退出」的一致交互。
+  const handleWbPicked = useCallback(() => setEditor({ isWbPickerActive: false }), [setEditor]);
 
   const handleHslPicked = useCallback(
     (colorKey: string) => {
