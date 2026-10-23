@@ -588,6 +588,68 @@ html[data-platform='android'] .custom-scrollbar {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Android 视图选项面板：原有 fixed 覆盖只写在 (orientation: portrait) 媒体查询中，
+   横屏手机(高度 ≤ 500)时 760px 宽面板会溢出屏幕。这里按平台统一改为视口内浮层，
+   与方向无关；顶部偏移按新的两行头部(标题行 + 操作行 ≈ 110px)留出空间。 */
+html[data-platform='android'] .library-view-options-menu {
+  position: fixed;
+  top: 6.5rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  width: auto;
+  margin-top: 0;
+  max-height: calc(100dvh - 7.5rem - var(--android-inset-bottom, 0px));
+  overflow-y: auto;
+  transform-origin: top right;
+}
+
+html[data-platform='android'] .library-view-options-content {
+  flex-direction: column;
+}
+
+html[data-platform='android'] .library-view-options-content > .library-view-options-section {
+  width: 100%;
+  border-right-width: 0;
+  border-bottom-width: 1px;
+}
+
+html[data-platform='android'] .library-view-options-content > .library-view-options-section:last-child {
+  border-bottom-width: 0;
+}
+
+/* Android 上下文菜单：条目高度提升到 44px 触控标准（桌面保持紧凑），
+   避免长按弹出的菜单里逐项误触相邻操作（如评分与删除相邻）。 */
+html[data-platform='android'] .context-menu-item {
+  min-height: 44px;
+}
+
+
+/* 纯触屏设备没有 hover：所有「悬浮才显示」的操作按钮（蒙版/图像修补的删除与可见性、
+   水印图片清除、全景/联机拍摄预览控制条等）必须常显，否则触屏用户完全无法触达。 */
+@media (hover: none) {
+  .touch-visible-on-nohover {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .image-picker-clear {
+    width: 1.5rem !important;
+    margin-left: 0 !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  /* 导出中的按钮原本靠 hover 从「进度」切换为「取消导出」，
+     触屏没有 hover 时用户看不到取消入口，这里强制显示取消文案。 */
+  .export-progress-label {
+    display: none !important;
+  }
+
+  .export-cancel-label {
+    display: flex !important;
+  }
+}
+
 /* 全局动效降级：当系统开启"减少动态效果"时，收敛所有 CSS 动画/过渡与平滑滚动。
    framer-motion 方向的降级由 App.tsx 顶部 <MotionConfig reducedMotion="user"> 负责。 */
 @media (prefers-reduced-motion: reduce) {

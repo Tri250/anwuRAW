@@ -194,6 +194,7 @@
       "pasteParametric": "パラメトリックカーブを貼り付け",
       "pastePoint": "ポイントカーブを貼り付け",
       "pointCurve": "ポイントカーブ",
+      "moreOptions": "その他のオプション",
       "resetAllParametric": "すべてのパラメトリックカーブをリセット",
       "resetAllPoint": "すべてのポイントカーブをリセット",
       "resetParametric": "{{channel}} パラメトリックカーブをリセット",
@@ -945,6 +946,8 @@
       "tooltips": {
         "aperture": "絞り値",
         "backToLibrary": "ライブラリに戻る",
+        "history": "履歴",
+        "more": "その他のオプション",
         "focalLength": "焦点距離",
         "fullscreen": "全画面表示切り替え (F)",
         "iso": "ISO感度",
@@ -1233,7 +1236,9 @@
         "thumbnailFit": "サムネイルのフィット",
         "thumbnailSize": "サムネイルサイズ",
         "title": "表示オプション"
-      }
+      },
+      "selectMultiple": "複数選択",
+      "selectMultipleDone": "完了"
     },
     "import": {
       "complete": "インポート完了！",
@@ -2138,8 +2143,10 @@
     "depthMapFailed": "深度マップの生成に失敗しました：{{error}}",
     "folderLoadFailed": "フォルダの読み込みに失敗しました：{{error}}",
     "folderTreeLoadFailed": "フォルダツリーの読み込みに失敗しました：{{error}}",
+    "folderSelectionFailed": "フォルダ選択ダイアログを開けませんでした。",
     "imageLoadFailed": "画像の読み込みに失敗しました：{{error}}",
     "imagesLoadFailed": "選択したフォルダから画像を読み込めませんでした。",
+    "openLibraryFailed": "ライブラリを開けませんでした。",
     "lutLoadFailed": "LUT の読み込みに失敗しました：{{error}}",
     "metadataUpdateFailed": "メタデータの更新に失敗しました：{{error}}",
     "moveFilesFailed": "ファイルの移動に失敗しました：{{error}}",

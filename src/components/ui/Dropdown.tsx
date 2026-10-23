@@ -45,14 +45,17 @@ const Dropdown = <T extends React.Key>({
   const selectedOption = options.find((opt) => opt.value === value) || null;
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
+    // 触屏 WebView 可能不合成 mousedown，补 touchstart 保证「点空白处收起下拉」
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, []);
 

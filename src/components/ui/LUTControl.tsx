@@ -10,6 +10,7 @@ import Slider from './Slider';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { getLutDisplayName } from '../../utils/lutDisplayNames';
+import { useLongPressMenu } from '../../hooks/useLongPressMenu';
 
 interface LutEntry {
   name: string;
@@ -35,6 +36,68 @@ interface LUTControlProps {
 
 const PREVIEW_SIZE = 112;
 const SUPPORTED_EXTENSIONS = ['cube', '3dl', 'png', 'jpg', 'jpeg', 'tiff'];
+
+interface LutSwatchProps {
+  entry: LutEntry;
+  thumb: string | null | undefined;
+  isSelected: boolean;
+  isLoadingPreviews: boolean;
+  onSelect(entry: LutEntry): void;
+  onHover(path: string | null, isBuiltIn?: boolean): void;
+  onContextMenu(event: React.MouseEvent, entry: LutEntry): void;
+}
+
+/**
+ * 单个 LUT 色板。抽成独立组件才能按色板调用长按 hook。
+ * Android 没有鼠标右键，长按 500ms 打开自定义 LUT 的删除/重命名菜单。
+ */
+function LutSwatch({ entry, thumb, isSelected, isLoadingPreviews, onSelect, onHover, onContextMenu }: LutSwatchProps) {
+  const longPress = useLongPressMenu(entry.path, entry.isBuiltIn ? undefined : (e: any) => onContextMenu(e, entry));
+
+  return (
+    <button
+      onMouseEnter={() => onHover(entry.path, entry.isBuiltIn)}
+      onMouseLeave={() => onHover(null)}
+      onPointerDown={longPress.onPointerDown}
+      onPointerMove={longPress.onPointerMove}
+      onPointerUp={longPress.onPointerUp}
+      onPointerCancel={longPress.onPointerCancel}
+      onClick={() => {
+        // 长按已弹出菜单：吞掉这次 click，避免同时选中 LUT
+        if (longPress.triggeredRef.current) {
+          longPress.triggeredRef.current = false;
+          return;
+        }
+        onSelect(entry);
+      }}
+      onContextMenu={(e) => {
+        longPress.cancel();
+        if (longPress.triggeredRef.current) {
+          e.preventDefault();
+          return;
+        }
+        if (!entry.isBuiltIn) onContextMenu(e, entry);
+      }}
+      className={`relative aspect-square rounded-md overflow-hidden bg-bg-tertiary border-2 transition-colors ${
+        isSelected ? 'border-accent' : 'border-transparent hover:border-surface'
+      }`}
+      data-tooltip={getLutDisplayName(entry.name)}
+    >
+      {isLoadingPreviews && thumb === undefined ? (
+        <div className="w-full h-full animate-pulse bg-surface" />
+      ) : thumb ? (
+        <img src={thumb} alt={getLutDisplayName(entry.name)} className="w-full h-full object-cover" draggable={false} />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-text-secondary">
+          <ImageOff size={18} />
+        </div>
+      )}
+      <span className="absolute inset-x-0 bottom-0 px-1 py-0.5 text-[10px] text-white bg-black/60 truncate text-left backdrop-blur-xs">
+        {getLutDisplayName(entry.name)}
+      </span>
+    </button>
+  );
+}
 
 export default function LUTControl({
   lutPath,
@@ -212,36 +275,18 @@ export default function LUTControl({
   const builtInLuts = safeEntries.filter((e) => e.isBuiltIn);
   const customLuts = safeEntries.filter((e) => !e.isBuiltIn);
 
-  const renderSwatch = (entry: LutEntry) => {
-    const thumb = previews[entry.path];
-    const isSelected = entry.path === lutPath;
-    return (
-      <button
-        key={entry.path}
-        onMouseEnter={() => onLutHover?.(entry.path, entry.isBuiltIn)}
-        onMouseLeave={() => onLutHover?.(null)}
-        onClick={() => handleSwatchClick(entry)}
-        onContextMenu={entry.isBuiltIn ? undefined : (e) => handleContextMenu(e, entry)}
-        className={`relative aspect-square rounded-md overflow-hidden bg-bg-tertiary border-2 transition-colors ${
-          isSelected ? 'border-accent' : 'border-transparent hover:border-surface'
-        }`}
-        data-tooltip={getLutDisplayName(entry.name)}
-      >
-        {isLoadingPreviews && thumb === undefined ? (
-          <div className="w-full h-full animate-pulse bg-surface" />
-        ) : thumb ? (
-          <img src={thumb} alt={getLutDisplayName(entry.name)} className="w-full h-full object-cover" draggable={false} />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-text-secondary">
-            <ImageOff size={18} />
-          </div>
-        )}
-        <span className="absolute inset-x-0 bottom-0 px-1 py-0.5 text-[10px] text-white bg-black/60 truncate text-left backdrop-blur-xs">
-          {getLutDisplayName(entry.name)}
-        </span>
-      </button>
-    );
-  };
+  const renderSwatch = (entry: LutEntry) => (
+    <LutSwatch
+      key={entry.path}
+      entry={entry}
+      thumb={previews[entry.path]}
+      isSelected={entry.path === lutPath}
+      isLoadingPreviews={isLoadingPreviews}
+      onSelect={handleSwatchClick}
+      onHover={(path, isBuiltIn) => onLutHover?.(path, isBuiltIn)}
+      onContextMenu={handleContextMenu}
+    />
+  );
 
   return (
     <div className="mb-2">

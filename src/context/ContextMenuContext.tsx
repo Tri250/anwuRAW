@@ -197,6 +197,7 @@ function MenuItem({ option, path, hideContextMenu }: MenuItemProps) {
     <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="relative">
       <button
         className={`
+          context-menu-item
           w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 justify-between
           transition-colors duration-150
           ${option.isDestructive ? 'text-red-400 hover:bg-red-500/20' : 'text-text-primary hover:bg-bg-primary'}
@@ -208,7 +209,9 @@ function MenuItem({ option, path, hideContextMenu }: MenuItemProps) {
             option.onClick();
             hideContextMenu();
           }
-          if (!option.disabled && option.submenu && hasInteractiveSubmenu) {
+          // 触屏没有 hover：点击带子菜单的父项也必须展开子菜单，
+          // 否则 Android 上「删除 → 删除关联文件」等多级操作完全无法到达
+          if (!option.disabled && option.submenu) {
             openSubmenu(path);
           }
         }}
@@ -266,7 +269,7 @@ function ContextMenu() {
           style={{ top: y, left: x }}
           transition={{ duration: 0.1, ease: 'easeOut' }}
         >
-          <div className="bg-surface/95 backdrop-blur-md rounded-lg shadow-xl p-2 w-64" role="menu">
+          <div className="bg-surface/95 backdrop-blur-md rounded-lg shadow-xl p-2 w-64 max-h-[calc(100dvh-1rem)] overflow-y-auto custom-scrollbar" role="menu">
             {options.map((option: any, index: number) => (
               <MenuItem hideContextMenu={hideContextMenu} key={index} option={option} path={[index]} />
             ))}
@@ -288,8 +291,12 @@ export function ContextMenuProvider({ children }: ContextMenuProviderProps) {
     const menuWidth = 256;
     const menuHeight =
       options.reduce((acc: number, opt: Option) => acc + (opt.type === OPTION_SEPARATOR ? 9 : 40), 0) + 16;
-    const adjustedX = x + menuWidth > window.innerWidth ? window.innerWidth - menuWidth - 10 : x;
-    const adjustedY = y + menuHeight > window.innerHeight ? window.innerHeight - menuHeight - 10 : y;
+    // 触屏上菜单可能从屏幕边缘弹出：同时约束左上角不小于 8px，
+    // 否则长按屏幕右上角时菜单会被推出可视区（负坐标）而无法点击
+    const adjustedX =
+      x + menuWidth > window.innerWidth ? Math.max(8, window.innerWidth - menuWidth - 10) : Math.max(8, x);
+    const adjustedY =
+      y + menuHeight > window.innerHeight ? Math.max(8, window.innerHeight - menuHeight - 10) : Math.max(8, y);
 
     setMenuState({ isVisible: true, x: adjustedX, y: adjustedY, options });
     setMenuId((id) => id + 1);
@@ -345,12 +352,15 @@ export function ContextMenuProvider({ children }: ContextMenuProviderProps) {
 
     if (menuState.isVisible) {
       document.addEventListener('mousedown', handleClickOutside);
+      // 触屏设备上部分 WebView 不会合成 mousedown，补 touchstart 才能“点空白关闭菜单”
+      document.addEventListener('touchstart', handleClickOutside, { passive: true });
       window.addEventListener('scroll', hideContextMenu, true);
       document.addEventListener('keydown', handleKeyDown);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
       window.removeEventListener('scroll', hideContextMenu, true);
       document.removeEventListener('keydown', handleKeyDown);
     };

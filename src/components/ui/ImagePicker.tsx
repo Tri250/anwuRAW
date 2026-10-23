@@ -51,7 +51,7 @@ export default function ImagePicker({ imageName, onImageSelect, onClear, label }
           {imageName && (
             <button
               onClick={onClear}
-              className="flex items-center justify-center p-0.5 rounded-full bg-bg-tertiary hover:bg-surface
+              className="image-picker-clear flex items-center justify-center p-0.5 rounded-full bg-bg-tertiary hover:bg-surface
                          w-0 ml-0 opacity-0 group-hover:w-6 group-hover:ml-0 group-hover:opacity-100
                          overflow-hidden pointer-events-none group-hover:pointer-events-auto
                          transition-all duration-200 ease-in-out"

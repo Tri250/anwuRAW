@@ -139,7 +139,7 @@ export default function FocusStackModal({
 
             {depthMapBase64 && (
               <div
-                className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/70 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-xl z-20 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/70 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-xl z-20 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 touch-visible-on-nohover"
                 onMouseDown={(e) => e.stopPropagation()}
               >
                 <button

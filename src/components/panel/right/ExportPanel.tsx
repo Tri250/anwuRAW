@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
-import { FileInput, CheckCircle, XCircle, Loader, Ban, ChevronDown, ChevronRight, Settings } from 'lucide-react';
+import { FileInput, CheckCircle, XCircle, Loader, Ban, ChevronDown, ChevronRight, Settings, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import debounce from 'lodash.debounce';
@@ -587,6 +587,17 @@ export default function ExportPanel({
     <div className={onClose ? 'h-full bg-bg-secondary rounded-lg flex flex-col' : 'flex flex-col h-full'}>
       <div className="p-3 flex justify-between items-center shrink-0 border-b border-surface">
         <Text variant={TextVariants.title}>{t('export.title')}</Text>
+        {/* 图库导出浮层（Android 紧凑布局）没有右侧面板可收起，提供显式关闭入口 */}
+        {onClose && (
+          <button
+            type="button"
+            className="w-9 h-9 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
+            onClick={onClose}
+            aria-label={t('editor.toolbar.tooltips.backToLibrary')}
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
       <div className="grow overflow-y-auto p-3 space-y-8">
         {canExport ? (
@@ -994,13 +1005,13 @@ export default function ExportPanel({
         >
           {status === Status.Exporting ? (
             <>
-              <span className="flex items-center group-hover:hidden">
+              <span className="flex items-center group-hover:hidden export-progress-label">
                 <Loader size={18} className="animate-spin mr-2" />
                 {progress.total > 1
                   ? t('export.status.exportingProgress', { current: progress.current, total: progress.total })
                   : t('export.status.exporting')}
               </span>
-              <span className="hidden items-center group-hover:flex">
+              <span className="hidden items-center group-hover:flex export-cancel-label">
                 <Ban size={18} className="mr-2" />
                 {t('export.status.cancelExport')}
               </span>

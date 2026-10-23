@@ -194,6 +194,7 @@
       "pasteParametric": "Enganxar corba paramètrica",
       "pastePoint": "Enganxar corba de punts",
       "pointCurve": "Corba de punts",
+      "moreOptions": "Més opcions",
       "resetAllParametric": "Restablir totes les corbes paramètriques",
       "resetAllPoint": "Restablir totes les corbes de punts",
       "resetParametric": "Restablir corba paramètrica de {{channel}}",
@@ -945,6 +946,8 @@
       "tooltips": {
         "aperture": "Obertura",
         "backToLibrary": "Tornar a la Biblioteca",
+        "history": "Historial",
+        "more": "Més opcions",
         "focalLength": "Distància focal",
         "fullscreen": "Alternar pantalla completa (F)",
         "iso": "ISO",
@@ -1233,7 +1236,9 @@
         "thumbnailFit": "Ajust de la miniatura",
         "thumbnailSize": "Mida de la miniatura",
         "title": "Opcions de visualització"
-      }
+      },
+      "selectMultiple": "Selecció múltiple",
+      "selectMultipleDone": "Fet"
     },
     "import": {
       "complete": "Importació completada!",
@@ -2138,8 +2143,10 @@
     "depthMapFailed": "Error en generar el mapa de profunditat: {{error}}",
     "folderLoadFailed": "Error en carregar la carpeta: {{error}}",
     "folderTreeLoadFailed": "Error en carregar l’arbre de carpetes: {{error}}",
+    "folderSelectionFailed": "No s'ha pogut obrir el diàleg de selecció de carpeta.",
     "imageLoadFailed": "Error en carregar la imatge: {{error}}",
     "imagesLoadFailed": "No s’han pogut carregar les imatges de la carpeta seleccionada.",
+    "openLibraryFailed": "No s'ha pogut obrir la biblioteca.",
     "lutLoadFailed": "Error en carregar el LUT: {{error}}",
     "metadataUpdateFailed": "Error en actualitzar les metadades: {{error}}",
     "moveFilesFailed": "Error en moure fitxers: {{error}}",

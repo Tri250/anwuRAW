@@ -194,6 +194,7 @@
       "pasteParametric": "Вставить параметрическую кривую",
       "pastePoint": "Вставить точечную кривую",
       "pointCurve": "Точечная кривая",
+      "moreOptions": "Дополнительные параметры",
       "resetAllParametric": "Сбросить все параметрические кривые",
       "resetAllPoint": "Сбросить все точечные кривые",
       "resetParametric": "Сбросить параметрическую кривую {{channel}}",
@@ -987,6 +988,8 @@
       "tooltips": {
         "aperture": "Диафрагма",
         "backToLibrary": "Назад в библиотеку",
+        "history": "История",
+        "more": "Дополнительные параметры",
         "focalLength": "Фокусное расстояние",
         "fullscreen": "Полноэкранный режим (F)",
         "iso": "ISO",
@@ -1283,7 +1286,9 @@
         "thumbnailFit": "Масштаб превью",
         "thumbnailSize": "Размер превью",
         "title": "Вид"
-      }
+      },
+      "selectMultiple": "Множественный выбор",
+      "selectMultipleDone": "Готово"
     },
     "import": {
       "complete": "Импорт завершен!",
@@ -2210,8 +2215,10 @@
     "depthMapFailed": "Не удалось создать карту глубины: {{error}}",
     "folderLoadFailed": "Не удалось загрузить папку: {{error}}",
     "folderTreeLoadFailed": "Не удалось загрузить дерево папок: {{error}}",
+    "folderSelectionFailed": "Не удалось открыть диалог выбора папки.",
     "imageLoadFailed": "Не удалось загрузить изображение: {{error}}",
     "imagesLoadFailed": "Не удалось загрузить изображения из выбранной папки.",
+    "openLibraryFailed": "Не удалось открыть библиотеку.",
     "lutLoadFailed": "Не удалось загрузить LUT: {{error}}",
     "metadataUpdateFailed": "Не удалось обновить метаданные: {{error}}",
     "moveFilesFailed": "Не удалось переместить файлы: {{error}}",

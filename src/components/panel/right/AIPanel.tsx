@@ -1631,7 +1631,7 @@ function ContainerRow({
             </Text>
           )}
         </div>
-        <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex opacity-0 group-hover:opacity-100 transition-opacity touch-visible-on-nohover">
           <button
             className="p-1 hover:text-text-primary text-text-secondary"
             data-tooltip={container.visible ? t('editor.ai.actions.hideEdit') : t('editor.ai.actions.showEdit')}
@@ -1906,7 +1906,7 @@ function SubMaskRow({
           {getSubMaskName(subMask)}
         </Text>
       )}
-      <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex opacity-0 group-hover:opacity-100 transition-opacity touch-visible-on-nohover">
         {index > 1 && (
           <button
             className="p-1 hover:text-text-primary text-text-secondary"

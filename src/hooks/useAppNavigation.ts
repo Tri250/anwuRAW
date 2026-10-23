@@ -90,6 +90,8 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
       const { setUI } = useUIStore.getState();
 
       if (openInEditor) {
+        // 进入编辑器即退出触屏多选模式，避免返回图库后仍停留在多选状态
+        setLibrary({ isMultiSelectMode: false });
         setUI({ activeView: 'editor' });
       }
 
@@ -504,7 +506,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
       }
     } catch (err) {
       console.error(isAndroid ? 'Failed to open Android library root:' : 'Failed to open directory dialog:', err);
-      toast.error(isAndroid ? 'Failed to open library.' : 'Failed to open folder selection dialog.');
+      toast.error(i18n.t(isAndroid ? 'toasts.openLibraryFailed' : 'toasts.folderSelectionFailed'));
     }
   };
 

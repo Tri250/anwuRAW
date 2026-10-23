@@ -16,6 +16,7 @@ import {
   Columns,
   SlidersHorizontal,
   Rows3,
+  CheckSquare,
 } from 'lucide-react';
 import CullingView from './library/CullingView';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -107,9 +108,10 @@ interface DisplayModeSwitchProps {
   displayMode: LibraryDisplayMode;
   setDisplayMode: (mode: LibraryDisplayMode) => void;
   t: any;
+  isAndroid?: boolean;
 }
 
-function DisplayModeSwitch({ displayMode, setDisplayMode, t }: DisplayModeSwitchProps) {
+function DisplayModeSwitch({ displayMode, setDisplayMode, t, isAndroid = false }: DisplayModeSwitchProps) {
   const options = useMemo(
     () => [
       {
@@ -122,20 +124,30 @@ function DisplayModeSwitch({ displayMode, setDisplayMode, t }: DisplayModeSwitch
         Icon: Rows3,
         tooltip: t('library.viewMode.list', { defaultValue: 'List View' }),
       },
-      {
-        id: LibraryDisplayMode.Cull,
-        Icon: Columns,
-        tooltip: t('library.viewMode.culling', { defaultValue: 'Culling View' }),
-      },
+      // 安卓触屏不提供 Culling 视图：该视图的评分/信息栏依赖 hover，缩放依赖滚轮，
+      // 手机上无法完整操作，因此只保留网格/列表两种可用模式
+      ...(isAndroid
+        ? []
+        : [
+            {
+              id: LibraryDisplayMode.Cull,
+              Icon: Columns,
+              tooltip: t('library.viewMode.culling', { defaultValue: 'Culling View' }),
+            },
+          ]),
     ],
-    [t],
+    [t, isAndroid],
   );
 
   const selectedIndex = options.findIndex((opt) => opt.id === displayMode);
   const safeIndex = selectedIndex >= 0 ? selectedIndex : 0;
 
   return (
-    <div className="flex items-center bg-surface p-1 rounded-lg border border-border-color/20 h-14 w-40 select-none">
+    <div
+      className={`flex items-center bg-surface p-1 rounded-lg border border-border-color/20 select-none ${
+        isAndroid ? 'h-12 w-24' : 'h-14 w-40'
+      }`}
+    >
       <div className="relative flex w-full h-full">
         <motion.div
           className="absolute top-0 bottom-0 z-0 bg-bg-primary rounded-md shadow-sm"
@@ -177,9 +189,14 @@ export default function MainLibrary(props: MainLibraryProps) {
   const [isBusyDelayed, setIsBusyDelayed] = useState(false);
   const [isBusyLoaderMounted, setIsBusyLoaderMounted] = useState(false);
   const [isProgressHovered, setIsProgressHovered] = useState(false);
+  // Android 上搜索框展开时独占整行，暂时隐藏视图模式/视图选项/主页按钮，避免窄屏横向溢出
+  const [isLibrarySearchActive, setIsLibrarySearchActive] = useState(false);
   const isSettingsOpen = useUIStore((state) => state.isSettingsOpen);
 
   const libraryDisplayMode = props.appSettings?.libraryDisplayMode || LibraryDisplayMode.Grid;
+  // 旧设置可能在桌面端选了 Culling；安卓不支持该视图，回退到网格，避免进入无法操作的界面
+  const effectiveLibraryDisplayMode =
+    props.isAndroid && libraryDisplayMode === LibraryDisplayMode.Cull ? LibraryDisplayMode.Grid : libraryDisplayMode;
 
   const setLibraryDisplayMode = (mode: LibraryDisplayMode) => {
     if (props.appSettings) {
@@ -191,6 +208,17 @@ export default function MainLibrary(props: MainLibraryProps) {
   };
 
   const searchCriteria = useLibraryStore((state) => state.searchCriteria);
+  const isMultiSelectMode = useLibraryStore((state) => state.isMultiSelectMode);
+
+  // 触屏多选模式开关：进入/退出时清空当前选择，避免残留上一次的批量选择状态
+  const toggleMultiSelectMode = () => {
+    useLibraryStore.getState().setLibrary({
+      isMultiSelectMode: !isMultiSelectMode,
+      multiSelectedPaths: [],
+      libraryActivePath: null,
+      selectionAnchorPath: null,
+    });
+  };
 
   const translatedRatingFilterOptions = useMemo(
     () => [
@@ -436,14 +464,62 @@ export default function MainLibrary(props: MainLibraryProps) {
     );
   }
 
+  const importStatusNode = (
+    <>
+      {props.importState.status === Status.Importing && (
+        <Text as="div" color={TextColors.accent} className="flex items-center gap-2 animate-pulse">
+          <FolderInput size={16} />
+          <span>
+            {t('library.import.progress', {
+              current: props.importState.progress?.current,
+              total: props.importState.progress?.total,
+            })}
+          </span>
+        </Text>
+      )}
+      {props.importState.status === Status.Success && (
+        <Text as="div" color={TextColors.success} className="flex items-center gap-2">
+          <Check size={16} />
+          <span>{t('library.import.complete')}</span>
+        </Text>
+      )}
+      {props.importState.status === Status.Error && (
+        <Text as="div" color={TextColors.error} className="flex items-center gap-2">
+          <AlertTriangle size={16} />
+          <span>{t('library.import.failed')}</span>
+        </Text>
+      )}
+    </>
+  );
+
+  const viewOptionsDropdownNode = (
+    <ViewOptionsDropdown
+      libraryViewMode={props.libraryViewMode}
+      onSelectSize={props.onThumbnailSizeChange}
+      onSelectAspectRatio={props.onThumbnailAspectRatioChange}
+      onLibraryRefresh={props.onLibraryRefresh}
+      setLibraryViewMode={props.setLibraryViewMode}
+      thumbnailSize={props.thumbnailSize}
+      thumbnailAspectRatio={props.thumbnailAspectRatio}
+      thumbnailSizeOptions={translatedThumbnailSizeOptions}
+      thumbnailAspectRatioOptions={translatedThumbnailAspectRatioOptions}
+      ratingFilterOptions={translatedRatingFilterOptions}
+      rawStatusOptions={translatedRawStatusOptions}
+      editedStatusOptions={translatedEditedStatusOptions}
+      sortOptions={translatedSortOptions}
+    />
+  );
+
   return (
     <div className="relative z-20 flex-1 flex flex-col h-full min-w-0 bg-bg-secondary rounded-lg overflow-visible">
       <header
-        className="p-3 shrink-0 flex justify-between items-center border-b border-surface gap-4"
+        className={`p-3 shrink-0 border-b border-surface ${
+          props.isAndroid ? 'flex flex-col gap-2' : 'flex justify-between items-center gap-4'
+        }`}
         onMouseEnter={() => setIsProgressHovered(true)}
         onMouseLeave={() => setIsProgressHovered(false)}
       >
-        <div className="min-w-0">
+        <div className={props.isAndroid ? 'min-w-0 flex items-center justify-between gap-2' : 'min-w-0'}>
           <Text variant={TextVariants.headline}>{t('library.header.title')}</Text>
           {!props.isAndroid && (
             <div className="flex items-center gap-2">
@@ -477,51 +553,69 @@ export default function MainLibrary(props: MainLibraryProps) {
               </div>
             </div>
           )}
+          {props.isAndroid && <div className="shrink-0">{importStatusNode}</div>}
         </div>
-        <div className="flex items-center gap-4 shrink-0">
-          {props.importState.status === Status.Importing && (
-            <Text as="div" color={TextColors.accent} className="flex items-center gap-2 animate-pulse">
-              <FolderInput size={16} />
-              <span>
-                {t('library.import.progress', {
-                  current: props.importState.progress?.current,
-                  total: props.importState.progress?.total,
-                })}
-              </span>
-            </Text>
-          )}
-          {props.importState.status === Status.Success && (
-            <Text as="div" color={TextColors.success} className="flex items-center gap-2">
-              <Check size={16} />
-              <span>{t('library.import.complete')}</span>
-            </Text>
-          )}
-          {props.importState.status === Status.Error && (
-            <Text as="div" color={TextColors.error} className="flex items-center gap-2">
-              <AlertTriangle size={16} />
-              <span>{t('library.import.failed')}</span>
-            </Text>
-          )}
-          <DisplayModeSwitch displayMode={libraryDisplayMode} setDisplayMode={setLibraryDisplayMode} t={t} />
+        {props.isAndroid ? (
+          // 安卓窄屏：标题单独一行，操作区独占另一行；搜索展开时隐藏其余控件，
+          // 避免「模式切换 + 搜索 + 视图选项 + 主页」在 360dp 上横向溢出
+          <div className="flex items-center gap-2 w-full min-w-0">
+            <div className="flex items-center bg-surface p-1 rounded-lg gap-1 border border-border-color/20 min-w-0">
+              <SearchInput
+                isAndroid
+                indexingProgress={props.indexingProgress}
+                isIndexing={props.isIndexing}
+                onActiveChange={setIsLibrarySearchActive}
+              />
+              {!isLibrarySearchActive && (
+                <>
+                  {viewOptionsDropdownNode}
+                  <Button
+                    className="h-12 w-12 bg-transparent text-text-primary shadow-none p-0 flex items-center justify-center"
+                    onClick={props.onGoHome}
+                    data-tooltip={t('library.tooltips.goHome')}
+                  >
+                    <Home className="w-5 h-5" />
+                  </Button>
+                </>
+              )}
+            </div>
+            {!isLibrarySearchActive && (
+              <>
+                <DisplayModeSwitch
+                  isAndroid
+                  displayMode={effectiveLibraryDisplayMode}
+                  setDisplayMode={setLibraryDisplayMode}
+                  t={t}
+                />
+                {/* 安卓触屏没有 Ctrl/Shift 多选：提供显式的多选模式开关 */}
+                <Button
+                  className={`h-12 w-12 shrink-0 shadow-none p-0 flex items-center justify-center border ${
+                    isMultiSelectMode
+                      ? 'bg-accent text-button-text border-accent'
+                      : 'bg-transparent text-text-primary border-border-color/20'
+                  }`}
+                  onClick={toggleMultiSelectMode}
+                  aria-pressed={isMultiSelectMode}
+                  aria-label={t(
+                    isMultiSelectMode ? 'library.header.selectMultipleDone' : 'library.header.selectMultiple',
+                  )}
+                  data-tooltip={t(
+                    isMultiSelectMode ? 'library.header.selectMultipleDone' : 'library.header.selectMultiple',
+                  )}
+                >
+                  <CheckSquare className="w-5 h-5" />
+                </Button>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-4 shrink-0">
+            {importStatusNode}
+            <DisplayModeSwitch displayMode={effectiveLibraryDisplayMode} setDisplayMode={setLibraryDisplayMode} t={t} />
 
-          <div className="flex items-center bg-surface p-1 rounded-lg gap-1 border border-border-color/20">
-            <SearchInput indexingProgress={props.indexingProgress} isIndexing={props.isIndexing} />
-            <ViewOptionsDropdown
-              libraryViewMode={props.libraryViewMode}
-              onSelectSize={props.onThumbnailSizeChange}
-              onSelectAspectRatio={props.onThumbnailAspectRatioChange}
-              onLibraryRefresh={props.onLibraryRefresh}
-              setLibraryViewMode={props.setLibraryViewMode}
-              thumbnailSize={props.thumbnailSize}
-              thumbnailAspectRatio={props.thumbnailAspectRatio}
-              thumbnailSizeOptions={translatedThumbnailSizeOptions}
-              thumbnailAspectRatioOptions={translatedThumbnailAspectRatioOptions}
-              ratingFilterOptions={translatedRatingFilterOptions}
-              rawStatusOptions={translatedRawStatusOptions}
-              editedStatusOptions={translatedEditedStatusOptions}
-              sortOptions={translatedSortOptions}
-            />
-            {!props.isAndroid && (
+            <div className="flex items-center bg-surface p-1 rounded-lg gap-1 border border-border-color/20">
+              <SearchInput indexingProgress={props.indexingProgress} isIndexing={props.isIndexing} />
+              {viewOptionsDropdownNode}
               <Button
                 className="h-12 w-12 bg-transparent text-text-primary shadow-none p-0 flex items-center justify-center"
                 onClick={props.onNavigateToCommunity}
@@ -529,26 +623,30 @@ export default function MainLibrary(props: MainLibraryProps) {
               >
                 <Users className="w-5 h-5" />
               </Button>
-            )}
-            <Button
-              className="h-12 w-12 bg-transparent text-text-primary shadow-none p-0 flex items-center justify-center"
-              onClick={props.onGoHome}
-              data-tooltip={t('library.tooltips.goHome')}
-            >
-              <Home className="w-5 h-5" />
-            </Button>
+              <Button
+                className="h-12 w-12 bg-transparent text-text-primary shadow-none p-0 flex items-center justify-center"
+                onClick={props.onGoHome}
+                data-tooltip={t('library.tooltips.goHome')}
+              >
+                <Home className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       {props.imageList.length > 0 ? (
-        libraryDisplayMode === LibraryDisplayMode.Cull ? (
+        effectiveLibraryDisplayMode === LibraryDisplayMode.Cull ? (
           <CullingView {...props} />
         ) : (
+          /* 多选模式下双击不应打开编辑器（否则会退出多选，误触概率高） */
           <LibraryGrid
             {...props}
-            libraryDisplayMode={libraryDisplayMode}
+            libraryDisplayMode={effectiveLibraryDisplayMode}
             thumbnailSizeOptions={translatedThumbnailSizeOptions}
+            onImageDoubleClick={(path: string) => {
+              if (!isMultiSelectMode) props.onImageDoubleClick(path);
+            }}
           />
         )
       ) : props.isIndexing || props.aiModelDownloadStatus || props.importState.status === Status.Importing ? (
@@ -594,8 +692,10 @@ export default function MainLibrary(props: MainLibraryProps) {
         </div>
       )}
       {props.isAndroid && (
+        // 悬浮导入按钮需避开「底部系统导航栏 inset + 底部工具栏(h-12)」，否则在三键导航机型上会压住底栏
         <Button
-          className="absolute bottom-18 right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50"
+          className="absolute right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50"
+          style={{ bottom: 'calc(var(--android-inset-bottom, 0px) + 3.5rem)' }}
           onClick={(e) => {
             e.stopPropagation();
             props.onImportClick();

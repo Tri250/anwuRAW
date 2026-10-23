@@ -194,6 +194,7 @@
       "pasteParametric": "Coller la courbe paramétrique",
       "pastePoint": "Coller la courbe à points",
       "pointCurve": "Courbe à points",
+      "moreOptions": "Plus d'options",
       "resetAllParametric": "Réinitialiser toutes les courbes paramétriques",
       "resetAllPoint": "Réinitialiser toutes les courbes à points",
       "resetParametric": "Réinitialiser la courbe paramétrique {{channel}}",
@@ -966,6 +967,8 @@
       "tooltips": {
         "aperture": "Ouverture",
         "backToLibrary": "Retour à la bibliothèque",
+        "history": "Historique",
+        "more": "Plus d'options",
         "focalLength": "Longueur focale",
         "fullscreen": "Basculer en plein écran (F)",
         "iso": "ISO",
@@ -1256,7 +1259,9 @@
         "thumbnailFit": "Ajustement de la miniature",
         "thumbnailSize": "Taille de la miniature",
         "title": "Options d'affichage"
-      }
+      },
+      "selectMultiple": "Sélection multiple",
+      "selectMultipleDone": "Terminé"
     },
     "import": {
       "complete": "Importation terminée !",
@@ -2171,8 +2176,10 @@
     "depthMapFailed": "Échec de la génération de la carte de profondeur : {{error}}",
     "folderLoadFailed": "Échec du chargement du dossier : {{error}}",
     "folderTreeLoadFailed": "Échec du chargement de l’arborescence des dossiers : {{error}}",
+    "folderSelectionFailed": "Impossible d'ouvrir la boîte de dialogue de sélection de dossier.",
     "imageLoadFailed": "Échec du chargement de l’image : {{error}}",
     "imagesLoadFailed": "Impossible de charger les images du dossier sélectionné.",
+    "openLibraryFailed": "Impossible d'ouvrir la bibliothèque.",
     "lutLoadFailed": "Échec du chargement du LUT : {{error}}",
     "metadataUpdateFailed": "Échec de la mise à jour des métadonnées : {{error}}",
     "moveFilesFailed": "Échec du déplacement des fichiers : {{error}}",

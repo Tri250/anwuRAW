@@ -49,6 +49,7 @@ import { useEditorStore } from '../../../store/useEditorStore';
 import { useUIStore } from '../../../store/useUIStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
 import { useOsPlatform } from '../../../hooks/useOsPlatform';
+import { useLongPressMenu } from '../../../hooks/useLongPressMenu';
 
 interface DroppableFolderItemProps {
   children: any;
@@ -440,16 +441,48 @@ function DraggablePresetItem({
     touchAction: 'none',
   };
 
+  // Android 无右键：长按预设打开上下文菜单（重命名/删除/导出）
+  const longPress = useLongPressMenu(preset.id, (e: any) => onContextMenu(e, { preset }));
+
   return (
     <div
-      onClick={() => onApply(preset)}
-      onContextMenu={(e: any) => onContextMenu(e, { preset })}
+      {...listeners}
+      {...attributes}
+      onPointerDown={(e: any) => {
+        (listeners as any)?.onPointerDown?.(e);
+        longPress.onPointerDown(e);
+      }}
+      onPointerMove={(e: any) => {
+        (listeners as any)?.onPointerMove?.(e);
+        longPress.onPointerMove(e);
+      }}
+      onPointerUp={(e: any) => {
+        (listeners as any)?.onPointerUp?.(e);
+        longPress.onPointerUp();
+      }}
+      onPointerCancel={(e: any) => {
+        (listeners as any)?.onPointerCancel?.(e);
+        longPress.onPointerCancel();
+      }}
+      onClick={() => {
+        if (longPress.triggeredRef.current) {
+          longPress.triggeredRef.current = false;
+          return;
+        }
+        onApply(preset);
+      }}
+      onContextMenu={(e: any) => {
+        longPress.cancel();
+        if (longPress.triggeredRef.current) {
+          e.preventDefault();
+          return;
+        }
+        onContextMenu(e, { preset });
+      }}
       ref={setCombinedRef}
       style={style}
     >
       <motion.div
-        {...listeners}
-        {...attributes}
         className="cursor-grab"
         whileTap={{ scale: isActive ? 1 : 0.98 }}
         transition={{ type: 'spring', stiffness: 400, damping: 17 }}
@@ -492,6 +525,9 @@ function DroppableFolderItem({ folder, onContextMenu, children, onToggle, isExpa
 
   const hasChildren = folder.children && folder.children.length > 0;
 
+  // Android 无右键：长按文件夹打开上下文菜单（重命名/删除等）
+  const longPress = useLongPressMenu(folder.id, (e: any) => onContextMenu(e, { folder }));
+
   return (
     <div
       className={`rounded-lg transition-colors ${isOver ? 'bg-surface-hover' : ''}`}
@@ -500,7 +536,26 @@ function DroppableFolderItem({ folder, onContextMenu, children, onToggle, isExpa
     >
       <div
         className="flex items-center gap-2 p-2 rounded-lg bg-surface cursor-pointer"
-        onContextMenu={(e: any) => onContextMenu(e, { folder })}
+        onPointerDown={longPress.onPointerDown}
+        onPointerMove={longPress.onPointerMove}
+        onPointerUp={longPress.onPointerUp}
+        onPointerCancel={longPress.onPointerCancel}
+        onClickCapture={(e: any) => {
+          // 长按已弹出菜单：在捕获阶段拦下内部 Text/图标的点击，避免顺带展开/收起文件夹
+          if (longPress.triggeredRef.current) {
+            longPress.triggeredRef.current = false;
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        }}
+        onContextMenu={(e: any) => {
+          longPress.cancel();
+          if (longPress.triggeredRef.current) {
+            e.preventDefault();
+            return;
+          }
+          onContextMenu(e, { folder });
+        }}
       >
         <div className="p-1 cursor-grab" ref={setDraggableNodeRef} {...listeners} {...attributes}>
           {isExpanded ? (

@@ -4,17 +4,18 @@ import { useSettingsStore } from '../store/useSettingsStore';
 import { useEditorStore } from '../store/useEditorStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { Panel } from '../components/ui/AppProperties';
+import { ANDROID_PHONE_MAX_HEIGHT, ANDROID_PHONE_MAX_WIDTH } from '../utils/touchUtils';
 
 /**
  * 与 App.tsx 中 isCompactPortrait 的 Android 判定保持一致：
- * 竖屏且视口宽 ≤ 600(ANDROID_PHONE_MAX_WIDTH)，或横屏手机(视口高 ≤ 500 / ANDROID_PHONE_MAX_HEIGHT)。
+ * 竖屏且视口宽 ≤ ANDROID_PHONE_MAX_WIDTH，或横屏手机(视口高 ≤ ANDROID_PHONE_MAX_HEIGHT)。
  * 仅在这两种紧凑布局下才存在移动端面板节点(MobilePanelSwitcher + activePanel)。
  */
 function isCompactPortraitViewport(): boolean {
   if (typeof window === 'undefined') return false;
   const vw = window.visualViewport?.width ?? window.innerWidth;
   const vh = window.visualViewport?.height ?? window.innerHeight;
-  return vw > 0 && ((vh > vw && vw <= 600) || vh <= 500);
+  return vw > 0 && ((vh > vw && vw <= ANDROID_PHONE_MAX_WIDTH) || vh <= ANDROID_PHONE_MAX_HEIGHT);
 }
 
 /**
@@ -163,6 +164,33 @@ export function useAndroidBackHandler() {
         isCompactPortraitViewport()
       ) {
         ui.setUI({ activePanel: null });
+        return true;
+      }
+
+      // 返回键应先退出图库多选模式，而不是直接回主页/退到后台
+      const libraryBeforeEscape = useLibraryStore.getState();
+      if (ui.activeView === 'library' && libraryBeforeEscape.isMultiSelectMode) {
+        libraryBeforeEscape.setLibrary({
+          isMultiSelectMode: false,
+          multiSelectedPaths: [],
+          libraryActivePath: null,
+          selectionAnchorPath: null,
+        });
+        return true;
+      }
+
+      // 社区预设页不是独立视图容器，返回键应先回到图库而不是退到后台
+      if (ui.activeView === 'community') {
+        ui.setUI({ activeView: 'library' });
+        return true;
+      }
+
+      // 长按/右键菜单是独立的临时浮层：返回键只关闭菜单，
+      // 不能在同一次按键里继续冒泡去退出视图或把应用切到后台。
+      if (document.querySelector('[role="menu"]')) {
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true }),
+        );
         return true;
       }
 

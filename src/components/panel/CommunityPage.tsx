@@ -295,7 +295,7 @@ const CommunityPage = ({ onBackToLibrary, imageList, currentFolderPath }: Commun
                         <Loader2 className="h-8 w-8 animate-spin text-text-secondary" />
                       )}
 
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 touch-visible-on-nohover">
                         <Button
                           size="sm"
                           variant="secondary"

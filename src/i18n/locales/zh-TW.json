@@ -194,6 +194,7 @@
       "pasteParametric": "貼上參數曲線",
       "pastePoint": "貼上點曲線",
       "pointCurve": "點曲線",
+      "moreOptions": "更多選項",
       "resetAllParametric": "重置所有參數曲線",
       "resetAllPoint": "重置所有點曲線",
       "resetParametric": "重置 {{channel}} 參數曲線",
@@ -945,6 +946,8 @@
       "tooltips": {
         "aperture": "光圈",
         "backToLibrary": "返回相簿",
+        "history": "歷史記錄",
+        "more": "更多選項",
         "focalLength": "焦距",
         "fullscreen": "切換全屏（F）",
         "iso": "ISO",
@@ -1233,7 +1236,9 @@
         "thumbnailFit": "縮圖適應",
         "thumbnailSize": "縮圖大小",
         "title": "檢視選項"
-      }
+      },
+      "selectMultiple": "多選",
+      "selectMultipleDone": "完成"
     },
     "import": {
       "complete": "匯入完成！",
@@ -2138,8 +2143,10 @@
     "depthMapFailed": "產生景深圖失敗：{{error}}",
     "folderLoadFailed": "載入資料夾失敗：{{error}}",
     "folderTreeLoadFailed": "載入資料夾樹失敗：{{error}}",
+    "folderSelectionFailed": "開啟資料夾選擇對話框失敗。",
     "imageLoadFailed": "載入圖像失敗：{{error}}",
     "imagesLoadFailed": "無法從所選資料夾載入圖像。",
+    "openLibraryFailed": "開啟圖庫失敗。",
     "lutLoadFailed": "載入 LUT 失敗：{{error}}",
     "metadataUpdateFailed": "更新中繼資料失敗：{{error}}",
     "moveFilesFailed": "移動檔案失敗：{{error}}",

@@ -48,7 +48,12 @@ function DropdownMenu({ buttonContent, buttonTitle, children, contentClassName =
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // 触屏 WebView 可能不合成 mousedown，补 touchstart 才能点空白关闭视图选项浮层
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   return (
@@ -238,7 +243,7 @@ const RatingSegmentedSwitch = ({ rating, onChange, ratingFilterOptions }: any) =
   );
 };
 
-export function SearchInput({ indexingProgress, isIndexing }: any) {
+export function SearchInput({ indexingProgress, isIndexing, isAndroid = false, onActiveChange }: any) {
   const { t } = useTranslation();
   const { searchCriteria, setSearchCriteria } = useLibraryStore(
     useShallow((state) => ({ searchCriteria: state.searchCriteria, setSearchCriteria: state.setSearchCriteria })),
@@ -345,11 +350,19 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
           ? t('library.header.search.addFilterOrSearch')
           : t('library.header.search.searchOrQuery');
 
+  // Android 竖屏时搜索框展开后需要独占整行：宽度按可视宽度减去页面左右内边距计算，
+  // 避免 min-w-[250px] 的内容区把 header 撑出屏幕（≤360dp 机型上的横向溢出）
+  const androidMaxWidth =
+    isAndroid && typeof window !== 'undefined' ? Math.max(160, window.innerWidth - 32) : Number.POSITIVE_INFINITY;
   const INACTIVE_WIDTH = 48;
   const PADDING_AND_ICONS_WIDTH = 100;
   const MAX_WIDTH = 680;
 
-  const calculatedWidth = Math.min(MAX_WIDTH, contentWidth + PADDING_AND_ICONS_WIDTH);
+  const calculatedWidth = Math.min(MAX_WIDTH, androidMaxWidth, contentWidth + PADDING_AND_ICONS_WIDTH);
+
+  useEffect(() => {
+    if (onActiveChange) onActiveChange(isActive);
+  }, [isActive, onActiveChange]);
 
   return (
     <motion.div
@@ -374,7 +387,13 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
         className="flex-1 min-w-0 h-full overflow-hidden flex items-center pl-1"
         style={{ opacity: isActive ? 1 : 0, pointerEvents: isActive ? 'auto' : 'none', transition: 'opacity 0.2s' }}
       >
-        <div ref={contentRef} className="flex items-center gap-2 h-full flex-nowrap min-w-[250px] pr-2">
+        <div
+          ref={contentRef}
+          className={clsx(
+            'flex items-center gap-2 h-full flex-nowrap pr-2',
+            isAndroid ? 'min-w-0' : 'min-w-[250px]',
+          )}
+        >
           {tags.map((tag) => {
             const match = tag.match(ADVANCED_QUERY_REGEX);
             const isQuery = !!match;
@@ -410,7 +429,10 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
             );
           })}
           <input
-            className="grow w-full h-full bg-transparent text-text-primary placeholder-text-secondary border-none focus:outline-hidden min-w-[150px]"
+            className={clsx(
+              'grow w-full h-full bg-transparent text-text-primary placeholder-text-secondary border-none focus:outline-hidden',
+              isAndroid ? 'min-w-[60px]' : 'min-w-[150px]',
+            )}
             disabled={isIndexing}
             onBlur={() => {
               if (tags.length === 0 && !text) setIsSearchActive(false);

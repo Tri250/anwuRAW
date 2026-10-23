@@ -484,6 +484,10 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
           props.handleImageSelect(path);
         }
         setPanel(Panel.Export);
+        // Android 紧凑图库没有右侧面板，打开全屏导出浮层，避免菜单点击后无任何可见反馈
+        if (activeView === 'library') {
+          setUI({ isLibraryExportPanelVisible: true });
+        }
       };
 
       const handleRemoveFromAlbum = async () => {

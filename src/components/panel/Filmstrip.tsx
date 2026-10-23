@@ -11,6 +11,7 @@ import { useProcessStore } from '../../store/useProcessStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useLibraryStore } from '../../store/useLibraryStore';
 import { useDraggable } from '@dnd-kit/core';
+import { useLongPressMenu } from '../../hooks/useLongPressMenu';
 
 const HORIZONTAL_PADDING = 4;
 const ITEM_GAP = 8;
@@ -85,6 +86,9 @@ const FilmstripThumbnail = memo(
       id: `filmstrip-image-${path}`,
       data: { type: 'library-image', path },
     });
+
+    // 平板/横屏 Android 没有鼠标右键：长按缩略图打开上下文菜单（与图库缩略图一致）
+    const longPress = useLongPressMenu(path, onContextMenu);
 
     const rating = imageRatings?.[path] || 0;
     const colorTag = tags?.find((t: string) => t.startsWith('color:'))?.substring(6);
@@ -178,11 +182,41 @@ const FilmstripThumbnail = memo(
           ringClass,
           isDragging && 'opacity-50 ring-2 ring-accent z-50',
         )}
+        onPointerDown={(e: any) => {
+          (listeners as any)?.onPointerDown?.(e);
+          longPress.onPointerDown(e);
+        }}
+        onPointerMove={(e: any) => {
+          (listeners as any)?.onPointerMove?.(e);
+          longPress.onPointerMove(e);
+        }}
+        onPointerUp={(e: any) => {
+          (listeners as any)?.onPointerUp?.(e);
+          longPress.onPointerUp();
+        }}
+        onPointerCancel={(e: any) => {
+          (listeners as any)?.onPointerCancel?.(e);
+          longPress.onPointerCancel();
+        }}
         onClick={(e: any) => {
           e.stopPropagation();
+          // 长按已弹出菜单：吞掉这次 click，避免误触发选中
+          if (longPress.triggeredRef.current) {
+            longPress.triggeredRef.current = false;
+            return;
+          }
           onImageSelect?.(path, e);
         }}
-        onContextMenu={(e: any) => onContextMenu?.(e, path)}
+        onContextMenu={(e: any) => {
+          // 原生 contextmenu 若先于自定义长按触发，取消计时器避免菜单被重复打开
+          longPress.cancel();
+          // 自定义长按已处理过，屏蔽 WebView 原生 contextmenu，避免菜单重复弹出
+          if (longPress.triggeredRef.current) {
+            e.preventDefault();
+            return;
+          }
+          onContextMenu?.(e, path);
+        }}
         style={{
           zIndex: isDragging ? 50 : isActive ? 2 : isSelected ? 1 : 'auto',
         }}

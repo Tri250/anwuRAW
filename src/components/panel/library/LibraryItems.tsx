@@ -19,6 +19,7 @@ import { ColumnWidths } from '../MainLibrary';
 import { useProcessStore } from '../../../store/useProcessStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { IconAperture, IconFocalLength, IconIso, IconShutter } from '../editor/ExifIcons';
+import { useLongPressMenu } from '../../../hooks/useLongPressMenu';
 
 interface ImageLayer {
   id: string;
@@ -70,6 +71,7 @@ const ThumbnailComponent = ({
     id: `image-${path}`,
     data: { type: 'library-image', path },
   });
+  const longPress = useLongPressMenu(path, onContextMenu);
 
   const { baseName, isVirtualCopy } = useMemo(() => {
     const fullFileName = path.split(/[\\/]/).pop() || '';
@@ -153,8 +155,11 @@ const ThumbnailComponent = ({
   const colorTag = tags?.find((t: string) => t.startsWith('color:'))?.substring(6);
   const colorLabel = COLOR_LABELS.find((c: Color) => c.name === colorTag);
 
-  const isAlways = exifOverlay === ExifOverlay.Always;
-  const isHover = exifOverlay === ExifOverlay.Hover;
+  // Android 触屏没有 hover：「悬浮显示 EXIF」永远无法触发，
+  // 因此移动端把 Hover 视为 Always，否则用户设置后缩略图上完全看不到参数。
+  const isAndroid = useSettingsStore((s) => s.osPlatform === 'android');
+  const isAlways = exifOverlay === ExifOverlay.Always || (isAndroid && exifOverlay === ExifOverlay.Hover);
+  const isHover = exifOverlay === ExifOverlay.Hover && !isAndroid;
 
   const hasEditIcon = !!showEditIcon;
   const hasColorLabel = !!colorLabel;
@@ -172,11 +177,41 @@ const ThumbnailComponent = ({
         isDragging && 'opacity-50 ring-2 ring-accent z-50',
       )}
       data-bench-id="thumbnail"
+      onPointerDown={(e: any) => {
+        (listeners as any)?.onPointerDown?.(e);
+        longPress.onPointerDown(e);
+      }}
+      onPointerMove={(e: any) => {
+        (listeners as any)?.onPointerMove?.(e);
+        longPress.onPointerMove(e);
+      }}
+      onPointerUp={(e: any) => {
+        (listeners as any)?.onPointerUp?.(e);
+        longPress.onPointerUp();
+      }}
+      onPointerCancel={(e: any) => {
+        (listeners as any)?.onPointerCancel?.(e);
+        longPress.onPointerCancel();
+      }}
       onClick={(e: any) => {
         e.stopPropagation();
+        // 长按已弹出菜单：吞掉这次 click，避免误触发选中/打开
+        if (longPress.triggeredRef.current) {
+          longPress.triggeredRef.current = false;
+          return;
+        }
         onImageClick(path, e);
       }}
-      onContextMenu={(e: any) => onContextMenu(e, path)}
+      onContextMenu={(e: any) => {
+        // 原生 contextmenu 若先于自定义长按触发，取消计时器避免菜单被重复打开
+        longPress.cancel();
+        // 自定义长按已处理过，屏蔽 WebView 原生 contextmenu，避免菜单重复弹出
+        if (longPress.triggeredRef.current) {
+          e.preventDefault();
+          return;
+        }
+        onContextMenu(e, path);
+      }}
       onDoubleClick={() => onImageDoubleClick(path)}
     >
       <div className="relative w-full flex-1 min-h-0 z-0 bg-surface">
@@ -498,6 +533,7 @@ const ListItemComponent = ({
     id: `image-${path}`,
     data: { type: 'library-image', path },
   });
+  const longPress = useLongPressMenu(path, onContextMenu);
 
   const { baseName, isVirtualCopy } = useMemo(() => {
     const fullFileName = path.split(/[\\/]/).pop() || '';
@@ -615,11 +651,38 @@ const ListItemComponent = ({
       {...listeners}
       {...attributes}
       className={`flex items-center w-full h-full cursor-pointer transition-all duration-150 ${borderClass} ${roundingClass} ${stateClass} ${isDragging ? 'opacity-50 ring-2 ring-accent z-50' : ''}`}
+      onPointerDown={(e: any) => {
+        (listeners as any)?.onPointerDown?.(e);
+        longPress.onPointerDown(e);
+      }}
+      onPointerMove={(e: any) => {
+        (listeners as any)?.onPointerMove?.(e);
+        longPress.onPointerMove(e);
+      }}
+      onPointerUp={(e: any) => {
+        (listeners as any)?.onPointerUp?.(e);
+        longPress.onPointerUp();
+      }}
+      onPointerCancel={(e: any) => {
+        (listeners as any)?.onPointerCancel?.(e);
+        longPress.onPointerCancel();
+      }}
       onClick={(e: any) => {
         e.stopPropagation();
+        if (longPress.triggeredRef.current) {
+          longPress.triggeredRef.current = false;
+          return;
+        }
         onImageClick(path, e);
       }}
-      onContextMenu={(e: any) => onContextMenu(e, path)}
+      onContextMenu={(e: any) => {
+        longPress.cancel();
+        if (longPress.triggeredRef.current) {
+          e.preventDefault();
+          return;
+        }
+        onContextMenu(e, path);
+      }}
       onDoubleClick={() => onImageDoubleClick(path)}
     >
       <div

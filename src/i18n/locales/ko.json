@@ -194,6 +194,7 @@
       "pasteParametric": "파라메트릭 커브 붙여넣기",
       "pastePoint": "포인트 커브 붙여넣기",
       "pointCurve": "포인트 커브",
+      "moreOptions": "추가 옵션",
       "resetAllParametric": "모든 파라메트릭 커브 초기화",
       "resetAllPoint": "모든 포인트 커브 초기화",
       "resetParametric": "{{channel}} 파라메트릭 커브 초기화",
@@ -945,6 +946,8 @@
       "tooltips": {
         "aperture": "조리개",
         "backToLibrary": "라이브러리로 돌아가기",
+        "history": "기록",
+        "more": "추가 옵션",
         "focalLength": "초점 거리",
         "fullscreen": "전체 화면 전환 (F)",
         "iso": "ISO",
@@ -1233,7 +1236,9 @@
         "thumbnailFit": "썸네일 맞춤",
         "thumbnailSize": "썸네일 크기",
         "title": "보기 옵션"
-      }
+      },
+      "selectMultiple": "여러 개 선택",
+      "selectMultipleDone": "완료"
     },
     "import": {
       "complete": "가져오기 완료!",
@@ -2138,8 +2143,10 @@
     "depthMapFailed": "깊이 맵 생성 실패: {{error}}",
     "folderLoadFailed": "폴더 로드 실패: {{error}}",
     "folderTreeLoadFailed": "폴더 트리 로드 실패: {{error}}",
+    "folderSelectionFailed": "폴더 선택 대화 상자를 열지 못했습니다.",
     "imageLoadFailed": "이미지 로드 실패: {{error}}",
     "imagesLoadFailed": "선택한 폴더에서 이미지를 불러오지 못했습니다.",
+    "openLibraryFailed": "라이브러리를 열지 못했습니다.",
     "lutLoadFailed": "LUT 로드 실패: {{error}}",
     "metadataUpdateFailed": "메타데이터 업데이트 실패: {{error}}",
     "moveFilesFailed": "파일 이동 실패: {{error}}",

@@ -694,7 +694,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
                 </div>
 
                 <div
-                  className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/75 backdrop-blur-md p-1 rounded-full border border-white/15 shadow-xl z-20 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap select-none"
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/75 backdrop-blur-md p-1 rounded-full border border-white/15 shadow-xl z-20 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap select-none touch-visible-on-nohover"
                   onMouseDown={(e) => e.stopPropagation()}
                 >
                   <button

@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import Text from './Text';
 import { TextVariants, TextWeights } from '../../types/typography';
+import { useLongPressMenu } from '../../hooks/useLongPressMenu';
 
 interface CollapsibleSectionProps {
   canToggleVisibility?: boolean;
@@ -86,11 +87,36 @@ export default function CollapsibleSection({
     onToggleVisibility();
   };
 
+  // Android 无右键：长按分区标题打开分区上下文菜单（重置本分区等），
+  // 只挂在标题行而非整个分区，避免长按滑块/输入时误弹菜单
+  const longPress = useLongPressMenu(title, (e: any) => onContextMenu?.(e));
+
   return (
     <div className="bg-surface rounded-lg overflow-hidden shrink-0" onContextMenu={onContextMenu}>
       <div
         className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-card-active transition-colors duration-200"
-        onClick={onToggle}
+        onPointerDown={longPress.onPointerDown}
+        onPointerMove={longPress.onPointerMove}
+        onPointerUp={longPress.onPointerUp}
+        onPointerCancel={longPress.onPointerCancel}
+        onClick={() => {
+          // 长按已弹出菜单：吞掉这次 click，避免同时折叠/展开分区
+          if (longPress.triggeredRef.current) {
+            longPress.triggeredRef.current = false;
+            return;
+          }
+          onToggle();
+        }}
+        onContextMenu={(e: any) => {
+          longPress.cancel();
+          if (longPress.triggeredRef.current) {
+            // 自定义长按已打开菜单，拦住原生 contextmenu 的冒泡，避免外层再次打开
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          // 未触发自定义长按时允许冒泡到外层 onContextMenu
+        }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >

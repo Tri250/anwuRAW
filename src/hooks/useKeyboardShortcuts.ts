@@ -574,6 +574,7 @@ export const useKeyboardShortcuts = ({
           else if (s.ui.activePanel === Panel.Crop) s.ui.setPanel(Panel.Adjustments);
           else if (s.ui.isFullScreen) handleToggleFullScreen();
           else if (s.ui.activeView === 'editor') handleBackToLibrary();
+          else if (s.ui.activeView === 'community') s.ui.setUI({ activeView: 'library' });
           else if (s.ui.activeView === 'library' && s.library.rootPaths?.length > 0) handleGoHome();
         },
       },

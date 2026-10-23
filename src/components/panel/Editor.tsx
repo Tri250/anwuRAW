@@ -863,7 +863,10 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     }
   }, [isMasking, isAiEditing, setEditor]);
 
+  // 拉直工具激活时禁用平移：触屏（Android）上由 ImageCanvas 的 Konva 触屏层绘制拉直线，
+  // 若外层仍启动平移，拖拽会同时带动画布，拉直角度随之偏移
   const isPanningDisabled =
+    isStraightenActive ||
     isMaskHovered ||
     isMaskTouchInteracting ||
     isCropping ||

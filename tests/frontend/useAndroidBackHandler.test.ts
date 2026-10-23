@@ -151,6 +151,35 @@ describe('useAndroidBackHandler', () => {
     dispatchSpy.mockRestore();
   });
 
+  it('社区预设页返回键回到图库,不退出应用', () => {
+    const handler = mount();
+    useUIStore.setState({ activeView: 'community' });
+    useLibraryStore.setState({ rootPaths: [] });
+
+    const result = handleBack(handler);
+
+    expect(result).toBe(true);
+    expect(useUIStore.getState().activeView).toBe('library');
+  });
+
+  it('长按菜单打开时返回键只关闭菜单,不退出主页或退到后台', () => {
+    const handler = mount();
+    // 无根目录 = 主页：若无菜单，该场景会返回 false 让原生侧退到后台
+    useLibraryStore.setState({ rootPaths: [] });
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    document.body.appendChild(menu);
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+    const result = handleBack(handler);
+
+    expect(result).toBe(true);
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    expect((dispatchSpy.mock.calls[0][0] as KeyboardEvent).key).toBe('Escape');
+    dispatchSpy.mockRestore();
+    menu.remove();
+  });
+
   it('平板宽视口(桌面布局)不收起 activePanel,退回 Escape 兜底', () => {
     const handler = mount();
     setViewport(800, 1280);

@@ -1,5 +1,16 @@
 import { memo, useState, useEffect, useRef, useMemo } from 'react';
-import { Eye, EyeOff, ArrowLeft, Maximize, Loader2, Undo, Redo, SplitSquareHorizontal } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  Maximize,
+  Loader2,
+  Undo,
+  Redo,
+  SplitSquareHorizontal,
+  History,
+  MoreHorizontal,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +21,7 @@ import { TextColors, TextVariants, TextWeights } from '../../../types/typography
 import { useLibraryStore } from '../../../store/useLibraryStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { findGroupVariants, getVariantLabel } from '../../../utils/imageGrouping';
+import { useContextMenu } from '../../../context/ContextMenuContext';
 
 interface EditorToolbarProps {
   canRedo: boolean;
@@ -56,6 +68,7 @@ const EditorToolbar = memo(
     goToAdjustmentsHistoryIndex,
   }: EditorToolbarProps) => {
     const { t } = useTranslation();
+    const { showContextMenu } = useContextMenu();
     const isAnyLoading = isLoading;
     const [isLoaderVisible, setIsLoaderVisible] = useState(false);
     const [isLoaderMounted, setIsLoaderMounted] = useState(false);
@@ -64,6 +77,8 @@ const EditorToolbar = memo(
     const prevIsLoadingRef = useRef(isLoading);
     const [isVcHovered, setIsVcHovered] = useState(false);
     const [isInfoHovered, setIsInfoHovered] = useState(false);
+    // Android 触屏没有 hover：信息条改为点击展开，否则 EXIF 详情永远不可见
+    const [isInfoPinned, setIsInfoPinned] = useState(false);
     const [isHistoryVisible, setIsHistoryVisible] = useState(false);
     const historyContainerRef = useRef<HTMLDivElement>(null);
     const historyButtonRef = useRef<HTMLDivElement>(null);
@@ -170,7 +185,7 @@ const EditorToolbar = memo(
 
     useEffect(() => {
       if (!isHistoryVisible) return;
-      const handleClickOutside = (e: MouseEvent) => {
+      const handleClickOutside = (e: MouseEvent | TouchEvent) => {
         if (
           historyContainerRef.current &&
           !historyContainerRef.current.contains(e.target as Node) &&
@@ -181,7 +196,12 @@ const EditorToolbar = memo(
         }
       };
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      // 触屏 WebView 可能不合成 mousedown，补 touchstart 才能点空白收起历史面板
+      document.addEventListener('touchstart', handleClickOutside, { passive: true });
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
     }, [isHistoryVisible]);
 
     const prevNamesRef = useRef<string[]>(['Initial State']);
@@ -358,7 +378,7 @@ const EditorToolbar = memo(
       e.currentTarget.blur();
     };
 
-    const isExpanded = isInfoHovered && (hasExif || isLoading);
+    const isExpanded = (isInfoHovered || isInfoPinned) && (hasExif || isLoading);
 
     return (
       <div className="relative shrink-0 flex items-center justify-between px-3 h-12 gap-3 z-40">
@@ -399,6 +419,16 @@ const EditorToolbar = memo(
             )}
             onMouseEnter={() => setIsInfoHovered(true)}
             onMouseLeave={() => setIsInfoHovered(false)}
+            onClick={() => {
+              if (!isAndroid || !hasExif) return;
+              // 触屏三段式：展开 EXIF → 切换到拍摄日期 → 收起
+              if (!isInfoPinned) setIsInfoPinned(true);
+              else if (!showDateView) onToggleDateView();
+              else {
+                setIsInfoPinned(false);
+                onToggleDateView();
+              }
+            }}
             style={{
               top: '6px',
               transform: 'translateX(-50%)',
@@ -502,7 +532,11 @@ const EditorToolbar = memo(
                 isExpanded ? 'opacity-100 delay-75' : 'opacity-0 hidden',
                 hasExif && 'cursor-pointer',
               )}
-              onClick={() => hasExif && onToggleDateView()}
+              onClick={() => {
+                // Android 由外层信息条统一处理展开/切换/收起，避免同一次点击被切换两次
+                if (isAndroid) return;
+                if (hasExif) onToggleDateView();
+              }}
             >
               <div
                 className={clsx(
@@ -686,31 +720,68 @@ const EditorToolbar = memo(
           >
             {showOriginal ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
-          <button
-            className={clsx(
-              'relative p-2 rounded-full transition-colors',
-              isComparing
-                ? 'bg-accent text-button-text hover:bg-accent/90 hover:text-button-text'
-                : 'bg-surface hover:bg-card-active text-text-primary',
-            )}
-            onClick={onToggleCompare}
-            onKeyDown={handleButtonKeyDown}
-            data-tooltip={
-              isComparing ? t('editor.toolbar.tooltips.closeCompare') : t('editor.toolbar.tooltips.compare')
-            }
-          >
-            <SplitSquareHorizontal size={20} />
-          </button>
-          <button
-            className="bg-surface text-text-primary p-2 rounded-full hover:bg-card-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-            onClick={onToggleFullScreen}
-            onKeyDown={handleButtonKeyDown}
-            data-tooltip={t('editor.toolbar.tooltips.fullscreen')}
-          >
-            <div className="relative w-5 h-5 flex items-center justify-center">
-              <Maximize size={20} />
-            </div>
-          </button>
+          {isAndroid ? (
+            // 手机宽度放不下 6 个按钮：把对比/全屏/历史收进「更多」菜单，
+            // 保证文件名与常用按钮（撤销/重做/原图）不被挤压到不可用
+            <button
+              className="bg-surface text-text-primary p-2 rounded-full hover:bg-card-active transition-colors"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                showContextMenu(rect.right, rect.bottom, [
+                  {
+                    label: isComparing
+                      ? t('editor.toolbar.tooltips.closeCompare')
+                      : t('editor.toolbar.tooltips.compare'),
+                    icon: SplitSquareHorizontal,
+                    onClick: onToggleCompare,
+                  },
+                  {
+                    label: t('editor.toolbar.tooltips.fullscreen'),
+                    icon: Maximize,
+                    onClick: onToggleFullScreen,
+                  },
+                  {
+                    label: t('editor.toolbar.tooltips.history'),
+                    icon: History,
+                    disabled: !adjustmentsHistory || adjustmentsHistory.length <= 1,
+                    onClick: () => setIsHistoryVisible((prev) => !prev),
+                  },
+                ]);
+              }}
+              aria-label={t('editor.toolbar.tooltips.more')}
+              data-tooltip={t('editor.toolbar.tooltips.more')}
+            >
+              <MoreHorizontal size={20} />
+            </button>
+          ) : (
+            <>
+              <button
+                className={clsx(
+                  'relative p-2 rounded-full transition-colors',
+                  isComparing
+                    ? 'bg-accent text-button-text hover:bg-accent/90 hover:text-button-text'
+                    : 'bg-surface hover:bg-card-active text-text-primary',
+                )}
+                onClick={onToggleCompare}
+                onKeyDown={handleButtonKeyDown}
+                data-tooltip={
+                  isComparing ? t('editor.toolbar.tooltips.closeCompare') : t('editor.toolbar.tooltips.compare')
+                }
+              >
+                <SplitSquareHorizontal size={20} />
+              </button>
+              <button
+                className="bg-surface text-text-primary p-2 rounded-full hover:bg-card-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+                onClick={onToggleFullScreen}
+                onKeyDown={handleButtonKeyDown}
+                data-tooltip={t('editor.toolbar.tooltips.fullscreen')}
+              >
+                <div className="relative w-5 h-5 flex items-center justify-center">
+                  <Maximize size={20} />
+                </div>
+              </button>
+            </>
+          )}
         </div>
       </div>
     );

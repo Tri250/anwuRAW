@@ -194,6 +194,7 @@
       "pasteParametric": "Paste Parametric Curve",
       "pastePoint": "Paste Point Curve",
       "pointCurve": "Point Curve",
+      "moreOptions": "More options",
       "presets": {
         "title": "Presets",
         "originalDesc": "Reset curve to original state",
@@ -945,6 +946,8 @@
       "tooltips": {
         "aperture": "Aperture",
         "backToLibrary": "Back to Library",
+        "history": "History",
+        "more": "More options",
         "focalLength": "Focal Length",
         "fullscreen": "Toggle Fullscreen (F)",
         "iso": "ISO",
@@ -1233,7 +1236,9 @@
         "thumbnailFit": "Thumbnail Fit",
         "thumbnailSize": "Thumbnail Size",
         "title": "View Options"
-      }
+      },
+      "selectMultiple": "Select multiple",
+      "selectMultipleDone": "Done"
     },
     "import": {
       "complete": "Import Complete!",
@@ -2138,8 +2143,10 @@
     "depthMapFailed": "Failed to generate depth map: {{error}}",
     "folderLoadFailed": "Failed to load folder: {{error}}",
     "folderTreeLoadFailed": "Failed to load folder tree: {{error}}",
+    "folderSelectionFailed": "Failed to open folder selection dialog.",
     "imageLoadFailed": "Failed to load image: {{error}}",
     "imagesLoadFailed": "Failed to load images from the selected folder.",
+    "openLibraryFailed": "Failed to open library.",
     "lutLoadFailed": "Failed to load LUT: {{error}}",
     "metadataUpdateFailed": "Failed to update metadata: {{error}}",
     "moveFilesFailed": "Failed to move files: {{error}}",

@@ -231,7 +231,24 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
 
   const handleLibraryImageSingleClick = useCallback(
     (path: string, event: any) => {
-      const { selectionAnchorPath, libraryActivePath, setLibrary } = useLibraryStore.getState();
+      const { selectionAnchorPath, libraryActivePath, multiSelectedPaths, isMultiSelectMode, setLibrary } =
+        useLibraryStore.getState();
+
+      // 触屏多选模式：单击即切换选中状态，不打开编辑器
+      if (isMultiSelectMode) {
+        const next = new Set(multiSelectedPaths);
+        if (next.has(path)) next.delete(path);
+        else next.add(path);
+
+        const nextPaths = Array.from(next);
+        setLibrary({
+          multiSelectedPaths: nextPaths,
+          selectionAnchorPath: path,
+          libraryActivePath: nextPaths.length > 0 ? path : null,
+        });
+        return;
+      }
+
       handleMultiSelectClick(path, event, {
         shiftAnchor: selectionAnchorPath ?? libraryActivePath,
         updateLibraryActivePath: true,

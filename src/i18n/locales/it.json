@@ -194,6 +194,7 @@
       "pasteParametric": "Incolla Curva Parametrica",
       "pastePoint": "Incolla Curva per Punti",
       "pointCurve": "Curva per Punti",
+      "moreOptions": "Altre opzioni",
       "resetAllParametric": "Ripristina Tutte le Curve Parametriche",
       "resetAllPoint": "Ripristina Tutte le Curve per Punti",
       "resetParametric": "Ripristina Curva Parametrica {{channel}}",
@@ -966,6 +967,8 @@
       "tooltips": {
         "aperture": "Apertura",
         "backToLibrary": "Torna alla Libreria",
+        "history": "Cronologia",
+        "more": "Altre opzioni",
         "focalLength": "Lunghezza Focale",
         "fullscreen": "Attiva/Disattiva Schermo Intero (F)",
         "iso": "ISO",
@@ -1256,7 +1259,9 @@
         "thumbnailFit": "Adattamento Miniatura",
         "thumbnailSize": "Dimensione Miniatura",
         "title": "Opzioni di Visualizzazione"
-      }
+      },
+      "selectMultiple": "Selezione multipla",
+      "selectMultipleDone": "Fatto"
     },
     "import": {
       "complete": "Importazione Completata!",
@@ -2171,8 +2176,10 @@
     "depthMapFailed": "Generazione della mappa di profondità non riuscita: {{error}}",
     "folderLoadFailed": "Caricamento della cartella non riuscito: {{error}}",
     "folderTreeLoadFailed": "Caricamento dell’albero delle cartelle non riuscito: {{error}}",
+    "folderSelectionFailed": "Impossibile aprire la finestra di selezione della cartella.",
     "imageLoadFailed": "Caricamento dell’immagine non riuscito: {{error}}",
     "imagesLoadFailed": "Impossibile caricare le immagini dalla cartella selezionata.",
+    "openLibraryFailed": "Impossibile aprire la libreria.",
     "lutLoadFailed": "Caricamento del LUT non riuscito: {{error}}",
     "metadataUpdateFailed": "Aggiornamento dei metadati non riuscito: {{error}}",
     "moveFilesFailed": "Spostamento dei file non riuscito: {{error}}",

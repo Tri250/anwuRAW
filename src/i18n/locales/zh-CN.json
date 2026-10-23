@@ -194,6 +194,7 @@
       "pasteParametric": "粘贴参数曲线",
       "pastePoint": "粘贴点曲线",
       "pointCurve": "点曲线",
+      "moreOptions": "更多选项",
       "presets": {
         "title": "预设",
         "originalDesc": "将曲线重置为原图状态",
@@ -945,6 +946,8 @@
       "tooltips": {
         "aperture": "光圈",
         "backToLibrary": "返回图库",
+        "history": "历史记录",
+        "more": "更多选项",
         "focalLength": "焦距",
         "fullscreen": "切换全屏（F）",
         "iso": "ISO",
@@ -1233,7 +1236,9 @@
         "thumbnailFit": "缩略图适应",
         "thumbnailSize": "缩略图大小",
         "title": "视图选项"
-      }
+      },
+      "selectMultiple": "多选",
+      "selectMultipleDone": "完成"
     },
     "import": {
       "complete": "导入完成！",
@@ -2138,8 +2143,10 @@
     "depthMapFailed": "生成景深图失败：{{error}}",
     "folderLoadFailed": "加载文件夹失败：{{error}}",
     "folderTreeLoadFailed": "加载文件夹树失败：{{error}}",
+    "folderSelectionFailed": "打开文件夹选择对话框失败。",
     "imageLoadFailed": "加载图像失败：{{error}}",
     "imagesLoadFailed": "无法从所选文件夹加载图像。",
+    "openLibraryFailed": "打开图库失败。",
     "lutLoadFailed": "加载 LUT 失败：{{error}}",
     "metadataUpdateFailed": "更新元数据失败：{{error}}",
     "moveFilesFailed": "移动文件失败：{{error}}",

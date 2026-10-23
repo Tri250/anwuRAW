@@ -29,6 +29,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { useDroppable } from '@dnd-kit/core';
+import { useLongPressMenu } from '../../../hooks/useLongPressMenu';
 import Text from '../../ui/Text';
 import { TEXT_COLOR_KEYS, TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { useShallow } from 'zustand/react/shallow';
@@ -186,11 +187,16 @@ function FolderSortMenu({
   const { t } = useTranslation();
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setIsOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // 触屏 WebView 可能不合成 mousedown，补 touchstart 才能点空白收起排序菜单
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, [setIsOpen]);
 
   const options = [
@@ -350,6 +356,9 @@ function AlbumTreeNode({
   const isImageDrag = active?.data?.current?.type === 'library-image';
   const isDropTarget = isOver && isImageDrag && !isGroup;
 
+  // 平板/横屏 Android 没有右键：长按相册行打开上下文菜单（重命名/删除/移动等）
+  const longPress = useLongPressMenu(item.id, (e: any) => onContextMenu(e, item));
+
   let ItemIcon: React.ElementType = isGroup ? (isExpanded ? FolderOpen : Folder) : AlbumIcon;
   if (item.icon && ALBUM_ICONS[item.icon]) {
     ItemIcon = ALBUM_ICONS[item.icon];
@@ -371,8 +380,29 @@ function AlbumTreeNode({
           'hover:bg-card-active': !isSelected && !isDropTarget,
           'bg-accent/20': isDropTarget,
         })}
-        onClick={() => (isGroup ? onToggle(item.id) : onSelectAlbum(item.id, item.name, (item as Album).images))}
-        onContextMenu={(e) => onContextMenu(e, item)}
+        onPointerDown={longPress.onPointerDown}
+        onPointerMove={longPress.onPointerMove}
+        onPointerUp={longPress.onPointerUp}
+        onPointerCancel={longPress.onPointerCancel}
+        onClick={() => {
+          if (longPress.triggeredRef.current) {
+            longPress.triggeredRef.current = false;
+            return;
+          }
+          if (isGroup) {
+            onToggle(item.id);
+          } else {
+            onSelectAlbum(item.id, item.name, (item as Album).images);
+          }
+        }}
+        onContextMenu={(e: any) => {
+          longPress.cancel();
+          if (longPress.triggeredRef.current) {
+            e.preventDefault();
+            return;
+          }
+          onContextMenu(e, item);
+        }}
       >
         <div className="relative w-5 h-5 flex items-center justify-center p-0.5 rounded-sm text-text-secondary shrink-0">
           <AnimatePresence mode="wait" initial={false}>
@@ -489,6 +519,9 @@ function TreeNode({
   const isImageDrag = active?.data?.current?.type === 'library-image';
   const isDropTarget = isOver && isImageDrag;
 
+  // 平板/横屏 Android 没有右键：长按文件夹行打开上下文菜单（重命名/删除/固定等）
+  const longPress = useLongPressMenu(node.path, (e: any, path: string) => onContextMenu(e, path, isPinned));
+
   const handleFolderIconClick = (e: any) => {
     e.stopPropagation();
     if (hasChildren) {
@@ -546,8 +579,26 @@ function TreeNode({
           'hover:bg-card-active': !isSelected && !isDropTarget,
           'bg-accent/20': isDropTarget,
         })}
-        onClick={handleNameClick}
-        onContextMenu={(e: any) => onContextMenu(e, node.path, isPinned)}
+        onPointerDown={longPress.onPointerDown}
+        onPointerMove={longPress.onPointerMove}
+        onPointerUp={longPress.onPointerUp}
+        onPointerCancel={longPress.onPointerCancel}
+        onClick={() => {
+          // 长按已弹出菜单：吞掉这次 click，避免顺带切换选中文件夹
+          if (longPress.triggeredRef.current) {
+            longPress.triggeredRef.current = false;
+            return;
+          }
+          handleNameClick();
+        }}
+        onContextMenu={(e: any) => {
+          longPress.cancel();
+          if (longPress.triggeredRef.current) {
+            e.preventDefault();
+            return;
+          }
+          onContextMenu(e, node.path, isPinned);
+        }}
       >
         <div
           className={clsx(

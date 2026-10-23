@@ -65,6 +65,7 @@ import { useProductivityActions } from './hooks/useProductivityActions';
 
 import { useAppInitialization } from './hooks/useAppInitialization';
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler';
+import { ANDROID_PHONE_MAX_HEIGHT, ANDROID_PHONE_MAX_WIDTH } from './utils/touchUtils';
 import './i18n';
 
 import {
@@ -145,10 +146,6 @@ function ImageDragOverlayNode({ activeItem }: { activeItem: { path: string; path
 
 function App() {
   const COMPACT_EDITOR_MAX_WIDTH = 900;
-  const ANDROID_PHONE_MAX_WIDTH = 600;
-  // Android 手机横屏(视口高 ≤500px)同样走紧凑移动布局:
-  // 桌面三栏(350+350 面板)会把手持横屏的画布挤压到不可用
-  const ANDROID_PHONE_MAX_HEIGHT = 500;
 
   const [activeImageDragItem, setActiveImageDragItem] = useState<{ path: string; paths: string[] } | null>(null);
 
@@ -344,10 +341,11 @@ function App() {
     compactEditorPanelMinHeight,
     Math.min(compactEditorPanelHeightOverride ?? compactEditorPanelDefaultHeight, compactEditorPanelMaxHeight),
   );
-  // 折叠态高度须装下内部固定控件：MobilePanelSwitcher(60px, 44px 图标+标签按钮+16px 内边距)
-  // + BottomBar(48px) + 边框与系统字体缩放余量。旧值 112px 在 Android 字体放大时会
-  // 裁剪 BottomBar 底缘，120px 提供 ~11px 安全余量
-  const compactEditorPanelCollapsedHeight = 120;
+  // 折叠态高度须装下内部固定控件（Android 根字号 106.25% 下的实测值）：
+  // 上滑提示条(≈17px) + MobilePanelSwitcher(p-2 + 图标/标签按钮 ≈73px)
+  // + BottomBar(h-12 + 顶边框 ≈52px) ≈ 142px。旧值 120px 会把底栏下缘裁掉约 20px，
+  // 148px 保留 ~6px 余量，避免 Android 字体缩放/横屏时底部按钮被 overflow-hidden 切掉
+  const compactEditorPanelCollapsedHeight = 148;
 
   const { handleCopyAdjustments, handlePasteAdjustments, handleResetAdjustments, handleZoomChange } =
     useEditorActions();
@@ -1010,9 +1008,16 @@ function App() {
                     requestThumbnails={requestThumbnails}
                   />
                 </div>
+                {isLibraryExportPanelVisible && activeView === 'library' && (
+                  // 图库导出浮层：紧凑 Android 没有右侧面板切换器，全屏浮层保证导出入口可达；
+                  // 桌面端从底栏导出按钮进入时同样使用该浮层，行为一致
+                  <div className="absolute inset-0 z-50 flex bg-bg-secondary rounded-lg bottom-inset-safe">
+                    <div className="w-full h-full flex flex-col p-3 overflow-hidden">{renderAppPanel(Panel.Export)}</div>
+                  </div>
+                )}
                 {isSettingsOpen && appSettings && hasRoots && (
                   <div className="absolute inset-0 z-50 flex bg-bg-secondary rounded-lg">
-                    <div className="w-full h-full flex flex-col p-4 lg:p-8 overflow-y-auto custom-scrollbar">
+                    <div className="w-full h-full flex flex-col p-4 lg:p-8 overflow-y-auto custom-scrollbar bottom-inset-safe">
                       <SettingsPanel
                         appSettings={appSettings}
                         onBack={() => setUI({ isSettingsOpen: false })}

@@ -1578,7 +1578,7 @@ function ContainerRow({
             </Text>
           )}
         </div>
-        <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex opacity-0 group-hover:opacity-100 transition-opacity touch-visible-on-nohover">
           <button
             className="p-1 hover:text-text-primary text-text-secondary"
             onMouseEnter={() => setIsMaskControlHovered(true)}
@@ -1865,7 +1865,7 @@ function SubMaskRow({
           {getSubMaskName(subMask)}
         </Text>
       )}
-      <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex opacity-0 group-hover:opacity-100 transition-opacity touch-visible-on-nohover">
         {index > 1 && (
           <button
             className="p-1 hover:text-text-primary text-text-secondary"

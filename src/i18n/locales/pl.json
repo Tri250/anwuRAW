@@ -194,6 +194,7 @@
       "pasteParametric": "Wklej krzywą parametryczną",
       "pastePoint": "Wklej krzywą punktową",
       "pointCurve": "Krzywa punktowa",
+      "moreOptions": "Więcej opcji",
       "resetAllParametric": "Resetuj wszystkie krzywe parametryczne",
       "resetAllPoint": "Resetuj wszystkie krzywe punktowe",
       "resetParametric": "Resetuj krzywą parametryczną ({{channel}})",
@@ -987,6 +988,8 @@
       "tooltips": {
         "aperture": "Przysłona",
         "backToLibrary": "Wróć do biblioteki",
+        "history": "Historia",
+        "more": "Więcej opcji",
         "focalLength": "Ogniskowa",
         "fullscreen": "Przełącz pełny ekran (F)",
         "iso": "ISO",
@@ -1283,7 +1286,9 @@
         "thumbnailFit": "Dopasowanie miniatury",
         "thumbnailSize": "Rozmiar miniatury",
         "title": "Opcje widoku"
-      }
+      },
+      "selectMultiple": "Wielokrotny wybór",
+      "selectMultipleDone": "Gotowe"
     },
     "import": {
       "complete": "Import zakończony!",
@@ -2210,8 +2215,10 @@
     "depthMapFailed": "Generowanie mapy głębi nie powiodło się: {{error}}",
     "folderLoadFailed": "Wczytywanie folderu nie powiodło się: {{error}}",
     "folderTreeLoadFailed": "Wczytywanie drzewa folderów nie powiodło się: {{error}}",
+    "folderSelectionFailed": "Nie udało się otworzyć okna wyboru folderu.",
     "imageLoadFailed": "Wczytywanie zdjęcia nie powiodło się: {{error}}",
     "imagesLoadFailed": "Nie można wczytać zdjęć z wybranego folderu.",
+    "openLibraryFailed": "Nie udało się otworzyć biblioteki.",
     "lutLoadFailed": "Wczytywanie LUT nie powiodło się: {{error}}",
     "metadataUpdateFailed": "Aktualizacja metadanych nie powiodła się: {{error}}",
     "moveFilesFailed": "Przenoszenie plików nie powiodło się: {{error}}",

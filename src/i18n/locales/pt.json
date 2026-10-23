@@ -194,6 +194,7 @@
       "pasteParametric": "Colar Curva Paramétrica",
       "pastePoint": "Colar Curva de Pontos",
       "pointCurve": "Curva de Pontos",
+      "moreOptions": "Mais opções",
       "resetAllParametric": "Redefinir Todas as Curvas Paramétricas",
       "resetAllPoint": "Redefinir Todas as Curvas de Pontos",
       "resetParametric": "Redefinir Curva Paramétrica {{channel}}",
@@ -966,6 +967,8 @@
       "tooltips": {
         "aperture": "Abertura",
         "backToLibrary": "Voltar para a Biblioteca",
+        "history": "Histórico",
+        "more": "Mais opções",
         "focalLength": "Distância Focal",
         "fullscreen": "Alternar Tela Cheia (F)",
         "iso": "ISO",
@@ -1256,7 +1259,9 @@
         "thumbnailFit": "Ajuste de Miniatura",
         "thumbnailSize": "Tamanho da Miniatura",
         "title": "Opções de Visualização"
-      }
+      },
+      "selectMultiple": "Seleção múltipla",
+      "selectMultipleDone": "Concluído"
     },
     "import": {
       "complete": "Importação Concluída!",
@@ -2172,8 +2177,10 @@
     "depthMapFailed": "Falha ao gerar o mapa de profundidade: {{error}}",
     "folderLoadFailed": "Falha ao carregar a pasta: {{error}}",
     "folderTreeLoadFailed": "Falha ao carregar a árvore de pastas: {{error}}",
+    "folderSelectionFailed": "Não foi possível abrir a caixa de diálogo de seleção de pasta.",
     "imageLoadFailed": "Falha ao carregar a imagem: {{error}}",
     "imagesLoadFailed": "Não foi possível carregar as imagens da pasta selecionada.",
+    "openLibraryFailed": "Não foi possível abrir a biblioteca.",
     "lutLoadFailed": "Falha ao carregar o LUT: {{error}}",
     "metadataUpdateFailed": "Falha ao atualizar os metadados: {{error}}",
     "moveFilesFailed": "Falha ao mover ficheiros: {{error}}",

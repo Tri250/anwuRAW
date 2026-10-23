@@ -36,6 +36,8 @@ interface LibraryState {
   selectionAnchorPath: string | null;
   libraryActivePath: string | null;
   libraryActiveAdjustments: Adjustments;
+  // Android 触屏没有 Ctrl/Shift：进入多选模式后，单击缩略图即切换该图选中状态
+  isMultiSelectMode: boolean;
 
   // Sorting & Filtering
   sortCriteria: SortCriteria;
@@ -73,6 +75,7 @@ export const useLibraryStore = create<LibraryState>((set) => ({
   selectionAnchorPath: null,
   libraryActivePath: null,
   libraryActiveAdjustments: INITIAL_ADJUSTMENTS,
+  isMultiSelectMode: false,
 
   sortCriteria: { key: 'name', order: SortDirection.Ascending },
   filterCriteria: { colors: [], rating: 0, rawStatus: RawStatus.All },
@@ -95,7 +98,7 @@ export const useLibraryStore = create<LibraryState>((set) => ({
 
   setLibrary: (updater) => set((state) => (typeof updater === 'function' ? updater(state) : updater)),
 
-  clearSelection: () => set({ multiSelectedPaths: [], libraryActivePath: null }),
+  clearSelection: () => set({ multiSelectedPaths: [], libraryActivePath: null, isMultiSelectMode: false }),
 
   setFilterCriteria: (criteria) =>
     set((state) => ({

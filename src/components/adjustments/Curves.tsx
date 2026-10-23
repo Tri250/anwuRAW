@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw, Copy, ClipboardPaste, Spline, Settings2 } from 'lucide-react';
+import { RotateCcw, Copy, ClipboardPaste, Spline, Settings2, MoreHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   ActiveChannel,
@@ -17,6 +17,7 @@ import Text from '../ui/Text';
 import Slider from '../ui/Slider';
 import { TextColors, TextVariants, TextWeights } from '../../types/typography';
 import { CURVE_TONE_PRESETS, DIAGONAL } from './curvePresets';
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 let curveClipboard: Array<Coord> | null = null;
 let parametricClipboard: any = null;
@@ -244,6 +245,7 @@ export default function CurveGraph({
 }: CurveGraphProps) {
   const { t } = useTranslation();
   const { showContextMenu } = useContextMenu();
+  const isAndroid = useSettingsStore((s) => s.osPlatform === 'android');
   const [curveMode, setCurveMode] = useState<'point' | 'parametric'>(adjustments.curveMode || 'point');
   const [activeChannel, setActiveChannel] = useState<ActiveChannel>(ActiveChannel.Luma);
   const [draggingPointIndex, setDraggingPointIndex] = useState<number | null>(null);
@@ -521,6 +523,46 @@ export default function CurveGraph({
         curves: { ...prev.curves, [activeChannel]: newPoints },
       }));
     }
+  };
+
+  // Android 没有鼠标右键：控制点用长按删除（等价桌面右键）。
+  // 用 Pointer Events 实现，和触摸拖动共存；长按触发时先结束拖动，
+  // 避免手指未抬起时曲线继续跟随导致误改。
+  const pointLongPressRef = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number; index: number } | null>(
+    null,
+  );
+
+  const cancelPointLongPress = () => {
+    if (pointLongPressRef.current) {
+      clearTimeout(pointLongPressRef.current.timer);
+      pointLongPressRef.current = null;
+    }
+  };
+
+  useEffect(() => cancelPointLongPress, []);
+
+  const handlePointPointerDown = (e: React.PointerEvent, index: number) => {
+    if (e.pointerType === 'mouse' || isParametricMode) return;
+    cancelPointLongPress();
+    const { clientX, clientY } = e;
+    pointLongPressRef.current = {
+      x: clientX,
+      y: clientY,
+      index,
+      timer: setTimeout(() => {
+        pointLongPressRef.current = null;
+        setDraggingPointIndex(null);
+        draggingIndexRef.current = null;
+        onDragStateChange?.(false);
+        handlePointContextMenu({ preventDefault() {}, stopPropagation() {}, clientX, clientY } as any, index);
+      }, 500),
+    };
+  };
+
+  const handlePointPointerMove = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse' || !pointLongPressRef.current) return;
+    const { x, y } = pointLongPressRef.current;
+    if (Math.hypot(e.clientX - x, e.clientY - y) > 10) cancelPointLongPress();
   };
 
   const handleContainerStart = (e: any) => {
@@ -833,6 +875,27 @@ export default function CurveGraph({
               </button>
             );
           })}
+          {/* Android 没有鼠标右键：曲线重置/复制/粘贴的右键菜单不可达，
+              提供显式「更多选项」入口，两种曲线模式都可用 */}
+          {isAndroid && (
+            <button
+              className="w-7 h-7 rounded-md flex items-center justify-center bg-surface-secondary text-text-secondary hover:text-text-primary transition-colors"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                handleContextMenu({
+                  preventDefault() {},
+                  stopPropagation() {},
+                  clientX: rect.right,
+                  clientY: rect.bottom,
+                } as any);
+              }}
+              type="button"
+              aria-label={t('adjustments.curves.moreOptions')}
+              data-tooltip={t('adjustments.curves.moreOptions')}
+            >
+              <MoreHorizontal size={16} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -946,6 +1009,11 @@ export default function CurveGraph({
                   key={i}
                   onMouseDown={(e: any) => handlePointStart(e, i)}
                   onTouchStart={(e: any) => handlePointStart(e, i)}
+                  onPointerDown={(e: React.PointerEvent) => handlePointPointerDown(e, i)}
+                  onPointerMove={handlePointPointerMove}
+                  onPointerUp={cancelPointLongPress}
+                  onPointerLeave={cancelPointLongPress}
+                  onPointerCancel={cancelPointLongPress}
                   onContextMenu={(e: React.MouseEvent) => handlePointContextMenu(e, i)}
                   r="6"
                   stroke="#1e1e1e"

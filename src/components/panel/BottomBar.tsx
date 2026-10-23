@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Star, Copy, ClipboardPaste, Check, Settings, Filter, PanelLeft, PanelBottom, PanelRight } from 'lucide-react';
+import { Star, Copy, ClipboardPaste, Check, Settings, Filter, PanelLeft, PanelBottom, PanelRight, FileInput } from 'lucide-react';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
@@ -55,15 +55,16 @@ interface BottomBarProps {
 
 interface StarRatingProps {
   disabled: boolean;
+  isAndroid?: boolean;
   onRate(rate: number): void;
   rating: number;
 }
 
-const StarRating = ({ rating, onRate, disabled }: StarRatingProps) => {
+const StarRating = ({ rating, onRate, disabled, isAndroid }: StarRatingProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className={clsx('flex items-center gap-1', disabled && 'cursor-not-allowed')}>
+    <div className={clsx('flex items-center', isAndroid ? 'gap-0.5' : 'gap-1', disabled && 'cursor-not-allowed')}>
       {[...Array(5)].map((_, index: number) => {
         const starValue = index + 1;
         return (
@@ -129,6 +130,7 @@ export default function BottomBar({
   isAndroid,
   isCopied,
   isCopyDisabled,
+  isExportDisabled = false,
   isFilmstripVisible,
   isLibraryView = false,
   isLoading = false,
@@ -141,6 +143,7 @@ export default function BottomBar({
   onContextMenu,
   onEmptyAreaContextMenu,
   onCopy,
+  onExportClick,
   onImageSelect,
   onOpenCopyPasteSettings,
   onRequestThumbnails,
@@ -376,10 +379,12 @@ export default function BottomBar({
           !isLibraryView && showFilmstrip && isFilmstripVisible ? 'border-surface' : 'border-transparent',
         )}
       >
-        <div className="flex items-center gap-4">
-          <StarRating rating={rating} onRate={onRate} disabled={isRatingDisabled} />
+        {/* Android 360dp 小屏：5 颗星 + 复制/粘贴/设置/导出 容易横向溢出，
+            收紧间距确保最右侧的导出按钮不被裁出屏幕 */}
+        <div className={clsx('flex items-center', isAndroid ? 'gap-2' : 'gap-4')}>
+          <StarRating rating={rating} onRate={onRate} disabled={isRatingDisabled} isAndroid={isAndroid} />
           <div className="h-5 w-px bg-surface"></div>
-          <div className="flex items-center gap-2">
+          <div className={clsx('flex items-center', isAndroid ? 'gap-1' : 'gap-2')}>
             <button
               className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
               disabled={isCopyDisabled}
@@ -453,6 +458,20 @@ export default function BottomBar({
             >
               <Settings size={18} />
             </button>
+
+            {/* 图库视图的导出入口：Android 紧凑布局没有右侧面板切换器，
+                此前只能先进入编辑器才能导出，批量导出路径过长 */}
+            {isLibraryView && onExportClick && (
+              <button
+                className="w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                disabled={isExportDisabled}
+                onClick={onExportClick}
+                aria-label={t('editor.switcher.tooltips.export')}
+                data-tooltip={t('editor.switcher.tooltips.export')}
+              >
+                <FileInput size={18} />
+              </button>
+            )}
           </div>
 
           {/* Android 紧凑编辑器隐藏快速过滤：过滤作用于图库筛选,编辑视图中无意义,

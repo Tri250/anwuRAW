@@ -194,6 +194,7 @@
       "pasteParametric": "Parametrische Kurve einfügen",
       "pastePoint": "Punktkurve einfügen",
       "pointCurve": "Punktkurve",
+      "moreOptions": "Weitere Optionen",
       "resetAllParametric": "Alle parametrischen Kurven zurücksetzen",
       "resetAllPoint": "Alle Punktkurven zurücksetzen",
       "resetParametric": "Parametrische {{channel}}-Kurve zurücksetzen",
@@ -945,6 +946,8 @@
       "tooltips": {
         "aperture": "Blende",
         "backToLibrary": "Zurück zur Bibliothek",
+        "history": "Verlauf",
+        "more": "Weitere Optionen",
         "focalLength": "Brennweite",
         "fullscreen": "Vollbild umschalten (F)",
         "iso": "ISO",
@@ -1233,7 +1236,9 @@
         "thumbnailFit": "Miniaturansicht Einpassen",
         "thumbnailSize": "Miniaturbildgröße",
         "title": "Ansichtsoptionen"
-      }
+      },
+      "selectMultiple": "Mehrere auswählen",
+      "selectMultipleDone": "Fertig"
     },
     "import": {
       "complete": "Import abgeschlossen!",
@@ -2138,8 +2143,10 @@
     "depthMapFailed": "Fehler beim Erzeugen der Tiefenkarte: {{error}}",
     "folderLoadFailed": "Fehler beim Laden des Ordners: {{error}}",
     "folderTreeLoadFailed": "Fehler beim Laden des Ordnerbaums: {{error}}",
+    "folderSelectionFailed": "Dialog zur Ordnerauswahl konnte nicht geöffnet werden.",
     "imageLoadFailed": "Fehler beim Laden des Bilds: {{error}}",
     "imagesLoadFailed": "Bilder aus dem ausgewählten Ordner konnten nicht geladen werden.",
+    "openLibraryFailed": "Bibliothek konnte nicht geöffnet werden.",
     "lutLoadFailed": "Fehler beim Laden des LUT: {{error}}",
     "metadataUpdateFailed": "Fehler beim Aktualisieren der Metadaten: {{error}}",
     "moveFilesFailed": "Fehler beim Verschieben der Dateien: {{error}}",
