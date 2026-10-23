@@ -504,6 +504,31 @@ export const useAppInitialization = ({
     return () => darkQuery.removeEventListener('change', applySystemTheme);
   }, [osPlatform, appSettings, setTheme]);
 
+  // Android 底部系统栏 inset 同步：MainActivity 在 WindowInsets 变化（启动/旋转/
+  // 键盘/分屏）时注入 window.__androidBottomInset 与 CSS 变量 --android-inset-bottom。
+  // 挂载即读一次（覆盖注入早于 React 挂载），并以短轮询兜底「页面加载前
+  // evaluateJavascript 被丢弃」的初始注入；变量后续变化由原生直接驱动 CSS，
+  // 无需 React 重渲染。非 Android 平台完全不执行。
+  useEffect(() => {
+    if (osPlatform !== 'android') return;
+    const root = document.documentElement;
+    const syncInset = () => {
+      const inset = (window as unknown as { __androidBottomInset?: number }).__androidBottomInset;
+      if (typeof inset === 'number' && inset >= 0) {
+        root.style.setProperty('--android-inset-bottom', `${inset}px`);
+        return true;
+      }
+      return false;
+    };
+    if (syncInset()) return;
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      if (syncInset() || attempts >= 12) window.clearInterval(timer);
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [osPlatform]);
+
   useEffect(() => {
     const root = document.documentElement;
 

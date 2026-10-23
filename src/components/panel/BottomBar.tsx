@@ -14,6 +14,7 @@ import { useUIStore } from '../../store/useUIStore';
 import { COLOR_LABELS } from '../../utils/adjustments';
 
 interface BottomBarProps {
+  avoidBottomInset?: boolean;
   filmstripHeight?: number;
   imageList?: Array<ImageFile>;
   imageRatings?: Record<string, number> | null;
@@ -46,6 +47,7 @@ interface BottomBarProps {
   selectedImage?: SelectedImage;
   setIsFilmstripVisible?(isVisible: boolean): void;
   showFilmstrip?: boolean;
+  showQuickFilter?: boolean;
   showZoomControls?: boolean;
   thumbnailAspectRatio: ThumbnailAspectRatio;
   totalImages?: number;
@@ -67,7 +69,7 @@ const StarRating = ({ rating, onRate, disabled }: StarRatingProps) => {
         return (
           <button
             // p-1.5 扩大触控目标：18px 图标 → 30px 命中区（Android 触屏误触率显著降低）
-            className="p-1.5 disabled:cursor-not-allowed"
+            className="p-1.5 transition-transform duration-150 active:scale-90 disabled:cursor-not-allowed"
             disabled={disabled}
             key={starValue}
             onClick={() => !disabled && onRate(starValue === rating ? 0 : starValue)}
@@ -106,7 +108,7 @@ const PanelToggleButton = ({ onClick, Icon, tooltip, disabled = false }: PanelTo
   <button
     className={clsx(
       // p-2 扩大触控目标：18px 图标 → 34px 命中区（触屏可达性）
-      'p-2 rounded-md transition-colors',
+      'p-2 rounded-md transition-[color,background-color,transform] duration-150 active:scale-90',
       disabled
         ? 'text-text-secondary opacity-40 cursor-not-allowed'
         : 'text-text-secondary hover:bg-surface hover:text-text-primary',
@@ -120,6 +122,7 @@ const PanelToggleButton = ({ onClick, Icon, tooltip, disabled = false }: PanelTo
 );
 
 export default function BottomBar({
+  avoidBottomInset = false,
   filmstripHeight,
   imageList = [],
   imageRatings,
@@ -148,6 +151,7 @@ export default function BottomBar({
   selectedImage,
   setIsFilmstripVisible,
   showFilmstrip = true,
+  showQuickFilter = true,
   showZoomControls = true,
   thumbnailAspectRatio,
   totalImages,
@@ -324,7 +328,14 @@ export default function BottomBar({
   };
 
   return (
-    <div className="shrink-0 bg-bg-secondary rounded-lg flex flex-col">
+    <div
+      className={clsx(
+        'shrink-0 bg-bg-secondary rounded-lg flex flex-col',
+        // 独立底部容器(图库/非紧凑编辑器)：背景延伸至屏幕最底部避让系统导航栏；
+        // 紧凑编辑器内嵌于面板容器时由父级负责避让，不重复设置
+        avoidBottomInset && 'bottom-inset-safe',
+      )}
+    >
       {!isLibraryView && showFilmstrip && (
         <div
           className={clsx(
@@ -370,7 +381,7 @@ export default function BottomBar({
           <div className="h-5 w-px bg-surface"></div>
           <div className="flex items-center gap-2">
             <button
-              className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+              className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
               disabled={isCopyDisabled}
               onClick={onCopy}
               data-tooltip={t('ui.bottomBar.tooltips.copySettings')}
@@ -403,7 +414,7 @@ export default function BottomBar({
             </button>
 
             <button
-              className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+              className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
               disabled={isPasteDisabled}
               onClick={onPaste}
               data-tooltip={t('ui.bottomBar.tooltips.pasteSettings')}
@@ -436,7 +447,7 @@ export default function BottomBar({
             </button>
 
             <button
-              className="w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90"
               onClick={onOpenCopyPasteSettings}
               data-tooltip={t('ui.bottomBar.tooltips.copyPasteSettings')}
             >
@@ -444,17 +455,21 @@ export default function BottomBar({
             </button>
           </div>
 
-          <div className="h-5 w-px bg-surface"></div>
+          {/* Android 紧凑编辑器隐藏快速过滤：过滤作用于图库筛选,编辑视图中无意义,
+              且展开态 400px 宽在 ≤360px 小屏会挤爆底栏 */}
+          {showQuickFilter && (
+            <>
+              <div className="h-5 w-px bg-surface"></div>
 
-          <div
-            className={clsx(
-              'flex items-center transition-all duration-300',
-              isFilterExpanded ? 'bg-surface rounded-md' : 'bg-transparent',
-            )}
-          >
+              <div
+                className={clsx(
+                  'flex items-center transition-all duration-300',
+                  isFilterExpanded ? 'bg-surface rounded-md' : 'bg-transparent',
+                )}
+              >
             <button
               className={clsx(
-                'relative w-8 h-8 flex items-center justify-center rounded-md transition-colors shrink-0',
+                'relative w-8 h-8 flex items-center justify-center rounded-md transition-[color,background-color,transform] duration-150 active:scale-90 shrink-0',
                 isFilterExpanded ? 'text-text-primary' : 'text-text-secondary hover:bg-surface hover:text-text-primary',
               )}
               onClick={() => setIsFilterExpanded(!isFilterExpanded)}
@@ -534,6 +549,8 @@ export default function BottomBar({
               </div>
             </div>
           </div>
+              </>
+          )}
 
           <div
             className={clsx(

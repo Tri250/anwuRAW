@@ -261,7 +261,7 @@ export function MobilePanelSwitcher({
   return (
     <div
       data-mobile-panel-switcher
-      className="flex items-center gap-2 p-2 overflow-x-auto border-t border-surface shrink-0 custom-scrollbar"
+      className="flex items-center gap-1 p-2 overflow-x-auto border-t border-surface shrink-0 custom-scrollbar"
     >
       {MOBILE_PANELS.map((id) => {
         const Icon = PANEL_ICONS[id];
@@ -274,13 +274,24 @@ export function MobilePanelSwitcher({
             aria-label={t(PANEL_TITLES[id])}
             aria-pressed={isActive}
             className={clsx(
-              'p-2 rounded-md shrink-0 transition-colors',
-              isActive
-                ? 'bg-surface text-text-primary'
-                : 'text-text-secondary hover:bg-surface hover:text-text-primary',
+              // 图标 + 短标签双层结构(国内主流修图 App 导航样式)：44px 触控目标,
+              // 按压缩放反馈,active 弹簧指示器随选中项平滑滑动
+              'relative flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg shrink-0',
+              'transition-[color,transform] duration-150 active:scale-95',
+              isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary',
             )}
           >
-            <Icon size={20} />
+            {isActive && (
+              <motion.div
+                layoutId="mobile-panel-indicator"
+                className="absolute inset-0 bg-surface rounded-lg"
+                transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+              />
+            )}
+            <Icon size={20} className="relative z-10" />
+            <span className="relative z-10 text-[10px] leading-none select-none whitespace-nowrap">
+              {t(PANEL_TITLES[id])}
+            </span>
           </button>
         );
       })}
