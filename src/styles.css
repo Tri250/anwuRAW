@@ -579,6 +579,15 @@ html[data-platform='android'] .fixed.inset-0.flex.items-center.justify-center > 
   overscroll-behavior: contain;
 }
 
+/* Android 面板与可滚动区域触控体验优化：
+   -webkit-overflow-scrolling: touch 启用 GPU 加速滚动，手指离开后继续惯性滑动；
+   overscroll-behavior: contain 防止滚动穿透到外层（如图片预览区），
+   避免用户滚动面板滑块时误触发图片缩放或页面滚动。 */
+html[data-platform='android'] .overflow-y-auto,
+html[data-platform='android'] .custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+}
+
 /* 全局动效降级：当系统开启"减少动态效果"时，收敛所有 CSS 动画/过渡与平滑滚动。
    framer-motion 方向的降级由 App.tsx 顶部 <MotionConfig reducedMotion="user"> 负责。 */
 @media (prefers-reduced-motion: reduce) {

@@ -1,4 +1,4 @@
-import { type RefObject, type PointerEvent as ReactPointerEvent } from 'react';
+import { type RefObject, type PointerEvent as ReactPointerEvent, useRef, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -98,6 +98,62 @@ export default function EditorView({
     })),
   );
 
+  // === 移动端面板滑动手势：上滑展开、下滑收起 ===
+  // 与面板内容区垂直滚动互斥：仅在面板顶部/切换器区域或折叠态时识别滑动
+  const touchStartRef = useRef<{ y: number; time: number; panelOpen: boolean } | null>(null);
+  const SWIPE_THRESHOLD_PX = 56; // 滑动距离阈值（约半个手指高度）
+  const SWIPE_MAX_DURATION_MS = 400; // 滑动最大持续时间
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (!isCompactPortrait) return;
+    const t = e.touches[0];
+    touchStartRef.current = {
+      y: t.clientY,
+      time: Date.now(),
+      panelOpen: !!activePanel,
+    };
+  }, [isCompactPortrait, activePanel]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isCompactPortrait || !touchStartRef.current) return;
+    const t = e.touches[0];
+    const deltaY = touchStartRef.current.y - t.clientY; // 正值 = 上滑
+    const absDelta = Math.abs(deltaY);
+    // 一旦确认为垂直滑动且超过阈值，阻止默认滚动行为
+    if (absDelta > 12) {
+      // 如果面板展开且内容区可滚动，仅在切换器/Resizer 区域（顶部 40px）识别滑动手势
+      const target = e.target as HTMLElement;
+      const isTopZone =
+        touchStartRef.current.y <= (e.currentTarget.getBoundingClientRect().top + 40);
+      if (touchStartRef.current.panelOpen && !isTopZone) {
+        touchStartRef.current = null;
+        return;
+      }
+      if (absDelta > SWIPE_THRESHOLD_PX * 0.5) {
+        e.preventDefault();
+      }
+    }
+  }, [isCompactPortrait]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!isCompactPortrait || !touchStartRef.current) return;
+    const start = touchStartRef.current;
+    const t = e.changedTouches[0];
+    const deltaY = start.y - t.clientY; // 正值 = 上滑
+    const absDelta = Math.abs(deltaY);
+    const duration = Date.now() - start.time;
+    touchStartRef.current = null;
+    if (duration > SWIPE_MAX_DURATION_MS) return;
+    if (absDelta < SWIPE_THRESHOLD_PX) return;
+    if (deltaY > 0 && !start.panelOpen) {
+      // 上滑且面板折叠 → 展开默认面板（调整）
+      handlePanelSelect(Panel.Adjustments);
+    } else if (deltaY < 0 && start.panelOpen) {
+      // 下滑且面板展开 → 收起
+      handlePanelSelect(null);
+    }
+  }, [isCompactPortrait, handlePanelSelect]);
+
   const editorNode = (
     <Editor
       onBackToLibrary={handleBackToLibrary}
@@ -186,6 +242,9 @@ export default function EditorView({
             : `calc(${compactEditorPanelCollapsedHeight}px + var(--android-inset-bottom, 0px))`,
         opacity: isFullScreen ? 0 : 1,
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {activePanel && !isFullScreen && (
         <Resizer
@@ -194,7 +253,9 @@ export default function EditorView({
           onDoubleClick={createResizeResetHandler('compact')}
         />
       )}
-      <div className="min-h-0 flex-1 overflow-hidden relative">
+      {/* 折叠态时内容区高度压缩为 0，避免 flex-1 展开形成大片白色空白；
+          展开态时 flex-1 占据切换器与底栏之间的剩余空间 */}
+      <div className={clsx('overflow-hidden relative', activePanel ? 'min-h-0 flex-1' : 'h-0')}>
         <AnimatePresence mode="wait">
           {activePanel && (
             <motion.div
@@ -210,6 +271,13 @@ export default function EditorView({
           )}
         </AnimatePresence>
       </div>
+      {/* 折叠态拖拽提示条：国内 App 标准交互，提示用户可上滑展开面板；
+          展开态由 Resizer 替代，提示条隐藏避免重复 */}
+      {!activePanel && (
+        <div className="shrink-0 flex items-center justify-center py-1.5">
+          <div className="w-10 h-1 rounded-full bg-border-color/50" />
+        </div>
+      )}
       <MobilePanelSwitcher activePanel={activePanel} onPanelSelect={handlePanelSelect} />
       <div className="shrink-0 border-t border-surface">{editorBottomBarComponent}</div>
     </div>
