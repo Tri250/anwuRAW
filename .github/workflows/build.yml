@@ -241,7 +241,9 @@ jobs:
           template='${{ steps.patch-release-name.outputs.platform }}'
 
           find src-tauri/gen/android/app/build/outputs -type f \( -name '*.apk' -o -name '*.aab' \) | while read -r file; do
-            ext=".${file##*.}"
+            # 不带点的扩展名：模板中占位符为 [ext]，点由模板的 ".[ext]" 提供，
+            # 若此处再带点会拼出 "aarch64..apk" 双点文件名
+            ext="${file##*.}"
             asset_name="${template//\[name\]/$app_name}"
             asset_name="${asset_name//\[version\]/$version}"
             asset_name="${asset_name//\[arch\]/$arch}"
