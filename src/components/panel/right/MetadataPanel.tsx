@@ -889,7 +889,7 @@ export default function MetadataPanel() {
                                     >
                                       {tagItem.tag}
                                     </Text>
-                                    <X size={10} className="opacity-50 group-hover:opacity-100" />
+                                    <X size={10} className="opacity-50 group-hover:opacity-100 touch-visible-on-nohover" />
                                   </motion.div>
                                 ))
                               ) : (
