@@ -264,17 +264,43 @@ jobs:
           # `gh release upload <tag>` 会命中错误对象导致资产落到错误 release。
           # 先删除同名旧资产再上传，等价于 --clobber 且保持可重跑幂等。
           release_id="${{ inputs.release-id }}"
-          for f in "$RUNNER_TEMP"/android-release-assets/*; do
+
+          # 防御：stage 目录为空时 glob 走字面量，后续 POST 会以诡异方式失败，
+          # 这里 fail-fast 给出可读错误（正常失败应在上游 Build/Prepare 步骤暴露）
+          shopt -s nullglob
+          files=("$RUNNER_TEMP"/android-release-assets/*)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No Android assets staged in $RUNNER_TEMP/android-release-assets (Prepare step found no APK/AAB)"
+            exit 1
+          fi
+
+          for f in "${files[@]}"; do
             name="$(basename "$f")"
             stale_ids="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets" \
               --jq ".[] | select(.name == \"${name}\") | .id" 2>/dev/null || true)"
             for eid in $stale_ids; do
               gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/assets/${eid}" 2>/dev/null || true
             done
-            gh api --method POST \
-              "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?name=${name}" \
-              -H "Content-Type: application/octet-stream" \
-              --input "$f" >/dev/null
+            # 资产上传端点必须在 uploads.github.com 域名：GitHub REST 文档规定
+            # "Upload a release asset" 走 uploads.github.com，POST 到 api.github.com
+            # 的同名路径会返回 404（查询/删除等管理端点才在 api.github.com）。
+            # 教训：v1.6.21 Android job 上传资产时全部 404 失败即因此。
+            uploaded=0
+            for attempt in 1 2 3; do
+              if gh api --method POST \
+                "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?name=${name}" \
+                -H "Content-Type: application/octet-stream" \
+                --input "$f" >/dev/null; then
+                uploaded=1
+                break
+              fi
+              echo "⚠️ upload attempt $attempt/3 failed for ${name}"
+              sleep $((attempt * 5))
+            done
+            if [ "$uploaded" -ne 1 ]; then
+              echo "::error::Failed to upload ${name} to release ${release_id} after 3 attempts"
+              exit 1
+            fi
             echo "uploaded: ${name}"
           done
 
