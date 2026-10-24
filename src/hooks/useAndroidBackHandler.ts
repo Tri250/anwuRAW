@@ -4,19 +4,6 @@ import { useSettingsStore } from '../store/useSettingsStore';
 import { useEditorStore } from '../store/useEditorStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { Panel } from '../components/ui/AppProperties';
-import { ANDROID_PHONE_MAX_HEIGHT, ANDROID_PHONE_MAX_WIDTH } from '../utils/touchUtils';
-
-/**
- * 与 App.tsx 中 isCompactPortrait 的 Android 判定保持一致：
- * 竖屏且视口宽 ≤ ANDROID_PHONE_MAX_WIDTH，或横屏手机(视口高 ≤ ANDROID_PHONE_MAX_HEIGHT)。
- * 仅在这两种紧凑布局下才存在移动端面板节点(MobilePanelSwitcher + activePanel)。
- */
-function isCompactPortraitViewport(): boolean {
-  if (typeof window === 'undefined') return false;
-  const vw = window.visualViewport?.width ?? window.innerWidth;
-  const vh = window.visualViewport?.height ?? window.innerHeight;
-  return vw > 0 && ((vh > vw && vw <= ANDROID_PHONE_MAX_WIDTH) || vh <= ANDROID_PHONE_MAX_HEIGHT);
-}
 
 /**
  * Android 返回键统一入口（由 MainActivity.onBackPressedDispatcher 调用）。
@@ -24,8 +11,8 @@ function isCompactPortraitViewport(): boolean {
  * 处理层级（从高到低）：
  * 1. 各类模态弹窗 → 逐个关闭
  * 2. 全屏浮层面板（设置 / 库导出）
- * 3. 移动端紧凑编辑面板（浏览型：调整/元数据/预设/导出等）→ 收起面板
- * 4. 其余编辑态（拉直/蒙版选中/裁剪/全屏）与视图层级 → 派发 Escape 交由快捷键系统逐层退出
+ * 3. 其余编辑态（拉直/蒙版选中/裁剪/全屏）与视图层级 → 派发 Escape 交由快捷键系统逐层退出
+ *    （移动端紧凑面板常驻展开，不设返回键收起层级）
  *
  * 返回值：是否消费了本次返回事件。返回 false 表示已无任何可退出的层级
  * （应用主页/社区页），MainActivity 据此 moveTaskToBack 将应用退至后台，
@@ -144,28 +131,9 @@ export function useAndroidBackHandler() {
         return true;
       }
 
-      // 再收起移动端紧凑编辑面板：返回键应先收起浏览型面板，而非直接退出编辑器。
-      // 裁剪面板属编辑模式，交由 Escape 兜底切回调整面板（面板保持展开）；
-      // 蒙版/AI 面板若存在选中容器（或拉直等编辑态），同样先由 Escape 关闭选中态，面板保持展开。
-      const editorState = useEditorStore.getState();
-      const hasEscapeSelectionState =
-        editorState.isStraightenActive ||
-        ui.customEscapeHandler ||
-        editorState.activeAiSubMaskId ||
-        editorState.activeAiPatchContainerId ||
-        editorState.activeMaskId ||
-        editorState.activeMaskContainerId;
-      if (
-        ui.activeView === 'editor' &&
-        !ui.isFullScreen &&
-        !hasEscapeSelectionState &&
-        ui.activePanel &&
-        ui.activePanel !== Panel.Crop &&
-        isCompactPortraitViewport()
-      ) {
-        ui.setUI({ activePanel: null });
-        return true;
-      }
+      // 面板常驻展开（v1.6.21 反馈「面板不要折叠」）：返回键不再收起移动端
+      // 紧凑编辑面板。编辑态（拉直/蒙版选择/Crop）仍由下方 Escape 派发逐级退出；
+      // 无编辑态时 Escape 直接退回图库，面板保持展开（activePanel 不重置）
 
       // 返回键应先退出图库多选模式，而不是直接回主页/退到后台
       const libraryBeforeEscape = useLibraryStore.getState();

@@ -938,8 +938,7 @@
         "inpaint": "Inpaint",
         "masks": "Masks",
         "presets": "Presets",
-        "tethering": "Tethering",
-        "swipeHint": "Swipe up to open panels"
+        "tethering": "Tethering"
       }
     },
     "toolbar": {

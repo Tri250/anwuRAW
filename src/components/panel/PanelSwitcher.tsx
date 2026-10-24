@@ -272,7 +272,9 @@ export function MobilePanelSwitcher({
         return (
           <button
             key={id}
-            onClick={() => onPanelSelect(isActive ? null : id)}
+            // 面板常驻展开（v1.6.21 反馈「面板不要折叠」）：重复点击已激活 tab
+            // 仅重新选中该面板，不再折叠面板；切换目标面板也走同一入口
+            onClick={() => onPanelSelect(id)}
             aria-label={t(PANEL_TITLES[id])}
             aria-pressed={isActive}
             className={clsx(

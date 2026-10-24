@@ -959,8 +959,7 @@
         "inpaint": "Inpainting",
         "masks": "Masques",
         "presets": "Paramètres prédéfinis",
-        "tethering": "Prise de vue connectée",
-        "swipeHint": "Glissez vers le haut pour ouvrir les panneaux"
+        "tethering": "Prise de vue connectée"
       }
     },
     "toolbar": {

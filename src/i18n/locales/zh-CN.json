@@ -938,8 +938,7 @@
         "inpaint": "修复",
         "masks": "蒙版",
         "presets": "预设",
-        "tethering": "联机拍摄",
-        "swipeHint": "上滑展开面板"
+        "tethering": "联机拍摄"
       }
     },
     "toolbar": {

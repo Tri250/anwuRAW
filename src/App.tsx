@@ -348,11 +348,6 @@ function App() {
     compactEditorPanelMinHeight,
     Math.min(compactEditorPanelHeightOverride ?? compactEditorPanelDefaultHeight, compactEditorPanelMaxHeight),
   );
-  // 折叠态高度须装下内部固定控件（Android 根字号 106.25% 下的实测值）：
-  // 上滑提示条(文字+圆条同行，py-2 点击区 ≈33px) + MobilePanelSwitcher(p-1.5 + 图标/标签按钮 ≈67px)
-  // + BottomBar(h-12 + 顶边框 ≈52px) ≈ 148px。旧值 148px 在提示条加大点击区后余量不足，
-  // 152px 保留 ~4px 余量，避免 Android 字体缩放/横屏时底部按钮被 overflow-hidden 切掉
-  const compactEditorPanelCollapsedHeight = 152;
 
   const { handleCopyAdjustments, handlePasteAdjustments, handleResetAdjustments, handleZoomChange } =
     useEditorActions();
@@ -971,7 +966,6 @@ function App() {
                       isCompactPortrait={isCompactPortrait}
                       isAndroid={isAndroid}
                       compactEditorPanelHeight={compactEditorPanelHeight}
-                      compactEditorPanelCollapsedHeight={compactEditorPanelCollapsedHeight}
                       thumbnailAspectRatio={thumbnailAspectRatio}
                       sortedImageList={sortedImageList}
                       createResizeHandler={createResizeHandler}
