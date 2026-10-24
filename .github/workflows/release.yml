@@ -272,3 +272,41 @@ jobs:
     secrets: inherit
     permissions:
       contents: write
+
+  # ---------------------------------------------------------------------------
+  # 收尾发布：全部 matrix 构建成功后，将 ensure-release 创建的 draft release
+  # 转为正式发布（历史缺口：此前工作流止步于资产上传，每次都需手动发布，
+  # v1.6.23 即为手动发布）。任一构建失败则跳过，draft 保留供排查。
+  # ---------------------------------------------------------------------------
+  publish:
+    needs: [ensure-release, release]
+    if: ${{ !cancelled() && (github.event_name == 'release' || needs.ensure-release.result == 'success') && needs.release.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # release.created 事件路径下 ensure-release 被跳过，outputs 为空，
+          # 回退到事件自带的 tag 名
+          tag="${{ needs.ensure-release.outputs.tag || github.ref_name }}"
+          release_id="${{ needs.ensure-release.outputs.release-id }}"
+          if [[ -z "$release_id" ]]; then
+            release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" -q '.id' 2>/dev/null || true)"
+          fi
+          if ! [[ "$release_id" =~ ^[0-9]+$ ]]; then
+            echo "❌ Cannot resolve numeric release id for tag $tag (got: ${release_id:-<empty>})."
+            exit 1
+          fi
+          # 幂等：仅当仍是 draft 时发布（重复 run / release.created 路径不报错）
+          is_draft="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" -q '.draft')"
+          if [[ "$is_draft" == "true" ]]; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" -F draft=false > /dev/null
+            echo "🚀 Published release $tag (id=$release_id)"
+          else
+            echo "ℹ️ Release $tag already published, nothing to do."
+          fi
