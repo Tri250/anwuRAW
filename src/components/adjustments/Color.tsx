@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Pipette, Sliders } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import Slider from '../ui/Slider';
+import Slider, { SliderChangeEvent } from '../ui/Slider';
 import ColorWheel from '../ui/ColorWheel';
 import { ColorAdjustment, ColorCalibration, HueSatLum, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
 import { Adjustments, ColorGrading } from '../../utils/adjustments';
@@ -10,6 +10,22 @@ import { AppSettings } from '../ui/AppProperties';
 import Text from '../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../types/typography';
 import { useEditorStore } from '../../store/useEditorStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
+import {
+  D65_AS_SHOT,
+  getRelativeWhiteBalance,
+  getWhiteBalanceMode,
+  kelvinSliderScale,
+  MAX_TEMPERATURE,
+  MAX_TINT,
+  MIN_TEMPERATURE,
+  RELATIVE_RANGE,
+  resolveWhiteBalance,
+  WhiteBalance,
+  WhiteBalanceMode,
+  withKelvinWhiteBalance,
+  withRelativeWhiteBalance,
+} from '../../utils/whiteBalance';
 
 interface ColorProps {
   color: string;
@@ -21,6 +37,7 @@ interface ColorPanelProps {
   adjustments: Adjustments;
   setAdjustments(adjustments: Partial<Adjustments>): any;
   appSettings: AppSettings | null;
+  asShotWhiteBalance?: WhiteBalance;
   isForMask?: boolean;
   isWbPickerActive?: boolean;
   toggleWbPicker?: () => void;
@@ -398,12 +415,14 @@ export default function ColorPanel({
   adjustments,
   setAdjustments,
   appSettings,
+  asShotWhiteBalance = D65_AS_SHOT,
   isForMask = false,
   isWbPickerActive = false,
   toggleWbPicker,
   onDragStateChange,
 }: ColorPanelProps) {
   const { t } = useTranslation();
+  const handleSettingsChange = useSettingsStore((state) => state.handleSettingsChange);
   const [activeColor, setActiveColor] = useState('reds');
   const adjustmentVisibility = appSettings?.adjustmentVisibility || {};
   const isWgpuEnabled = appSettings?.useWgpuRenderer !== false;
@@ -481,40 +500,91 @@ export default function ColorPanel({
   const saturation_slider = `sat-slider-${activeColor}`;
   const luminance_slider = `lum-slider-${activeColor}`;
 
+  // Kelvin 模式：色温/色调以绝对值（2000–50000K / ±150）呈现，存入 adjustments.whiteBalance；
+  // 相对模式保持原有 -100..100 滑块，若存在绝对白平衡则换算回相对值显示。
+  const kelvinAsShot = !isForMask && getWhiteBalanceMode(appSettings) === WhiteBalanceMode.Kelvin ? asShotWhiteBalance : undefined;
+  const isKelvinMode = !!kelvinAsShot;
+  const displayedWhiteBalance = kelvinAsShot
+    ? resolveWhiteBalance(kelvinAsShot, adjustments)
+    : getRelativeWhiteBalance(asShotWhiteBalance, adjustments);
+  const tintRange = kelvinAsShot ? MAX_TINT : RELATIVE_RANGE;
+
+  const toggleWhiteBalanceMode = () => {
+    if (appSettings) {
+      handleSettingsChange({
+        ...appSettings,
+        whiteBalanceMode: isKelvinMode ? WhiteBalanceMode.Relative : WhiteBalanceMode.Kelvin,
+      });
+    }
+  };
+
+  const handleWhiteBalanceChange = (key: keyof WhiteBalance, value: number | string) => {
+    setAdjustments((prev: Adjustments) => {
+      if (kelvinAsShot) {
+        return withKelvinWhiteBalance(prev, { ...resolveWhiteBalance(kelvinAsShot, prev), [key]: Number(value) });
+      }
+      return prev.whiteBalance
+        ? withRelativeWhiteBalance(prev, {
+            ...getRelativeWhiteBalance(asShotWhiteBalance, prev),
+            [key]: Number(value),
+          })
+        : { ...prev, [key]: Number(value) };
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="p-2 bg-bg-tertiary rounded-md">
         <div className="flex justify-between items-center mb-2">
           <Text variant={TextVariants.heading}>{t('adjustments.color.whiteBalance')}</Text>
-          {!isForMask && toggleWbPicker && (
-            <button
-              onClick={toggleWbPicker}
-              className={`p-1.5 rounded-md transition-colors ${
-                isWbPickerActive ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
-              }`}
-              data-tooltip={t('adjustments.color.wbPickerTooltip')}
-            >
-              <Pipette size={16} />
-            </button>
+          {!isForMask && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={toggleWhiteBalanceMode}
+                className={`w-6 h-6 flex items-center justify-center rounded-md text-xs font-semibold transition-colors ${
+                  isKelvinMode ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
+                }`}
+                data-tooltip={t('adjustments.color.kelvinModeTooltip')}
+              >
+                K
+              </button>
+              {toggleWbPicker && (
+                <button
+                  onClick={toggleWbPicker}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    isWbPickerActive ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
+                  }`}
+                  data-tooltip={t('adjustments.color.wbPickerTooltip')}
+                >
+                  <Pipette size={16} />
+                </button>
+              )}
+            </div>
           )}
         </div>
         <Slider
+          key={isKelvinMode ? 'kelvinTemperature' : 'temperature'}
+          defaultValue={kelvinAsShot?.temperature}
           label={t('adjustments.color.temperature')}
-          max={100}
-          min={-100}
-          onChange={(e: any) => handleAdjustmentChange(ColorAdjustment.Temperature, e.target.value)}
-          step={1}
-          value={adjustments.temperature || 0}
+          max={kelvinAsShot ? MAX_TEMPERATURE : RELATIVE_RANGE}
+          min={kelvinAsShot ? MIN_TEMPERATURE : -RELATIVE_RANGE}
+          onChange={(e: SliderChangeEvent) => handleWhiteBalanceChange('temperature', e.target.value)}
+          scale={kelvinAsShot ? kelvinSliderScale : undefined}
+          step={kelvinAsShot ? 50 : 1}
+          suffix={kelvinAsShot ? 'K' : undefined}
+          value={displayedWhiteBalance.temperature}
           trackClassName="temperature-gradient-track"
           onDragStateChange={onDragStateChange}
         />
         <Slider
+          key={isKelvinMode ? 'kelvinTint' : 'tint'}
+          defaultValue={kelvinAsShot?.tint}
           label={t('adjustments.color.tint')}
-          max={100}
-          min={-100}
-          onChange={(e: any) => handleAdjustmentChange(ColorAdjustment.Tint, e.target.value)}
+          max={tintRange}
+          min={-tintRange}
+          onChange={(e: SliderChangeEvent) => handleWhiteBalanceChange('tint', e.target.value)}
           step={1}
-          value={adjustments.tint || 0}
+          value={displayedWhiteBalance.tint}
           trackClassName="tint-gradient-track"
           onDragStateChange={onDragStateChange}
         />

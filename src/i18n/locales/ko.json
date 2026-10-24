@@ -167,6 +167,7 @@
       "toggleSliders": "슬라이더 전환",
       "vibrance": "생동감",
       "wbPickerTooltip": "화이트 밸런스 피커",
+      "kelvinModeTooltip": "색온도를 켈빈으로 표시",
       "wbPickerWgpuDisabled": "WB 피커: 설정에서 WGPU를 비활성화하세요.",
       "whiteBalance": "화이트 밸런스"
     },

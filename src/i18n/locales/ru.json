@@ -167,6 +167,7 @@
       "toggleSliders": "Переключить ползунки",
       "vibrance": "Красочность",
       "wbPickerTooltip": "Пипетка баланса белого",
+      "kelvinModeTooltip": "Показывать температуру в кельвинах",
       "wbPickerWgpuDisabled": "Пипетка ББ: отключите WGPU в настройках.",
       "whiteBalance": "Баланс белого"
     },

@@ -7,6 +7,13 @@ import { Stamp, Bandage, Spline, BrushCleaning } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'react-toastify';
 import { Adjustments, AiPatch, Coord, GuideLine, GuideOrientation, MaskContainer } from '../../../utils/adjustments';
+import {
+  D65_AS_SHOT,
+  getWhiteBalanceMode,
+  resolveWhiteBalance,
+  WhiteBalanceMode,
+  withKelvinWhiteBalance,
+} from '../../../utils/whiteBalance';
 import { Mask, SubMask, SubMaskMode, ToolType } from '../right/Masks';
 import { AppSettings, BrushSettings, SelectedImage } from '../../ui/AppProperties';
 import { RenderSize } from '../../../hooks/useImageRenderSize';
@@ -2019,11 +2026,18 @@ const ImageCanvas = memo(
           const deltaTemp = median(tempSignals) * 125.0;
           const deltaTint = tintSignals.length > 0 ? median(tintSignals) * 400.0 : 0;
 
-          setAdjustments((prev: Adjustments) => ({
-            ...prev,
-            temperature: Math.max(-100, Math.min(100, deltaTemp)),
-            tint: Math.max(-100, Math.min(100, deltaTint)),
-          }));
+          // Kelvin 模式下把吸管结果换算为绝对白平衡存入 adjustments.whiteBalance，
+          // 相对模式维持原有 -100..100 滑块偏移。
+          if (getWhiteBalanceMode(appSettings) === WhiteBalanceMode.Kelvin) {
+            const picked = resolveWhiteBalance(D65_AS_SHOT, { temperature: deltaTemp, tint: deltaTint });
+            setAdjustments((prev: Adjustments) => withKelvinWhiteBalance(prev, picked));
+          } else {
+            setAdjustments((prev: Adjustments) => ({
+              ...prev,
+              temperature: Math.max(-100, Math.min(100, deltaTemp)),
+              tint: Math.max(-100, Math.min(100, deltaTint)),
+            }));
+          }
 
           onWbPicked();
         };
@@ -2036,6 +2050,7 @@ const ImageCanvas = memo(
         onWbPicked,
         setAdjustments,
         getCanvasPointer,
+        appSettings,
       ],
     );
 

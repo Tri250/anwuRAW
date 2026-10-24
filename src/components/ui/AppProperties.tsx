@@ -1,6 +1,7 @@
 import { ExportPreset } from './ExportImportProperties';
 import { Adjustments, CopyPasteSettings } from '../../utils/adjustments';
 import { ToolType } from '../panel/right/Masks';
+import type { WhiteBalanceMode } from '../../utils/whiteBalance';
 
 export const GLOBAL_KEYS = [
   ' ',
@@ -235,6 +236,7 @@ export interface AppSettings {
   tonemapperOverrideEnabled?: boolean;
   defaultRawTonemapper?: string;
   defaultNonRawTonemapper?: string;
+  whiteBalanceMode?: WhiteBalanceMode;
   copyPasteSettings?: CopyPasteSettings;
   enableFocusMode?: boolean;
   openTreeSections?: string[];

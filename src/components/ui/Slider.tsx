@@ -2,13 +2,23 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next';
 import { GLOBAL_KEYS } from './AppProperties';
 
-type SliderChangeEvent =
+export type SliderChangeEvent =
   | React.ChangeEvent<HTMLInputElement>
   | {
       target: {
         value: number | string;
       };
     };
+
+export interface SliderScale {
+  fromPosition(position: number): number;
+  toPosition(value: number): number;
+}
+
+const LINEAR_SCALE: SliderScale = {
+  fromPosition: (position) => position,
+  toPosition: (value) => value,
+};
 
 interface SliderProps {
   defaultValue?: number;
@@ -19,12 +29,15 @@ interface SliderProps {
   onChange(event: SliderChangeEvent): void;
   onDragStateChange?(state: boolean): void;
   onPointerUp?(): void;
+  scale?: SliderScale;
   step: number;
   value: number;
   trackClassName?: string;
   fillOrigin?: 'min' | 'default';
   suffix?: string;
 }
+
+const getFraction = (value: number, min: number, max: number) => (max !== min ? (value - min) / (max - min) : 0);
 
 const DOUBLE_CLICK_THRESHOLD_MS = 150;
 const FINE_ADJUSTMENT_MULTIPLIER = 0.2;
@@ -43,6 +56,7 @@ const Slider = ({
   onChange,
   onDragStateChange = () => {},
   onPointerUp,
+  scale = LINEAR_SCALE,
   step = 1,
   value,
   trackClassName,
@@ -80,13 +94,17 @@ const Slider = ({
     };
   }, []);
 
-  const fillPercentage = max !== min ? ((displayValue - min) / (max - min)) * 100 : 0;
+  const minPosition = scale.toPosition(min);
+  const maxPosition = scale.toPosition(max);
+  const getPositionFraction = (val: number) => getFraction(scale.toPosition(val), minPosition, maxPosition);
+
+  const fillPercentage = getPositionFraction(displayValue) * 100;
   const originPercentage = useMemo(() => {
     if (fillOrigin === 'min') {
       return 0;
     }
-    return max !== min ? ((defaultValue - min) / (max - min)) * 100 : 0;
-  }, [fillOrigin, defaultValue, min, max]);
+    return getFraction(scale.toPosition(defaultValue), minPosition, maxPosition) * 100;
+  }, [fillOrigin, defaultValue, scale, minPosition, maxPosition]);
 
   const stepStr = String(step);
   const decimalPlaces = stepStr.includes('.') ? stepStr.split('.')[1].length : 0;
@@ -102,11 +120,13 @@ const Slider = ({
 
   const onChangeRef = useRef(onChange);
   const snapToStepRef = useRef(snapToStep);
-  const rangeRef = useRef({ min, max });
+  const rangeRef = useRef({ min: minPosition, max: maxPosition });
+  const scaleRef = useRef(scale);
 
   onChangeRef.current = onChange;
   snapToStepRef.current = snapToStep;
-  rangeRef.current = { min, max };
+  rangeRef.current = { min: minPosition, max: maxPosition };
+  scaleRef.current = scale;
 
   const onDragStateChangeRef = useRef(onDragStateChange);
   onDragStateChangeRef.current = onDragStateChange;
@@ -250,7 +270,7 @@ const Slider = ({
         lastPointerXRef.current = clientX;
       }
 
-      const snappedValue = snapToStepRef.current(accumulatedValueRef.current);
+      const snappedValue = snapToStepRef.current(scaleRef.current.fromPosition(accumulatedValueRef.current));
 
       setDisplayValue(snappedValue);
       onChangeRef.current({ target: { value: snappedValue } });
@@ -360,8 +380,10 @@ const Slider = ({
     }
 
     if (!isDragging) {
-      setDisplayValue(Number(e.target.value));
-      onChange(e);
+      const numVal =
+        scale === LINEAR_SCALE ? Number(e.target.value) : snapToStep(scale.fromPosition(Number(e.target.value)));
+      setDisplayValue(numVal);
+      onChange(scale === LINEAR_SCALE ? e : { target: { value: numVal } });
     }
   };
 
@@ -376,10 +398,10 @@ const Slider = ({
 
     const rect = e.currentTarget.getBoundingClientRect();
     const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const rawValue = min + fraction * (max - min);
-    const snappedValue = snapToStep(rawValue);
+    const rawPosition = minPosition + fraction * (maxPosition - minPosition);
+    const snappedValue = snapToStep(scale.fromPosition(rawPosition));
 
-    accumulatedValueRef.current = rawValue;
+    accumulatedValueRef.current = rawPosition;
     lastPointerXRef.current = e.clientX;
 
     setIsDragging(true);
@@ -399,7 +421,7 @@ const Slider = ({
     if (!inputEl) return;
 
     const rect = inputEl.getBoundingClientRect();
-    const fraction = max !== min ? (displayValue - min) / (max - min) : 0;
+    const fraction = getPositionFraction(displayValue);
     const thumbX = rect.left + Math.max(0, Math.min(1, fraction)) * rect.width;
 
     if (Math.abs(touch.clientX - thumbX) > TOUCH_THUMB_HIT_RADIUS_PX) {
@@ -413,10 +435,10 @@ const Slider = ({
         return;
       }
       const trackFraction = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
-      const rawTrackValue = min + trackFraction * (max - min);
-      const snappedTrackValue = snapToStep(rawTrackValue);
+      const rawTrackPosition = minPosition + trackFraction * (maxPosition - minPosition);
+      const snappedTrackValue = snapToStep(scale.fromPosition(rawTrackPosition));
 
-      accumulatedValueRef.current = rawTrackValue;
+      accumulatedValueRef.current = rawTrackPosition;
       lastPointerXRef.current = touch.clientX;
       pendingTouchRef.current = null;
 
@@ -430,7 +452,7 @@ const Slider = ({
       startX: touch.clientX,
       startY: touch.clientY,
       latestX: touch.clientX,
-      startValue: displayValue,
+      startValue: scale.toPosition(displayValue),
     };
   };
 
@@ -460,10 +482,10 @@ const Slider = ({
 
     const rect = inputEl.getBoundingClientRect();
     const multiplier = hasFineAdjustmentModifier(e) ? FINE_ADJUSTMENT_MULTIPLIER : 1;
-    const rawValue = pendingTouch.startValue + (deltaX / rect.width) * (max - min) * multiplier;
-    const snappedValue = snapToStep(rawValue);
+    const rawPosition = pendingTouch.startValue + (deltaX / rect.width) * (maxPosition - minPosition) * multiplier;
+    const snappedValue = snapToStep(scale.fromPosition(rawPosition));
 
-    accumulatedValueRef.current = rawValue;
+    accumulatedValueRef.current = rawPosition;
     lastPointerXRef.current = touch.clientX;
     pendingTouchRef.current = null;
 
@@ -654,8 +676,8 @@ const Slider = ({
             isDragging ? 'slider-thumb-active' : ''
           } ${disabled ? 'cursor-not-allowed' : ''}`}
           style={{ margin: 0, touchAction: isDragging ? 'none' : 'pan-y' }}
-          max={String(max)}
-          min={String(min)}
+          max={String(maxPosition)}
+          min={String(minPosition)}
           onChange={handleChange}
           onDoubleClick={handleReset}
           onKeyDown={handleRangeKeyDown}
@@ -664,9 +686,9 @@ const Slider = ({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
-          step={String(step)}
+          step={scale === LINEAR_SCALE ? String(step) : 'any'}
           type="range"
-          value={displayValue}
+          value={scale.toPosition(displayValue)}
         />
       </div>
     </div>

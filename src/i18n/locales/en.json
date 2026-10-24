@@ -167,6 +167,7 @@
       "toggleSliders": "Toggle Sliders",
       "vibrance": "Vibrance",
       "wbPickerTooltip": "White Balance Picker",
+      "kelvinModeTooltip": "Show temperature in Kelvin",
       "wbPickerWgpuDisabled": "WB Picker: Disable WGPU in Settings.",
       "whiteBalance": "White Balance"
     },

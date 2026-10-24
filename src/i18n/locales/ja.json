@@ -167,6 +167,7 @@
       "toggleSliders": "スライダー切り替え",
       "vibrance": "自然な彩度",
       "wbPickerTooltip": "ホワイトバランススポイト",
+      "kelvinModeTooltip": "色温度をケルビンで表示",
       "wbPickerWgpuDisabled": "WBスポイト: 設定でWGPUを無効にしてください。",
       "whiteBalance": "ホワイトバランス"
     },

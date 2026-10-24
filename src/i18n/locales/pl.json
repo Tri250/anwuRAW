@@ -167,6 +167,7 @@
       "toggleSliders": "Przełącz suwaki",
       "vibrance": "Jaskrawość",
       "wbPickerTooltip": "Próbnik balansu bieli",
+      "kelvinModeTooltip": "Pokaż temperaturę w kelwinach",
       "wbPickerWgpuDisabled": "Próbnik BB: Wyłącz WGPU w Ustawieniach.",
       "whiteBalance": "Balans bieli"
     },

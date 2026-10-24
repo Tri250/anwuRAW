@@ -167,6 +167,7 @@
       "toggleSliders": "Regler umschalten",
       "vibrance": "Dynamik",
       "wbPickerTooltip": "Weißabgleich-Pipette",
+      "kelvinModeTooltip": "Temperatur in Kelvin anzeigen",
       "wbPickerWgpuDisabled": "WA-Pipette: WGPU in den Einstellungen deaktivieren.",
       "whiteBalance": "Weißabgleich"
     },

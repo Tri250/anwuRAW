@@ -167,6 +167,7 @@
       "toggleSliders": "Basculer les curseurs",
       "vibrance": "Vibrance",
       "wbPickerTooltip": "Pipette de balance des blancs",
+      "kelvinModeTooltip": "Afficher la température en Kelvin",
       "wbPickerWgpuDisabled": "Pipette BB : Désactivez WGPU dans les paramètres.",
       "whiteBalance": "Balance des blancs"
     },

@@ -500,6 +500,9 @@ pub struct AppSettings {
     pub default_raw_tonemapper: Option<String>,
     #[serde(default)]
     pub default_non_raw_tonemapper: Option<String>,
+    /// 白平衡滑块模式：kelvin（绝对色温 2000–50000K）/ relative（-100..100 相对偏移，默认）
+    #[serde(default)]
+    pub white_balance_mode: Option<String>,
     #[serde(default)]
     pub enable_focus_mode: Option<bool>,
     #[serde(default)]
@@ -614,6 +617,7 @@ impl Default for AppSettings {
             tonemapper_override_enabled: Some(false),
             default_raw_tonemapper: Some("agx".to_string()),
             default_non_raw_tonemapper: Some("basic".to_string()),
+            white_balance_mode: None,
             enable_focus_mode: Some(false),
             folder_icons: Some(HashMap::new()),
             raw_preprocessing_color_nr: Some(0.5),

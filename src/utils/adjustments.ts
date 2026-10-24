@@ -1,6 +1,7 @@
 import { Crop } from 'react-image-crop';
 import { v4 as uuidv4 } from 'uuid';
 import { SubMask, SubMaskMode } from '../components/panel/right/Masks';
+import type { WhiteBalance } from './whiteBalance';
 
 export enum ActiveChannel {
   Blue = 'blue',
@@ -48,6 +49,7 @@ export enum ColorAdjustment {
   Temperature = 'temperature',
   Tint = 'tint',
   Vibrance = 'vibrance',
+  WhiteBalance = 'whiteBalance',
 }
 
 export enum ColorGrading {
@@ -298,6 +300,7 @@ export interface Adjustments {
   structure: number;
   temperature: number;
   tint: number;
+  whiteBalance?: WhiteBalance | null;
   toneMapper: 'agx' | 'basic' | 'reinhard' | 'filmic' | 'gamma' | 'none';
   transformDistortion: number;
   transformVertical: number;
@@ -670,6 +673,7 @@ export const INITIAL_ADJUSTMENTS: Adjustments = {
   structure: 0,
   temperature: 0,
   tint: 0,
+  whiteBalance: null,
   toneMapper: 'basic',
   transformDistortion: 0,
   transformVertical: 0,
@@ -888,7 +892,7 @@ export const ADJUSTMENT_GROUPS: Record<string, AdjustmentGroup[]> = {
     },
   ],
   color: [
-    { label: 'modals.copyPaste.groups.whiteBalance', keys: [ColorAdjustment.Temperature, ColorAdjustment.Tint] },
+    { label: 'modals.copyPaste.groups.whiteBalance', keys: [ColorAdjustment.Temperature, ColorAdjustment.Tint, ColorAdjustment.WhiteBalance] },
     { label: 'modals.copyPaste.groups.presence', keys: [ColorAdjustment.Saturation, ColorAdjustment.Vibrance] },
     {
       label: 'modals.copyPaste.groups.hueShift',
@@ -1010,6 +1014,7 @@ export const ADJUSTMENT_SECTIONS: Sections = {
     ColorAdjustment.Saturation,
     ColorAdjustment.Temperature,
     ColorAdjustment.Tint,
+    ColorAdjustment.WhiteBalance,
     ColorAdjustment.Vibrance,
     ColorAdjustment.Hsl,
     ColorAdjustment.ColorGrading,

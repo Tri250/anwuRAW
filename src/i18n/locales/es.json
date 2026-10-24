@@ -167,6 +167,7 @@
       "toggleSliders": "Alternar controles",
       "vibrance": "Intensidad",
       "wbPickerTooltip": "Selector de balance de blancos",
+      "kelvinModeTooltip": "Mostrar la temperatura en Kelvin",
       "wbPickerWgpuDisabled": "Selector BB: Desactiva WGPU en los Ajustes.",
       "whiteBalance": "Balance de blancos"
     },
