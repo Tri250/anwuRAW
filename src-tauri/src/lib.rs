@@ -47,6 +47,7 @@ mod raw_processing;
 mod split_toning;
 mod tagging;
 mod tagging_utils;
+mod white_balance;
 mod window_customizer;
 
 use std::collections::{HashMap, hash_map::DefaultHasher};

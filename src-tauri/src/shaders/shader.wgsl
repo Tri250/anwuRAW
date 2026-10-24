@@ -1759,13 +1759,6 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     var t_blacks = adjustments.global.blacks;
     var t_saturation = adjustments.global.saturation;
     var t_wb_log_gains = vec3<f32>(adjustments.global.wb_log_gain_l, adjustments.global.wb_log_gain_m, adjustments.global.wb_log_gain_s);
-    // 本地兼容：Kelvin 引擎（Phase 6）接入前，将旧 temperature/tint 滑块近似映射为每通道 log 增益
-    let legacy_wb_mult = vec3<f32>(
-        (1.0 + adjustments.global.temperature * 0.2) * (1.0 + adjustments.global.tint * 0.25),
-        (1.0 + adjustments.global.temperature * 0.05) * (1.0 - adjustments.global.tint * 0.25),
-        (1.0 - adjustments.global.temperature * 0.2) * (1.0 + adjustments.global.tint * 0.25),
-    );
-    t_wb_log_gains += log(max(legacy_wb_mult, vec3<f32>(0.01)));
     var t_vibrance = adjustments.global.vibrance;
     var t_luma_nr = adjustments.global.luma_noise_reduction;
     var t_color_nr = adjustments.global.color_noise_reduction;
@@ -1802,12 +1795,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
             t_blacks += m.blacks * influence;
 
             t_saturation += m.saturation * influence;
-            let legacy_m_wb = vec3<f32>(
-                (1.0 + m.temperature * 0.2) * (1.0 + m.tint * 0.25),
-                (1.0 + m.temperature * 0.05) * (1.0 - m.tint * 0.25),
-                (1.0 - m.temperature * 0.2) * (1.0 + m.tint * 0.25),
-            );
-            t_wb_log_gains += (vec3<f32>(m.wb_log_gain_l, m.wb_log_gain_m, m.wb_log_gain_s) + log(max(legacy_m_wb, vec3<f32>(0.01)))) * influence;
+            t_wb_log_gains += vec3<f32>(m.wb_log_gain_l, m.wb_log_gain_m, m.wb_log_gain_s) * influence;
             t_vibrance += m.vibrance * influence;
 
             t_luma_nr += m.luma_noise_reduction * influence;

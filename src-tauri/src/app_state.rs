@@ -51,6 +51,8 @@ pub struct CachedPreview {
 pub struct GpuImageCache {
     pub texture: Texture,
     pub texture_view: TextureView,
+    pub gf_coeffs_view: TextureView,
+    pub gf_dehaze_view: TextureView,
     pub width: u32,
     pub height: u32,
     pub transform_hash: u64,

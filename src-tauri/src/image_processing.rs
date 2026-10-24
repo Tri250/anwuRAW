@@ -2,6 +2,7 @@ use crate::channel_mixer::ChannelMixerSettings;
 use crate::gpu_processing::WgpuDisplay;
 use crate::guided_perspective::{GuideLine, compute_guided_homography, count_valid_lines};
 use crate::split_toning::SplitToningSettings;
+use crate::white_balance;
 use bytemuck::{Pod, Zeroable};
 use glam::{Mat3, Vec2, Vec3};
 use image::{DynamicImage, GenericImageView, Rgb32FImage, Rgba};
@@ -1478,7 +1479,7 @@ pub struct ColorCalibrationSettings {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Pod, Zeroable)]
-#[repr(C)]
+#[repr(C, align(16))]
 pub struct GpuMat3 {
     col0: [f32; 4],
     col1: [f32; 4],
@@ -1545,9 +1546,13 @@ pub struct GlobalAdjustments {
     pub vignette_center_y: f32,
     _pad_lut5: f32,
 
+    // mat3x3<f32> 在 WGSL 中按 16 字节对齐，这里显式补齐到 192 字节，
+    // 避免 repr(C) 产生隐式 padding（bytemuck 的 Pod 不允许存在 padding）。
     _pad_agx1: f32,
     _pad_agx2: f32,
     _pad_agx3: f32,
+    _pad_agx4: f32,
+    _pad_agx5: f32,
     pub agx_pipe_to_rendering_matrix: GpuMat3,
     pub agx_rendering_to_pipe_matrix: GpuMat3,
     pub wb_rgb_to_lms_matrix: GpuMat3,
@@ -1814,8 +1819,8 @@ fn convert_points_to_aligned(frontend_points: Vec<serde_json::Value>) -> [Point;
     aligned_points
 }
 
-const WP_D65: Vec2 = Vec2::new(0.3127, 0.3290);
-const PRIMARIES_SRGB: [Vec2; 3] = [
+pub(crate) const WP_D65: Vec2 = Vec2::new(0.3127, 0.3290);
+pub(crate) const PRIMARIES_SRGB: [Vec2; 3] = [
     Vec2::new(0.64, 0.33),
     Vec2::new(0.30, 0.60),
     Vec2::new(0.15, 0.06),
@@ -1834,7 +1839,7 @@ fn xy_to_xyz(xy: Vec2) -> Vec3 {
     }
 }
 
-fn primaries_to_xyz_matrix(primaries: &[Vec2; 3], white_point: Vec2) -> Mat3 {
+pub(crate) fn primaries_to_xyz_matrix(primaries: &[Vec2; 3], white_point: Vec2) -> Mat3 {
     let r_xyz = xy_to_xyz(primaries[0]);
     let g_xyz = xy_to_xyz(primaries[1]);
     let b_xyz = xy_to_xyz(primaries[2]);
@@ -2140,6 +2145,8 @@ pub fn is_image_edited(
 fn get_global_adjustments_from_json(
     js_adjustments: &serde_json::Value,
     is_raw: bool,
+    white_balance_gains: [f32; 3],
+    rgb_to_lms: Mat3,
     tonemapper_override: Option<u32>,
 ) -> GlobalAdjustments {
     let visibility = js_adjustments.get("sectionVisibility");
@@ -2279,9 +2286,9 @@ fn get_global_adjustments_from_json(
         tint: get_val("color", "tint", SCALES.tint, None),
         vibrance: get_val("color", "vibrance", SCALES.vibrance, None),
         hue: get_val("color", "hue", 1.0, None),
-        wb_log_gain_l: 0.0,
-        wb_log_gain_m: 0.0,
-        wb_log_gain_s: 0.0,
+        wb_log_gain_l: white_balance_gains[0],
+        wb_log_gain_m: white_balance_gains[1],
+        wb_log_gain_s: white_balance_gains[2],
         centre_x: 0.5,
         centre_y: 0.5,
 
@@ -2370,10 +2377,12 @@ fn get_global_adjustments_from_json(
         _pad_agx1: 0.0,
         _pad_agx2: 0.0,
         _pad_agx3: 0.0,
+        _pad_agx4: 0.0,
+        _pad_agx5: 0.0,
         agx_pipe_to_rendering_matrix: pipe_to_rendering,
         agx_rendering_to_pipe_matrix: rendering_to_pipe,
-        wb_rgb_to_lms_matrix: GpuMat3::default(),
-        wb_lms_to_rgb_matrix: GpuMat3::default(),
+        wb_rgb_to_lms_matrix: mat3_to_gpu_mat3(rgb_to_lms),
+        wb_lms_to_rgb_matrix: mat3_to_gpu_mat3(rgb_to_lms.inverse()),
 
         _pad_cg1: 0.0,
         _pad_cg2: 0.0,
@@ -2446,7 +2455,10 @@ fn get_global_adjustments_from_json(
     }
 }
 
-fn get_mask_adjustments_from_json(adj: &serde_json::Value) -> MaskAdjustments {
+fn get_mask_adjustments_from_json(
+    adj: &serde_json::Value,
+    global_white_balance: white_balance::WhiteBalance,
+) -> MaskAdjustments {
     if adj.is_null() {
         return MaskAdjustments::default();
     }
@@ -2490,6 +2502,19 @@ fn get_mask_adjustments_from_json(adj: &serde_json::Value) -> MaskAdjustments {
     };
     let cg_obj = adj.get("colorGrading").cloned().unwrap_or_default();
 
+    // 蒙版白平衡：在全局目标白平衡基础上再做相对偏移。
+    let mask_wb_gains = if is_visible("color") {
+        white_balance::adaptation_log_gains(
+            global_white_balance,
+            global_white_balance.shifted(
+                adj["temperature"].as_f64().unwrap_or(0.0),
+                adj["tint"].as_f64().unwrap_or(0.0),
+            ),
+        )
+    } else {
+        [0.0; 3]
+    };
+
     MaskAdjustments {
         exposure: get_val("basic", "exposure", SCALES.exposure),
         brightness: get_val("basic", "brightness", SCALES.brightness),
@@ -2522,9 +2547,9 @@ fn get_mask_adjustments_from_json(adj: &serde_json::Value) -> MaskAdjustments {
         sharpness_threshold: get_val("details", "sharpnessThreshold", SCALES.sharpness_threshold),
 
         hue: get_val("color", "hue", 1.0),
-        wb_log_gain_l: 0.0,
-        wb_log_gain_m: 0.0,
-        wb_log_gain_s: 0.0,
+        wb_log_gain_l: mask_wb_gains[0],
+        wb_log_gain_m: mask_wb_gains[1],
+        wb_log_gain_s: mask_wb_gains[2],
         _pad_wb: 0.0,
         color_grading_shadows: if is_visible("color") {
             parse_color_grade_settings(&cg_obj["shadows"])
@@ -2584,7 +2609,30 @@ pub fn get_all_adjustments_from_json(
     is_raw: bool,
     tonemapper_override: Option<u32>,
 ) -> AllAdjustments {
-    let global = get_global_adjustments_from_json(js_adjustments, is_raw, tonemapper_override);
+    // Kelvin 白平衡：以 D65 为基准（“as shot”），用户 temperature/tint 视为相对偏移，
+    // 换算为 LMS 空间的每通道对数增益后交给着色器。
+    let as_shot_white_balance = white_balance::WhiteBalance::reference();
+    let target_white_balance = if js_adjustments
+        .get("sectionVisibility")
+        .and_then(|v| v.get("color"))
+        .and_then(|s| s.as_bool())
+        .unwrap_or(true)
+    {
+        white_balance::from_adjustments(js_adjustments, as_shot_white_balance)
+    } else {
+        as_shot_white_balance
+    };
+    let white_balance_gains =
+        white_balance::adaptation_log_gains(as_shot_white_balance, target_white_balance);
+    let rgb_to_lms = white_balance::rgb_to_lms();
+
+    let global = get_global_adjustments_from_json(
+        js_adjustments,
+        is_raw,
+        white_balance_gains,
+        rgb_to_lms,
+        tonemapper_override,
+    );
     let mut mask_adjustments = [MaskAdjustments::default(); MAX_MASKS];
     let mut mask_count = 0;
 
@@ -2599,7 +2647,8 @@ pub fn get_all_adjustments_from_json(
         .enumerate()
         .take(MAX_MASKS)
     {
-        mask_adjustments[i] = get_mask_adjustments_from_json(&mask_def.adjustments);
+        mask_adjustments[i] =
+            get_mask_adjustments_from_json(&mask_def.adjustments, target_white_balance);
         mask_count += 1;
     }
 

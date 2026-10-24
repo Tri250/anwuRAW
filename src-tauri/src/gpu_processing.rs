@@ -503,6 +503,24 @@ struct BlurParams {
     _pad3: u32,
 }
 
+const GF_SHORT_EDGE: u32 = 1080;
+const GF_CLARITY_RADIUS: f32 = 8.0;
+const GF_STRUCTURE_RADIUS: f32 = 40.0;
+const GF_CLARITY_EPS: f32 = 0.25;
+const GF_STRUCTURE_EPS: f32 = 0.5;
+const GF_COARSE_DIV: u32 = 4;
+const GF_TONAL_RADIUS: f32 = 10.0;
+const GF_TONAL_EPS: f32 = 0.25;
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+struct GfParams {
+    radius: u32,
+    is_raw: u32,
+    eps: f32,
+    _pad: f32,
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct FlareParams {
@@ -532,6 +550,14 @@ pub struct GpuProcessor {
     flare_ghosts_view: wgpu::TextureView,
     flare_final_view: wgpu::TextureView,
     flare_sampler: wgpu::Sampler,
+
+    gf_bgl: wgpu::BindGroupLayout,
+    gf_downsample_pipeline: wgpu::ComputePipeline,
+    gf_box_down_pipeline: wgpu::ComputePipeline,
+    gf_blur_h_pipeline: wgpu::ComputePipeline,
+    gf_blur_v_pipeline: wgpu::ComputePipeline,
+    gf_coeffs_pipeline: wgpu::ComputePipeline,
+    gf_pack_pipeline: wgpu::ComputePipeline,
 
     main_bgl: wgpu::BindGroupLayout,
     main_pipeline: wgpu::ComputePipeline,
@@ -776,6 +802,74 @@ impl GpuProcessor {
             ..Default::default()
         });
 
+        let gf_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Guided Filter Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/guided.wgsl").into()),
+        });
+
+        let gf_texture_entry = |binding: u32| wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        };
+
+        let gf_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Guided Filter BGL"),
+            entries: &[
+                gf_texture_entry(0),
+                gf_texture_entry(1),
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::StorageTexture {
+                        access: wgpu::StorageTextureAccess::WriteOnly,
+                        format: wgpu::TextureFormat::Rgba32Float,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+            ],
+        });
+
+        let gf_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Guided Filter Pipeline Layout"),
+            bind_group_layouts: &[Some(&gf_bgl)],
+            immediate_size: 0,
+        });
+
+        let gf_pipeline = |entry: &'static str| {
+            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some(entry),
+                layout: Some(&gf_layout),
+                module: &gf_shader,
+                entry_point: Some(entry),
+                compilation_options: Default::default(),
+                cache: None,
+            })
+        };
+
+        let gf_downsample_pipeline = gf_pipeline("gf_downsample");
+        let gf_box_down_pipeline = gf_pipeline("gf_box_down");
+        let gf_blur_h_pipeline = gf_pipeline("gf_blur_h");
+        let gf_blur_v_pipeline = gf_pipeline("gf_blur_v");
+        let gf_coeffs_pipeline = gf_pipeline("gf_coeffs");
+        let gf_pack_pipeline = gf_pipeline("gf_pack");
+
         let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Image Processing Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shaders/shader.wgsl").into()),
@@ -897,6 +991,26 @@ impl GpuProcessor {
             binding: 10 + MAX_MASK_BINDINGS,
             visibility: wgpu::ShaderStages::COMPUTE,
             ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+            count: None,
+        });
+        bind_group_layout_entries.push(wgpu::BindGroupLayoutEntry {
+            binding: 11 + MAX_MASK_BINDINGS,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        });
+        bind_group_layout_entries.push(wgpu::BindGroupLayoutEntry {
+            binding: 12 + MAX_MASK_BINDINGS,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
             count: None,
         });
 
@@ -1069,6 +1183,13 @@ impl GpuProcessor {
             flare_ghosts_view,
             flare_final_view,
             flare_sampler,
+            gf_bgl,
+            gf_downsample_pipeline,
+            gf_box_down_pipeline,
+            gf_blur_h_pipeline,
+            gf_blur_v_pipeline,
+            gf_coeffs_pipeline,
+            gf_pack_pipeline,
             main_bgl,
             main_pipeline,
             adjustments_buffer,
@@ -1092,6 +1213,8 @@ impl GpuProcessor {
     pub fn run(
         &self,
         input_texture_view: &wgpu::TextureView,
+        gf_coeffs_view: &wgpu::TextureView,
+        gf_dehaze_view: &wgpu::TextureView,
         width: u32,
         height: u32,
         request: RenderRequest,
@@ -1506,6 +1629,14 @@ impl GpuProcessor {
                     binding: 10 + MAX_MASK_BINDINGS,
                     resource: wgpu::BindingResource::Sampler(&self.flare_sampler),
                 });
+                bind_group_entries.push(wgpu::BindGroupEntry {
+                    binding: 11 + MAX_MASK_BINDINGS,
+                    resource: wgpu::BindingResource::TextureView(gf_coeffs_view),
+                });
+                bind_group_entries.push(wgpu::BindGroupEntry {
+                    binding: 12 + MAX_MASK_BINDINGS,
+                    resource: wgpu::BindingResource::TextureView(gf_dehaze_view),
+                });
 
                 let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some("Tile Bind Group"),
@@ -1588,6 +1719,204 @@ impl GpuProcessor {
         }
 
         Ok((final_pixels, out_width, out_height, bounds.x, bounds.y))
+    }
+
+    pub fn build_guided_coeffs(
+        &self,
+        input_view: &wgpu::TextureView,
+        width: u32,
+        height: u32,
+        is_raw: u32,
+    ) -> (wgpu::TextureView, wgpu::TextureView) {
+        let device = &self.context.device;
+        let queue = &self.context.queue;
+
+        let short = width.min(height).max(1);
+        let k = (GF_SHORT_EDGE as f32 / short as f32).min(1.0);
+        let lw = ((width as f32 * k).round() as u32).max(1);
+        let lh = ((height as f32 * k).round() as u32).max(1);
+        let low_short = lw.min(lh) as f32;
+        let cw = lw.div_ceil(GF_COARSE_DIV).max(1);
+        let ch = lh.div_ceil(GF_COARSE_DIV).max(1);
+
+        let make_view = |label: &'static str, w: u32, h: u32| {
+            device
+                .create_texture(&wgpu::TextureDescriptor {
+                    label: Some(label),
+                    size: wgpu::Extent3d {
+                        width: w,
+                        height: h,
+                        depth_or_array_layers: 1,
+                    },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format: wgpu::TextureFormat::Rgba32Float,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING
+                        | wgpu::TextureUsages::STORAGE_BINDING,
+                    view_formats: &[],
+                })
+                .create_view(&Default::default())
+        };
+
+        let make_params = |base_radius: f32, eps: f32, div: f32| {
+            let radius = (base_radius * low_short / 1080.0 / div).ceil().max(1.0) as u32;
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Guided Filter Params"),
+                contents: bytemuck::bytes_of(&GfParams {
+                    radius,
+                    is_raw,
+                    eps,
+                    _pad: 0.0,
+                }),
+                usage: wgpu::BufferUsages::UNIFORM,
+            })
+        };
+
+        let moments = make_view("GF Moments", lw, lh);
+        let tmp = make_view("GF Ping Pong", lw, lh);
+        let blurred = make_view("GF Blurred", lw, lh);
+        let ab = make_view("GF Coeffs", lw, lh);
+        let ab_clarity = make_view("GF Coeffs Clarity", lw, lh);
+        let c_moments = make_view("GF Coarse Moments", cw, ch);
+        let c_tmp = make_view("GF Coarse Ping Pong", cw, ch);
+        let c_blurred = make_view("GF Coarse Blurred", cw, ch);
+        let c_ab = make_view("GF Coarse Coeffs", cw, ch);
+
+        let params_clarity = make_params(GF_CLARITY_RADIUS, GF_CLARITY_EPS, 1.0);
+        let params_tonal = make_params(GF_TONAL_RADIUS, GF_TONAL_EPS, 1.0);
+        let params_coarse =
+            make_params(GF_STRUCTURE_RADIUS, GF_STRUCTURE_EPS, GF_COARSE_DIV as f32);
+
+        let mut encoder = device.create_command_encoder(&Default::default());
+
+        let mut pass = |pipeline: &wgpu::ComputePipeline,
+                        src_a: &wgpu::TextureView,
+                        src_b: &wgpu::TextureView,
+                        dst: &wgpu::TextureView,
+                        params: &wgpu::Buffer,
+                        (w, h): (u32, u32)| {
+            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("Guided Filter BG"),
+                layout: &self.gf_bgl,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(src_a),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(src_b),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::TextureView(dst),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 3,
+                        resource: params.as_entire_binding(),
+                    },
+                ],
+            });
+            let mut cpass = encoder.begin_compute_pass(&Default::default());
+            cpass.set_pipeline(pipeline);
+            cpass.set_bind_group(0, &bind_group, &[]);
+            cpass.dispatch_workgroups(w.div_ceil(8), h.div_ceil(8), 1);
+        };
+        let fine = (lw, lh);
+        let coarse = (cw, ch);
+
+        pass(
+            &self.gf_downsample_pipeline,
+            input_view,
+            input_view,
+            &moments,
+            &params_clarity,
+            fine,
+        );
+
+        pass(
+            &self.gf_box_down_pipeline,
+            &moments,
+            &moments,
+            &c_moments,
+            &params_coarse,
+            coarse,
+        );
+        pass(
+            &self.gf_blur_h_pipeline,
+            &c_moments,
+            &c_moments,
+            &c_tmp,
+            &params_coarse,
+            coarse,
+        );
+        pass(
+            &self.gf_blur_v_pipeline,
+            &c_tmp,
+            &c_tmp,
+            &c_blurred,
+            &params_coarse,
+            coarse,
+        );
+        pass(
+            &self.gf_coeffs_pipeline,
+            &c_blurred,
+            &c_blurred,
+            &c_ab,
+            &params_coarse,
+            coarse,
+        );
+        pass(
+            &self.gf_blur_h_pipeline,
+            &c_ab,
+            &c_ab,
+            &c_tmp,
+            &params_coarse,
+            coarse,
+        );
+        pass(
+            &self.gf_blur_v_pipeline,
+            &c_tmp,
+            &c_tmp,
+            &c_moments,
+            &params_coarse,
+            coarse,
+        );
+
+        for (params, out) in [(&params_clarity, &ab_clarity), (&params_tonal, &blurred)] {
+            pass(
+                &self.gf_blur_h_pipeline,
+                &moments,
+                &moments,
+                &tmp,
+                params,
+                fine,
+            );
+            pass(&self.gf_blur_v_pipeline, &tmp, &tmp, &blurred, params, fine);
+            pass(
+                &self.gf_coeffs_pipeline,
+                &blurred,
+                &blurred,
+                &ab,
+                params,
+                fine,
+            );
+            pass(&self.gf_blur_h_pipeline, &ab, &ab, &tmp, params, fine);
+            pass(&self.gf_blur_v_pipeline, &tmp, &tmp, out, params, fine);
+        }
+
+        pass(
+            &self.gf_pack_pipeline,
+            &ab_clarity,
+            &blurred,
+            &ab,
+            &params_clarity,
+            fine,
+        );
+
+        queue.submit(Some(encoder.finish()));
+        (ab, c_moments)
     }
 }
 
@@ -1709,6 +2038,7 @@ fn process_and_get_dynamic_image_inner(
         .lock()
         .unwrap_or_else(|e| e.into_inner());
     let mut needs_new_cache = false;
+    let is_raw = request.adjustments.global.is_raw_image;
 
     if let Some(cache) = &*cache_lock {
         if cache.transform_hash != transform_hash || cache.width != width || cache.height != height
@@ -1751,9 +2081,14 @@ fn process_and_get_dynamic_image_inner(
         );
         let texture_view = texture.create_view(&Default::default());
 
+        let (gf_coeffs_view, gf_dehaze_view) =
+            processor.build_guided_coeffs(&texture_view, width, height, is_raw);
+
         *cache_lock = Some(GpuImageCache {
             texture,
             texture_view,
+            gf_coeffs_view,
+            gf_dehaze_view,
             width,
             height,
             transform_hash,
@@ -1766,6 +2101,8 @@ fn process_and_get_dynamic_image_inner(
 
     let (processed_pixels, out_w, out_h, out_x, out_y) = processor.run(
         &cache.texture_view,
+        &cache.gf_coeffs_view,
+        &cache.gf_dehaze_view,
         cache.width,
         cache.height,
         request,
