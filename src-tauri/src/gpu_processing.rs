@@ -1210,6 +1210,7 @@ impl GpuProcessor {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn run(
         &self,
         input_texture_view: &wgpu::TextureView,

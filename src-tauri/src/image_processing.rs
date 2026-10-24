@@ -495,11 +495,20 @@ fn build_transform_matrices(
     let guided_m = if params.guided_perspective_enabled
         && count_valid_lines(&params.guided_lines, width as f64, height as f64) >= 2
     {
-        if let Some(res) = compute_guided_homography(&params.guided_lines, width as f64, height as f64) {
+        if let Some(res) =
+            compute_guided_homography(&params.guided_lines, width as f64, height as f64)
+        {
             let h = res.forward_h;
             NaMatrix3::new(
-                h[0][0] as f32, h[0][1] as f32, h[0][2] as f32, h[1][0] as f32, h[1][1] as f32,
-                h[1][2] as f32, h[2][0] as f32, h[2][1] as f32, h[2][2] as f32,
+                h[0][0] as f32,
+                h[0][1] as f32,
+                h[0][2] as f32,
+                h[1][0] as f32,
+                h[1][1] as f32,
+                h[1][2] as f32,
+                h[2][0] as f32,
+                h[2][1] as f32,
+                h[2][2] as f32,
             )
         } else {
             NaMatrix3::identity()

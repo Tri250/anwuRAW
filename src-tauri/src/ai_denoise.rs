@@ -343,8 +343,8 @@ fn box_filter_plane(buf: &mut [f32], w: usize, h: usize, radius: usize) {
         for i in -r..=r {
             sum += src[i.clamp(0, wi - 1) as usize];
         }
-        for x in 0..w {
-            row[x] = sum * inv;
+        for (x, cell) in row.iter_mut().enumerate() {
+            *cell = sum * inv;
             let add = ((x as isize + r + 1).clamp(0, wi - 1)) as usize;
             let sub = ((x as isize - r).clamp(0, wi - 1)) as usize;
             sum += src[add] - src[sub];
@@ -526,10 +526,8 @@ async fn generate(
         // 缩略图缓存哈希包含降噪就绪位，会自动 miss 并重生成。
         let thumbnail_handle = app_handle.clone();
         tauri::async_runtime::spawn_blocking(move || {
-            let _ = crate::file_management::update_thumbnail_queue(
-                vec![loaded_path],
-                thumbnail_handle,
-            );
+            let _ =
+                crate::file_management::update_thumbnail_queue(vec![loaded_path], thumbnail_handle);
         });
     }
 

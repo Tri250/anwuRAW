@@ -218,11 +218,8 @@ fn compute_full_transformed_res(
         .get("aiPatches")
         .and_then(|v| v.as_array())
         .is_some_and(|a| !a.is_empty());
-    let denoised_base = crate::ai_denoise::apply_ai_denoise(
-        &loaded_image.image,
-        &loaded_image.path,
-        adjustments,
-    );
+    let denoised_base =
+        crate::ai_denoise::apply_ai_denoise(&loaded_image.image, &loaded_image.path, adjustments);
     let patched_original_image = match (denoised_base, has_patches) {
         (base, true) => Cow::Owned(
             composite_patches_on_image(&base, adjustments)
