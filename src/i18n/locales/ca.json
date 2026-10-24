@@ -1754,7 +1754,8 @@
         "confirmResetLayoutTitle": "Restablir el disseny de l'espai de treball",
         "confirmTitle": "Confirmar eliminació",
         "resetLayoutMessage": "Esteu segur que voleu restablir el disseny de l'espai de treball? Tots els panells acoblats, les amplades i les posicions dels commutadors es restauraran als seus valors predeterminats.",
-        "sidecarMessage": "Esteu segur que voleu suprimir tots els fitxers sidecar?\n\nAixò eliminarà permanentment totes les vostres edicions per a totes les imatges dins de totes les carpetes arrel actives i les seves subcarpetes."
+        "sidecarMessage": "Esteu segur que voleu suprimir tots els fitxers sidecar?\n\nAixò eliminarà permanentment totes les vostres edicions per a totes les imatges dins de totes les carpetes arrel actives i les seves subcarpetes.",
+        "aiDenoiseMessage": "Segur que vols esborrar la memòria cau de reducció de soroll IA?\n\nLes imatges amb la reducció de soroll IA activada s'hauran de tornar a processar, cosa que pot trigar diversos minuts per imatge."
       },
       "noFolders": "No s'ha seleccionat cap carpeta",
       "resetLayoutButton": "Restablir disseny",
@@ -1778,9 +1779,14 @@
         "resettingLayout": "Restablint l'espai de treball...",
         "sidecarSuccess": "{{count}} fitxers sidecar eliminats correctament.",
         "sidecarSuccess_one": "{{count}} fitxer sidecar eliminat correctament.",
-        "sidecarSuccess_other": "{{count}} fitxers sidecar eliminats correctament."
+        "sidecarSuccess_other": "{{count}} fitxers sidecar eliminats correctament.",
+        "aiDenoiseSuccess": "Memòria cau de reducció de soroll IA esborrada correctament.",
+        "clearingAiDenoise": "Esborrant la memòria cau de reducció de soroll IA..."
       },
-      "title": "Gestió de dades"
+      "title": "Gestió de dades",
+      "clearAiDenoise": "Esborra la memòria cau de reducció de soroll IA",
+      "clearAiDenoiseButton": "Esborra",
+      "clearAiDenoiseDesc": "Elimina els resultats desats de la reducció de soroll IA ({{size}}). Les imatges amb la reducció de soroll IA activada la tornaran a calcular la propera vegada que s'obrin."
     },
     "general": {
       "createXmp": "Crear fitxers XMP que falten",

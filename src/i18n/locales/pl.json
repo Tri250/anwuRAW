@@ -1820,7 +1820,8 @@
         "confirmResetLayoutTitle": "Zresetuj układ obszaru roboczego",
         "confirmTitle": "Potwierdź usunięcie",
         "resetLayoutMessage": "Czy na pewno chcesz zresetować układ obszaru roboczego? Wszystkie przypięte panele, szerokości i pozycje przełączników zostaną przywrócone do wartości domyślnych.",
-        "sidecarMessage": "Czy na pewno chcesz usunąć wszystkie pliki sidecar?\n\nTo trwale usunie wszystkie twoje edycje dla wszystkich obrazów wewnątrz wszystkich aktywnych folderów głównych oraz ich podfolderów."
+        "sidecarMessage": "Czy na pewno chcesz usunąć wszystkie pliki sidecar?\n\nTo trwale usunie wszystkie twoje edycje dla wszystkich obrazów wewnątrz wszystkich aktywnych folderów głównych oraz ich podfolderów.",
+        "aiDenoiseMessage": "Czy na pewno chcesz wyczyścić pamięć podręczną odszumiania AI?\n\nZdjęcia z włączonym odszumianiem AI trzeba będzie odszumić ponownie, co może zająć kilka minut na zdjęcie."
       },
       "noFolders": "Nie wybrano żadnych folderów",
       "resetLayoutButton": "Zresetuj układ",
@@ -1850,9 +1851,14 @@
         "sidecarSuccess_few": "Pomyślnie usunięto {{count}} pliki sidecar.",
         "sidecarSuccess_many": "Pomyślnie usunięto {{count}} plików sidecar.",
         "sidecarSuccess_one": "Pomyślnie usunięto {{count}} plik sidecar.",
-        "sidecarSuccess_other": "Pomyślnie usunięto {{count}} plików sidecar."
+        "sidecarSuccess_other": "Pomyślnie usunięto {{count}} plików sidecar.",
+        "aiDenoiseSuccess": "Pamięć podręczna odszumiania AI została wyczyszczona.",
+        "clearingAiDenoise": "Czyszczenie pamięci podręcznej odszumiania AI..."
       },
-      "title": "Zarządzanie danymi"
+      "title": "Zarządzanie danymi",
+      "clearAiDenoise": "Wyczyść pamięć podręczną odszumiania AI",
+      "clearAiDenoiseButton": "Wyczyść",
+      "clearAiDenoiseDesc": "Usuwa zapisane wyniki odszumiania AI ({{size}}). Zdjęcia z włączonym odszumianiem AI przeliczą je przy następnym otwarciu."
     },
     "general": {
       "createXmp": "Twórz brakujące pliki XMP",

@@ -1754,7 +1754,8 @@
         "confirmResetLayoutTitle": "Arbeitsbereich-Layout zurücksetzen",
         "confirmTitle": "Löschen bestätigen",
         "resetLayoutMessage": "Möchten Sie das Layout des Arbeitsbereichs wirklich zurücksetzen? Alle angedockten Panels, Breiten und Umschalter-Positionen werden auf ihre Standardwerte zurückgesetzt.",
-        "sidecarMessage": "Sind Sie sicher, dass Sie alle Filialdateien löschen möchten?\n\nDies entfernt dauerhaft alle Ihre Bearbeitungen für alle Bilder in allen aktiven Stammordnern."
+        "sidecarMessage": "Sind Sie sicher, dass Sie alle Filialdateien löschen möchten?\n\nDies entfernt dauerhaft alle Ihre Bearbeitungen für alle Bilder in allen aktiven Stammordnern.",
+        "aiDenoiseMessage": "Möchtest du den KI-Entrauschen-Cache wirklich leeren?\n\nBilder mit aktiviertem KI-Entrauschen müssen erneut entrauscht werden, was pro Bild mehrere Minuten dauern kann."
       },
       "noFolders": "Keine Ordner ausgewählt",
       "resetLayoutButton": "Layout zurücksetzen",
@@ -1778,9 +1779,14 @@
         "resettingLayout": "Arbeitsbereich wird zurückgesetzt...",
         "sidecarSuccess": "{{count}} Filialdateien erfolgreich gelöscht.",
         "sidecarSuccess_one": "{{count}} Filialdatei erfolgreich gelöscht.",
-        "sidecarSuccess_other": "{{count}} Filialdateien erfolgreich gelöscht."
+        "sidecarSuccess_other": "{{count}} Filialdateien erfolgreich gelöscht.",
+        "aiDenoiseSuccess": "KI-Entrauschen-Cache erfolgreich geleert.",
+        "clearingAiDenoise": "KI-Entrauschen-Cache wird geleert..."
       },
-      "title": "Datenverwaltung"
+      "title": "Datenverwaltung",
+      "clearAiDenoise": "KI-Entrauschen-Cache leeren",
+      "clearAiDenoiseButton": "Leeren",
+      "clearAiDenoiseDesc": "Löscht die zwischengespeicherten KI-Entrauschen-Ergebnisse ({{size}}). Bilder mit aktiviertem KI-Entrauschen berechnen es beim nächsten Öffnen neu."
     },
     "general": {
       "createXmp": "Fehlende XMP-Dateien erstellen",

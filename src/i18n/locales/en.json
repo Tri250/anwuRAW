@@ -1766,7 +1766,8 @@
         "confirmResetLayoutTitle": "Reset Workspace Layout",
         "confirmTitle": "Confirm Deletion",
         "resetLayoutMessage": "Are you sure you want to reset the workspace layout? All docked panels, widths, and switcher positions will be restored to their defaults.",
-        "sidecarMessage": "Are you sure you want to delete all sidecar files?\n\nThis will permanently remove all your edits for all images inside all active root folders and their subfolders."
+        "sidecarMessage": "Are you sure you want to delete all sidecar files?\n\nThis will permanently remove all your edits for all images inside all active root folders and their subfolders.",
+        "aiDenoiseMessage": "Are you sure you want to clear the AI Denoise cache?\n\nImages with AI Denoise enabled will need to be denoised again, which can take several minutes per image."
       },
       "noFolders": "No folders selected",
       "resetLayoutButton": "Reset Layout",
@@ -1790,9 +1791,14 @@
         "resettingLayout": "Resetting workspace...",
         "sidecarSuccess": "{{count}} sidecar files deleted successfully.",
         "sidecarSuccess_one": "{{count}} sidecar file deleted successfully.",
-        "sidecarSuccess_other": "{{count}} sidecar files deleted successfully."
+        "sidecarSuccess_other": "{{count}} sidecar files deleted successfully.",
+        "aiDenoiseSuccess": "AI Denoise cache cleared successfully.",
+        "clearingAiDenoise": "Clearing AI Denoise cache..."
       },
-      "title": "Data Management"
+      "title": "Data Management",
+      "clearAiDenoise": "Clear AI Denoise Cache",
+      "clearAiDenoiseButton": "Clear",
+      "clearAiDenoiseDesc": "Deletes the cached AI Denoise results ({{size}}). Images with AI Denoise enabled recalculate it the next time they are opened."
     },
     "general": {
       "createXmp": "Create Missing XMP Files",

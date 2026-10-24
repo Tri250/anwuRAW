@@ -1785,7 +1785,8 @@
         "confirmResetLayoutTitle": "Redefinir layout do espaço de trabalho",
         "confirmTitle": "Confirmar Exclusão",
         "resetLayoutMessage": "Tem certeza de que deseja redefinir o layout do espaço de trabalho? Todos os painéis acoplados, larguras e posições dos seletores serão restaurados para os padrões originais.",
-        "sidecarMessage": "Tem certeza de que deseja excluir todos os arquivos sidecar?\n\nIsso removerá permanentemente todas as suas edições para todas as imagens dentro de todas as pastas raiz ativas e suas subpastas."
+        "sidecarMessage": "Tem certeza de que deseja excluir todos os arquivos sidecar?\n\nIsso removerá permanentemente todas as suas edições para todas as imagens dentro de todas as pastas raiz ativas e suas subpastas.",
+        "aiDenoiseMessage": "Tem a certeza de que pretende limpar a cache da redução de ruído IA?\n\nAs imagens com a redução de ruído IA ativada terão de ser processadas novamente, o que pode demorar vários minutos por imagem."
       },
       "noFolders": "Nenhuma pasta selecionada",
       "resetLayoutButton": "Redefinir layout",
@@ -1812,9 +1813,14 @@
         "sidecarSuccess": "{{count}} arquivos sidecar excluídos com sucesso.",
         "sidecarSuccess_many": "{{count}} arquivos sidecar excluídos com sucesso.",
         "sidecarSuccess_one": "{{count}} arquivo sidecar excluído com sucesso.",
-        "sidecarSuccess_other": "{{count}} arquivos sidecar excluídos com sucesso."
+        "sidecarSuccess_other": "{{count}} arquivos sidecar excluídos com sucesso.",
+        "aiDenoiseSuccess": "Cache da redução de ruído IA limpa com sucesso.",
+        "clearingAiDenoise": "A limpar a cache da redução de ruído IA..."
       },
-      "title": "Gerenciamento de Dados"
+      "title": "Gerenciamento de Dados",
+      "clearAiDenoise": "Limpar cache da redução de ruído IA",
+      "clearAiDenoiseButton": "Limpar",
+      "clearAiDenoiseDesc": "Elimina os resultados guardados da redução de ruído IA ({{size}}). As imagens com a redução de ruído IA ativada voltam a calculá-la da próxima vez que forem abertas."
     },
     "general": {
       "createXmp": "Criar Arquivos XMP Ausentes",

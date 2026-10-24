@@ -1754,7 +1754,8 @@
         "confirmResetLayoutTitle": "ワークスペースレイアウトのリセット",
         "confirmTitle": "削除の確認",
         "resetLayoutMessage": "ワークスペースのレイアウトをリセットしてもよろしいですか？ドッキングされたすべてのパネル、幅、および切り替えボタンの位置がデフォルトに復元されます。",
-        "sidecarMessage": "本当にすべてのサイドカーファイルを削除しますか？\n\nアクティブなルートフォルダとそのサブフォルダ内にある、すべての画像の編集内容が完全に削除されます。"
+        "sidecarMessage": "本当にすべてのサイドカーファイルを削除しますか？\n\nアクティブなルートフォルダとそのサブフォルダ内にある、すべての画像の編集内容が完全に削除されます。",
+        "aiDenoiseMessage": "AIノイズ除去キャッシュを消去してもよろしいですか？\n\nAIノイズ除去が有効な画像は再度処理する必要があり、1枚あたり数分かかる場合があります。"
       },
       "noFolders": "フォルダが選択されていません",
       "resetLayoutButton": "レイアウトをリセット",
@@ -1778,9 +1779,14 @@
         "resettingLayout": "ワークスペースをリセット中...",
         "sidecarSuccess": "{{count}} 件のサイドカーファイルを正常に削除しました。",
         "sidecarSuccess_one": "{{count}} 件のサイドカーファイルを正常に削除しました。",
-        "sidecarSuccess_other": "{{count}} 件のサイドカーファイルを正常に削除しました。"
+        "sidecarSuccess_other": "{{count}} 件のサイドカーファイルを正常に削除しました。",
+        "aiDenoiseSuccess": "AIノイズ除去キャッシュを消去しました。",
+        "clearingAiDenoise": "AIノイズ除去キャッシュを消去中..."
       },
-      "title": "データ管理"
+      "title": "データ管理",
+      "clearAiDenoise": "AIノイズ除去キャッシュを消去",
+      "clearAiDenoiseButton": "消去",
+      "clearAiDenoiseDesc": "キャッシュされたAIノイズ除去の結果（{{size}}）を削除します。AIノイズ除去が有効な画像は、次に開いたときに再計算されます。"
     },
     "general": {
       "createXmp": "見つからないXMPファイルを作成",

@@ -1784,7 +1784,8 @@
         "confirmResetLayoutTitle": "Réinitialiser la disposition de l'espace de travail",
         "confirmTitle": "Confirmer la suppression",
         "resetLayoutMessage": "Êtes-vous sûr de vouloir réinitialiser la disposition de l'espace de travail ? Tous les panneaux ancrés, les largeurs et les positions des sélecteurs seront restaurés à leurs valeurs par défaut.",
-        "sidecarMessage": "Êtes-vous sûr de vouloir supprimer tous les fichiers annexes ?\n\nCeci supprimera définitivement toutes vos retouches pour toutes les images à l'intérieur de tous les dossiers racine actifs et de leurs sous-dossiers."
+        "sidecarMessage": "Êtes-vous sûr de vouloir supprimer tous les fichiers annexes ?\n\nCeci supprimera définitivement toutes vos retouches pour toutes les images à l'intérieur de tous les dossiers racine actifs et de leurs sous-dossiers.",
+        "aiDenoiseMessage": "Voulez-vous vraiment vider le cache du débruitage IA ?\n\nLes images avec le débruitage IA activé devront être débruitées à nouveau, ce qui peut prendre plusieurs minutes par image."
       },
       "noFolders": "Aucun dossier sélectionné",
       "resetLayoutButton": "Réinitialiser la disposition",
@@ -1811,9 +1812,14 @@
         "sidecarSuccess": "{{count}} fichiers annexes supprimés avec succès.",
         "sidecarSuccess_many": "{{count}} fichiers annexes supprimés avec succès.",
         "sidecarSuccess_one": "{{count}} fichier annexe supprimé avec succès.",
-        "sidecarSuccess_other": "{{count}} fichiers annexes supprimés avec succès."
+        "sidecarSuccess_other": "{{count}} fichiers annexes supprimés avec succès.",
+        "aiDenoiseSuccess": "Cache du débruitage IA vidé avec succès.",
+        "clearingAiDenoise": "Vidage du cache du débruitage IA..."
       },
-      "title": "Gestion des données"
+      "title": "Gestion des données",
+      "clearAiDenoise": "Vider le cache du débruitage IA",
+      "clearAiDenoiseButton": "Vider",
+      "clearAiDenoiseDesc": "Supprime les résultats du débruitage IA mis en cache ({{size}}). Les images avec le débruitage IA activé le recalculeront à leur prochaine ouverture."
     },
     "general": {
       "createXmp": "Créer les fichiers XMP manquants",

@@ -1784,7 +1784,8 @@
         "confirmResetLayoutTitle": "Restablecer el diseño del espacio de trabajo",
         "confirmTitle": "Confirmar eliminación",
         "resetLayoutMessage": "¿Estás seguro de que deseas restablecer el diseño del espacio de trabajo? Todos los paneles acoplados, anchuras y posiciones de los selectores se restaurarán a sus valores predeterminados.",
-        "sidecarMessage": "¿Estás seguro de que quieres eliminar todos los archivos sidecar?\n\nEsto eliminará permanentemente todas tus ediciones para todas las imágenes dentro de todas las carpetas raíz activas y sus subcarpetas."
+        "sidecarMessage": "¿Estás seguro de que quieres eliminar todos los archivos sidecar?\n\nEsto eliminará permanentemente todas tus ediciones para todas las imágenes dentro de todas las carpetas raíz activas y sus subcarpetas.",
+        "aiDenoiseMessage": "¿Seguro que quieres borrar la caché de reducción de ruido IA?\n\nLas imágenes con la reducción de ruido IA activada tendrán que procesarse de nuevo, lo que puede tardar varios minutos por imagen."
       },
       "noFolders": "No hay carpetas seleccionadas",
       "resetLayoutButton": "Restablecer diseño",
@@ -1811,9 +1812,14 @@
         "sidecarSuccess": "{{count}} archivos sidecar eliminados con éxito.",
         "sidecarSuccess_many": "{{count}} archivos sidecar eliminados con éxito.",
         "sidecarSuccess_one": "{{count}} archivo sidecar eliminado con éxito.",
-        "sidecarSuccess_other": "{{count}} archivos sidecar eliminados con éxito."
+        "sidecarSuccess_other": "{{count}} archivos sidecar eliminados con éxito.",
+        "aiDenoiseSuccess": "Caché de reducción de ruido IA borrada correctamente.",
+        "clearingAiDenoise": "Borrando la caché de reducción de ruido IA..."
       },
-      "title": "Gestión de datos"
+      "title": "Gestión de datos",
+      "clearAiDenoise": "Borrar caché de reducción de ruido IA",
+      "clearAiDenoiseButton": "Borrar",
+      "clearAiDenoiseDesc": "Elimina los resultados guardados de la reducción de ruido IA ({{size}}). Las imágenes con la reducción de ruido IA activada la recalcularán la próxima vez que se abran."
     },
     "general": {
       "createXmp": "Crear archivos XMP faltantes",

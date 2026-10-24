@@ -1754,7 +1754,8 @@
         "confirmResetLayoutTitle": "重設工作區版面配置",
         "confirmTitle": "確認刪除",
         "resetLayoutMessage": "確定要重設工作區版面配置嗎？所有停靠的面板、寬度和切換器位置都將還原為預設值。",
-        "sidecarMessage": "您確定要刪除所有附屬檔案嗎？\n\n這將永久刪除所有活動根資料夾及其子資料夾中所有影像的所有編輯資料。"
+        "sidecarMessage": "您確定要刪除所有附屬檔案嗎？\n\n這將永久刪除所有活動根資料夾及其子資料夾中所有影像的所有編輯資料。",
+        "aiDenoiseMessage": "確定要清除 AI 降噪快取嗎？\n\n啟用 AI 降噪的影像需要重新降噪，每張影像可能需要數分鐘。"
       },
       "noFolders": "未選擇資料夾",
       "resetLayoutButton": "重設版面配置",
@@ -1778,9 +1779,14 @@
         "resettingLayout": "正在重設工作區...",
         "sidecarSuccess": "{{count}} 個附屬檔案已成功刪除。",
         "sidecarSuccess_one": "{{count}} 個附屬檔案已成功刪除。",
-        "sidecarSuccess_other": "{{count}} 個附屬檔案已成功刪除。"
+        "sidecarSuccess_other": "{{count}} 個附屬檔案已成功刪除。",
+        "aiDenoiseSuccess": "AI 降噪快取已成功清除。",
+        "clearingAiDenoise": "正在清除 AI 降噪快取..."
       },
-      "title": "資料管理"
+      "title": "資料管理",
+      "clearAiDenoise": "清除 AI 降噪快取",
+      "clearAiDenoiseButton": "清除",
+      "clearAiDenoiseDesc": "刪除已快取的 AI 降噪結果（{{size}}）。啟用 AI 降噪的影像會在下次開啟時重新計算。"
     },
     "general": {
       "createXmp": "建立缺失的 XMP 檔案",

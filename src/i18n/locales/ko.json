@@ -1754,7 +1754,8 @@
         "confirmResetLayoutTitle": "작업 공간 레이아웃 초기화",
         "confirmTitle": "삭제 확인",
         "resetLayoutMessage": "작업 공간 레이아웃을 초기화하시겠습니까? 도킹된 모든 패널, 너비 및 전환기 위치가 기본값으로 복원됩니다.",
-        "sidecarMessage": "모든 사이드카 파일을 삭제하시겠습니까?\n\n모든 활성 루트 폴더 및 하위 폴더 내의 모든 이미지에 대한 편집 내용이 영구적으로 제거됩니다."
+        "sidecarMessage": "모든 사이드카 파일을 삭제하시겠습니까?\n\n모든 활성 루트 폴더 및 하위 폴더 내의 모든 이미지에 대한 편집 내용이 영구적으로 제거됩니다.",
+        "aiDenoiseMessage": "AI 노이즈 제거 캐시를 지우시겠습니까?\n\nAI 노이즈 제거가 켜진 이미지는 다시 처리해야 하며, 이미지당 몇 분이 걸릴 수 있습니다."
       },
       "noFolders": "선택된 폴더 없음",
       "resetLayoutButton": "레이아웃 초기화",
@@ -1778,9 +1779,14 @@
         "resettingLayout": "작업 공간 초기화 중...",
         "sidecarSuccess": "사이드카 파일 {{count}}개가 성공적으로 삭제되었습니다.",
         "sidecarSuccess_one": "사이드카 파일 {{count}}개가 성공적으로 삭제되었습니다.",
-        "sidecarSuccess_other": "사이드카 파일 {{count}}개가 성공적으로 삭제되었습니다."
+        "sidecarSuccess_other": "사이드카 파일 {{count}}개가 성공적으로 삭제되었습니다.",
+        "aiDenoiseSuccess": "AI 노이즈 제거 캐시를 지웠습니다.",
+        "clearingAiDenoise": "AI 노이즈 제거 캐시를 지우는 중..."
       },
-      "title": "데이터 관리"
+      "title": "데이터 관리",
+      "clearAiDenoise": "AI 노이즈 제거 캐시 지우기",
+      "clearAiDenoiseButton": "지우기",
+      "clearAiDenoiseDesc": "캐시된 AI 노이즈 제거 결과({{size}})를 삭제합니다. AI 노이즈 제거가 켜진 이미지는 다음에 열 때 다시 계산됩니다."
     },
     "general": {
       "createXmp": "누락된 XMP 파일 생성",
