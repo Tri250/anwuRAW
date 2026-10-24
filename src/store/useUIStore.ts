@@ -284,7 +284,17 @@ export const useUIStore = create<UIState>((set, get) => ({
   bottomPanelHeight: DEFAULT_BOTTOM_PANEL_HEIGHT,
   leftTopHeight: DEFAULT_PANEL_SECTION_HEIGHT,
   rightTopHeight: DEFAULT_PANEL_SECTION_HEIGHT,
-  compactEditorPanelHeightOverride: null,
+  // Android 端用户拖动的紧凑面板高度：持久化到 localStorage，
+  // 重启后仍保留用户习惯的面板大小（双击把手重置为默认并清除）
+  compactEditorPanelHeightOverride: (() => {
+    try {
+      const stored = localStorage.getItem('rapidraw.compactPanelHeight');
+      const parsed = stored ? Number(stored) : NaN;
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    } catch {
+      return null;
+    }
+  })(),
 
   panelLayout: {
     leftTop: [Panel.Metadata, Panel.FolderTree, Panel.Export],

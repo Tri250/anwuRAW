@@ -149,7 +149,9 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
 
       setUI({
         isLibraryExportPanelVisible: false,
-        compactEditorPanelHeightOverride: null,
+        // 注意：切图不再重置 compactEditorPanelHeightOverride。
+        // 用户拖大的面板高度是会话级偏好（并持久化到 localStorage），
+        // 旧逻辑每次切图弹回默认高度，是「面板太小」反馈的直接原因之一
       });
 
       if (isFrontendCached && cached && cached.selectedImage) {

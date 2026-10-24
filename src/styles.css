@@ -556,6 +556,33 @@ html[data-platform='android'] [role='listbox'] button {
   min-height: 40px;
 }
 
+/* ===== Android 编辑面板触控扩容（反馈：面板太小、不好操作）===== */
+
+/* 滑杆行距：mb-2(8px) 相邻滑杆过密，触屏易误触上下行，加到 14px */
+html[data-platform='android'] .slider-row {
+  margin-bottom: 14px;
+}
+
+/* 滑杆数值点击区：视觉不变，纵向透明扩容(20px → 32px 命中高)，
+   手机上点数值弹输入框不再需要反复瞄准 */
+html[data-platform='android'] .slider-value-display {
+  display: inline-block;
+  padding: 6px 0;
+  margin: -6px 0;
+}
+
+/* 分区可见性(眼睛)按钮命中区：24px → 40px（覆盖通用 button[data-tooltip] 的 -4px） */
+html[data-platform='android'] button.section-visibility-toggle::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
+/* 面板高度拖动把手：h-5(20px) 触屏难以抓取，加高到 28px（视觉条不变） */
+html[data-platform='android'] .cursor-row-resize {
+  min-height: 28px;
+}
+
 /* Toast 定位修正：position:fixed 相对视口定位,不受容器避让影响,
    bottom-right 默认会压在底部手势条与 BottomBar 之上。
    抬高至 BottomBar(48px) + 容器留白(约 28px) 之上,并叠加底部安全区

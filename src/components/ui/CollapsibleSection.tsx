@@ -128,7 +128,8 @@ export default function CollapsibleSection({
             <div className="w-6 h-6 flex items-center justify-center">
               <button
                 className={clsx(
-                  'p-1 rounded-full text-text-secondary hover:bg-bg-primary z-10 transition-opacity duration-300',
+                  // section-visibility-toggle：Android 端命中区扩容锚点（见 styles.css）
+                  'section-visibility-toggle p-1 rounded-full text-text-secondary hover:bg-bg-primary z-10 transition-opacity duration-300',
                   showEyeButton ? 'opacity-100' : 'opacity-0 pointer-events-none',
                 )}
                 onClick={handleVisibilityClick}

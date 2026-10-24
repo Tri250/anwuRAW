@@ -571,7 +571,9 @@ const Slider = ({
   const numericValue = isNaN(Number(value)) ? 0 : Number(value);
 
   return (
-    <div className={`mb-2 group ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} ref={containerRef}>
+    // slider-row / slider-value-display：Android 端触控扩容锚点（见 styles.css），
+    // 行距加大防止相邻滑杆误触，数值点击区扩大便于触屏点按编辑
+    <div className={`mb-2 group slider-row ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} ref={containerRef}>
       <div className="flex justify-between items-center mb-1">
         <div
           className={`grid ${typeof label === 'string' && !disabled ? 'cursor-pointer' : ''}`}
@@ -621,7 +623,7 @@ const Slider = ({
             />
           ) : (
             <span
-              className={`text-sm text-text-primary w-full text-right select-none ${disabled ? '' : 'cursor-text'}`}
+              className={`slider-value-display text-sm text-text-primary w-full text-right select-none ${disabled ? '' : 'cursor-text'}`}
               onClick={disabled ? undefined : handleValueClick}
               onDoubleClick={disabled ? undefined : handleReset}
               data-tooltip={disabled ? undefined : t('ui.slider.clickToEdit')}

@@ -334,12 +334,10 @@ function App() {
     // 横图：剩余空间充足 → 面板封顶，多余空间让给预览区（维持 v1.6.20「面板太高」的修复）；
     // 竖图：按宽适配必然超出预览区、画面无法完整显示，此时若仍把面板压到可用下限
     // (160~220px)，滑杆/预设列表等控件会被压得无法操作（v1.6.20 用户反馈「面板太小」）。
-    // 竖图场景改为给面板 40% 视口保底（仍受 45% 封顶约束），预览区约保留一半屏幕，
-    // 竖图预览本就需平移查看，与主流手机修图 App（Snapseed/Lightroom）行为一致
+    // 竖图场景直接给到与横图封顶一致的 45% 视口：竖图预览本就需平移查看，
+    // 与主流手机修图 App（Snapseed/Lightroom）行为一致；用户还可用把手拖大（已持久化）
     if (calculatedBottomHeight < usabilityFloor) {
-      const portraitFloor =
-        viewportSize.height > 0 ? Math.round(viewportSize.height * 0.4) : 300;
-      return Math.min(defaultCap, Math.max(usabilityFloor, portraitFloor));
+      return defaultCap;
     }
     // 剩余空间充足(横图) → 面板封顶，多余空间让给预览区
     return Math.min(defaultCap, Math.max(usabilityFloor, calculatedBottomHeight));
@@ -629,14 +627,19 @@ function App() {
           }));
         }
       } else if (stateKey === 'compact') {
-        setUI({
-          compactEditorPanelHeightOverride: Math.round(
-            Math.max(
-              compactEditorPanelMinHeight,
-              Math.min(startSize - (moveEvent.clientY - startY), compactEditorPanelMaxHeight),
-            ),
+        const height = Math.round(
+          Math.max(
+            compactEditorPanelMinHeight,
+            Math.min(startSize - (moveEvent.clientY - startY), compactEditorPanelMaxHeight),
           ),
-        });
+        );
+        setUI({ compactEditorPanelHeightOverride: height });
+        // 持久化用户拖动的高度：重启/切图后面板保持用户习惯的大小
+        try {
+          localStorage.setItem('rapidraw.compactPanelHeight', String(height));
+        } catch {
+          /* 隐私模式等 localStorage 不可用时静默降级为会话内生效 */
+        }
       }
     };
 
@@ -680,6 +683,11 @@ function App() {
       }));
     } else if (stateKey === 'compact') {
       setUI({ compactEditorPanelHeightOverride: null });
+      try {
+        localStorage.removeItem('rapidraw.compactPanelHeight');
+      } catch {
+        /* ignore */
+      }
     }
   };
 
