@@ -938,7 +938,8 @@
         "inpaint": "인페인팅",
         "masks": "마스크",
         "presets": "프리셋",
-        "tethering": "테더링"
+        "tethering": "테더링",
+        "swipeHint": "위로 스와이프하여 패널 열기"
       }
     },
     "toolbar": {

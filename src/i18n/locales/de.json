@@ -938,7 +938,8 @@
         "inpaint": "Reparieren",
         "masks": "Masken",
         "presets": "Vorgaben",
-        "tethering": "Tethering"
+        "tethering": "Tethering",
+        "swipeHint": "Nach oben wischen, um Paneele zu öffnen"
       }
     },
     "toolbar": {

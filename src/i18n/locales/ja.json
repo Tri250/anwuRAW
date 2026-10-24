@@ -938,7 +938,8 @@
         "inpaint": "インペイント",
         "masks": "マスク",
         "presets": "プリセット",
-        "tethering": "テザー撮影"
+        "tethering": "テザー撮影",
+        "swipeHint": "上にスワイプでパネルを開く"
       }
     },
     "toolbar": {

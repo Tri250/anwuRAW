@@ -959,7 +959,8 @@
         "inpaint": "Inpainting",
         "masks": "Maschere",
         "presets": "Predefiniti",
-        "tethering": "Acquisizione diretta"
+        "tethering": "Acquisizione diretta",
+        "swipeHint": "Scorri verso l'alto per aprire i pannelli"
       }
     },
     "toolbar": {

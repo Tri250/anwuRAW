@@ -938,7 +938,8 @@
         "inpaint": "修復",
         "masks": "遮色片",
         "presets": "預設",
-        "tethering": "連線拍攝"
+        "tethering": "連線拍攝",
+        "swipeHint": "上滑展開面板"
       }
     },
     "toolbar": {

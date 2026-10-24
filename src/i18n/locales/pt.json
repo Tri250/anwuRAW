@@ -959,7 +959,8 @@
         "inpaint": "Preencher",
         "masks": "Máscaras",
         "presets": "Predefinições",
-        "tethering": "Captura Conectada (Tethering)"
+        "tethering": "Captura Conectada (Tethering)",
+        "swipeHint": "Deslize para cima para abrir os painéis"
       }
     },
     "toolbar": {

@@ -980,7 +980,8 @@
         "inpaint": "Inpaint",
         "masks": "Maski",
         "presets": "Presety",
-        "tethering": "Tethering (Połączenie przewodowe)"
+        "tethering": "Tethering (Połączenie przewodowe)",
+        "swipeHint": "Przesuń w górę, aby otworzyć panele"
       }
     },
     "toolbar": {

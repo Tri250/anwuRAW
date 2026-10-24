@@ -938,7 +938,8 @@
         "inpaint": "Inpainting",
         "masks": "Màscares",
         "presets": "Ajustos preestablerts",
-        "tethering": "Captura connectada"
+        "tethering": "Captura connectada",
+        "swipeHint": "Llisca cap amunt per obrir els panels"
       }
     },
     "toolbar": {

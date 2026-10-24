@@ -959,7 +959,8 @@
         "inpaint": "Inpainting",
         "masks": "Máscaras",
         "presets": "Ajustes preestablecidos",
-        "tethering": "Captura conectada"
+        "tethering": "Captura conectada",
+        "swipeHint": "Desliza hacia arriba para abrir los paneles"
       }
     },
     "toolbar": {

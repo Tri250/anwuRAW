@@ -331,8 +331,17 @@ function App() {
         : 60;
     const totalDesiredTopHeight = desiredImageHeight + topUiEstimation;
     const calculatedBottomHeight = Math.round(viewportSize.height - totalDesiredTopHeight);
-    // 剩余空间充足(横图) → 面板封顶，多余空间让给预览区；
-    // 剩余不足(竖图) → 面板取可用下限，预览尽量显示完整画面
+    // 横图：剩余空间充足 → 面板封顶，多余空间让给预览区（维持 v1.6.20「面板太高」的修复）；
+    // 竖图：按宽适配必然超出预览区、画面无法完整显示，此时若仍把面板压到可用下限
+    // (160~220px)，滑杆/预设列表等控件会被压得无法操作（v1.6.20 用户反馈「面板太小」）。
+    // 竖图场景改为给面板 40% 视口保底（仍受 45% 封顶约束），预览区约保留一半屏幕，
+    // 竖图预览本就需平移查看，与主流手机修图 App（Snapseed/Lightroom）行为一致
+    if (calculatedBottomHeight < usabilityFloor) {
+      const portraitFloor =
+        viewportSize.height > 0 ? Math.round(viewportSize.height * 0.4) : 300;
+      return Math.min(defaultCap, Math.max(usabilityFloor, portraitFloor));
+    }
+    // 剩余空间充足(横图) → 面板封顶，多余空间让给预览区
     return Math.min(defaultCap, Math.max(usabilityFloor, calculatedBottomHeight));
   };
 
@@ -342,10 +351,10 @@ function App() {
     Math.min(compactEditorPanelHeightOverride ?? compactEditorPanelDefaultHeight, compactEditorPanelMaxHeight),
   );
   // 折叠态高度须装下内部固定控件（Android 根字号 106.25% 下的实测值）：
-  // 上滑提示条(≈17px) + MobilePanelSwitcher(p-2 + 图标/标签按钮 ≈73px)
-  // + BottomBar(h-12 + 顶边框 ≈52px) ≈ 142px。旧值 120px 会把底栏下缘裁掉约 20px，
-  // 148px 保留 ~6px 余量，避免 Android 字体缩放/横屏时底部按钮被 overflow-hidden 切掉
-  const compactEditorPanelCollapsedHeight = 148;
+  // 上滑提示条(文字+圆条同行，py-2 点击区 ≈33px) + MobilePanelSwitcher(p-1.5 + 图标/标签按钮 ≈67px)
+  // + BottomBar(h-12 + 顶边框 ≈52px) ≈ 148px。旧值 148px 在提示条加大点击区后余量不足，
+  // 152px 保留 ~4px 余量，避免 Android 字体缩放/横屏时底部按钮被 overflow-hidden 切掉
+  const compactEditorPanelCollapsedHeight = 152;
 
   const { handleCopyAdjustments, handlePasteAdjustments, handleResetAdjustments, handleZoomChange } =
     useEditorActions();

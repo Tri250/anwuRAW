@@ -263,7 +263,7 @@ export function MobilePanelSwitcher({
   return (
     <div
       data-mobile-panel-switcher
-      className="flex items-center gap-1 p-2 overflow-x-auto border-t border-surface shrink-0 custom-scrollbar"
+      className="flex items-stretch gap-0.5 p-1.5 border-t border-surface shrink-0"
     >
       {MOBILE_PANELS.map((id) => {
         const Icon = PANEL_ICONS[id];
@@ -276,9 +276,10 @@ export function MobilePanelSwitcher({
             aria-label={t(PANEL_TITLES[id])}
             aria-pressed={isActive}
             className={clsx(
-              // 图标 + 短标签双层结构：触控目标从 36~40px 提升到 48×56px（iOS/Android HIG 标准），
-              // 确保大字体/粗手指也能可靠点击；active 弹簧指示器 + 按压缩放反馈保留
-              'relative flex flex-col items-center justify-center gap-1 py-2.5 px-3 rounded-xl shrink-0',
+              // 均分布局（flex-1）：7 个 tab 在 360px 手机屏上每格约 48px，全部可见、
+              // 无需横向滚动即可呼出任意面板（旧版 overflow-x-auto 会截断预设/导出，
+              // 是「面板不好呼出」的主因）；触控目标高度保持 ≥48px（HIG 标准）
+              'relative flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-xl',
               'transition-[color,transform] duration-150 active:scale-95',
               isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary',
             )}
@@ -292,8 +293,8 @@ export function MobilePanelSwitcher({
                 transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
               />
             )}
-            <Icon size={20} className="relative z-10" />
-            <span className="relative z-10 text-[10px] leading-none select-none whitespace-nowrap">
+            <Icon size={20} className="relative z-10 shrink-0" />
+            <span className="relative z-10 w-full text-center text-[10px] leading-none select-none truncate">
               {t(PANEL_TITLES[id])}
             </span>
           </button>
