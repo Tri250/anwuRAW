@@ -2042,6 +2042,21 @@ const ImageCanvas = memo(
           return;
         }
 
+        // Android 触屏：第二根手指落下时立即终止当前绘制。
+        // Konva 对每根手指都会派发 start/move，若不拦截，双指捏合或误触
+        // 会替换 currentLine / previewBox，把第二条轨迹画进蒙版形成乱线。
+        if (e.evt?.touches && e.evt.touches.length > 1) {
+          isDrawing.current = false;
+          currentLine.current = null;
+          drawingStageRef.current = null;
+          activeStrokeIndex.current = null;
+          previewBoxRef.current = null;
+          setPreviewBox(null);
+          setIsMaskInteractionActive(false);
+          if (e.evt.cancelable) e.evt.preventDefault();
+          return;
+        }
+
         if (e.evt && e.evt.cancelable) e.evt.preventDefault();
 
         if (isHslPickerActive) {
@@ -2282,6 +2297,19 @@ const ImageCanvas = memo(
 
     const handleMove = useCallback(
       (e: any) => {
+        // Android 触屏：多指触摸时终止绘制（同 handleStart，防双指画乱线）
+        if (e?.evt?.touches && e.evt.touches.length > 1) {
+          if (isDrawing.current) {
+            isDrawing.current = false;
+            currentLine.current = null;
+            drawingStageRef.current = null;
+            activeStrokeIndex.current = null;
+            setIsMaskInteractionActive(false);
+          }
+          if (e.evt.cancelable) e.evt.preventDefault();
+          return;
+        }
+
         if (isWbPickerActive) {
           return;
         }
@@ -3014,7 +3042,7 @@ const ImageCanvas = memo(
               )}
             </div>
 
-            <div className="absolute inset-0 pointer-events-none z-50">
+            <div className="absolute inset-0 pointer-events-none z-50" data-mask-interactive="">
               {!isDrawing.current &&
                 directPatchMarkers.map((m) => {
                   const left = (m.cx - cropX) * imageRenderSize.scale + imageRenderSize.offsetX;
@@ -3103,6 +3131,7 @@ const ImageCanvas = memo(
 
           {(isMasking || isAiEditing || isWbPickerActive) && (
             <div
+              data-mask-interactive=""
               style={{
                 position: 'absolute',
                 top: stageTop,

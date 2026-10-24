@@ -119,19 +119,16 @@ export default function EditorView({
     const t = e.touches[0];
     const deltaY = touchStartRef.current.y - t.clientY; // 正值 = 上滑
     const absDelta = Math.abs(deltaY);
-    // 一旦确认为垂直滑动且超过阈值，阻止默认滚动行为
     if (absDelta > 12) {
       // 如果面板展开且内容区可滚动，仅在切换器/Resizer 区域（顶部 40px）识别滑动手势
-      const target = e.target as HTMLElement;
       const isTopZone =
         touchStartRef.current.y <= (e.currentTarget.getBoundingClientRect().top + 40);
       if (touchStartRef.current.panelOpen && !isTopZone) {
         touchStartRef.current = null;
-        return;
       }
-      if (absDelta > SWIPE_THRESHOLD_PX * 0.5) {
-        e.preventDefault();
-      }
+      // 说明：原实现此处调用 e.preventDefault()，但 React 17+ 的 onTouchMove
+      // 是 passive 监听，调用无效且报控制台警告；浏览器手势接管已由容器
+      // touchAction 分态控制（折叠态 none / 展开态 pan-y），无需 JS 侧处理
     }
   }, [isCompactPortrait]);
 

@@ -26,19 +26,25 @@ export default function CloneSourceHandle({
   const dragging = useRef(false);
   const posRef = useRef({ x: sx, y: sy });
   posRef.current = { x: sx, y: sy };
+  const lastClientRef = useRef<{ x: number; y: number } | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
     dragging.current = true;
     posRef.current = { x: sx, y: sy };
+    lastClientRef.current = { x: e.clientX, y: e.clientY };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragging.current) return;
+    // 不能用 e.movementX/Y：Android 触摸产生的 PointerEvent 中两者恒为 0，
+    // 会导致源点手柄在触屏上完全拖不动，必须用 clientX/Y 自行计算增量
+    const last = lastClientRef.current ?? { x: e.clientX, y: e.clientY };
+    lastClientRef.current = { x: e.clientX, y: e.clientY };
     const scale = Math.max(imageScale, 1e-3);
-    let nx = posRef.current.x + e.movementX / scale;
-    let ny = posRef.current.y + e.movementY / scale;
+    let nx = posRef.current.x + (e.clientX - last.x) / scale;
+    let ny = posRef.current.y + (e.clientY - last.y) / scale;
     nx = Math.max(0, Math.min(imageWidth, nx));
     ny = Math.max(0, Math.min(imageHeight, ny));
     posRef.current = { x: nx, y: ny };

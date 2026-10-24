@@ -986,6 +986,16 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     (e: React.PointerEvent<HTMLDivElement>) => {
       wasPanningDisabledOnDown.current = isPanningDisabled;
 
+      // Android 触屏：蒙版交互层（蒙版舞台 / 标记 / 仿制源点手柄）上的触摸不启动画布平移。
+      // 蒙版触摸标记（isMaskTouchInteracting）在 touchstart 才置位，晚于本处的 pointerdown，
+      // 若依赖它，拖动径向/线性蒙版控件的首帧会先带动画布平移（视觉抖动）后才被矫正。
+      if (
+        e.pointerType === 'touch' &&
+        (e.target as HTMLElement | null)?.closest?.('[data-mask-interactive]')
+      ) {
+        return;
+      }
+
       const isBrushActiveLocal =
         (isMasking || isAiEditing) && (activeSubMask?.type === Mask.Brush || activeSubMask?.type === Mask.Flow);
 
@@ -1273,7 +1283,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         animateTransform(newPositionX, newPositionY, zoomTarget, clickAnimationTime);
       }
     },
-    [isAndroid, isCropping, isMasking, isAiEditing, isWbPickerActive, animateTransform, straightenDragLine],
+    [isAndroid, isCropping, isMasking, isAiEditing, isWbPickerActive, isPanningDisabled, animateTransform, straightenDragLine],
   );
 
   useEffect(() => {

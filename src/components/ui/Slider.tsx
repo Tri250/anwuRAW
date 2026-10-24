@@ -111,6 +111,37 @@ const Slider = ({
   const onDragStateChangeRef = useRef(onDragStateChange);
   onDragStateChangeRef.current = onDragStateChange;
 
+  const isDraggingRef = useRef(false);
+  isDraggingRef.current = isDragging;
+
+  // Android 触屏守护：React 17+ 将 onTouchMove 注册为 passive 监听，
+  // handleTouchMove 中的 preventDefault() 实际无效；且 touch-action 在手势开始时
+  // 已按当时值锁定，拖动中动态切为 none 也不生效。必须由原生层按手势趋势
+  // 阻止浏览器滚动：横向趋势（dx >= dy）时消费事件，纵向趋势放行让页面滚动。
+  useEffect(() => {
+    const inputEl = rangeInputRef.current;
+    if (!inputEl) return;
+
+    const guard = (e: TouchEvent) => {
+      if (disabled) return;
+      if (isDraggingRef.current) {
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+      const pending = pendingTouchRef.current;
+      const t = e.touches[0];
+      if (!pending || !t) return;
+      const dx = Math.abs(t.clientX - pending.startX);
+      const dy = Math.abs(t.clientY - pending.startY);
+      if (dx >= dy && e.cancelable) {
+        e.preventDefault();
+      }
+    };
+
+    inputEl.addEventListener('touchmove', guard, { passive: false });
+    return () => inputEl.removeEventListener('touchmove', guard);
+  }, [disabled]);
+
   useEffect(() => {
     onDragStateChangeRef.current(isDragging);
   }, [isDragging]);
