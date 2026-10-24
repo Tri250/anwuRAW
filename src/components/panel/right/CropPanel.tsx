@@ -518,7 +518,7 @@ export default function CropPanel() {
         </button>
       </div>
 
-      <div className="grow overflow-y-auto p-3 space-y-8">
+      <div className="grow overflow-y-auto p-3 space-y-6 custom-scrollbar">
         {selectedImage ? (
           <>
             <div className="space-y-4">
