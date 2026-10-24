@@ -242,6 +242,11 @@
       "bokehShape": "Forma do bokeh",
       "creative": "Criativo",
       "feather": "Difusão",
+      "fog": "Névoa",
+      "fogDensity": "Densidade",
+      "fogHeight": "Névoa rasteira",
+      "fogStart": "Início",
+      "fogVariation": "Variação",
       "glow": "Brilho",
       "grain": "Granulação",
       "halation": "Halo",
@@ -250,9 +255,34 @@
       "lightFlares": "Efeitos de Luz",
       "lut": "LUT",
       "midpoint": "Ponto Médio",
+      "relight": "Reiluminar",
+      "relightAddLight": "Adicionar luz",
+      "relightAmbient": "Ambiente",
+      "relightAngle": "Ângulo",
+      "relightColor": "Cor da luz",
+      "relightCone": "Cone",
+      "relightDepth": "Profundidade",
+      "relightDuplicateLight": "Duplicar luz",
+      "relightElevation": "Elevação",
+      "relightFalloff": "Atenuação",
+      "relightHint": "Adicione ou selecione uma luz e clique ou arraste na imagem para posicioná-la.",
+      "relightIntensity": "Intensidade",
+      "relightLight": "Luz {{index}}",
+      "relightRemoveLight": "Remover luz",
+      "relightShadowSoftness": "Suavidade das sombras",
+      "relightShadows": "Sombras",
+      "relightShine": "Brilho",
+      "relightSoftness": "Suavidade",
+      "relightType": "Tipo de luz",
+      "relightTypes": {
+        "directional": "Direcional",
+        "point": "Pontual",
+        "spot": "Spot"
+      },
       "roughness": "Rugosidade",
       "roundness": "Arredondamento",
       "size": "Tamanho",
+      "spatial": "Espacial",
       "vignette": "Vinheta"
     },
     "splitToning": {
@@ -590,7 +620,8 @@
         "useBasicInpaint": "Usar preenchimento básico",
         "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
-      "touchUpTitle": "Retoques"
+      "touchUpTitle": "Retoques",
+      "generatingNormalMap": "Calculando mapa de normais IA..."
     },
     "crop": {
       "aspectRatioHeading": "Proporção de Tela",
@@ -614,6 +645,10 @@
         "armature": {
           "desc": "Armação",
           "name": "Armação"
+        },
+        "center": {
+          "desc": "Linhas centrais",
+          "name": "Centro"
         },
         "diagonal": {
           "desc": "Linhas Diagonais",
@@ -1032,7 +1067,9 @@
     },
     "file": {
       "quality": "Qualidade",
-      "qualityLossless": "Qualidade (Sem Perdas)"
+      "qualityLossless": "Qualidade (Sem Perdas)",
+      "resolution": "Resolução",
+      "dpi": "DPI"
     },
     "labels": {
       "image": "Imagem",
@@ -2215,7 +2252,8 @@
     "renameFolderFailed": "Falha ao renomear a pasta: {{error}}",
     "restoreSessionFailed": "Falha ao restaurar a sessão. Uma pasta pode ter sido movida ou eliminada.",
     "saveChangesFailed": "Falha ao guardar as alterações: {{error}}",
-    "unsupportedFormat": "Formatos de ficheiro não suportados detetados: {{formats}}"
+    "unsupportedFormat": "Formatos de ficheiro não suportados detetados: {{formats}}",
+    "normalMapFailed": "Falha ao gerar o mapa de normais: {{error}}"
   },
   "ui": {
     "bottomBar": {

@@ -6,6 +6,8 @@ import { ImageDimensions } from '../hooks/useImageRenderSize';
 import { ToolType } from '../components/panel/right/Masks';
 import { OverlayMode } from '../components/panel/right/CropPanel';
 
+export type CenterMarker = 'vignette' | 'centre';
+
 interface InteractivePatch {
   url: string;
   normX: number;
@@ -61,7 +63,11 @@ interface EditorState {
   isWbPickerActive: boolean;
   isHslPickerActive: boolean;
   hslTargetColor: string | null;
+  isRelightPickerActive: boolean;
+  activeRelightLightId: string | null;
   liveRotation: number | null;
+  /** 画布中心点标记：vignette（效果面板暗角）/ centre（细节面板 Centré） */
+  activeCenterMarker: CenterMarker | null;
   brushSettings: BrushSettings | null;
 
   // Masks & AI
@@ -129,7 +135,10 @@ export const useEditorStore = create<EditorState>((set) => ({
   isWbPickerActive: false,
   isHslPickerActive: false,
   hslTargetColor: null,
+  isRelightPickerActive: false,
+  activeRelightLightId: null,
   liveRotation: null,
+  activeCenterMarker: null,
 
   copiedSectionAdjustments: null,
   copiedMask: null,

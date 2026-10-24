@@ -242,6 +242,11 @@
       "bokehShape": "Forma del bokeh",
       "creative": "Creativo",
       "feather": "Sfumatura",
+      "fog": "Nebbia",
+      "fogDensity": "Densità",
+      "fogHeight": "Nebbia bassa",
+      "fogStart": "Inizio",
+      "fogVariation": "Variazione",
       "glow": "Bagliore",
       "grain": "Grana",
       "halation": "Alonatura",
@@ -250,9 +255,34 @@
       "lightFlares": "Riflessi di Luce",
       "lut": "LUT",
       "midpoint": "Punto Medio",
+      "relight": "Riilluminazione",
+      "relightAddLight": "Aggiungi luce",
+      "relightAmbient": "Ambiente",
+      "relightAngle": "Angolo",
+      "relightColor": "Colore luce",
+      "relightCone": "Cono",
+      "relightDepth": "Profondità",
+      "relightDuplicateLight": "Duplica luce",
+      "relightElevation": "Elevazione",
+      "relightFalloff": "Attenuazione",
+      "relightHint": "Aggiungi o seleziona una luce, poi clicca o trascina sull'immagine per posizionarla.",
+      "relightIntensity": "Intensità",
+      "relightLight": "Luce {{index}}",
+      "relightRemoveLight": "Rimuovi luce",
+      "relightShadowSoftness": "Morbidezza ombre",
+      "relightShadows": "Ombre",
+      "relightShine": "Lucentezza",
+      "relightSoftness": "Morbidezza",
+      "relightType": "Tipo di luce",
+      "relightTypes": {
+        "directional": "Direzionale",
+        "point": "Puntiforme",
+        "spot": "Spot"
+      },
       "roughness": "Ruvidezza",
       "roundness": "Rotondità",
       "size": "Dimensione",
+      "spatial": "Spaziale",
       "vignette": "Vignettatura"
     },
     "splitToning": {
@@ -590,7 +620,8 @@
         "useBasicInpaint": "Usa inpainting semplice",
         "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
-      "touchUpTitle": "Ritocchi"
+      "touchUpTitle": "Ritocchi",
+      "generatingNormalMap": "Calcolo della mappa delle normali IA..."
     },
     "crop": {
       "aspectRatioHeading": "Proporzioni",
@@ -614,6 +645,10 @@
         "armature": {
           "desc": "Triangoli Armonici",
           "name": "Armatura"
+        },
+        "center": {
+          "desc": "Linee centrali",
+          "name": "Centro"
         },
         "diagonal": {
           "desc": "Linee Diagonali",
@@ -1032,7 +1067,9 @@
     },
     "file": {
       "quality": "Qualità",
-      "qualityLossless": "Qualità (Senza Perdita)"
+      "qualityLossless": "Qualità (Senza Perdita)",
+      "resolution": "Risoluzione",
+      "dpi": "DPI"
     },
     "labels": {
       "image": "Immagine",
@@ -2214,7 +2251,8 @@
     "renameFolderFailed": "Ridenominazione della cartella non riuscita: {{error}}",
     "restoreSessionFailed": "Ripristino della sessione non riuscito. Una cartella potrebbe essere stata spostata o eliminata.",
     "saveChangesFailed": "Salvataggio delle modifiche non riuscito: {{error}}",
-    "unsupportedFormat": "Rilevati formati di file non supportati: {{formats}}"
+    "unsupportedFormat": "Rilevati formati di file non supportati: {{formats}}",
+    "normalMapFailed": "Generazione della mappa delle normali non riuscita: {{error}}"
   },
   "ui": {
     "bottomBar": {

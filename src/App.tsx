@@ -65,7 +65,6 @@ import { useProductivityActions } from './hooks/useProductivityActions';
 
 import { useAppInitialization } from './hooks/useAppInitialization';
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler';
-import { ANDROID_PHONE_MAX_HEIGHT, ANDROID_PHONE_MAX_WIDTH } from './utils/touchUtils';
 import './i18n';
 
 import {
@@ -146,6 +145,8 @@ function ImageDragOverlayNode({ activeItem }: { activeItem: { path: string; path
 
 function App() {
   const COMPACT_EDITOR_MAX_WIDTH = 900;
+  const ANDROID_COMPACT_MAX_WIDTH = 600;
+  const ANDROID_FULL_MIN_WIDTH = 1000;
 
   const [activeImageDragItem, setActiveImageDragItem] = useState<{ path: string; paths: string[] } | null>(null);
 
@@ -280,20 +281,22 @@ function App() {
 
   const isAndroid = osPlatform === 'android';
   const isPortraitViewport = viewportSize.width > 0 && viewportSize.height > viewportSize.width;
-  const isAndroidLandscapePhone =
-    isAndroid && viewportSize.height > 0 && viewportSize.height <= ANDROID_PHONE_MAX_HEIGHT;
-  const compactEditorMaxWidth = isAndroid ? ANDROID_PHONE_MAX_WIDTH : COMPACT_EDITOR_MAX_WIDTH;
-  const isCompactPortrait =
-    viewportSize.width > 0 &&
-    ((isPortraitViewport && viewportSize.width <= compactEditorMaxWidth) || isAndroidLandscapePhone);
-  const useCompactAndroidPanels = isAndroid && isCompactPortrait;
 
-  // 紧凑面板最小高度：小视口(如 Android 手机横屏 ~360px 高)按视口比例收缩,
-  // 否则固定 220px 下限会让横屏下面板始终占据过半屏幕且无法拖小
-  const compactEditorPanelMinHeight = Math.min(
-    220,
-    viewportSize.height > 0 ? Math.max(120, Math.round(viewportSize.height * 0.35)) : 220,
-  );
+  type LayoutMode = 'compact' | 'wide' | 'full';
+  const layoutMode: LayoutMode = isAndroid
+    ? viewportSize.width >= ANDROID_FULL_MIN_WIDTH
+      ? 'full'
+      : isPortraitViewport && viewportSize.width < ANDROID_COMPACT_MAX_WIDTH
+        ? 'compact'
+        : 'wide'
+    : isPortraitViewport && viewportSize.width > 0 && viewportSize.width <= COMPACT_EDITOR_MAX_WIDTH
+      ? 'compact'
+      : 'full';
+
+  const useCompactPanels = layoutMode === 'compact';
+  const useWidePanels = layoutMode === 'wide';
+
+  const compactEditorPanelMinHeight = 220;
   const compactEditorPanelMaxHeight =
     viewportSize.height > 0
       ? Math.max(compactEditorPanelMinHeight, Math.min(Math.round(viewportSize.height * 0.85), 850))
@@ -301,18 +304,10 @@ function App() {
 
   const getDynamicCompactPanelHeight = () => {
     const { originalSize, adjustments } = useEditorStore.getState();
-    // 可用下限：保证滑杆等控件可操作的最低高度(按视口收缩 160~220px)
-    const usabilityFloor =
-      viewportSize.height > 0
-        ? Math.max(160, Math.min(220, Math.round(viewportSize.height * 0.25)))
-        : 220;
-    // 默认封顶 45% 视口：横图完整显示后剩余空间可达 55%+，不封顶会被面板全部吃掉
-    // (v1.6.20 反馈「面板太高、预览太小」的主因)；预览区因此始终保有约一半屏幕
-    const defaultCap =
-      viewportSize.height > 0 ? Math.round(viewportSize.height * 0.45) : 420;
+    const halfScreenHeight = viewportSize.height > 0 ? Math.round(viewportSize.height * 0.5) : 340;
 
     if (!selectedImage || originalSize.width === 0 || originalSize.height === 0 || viewportSize.width === 0) {
-      return Math.min(defaultCap, Math.max(usabilityFloor, Math.round(viewportSize.height * 0.4)));
+      return halfScreenHeight;
     }
     let effectiveRatio = originalSize.width / originalSize.height;
     const orientationSteps = adjustments?.orientationSteps || 0;
@@ -323,24 +318,10 @@ function App() {
       effectiveRatio = adjustments.aspectRatio;
     }
     const desiredImageHeight = viewportSize.width / effectiveRatio;
-    // Android 紧凑布局顶部实际高度：p-2(8) + 工具栏 h-12(48) + gap-2(8) + p-2(8) = 72
-    const topUiEstimation = isCompactPortrait
-      ? 72
-      : !appSettings?.decorations && !isWindowFullScreen
-        ? 110
-        : 60;
+    const topUiEstimation = !appSettings?.decorations && !isWindowFullScreen ? 110 : 60;
     const totalDesiredTopHeight = desiredImageHeight + topUiEstimation;
     const calculatedBottomHeight = Math.round(viewportSize.height - totalDesiredTopHeight);
-    // 横图：剩余空间充足 → 面板封顶，多余空间让给预览区（维持 v1.6.20「面板太高」的修复）；
-    // 竖图：按宽适配必然超出预览区、画面无法完整显示，此时若仍把面板压到可用下限
-    // (160~220px)，滑杆/预设列表等控件会被压得无法操作（v1.6.20 用户反馈「面板太小」）。
-    // 竖图场景直接给到与横图封顶一致的 45% 视口：竖图预览本就需平移查看，
-    // 与主流手机修图 App（Snapseed/Lightroom）行为一致；用户还可用把手拖大（已持久化）
-    if (calculatedBottomHeight < usabilityFloor) {
-      return defaultCap;
-    }
-    // 剩余空间充足(横图) → 面板封顶，多余空间让给预览区
-    return Math.min(defaultCap, Math.max(usabilityFloor, calculatedBottomHeight));
+    return Math.max(halfScreenHeight, calculatedBottomHeight);
   };
 
   const compactEditorPanelDefaultHeight = getDynamicCompactPanelHeight();
@@ -348,6 +329,7 @@ function App() {
     compactEditorPanelMinHeight,
     Math.min(compactEditorPanelHeightOverride ?? compactEditorPanelDefaultHeight, compactEditorPanelMaxHeight),
   );
+  const compactEditorPanelCollapsedHeight = 96;
 
   const { handleCopyAdjustments, handlePasteAdjustments, handleResetAdjustments, handleZoomChange } =
     useEditorActions();
@@ -823,7 +805,7 @@ function App() {
   const hasRoots = rootPaths && rootPaths.length > 0;
   const hasMainContent = hasRoots || (activeView === 'editor' && !!selectedImage);
 
-  const shouldHideFolderTree = useCompactAndroidPanels;
+  const shouldHideFolderTree = useCompactPanels || useWidePanels;
   const isWgpuActive =
     activeView === 'editor' &&
     appSettings?.useWgpuRenderer !== false &&
@@ -885,7 +867,7 @@ function App() {
 
   const ActiveOverlayIcon = activeLayoutDragItem ? PANEL_ICONS[activeLayoutDragItem] : null;
   const effectiveLeftWidth = uiVisibility.leftPanel ? leftPanelWidth : 48;
-  const effectiveRightWidth = uiVisibility.rightPanel ? rightPanelWidth : 48;
+  const effectiveRightWidth = uiVisibility.rightPanel ? rightPanelWidth : useWidePanels ? 58 : 48;
 
   return (
     <>
@@ -965,9 +947,10 @@ function App() {
                     <EditorView
                       transformWrapperRef={transformWrapperRef}
                       isResizing={isResizing}
-                      isCompactPortrait={isCompactPortrait}
+                      layoutMode={layoutMode}
                       isAndroid={isAndroid}
                       compactEditorPanelHeight={compactEditorPanelHeight}
+                      compactEditorPanelCollapsedHeight={compactEditorPanelCollapsedHeight}
                       thumbnailAspectRatio={thumbnailAspectRatio}
                       sortedImageList={sortedImageList}
                       createResizeHandler={createResizeHandler}
@@ -1044,7 +1027,7 @@ function App() {
                   </div>
                 )}
               </div>
-              {!useCompactAndroidPanels && hasMainContent && (
+              {!useCompactPanels && hasMainContent && (
                 <SidePanelArea
                   side="right"
                   width={effectiveRightWidth}
@@ -1054,6 +1037,7 @@ function App() {
                   onWidthChange={createResizeHandler('right', effectiveRightWidth)}
                   onWidthReset={createResizeResetHandler('right')}
                   isResizing={isResizing}
+                  showAdditionalTabs={useWidePanels}
                 />
               )}
             </div>

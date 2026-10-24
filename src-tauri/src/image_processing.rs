@@ -1394,6 +1394,16 @@ pub fn apply_flip<'a>(
     Cow::Owned(img)
 }
 
+/// 空间效果（relight / fog）统一开关判断：effects 分区可见且对应 effect 启用。
+pub fn is_effect_enabled(adjustments: &serde_json::Value, _tool: &str, enabled_key: &str) -> bool {
+    let effects_visible = adjustments
+        .get("sectionVisibility")
+        .and_then(|v| v.get("effects"))
+        .and_then(|s| s.as_bool())
+        .unwrap_or(true);
+    effects_visible && adjustments.get(enabled_key).and_then(|v| v.as_bool()).unwrap_or(false)
+}
+
 pub fn is_geometry_identity(params: &GeometryParams) -> bool {
     if params.guided_perspective_enabled && params.guided_lines.len() >= 2 {
         return false;
@@ -2298,8 +2308,8 @@ fn get_global_adjustments_from_json(
         wb_log_gain_l: white_balance_gains[0],
         wb_log_gain_m: white_balance_gains[1],
         wb_log_gain_s: white_balance_gains[2],
-        centre_x: 0.5,
-        centre_y: 0.5,
+        centre_x: get_val("details", "centréX", 1.0, Some(0.5)),
+        centre_y: get_val("details", "centréY", 1.0, Some(0.5)),
 
         sharpness: get_val("details", "sharpness", SCALES.sharpness, None),
         luma_noise_reduction: get_val(
@@ -2379,8 +2389,8 @@ fn get_global_adjustments_from_json(
             _ => 0,
         }),
         lut_is_scene_referred,
-        vignette_center_x: 0.5,
-        vignette_center_y: 0.5,
+        vignette_center_x: get_val("effects", "vignetteCenterX", 1.0, Some(0.5)),
+        vignette_center_y: get_val("effects", "vignetteCenterY", 1.0, Some(0.5)),
         _pad_lut5: 0.0,
 
         _pad_agx1: 0.0,

@@ -7,13 +7,6 @@
 export const DOUBLE_TAP_MAX_DELAY_MS = 300;
 export const DOUBLE_TAP_MAX_DISTANCE_PX = 40;
 
-/**
- * Android 手机紧凑布局阈值（App.tsx 布局判定与 useAndroidBackHandler 共用，
- * 避免两处硬编码漂移导致返回键与紧凑面板节点不一致）。
- */
-export const ANDROID_PHONE_MAX_WIDTH = 600;
-export const ANDROID_PHONE_MAX_HEIGHT = 500;
-
 export interface TapPoint {
   time: number;
   x: number;

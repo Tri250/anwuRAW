@@ -4,13 +4,14 @@ version = 4
 
 [[package]]
 name = "RapidRAW"
-version = "1.6.23"
+version = "1.6.24"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
  "blake3",
  "bytemuck",
  "chrono",
+ "crc32fast",
  "fern",
  "filetime",
  "futures",
@@ -68,6 +69,7 @@ dependencies = [
  "tauri-plugin-shell",
  "tauri-plugin-single-instance",
  "tempfile",
+ "tiff",
  "tokenizers",
  "tokio",
  "trash",

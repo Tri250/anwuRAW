@@ -107,14 +107,41 @@ interface MyLens {
 const EXECUTE_TIMEOUT = 3000;
 
 const adjustmentVisibilityDefaults = {
+  whiteBalance: true,
+  colorPresence: true,
+  hue: true,
+  colorGrading: true,
+  colorMixer: true,
+  colorCalibration: false,
   sharpening: true,
   presence: true,
   noiseReduction: true,
   chromaticAberration: false,
+  creative: true,
+  lensBlur: true,
+  lut: true,
   vignette: true,
-  colorCalibration: false,
   grain: true,
 };
+
+// 与各调整面板（Color/Details/Effects）的工具块一一对应，labelKey 复用面板标题的 i18n 键
+const adjustmentVisibilityTools: Array<{ key: keyof typeof adjustmentVisibilityDefaults; labelKey: string }> = [
+  { key: 'whiteBalance', labelKey: 'adjustments.color.whiteBalance' },
+  { key: 'colorPresence', labelKey: 'adjustments.color.presence' },
+  { key: 'hue', labelKey: 'adjustments.color.hue' },
+  { key: 'colorGrading', labelKey: 'adjustments.color.colorGrading' },
+  { key: 'colorMixer', labelKey: 'adjustments.color.colorMixer' },
+  { key: 'colorCalibration', labelKey: 'adjustments.color.calibration.title' },
+  { key: 'sharpening', labelKey: 'adjustments.details.sharpening' },
+  { key: 'presence', labelKey: 'adjustments.details.presence' },
+  { key: 'noiseReduction', labelKey: 'adjustments.details.noiseReduction' },
+  { key: 'chromaticAberration', labelKey: 'adjustments.details.chromaticAberration' },
+  { key: 'creative', labelKey: 'adjustments.effects.creative' },
+  { key: 'lensBlur', labelKey: 'adjustments.effects.lensBlur' },
+  { key: 'lut', labelKey: 'adjustments.effects.lut' },
+  { key: 'vignette', labelKey: 'adjustments.effects.vignette' },
+  { key: 'grain', labelKey: 'adjustments.effects.grain' },
+];
 
 const resolutions: OptionItem<number>[] = [
   { value: 720, label: '720px' },
@@ -1305,58 +1332,22 @@ export default function SettingsPanel({
                     </Text>
                     <Text className="mb-4">{t('settings.adjustments.description')}</Text>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                      <Switch
-                        label={t('settings.adjustments.chromaticAberration')}
-                        checked={appSettings?.adjustmentVisibility?.chromaticAberration ?? false}
-                        onChange={(checked) =>
-                          onSettingsChange({
-                            ...appSettings,
-                            adjustmentVisibility: {
-                              ...(appSettings?.adjustmentVisibility || adjustmentVisibilityDefaults),
-                              chromaticAberration: checked,
-                            },
-                          })
-                        }
-                      />
-                      <Switch
-                        label={t('settings.adjustments.grain')}
-                        checked={appSettings?.adjustmentVisibility?.grain ?? true}
-                        onChange={(checked) =>
-                          onSettingsChange({
-                            ...appSettings,
-                            adjustmentVisibility: {
-                              ...(appSettings?.adjustmentVisibility || adjustmentVisibilityDefaults),
-                              grain: checked,
-                            },
-                          })
-                        }
-                      />
-                      <Switch
-                        label={t('settings.adjustments.colorCalibration')}
-                        checked={appSettings?.adjustmentVisibility?.colorCalibration ?? true}
-                        onChange={(checked) =>
-                          onSettingsChange({
-                            ...appSettings,
-                            adjustmentVisibility: {
-                              ...(appSettings?.adjustmentVisibility || adjustmentVisibilityDefaults),
-                              colorCalibration: checked,
-                            },
-                          })
-                        }
-                      />
-                      <Switch
-                        label={t('settings.adjustments.noiseReduction')}
-                        checked={appSettings?.adjustmentVisibility?.noiseReduction ?? true}
-                        onChange={(checked) =>
-                          onSettingsChange({
-                            ...appSettings,
-                            adjustmentVisibility: {
-                              ...(appSettings?.adjustmentVisibility || adjustmentVisibilityDefaults),
-                              noiseReduction: checked,
-                            },
-                          })
-                        }
-                      />
+                      {adjustmentVisibilityTools.map(({ key, labelKey }) => (
+                        <Switch
+                          key={key}
+                          label={t(labelKey)}
+                          checked={appSettings?.adjustmentVisibility?.[key] ?? adjustmentVisibilityDefaults[key]}
+                          onChange={(checked) =>
+                            onSettingsChange({
+                              ...appSettings,
+                              adjustmentVisibility: {
+                                ...(appSettings?.adjustmentVisibility || adjustmentVisibilityDefaults),
+                                [key]: checked,
+                              },
+                            })
+                          }
+                        />
+                      ))}
                     </div>
                   </div>
 
@@ -2345,10 +2336,7 @@ export default function SettingsPanel({
                         buttonAction={handleClearAiDenoiseCache}
                         buttonText={t('settings.data.clearAiDenoiseButton')}
                         description={t('settings.data.clearAiDenoiseDesc', {
-                          size:
-                            aiDenoiseCacheSize === null
-                              ? '…'
-                              : formatBytes(aiDenoiseCacheSize, t),
+                          size: aiDenoiseCacheSize === null ? '…' : formatBytes(aiDenoiseCacheSize, t),
                         })}
                         disabled={!aiDenoiseCacheSize}
                         icon={<Trash2 size={16} className="mr-2" />}

@@ -13,15 +13,16 @@ import { useUIStore } from '../../store/useUIStore';
 import { useLibraryStore } from '../../store/useLibraryStore';
 import { useProcessStore } from '../../store/useProcessStore';
 
-import { ImageFile, Orientation, Panel, ThumbnailAspectRatio } from '../ui/AppProperties';
+import { ImageFile, Orientation, ThumbnailAspectRatio } from '../ui/AppProperties';
 import { getImageFlag } from '../../utils/imageFlags';
 
 interface EditorViewProps {
   transformWrapperRef: RefObject<any>;
   isResizing: boolean;
-  isCompactPortrait: boolean;
+  layoutMode: 'compact' | 'wide' | 'full';
   isAndroid: boolean;
   compactEditorPanelHeight: number;
+  compactEditorPanelCollapsedHeight: number;
   thumbnailAspectRatio: ThumbnailAspectRatio;
   sortedImageList: ImageFile[];
   createResizeHandler: (stateKey: string, startSize: number) => (e: ReactPointerEvent<HTMLDivElement>) => void;
@@ -45,9 +46,10 @@ interface EditorViewProps {
 export default function EditorView({
   transformWrapperRef,
   isResizing,
-  isCompactPortrait,
+  layoutMode,
   isAndroid,
   compactEditorPanelHeight,
+  compactEditorPanelCollapsedHeight,
   thumbnailAspectRatio,
   sortedImageList,
   createResizeHandler,
@@ -99,12 +101,6 @@ export default function EditorView({
     })),
   );
 
-  // === 移动端面板常驻展开（v1.6.21 反馈「面板不要折叠」） ===
-  // 面板容器不存在折叠态：activePanel 意外为 null 时兜底打开「调整」，
-  // 上/下滑展开折叠手势、重复点击 tab 折叠、返回键折叠路径均已移除，
-  // 底部面板区域始终以 compactEditorPanelHeight 高度渲染当前面板内容
-  const effectivePanel = activePanel ?? Panel.Adjustments;
-
   const editorNode = (
     <Editor
       onBackToLibrary={handleBackToLibrary}
@@ -116,7 +112,7 @@ export default function EditorView({
 
   const editorBottomBarComponent = (
     <BottomBar
-      avoidBottomInset={!isCompactPortrait}
+      avoidBottomInset={layoutMode !== 'compact'}
       filmstripHeight={bottomPanelHeight}
       imageList={sortedImageList}
       imageRatings={imageRatings}
@@ -130,7 +126,7 @@ export default function EditorView({
       isRatingDisabled={!selectedImage}
       isResizing={isResizing}
       multiSelectedPaths={multiSelectedPaths}
-      showQuickFilter={!isCompactPortrait}
+      showQuickFilter={layoutMode !== 'compact'}
       onClearSelection={handleClearSelection}
       onContextMenu={handleThumbnailContextMenu}
       onEmptyAreaContextMenu={handleMainLibraryContextMenu}
@@ -148,7 +144,7 @@ export default function EditorView({
       setIsFilmstripVisible={(value: boolean) =>
         setUI((state) => ({ uiVisibility: { ...state.uiVisibility, filmstrip: value } }))
       }
-      showFilmstrip={!isCompactPortrait}
+      showFilmstrip={layoutMode !== 'compact'}
       showZoomControls={!isAndroid}
       thumbnailAspectRatio={thumbnailAspectRatio}
       totalImages={sortedImageList.length}
@@ -166,7 +162,7 @@ export default function EditorView({
         opacity: isFullScreen ? 0 : 1,
       }}
     >
-      {!isCompactPortrait && (
+      {layoutMode !== 'compact' && (
         <Resizer
           direction={Orientation.Horizontal}
           onMouseDown={createResizeHandler('bottom', bottomPanelHeight)}
@@ -177,54 +173,52 @@ export default function EditorView({
     </div>
   );
 
-  const editorMobilePanelNode = isCompactPortrait ? (
-    <div
-      className={clsx(
-        // bottom-inset-safe：面板背景延伸到屏幕最底部，系统导航栏浮于其上，
-        // 消除 WebView 被原生 insets 收缩后面板与屏幕底之间的灰带空隙
-        'flex overflow-hidden shrink-0 flex-col bg-bg-secondary rounded-lg bottom-inset-safe',
-        !isResizing && !isInstantTransition && 'transition-all duration-300 ease-in-out',
-      )}
-      style={{
-        // 面板常驻展开：总高固定为 compactEditorPanelHeight，由 border-box 的
-        // padding 从内容区挤出底部 inset（内容区可滚动，无感），不再有折叠高度分支
-        height: isFullScreen ? 0 : compactEditorPanelHeight,
-        opacity: isFullScreen ? 0 : 1,
-      }}
-    >
-      {!isFullScreen && (
-        <Resizer
-          direction={Orientation.Horizontal}
-          onMouseDown={createResizeHandler('compact', compactEditorPanelHeight)}
-          onDoubleClick={createResizeResetHandler('compact')}
-        />
-      )}
-      {/* 内容区占据切换器与底栏之间的全部剩余空间，面板切换走 AnimatePresence 过渡 */}
-      <div className="overflow-hidden relative min-h-0 flex-1">
-        <AnimatePresence mode="wait">
-          {!isFullScreen && (
-            <motion.div
-              key={effectivePanel}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.15 }}
-              className="absolute inset-0 overflow-y-auto custom-scrollbar"
-            >
-              {renderAppPanel(effectivePanel)}
-            </motion.div>
-          )}
-        </AnimatePresence>
+  const editorMobilePanelNode =
+    layoutMode === 'compact' ? (
+      <div
+        className={clsx(
+          // bottom-inset-safe：面板背景延伸到屏幕最底部，系统导航栏浮于其上，
+          // 消除 WebView 被原生 insets 收缩后面板与屏幕底之间的灰带空隙
+          'flex overflow-hidden shrink-0 flex-col bg-bg-secondary rounded-lg bottom-inset-safe',
+          !isResizing && !isInstantTransition && 'transition-all duration-300 ease-in-out',
+        )}
+        style={{
+          height: isFullScreen ? 0 : activePanel ? compactEditorPanelHeight : compactEditorPanelCollapsedHeight,
+          opacity: isFullScreen ? 0 : 1,
+        }}
+      >
+        {activePanel && !isFullScreen && (
+          <Resizer
+            direction={Orientation.Horizontal}
+            onMouseDown={createResizeHandler('compact', compactEditorPanelHeight)}
+            onDoubleClick={createResizeResetHandler('compact')}
+          />
+        )}
+        <div className="min-h-0 flex-1 overflow-hidden relative">
+          <AnimatePresence mode="wait">
+            {activePanel && (
+              <motion.div
+                key={activePanel}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.15 }}
+                className="absolute inset-0 overflow-y-auto custom-scrollbar"
+              >
+                {renderAppPanel(activePanel)}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        <MobilePanelSwitcher activePanel={activePanel} onPanelSelect={handlePanelSelect} />
+        <div className="shrink-0 border-t border-surface">{editorBottomBarComponent}</div>
       </div>
-      <MobilePanelSwitcher activePanel={effectivePanel} onPanelSelect={handlePanelSelect} />
-      <div className="shrink-0 border-t border-surface">{editorBottomBarComponent}</div>
-    </div>
-  ) : null;
+    ) : null;
 
   return (
-    <div className={clsx('flex grow h-full min-h-0', isCompactPortrait ? 'flex-col gap-2' : 'flex-col')}>
-      <div className={clsx('flex-1 flex flex-col min-w-0', isCompactPortrait && 'min-h-0')}>{editorNode}</div>
-      {isCompactPortrait ? editorMobilePanelNode : editorBottomBarNode}
+    <div className={clsx('flex grow h-full min-h-0', layoutMode === 'compact' ? 'flex-col gap-2' : 'flex-col')}>
+      <div className={clsx('flex-1 flex flex-col min-w-0', layoutMode === 'compact' && 'min-h-0')}>{editorNode}</div>
+      {layoutMode === 'compact' ? editorMobilePanelNode : editorBottomBarNode}
     </div>
   );
 }

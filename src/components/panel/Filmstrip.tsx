@@ -115,7 +115,13 @@ const FilmstripThumbnail = memo(
       filename.length > 40 ? filename.substring(0, 20) + '...' + filename.substring(filename.length - 17) : filename;
 
     useEffect(() => {
-      if (thumbnailAspectRatio === ThumbnailAspectRatio.Contain && thumbData) {
+      // Contain / Justified 都依赖真实宽高比：Contain 用于 object-contain 占位，
+      // Justified 用于行式布局计算（与 LibraryGrid 瀑布流一致）
+      const needsCalculation =
+        thumbnailAspectRatio === ThumbnailAspectRatio.Contain ||
+        thumbnailAspectRatio === ThumbnailAspectRatio.Justified;
+
+      if (needsCalculation && thumbData) {
         const img = new Image();
         img.onload = () => {
           const ratio = img.naturalWidth / img.naturalHeight;

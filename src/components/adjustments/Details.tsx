@@ -29,6 +29,7 @@ export default function DetailsPanel({
     state.selectedImage ? state.aiDenoiseProgress[state.selectedImage.path] : undefined,
   );
   const aiModelDownloadStatus = useProcessStore((state) => state.aiModelDownloadStatus);
+  const setEditor = useEditorStore((state) => state.setEditor);
 
   const handleAdjustmentChange = (key: string, value: string) => {
     const numericValue = parseInt(value, 10);
@@ -100,15 +101,17 @@ export default function DetailsPanel({
             onDragStateChange={onDragStateChange}
           />
           {!isForMask && (
-            <Slider
-              label={t('adjustments.details.centre')}
-              max={100}
-              min={-100}
-              onChange={(e: any) => handleAdjustmentChange(DetailsAdjustment.Centré, e.target.value)}
-              step={1}
-              value={adjustments.centré}
-              onDragStateChange={onDragStateChange}
-            />
+            <div data-center-marker-controls="centre" onPointerDown={() => setEditor({ activeCenterMarker: 'centre' })}>
+              <Slider
+                label={t('adjustments.details.centre')}
+                max={100}
+                min={-100}
+                onChange={(e: any) => handleAdjustmentChange(DetailsAdjustment.Centré, e.target.value)}
+                step={1}
+                value={adjustments.centré}
+                onDragStateChange={onDragStateChange}
+              />
+            </div>
           )}
         </div>
       )}

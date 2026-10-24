@@ -46,7 +46,11 @@ export interface ExportSettings {
   preserveFolders?: boolean;
   colorSpace?: 'srgb' | 'displayP3' | 'adobeRgb' | 'proPhoto';
   bitDepth?: 8 | 16;
+  dpi?: number;
 }
+
+export const DEFAULT_EXPORT_DPI = 300;
+export const MAX_EXPORT_DPI = 65535;
 
 export enum WatermarkAnchor {
   TopLeft = 'topLeft',

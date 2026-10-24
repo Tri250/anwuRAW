@@ -14,8 +14,10 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use image::codecs::jpeg::JpegEncoder;
+use image::codecs::jpeg::{JpegEncoder, PixelDensity};
 use image::{DynamicImage, GenericImageView, GrayImage, ImageBuffer, ImageFormat, Luma, imageops};
+use tiff::encoder::{Rational, TiffEncoder, TiffValue, colortype};
+use tiff::tags::ResolutionUnit;
 use jxl_encoder::{
     LosslessConfig, LossyConfig, PixelLayout,
     api::{calibrated_jxl_quality, quality_to_distance},
@@ -97,6 +99,8 @@ pub struct ExportSettings {
     pub color_space: ExportColorSpace,
     #[serde(default = "default_bit_depth")]
     pub bit_depth: u8,
+    #[serde(default)]
+    pub dpi: Option<u16>,
 }
 
 fn default_bit_depth() -> u8 {
@@ -526,6 +530,7 @@ fn save_image_with_metadata(
         export_settings.jpeg_quality,
         &export_settings.color_space,
         export_settings.bit_depth,
+        export_settings.dpi,
     )?;
 
     exif_processing::write_image_with_metadata(
@@ -706,6 +711,7 @@ fn encode_image_to_bytes(
     jpeg_quality: u8,
     _color_space: &ExportColorSpace,
     bit_depth: u8,
+    dpi: Option<u16>,
 ) -> Result<Vec<u8>, String> {
     let mut image_bytes = Vec::new();
     let mut cursor = Cursor::new(&mut image_bytes);
@@ -754,7 +760,10 @@ fn encode_image_to_bytes(
         }
         "jpg" | "jpeg" => {
             let rgb_image = image.to_rgb8();
-            let encoder = JpegEncoder::new_with_quality(&mut cursor, jpeg_quality);
+            let mut encoder = JpegEncoder::new_with_quality(&mut cursor, jpeg_quality);
+            if let Some(dpi) = dpi {
+                encoder.set_pixel_density(PixelDensity::dpi(dpi));
+            }
             rgb_image
                 .write_with_encoder(encoder)
                 .map_err(|e| e.to_string())?;
@@ -769,17 +778,31 @@ fn encode_image_to_bytes(
             image_to_encode
                 .write_to(&mut cursor, image::ImageFormat::Png)
                 .map_err(|e| e.to_string())?;
+            if let Some(dpi) = dpi {
+                insert_png_phys_chunk(&mut image_bytes, dpi);
+            }
         }
         "tiff" => {
             // TIFF 根据 bit_depth 选择 8-bit 或 16-bit
-            let image_to_encode = if bit_depth >= 16 {
-                DynamicImage::ImageRgb16(image.to_rgb16())
+            let (width, height) = image.dimensions();
+            let mut encoder = TiffEncoder::new(&mut cursor).map_err(|e| e.to_string())?;
+            if bit_depth >= 16 {
+                write_tiff::<colortype::RGB16, _>(
+                    &mut encoder,
+                    width,
+                    height,
+                    image.to_rgb16().as_raw(),
+                    dpi,
+                )?;
             } else {
-                image.to_rgb8().into()
-            };
-            image_to_encode
-                .write_to(&mut cursor, image::ImageFormat::Tiff)
-                .map_err(|e| e.to_string())?;
+                write_tiff::<colortype::RGB8, _>(
+                    &mut encoder,
+                    width,
+                    height,
+                    image.to_rgb8().as_raw(),
+                    dpi,
+                )?;
+            }
         }
         "avif" => {
             image
@@ -789,6 +812,40 @@ fn encode_image_to_bytes(
         _ => return Err(format!("Unsupported file format: {}", output_format)),
     };
     Ok(image_bytes)
+}
+
+fn write_tiff<C: colortype::ColorType, W: std::io::Write + std::io::Seek>(
+    encoder: &mut TiffEncoder<W>,
+    width: u32,
+    height: u32,
+    data: &[C::Inner],
+    dpi: Option<u16>,
+) -> Result<(), String>
+where
+    [C::Inner]: TiffValue,
+{
+    let mut image = encoder
+        .new_image::<C>(width, height)
+        .map_err(|e| e.to_string())?;
+    if let Some(dpi) = dpi {
+        image.resolution(
+            ResolutionUnit::Inch,
+            Rational {
+                n: dpi.into(),
+                d: 1,
+            },
+        );
+    }
+    image.write_data(data).map_err(|e| e.to_string())
+}
+
+fn insert_png_phys_chunk(image_bytes: &mut Vec<u8>, dpi: u16) {
+    let pixels_per_meter = (f64::from(dpi) / 0.0254).round() as u32;
+    let mut data = Vec::with_capacity(9);
+    data.extend_from_slice(&pixels_per_meter.to_be_bytes());
+    data.extend_from_slice(&pixels_per_meter.to_be_bytes());
+    data.push(1);
+    exif_processing::insert_png_chunk(image_bytes, b"pHYs", &data);
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1471,6 +1528,7 @@ pub async fn run_headless_export(
         preserve_folders: true,
         color_space: ExportColorSpace::default(),
         bit_depth: default_bit_depth(),
+        dpi: None,
     };
 
     let mut custom_adjustments = None;
@@ -1674,6 +1732,7 @@ pub async fn estimate_export_sizes(
             export_settings.jpeg_quality,
             &export_settings.color_space,
             export_settings.bit_depth,
+            None,
         )?;
         let preview_byte_size = preview_bytes.len();
 
@@ -1820,6 +1879,7 @@ pub async fn estimate_export_sizes(
             export_settings.jpeg_quality,
             &export_settings.color_space,
             export_settings.bit_depth,
+            None,
         )?;
         let single_image_estimated_size = preview_bytes.len();
 

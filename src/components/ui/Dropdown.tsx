@@ -10,6 +10,7 @@ import clsx from 'clsx';
 export interface OptionItem<T extends React.Key> {
   label: string;
   value: T;
+  disabled?: boolean;
 }
 
 interface DropdownProps<T extends React.Key> {
@@ -67,6 +68,7 @@ const Dropdown = <T extends React.Key>({
   }, [isOpen]);
 
   const handleSelect = (option: OptionItem<T>) => {
+    if (option.disabled) return;
     onChange(option.value);
     setIsOpen(false);
   };
@@ -163,11 +165,14 @@ const Dropdown = <T extends React.Key>({
                   <button
                     key={option.value}
                     onClick={() => handleSelect(option)}
+                    disabled={option.disabled}
                     className={clsx(
                       'w-full text-left px-3 py-2 rounded-md flex items-center justify-between',
-                      'transition-colors duration-150 hover:bg-bg-primary',
+                      'transition-colors duration-150',
                       {
                         'bg-bg-primary': isSelected,
+                        'hover:bg-bg-primary': !option.disabled,
+                        'opacity-40 cursor-not-allowed': option.disabled,
                       },
                     )}
                     role="option"

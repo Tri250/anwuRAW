@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ExportPreset, WatermarkAnchor } from '../components/ui/ExportImportProperties';
+import { DEFAULT_EXPORT_DPI, ExportPreset, WatermarkAnchor } from '../components/ui/ExportImportProperties';
 
 export function useExportSettings() {
   const [fileFormat, setFileFormat] = useState('jpeg');
   const [jpegQuality, setJpegQuality] = useState(90);
+  const [dpi, setDpi] = useState(DEFAULT_EXPORT_DPI);
   const [enableResize, setEnableResize] = useState(false);
   const [resizeMode, setResizeMode] = useState('longEdge');
   const [resizeValue, setResizeValue] = useState(2048);
@@ -26,6 +27,7 @@ export function useExportSettings() {
   const handleApplyPreset = useCallback((preset: ExportPreset) => {
     setFileFormat(preset.fileFormat);
     setJpegQuality(preset.jpegQuality);
+    setDpi((preset as { dpi?: number }).dpi ?? DEFAULT_EXPORT_DPI);
     setEnableResize(preset.enableResize);
     setResizeMode(preset.resizeMode);
     setResizeValue(preset.resizeValue);
@@ -50,6 +52,7 @@ export function useExportSettings() {
     () => ({
       fileFormat,
       jpegQuality,
+      dpi,
       enableResize,
       resizeMode,
       resizeValue,
@@ -72,6 +75,7 @@ export function useExportSettings() {
     [
       fileFormat,
       jpegQuality,
+      dpi,
       enableResize,
       resizeMode,
       resizeValue,
@@ -98,6 +102,8 @@ export function useExportSettings() {
     setFileFormat,
     jpegQuality,
     setJpegQuality,
+    dpi,
+    setDpi,
     enableResize,
     setEnableResize,
     resizeMode,
