@@ -868,7 +868,7 @@ fn run_native_denoise(
     accumulator: &mut [f32],
     width: usize,
     height: usize,
-    app_handle: &tauri::AppHandle,
+    on_progress: &dyn Fn(f32),
     params: TileParams,
 ) -> Result<()> {
     let w = width as i32;
@@ -887,8 +887,7 @@ fn run_native_denoise(
             params.ucs as i32 * yi as i32 - params.overlap as i32 * yi as i32 - params.pad as i32;
 
         if i % 10 == 0 {
-            let pct = (i as f32 / total as f32) * 100.0;
-            let _ = app_handle.emit("denoise-progress", format!("Denoising… {:.0}%", pct));
+            on_progress(i as f32 / total as f32);
         }
 
         let crop = extract_tile_mirror(img, x0, y0, params.cs);
@@ -961,12 +960,11 @@ pub fn run_ai_denoise(
     rgb_img: &Rgb32FImage,
     intensity: f32,
     session: &Mutex<Session>,
-    app_handle: &tauri::AppHandle,
+    on_progress: &dyn Fn(f32),
 ) -> Result<DynamicImage> {
     let (width, height) = rgb_img.dimensions();
     let params = select_tile_params(intensity);
 
-    let _ = app_handle.emit("denoise-progress", "Denoising (AI NIND)...");
     let mut accumulator = vec![0.0f32; width as usize * height as usize * 3];
     run_native_denoise(
         rgb_img,
@@ -974,7 +972,7 @@ pub fn run_ai_denoise(
         &mut accumulator,
         width as usize,
         height as usize,
-        app_handle,
+        on_progress,
         params,
     )?;
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import i18n from 'i18next';
 import { toast } from 'react-toastify';
-import { ImageFile, Panel, ExifOverlay } from '../components/ui/AppProperties';
+import { ImageFile, ImageFlag, Panel, ExifOverlay } from '../components/ui/AppProperties';
 import { KEYBIND_DEFINITIONS, normalizeCombo } from '../utils/keyboardUtils';
 import { useEditorStore } from '../store/useEditorStore';
 import { useLibraryStore } from '../store/useLibraryStore';
@@ -33,7 +33,7 @@ export const useKeyboardShortcuts = ({
   handleZoomChange,
 }: KeyboardShortcutsProps) => {
   const { handleRotate, handleCopyAdjustments, handlePasteAdjustments, toggleShowOriginal } = useEditorActions();
-  const { handleRate, handleSetColorLabel } = useLibraryActions();
+  const { handleRate, handleSetColorLabel, handleSetFlag, handleToggleFlag } = useLibraryActions();
 
   const sortedListRef = useRef(sortedImageList);
   useEffect(() => {
@@ -530,6 +530,27 @@ export const useKeyboardShortcuts = ({
           handleSetColorLabel('purple');
         },
       },
+      toggle_pick: {
+        shouldFire: () => true,
+        execute: (e: any) => {
+          e.preventDefault();
+          handleToggleFlag(ImageFlag.Pick);
+        },
+      },
+      toggle_reject: {
+        shouldFire: () => true,
+        execute: (e: any) => {
+          e.preventDefault();
+          handleToggleFlag(ImageFlag.Reject);
+        },
+      },
+      unflag: {
+        shouldFire: () => true,
+        execute: (e: any) => {
+          e.preventDefault();
+          handleSetFlag(null);
+        },
+      },
       brush_size_up: {
         shouldFire: (s: any) =>
           s.ui.activeView === 'editor' &&
@@ -683,6 +704,8 @@ export const useKeyboardShortcuts = ({
     handlePasteAdjustments,
     handleRate,
     handleSetColorLabel,
+    handleSetFlag,
+    handleToggleFlag,
     toggleShowOriginal,
   ]);
 };

@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Button from '../ui/Button';
 import Slider from '../ui/Slider';
 import throttle from 'lodash.throttle';
-import { Adjustments } from '../../utils/adjustments';
+import { Adjustments, GuideLine } from '../../utils/adjustments';
 import clsx from 'clsx';
 import Text from '../ui/Text';
 import { TextColors, TextVariants } from '../../types/typography';
@@ -20,6 +20,8 @@ interface GeometryParams {
   scale: number;
   x_offset: number;
   y_offset: number;
+  guided_lines: GuideLine[];
+  guided_perspective_enabled: boolean;
   lens_distortion_amount: number;
   lens_vignette_amount: number;
   lens_tca_amount: number;
@@ -39,6 +41,8 @@ interface GeometryParams {
 
 type TransformParams = Omit<
   GeometryParams,
+  | 'guided_lines'
+  | 'guided_perspective_enabled'
   | 'lens_distortion_amount'
   | 'lens_vignette_amount'
   | 'lens_tca_amount'
@@ -220,6 +224,8 @@ export default function TransformModal({ isOpen, onClose, onApply, currentAdjust
           lens_distortion_enabled: currentAdjustments.lensDistortionEnabled ?? true,
           lens_tca_enabled: currentAdjustments.lensTcaEnabled ?? true,
           lens_vignette_enabled: currentAdjustments.lensVignetteEnabled ?? true,
+          guided_lines: currentAdjustments.guidedPerspective?.lines ?? [],
+          guided_perspective_enabled: currentAdjustments.guidedPerspective?.enabled ?? false,
         };
 
         const result: string = await invoke('preview_geometry_transform', {
@@ -323,6 +329,8 @@ export default function TransformModal({ isOpen, onClose, onApply, currentAdjust
         lens_distortion_enabled: currentAdjustments.lensDistortionEnabled ?? true,
         lens_tca_enabled: currentAdjustments.lensTcaEnabled ?? true,
         lens_vignette_enabled: currentAdjustments.lensVignetteEnabled ?? true,
+        guided_lines: currentAdjustments.guidedPerspective?.lines ?? [],
+        guided_perspective_enabled: currentAdjustments.guidedPerspective?.enabled ?? false,
       };
       const result: string = await invoke('preview_geometry_transform', {
         params: fullParams,

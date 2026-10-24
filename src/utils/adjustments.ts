@@ -64,6 +64,9 @@ export enum DetailsAdjustment {
   Dehaze = 'dehaze',
   Structure = 'structure',
   Centré = 'centré',
+  AiDenoiseAmount = 'aiDenoiseAmount',
+  AiDenoiseDetail = 'aiDenoiseDetail',
+  AiDenoiseEnabled = 'aiDenoiseEnabled',
   ColorNoiseReduction = 'colorNoiseReduction',
   LumaNoiseReduction = 'lumaNoiseReduction',
   Sharpness = 'sharpness',
@@ -196,9 +199,27 @@ export interface ParametricCurve {
   red: ParametricCurveSettings;
 }
 
+export type GuideOrientation = 'vertical' | 'horizontal';
+
+export interface GuideLine {
+  id: string;
+  type: GuideOrientation;
+  p1: Coord;
+  p2: Coord;
+}
+
+export interface GuidedPerspective {
+  enabled: boolean;
+  lines: GuideLine[];
+  autoCrop: boolean;
+}
+
 export interface Adjustments {
   [index: string]: any;
   aiPatches: Array<AiPatch>;
+  aiDenoiseAmount: number;
+  aiDenoiseDetail: number;
+  aiDenoiseEnabled: boolean;
   aspectRatio: number | null;
   blacks: number;
   brightness: number;
@@ -224,6 +245,7 @@ export interface Adjustments {
   grainAmount: number;
   grainRoughness: number;
   grainSize: number;
+  guidedPerspective: GuidedPerspective;
   halationAmount: number;
   highlights: number;
   hsl: Hsl;
@@ -561,6 +583,9 @@ export const INITIAL_MASK_CONTAINER: MaskContainer = {
 
 export const INITIAL_ADJUSTMENTS: Adjustments = {
   aiPatches: [],
+  aiDenoiseAmount: 100,
+  aiDenoiseDetail: 0,
+  aiDenoiseEnabled: false,
   aspectRatio: null,
   blacks: 0,
   brightness: 0,
@@ -586,6 +611,7 @@ export const INITIAL_ADJUSTMENTS: Adjustments = {
   grainAmount: 0,
   grainRoughness: 50,
   grainSize: 25,
+  guidedPerspective: { enabled: false, lines: [], autoCrop: true },
   halationAmount: 0,
   highlights: 0,
   hsl: {
@@ -765,7 +791,26 @@ export const normalizeLoadedAdjustments = (loadedAdjustments: Adjustments): any 
   return {
     ...INITIAL_ADJUSTMENTS,
     ...loadedAdjustments,
+    guidedPerspective: {
+      enabled: loadedAdjustments.guidedPerspective?.enabled ?? false,
+      lines: (() => {
+        const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+        const raw = (loadedAdjustments.guidedPerspective?.lines || []).map((l: any) => ({
+          id: l.id || uuidv4(),
+          type: (l.type === 'horizontal' ? 'horizontal' : 'vertical') as 'vertical' | 'horizontal',
+          p1: { x: clamp01(l.p1?.x ?? 0), y: clamp01(l.p1?.y ?? 0) },
+          p2: { x: clamp01(l.p2?.x ?? 1), y: clamp01(l.p2?.y ?? 1) },
+        }));
+        const verts = raw.filter((l) => l.type === 'vertical').slice(0, 2);
+        const hors = raw.filter((l) => l.type === 'horizontal').slice(0, 2);
+        return [...verts, ...hors];
+      })(),
+      autoCrop: loadedAdjustments.guidedPerspective?.autoCrop ?? true,
+    },
     lutIsSceneReferred: loadedAdjustments.lutIsSceneReferred ?? false,
+    aiDenoiseAmount: loadedAdjustments.aiDenoiseAmount ?? INITIAL_ADJUSTMENTS.aiDenoiseAmount,
+    aiDenoiseDetail: loadedAdjustments.aiDenoiseDetail ?? INITIAL_ADJUSTMENTS.aiDenoiseDetail,
+    aiDenoiseEnabled: loadedAdjustments.aiDenoiseEnabled ?? INITIAL_ADJUSTMENTS.aiDenoiseEnabled,
     flareAmount: loadedAdjustments.flareAmount ?? INITIAL_ADJUSTMENTS.flareAmount,
     glowAmount: loadedAdjustments.glowAmount ?? INITIAL_ADJUSTMENTS.glowAmount,
     halationAmount: loadedAdjustments.halationAmount ?? INITIAL_ADJUSTMENTS.halationAmount,
@@ -869,7 +914,13 @@ export const ADJUSTMENT_GROUPS: Record<string, AdjustmentGroup[]> = {
     },
     {
       label: 'modals.copyPaste.groups.noiseReduction',
-      keys: [DetailsAdjustment.LumaNoiseReduction, DetailsAdjustment.ColorNoiseReduction],
+      keys: [
+        DetailsAdjustment.LumaNoiseReduction,
+        DetailsAdjustment.ColorNoiseReduction,
+        DetailsAdjustment.AiDenoiseEnabled,
+        DetailsAdjustment.AiDenoiseAmount,
+        DetailsAdjustment.AiDenoiseDetail,
+      ],
     },
     {
       label: 'modals.copyPaste.groups.chromaticAberration',
@@ -930,6 +981,10 @@ export const ADJUSTMENT_GROUPS: Record<string, AdjustmentGroup[]> = {
         LensAdjustment.LensTcaEnabled,
         LensAdjustment.LensVignetteEnabled,
       ],
+    },
+    {
+      label: 'modals.copyPaste.groups.guidedPerspective',
+      keys: ['guidedPerspective'],
     },
   ],
   masks: [{ label: 'modals.copyPaste.groups.masks', keys: ['masks'] }],

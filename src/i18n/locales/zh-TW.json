@@ -215,6 +215,8 @@
       }
     },
     "details": {
+      "aiDenoise": "AI 降噪",
+      "aiDenoiseDetail": "細節",
       "blueYellow": "藍/黃",
       "centre": "置中",
       "chromaticAberration": "色差",
@@ -498,6 +500,7 @@
       },
       "createNewTitle": "建立新的生成式編輯",
       "createNewTooltip": "建立新的 {{name}} 編輯",
+      "denoising": "正在進行 AI 降噪...",
       "dropzoneText": "拖放到此處以建立新編輯",
       "editSettingsTitle": "編輯設定",
       "editsTitle": "編輯",
@@ -684,6 +687,16 @@
       "done": "完成",
       "exporting": "正在匯出…",
       "savesTo": "外部編輯 — 儲存至"
+    },
+    "guided": {
+      "cancel": "取消",
+      "drawingActive": "繪圖中",
+      "hint": "沿著照片中應該是垂直或水平的邊緣繪製。",
+      "linesStatus": "活躍引導線",
+      "toast": {
+        "angleRejected": "線條角度偏離水平或垂直太遠",
+        "maxLines": "最多允許 2 條垂直線和 2 條水平線"
+      }
     },
     "layout": {
       "split": "拆分"
@@ -1307,6 +1320,7 @@
     },
     "thumbnailFit": {
       "fillSquare": "填充正方形",
+      "justified": "瀑布流",
       "originalRatio": "原始比例"
     },
     "thumbnailSize": {
@@ -1411,6 +1425,7 @@
         "curves": "曲線",
         "exposureToneMapper": "曝光與色調映射",
         "grain": "顆粒",
+        "guidedPerspective": "引導透視",
         "halationGlow": "光暈與發光",
         "hueShift": "全域色相偏移",
         "lensCorrection": "鏡頭校正",
@@ -1661,6 +1676,7 @@
       "cancel": "取消",
       "compareTooltip": "按住以對比",
       "distortion": "畸變",
+      "guided": "引導透視",
       "horizontal": "水平",
       "maskWarning": "變換會更新基礎幾何形狀。現有遮色片可能會偏移，AI 遮色片需要重新生成。",
       "offset": "偏移",

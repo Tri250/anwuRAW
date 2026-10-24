@@ -14,6 +14,7 @@ import { useLibraryStore } from '../../store/useLibraryStore';
 import { useProcessStore } from '../../store/useProcessStore';
 
 import { ImageFile, Orientation, Panel, ThumbnailAspectRatio } from '../ui/AppProperties';
+import { getImageFlag } from '../../utils/imageFlags';
 
 interface EditorViewProps {
   transformWrapperRef: RefObject<any>;
@@ -34,6 +35,7 @@ interface EditorViewProps {
   handleCopyAdjustments: () => void;
   handlePasteAdjustments: () => void;
   handleRate: (...args: any) => void;
+  handleToggleFlag: (...args: any) => void;
   handleZoomChange: (zoom: number) => void;
   handlePanelSelect: (panelId: any) => void;
   requestThumbnails: any;
@@ -59,6 +61,7 @@ export default function EditorView({
   handleCopyAdjustments,
   handlePasteAdjustments,
   handleRate,
+  handleToggleFlag,
   handleZoomChange,
   handlePanelSelect,
   requestThumbnails,
@@ -136,6 +139,8 @@ export default function EditorView({
       onImageSelect={handleImageClick}
       onPaste={() => handlePasteAdjustments()}
       onRate={handleRate}
+      onToggleFlag={handleToggleFlag}
+      flag={getImageFlag(sortedImageList, selectedImage?.path)}
       onRequestThumbnails={requestThumbnails}
       onZoomChange={handleZoomChange}
       rating={imageRatings[selectedImage?.path || ''] || 0}

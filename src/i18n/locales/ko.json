@@ -215,6 +215,8 @@
       }
     },
     "details": {
+      "aiDenoise": "AI 노이즈 제거",
+      "aiDenoiseDetail": "디테일",
       "blueYellow": "파랑/노랑",
       "centre": "중앙",
       "chromaticAberration": "색수차",
@@ -498,6 +500,7 @@
       },
       "createNewTitle": "새 생성형 편집 만들기",
       "createNewTooltip": "새 {{name}} 편집 만들기",
+      "denoising": "AI 노이즈 제거 실행 중...",
       "dropzoneText": "여기에 놓아 새 편집을 만드세요",
       "editSettingsTitle": "편집 설정",
       "editsTitle": "편집",
@@ -684,6 +687,16 @@
       "done": "완료",
       "exporting": "내보내는 중…",
       "savesTo": "외부 편집 — 저장 위치:"
+    },
+    "guided": {
+      "cancel": "취소",
+      "drawingActive": "그리기 활성화",
+      "hint": "사진에서 수직이나 수평이 되어야 하는 가장자리를 따라 그리세요.",
+      "linesStatus": "활성 안내선",
+      "toast": {
+        "angleRejected": "선의 각도가 수평이나 수직에서 너무 벗어났습니다",
+        "maxLines": "수직선 2개, 수평선 2개까지만 허용됩니다"
+      }
     },
     "layout": {
       "split": "분할"
@@ -1307,6 +1320,7 @@
     },
     "thumbnailFit": {
       "fillSquare": "정사각형 채우기",
+      "justified": "메이슨리",
       "originalRatio": "원본 비율"
     },
     "thumbnailSize": {
@@ -1411,6 +1425,7 @@
         "curves": "커브",
         "exposureToneMapper": "노출 및 톤 매퍼",
         "grain": "그레인",
+        "guidedPerspective": "유도된 원근 보정",
         "halationGlow": "헐레이션 및 글로우",
         "hueShift": "글로벌 색조 시프트",
         "lensCorrection": "렌즈 보정",
@@ -1661,6 +1676,7 @@
       "cancel": "취소",
       "compareTooltip": "길게 눌러 비교",
       "distortion": "왜곡",
+      "guided": "유도된 원근 보정",
       "horizontal": "수평",
       "maskWarning": "변형은 기본 지오메트리를 변경합니다. 기존 마스크가 이동할 수 있으며 AI 마스크는 다시 생성해야 합니다.",
       "offset": "오프셋",

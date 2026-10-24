@@ -12,6 +12,7 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 
 import { ImageFile, LibraryViewMode, ThumbnailAspectRatio, ThumbnailSize } from '../ui/AppProperties';
 import { GroupBadgeInfo, GroupId } from '../../utils/imageGrouping';
+import { getImageFlag } from '../../utils/imageFlags';
 
 interface LibraryViewProps {
   sortedImageList: ImageFile[];
@@ -27,6 +28,7 @@ interface LibraryViewProps {
   handleLibraryImageSingleClick: (...args: any) => void;
   handleImageSelect: (...args: any) => void;
   handleRate: (...args: any) => void;
+  handleToggleFlag: (...args: any) => void;
   handleThumbnailContextMenu: (...args: any) => void;
   handleMainLibraryContextMenu: (...args: any) => void;
   handleContinueSession: (...args: any) => void;
@@ -54,6 +56,7 @@ export default function LibraryView({
   handleLibraryImageSingleClick,
   handleImageSelect,
   handleRate,
+  handleToggleFlag,
   handleThumbnailContextMenu,
   handleMainLibraryContextMenu,
   handleContinueSession,
@@ -187,6 +190,8 @@ export default function LibraryView({
             onOpenCopyPasteSettings={() => setUI({ isCopyPasteSettingsModalOpen: true })}
             onPaste={() => handlePasteAdjustments()}
             onRate={handleRate}
+            onToggleFlag={handleToggleFlag}
+            flag={getImageFlag(imageList, libraryActivePath)}
             onReset={() => handleResetAdjustments()}
             rating={imageRatings[libraryActivePath || ''] || 0}
             thumbnailAspectRatio={thumbnailAspectRatio}

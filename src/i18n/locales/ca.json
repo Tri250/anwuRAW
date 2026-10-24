@@ -215,6 +215,8 @@
       }
     },
     "details": {
+      "aiDenoise": "Reducció de soroll IA",
+      "aiDenoiseDetail": "Detall",
       "blueYellow": "Blau/Groc",
       "centre": "Centre",
       "chromaticAberration": "Aberració cromàtica",
@@ -498,6 +500,7 @@
       },
       "createNewTitle": "Crear nova edició generativa",
       "createNewTooltip": "Crear nova edició {{name}}",
+      "denoising": "Executant la reducció de soroll IA...",
       "dropzoneText": "Deixeu anar aquí per crear una edició nova",
       "editSettingsTitle": "Configuració d'edició",
       "editsTitle": "Edicions",
@@ -684,6 +687,16 @@
       "done": "Fet",
       "exporting": "S'està exportant…",
       "savesTo": "Edició externa — es desa a"
+    },
+    "guided": {
+      "cancel": "Cancel·lar",
+      "drawingActive": "Dibuix actiu",
+      "hint": "Dibuixa al llarg de les vores de la foto que haurien de ser verticals o horitzontals.",
+      "linesStatus": "Línies guia actives",
+      "toast": {
+        "angleRejected": "L'angle de la línia està massa lluny de l'horitzontal o vertical",
+        "maxLines": "Es permeten com a màxim 2 línies verticals i 2 horitzontals"
+      }
     },
     "layout": {
       "split": "Dividir"
@@ -1307,6 +1320,7 @@
     },
     "thumbnailFit": {
       "fillSquare": "Omplir el quadrat",
+      "justified": "Mosaic",
       "originalRatio": "Proporció original"
     },
     "thumbnailSize": {
@@ -1411,6 +1425,7 @@
         "curves": "Corbes",
         "exposureToneMapper": "Exposició i Mapejador de tons",
         "grain": "Gra",
+        "guidedPerspective": "Perspectiva guiada",
         "halationGlow": "Halació i Resplendor",
         "hueShift": "Canvi de to global",
         "lensCorrection": "Correcció de l'objectiu",
@@ -1661,6 +1676,7 @@
       "cancel": "Cancel·lar",
       "compareTooltip": "Mantingueu premut per comparar",
       "distortion": "Distorsió",
+      "guided": "Perspectiva guiada",
       "horizontal": "Horitzontal",
       "maskWarning": "La transformació actualitza la geometria base. Les màscares existents es poden moure i les màscares d'IA s'han de tornar a generar.",
       "offset": "Desplaçament",

@@ -6,12 +6,14 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 
 import Filmstrip from './Filmstrip';
-import { GLOBAL_KEYS, ImageFile, SelectedImage, ThumbnailAspectRatio } from '../ui/AppProperties';
+import { GLOBAL_KEYS, FlagStatus, ImageFile, ImageFlag, SelectedImage, ThumbnailAspectRatio } from '../ui/AppProperties';
 import Text from '../ui/Text';
+import FlagToggles from '../ui/FlagToggles';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useLibraryStore } from '../../store/useLibraryStore';
 import { useUIStore } from '../../store/useUIStore';
 import { COLOR_LABELS } from '../../utils/adjustments';
+import { FLAG_ICONS } from '../../utils/imageFlags';
 
 interface BottomBarProps {
   avoidBottomInset?: boolean;
@@ -30,6 +32,7 @@ interface BottomBarProps {
   isRatingDisabled?: boolean;
   isResetDisabled?: boolean;
   isResizing?: boolean;
+  flag?: ImageFlag | null;
   multiSelectedPaths?: Array<string>;
   onClearSelection?(): void;
   onContextMenu?(event: any, path: string): void;
@@ -41,6 +44,7 @@ interface BottomBarProps {
   onRequestThumbnails?(paths: string[]): void;
   onPaste(): void;
   onRate(rate: number): void;
+  onToggleFlag?(flag: ImageFlag): void;
   onReset?(): void;
   onZoomChange?(zoomValue: number, fitToWindow?: boolean): void;
   rating: number;
@@ -138,6 +142,7 @@ export default function BottomBar({
   isPasteDisabled,
   isRatingDisabled = false,
   isResizing,
+  flag,
   multiSelectedPaths = [],
   onClearSelection,
   onContextMenu,
@@ -149,6 +154,7 @@ export default function BottomBar({
   onRequestThumbnails,
   onPaste,
   onRate,
+  onToggleFlag,
   onZoomChange = () => {},
   rating,
   selectedImage,
@@ -383,6 +389,12 @@ export default function BottomBar({
             收紧间距确保最右侧的导出按钮不被裁出屏幕 */}
         <div className={clsx('flex items-center', isAndroid ? 'gap-2' : 'gap-4')}>
           <StarRating rating={rating} onRate={onRate} disabled={isRatingDisabled} isAndroid={isAndroid} />
+          <FlagToggles
+            flag={flag ?? null}
+            onToggle={(option) => onToggleFlag?.(option)}
+            inactiveClassName="text-text-secondary hover:text-accent"
+            disabled={isRatingDisabled}
+          />
           <div className="h-5 w-px bg-surface"></div>
           <div className={clsx('flex items-center', isAndroid ? 'gap-1' : 'gap-2')}>
             <button
@@ -561,6 +573,41 @@ export default function BottomBar({
                         data-tooltip={tooltipTitle}
                       >
                         {isSelected && <Check size={10} className="text-white drop-shadow-md" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="h-4 w-px bg-border-color"></div>
+
+                <div className="flex items-center gap-1.5">
+                  {Object.values(ImageFlag).map((option) => {
+                    const Icon = FLAG_ICONS[option];
+                    const status = option === ImageFlag.Pick ? FlagStatus.Picked : FlagStatus.Rejected;
+                    const isActive = filterCriteria.flagStatus === status;
+                    const tooltipKey =
+                      option === ImageFlag.Pick ? 'library.filters.flag.picked' : 'library.filters.flag.rejected';
+
+                    return (
+                      <button
+                        key={`qf-flag-${option}`}
+                        onClick={() =>
+                          setFilterCriteria((prev) => ({
+                            ...prev,
+                            flagStatus: prev.flagStatus === status ? FlagStatus.All : status,
+                          }))
+                        }
+                        className="p-0.5 focus:outline-none"
+                        data-tooltip={t(tooltipKey)}
+                      >
+                        <Icon
+                          size={16}
+                          className={clsx(
+                            'transition-colors duration-150',
+                            isActive ? 'text-accent' : 'text-text-secondary hover:text-accent',
+                            isActive && option === ImageFlag.Pick && 'fill-accent',
+                          )}
+                        />
                       </button>
                     );
                   })}

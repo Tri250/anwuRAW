@@ -385,6 +385,8 @@ function App() {
 
   const {
     handleRate,
+    handleToggleFlag,
+    handleSetFlag,
     handleClearSelection,
     handleLibraryImageSingleClick,
     handleImageClick,
@@ -979,6 +981,7 @@ function App() {
                       handleCopyAdjustments={handleCopyAdjustments}
                       handlePasteAdjustments={handlePasteAdjustments}
                       handleRate={handleRate}
+                      handleToggleFlag={handleToggleFlag}
                       handleZoomChange={handleZoomChange}
                       handlePanelSelect={handlePanelSelect}
                       requestThumbnails={requestThumbnails}
@@ -1006,6 +1009,7 @@ function App() {
                     handleLibraryImageSingleClick={handleLibraryImageSingleClick}
                     handleImageSelect={handleImageSelect}
                     handleRate={handleRate}
+                    handleToggleFlag={handleToggleFlag}
                     handleThumbnailContextMenu={handleThumbnailContextMenu}
                     handleMainLibraryContextMenu={handleMainLibraryContextMenu}
                     handleContinueSession={handleContinueSession}
@@ -1080,6 +1084,7 @@ function App() {
           handleSaveRename={handleSaveRename}
           handleStartImport={handleStartImport}
           handleSetColorLabel={handleSetColorLabel}
+          handleSetFlag={handleSetFlag}
           handleRate={handleRate}
           executeDelete={executeDelete}
           handleSaveCollage={handleSaveCollage}

@@ -215,6 +215,8 @@
       "resetPoint": "Reset {{channel}} Point Curve"
     },
     "details": {
+      "aiDenoise": "AI Denoise",
+      "aiDenoiseDetail": "Detail",
       "blueYellow": "Blue/Yellow",
       "centre": "Centré",
       "chromaticAberration": "Chromatic Aberration",
@@ -315,6 +317,9 @@
       "denoise": "Denoise Image",
       "editImage": "Edit Image",
       "exportImage": "Export Image",
+      "flagPick": "Flag as Pick",
+      "flagReject": "Flag as Reject",
+      "flagTitle": "Pick / Reject",
       "frameImage": "Frame Image",
       "mergeHdr": "Merge to HDR",
       "noLabel": "No Label",
@@ -332,7 +337,8 @@
       "resetConfirmTitle_other": "Reset Adjustments ({{count}} images)",
       "stitchPanorama": "Stitch Panorama",
       "tagging": "Tagging",
-      "undo": "Undo"
+      "undo": "Undo",
+      "unflagged": "Remove Flag"
     },
     "folders": {
       "changeIcon": "Change Icon",
@@ -355,6 +361,7 @@
     "library": {
       "addCopiedToAlbum_one": "Add copied image to album",
       "addCopiedToAlbum_other": "Add {{count}} copied images to album",
+      "deleteRejected": "Delete Rejected Images",
       "refreshView": "Refresh View"
     },
     "merge": {
@@ -498,6 +505,7 @@
       },
       "createNewTitle": "Create New Generative Edit",
       "createNewTooltip": "Create New {{name}} Edit",
+      "denoising": "Running AI Denoise...",
       "dropzoneText": "Drop here to create a new edit",
       "editSettingsTitle": "Edit Settings",
       "editsTitle": "Edits",
@@ -684,6 +692,16 @@
       "done": "Done",
       "exporting": "Exporting…",
       "savesTo": "External edit — saves to"
+    },
+    "guided": {
+      "cancel": "Cancel",
+      "drawingActive": "Drawing Active",
+      "hint": "Draw along edges in your photo that should be vertical or horizontal.",
+      "linesStatus": "Active Guide Lines",
+      "toast": {
+        "angleRejected": "Line angle is too far from horizontal or vertical",
+        "maxLines": "Maximum 2 vertical and 2 horizontal lines allowed"
+      }
     },
     "layout": {
       "split": "Split"
@@ -1108,6 +1126,7 @@
       "colorLabel": "Color Label",
       "dimensions": "Dimensions",
       "editImage": "Edit Image",
+      "flag": "Pick / Reject",
       "focalLength": "Focal Length",
       "iso": "ISO",
       "metadata": "Metadata",
@@ -1138,6 +1157,12 @@
         "all": "All Images",
         "editedOnly": "Edited Only",
         "uneditedOnly": "Unedited Only"
+      },
+      "flag": {
+        "all": "All Images",
+        "excludeRejected": "Exclude Rejected",
+        "picked": "Picked Only",
+        "rejected": "Rejected Only"
       },
       "noMatch": "No images found that match your filter.",
       "rating": {
@@ -1307,6 +1332,7 @@
     },
     "thumbnailFit": {
       "fillSquare": "Fill Square",
+      "justified": "Masonry",
       "originalRatio": "Original Ratio"
     },
     "thumbnailSize": {
@@ -1411,6 +1437,7 @@
         "curves": "Curves",
         "exposureToneMapper": "Exposure & Tone Mapper",
         "grain": "Grain",
+        "guidedPerspective": "Guided Perspective",
         "halationGlow": "Halation & Glow",
         "hueShift": "Global Hue Shift",
         "lensCorrection": "Lens Correction",
@@ -1661,6 +1688,7 @@
       "cancel": "Cancel",
       "compareTooltip": "Hold to Compare",
       "distortion": "Distortion",
+      "guided": "Guided Perspective",
       "horizontal": "Horizontal",
       "maskWarning": "Transforming updates base geometry. Existing masks may shift, and AI masks must be regenerated.",
       "offset": "Offset",
@@ -1837,9 +1865,12 @@
         "toggle_library_exif": "Toggle EXIF overlay",
         "toggle_masks": "Toggle Masks panel",
         "toggle_metadata": "Toggle Metadata panel",
+        "toggle_pick": "Toggle pick flag",
         "toggle_presets": "Toggle Presets panel",
+        "toggle_reject": "Toggle reject flag",
         "toggle_right_panel": "Toggle Right Panel",
         "undo": "Undo adjustment",
+        "unflag": "Remove pick/reject flag",
         "zoom_100": "Zoom to 100%",
         "zoom_fit": "Zoom to fit",
         "zoom_in": "Zoom in",
@@ -2141,6 +2172,7 @@
     "createFolderFailed": "Failed to create folder: {{error}}",
     "deleteFilesFailed": "Failed to delete files: {{error}}",
     "depthMapFailed": "Failed to generate depth map: {{error}}",
+    "flagFailed": "Failed to update flag: {{error}}",
     "folderLoadFailed": "Failed to load folder: {{error}}",
     "folderTreeLoadFailed": "Failed to load folder tree: {{error}}",
     "folderSelectionFailed": "Failed to open folder selection dialog.",
@@ -2199,6 +2231,10 @@
     "dropdown": {
       "placeholder": "Select an option",
       "searchPlaceholder": "Filter options..."
+    },
+    "flags": {
+      "togglePick": "Toggle Pick",
+      "toggleReject": "Toggle Reject"
     },
     "exportPresets": {
       "deleteTooltip": "Delete preset",

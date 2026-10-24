@@ -215,6 +215,8 @@
       }
     },
     "details": {
+      "aiDenoise": "Odszumianie AI",
+      "aiDenoiseDetail": "Szczegóły",
       "blueYellow": "Niebieski/Żółty",
       "centre": "Środek",
       "chromaticAberration": "Aberracja chromatyczna",
@@ -530,6 +532,7 @@
       },
       "createNewTitle": "Utwórz nową edycję generatywną",
       "createNewTooltip": "Utwórz nową edycję {{name}}",
+      "denoising": "Trwa odszumianie AI...",
       "dropzoneText": "Upuść tutaj, aby utworzyć nową edycję",
       "editSettingsTitle": "Ustawienia edycji",
       "editsTitle": "Edycje",
@@ -724,6 +727,16 @@
       "done": "Gotowe",
       "exporting": "Eksportowanie…",
       "savesTo": "Zewnętrzna edycja — zapisuje do"
+    },
+    "guided": {
+      "cancel": "Anuluj",
+      "drawingActive": "Rysowanie aktywne",
+      "hint": "Rysuj wzdłuż krawędzi na zdjęciu, które powinny być pionowe lub poziome.",
+      "linesStatus": "Aktywne linie pomocnicze",
+      "toast": {
+        "angleRejected": "Kąt linii jest zbyt odległy od poziomu lub pionu",
+        "maxLines": "Dozwolone są maksymalnie 2 linie pionowe i 2 poziome"
+      }
     },
     "layout": {
       "split": "Podziel"
@@ -1359,6 +1372,7 @@
     },
     "thumbnailFit": {
       "fillSquare": "Wypełnij kwadrat",
+      "justified": "Mozaika",
       "originalRatio": "Oryginalne proporcje"
     },
     "thumbnailSize": {
@@ -1463,6 +1477,7 @@
         "curves": "Krzywe",
         "exposureToneMapper": "Ekspozycja i Mapowanie tonów",
         "grain": "Ziarno",
+        "guidedPerspective": "Perspektywa z przewodnikiem",
         "halationGlow": "Halacja i Poświata",
         "hueShift": "Globalne przesunięcie odcienia",
         "lensCorrection": "Korekcja obiektywu",
@@ -1727,6 +1742,7 @@
       "cancel": "Anuluj",
       "compareTooltip": "Przytrzymaj, aby porównać",
       "distortion": "Dystorsja",
+      "guided": "Perspektywa z przewodnikiem",
       "horizontal": "Poziomo",
       "maskWarning": "Przekształcanie aktualizuje geometrię bazową. Istniejące maski mogą się przesunąć, a maski AI będą musiały zostać wygenerowane ponownie.",
       "offset": "Przesunięcie",

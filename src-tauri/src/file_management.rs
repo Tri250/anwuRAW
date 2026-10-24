@@ -36,7 +36,7 @@ use crate::gpu_processing;
 use crate::image_loader;
 use crate::image_processing::GpuContext;
 use crate::image_processing::{
-    Crop, ImageMetadata, apply_coarse_rotation, apply_cpu_default_raw_processing, apply_crop,
+    Crop, ImageFlag, ImageMetadata, apply_coarse_rotation, apply_cpu_default_raw_processing, apply_crop,
     apply_flip, apply_geometry_warp, apply_rotation, auto_results_to_json,
     get_all_adjustments_from_json, perform_auto_analysis,
 };
@@ -78,6 +78,16 @@ fn compute_thumbnail_cache_hash(path_str: &str, adjustments_bytes: &[u8]) -> Opt
     hasher.update(path_str.as_bytes());
     hasher.update(&img_mod_time.to_le_bytes());
     hasher.update(adjustments_bytes);
+
+    // AI 降噪启用时，把该路径的降噪缓存命中位并入哈希：
+    // 降噪结果就绪后此位翻转，缩略图缓存自动 miss 并重生成（含降噪）。
+    if let Ok(adjustments) = serde_json::from_slice::<serde_json::Value>(adjustments_bytes)
+        && crate::ai_denoise::is_enabled(&adjustments)
+    {
+        let ready = crate::ai_denoise::is_entry_cached(&source_path.to_string_lossy());
+        hasher.update(&[u8::from(ready)]);
+    }
+
     Some(hasher.finalize().to_hex().to_string())
 }
 
@@ -85,6 +95,7 @@ struct ImageFileMetadata {
     is_edited: bool,
     tags: Option<Vec<String>>,
     rating: u8,
+    flag: Option<ImageFlag>,
     is_raw: bool,
 }
 
@@ -111,6 +122,7 @@ fn resolve_image_metadata(
         is_edited,
         tags: metadata.tags,
         rating: metadata.rating,
+        flag: metadata.flag,
         is_raw,
     }
 }
@@ -121,10 +133,11 @@ fn emit_image_metadata_loaded(
     rating: u8,
     is_edited: bool,
     tags: &Option<Vec<String>>,
+    flag: &Option<ImageFlag>,
 ) {
     let _ = app_handle.emit(
         "image-metadata-loaded",
-        serde_json::json!({ "path": path, "rating": rating, "is_edited": is_edited, "tags": tags }),
+        serde_json::json!({ "path": path, "rating": rating, "is_edited": is_edited, "tags": tags, "flag": flag }),
     );
 }
 
@@ -197,6 +210,7 @@ pub fn start_metadata_workers(app_handle: tauri::AppHandle) {
                     metadata.rating,
                     metadata.is_edited,
                     &metadata.tags,
+                    &metadata.flag,
                 );
 
                 manager_clone
@@ -293,6 +307,7 @@ pub struct ImageFile {
     modified: u64,
     is_edited: bool,
     rating: u8,
+    flag: Option<ImageFlag>,
     tags: Option<Vec<String>>,
     exif: Option<HashMap<String, String>>,
     is_virtual_copy: bool,
@@ -683,6 +698,7 @@ pub fn list_images_in_dir(path: String, app_handle: AppHandle) -> Result<Vec<Ima
                         is_edited: false,
                         tags: None,
                         rating: 0,
+                        flag: None,
                         is_raw: crate::formats::is_raw_file(&path_buf),
                     }
                 } else {
@@ -699,6 +715,7 @@ pub fn list_images_in_dir(path: String, app_handle: AppHandle) -> Result<Vec<Ima
                     is_raw: metadata.is_raw,
                     group_id: None,
                     rating: metadata.rating,
+                    flag: metadata.flag,
                     is_cloud_placeholder,
                 });
             }
@@ -816,6 +833,7 @@ pub fn list_images_recursive(
                         is_edited: false,
                         tags: None,
                         rating: 0,
+                        flag: None,
                         is_raw: crate::formats::is_raw_file(&path_buf),
                     }
                 } else {
@@ -832,6 +850,7 @@ pub fn list_images_recursive(
                     is_raw: metadata.is_raw,
                     group_id: None,
                     rating: metadata.rating,
+                    flag: metadata.flag,
                     is_cloud_placeholder,
                 });
             }
@@ -1087,6 +1106,7 @@ pub fn get_album_images(
                     is_edited: false,
                     tags: None,
                     rating: 0,
+                    flag: None,
                     is_raw: crate::formats::is_raw_file(&source_path),
                 }
             } else {
@@ -1103,6 +1123,7 @@ pub fn get_album_images(
                 is_raw: metadata.is_raw,
                 group_id: None,
                 rating: metadata.rating,
+                flag: metadata.flag,
                 is_cloud_placeholder,
             })
         })
@@ -3078,6 +3099,9 @@ pub fn set_rating_for_paths(
 
             let mut metadata = crate::exif_processing::load_sidecar(&sidecar_path);
             metadata.rating = rating;
+            if rating > 0 && metadata.flag == Some(ImageFlag::Reject) {
+                metadata.flag = None;
+            }
 
             match serde_json::to_string_pretty(&metadata) {
                 Ok(json_string) => match std::fs::write(&sidecar_path, json_string) {
@@ -3099,6 +3123,47 @@ pub fn set_rating_for_paths(
         Ok(())
     } else {
         Err(format!("部分文件评分更新失败:\n{}", errors.join("\n")))
+    }
+}
+
+#[tauri::command]
+pub fn set_flag_for_paths(
+    paths: Vec<String>,
+    flag: Option<ImageFlag>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    let settings = load_settings(app_handle.clone()).unwrap_or_default();
+    let enable_xmp_sync = settings.enable_xmp_sync.unwrap_or(false);
+    let create_xmp_if_missing = settings.create_xmp_if_missing.unwrap_or(false);
+
+    let errors: Vec<String> = paths
+        .par_iter()
+        .filter_map(|path| {
+            let (_, sidecar_path) = parse_virtual_path(path);
+
+            let mut metadata = crate::exif_processing::load_sidecar(&sidecar_path);
+            metadata.flag = flag;
+
+            match serde_json::to_string_pretty(&metadata) {
+                Ok(json_string) => match std::fs::write(&sidecar_path, json_string) {
+                    Ok(_) => {
+                        if enable_xmp_sync {
+                            let source_path = parse_virtual_path(path).0;
+                            sync_metadata_to_xmp(&source_path, &metadata, create_xmp_if_missing);
+                        }
+                        None
+                    }
+                    Err(e) => Some(format!("{}: 写入 sidecar 失败: {}", path, e)),
+                },
+                Err(e) => Some(format!("{}: JSON 序列化失败: {}", path, e)),
+            }
+        })
+        .collect();
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("部分文件标记更新失败:\n{}", errors.join("\n")))
     }
 }
 

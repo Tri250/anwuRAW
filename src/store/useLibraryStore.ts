@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   FilterCriteria,
+  FlagStatus,
   ImageFile,
   RawStatus,
   SortCriteria,
@@ -78,7 +79,7 @@ export const useLibraryStore = create<LibraryState>((set) => ({
   isMultiSelectMode: false,
 
   sortCriteria: { key: 'name', order: SortDirection.Ascending },
-  filterCriteria: { colors: [], rating: 0, rawStatus: RawStatus.All },
+  filterCriteria: { colors: [], rating: 0, rawStatus: RawStatus.All, flagStatus: FlagStatus.All },
   searchCriteria: { tags: [], text: '', mode: 'OR' },
 
   isTreeLoading: false,

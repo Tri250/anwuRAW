@@ -164,6 +164,24 @@ export const KEYBIND_DEFINITIONS: KeybindDefinition[] = [
     section: 'rating',
   },
   {
+    action: 'toggle_pick',
+    description: 'settings.keybinds.actions.toggle_pick',
+    defaultCombo: ['shift', 'KeyP'],
+    section: 'rating',
+  },
+  {
+    action: 'toggle_reject',
+    description: 'settings.keybinds.actions.toggle_reject',
+    defaultCombo: ['KeyX'],
+    section: 'rating',
+  },
+  {
+    action: 'unflag',
+    description: 'settings.keybinds.actions.unflag',
+    defaultCombo: ['KeyU'],
+    section: 'rating',
+  },
+  {
     action: 'toggle_adjustments',
     description: 'settings.keybinds.actions.toggle_adjustments',
     defaultCombo: ['KeyD'],

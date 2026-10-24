@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
-import { RawStatus, EditedStatus, SortDirection, ImageFile, GroupingMode } from '../components/ui/AppProperties';
+import { RawStatus, EditedStatus, SortDirection, ImageFile, ImageFlag, FlagStatus, GroupingMode } from '../components/ui/AppProperties';
 import { buildImageGroups, GroupBadgeInfo, GroupId } from '../utils/imageGrouping';
 
 export const ADVANCED_QUERY_REGEX =
@@ -63,6 +63,12 @@ function computeGroupedLibrary(libraryState: any, settingsState: any): GroupedLi
     if (filterCriteria.editedStatus && filterCriteria.editedStatus !== EditedStatus.All) {
       if (filterCriteria.editedStatus === EditedStatus.EditedOnly && !image.is_edited) return false;
       if (filterCriteria.editedStatus === EditedStatus.UneditedOnly && image.is_edited) return false;
+    }
+
+    if (filterCriteria.flagStatus && filterCriteria.flagStatus !== FlagStatus.All) {
+      if (filterCriteria.flagStatus === FlagStatus.Picked && image.flag !== ImageFlag.Pick) return false;
+      if (filterCriteria.flagStatus === FlagStatus.ExcludeRejected && image.flag === ImageFlag.Reject) return false;
+      if (filterCriteria.flagStatus === FlagStatus.Rejected && image.flag !== ImageFlag.Reject) return false;
     }
 
     if (filterCriteria.colors && filterCriteria.colors.length > 0) {

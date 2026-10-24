@@ -1,5 +1,6 @@
 use crate::channel_mixer::ChannelMixerSettings;
 use crate::gpu_processing::WgpuDisplay;
+use crate::guided_perspective::{GuideLine, compute_guided_homography, count_valid_lines};
 use crate::split_toning::SplitToningSettings;
 use bytemuck::{Pod, Zeroable};
 use glam::{Mat3, Vec2, Vec3};
@@ -50,10 +51,30 @@ impl<'a> IntoCowImage<'a> for &'a std::sync::Arc<DynamicImage> {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ImageFlag {
+    Pick,
+    Reject,
+}
+
+fn deserialize_image_flag<'de, D>(deserializer: D) -> Result<Option<ImageFlag>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(serde_json::from_value(Value::deserialize(deserializer)?).unwrap_or(None))
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ImageMetadata {
     pub version: u32,
     pub rating: u8,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_image_flag",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub flag: Option<ImageFlag>,
     pub adjustments: Value,
     #[serde(default)]
     pub tags: Option<Vec<String>>,
@@ -66,6 +87,7 @@ impl Default for ImageMetadata {
         ImageMetadata {
             version: 1,
             rating: 0,
+            flag: None,
             adjustments: Value::Null,
             tags: None,
             exif: None,
@@ -81,7 +103,7 @@ pub struct Crop {
     pub height: f64,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GeometryParams {
     pub distortion: f32,
     pub vertical: f32,
@@ -106,6 +128,10 @@ pub struct GeometryParams {
     pub vig_k1: f32,
     pub vig_k2: f32,
     pub vig_k3: f32,
+    #[serde(default)]
+    pub guided_lines: Vec<GuideLine>,
+    #[serde(default)]
+    pub guided_perspective_enabled: bool,
 }
 
 impl Default for GeometryParams {
@@ -134,6 +160,8 @@ impl Default for GeometryParams {
             vig_k1: 0.0,
             vig_k2: 0.0,
             vig_k3: 0.0,
+            guided_lines: Vec::new(),
+            guided_perspective_enabled: false,
         }
     }
 }
@@ -142,6 +170,16 @@ pub fn get_geometry_params_from_json(adjustments: &serde_json::Value) -> Geometr
     let lens_params = adjustments
         .get("lensDistortionParams")
         .and_then(|v| v.as_object());
+
+    let guided = adjustments.get("guidedPerspective");
+    let guided_perspective_enabled = guided
+        .and_then(|g| g.get("enabled"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let guided_lines: Vec<GuideLine> = guided
+        .and_then(|g| g.get("lines"))
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
 
     GeometryParams {
         distortion: adjustments["transformDistortion"].as_f64().unwrap_or(0.0) as f32,
@@ -193,6 +231,8 @@ pub fn get_geometry_params_from_json(adjustments: &serde_json::Value) -> Geometr
         vig_k3: lens_params
             .and_then(|p| p.get("vig_k3").and_then(|k| k.as_f64()))
             .unwrap_or(0.0) as f32,
+        guided_lines,
+        guided_perspective_enabled,
     }
 }
 
@@ -450,7 +490,24 @@ fn build_transform_matrices(
     );
     let m_offset = NaMatrix3::new(1.0, 0.0, off_x, 0.0, 1.0, off_y, 0.0, 0.0, 1.0);
 
-    let forward = t_center * m_offset * m_perspective * m_rotate * m_scale * t_uncenter;
+    // 引导线透视：把用户在画布上画的直线求解出的单应性矩阵插入几何管线
+    let guided_m = if params.guided_perspective_enabled
+        && count_valid_lines(&params.guided_lines, width as f64, height as f64) >= 2
+    {
+        if let Some(res) = compute_guided_homography(&params.guided_lines, width as f64, height as f64) {
+            let h = res.forward_h;
+            NaMatrix3::new(
+                h[0][0] as f32, h[0][1] as f32, h[0][2] as f32, h[1][0] as f32, h[1][1] as f32,
+                h[1][2] as f32, h[2][0] as f32, h[2][1] as f32, h[2][2] as f32,
+            )
+        } else {
+            NaMatrix3::identity()
+        }
+    } else {
+        NaMatrix3::identity()
+    };
+
+    let forward = t_center * m_offset * m_perspective * m_rotate * m_scale * guided_m * t_uncenter;
     let half_diagonal =
         ((width as f64 * width as f64 + height as f64 * height as f64).sqrt()) / 2.0;
 
@@ -1328,6 +1385,10 @@ pub fn apply_flip<'a>(
 }
 
 pub fn is_geometry_identity(params: &GeometryParams) -> bool {
+    if params.guided_perspective_enabled && params.guided_lines.len() >= 2 {
+        return false;
+    }
+
     let dist_identity = !params.lens_distortion_enabled
         || ((params.lens_distortion_amount - 1.0).abs() < 1e-4
             && params.lens_dist_k1.abs() < 1e-6
@@ -1449,9 +1510,11 @@ pub struct GlobalAdjustments {
     pub tint: f32,
     pub vibrance: f32,
     pub hue: f32,
-    _pad_color1: f32,
-    _pad_color2: f32,
-    _pad_color3: f32,
+    pub wb_log_gain_l: f32,
+    pub wb_log_gain_m: f32,
+    pub wb_log_gain_s: f32,
+    pub centre_x: f32,
+    pub centre_y: f32,
 
     pub sharpness: f32,
     pub luma_noise_reduction: f32,
@@ -1478,8 +1541,8 @@ pub struct GlobalAdjustments {
     pub lut_intensity: f32,
     pub tonemapper_mode: u32,
     pub lut_is_scene_referred: u32,
-    _pad_lut3: f32,
-    _pad_lut4: f32,
+    pub vignette_center_x: f32,
+    pub vignette_center_y: f32,
     _pad_lut5: f32,
 
     _pad_agx1: f32,
@@ -1487,6 +1550,8 @@ pub struct GlobalAdjustments {
     _pad_agx3: f32,
     pub agx_pipe_to_rendering_matrix: GpuMat3,
     pub agx_rendering_to_pipe_matrix: GpuMat3,
+    pub wb_rgb_to_lms_matrix: GpuMat3,
+    pub wb_lms_to_rgb_matrix: GpuMat3,
 
     _pad_cg1: f32,
     _pad_cg2: f32,
@@ -1551,8 +1616,10 @@ pub struct MaskAdjustments {
     pub sharpness_threshold: f32,
 
     pub hue: f32,
-    _pad_cg1: f32,
-    _pad_cg2: f32,
+    pub wb_log_gain_l: f32,
+    pub wb_log_gain_m: f32,
+    pub wb_log_gain_s: f32,
+    _pad_wb: f32,
     pub color_grading_shadows: ColorGradeSettings,
     pub color_grading_midtones: ColorGradeSettings,
     pub color_grading_highlights: ColorGradeSettings,
@@ -2212,9 +2279,11 @@ fn get_global_adjustments_from_json(
         tint: get_val("color", "tint", SCALES.tint, None),
         vibrance: get_val("color", "vibrance", SCALES.vibrance, None),
         hue: get_val("color", "hue", 1.0, None),
-        _pad_color1: 0.0,
-        _pad_color2: 0.0,
-        _pad_color3: 0.0,
+        wb_log_gain_l: 0.0,
+        wb_log_gain_m: 0.0,
+        wb_log_gain_s: 0.0,
+        centre_x: 0.5,
+        centre_y: 0.5,
 
         sharpness: get_val("details", "sharpness", SCALES.sharpness, None),
         luma_noise_reduction: get_val(
@@ -2294,8 +2363,8 @@ fn get_global_adjustments_from_json(
             _ => 0,
         }),
         lut_is_scene_referred,
-        _pad_lut3: 0.0,
-        _pad_lut4: 0.0,
+        vignette_center_x: 0.5,
+        vignette_center_y: 0.5,
         _pad_lut5: 0.0,
 
         _pad_agx1: 0.0,
@@ -2303,6 +2372,8 @@ fn get_global_adjustments_from_json(
         _pad_agx3: 0.0,
         agx_pipe_to_rendering_matrix: pipe_to_rendering,
         agx_rendering_to_pipe_matrix: rendering_to_pipe,
+        wb_rgb_to_lms_matrix: GpuMat3::default(),
+        wb_lms_to_rgb_matrix: GpuMat3::default(),
 
         _pad_cg1: 0.0,
         _pad_cg2: 0.0,
@@ -2451,8 +2522,10 @@ fn get_mask_adjustments_from_json(adj: &serde_json::Value) -> MaskAdjustments {
         sharpness_threshold: get_val("details", "sharpnessThreshold", SCALES.sharpness_threshold),
 
         hue: get_val("color", "hue", 1.0),
-        _pad_cg1: 0.0,
-        _pad_cg2: 0.0,
+        wb_log_gain_l: 0.0,
+        wb_log_gain_m: 0.0,
+        wb_log_gain_s: 0.0,
+        _pad_wb: 0.0,
         color_grading_shadows: if is_visible("color") {
             parse_color_grade_settings(&cg_obj["shadows"])
         } else {

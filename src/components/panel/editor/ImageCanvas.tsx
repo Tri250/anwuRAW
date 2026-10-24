@@ -4,7 +4,9 @@ import 'react-image-crop/dist/ReactCrop.css';
 import { Stage, Layer, Ellipse, Line, Transformer, Group, Circle, Rect, Arrow } from 'react-konva';
 import { PercentCrop, Crop } from 'react-image-crop';
 import { Stamp, Bandage, Spline, BrushCleaning } from 'lucide-react';
-import { Adjustments, AiPatch, Coord, MaskContainer } from '../../../utils/adjustments';
+import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'react-toastify';
+import { Adjustments, AiPatch, Coord, GuideLine, GuideOrientation, MaskContainer } from '../../../utils/adjustments';
 import { Mask, SubMask, SubMaskMode, ToolType } from '../right/Masks';
 import { AppSettings, BrushSettings, SelectedImage } from '../../ui/AppProperties';
 import { RenderSize } from '../../../hooks/useImageRenderSize';
@@ -31,6 +33,70 @@ interface DrawnLine {
   tool: ToolType;
 }
 
+// ---- 引导线透视：3x3 单应性矩阵工具（与上游 RapidRAW 一致，行主序） ----
+const IDENTITY_3X3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+
+function multiply3x3(a: number[], b: number[]): number[] {
+  if (!a || !b) return IDENTITY_3X3;
+  const out = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      out[i * 3 + j] = a[i * 3 + 0] * b[0 * 3 + j] + a[i * 3 + 1] * b[1 * 3 + j] + a[i * 3 + 2] * b[2 * 3 + j];
+    }
+  }
+  return out;
+}
+
+function invert3x3(h: number[]): number[] {
+  if (!h) return IDENTITY_3X3;
+  const a = h[0],
+    b = h[1],
+    c = h[2],
+    d = h[3],
+    e = h[4],
+    f = h[5],
+    g = h[6],
+    hh = h[7],
+    i = h[8];
+  const A = e * i - f * hh,
+    B = f * g - d * i,
+    C = d * hh - e * g;
+  const D = c * hh - b * i,
+    E = a * i - c * g,
+    F = b * g - a * hh;
+  const G = b * f - c * e,
+    H = c * d - a * f,
+    I = a * e - b * d;
+  const det = a * A + b * B + c * C;
+  if (Math.abs(det) < 1e-15) return IDENTITY_3X3;
+  const inv = 1.0 / det;
+  return [A * inv, D * inv, G * inv, B * inv, E * inv, H * inv, C * inv, F * inv, I * inv];
+}
+
+function project3x3(h: number[], x: number, y: number): { x: number; y: number } {
+  if (!h) return { x, y };
+  const W = h[6] * x + h[7] * y + h[8];
+  if (Math.abs(W) < 1e-12) return { x, y };
+  return {
+    x: (h[0] * x + h[1] * y + h[2]) / W,
+    y: (h[3] * x + h[4] * y + h[5]) / W,
+  };
+}
+
+function orientPoint(x: number, y: number, w: number, h: number, steps: number) {
+  const s = ((steps % 4) + 4) % 4;
+  if (s === 0) return { x, y };
+  if (s === 1) return { x: h - y, y: x };
+  if (s === 2) return { x: w - x, y: h - y };
+  return { x: y, y: w - x };
+}
+
+function unorientPoint(x: number, y: number, w: number, h: number, steps: number) {
+  const s = ((steps % 4) + 4) % 4;
+  const inv = (4 - s) % 4;
+  return orientPoint(x, y, w, h, inv);
+}
+
 interface ImageCanvasProps {
   appSettings: AppSettings | null;
   activeAiPatchContainerId: string | null;
@@ -49,6 +115,7 @@ interface ImageCanvasProps {
   isMasking: boolean;
   isSliderDragging: boolean;
   isStraightenActive: boolean;
+  isGuidedPerspectiveActive?: boolean;
   isRotationActive?: boolean;
   maskOverlayUrl: string | null;
   maskOverlayVisible?: boolean;
@@ -1310,6 +1377,7 @@ const ImageCanvas = memo(
     isMasking,
     isSliderDragging,
     isStraightenActive,
+    isGuidedPerspectiveActive = false,
     isRotationActive,
     maskOverlayUrl,
     maskOverlayVisible = true,
@@ -1361,6 +1429,13 @@ const ImageCanvas = memo(
     const [cursorPreview, setCursorPreview] = useState<CursorPreview>({ x: 0, y: 0, visible: false });
     const [straightenLine, setStraightenLine] = useState<any>(null);
     const isStraightening = useRef(false);
+
+    // 引导线透视状态
+    const [forwardH, setForwardH] = useState<number[]>(IDENTITY_3X3);
+    const [invH, setInvH] = useState<number[]>(IDENTITY_3X3);
+    const [draftGuideLine, setDraftGuideLine] = useState<{ p1: Coord; p2: Coord } | null>(null);
+    const [localDragLines, setLocalDragLines] = useState<GuideLine[] | null>(null);
+    const isGuidedDrawing = useRef(false);
 
     const [displayState, setDisplayState] = useState({
       base: finalPreviewUrl || selectedImage.thumbnailUrl,
@@ -2811,6 +2886,155 @@ const ImageCanvas = memo(
       }
     };
 
+    // ---- 引导线透视：计算正向/逆向单应性矩阵（与 Rust 几何管线保持一致） ----
+    useEffect(() => {
+      const calcMatrix = async () => {
+        if (!selectedImage?.width || !selectedImage?.height) return;
+        const Ow = selectedImage.width;
+        const Oh = selectedImage.height;
+        let guidedH = IDENTITY_3X3;
+        const lines = adjustments.guidedPerspective?.lines || [];
+        if (lines.length >= 2) {
+          try {
+            const res: any = await invoke('calculate_guided_perspective', { lines, width: Ow, height: Oh });
+            if (res?.valid && (res?.forwardH || res?.forward_h)) {
+              guidedH = res.forwardH || res.forward_h;
+            }
+          } catch (e) {
+            console.error('Matrix calculation failed', e);
+          }
+        }
+        const ref_dim = 2000.0;
+        const p_vert = ((adjustments.transformVertical ?? 0) / 100000.0) * (ref_dim / Oh);
+        const p_horiz = (-(adjustments.transformHorizontal ?? 0) / 100000.0) * (ref_dim / Ow);
+        const theta = ((adjustments.transformRotate ?? 0) * Math.PI) / 180.0;
+        const aspect = adjustments.transformAspect ?? 0;
+        const aspect_factor = aspect >= 0.0 ? 1.0 + aspect / 100.0 : 1.0 / (1.0 + Math.abs(aspect) / 100.0);
+        const scale_factor = (adjustments.transformScale ?? 100) / 100.0;
+        const off_x = ((adjustments.transformXOffset ?? 0) / 100.0) * Ow;
+        const off_y = ((adjustments.transformYOffset ?? 0) / 100.0) * Oh;
+
+        const cx = Ow / 2.0;
+        const cy = Oh / 2.0;
+        const t_center = [1, 0, cx, 0, 1, cy, 0, 0, 1];
+        const t_uncenter = [1, 0, -cx, 0, 1, -cy, 0, 0, 1];
+        const m_perspective = [1, 0, 0, 0, 1, 0, p_horiz, p_vert, 1];
+        const m_rotate = [Math.cos(theta), -Math.sin(theta), 0, Math.sin(theta), Math.cos(theta), 0, 0, 0, 1];
+        const m_scale = [scale_factor * aspect_factor, 0, 0, 0, scale_factor, 0, 0, 0, 1];
+        const m_offset = [1, 0, off_x, 0, 1, off_y, 0, 0, 1];
+
+        let f = multiply3x3(t_center, m_offset);
+        f = multiply3x3(f, m_perspective);
+        f = multiply3x3(f, m_rotate);
+        f = multiply3x3(f, m_scale);
+        f = multiply3x3(f, guidedH);
+        f = multiply3x3(f, t_uncenter);
+
+        setForwardH(f);
+        setInvH(invert3x3(f));
+      };
+      calcMatrix();
+    }, [
+      selectedImage?.width,
+      selectedImage?.height,
+      adjustments.guidedPerspective?.lines,
+      adjustments.transformVertical,
+      adjustments.transformHorizontal,
+      adjustments.transformRotate,
+      adjustments.transformAspect,
+      adjustments.transformScale,
+      adjustments.transformXOffset,
+      adjustments.transformYOffset,
+    ]);
+
+    // ---- 引导线透视：画布交互（画线/拖拽端点） ----
+    const commitGuidedLines = (newLines: GuideLine[]) => {
+      setAdjustments((prev) => ({
+        ...prev,
+        guidedPerspective: {
+          ...prev.guidedPerspective,
+          enabled: newLines.length >= 2,
+          lines: newLines,
+          autoCrop: true,
+        },
+      }));
+    };
+
+    const handleGuidedMouseDown = (e: any) => {
+      if (e.evt && typeof e.evt.button === 'number' && e.evt.button !== 0 && !e.evt.touches) {
+        return;
+      }
+      // 只响应舞台空白处的按下（点在端点圆上时不启动画线）
+      if (e.target !== e.target.getStage()) return;
+      const stage = e.target.getStage();
+      const pos = stage?.getPointerPosition();
+      if (!pos || !uncroppedImageRenderSize?.width || !uncroppedImageRenderSize?.height) return;
+      const uv = mapScreenToUv(pos.x, pos.y);
+      setDraftGuideLine({ p1: uv, p2: uv });
+      isGuidedDrawing.current = true;
+    };
+
+    const handleGuidedMouseMove = (e: any) => {
+      if (!isGuidedDrawing.current || !draftGuideLine) return;
+      const pos = e.target.getStage()?.getPointerPosition();
+      if (!pos) return;
+      const uv = mapScreenToUv(pos.x, pos.y);
+      setDraftGuideLine((prev) => (prev ? { p1: prev.p1, p2: uv } : null));
+      if (e.evt && e.evt.cancelable) e.evt.preventDefault();
+    };
+
+    const handleGuidedMouseUp = () => {
+      if (!isGuidedDrawing.current) return;
+      isGuidedDrawing.current = false;
+      if (!draftGuideLine) return;
+      const { p1, p2 } = draftGuideLine;
+      setDraftGuideLine(null);
+
+      const sc1 = mapUvToScreen(p1);
+      const sc2 = mapUvToScreen(p2);
+      const dx = sc2.x - sc1.x;
+      const dy = sc2.y - sc1.y;
+
+      if (Math.hypot(dx, dy) < 15) return;
+
+      const tan35 = Math.tan((35 * Math.PI) / 180);
+      const isVert = Math.abs(dx) <= Math.abs(dy) * tan35;
+      const isHoriz = Math.abs(dy) <= Math.abs(dx) * tan35;
+
+      if (!isVert && !isHoriz) {
+        toast.error(t('editor.guided.toast.angleRejected'));
+        return;
+      }
+
+      const type: GuideOrientation = isVert ? 'vertical' : 'horizontal';
+      const existingLines = adjustments.guidedPerspective?.lines || [];
+      if (existingLines.filter((l) => l.type === type).length >= 2) {
+        toast.error(t('editor.guided.toast.maxLines'));
+        return;
+      }
+
+      commitGuidedLines([...existingLines, { id: crypto.randomUUID(), type, p1, p2 }]);
+    };
+
+    const handleGuidedMouseLeave = () => {
+      if (isGuidedDrawing.current) {
+        isGuidedDrawing.current = false;
+        setDraftGuideLine(null);
+      }
+    };
+
+    const handleGuidedEndpointDragMove = (lineId: string, endpoint: 'p1' | 'p2', newUv: Coord) => {
+      const baseLines = localDragLines || adjustments.guidedPerspective?.lines || [];
+      setLocalDragLines(baseLines.map((l) => (l.id === lineId ? { ...l, [endpoint]: newUv } : l)));
+    };
+
+    const handleGuidedEndpointDragEnd = () => {
+      if (localDragLines) {
+        commitGuidedLines(localDragLines);
+        setLocalDragLines(null);
+      }
+    };
+
     const cropPreviewUrl = uncroppedAdjustedPreviewUrl || selectedImage.thumbnailUrl;
     const isShowingOriginal = showOriginal;
 
@@ -2856,6 +3080,91 @@ const ImageCanvas = memo(
       const rotation = liveRotation !== null && liveRotation !== undefined ? liveRotation : adjustments.rotation || 0;
       return `rotate(${rotation}deg)`;
     }, [adjustments.rotation, liveRotation]);
+
+    // ---- 引导线透视：UV(0-1 原图空间) <-> 屏幕坐标映射（经单应性矩阵投影） ----
+    const mapUvToScreen = useCallback(
+      (uv: Coord) => {
+        if (!uncroppedImageRenderSize?.width || !uncroppedImageRenderSize?.height) return { x: 0, y: 0 };
+        const Ow = selectedImage?.width || 1920;
+        const Oh = selectedImage?.height || 1080;
+        const orientationSteps = adjustments.orientationSteps || 0;
+        const Dw = orientationSteps % 2 !== 0 ? Oh : Ow;
+        const Dh = orientationSteps % 2 !== 0 ? Ow : Oh;
+
+        const ox = uv.x * Ow;
+        const oy = uv.y * Oh;
+        const warped = project3x3(forwardH, ox, oy);
+
+        let { x: px, y: py } = orientPoint(warped.x, warped.y, Ow, Oh, orientationSteps);
+        if (adjustments.flipHorizontal) px = Dw - px;
+        if (adjustments.flipVertical) py = Dh - py;
+
+        const sx = (px / Dw) * uncroppedImageRenderSize.width;
+        const sy = (py / Dh) * uncroppedImageRenderSize.height;
+
+        const activeRotation =
+          liveRotation !== null && liveRotation !== undefined ? liveRotation : adjustments.rotation || 0;
+        if (Math.abs(activeRotation) > 1e-4) {
+          const rad = (activeRotation * Math.PI) / 180;
+          const cos = Math.cos(rad);
+          const sin = Math.sin(rad);
+          const cx = uncroppedImageRenderSize.width / 2;
+          const cy = uncroppedImageRenderSize.height / 2;
+          const dx = sx - cx;
+          const dy = sy - cy;
+          return {
+            x: cx + dx * cos - dy * sin,
+            y: cy + dx * sin + dy * cos,
+          };
+        }
+
+        return { x: sx, y: sy };
+      },
+      [forwardH, uncroppedImageRenderSize, selectedImage, adjustments, liveRotation],
+    );
+
+    const mapScreenToUv = useCallback(
+      (stageX: number, stageY: number): Coord => {
+        if (!uncroppedImageRenderSize?.width || !uncroppedImageRenderSize?.height) return { x: 0, y: 0 };
+        const Ow = selectedImage?.width || 1920;
+        const Oh = selectedImage?.height || 1080;
+        const orientationSteps = adjustments.orientationSteps || 0;
+        const Dw = orientationSteps % 2 !== 0 ? Oh : Ow;
+        const Dh = orientationSteps % 2 !== 0 ? Ow : Oh;
+
+        const activeRotation =
+          liveRotation !== null && liveRotation !== undefined ? liveRotation : adjustments.rotation || 0;
+        let sx = stageX;
+        let sy = stageY;
+
+        if (Math.abs(activeRotation) > 1e-4) {
+          const rad = (activeRotation * Math.PI) / 180;
+          const cos = Math.cos(rad);
+          const sin = Math.sin(rad);
+          const cx = uncroppedImageRenderSize.width / 2;
+          const cy = uncroppedImageRenderSize.height / 2;
+          const dx = stageX - cx;
+          const dy = stageY - cy;
+          sx = cx + dx * cos + dy * sin;
+          sy = cy - dx * sin + dy * cos;
+        }
+
+        let px = (sx / uncroppedImageRenderSize.width) * Dw;
+        let py = (sy / uncroppedImageRenderSize.height) * Dh;
+
+        if (adjustments.flipHorizontal) px = Dw - px;
+        if (adjustments.flipVertical) py = Dh - py;
+
+        const unoriented = unorientPoint(px, py, Dw, Dh, orientationSteps);
+        const orig = project3x3(invH, unoriented.x, unoriented.y);
+
+        return {
+          x: Math.max(0, Math.min(1, orig.x / Ow)),
+          y: Math.max(0, Math.min(1, orig.y / Oh)),
+        };
+      },
+      [invH, uncroppedImageRenderSize, selectedImage, adjustments, liveRotation],
+    );
 
     const getCropDimensions = () => {
       if (!crop || !uncroppedImageRenderSize?.width || !uncroppedImageRenderSize?.height) {
@@ -3348,6 +3657,104 @@ const ImageCanvas = memo(
                         ]}
                         stroke="#0ea5e9"
                         strokeWidth={2}
+                      />
+                    )}
+                  </Layer>
+                </Stage>
+              )}
+
+              {(isGuidedPerspectiveActive || (adjustments.guidedPerspective?.lines?.length ?? 0) > 0) && (
+                <Stage
+                  height={uncroppedImageRenderSize.height}
+                  onMouseDown={isGuidedPerspectiveActive ? handleGuidedMouseDown : undefined}
+                  onTouchStart={isGuidedPerspectiveActive ? handleGuidedMouseDown : undefined}
+                  onMouseLeave={handleGuidedMouseLeave}
+                  onMouseMove={isGuidedPerspectiveActive ? handleGuidedMouseMove : undefined}
+                  onTouchMove={isGuidedPerspectiveActive ? handleGuidedMouseMove : undefined}
+                  onMouseUp={isGuidedPerspectiveActive ? handleGuidedMouseUp : undefined}
+                  onTouchEnd={isGuidedPerspectiveActive ? handleGuidedMouseUp : undefined}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    zIndex: 10,
+                    cursor: isGuidedPerspectiveActive ? 'crosshair' : 'default',
+                    touchAction: 'none',
+                    pointerEvents: isGuidedPerspectiveActive ? 'auto' : 'none',
+                  }}
+                  width={uncroppedImageRenderSize.width}
+                >
+                  <Layer>
+                    {(localDragLines || adjustments.guidedPerspective?.lines || []).map((line) => {
+                      const sc1 = mapUvToScreen(line.p1);
+                      const sc2 = mapUvToScreen(line.p2);
+                      return (
+                        <Group key={line.id}>
+                          <Line
+                            points={[sc1.x, sc1.y, sc2.x, sc2.y]}
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            hitStrokeWidth={12}
+                            dash={[6, 4]}
+                            opacity={isGuidedPerspectiveActive ? 1 : 0.75}
+                          />
+                          {isGuidedPerspectiveActive && (
+                            <>
+                              <Circle
+                                x={sc1.x}
+                                y={sc1.y}
+                                radius={6}
+                                fill="#ffffff"
+                                stroke="#3b82f6"
+                                strokeWidth={2}
+                                draggable
+                                onMouseDown={(e) => {
+                                  e.cancelBubble = true;
+                                }}
+                                onTouchStart={(e) => {
+                                  e.cancelBubble = true;
+                                }}
+                                onDragMove={(e) => {
+                                  handleGuidedEndpointDragMove(line.id, 'p1', mapScreenToUv(e.target.x(), e.target.y()));
+                                }}
+                                onDragEnd={handleGuidedEndpointDragEnd}
+                              />
+                              <Circle
+                                x={sc2.x}
+                                y={sc2.y}
+                                radius={6}
+                                fill="#ffffff"
+                                stroke="#3b82f6"
+                                strokeWidth={2}
+                                draggable
+                                onMouseDown={(e) => {
+                                  e.cancelBubble = true;
+                                }}
+                                onTouchStart={(e) => {
+                                  e.cancelBubble = true;
+                                }}
+                                onDragMove={(e) => {
+                                  handleGuidedEndpointDragMove(line.id, 'p2', mapScreenToUv(e.target.x(), e.target.y()));
+                                }}
+                                onDragEnd={handleGuidedEndpointDragEnd}
+                              />
+                            </>
+                          )}
+                        </Group>
+                      );
+                    })}
+
+                    {draftGuideLine && (
+                      <Line
+                        points={[
+                          mapUvToScreen(draftGuideLine.p1).x,
+                          mapUvToScreen(draftGuideLine.p1).y,
+                          mapUvToScreen(draftGuideLine.p2).x,
+                          mapUvToScreen(draftGuideLine.p2).y,
+                        ]}
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dash={[4, 4]}
                       />
                     )}
                   </Layer>

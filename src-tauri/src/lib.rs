@@ -8,6 +8,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 mod adjustment_utils;
 mod ai_commands;
 mod ai_connector;
+mod ai_denoise;
 mod ai_processing;
 mod android_integration;
 mod app_settings;
@@ -25,6 +26,7 @@ mod file_management;
 mod focus_stacking;
 mod formats;
 mod gpu_processing;
+mod guided_perspective;
 mod hdr_deghosting;
 mod image_loader;
 mod image_processing;
@@ -215,13 +217,18 @@ fn compute_full_transformed_res(
         .get("aiPatches")
         .and_then(|v| v.as_array())
         .is_some_and(|a| !a.is_empty());
-    let patched_original_image = if has_patches {
-        Cow::Owned(
-            composite_patches_on_image(&loaded_image.image, adjustments)
+    let denoised_base = crate::ai_denoise::apply_ai_denoise(
+        &loaded_image.image,
+        &loaded_image.path,
+        adjustments,
+    );
+    let patched_original_image = match (denoised_base, has_patches) {
+        (base, true) => Cow::Owned(
+            composite_patches_on_image(&base, adjustments)
                 .map_err(|e| format!("Failed to composite AI patches: {}", e))?,
-        )
-    } else {
-        Cow::Borrowed(loaded_image.image.as_ref())
+        ),
+        (Cow::Owned(img), false) => Cow::Owned(img),
+        (Cow::Borrowed(_), false) => Cow::Borrowed(loaded_image.image.as_ref()),
     };
 
     let (transformed_img, offset) = apply_all_transformations(patched_original_image, adjustments);
@@ -369,6 +376,8 @@ fn process_preview_job(
         .ok_or("No original image loaded")?
         .clone();
     drop(loaded_image_guard);
+
+    crate::ai_denoise::ensure_generated(app_handle, &loaded_image, &adjustments_clone);
 
     let new_transform_hash = calculate_transform_hash(&adjustments_clone);
     let settings = load_settings(app_handle.clone()).unwrap_or_default();
@@ -797,17 +806,22 @@ fn generate_uncropped_preview(
             .get("aiPatches")
             .and_then(|v| v.as_array())
             .is_some_and(|a| !a.is_empty());
+        let denoised_base = crate::ai_denoise::apply_ai_denoise(
+            &loaded_image.image,
+            &loaded_image.path,
+            &adjustments_clone,
+        );
         let patched_image = if has_patches {
             Cow::Owned(
-                composite_patches_on_image(&loaded_image.image, &adjustments_clone).unwrap_or_else(
+                composite_patches_on_image(&denoised_base, &adjustments_clone).unwrap_or_else(
                     |e| {
                         eprintln!("Failed to composite patches for uncropped preview: {}", e);
-                        loaded_image.image.as_ref().clone()
+                        denoised_base.as_ref().clone()
                     },
                 ),
             )
         } else {
-            Cow::Borrowed(loaded_image.image.as_ref())
+            denoised_base
         };
 
         let warped_image = apply_geometry_warp(patched_image, &adjustments_clone);
@@ -954,8 +968,26 @@ async fn preview_geometry_transform(
             let final_preview_dim = settings.editor_preview_resolution.unwrap_or(1920);
             let target_dim = (final_preview_dim as f32 / interactive_divisor) as u32;
 
+            let denoise_adjustments = js_adjustments.clone();
+            let denoise_path = loaded_image_path.clone();
             let preview_base = tokio::task::spawn_blocking(move || -> DynamicImage {
-                downscale_f32_image(&original_image, target_dim, target_dim)
+                // 几何预览基准图同样应用非破坏性 AI 降噪（+ patches），与主预览一致
+                let denoised_base = crate::ai_denoise::apply_ai_denoise(
+                    &original_image,
+                    &denoise_path,
+                    &denoise_adjustments,
+                );
+                let has_patches = denoise_adjustments
+                    .get("aiPatches")
+                    .and_then(|v| v.as_array())
+                    .is_some_and(|a| !a.is_empty());
+                let base = if has_patches {
+                    composite_patches_on_image(&denoised_base, &denoise_adjustments)
+                        .unwrap_or_else(|_| denoised_base.as_ref().clone())
+                } else {
+                    denoised_base.as_ref().clone()
+                };
+                downscale_f32_image(&base, target_dim, target_dim)
             })
             .await
             .map_err(|e| e.to_string())?;
@@ -2089,6 +2121,13 @@ pub fn run() {
                 state.decoded_image_cache.lock().unwrap_or_else(|e| e.into_inner()).set_capacity(cache_size);
             }
 
+            {
+                // 初始化非破坏性 AI 降噪磁盘缓存目录
+                if let Ok(cache_dir) = app_handle.path().app_cache_dir() {
+                    crate::ai_denoise::initialize_cache_dir(cache_dir);
+                }
+            }
+
             if crash_flag_path.exists() {
                 log::warn!("GPU Driver crash detected on last run! Falling back to OpenGL backend.");
                 settings.processing_backend = Some("gl".to_string());
@@ -2428,6 +2467,8 @@ pub fn run() {
             denoising::apply_denoising,
             denoising::batch_denoise_images,
             denoising::save_denoised_image,
+            ai_denoise::get_ai_denoise_cache_size,
+            ai_denoise::clear_ai_denoise_cache,
             focus_stacking::stitch_focus_stack,
             focus_stacking::save_focus_stack,
             image_loader::load_image,
@@ -2475,6 +2516,7 @@ pub fn run() {
             file_management::clear_all_sidecars,
             file_management::clear_thumbnail_cache,
             file_management::set_color_label_for_paths,
+            file_management::set_flag_for_paths,
             file_management::set_rating_for_paths,
             file_management::import_files,
             file_management::create_virtual_copy,
@@ -2504,6 +2546,7 @@ pub fn run() {
             channel_mixer::apply_channel_mixer_command,
             split_toning::apply_split_toning_command,
             detect_straighten::detect_straighten_angle,
+            guided_perspective::calculate_guided_perspective,
             color_range_mask::generate_color_range_mask_command,
             luminance_range_mask::generate_luminance_range_mask_command,
             iptc_processing::read_iptc_metadata,

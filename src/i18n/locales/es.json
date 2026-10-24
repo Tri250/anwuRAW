@@ -215,6 +215,8 @@
       }
     },
     "details": {
+      "aiDenoise": "Reducción de ruido IA",
+      "aiDenoiseDetail": "Detalle",
       "blueYellow": "Azul/Amarillo",
       "centre": "Centro",
       "chromaticAberration": "Aberración cromática",
@@ -514,6 +516,7 @@
       },
       "createNewTitle": "Crear nueva edición generativa",
       "createNewTooltip": "Crear nueva edición {{name}}",
+      "denoising": "Ejecutando reducción de ruido IA...",
       "dropzoneText": "Suelta aquí para crear una nueva edición",
       "editSettingsTitle": "Ajustes de edición",
       "editsTitle": "Ediciones",
@@ -704,6 +707,16 @@
       "done": "Listo",
       "exporting": "Exportando…",
       "savesTo": "Edición externa: se guarda en"
+    },
+    "guided": {
+      "cancel": "Cancelar",
+      "drawingActive": "Dibujo activo",
+      "hint": "Dibuja a lo largo de los bordes de tu foto que deberían ser verticales u horizontales.",
+      "linesStatus": "Líneas guía activas",
+      "toast": {
+        "angleRejected": "El ángulo de la línea está demasiado lejos de la horizontal o vertical",
+        "maxLines": "Se permiten un máximo de 2 líneas verticales y 2 horizontales"
+      }
     },
     "layout": {
       "split": "Dividir"
@@ -1331,6 +1344,7 @@
     },
     "thumbnailFit": {
       "fillSquare": "Llenar cuadrado",
+      "justified": "Mosaico",
       "originalRatio": "Proporción original"
     },
     "thumbnailSize": {
@@ -1435,6 +1449,7 @@
         "curves": "Curvas",
         "exposureToneMapper": "Exposición y Mapeador de tonos",
         "grain": "Grano",
+        "guidedPerspective": "Perspectiva guiada",
         "halationGlow": "Halación y Resplandor",
         "hueShift": "Cambio de tono global",
         "lensCorrection": "Corrección de lente",
@@ -1691,6 +1706,7 @@
       "cancel": "Cancelar",
       "compareTooltip": "Mantén presionado para comparar",
       "distortion": "Distorsión",
+      "guided": "Perspectiva guiada",
       "horizontal": "Horizontal",
       "maskWarning": "Transformar actualiza la geometría base. Las máscaras existentes pueden desplazarse y las máscaras de IA deben regenerarse.",
       "offset": "Desplazamiento",

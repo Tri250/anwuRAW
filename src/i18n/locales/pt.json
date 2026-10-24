@@ -215,6 +215,8 @@
       }
     },
     "details": {
+      "aiDenoise": "Redução de ruído IA",
+      "aiDenoiseDetail": "Detalhe",
       "blueYellow": "Azul/Amarelo",
       "centre": "Centro",
       "chromaticAberration": "Aberração Cromática",
@@ -514,6 +516,7 @@
       },
       "createNewTitle": "Criar Nova Edição Generativa",
       "createNewTooltip": "Criar Nova Edição de {{name}}",
+      "denoising": "A executar redução de ruído IA...",
       "dropzoneText": "Solte aqui para criar uma nova edição",
       "editSettingsTitle": "Configurações de Edição",
       "editsTitle": "Edições",
@@ -704,6 +707,16 @@
       "done": "Concluído",
       "exporting": "Exportando…",
       "savesTo": "Edição externa — salva em"
+    },
+    "guided": {
+      "cancel": "Cancelar",
+      "drawingActive": "Desenho ativo",
+      "hint": "Desenhe ao longo das bordas da sua foto que devem ser verticais ou horizontais.",
+      "linesStatus": "Linhas guias ativas",
+      "toast": {
+        "angleRejected": "O ângulo da linha está muito longe da horizontal ou vertical",
+        "maxLines": "São permitidas no máximo 2 linhas verticais e 2 horizontais"
+      }
     },
     "layout": {
       "split": "Dividir"
@@ -1331,6 +1344,7 @@
     },
     "thumbnailFit": {
       "fillSquare": "Preencher Quadrado",
+      "justified": "Mosaico",
       "originalRatio": "Proporção Original"
     },
     "thumbnailSize": {
@@ -1435,6 +1449,7 @@
         "curves": "Curvas",
         "exposureToneMapper": "Exposição e Mapeador de Tons",
         "grain": "Granulação",
+        "guidedPerspective": "Perspectiva guiada",
         "halationGlow": "Halo e Brilho",
         "hueShift": "Deslocamento de matiz global",
         "lensCorrection": "Correção de Lente",
@@ -1692,6 +1707,7 @@
       "cancel": "Cancelar",
       "compareTooltip": "Segure para Comparar",
       "distortion": "Distorção",
+      "guided": "Perspectiva guiada",
       "horizontal": "Horizontal",
       "maskWarning": "A transformação atualiza a geometria base. Máscaras existentes podem mudar, e máscaras de IA devem ser regeneradas.",
       "offset": "Deslocamento",

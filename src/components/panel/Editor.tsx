@@ -107,6 +107,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   const overlayMode = useEditorStore((s) => s.overlayMode);
   const overlayRotation = useEditorStore((s) => s.overlayRotation);
   const isStraightenActive = useEditorStore((s) => s.isStraightenActive);
+  const isGuidedPerspectiveActive = useEditorStore((s) => s.isGuidedPerspectiveActive);
   const isWbPickerActive = useEditorStore((s) => s.isWbPickerActive);
   const isHslPickerActive = useEditorStore((s) => s.isHslPickerActive);
   const liveRotation = useEditorStore((s) => s.liveRotation);
@@ -2394,6 +2395,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
             isMaskControlHovered={isMaskControlHovered}
             isMasking={isMasking}
             isStraightenActive={isStraightenActive}
+            isGuidedPerspectiveActive={isGuidedPerspectiveActive}
             isRotationActive={isRotationActive}
             isSliderDragging={isSliderDragging}
             maskOverlayUrl={maskOverlayUrl}

@@ -326,11 +326,18 @@ fn denoise_image(
 
     let out_dynamic = if method == "ai" {
         let session_arc = ai_session.ok_or_else(|| "AI Session not provided".to_string())?;
+        let _ = app_handle.emit("denoise-progress", "Denoising (AI NIND)...");
+        let progress_handle = app_handle.clone();
         crate::ai_processing::run_ai_denoise(
             &rgb_img_for_denoiser,
             intensity,
             &session_arc,
-            &app_handle,
+            &|pct| {
+                let _ = progress_handle.emit(
+                    "denoise-progress",
+                    format!("Denoising… {:.0}%", pct * 100.0),
+                );
+            },
         )
         .map_err(|e| e.to_string())?
     } else {

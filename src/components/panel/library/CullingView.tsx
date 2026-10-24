@@ -19,7 +19,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
-import { Invokes, ImageFile } from '../../ui/AppProperties';
+import { Invokes, ImageFile, ImageFlag } from '../../ui/AppProperties';
+import FlagBadges from '../../ui/FlagBadges';
+import FlagToggles from '../../ui/FlagToggles';
 import { Thumbnail } from './LibraryItems';
 import Text from '../../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
@@ -92,7 +94,7 @@ function CullingPreview({
   const panRef = useRef(pan);
   const [tagInputValue, setTagInputValue] = useState('');
   const [fitScale, setFitScale] = useState<number | null>(null);
-  const { handleRate, handleSetColorLabel, handleTagsChanged } = useLibraryActions();
+  const { handleRate, handleSetColorLabel, handleToggleFlag, handleTagsChanged } = useLibraryActions();
   const USER_TAG_PREFIX = 'user:';
   const getPathsToUpdate = () =>
     expandGroupedPaths(
@@ -111,7 +113,7 @@ function CullingPreview({
 
   const displayEditIcon = useSettingsStore((s) => s.appSettings?.displayEditIcon ?? true);
   const showEditIcon = image.is_edited && displayEditIcon;
-  const hasAnyOverlay = showEditIcon || !!colorLabel || rating > 0;
+  const hasAnyOverlay = showEditIcon || !!colorLabel || rating > 0 || !!image.flag;
 
   const currentTags = useMemo(() => {
     return (image.tags || [])
@@ -689,6 +691,23 @@ function CullingPreview({
                 variant={TextVariants.small}
                 className="text-white/50 text-[10px] uppercase tracking-wider mb-1.5 block"
               >
+                {t('library.culling.flag')}
+              </Text>
+              <div className="flex items-center gap-2">
+                <FlagToggles
+                  flag={image.flag ?? null}
+                  onToggle={(option) => handleToggleFlag(option, [image.path])}
+                  inactiveClassName="text-white/30 hover:text-white/80"
+                  size={18}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Text
+                variant={TextVariants.small}
+                className="text-white/50 text-[10px] uppercase tracking-wider mb-1.5 block"
+              >
                 {t('library.culling.colorLabel')}
               </Text>
               <div className="flex flex-wrap gap-2">
@@ -839,6 +858,8 @@ function CullingPreview({
                 <StarIcon size={12} className="text-white fill-white" />
               </div>
             )}
+
+            <FlagBadges flag={image.flag ?? null} hasPrecedingBadge={showEditIcon || !!colorLabel || rating > 0} />
           </div>
         )}
 

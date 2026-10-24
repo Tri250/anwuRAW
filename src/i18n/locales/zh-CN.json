@@ -215,6 +215,8 @@
       "resetPoint": "重置 {{channel}} 点曲线"
     },
     "details": {
+      "aiDenoise": "AI 降噪",
+      "aiDenoiseDetail": "细节",
       "blueYellow": "蓝/黄",
       "centre": "居中",
       "chromaticAberration": "色差",
@@ -315,6 +317,9 @@
       "denoise": "降噪图像",
       "editImage": "编辑图像",
       "exportImage": "导出图像",
+      "flagPick": "标记为入选",
+      "flagReject": "标记为排除",
+      "flagTitle": "选片标记",
       "frameImage": "装裱图像",
       "mergeHdr": "合并为 HDR",
       "noLabel": "无标签",
@@ -332,7 +337,8 @@
       "resetConfirmTitle_other": "重置调整（{{count}} 张图像）",
       "stitchPanorama": "拼接全景图",
       "tagging": "标签",
-      "undo": "撤销"
+      "undo": "撤销",
+      "unflagged": "移除标记"
     },
     "folders": {
       "changeIcon": "更换图标",
@@ -355,7 +361,8 @@
     "library": {
       "addCopiedToAlbum_one": "将复制的图像添加到相册",
       "addCopiedToAlbum_other": "将 {{count}} 张复制的图像添加到相册",
-      "refreshView": "刷新视图"
+      "refreshView": "刷新视图",
+      "deleteRejected": "删除已排除的图像"
     },
     "merge": {
       "focusStack": "焦距合成",
@@ -498,6 +505,7 @@
       },
       "createNewTitle": "创建新的生成式编辑",
       "createNewTooltip": "创建新的 {{name}} 编辑",
+      "denoising": "正在进行 AI 降噪...",
       "dropzoneText": "拖放到此处以创建新编辑",
       "editSettingsTitle": "编辑设置",
       "editsTitle": "编辑",
@@ -684,6 +692,16 @@
       "done": "完成",
       "exporting": "正在导出…",
       "savesTo": "外部编辑 — 保存至"
+    },
+    "guided": {
+      "cancel": "取消",
+      "drawingActive": "绘图中",
+      "hint": "沿着照片中应该是垂直或水平的边缘绘制。",
+      "linesStatus": "活跃引导线",
+      "toast": {
+        "angleRejected": "线条角度偏离水平或垂直太远",
+        "maxLines": "最多允许 2 条垂直线和 2 条水平线"
+      }
     },
     "layout": {
       "split": "拆分"
@@ -1108,6 +1126,7 @@
       "colorLabel": "颜色标签",
       "dimensions": "尺寸",
       "editImage": "编辑图像",
+      "flag": "选片标记",
       "focalLength": "焦距",
       "iso": "ISO",
       "metadata": "元数据",
@@ -1138,6 +1157,12 @@
         "all": "所有图像",
         "editedOnly": "仅已编辑",
         "uneditedOnly": "仅未编辑"
+      },
+      "flag": {
+        "all": "所有图像",
+        "excludeRejected": "隐藏已排除",
+        "picked": "仅入选",
+        "rejected": "仅排除"
       },
       "noMatch": "未找到匹配过滤条件的图像。",
       "rating": {
@@ -1307,6 +1332,7 @@
     },
     "thumbnailFit": {
       "fillSquare": "填充正方形",
+      "justified": "瀑布流",
       "originalRatio": "原始比例"
     },
     "thumbnailSize": {
@@ -1411,6 +1437,7 @@
         "curves": "曲线",
         "exposureToneMapper": "曝光与色调映射",
         "grain": "颗粒",
+        "guidedPerspective": "引导透视",
         "halationGlow": "光晕与发光",
         "hueShift": "全局色相偏移",
         "lensCorrection": "镜头校正",
@@ -1661,6 +1688,7 @@
       "cancel": "取消",
       "compareTooltip": "按住以对比",
       "distortion": "畸变",
+      "guided": "引导透视",
       "horizontal": "水平",
       "maskWarning": "变换会更新基础几何形状。现有蒙版可能会偏移，AI 蒙版需要重新生成。",
       "offset": "偏移",
@@ -1837,9 +1865,12 @@
         "toggle_library_exif": "切换 EXIF 叠加",
         "toggle_masks": "切换蒙版面板",
         "toggle_metadata": "切换元数据面板",
+        "toggle_pick": "切换入选标记",
         "toggle_presets": "切换预设面板",
+        "toggle_reject": "切换排除标记",
         "toggle_right_panel": "切换右侧面板",
         "undo": "撤销调整",
+        "unflag": "移除选片标记",
         "zoom_100": "缩放到 100%",
         "zoom_fit": "缩放以适应",
         "zoom_in": "放大",
@@ -2141,6 +2172,7 @@
     "createFolderFailed": "创建文件夹失败：{{error}}",
     "deleteFilesFailed": "删除文件失败：{{error}}",
     "depthMapFailed": "生成景深图失败：{{error}}",
+    "flagFailed": "更新选片标记失败：{{error}}",
     "folderLoadFailed": "加载文件夹失败：{{error}}",
     "folderTreeLoadFailed": "加载文件夹树失败：{{error}}",
     "folderSelectionFailed": "打开文件夹选择对话框失败。",
@@ -2199,6 +2231,10 @@
     "dropdown": {
       "placeholder": "选择一个选项",
       "searchPlaceholder": "筛选选项..."
+    },
+    "flags": {
+      "togglePick": "切换入选标记",
+      "toggleReject": "切换排除标记"
     },
     "exportPresets": {
       "deleteTooltip": "删除预设",

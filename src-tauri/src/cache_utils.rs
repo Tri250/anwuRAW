@@ -23,6 +23,7 @@ pub const GEOMETRY_KEYS: &[&str] = &[
     "lensDistortionEnabled",
     "lensTcaEnabled",
     "lensVignetteEnabled",
+    "guidedPerspective",
 ];
 
 pub fn calculate_thumbnail_base_hash(adjustments: &serde_json::Value) -> u64 {
@@ -99,6 +100,12 @@ pub fn calculate_visual_hash(path: &str, adjustments: &serde_json::Value) -> u64
                 }
             }
         }
+    }
+
+    // AI 降噪启用时，把缓存 epoch 并入哈希：
+    // 降噪结果在后台生成完成后 epoch 递增，使既有缓存自动失效并重渲染。
+    if crate::ai_denoise::is_enabled(adjustments) {
+        crate::ai_denoise::cache_epoch().hash(&mut hasher);
     }
 
     hasher.finish()

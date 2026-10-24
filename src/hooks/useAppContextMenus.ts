@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   Aperture,
+  Ban,
   Check,
   ClipboardPaste,
   Copy,
@@ -9,6 +10,7 @@ import {
   Edit,
   FileEdit,
   FileInput,
+  Flag,
   Folder,
   FolderInput,
   FolderPlus,
@@ -51,7 +53,7 @@ import { useLibraryStore } from '../store/useLibraryStore';
 import { useProcessStore } from '../store/useProcessStore';
 import { useUIStore } from '../store/useUIStore';
 import { useSettingsStore } from '../store/useSettingsStore';
-import { Invokes, Option, OPTION_SEPARATOR, Panel, AlbumItem, Album, AlbumGroup } from '../components/ui/AppProperties';
+import { Invokes, Option, OPTION_SEPARATOR, Panel, ImageFlag, AlbumItem, Album, AlbumGroup } from '../components/ui/AppProperties';
 import { Color, COLOR_LABELS, INITIAL_ADJUSTMENTS, normalizeLoadedAdjustments } from '../utils/adjustments';
 import TaggingSubMenu from '../context/TaggingSubMenu';
 import { useEditorActions } from './useEditorActions';
@@ -76,7 +78,7 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
 
   const { handleAutoAdjustments, handleResetAdjustments, handleCopyAdjustments, handlePasteAdjustments } =
     useEditorActions();
-  const { handleRate, handleSetColorLabel, handleTagsChanged } = useLibraryActions();
+  const { handleRate, handleSetColorLabel, handleSetFlag, handleToggleFlag, handleTagsChanged } = useLibraryActions();
 
   const albumIcons = useMemo(
     () => [
@@ -262,6 +264,15 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
           })),
         },
         {
+          label: t('contextMenus.editor.flagTitle'),
+          icon: Flag,
+          submenu: [
+            { label: t('contextMenus.editor.flagPick'), onClick: () => handleToggleFlag(ImageFlag.Pick) },
+            { label: t('contextMenus.editor.flagReject'), onClick: () => handleToggleFlag(ImageFlag.Reject) },
+            { label: t('contextMenus.editor.unflagged'), onClick: () => handleSetFlag(null) },
+          ],
+        },
+        {
           label: t('contextMenus.editor.colorLabel'),
           icon: Palette,
           submenu: [
@@ -321,6 +332,8 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
       handleAutoAdjustments,
       handleRate,
       handleSetColorLabel,
+      handleSetFlag,
+      handleToggleFlag,
       handleTagsChanged,
       showContextMenu,
       t,
@@ -728,6 +741,15 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
           })),
         },
         {
+          icon: Flag,
+          label: t('contextMenus.editor.flagTitle'),
+          submenu: [
+            { label: t('contextMenus.editor.flagPick'), onClick: () => handleToggleFlag(ImageFlag.Pick, finalSelection) },
+            { label: t('contextMenus.editor.flagReject'), onClick: () => handleToggleFlag(ImageFlag.Reject, finalSelection) },
+            { label: t('contextMenus.editor.unflagged'), onClick: () => handleSetFlag(null, finalSelection) },
+          ],
+        },
+        {
           label: t('contextMenus.editor.colorLabel'),
           icon: Palette,
           submenu: [
@@ -813,6 +835,8 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
       handlePasteAdjustments,
       handleRate,
       handleSetColorLabel,
+      handleSetFlag,
+      handleToggleFlag,
       handleTagsChanged,
       handleResetAdjustments,
       showContextMenu,
@@ -1282,7 +1306,9 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
       event.stopPropagation();
 
       const { copiedFilePaths, setProcess } = useProcessStore.getState();
-      const { currentFolderPath, activeAlbumId, setLibrary } = useLibraryStore.getState();
+      const { currentFolderPath, activeAlbumId, imageList, setLibrary } = useLibraryStore.getState();
+
+      const rejectedPaths = (imageList || []).filter((image) => image.flag === ImageFlag.Reject).map((image) => image.path);
 
       const numCopied = copiedFilePaths.length;
       const copyPastedLabel = t('contextMenus.folders.copyHere', { count: numCopied });
@@ -1356,6 +1382,14 @@ export function useAppContextMenus(props: UseAppContextMenusProps) {
           label: t('contextMenus.folders.importImages'),
           onClick: () => props.handleImportClick(currentFolderPath as string),
           disabled: !currentFolderPath || isAlbumView,
+        },
+        { type: OPTION_SEPARATOR },
+        {
+          icon: Trash2,
+          label: t('contextMenus.library.deleteRejected'),
+          isDestructive: true,
+          disabled: rejectedPaths.length === 0,
+          onClick: () => props.executeDelete(rejectedPaths, { includeAssociated: false }),
         },
       ];
 

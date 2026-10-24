@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Aperture,
+  Ban,
+  Cuboid,
   FlipHorizontal,
   FlipVertical,
   Grid3x3,
+  Minus,
   RectangleHorizontal,
   RectangleVertical,
   RotateCcw,
   RotateCw,
   Ruler,
   Scan,
+  Trash2,
   Wand2,
   X,
 } from 'lucide-react';
@@ -53,6 +57,7 @@ export default function CropPanel() {
   const selectedImage = useEditorStore((s) => s.selectedImage);
   const adjustments = useEditorStore((s) => s.adjustments);
   const isStraightenActive = useEditorStore((s) => s.isStraightenActive);
+  const isGuidedPerspectiveActive = useEditorStore((s) => s.isGuidedPerspectiveActive);
   const activeOverlay = useEditorStore((s) => s.overlayMode);
   const setEditor = useEditorStore((s) => s.setEditor);
   const { setAdjustments, handleRotate } = useEditorActions();
@@ -406,6 +411,7 @@ export default function CropPanel() {
       transformScale: INITIAL_ADJUSTMENTS.transformScale ?? 100,
       transformXOffset: INITIAL_ADJUSTMENTS.transformXOffset ?? 0,
       transformYOffset: INITIAL_ADJUSTMENTS.transformYOffset ?? 0,
+      guidedPerspective: INITIAL_ADJUSTMENTS.guidedPerspective,
       lensMaker: INITIAL_ADJUSTMENTS.lensMaker,
       lensModel: INITIAL_ADJUSTMENTS.lensModel,
       lensDistortionAmount: INITIAL_ADJUSTMENTS.lensDistortionAmount,
@@ -777,6 +783,100 @@ export default function CropPanel() {
                   <Aperture size={20} className="transition-none" />
                   <span className="text-xs mt-2 transition-none">{t('editor.crop.labels.lens')}</span>
                 </motion.div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Text variant={TextVariants.heading} className="mb-2">
+                {t('modals.transform.guided')}
+              </Text>
+              <div className="space-y-3">
+                <motion.button
+                  type="button"
+                  onClick={() => setEditor({ isGuidedPerspectiveActive: !isGuidedPerspectiveActive })}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                  className={clsx(
+                    'w-full flex items-center justify-center p-2.5 rounded-lg text-sm font-medium cursor-pointer transition-colors group',
+                    isGuidedPerspectiveActive
+                      ? 'bg-accent text-button-text hover:bg-red-600 hover:text-white'
+                      : 'bg-bg-secondary text-text-secondary hover:bg-card-active hover:text-text-primary',
+                  )}
+                >
+                  {isGuidedPerspectiveActive ? (
+                    <>
+                      <span className="flex items-center gap-2 group-hover:hidden">
+                        <Cuboid size={16} />
+                        {t('editor.guided.drawingActive')}
+                      </span>
+                      <span className="hidden items-center gap-2 group-hover:flex">
+                        <Ban size={16} />
+                        {t('editor.guided.cancel')}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Cuboid size={16} />
+                      {t('modals.transform.guided')}
+                    </span>
+                  )}
+                </motion.button>
+
+                {adjustments.guidedPerspective?.lines && adjustments.guidedPerspective.lines.length > 0 && (
+                  <div className="p-3 bg-bg-primary rounded-md border border-surface flex flex-col gap-2">
+                    <div className="flex justify-between items-center text-xs font-medium">
+                      <span>{t('editor.guided.linesStatus')}</span>
+                      <span
+                        className={clsx(
+                          adjustments.guidedPerspective.lines.length >= 2 ? 'text-accent' : 'text-text-secondary',
+                        )}
+                      >
+                        {adjustments.guidedPerspective.lines.length} / 4
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 mt-1">
+                      {adjustments.guidedPerspective.lines.map((line, idx) => (
+                        <div
+                          key={line.id}
+                          className="flex items-center gap-2 p-2 rounded-md bg-surface transition-colors group"
+                        >
+                          <Text
+                            as="div"
+                            color={TextColors.secondary}
+                            className="p-0.5 rounded transition-colors shrink-0 flex items-center justify-center"
+                          >
+                            <Minus size={16} />
+                          </Text>
+                          <div className="flex-1 min-w-0">
+                            <Text
+                              color={TextColors.primary}
+                              weight={TextWeights.medium}
+                              className="truncate select-none text-xs capitalize"
+                            >
+                              {line.type} Guide #{idx + 1}
+                            </Text>
+                          </div>
+                          <button
+                            className="p-1 hover:text-red-500 text-text-secondary transition-colors"
+                            onClick={() => {
+                              const newLines = adjustments.guidedPerspective!.lines.filter((l) => l.id !== line.id);
+                              setAdjustments((prev: Adjustments) => ({
+                                ...prev,
+                                guidedPerspective: {
+                                  ...prev.guidedPerspective,
+                                  lines: newLines,
+                                  enabled: newLines.length >= 2,
+                                },
+                              }));
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </>

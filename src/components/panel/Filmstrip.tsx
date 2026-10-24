@@ -3,7 +3,8 @@ import { Image as ImageIcon, Star, SlidersHorizontal } from 'lucide-react';
 import clsx from 'clsx';
 import { Grid, useGridCallbackRef } from 'react-window';
 import { useTranslation } from 'react-i18next';
-import { ImageFile, SelectedImage, ThumbnailAspectRatio, GroupingMode } from '../ui/AppProperties';
+import { ImageFile, ImageFlag, SelectedImage, ThumbnailAspectRatio, GroupingMode } from '../ui/AppProperties';
+import FlagBadges from '../ui/FlagBadges';
 import { Color, COLOR_LABELS } from '../../utils/adjustments';
 import Text from '../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../types/typography';
@@ -80,7 +81,7 @@ const FilmstripThumbnail = memo(
 
     const isInitialLoad = useRef(true);
 
-    const { path, tags, is_edited: isEdited } = imageFile;
+    const { path, tags, is_edited: isEdited, flag } = imageFile;
 
     const isAndroid = useSettingsStore((s) => s.osPlatform === 'android');
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -104,7 +105,8 @@ const FilmstripThumbnail = memo(
     const hasEditIcon = !!showEditIcon;
     const hasColorLabel = !!colorLabel;
     const hasRating = rating > 0;
-    const hasAnyOverlay = hasEditIcon || hasColorLabel || hasRating;
+    const hasFlag = !!flag;
+    const hasAnyOverlay = hasEditIcon || hasColorLabel || hasRating || hasFlag;
 
     const cleanPath = path.split('?')[0];
     const filename = cleanPath.split(/[\\/]/).pop() || '';
@@ -250,7 +252,7 @@ const FilmstripThumbnail = memo(
                   alt={truncatedTitle}
                   className={`${imageClasses} ${
                     thumbnailAspectRatio === ThumbnailAspectRatio.Contain ? 'object-contain' : 'object-cover'
-                  } relative`}
+                  } relative ${flag === ImageFlag.Reject ? 'opacity-60 grayscale' : ''}`}
                   loading="lazy"
                   decoding="async"
                   src={layer.url}
@@ -312,6 +314,8 @@ const FilmstripThumbnail = memo(
               </Text>
               <Star size={12} className="text-white fill-white" />
             </div>
+
+            <FlagBadges flag={flag ?? null} hasPrecedingBadge={hasEditIcon || hasColorLabel || hasRating} />
           </div>
         </div>
 

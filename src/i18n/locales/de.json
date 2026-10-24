@@ -215,6 +215,8 @@
       }
     },
     "details": {
+      "aiDenoise": "KI-Entrauschen",
+      "aiDenoiseDetail": "Details",
       "blueYellow": "Blau/Gelb",
       "centre": "Zentriert",
       "chromaticAberration": "Chromatische Aberration",
@@ -498,6 +500,7 @@
       },
       "createNewTitle": "Neue generative Bearbeitung erstellen",
       "createNewTooltip": "Neue {{name}}-Bearbeitung erstellen",
+      "denoising": "KI-Entrauschen läuft...",
       "dropzoneText": "Hier ablegen, um eine neue Bearbeitung zu erstellen",
       "editSettingsTitle": "Bearbeitungseinstellungen",
       "editsTitle": "Bearbeitungen",
@@ -684,6 +687,16 @@
       "done": "Fertig",
       "exporting": "Exportieren…",
       "savesTo": "Externe Bearbeitung — speichert in"
+    },
+    "guided": {
+      "cancel": "Abbrechen",
+      "drawingActive": "Zeichnen aktiv",
+      "hint": "Zeichnen Sie entlang der Kanten in Ihrem Foto, die vertikal oder horizontal sein sollten.",
+      "linesStatus": "Aktive Hilfslinien",
+      "toast": {
+        "angleRejected": "Linienwinkel ist zu weit von horizontal oder vertikal entfernt",
+        "maxLines": "Maximal 2 vertikale und 2 horizontale Linien erlaubt"
+      }
     },
     "layout": {
       "split": "Teilen"
@@ -1307,6 +1320,7 @@
     },
     "thumbnailFit": {
       "fillSquare": "Quadrat füllen",
+      "justified": "Mosaik",
       "originalRatio": "Original-Verhältnis"
     },
     "thumbnailSize": {
@@ -1411,6 +1425,7 @@
         "curves": "Kurven",
         "exposureToneMapper": "Belichtung & Tonemapper",
         "grain": "Körnung",
+        "guidedPerspective": "Geführte Perspektive",
         "halationGlow": "Lichthof & Glühen",
         "hueShift": "Globaler Farbton-Shift",
         "lensCorrection": "Objektivkorrektur",
@@ -1661,6 +1676,7 @@
       "cancel": "Abbrechen",
       "compareTooltip": "Halten zum Vergleichen",
       "distortion": "Verzerrung",
+      "guided": "Geführte Perspektive",
       "horizontal": "Horizontal",
       "maskWarning": "Transformieren aktualisiert die Basisgeometrie. Masken können sich verschieben, KI-Masken müssen neu generiert werden.",
       "offset": "Versatz",

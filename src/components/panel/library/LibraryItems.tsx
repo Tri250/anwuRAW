@@ -12,7 +12,8 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useDraggable } from '@dnd-kit/core';
 import { COLOR_LABELS, Color } from '../../../utils/adjustments';
-import { ThumbnailAspectRatio, ImageFile, ExifOverlay } from '../../ui/AppProperties';
+import { ThumbnailAspectRatio, ImageFile, ExifOverlay, ImageFlag } from '../../ui/AppProperties';
+import FlagBadges from '../../ui/FlagBadges';
 import Text from '../../ui/Text';
 import { TextColors, TextVariants, TextWeights, TEXT_COLOR_KEYS } from '../../../types/typography';
 import { ColumnWidths } from '../MainLibrary';
@@ -35,6 +36,7 @@ const ThumbnailComponent = ({
   onImageClick,
   onImageDoubleClick,
   onLoad,
+  onAspectRatioLoaded,
   path,
   rating,
   tags,
@@ -43,6 +45,7 @@ const ThumbnailComponent = ({
   exif,
   isCloudPlaceholder,
   groupBadgeLabel,
+  flag,
 }: any) => {
   const { t } = useTranslation();
   const data = useProcessStore((s) => s.thumbnails[path]);
@@ -167,8 +170,10 @@ const ThumbnailComponent = ({
   const hasEditIcon = !!showEditIcon;
   const hasColorLabel = !!colorLabel;
   const hasRating = rating > 0;
+  const hasFlag = !!flag;
+  const isRejected = flag === ImageFlag.Reject;
   const hasGroupBadge = !!groupBadgeLabel;
-  const hasAnyOverlay = hasEditIcon || hasColorLabel || hasRating || hasGroupBadge;
+  const hasAnyOverlay = hasEditIcon || hasColorLabel || hasRating || hasFlag || hasGroupBadge;
 
   return (
     <div
@@ -236,11 +241,22 @@ const ThumbnailComponent = ({
                     'w-full h-full transition-transform duration-300 will-change-transform relative',
                     thumbnailAspectRatio === ThumbnailAspectRatio.Contain ? 'object-contain' : 'object-cover',
                     isForcedHover ? 'scale-[1.02]' : 'group-hover:scale-[1.02]',
+                    // Reject 的图直接置灰弱化，选片扫图时一眼可辨
+                    isRejected && 'opacity-60 grayscale',
                   )}
                   decoding="async"
                   loading="lazy"
                   src={layer.url}
-                  onLoad={() => onLoad(path)}
+                  onLoad={(e: any) => {
+                    onLoad(path);
+                    // 瀑布流模式：把真实宽高比回传给网格，用于按比例排版
+                    if (thumbnailAspectRatio === ThumbnailAspectRatio.Justified && onAspectRatioLoaded) {
+                      const img = e.target as HTMLImageElement;
+                      if (img.naturalWidth && img.naturalHeight) {
+                        onAspectRatioLoaded(path, img.naturalWidth / img.naturalHeight);
+                      }
+                    }
+                  }}
                 />
               </div>
             ))}
@@ -321,11 +337,13 @@ const ThumbnailComponent = ({
             <StarIcon size={12} className="text-white fill-white" />
           </div>
 
+          <FlagBadges flag={flag ?? null} hasPrecedingBadge={hasEditIcon || hasColorLabel || hasRating} />
+
           <div
             className={clsx(
               'flex items-center shrink-0 transition-all duration-200 ease-out overflow-hidden',
               hasGroupBadge ? 'max-w-4 opacity-100 scale-100' : 'max-w-0 opacity-0 scale-75 pointer-events-none',
-              hasGroupBadge && (hasEditIcon || hasColorLabel || hasRating) ? 'ml-1.5' : 'ml-0',
+              hasGroupBadge && (hasEditIcon || hasColorLabel || hasRating || hasFlag) ? 'ml-1.5' : 'ml-0',
             )}
             data-tooltip={groupBadgeLabel}
           >
@@ -510,6 +528,7 @@ const ListItemComponent = ({
   isCloudPlaceholder,
   isPrevSelected,
   isNextSelected,
+  flag,
 }: any) => {
   const { t } = useTranslation();
   const data = useProcessStore((s) => s.thumbnails[path]);
@@ -710,7 +729,7 @@ const ListItemComponent = ({
                     alt={baseName}
                     className={`w-full h-full relative ${
                       thumbnailAspectRatio === ThumbnailAspectRatio.Contain ? 'object-contain' : 'object-cover'
-                    }`}
+                    } ${flag === ImageFlag.Reject ? 'opacity-60 grayscale' : ''}`}
                     decoding="async"
                     loading="lazy"
                     src={layer.url}
@@ -840,6 +859,7 @@ const RowComponent = ({
   onImageDoubleClick,
   thumbnailAspectRatio,
   onImageLoad,
+  onAspectRatioLoaded,
   imageRatings,
   baseFolderPath,
   itemWidth,
@@ -942,7 +962,7 @@ const RowComponent = ({
         boxSizing: 'border-box',
       }}
     >
-      {row.images.map((imageFile: ImageFile) => {
+      {row.images.map((imageFile: ImageFile, imageIndex: number) => {
         let isPrevSelected = false;
         let isNextSelected = false;
 
@@ -958,12 +978,15 @@ const RowComponent = ({
           }
         }
 
+        // 瀑布流：行内每张图按 justifiedWidths 取宽、行高等高；普通网格退回均分
+        const currentItemWidth = row.justifiedWidths ? row.justifiedWidths[imageIndex] : itemWidth;
+
         return (
           <div
             key={imageFile.path}
             style={{
-              width: isListView ? '100%' : itemWidth,
-              height: itemHeight,
+              width: isListView ? '100%' : currentItemWidth,
+              height: isListView ? itemHeight : row.rowHeight || itemHeight,
             }}
           >
             {isListView ? (
@@ -984,6 +1007,7 @@ const RowComponent = ({
                 isCloudPlaceholder={imageFile.is_cloud_placeholder}
                 isPrevSelected={isPrevSelected}
                 isNextSelected={isNextSelected}
+                flag={imageFile.flag}
               />
             ) : (
               <Thumbnail
@@ -993,6 +1017,7 @@ const RowComponent = ({
                 onImageClick={onImageClick}
                 onImageDoubleClick={onImageDoubleClick}
                 onLoad={onImageLoad}
+                onAspectRatioLoaded={onAspectRatioLoaded}
                 path={imageFile.path}
                 rating={imageRatings?.[imageFile.path] || 0}
                 tags={imageFile.tags}
@@ -1001,6 +1026,7 @@ const RowComponent = ({
                 aspectRatio={thumbnailAspectRatio}
                 isCloudPlaceholder={imageFile.is_cloud_placeholder}
                 groupBadgeLabel={imageFile.group_id && groupBadgeInfo?.get(imageFile.group_id)?.label}
+                flag={imageFile.flag}
               />
             )}
           </div>

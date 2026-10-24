@@ -57,6 +57,7 @@ interface EditorState {
   overlayMode: OverlayMode;
   overlayRotation: number;
   isStraightenActive: boolean;
+  isGuidedPerspectiveActive: boolean;
   isWbPickerActive: boolean;
   isHslPickerActive: boolean;
   hslTargetColor: string | null;
@@ -75,6 +76,7 @@ interface EditorState {
   isAIConnectorConnected: boolean;
   hasRenderedFirstFrame: boolean;
   patchesSentToBackend: Set<string>;
+  aiDenoiseProgress: Record<string, number>;
 
   // Clipboard
   copiedSectionAdjustments: any | null;
@@ -123,6 +125,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   overlayMode: 'thirds',
   overlayRotation: 0,
   isStraightenActive: false,
+  isGuidedPerspectiveActive: false,
   isWbPickerActive: false,
   isHslPickerActive: false,
   hslTargetColor: null,
@@ -140,6 +143,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   maskOverlayVisible: true,
   hasRenderedFirstFrame: false,
   patchesSentToBackend: new Set<string>(),
+  aiDenoiseProgress: {},
 
   setEditor: (updater) => set((state) => (typeof updater === 'function' ? updater(state) : updater)),
 

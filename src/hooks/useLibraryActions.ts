@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
-import { Invokes, ImageFile, AlbumItem, Album, AlbumGroup } from '../components/ui/AppProperties';
+import { Invokes, ImageFile, ImageFlag, AlbumItem, Album, AlbumGroup } from '../components/ui/AppProperties';
 import { globalImageCache } from '../utils/ImageLRUCache';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { computeSortedLibrary } from './useSortedLibrary';
@@ -33,12 +33,58 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
         pathsToRate.forEach((p) => {
           newRatings[p] = finalRating;
         });
-        return { imageRatings: newRatings };
+        return {
+          imageRatings: newRatings,
+          // 打分后清除 Reject 标记（与后端行为保持一致）
+          imageList: state.imageList.map((image: ImageFile) =>
+            finalRating > 0 && image.flag === ImageFlag.Reject && pathsToRate.includes(image.path)
+              ? { ...image, flag: null }
+              : image,
+          ),
+        };
       });
     } catch (err) {
       toast.error(i18n.t('toasts.ratingFailed', { error: String(err) }));
     }
   }, []);
+
+  const handleSetFlag = useCallback(async (flag: ImageFlag | null, paths?: string[]) => {
+    const { multiSelectedPaths, imageList, setLibrary } = useLibraryStore.getState();
+    const { selectedImage } = useEditorStore.getState();
+
+    const selectedPaths =
+      paths || (multiSelectedPaths.length > 0 ? multiSelectedPaths : selectedImage ? [selectedImage.path] : []);
+    if (selectedPaths.length === 0) return;
+
+    const groupingMode = useSettingsStore.getState().appSettings?.grouping ?? 'off';
+    const pathsToUpdate = expandGroupedPaths(imageList, selectedPaths, groupingMode);
+
+    try {
+      await invoke(Invokes.SetFlagForPaths, { paths: pathsToUpdate, flag });
+      setLibrary((state) => ({
+        imageList: state.imageList.map((image: ImageFile) =>
+          pathsToUpdate.includes(image.path) && image.flag !== flag ? { ...image, flag } : image,
+        ),
+      }));
+    } catch (err) {
+      toast.error(i18n.t('toasts.flagFailed', { error: String(err) }));
+    }
+  }, []);
+
+  const handleToggleFlag = useCallback(
+    (flag: ImageFlag, paths?: string[]) => {
+      const { multiSelectedPaths, imageList } = useLibraryStore.getState();
+      const { selectedImage } = useEditorStore.getState();
+
+      const selectedPaths =
+        paths || (multiSelectedPaths.length > 0 ? multiSelectedPaths : selectedImage ? [selectedImage.path] : []);
+      if (selectedPaths.length === 0) return;
+
+      const hasFlag = imageList.find((img: ImageFile) => img.path === selectedPaths[0])?.flag === flag;
+      handleSetFlag(hasFlag ? null : flag, selectedPaths);
+    },
+    [handleSetFlag],
+  );
 
   const handleSetColorLabel = useCallback(async (color: string | null, paths?: string[]) => {
     const { multiSelectedPaths, libraryActivePath, imageList, setLibrary } = useLibraryStore.getState();
@@ -455,6 +501,8 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
   return {
     handleRate,
     handleSetColorLabel,
+    handleSetFlag,
+    handleToggleFlag,
     handleTagsChanged,
     handleUpdateExif,
     handleClearSelection,
