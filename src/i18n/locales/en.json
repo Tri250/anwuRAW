@@ -242,6 +242,11 @@
       "bokehShape": "Bokeh Shape",
       "creative": "Creative",
       "feather": "Feather",
+      "fog": "Fog",
+      "fogDensity": "Density",
+      "fogHeight": "Ground Fog",
+      "fogStart": "Start",
+      "fogVariation": "Variation",
       "glow": "Glow",
       "grain": "Grain",
       "halation": "Halation",
@@ -250,9 +255,34 @@
       "lightFlares": "Light Flares",
       "lut": "LUT",
       "midpoint": "Midpoint",
+      "relight": "Relight",
+      "relightAddLight": "Add Light",
+      "relightAmbient": "Ambient",
+      "relightAngle": "Angle",
+      "relightColor": "Light Color",
+      "relightCone": "Cone",
+      "relightDepth": "Depth",
+      "relightDuplicateLight": "Duplicate Light",
+      "relightElevation": "Elevation",
+      "relightFalloff": "Falloff",
+      "relightHint": "Add or select a light, then click or drag on the image to position it.",
+      "relightIntensity": "Intensity",
+      "relightLight": "Light {{index}}",
+      "relightRemoveLight": "Remove Light",
+      "relightShadowSoftness": "Shadow Softness",
+      "relightShadows": "Shadows",
+      "relightShine": "Shine",
+      "relightSoftness": "Softness",
+      "relightType": "Light Type",
+      "relightTypes": {
+        "directional": "Directional",
+        "point": "Point",
+        "spot": "Spot"
+      },
       "roughness": "Roughness",
       "roundness": "Roundness",
       "size": "Size",
+      "spatial": "Spatial",
       "vignette": "Vignette"
     },
     "splitToning": {
@@ -575,7 +605,8 @@
         "selectionPropertiesTitle": "Selection Properties",
         "useBasicInpaint": "Use basic inpainting"
       },
-      "touchUpTitle": "Touch Up"
+      "touchUpTitle": "Touch Up",
+      "generatingNormalMap": "Calculating AI Normal Map..."
     },
     "crop": {
       "aspectRatioHeading": "Aspect Ratio",
@@ -1019,7 +1050,9 @@
     },
     "file": {
       "quality": "Quality",
-      "qualityLossless": "Quality (Lossless)"
+      "qualityLossless": "Quality (Lossless)",
+      "resolution": "Resolution",
+      "dpi": "DPI"
     },
     "labels": {
       "image": "Image",
@@ -2201,7 +2234,8 @@
     "renameFolderFailed": "Failed to rename folder: {{error}}",
     "restoreSessionFailed": "Failed to restore session. A folder may have been moved or deleted.",
     "saveChangesFailed": "Failed to save changes: {{error}}",
-    "unsupportedFormat": "Unsupported file format(s) detected: {{formats}}"
+    "unsupportedFormat": "Unsupported file format(s) detected: {{formats}}",
+    "normalMapFailed": "Failed to generate normal map: {{error}}"
   },
   "ui": {
     "bottomBar": {

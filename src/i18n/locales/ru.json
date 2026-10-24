@@ -242,6 +242,11 @@
       "bokehShape": "Форма боке",
       "creative": "Творчество",
       "feather": "Растушевка",
+      "fog": "Туман",
+      "fogDensity": "Плотность",
+      "fogHeight": "Приземный туман",
+      "fogStart": "Начало",
+      "fogVariation": "Неоднородность",
       "glow": "Свечение",
       "grain": "Зернистость",
       "halation": "Ореол",
@@ -250,9 +255,34 @@
       "lightFlares": "Блики",
       "lut": "LUT",
       "midpoint": "Средняя точка",
+      "relight": "Переосвещение",
+      "relightAddLight": "Добавить свет",
+      "relightAmbient": "Окружающий свет",
+      "relightAngle": "Угол",
+      "relightColor": "Цвет света",
+      "relightCone": "Конус",
+      "relightDepth": "Глубина",
+      "relightDuplicateLight": "Дублировать свет",
+      "relightElevation": "Высота",
+      "relightFalloff": "Затухание",
+      "relightHint": "Добавьте или выберите источник света, затем щёлкните или перетащите на изображении, чтобы разместить его.",
+      "relightIntensity": "Интенсивность",
+      "relightLight": "Свет {{index}}",
+      "relightRemoveLight": "Удалить свет",
+      "relightShadowSoftness": "Мягкость теней",
+      "relightShadows": "Тени",
+      "relightShine": "Блеск",
+      "relightSoftness": "Мягкость",
+      "relightType": "Тип света",
+      "relightTypes": {
+        "directional": "Направленный",
+        "point": "Точечный",
+        "spot": "Прожектор"
+      },
       "roughness": "Шероховатость",
       "roundness": "Округлость",
       "size": "Размер",
+      "spatial": "Пространственные",
       "vignette": "Виньетирование"
     },
     "splitToning": {
@@ -610,7 +640,8 @@
         "useBasicInpaint": "Использовать простое восстановление",
         "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
-      "touchUpTitle": "Ретушь"
+      "touchUpTitle": "Ретушь",
+      "generatingNormalMap": "Вычисление ИИ-карты нормалей..."
     },
     "crop": {
       "aspectRatioHeading": "Соотношение сторон",
@@ -1058,7 +1089,9 @@
     },
     "file": {
       "quality": "Качество",
-      "qualityLossless": "Качество (без потерь)"
+      "qualityLossless": "Качество (без потерь)",
+      "resolution": "Разрешение",
+      "dpi": "DPI"
     },
     "labels": {
       "image": "Изображение",
@@ -2257,7 +2290,8 @@
     "renameFolderFailed": "Не удалось переименовать папку: {{error}}",
     "restoreSessionFailed": "Не удалось восстановить сеанс. Возможно, папка была перемещена или удалена.",
     "saveChangesFailed": "Не удалось сохранить изменения: {{error}}",
-    "unsupportedFormat": "Обнаружены неподдерживаемые форматы файлов: {{formats}}"
+    "unsupportedFormat": "Обнаружены неподдерживаемые форматы файлов: {{formats}}",
+    "normalMapFailed": "Не удалось создать карту нормалей: {{error}}"
   },
   "ui": {
     "bottomBar": {

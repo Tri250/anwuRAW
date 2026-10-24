@@ -6,6 +6,7 @@ use image::{DynamicImage, GenericImageView, GrayImage, ImageFormat, Luma, Rgba, 
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
 use std::f32::consts::PI;
 use std::hash::{Hash, Hasher};
@@ -1558,6 +1559,14 @@ pub fn generate_mask_overlay(
     } else {
         Ok("".to_string())
     }
+}
+
+pub fn build_full_source_image(base_image: &DynamicImage, is_raw: bool) -> std::borrow::Cow<'_, DynamicImage> {
+    let mut image = Cow::Borrowed(base_image);
+    if is_raw {
+        crate::image_processing::apply_cpu_default_raw_processing(image.to_mut());
+    }
+    image
 }
 
 pub fn resolve_warped_image_for_masks(

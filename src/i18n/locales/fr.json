@@ -242,6 +242,11 @@
       "bokehShape": "Forme du bokeh",
       "creative": "Créatif",
       "feather": "Contour progressif",
+      "fog": "Brouillard",
+      "fogDensity": "Densité",
+      "fogHeight": "Brouillard au sol",
+      "fogStart": "Début",
+      "fogVariation": "Variation",
       "glow": "Lueur",
       "grain": "Grain",
       "halation": "Halo",
@@ -250,9 +255,34 @@
       "lightFlares": "Reflets",
       "lut": "LUT",
       "midpoint": "Point médian",
+      "relight": "Rééclairage",
+      "relightAddLight": "Ajouter une lumière",
+      "relightAmbient": "Ambiance",
+      "relightAngle": "Angle",
+      "relightColor": "Couleur de la lumière",
+      "relightCone": "Cône",
+      "relightDepth": "Profondeur",
+      "relightDuplicateLight": "Dupliquer la lumière",
+      "relightElevation": "Élévation",
+      "relightFalloff": "Atténuation",
+      "relightHint": "Ajoutez ou sélectionnez une lumière, puis cliquez ou faites glisser sur l'image pour la positionner.",
+      "relightIntensity": "Intensité",
+      "relightLight": "Lumière {{index}}",
+      "relightRemoveLight": "Supprimer la lumière",
+      "relightShadowSoftness": "Douceur des ombres",
+      "relightShadows": "Ombres",
+      "relightShine": "Brillance",
+      "relightSoftness": "Douceur",
+      "relightType": "Type de lumière",
+      "relightTypes": {
+        "directional": "Directionnelle",
+        "point": "Ponctuelle",
+        "spot": "Projecteur"
+      },
       "roughness": "Rugosité",
       "roundness": "Arrondi",
       "size": "Taille",
+      "spatial": "Spatial",
       "vignette": "Vignettage"
     },
     "splitToning": {
@@ -590,7 +620,8 @@
         "useBasicInpaint": "Utiliser l'inpainting simple",
         "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
-      "touchUpTitle": "Retouches"
+      "touchUpTitle": "Retouches",
+      "generatingNormalMap": "Calcul de la carte des normales IA..."
     },
     "crop": {
       "aspectRatioHeading": "Rapport d'aspect",
@@ -1036,7 +1067,9 @@
     },
     "file": {
       "quality": "Qualité",
-      "qualityLossless": "Qualité (Sans perte)"
+      "qualityLossless": "Qualité (Sans perte)",
+      "resolution": "Résolution",
+      "dpi": "PPP"
     },
     "labels": {
       "image": "Image",
@@ -2218,7 +2251,8 @@
     "renameFolderFailed": "Échec du renommage du dossier : {{error}}",
     "restoreSessionFailed": "Échec de la restauration de session. Un dossier a peut-être été déplacé ou supprimé.",
     "saveChangesFailed": "Échec de l’enregistrement des modifications : {{error}}",
-    "unsupportedFormat": "Formats de fichiers non pris en charge détectés : {{formats}}"
+    "unsupportedFormat": "Formats de fichiers non pris en charge détectés : {{formats}}",
+    "normalMapFailed": "Échec de la génération de la carte de normales : {{error}}"
   },
   "ui": {
     "bottomBar": {

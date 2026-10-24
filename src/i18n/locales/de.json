@@ -242,6 +242,11 @@
       "bokehShape": "Bokeh-Form",
       "creative": "Kreativ",
       "feather": "Weiche Kante",
+      "fog": "Nebel",
+      "fogDensity": "Dichte",
+      "fogHeight": "Bodennebel",
+      "fogStart": "Beginn",
+      "fogVariation": "Variation",
       "glow": "Glühen",
       "grain": "Körnung",
       "halation": "Lichthof",
@@ -250,9 +255,34 @@
       "lightFlares": "Blendenflecke",
       "lut": "LUT",
       "midpoint": "Mittelpunkt",
+      "relight": "Neu beleuchten",
+      "relightAddLight": "Licht hinzufügen",
+      "relightAmbient": "Umgebungslicht",
+      "relightAngle": "Winkel",
+      "relightColor": "Lichtfarbe",
+      "relightCone": "Kegel",
+      "relightDepth": "Tiefe",
+      "relightDuplicateLight": "Licht duplizieren",
+      "relightElevation": "Höhe",
+      "relightFalloff": "Abfall",
+      "relightHint": "Füge ein Licht hinzu oder wähle eines aus und klicke oder ziehe im Bild, um es zu platzieren.",
+      "relightIntensity": "Intensität",
+      "relightLight": "Licht {{index}}",
+      "relightRemoveLight": "Licht entfernen",
+      "relightShadowSoftness": "Schattenweichheit",
+      "relightShadows": "Schatten",
+      "relightShine": "Glanz",
+      "relightSoftness": "Weichheit",
+      "relightType": "Lichttyp",
+      "relightTypes": {
+        "directional": "Gerichtet",
+        "point": "Punkt",
+        "spot": "Spot"
+      },
       "roughness": "Rauheit",
       "roundness": "Rundheit",
       "size": "Größe",
+      "spatial": "Räumlich",
       "vignette": "Vignettierung"
     },
     "splitToning": {
@@ -570,7 +600,8 @@
         "useBasicInpaint": "Einfaches Reparieren verwenden",
         "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
-      "touchUpTitle": "Ausbessern"
+      "touchUpTitle": "Ausbessern",
+      "generatingNormalMap": "KI-Normalenkarte wird berechnet..."
     },
     "crop": {
       "aspectRatioHeading": "Seitenverhältnis",
@@ -1014,7 +1045,9 @@
     },
     "file": {
       "quality": "Qualität",
-      "qualityLossless": "Qualität (Verlustfrei)"
+      "qualityLossless": "Qualität (Verlustfrei)",
+      "resolution": "Auflösung",
+      "dpi": "DPI"
     },
     "labels": {
       "image": "Bild",
@@ -2185,7 +2218,8 @@
     "renameFolderFailed": "Fehler beim Umbenennen des Ordners: {{error}}",
     "restoreSessionFailed": "Sitzung konnte nicht wiederhergestellt werden. Ein Ordner wurde möglicherweise verschoben oder gelöscht.",
     "saveChangesFailed": "Fehler beim Speichern der Änderungen: {{error}}",
-    "unsupportedFormat": "Nicht unterstützte Dateiformate erkannt: {{formats}}"
+    "unsupportedFormat": "Nicht unterstützte Dateiformate erkannt: {{formats}}",
+    "normalMapFailed": "Fehler beim Erzeugen der Normalmap: {{error}}"
   },
   "ui": {
     "bottomBar": {

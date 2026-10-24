@@ -6,7 +6,7 @@ import { PercentCrop, Crop } from 'react-image-crop';
 import { Stamp, Bandage, Spline, BrushCleaning } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'react-toastify';
-import { Adjustments, AiPatch, Coord, GuideLine, GuideOrientation, MaskContainer } from '../../../utils/adjustments';
+import { Adjustments, AiPatch, Coord, GuideLine, GuideOrientation, MaskContainer, RelightLight, createRelightLight } from '../../../utils/adjustments';
 import {
   D65_AS_SHOT,
   getWhiteBalanceMode,
@@ -21,6 +21,10 @@ import { useOsPlatform } from '../../../hooks/useOsPlatform';
 import { useTranslation } from 'react-i18next';
 import type { OverlayMode } from '../right/CropPanel';
 import CompositionOverlays from './overlays/CompositionOverlays';
+import CenterMarkerShape, { CENTER_MARKERS } from './overlays/CenterMarkerShape';
+import RelightLightShape, { RelightBasis } from './overlays/RelightLightShape';
+import { useEditorStore } from '../../../store/useEditorStore';
+import { useUIStore } from '../../../store/useUIStore';
 import CloneSourceHandle from './CloneSourceHandle';
 import { calculateStraightenAngle } from '../../../utils/cropUtils';
 import { rgbToHsl, hueToColorKey, median, srgbToLinear } from '../../../utils/colorUtils';
@@ -1717,6 +1721,71 @@ const ImageCanvas = memo(
     const isLiquifyActive = isAiEditing && activeSubMask?.type === Mask.Liquify;
     const isRetouchActive = isAiEditing && activeSubMask?.type === Mask.Retouch;
 
+    // 画布中心点标记（暗角 / Centré）：对应面板分区展开时显示，可拖拽、双击重置
+    const activeCenterMarker = useEditorStore((state) => state.activeCenterMarker);
+    const setEditor = useEditorStore((state) => state.setEditor);
+    // 2.5D 重打光：灯光位置/方向交互（与 centerMarker 同类画布叠加层）
+    const isRelightPickerActive = useEditorStore((state) => state.isRelightPickerActive);
+    const activeRelightLightId = useEditorStore((state) => state.activeRelightLightId);
+    const isRelightToolOpen = useUIStore(
+      (state) => state.uiVisibility.rightPanel && !!state.collapsibleSectionsState.effects,
+    );
+    // handleStart 定义先于 relight 映射函数（依赖 mapScreenToUv），通过 ref 延迟访问
+    const relightApiRef = useRef<{ add: (pos: Coord) => void; move: (id: string, pos: Coord) => void } | null>(null);
+    const isCenterMarkerSectionOpen = useUIStore(
+      (state) =>
+        !!activeCenterMarker &&
+        state.uiVisibility.rightPanel &&
+        !!state.collapsibleSectionsState[CENTER_MARKERS[activeCenterMarker].section],
+    );
+    const centerMarkerConfig = activeCenterMarker ? CENTER_MARKERS[activeCenterMarker] : null;
+    const showCenterMarker =
+      !!centerMarkerConfig && isCenterMarkerSectionOpen && !isMasking && !isAiEditing && !isCropping && !showOriginal;
+    const centerMarkerPos = useMemo((): Coord => {
+      if (!centerMarkerConfig) return { x: 0, y: 0 };
+      const [keyX, keyY] = centerMarkerConfig.keys;
+      return {
+        x: ((adjustments[keyX] as number | undefined) ?? 0.5) * imageRenderSize.width,
+        y: ((adjustments[keyY] as number | undefined) ?? 0.5) * imageRenderSize.height,
+      };
+    }, [centerMarkerConfig, adjustments, imageRenderSize.width, imageRenderSize.height]);
+    const setCenterMarker = useCallback(
+      (pos: Coord | null) => {
+        if (!centerMarkerConfig || !imageRenderSize.width || !imageRenderSize.height) return;
+        const [keyX, keyY] = centerMarkerConfig.keys;
+        const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+        setAdjustments((prev: Adjustments) => ({
+          ...prev,
+          [keyX]: pos ? clamp01(pos.x / imageRenderSize.width) : 0.5,
+          [keyY]: pos ? clamp01(pos.y / imageRenderSize.height) : 0.5,
+        }));
+      },
+      [centerMarkerConfig, imageRenderSize.width, imageRenderSize.height, setAdjustments],
+    );
+
+    useEffect(() => {
+      if (activeCenterMarker && !isCenterMarkerSectionOpen) {
+        setEditor({ activeCenterMarker: null });
+      }
+    }, [activeCenterMarker, isCenterMarkerSectionOpen, setEditor]);
+
+    useEffect(() => {
+      if (!activeCenterMarker) return;
+
+      const handlePointerDown = (e: PointerEvent) => {
+        const target = e.target as HTMLElement;
+        if (
+          target.closest('.konvajs-content') ||
+          target.closest(`[data-center-marker-controls="${activeCenterMarker}"]`)
+        )
+          return;
+        setEditor({ activeCenterMarker: null });
+      };
+
+      window.addEventListener('pointerdown', handlePointerDown, true);
+      return () => window.removeEventListener('pointerdown', handlePointerDown, true);
+    }, [activeCenterMarker, setEditor]);
+
     const isDirectPatchActive =
       (isMasking || isAiEditing) &&
       (activeSubMask?.type === Mask.Clone ||
@@ -2159,6 +2228,28 @@ const ImageCanvas = memo(
           return;
         }
 
+        if (isRelightPickerActive) {
+          if (e.target !== e.target.getStage()) return;
+          const pos = getCanvasPointer(e.target.getStage());
+          if (
+            !pos ||
+            pos.x < 0 ||
+            pos.y < 0 ||
+            pos.x > imageRenderSize.width ||
+            pos.y > imageRenderSize.height
+          )
+            return;
+          const activeLight = adjustments.relightLights?.find((l) => l.id === activeRelightLightId);
+          if (activeLight) {
+            if (activeLight.type !== 'directional') {
+              relightApiRef.current?.move(activeLight.id, pos);
+            }
+          } else {
+            relightApiRef.current?.add(pos);
+          }
+          return;
+        }
+
         if (isParametricActive && activeSubMask) {
           const pos = getCanvasPointer(e.target.getStage());
           if (!pos) return;
@@ -2356,6 +2447,8 @@ const ImageCanvas = memo(
       [
         isWbPickerActive,
         handleWbClick,
+        isRelightPickerActive,
+        activeRelightLightId,
         isInitialDrawing,
         isBrushActive,
         isCloneOrHealActive,
@@ -3181,6 +3274,117 @@ const ImageCanvas = memo(
       [invH, uncroppedImageRenderSize, selectedImage, adjustments, liveRotation],
     );
 
+    // ---- 2.5D 重打光：屏幕坐标 <-> source-space UV 映射与灯光编辑 ----
+    const mapCanvasPointToUv = useCallback(
+      (p: Coord): Coord => {
+        if (
+          !uncroppedImageRenderSize?.width ||
+          !uncroppedImageRenderSize?.height ||
+          !effectiveImageDimensions.width ||
+          !effectiveImageDimensions.height
+        ) {
+          return { x: 0, y: 0 };
+        }
+        const scale = imageRenderSize.scale || 1;
+        const stageX = ((p.x / scale + cropX) / effectiveImageDimensions.width) * uncroppedImageRenderSize.width;
+        const stageY = ((p.y / scale + cropY) / effectiveImageDimensions.height) * uncroppedImageRenderSize.height;
+        return mapScreenToUv(stageX, stageY);
+      },
+      [uncroppedImageRenderSize, effectiveImageDimensions, imageRenderSize.scale, cropX, cropY, mapScreenToUv],
+    );
+
+    const mapRelightUvToCanvas = useCallback(
+      (uv: Coord): Coord => {
+        if (
+          !uncroppedImageRenderSize?.width ||
+          !uncroppedImageRenderSize?.height ||
+          !effectiveImageDimensions.width ||
+          !effectiveImageDimensions.height
+        ) {
+          return { x: 0, y: 0 };
+        }
+        const scale = imageRenderSize.scale || 1;
+        const stage = mapUvToScreen(uv);
+        return {
+          x: ((stage.x / uncroppedImageRenderSize.width) * effectiveImageDimensions.width - cropX) * scale,
+          y: ((stage.y / uncroppedImageRenderSize.height) * effectiveImageDimensions.height - cropY) * scale,
+        };
+      },
+      [uncroppedImageRenderSize, effectiveImageDimensions, imageRenderSize.scale, cropX, cropY, mapUvToScreen],
+    );
+
+    const addRelightLight = useCallback(
+      (pos: Coord) => {
+        const uv = mapCanvasPointToUv(pos);
+        const light = createRelightLight(uv.x, uv.y);
+        setAdjustments((prev: Adjustments) => ({ ...prev, relightLights: [...(prev.relightLights || []), light] }));
+        setEditor({ activeRelightLightId: light.id });
+      },
+      [mapCanvasPointToUv, setAdjustments, setEditor],
+    );
+
+    const moveRelightLight = useCallback(
+      (id: string, pos: Coord) => {
+        const uv = mapCanvasPointToUv(pos);
+        setAdjustments((prev: Adjustments) => ({
+          ...prev,
+          relightLights: (prev.relightLights || []).map((l: RelightLight) =>
+            l.id === id ? { ...l, x: uv.x, y: uv.y } : l,
+          ),
+        }));
+      },
+      [mapCanvasPointToUv, setAdjustments],
+    );
+
+    const aimRelightLight = useCallback(
+      (id: string, angle: number, elevation: number) => {
+        setAdjustments((prev: Adjustments) => ({
+          ...prev,
+          relightLights: (prev.relightLights || []).map((l: RelightLight) =>
+            l.id === id ? { ...l, angle, elevation } : l,
+          ),
+        }));
+      },
+      [setAdjustments],
+    );
+
+    const relightBasis = useMemo((): RelightBasis => {
+      const width = selectedImage?.width || 1920;
+      const height = selectedImage?.height || 1080;
+      const longSide = Math.max(width, height);
+      const step = 0.01;
+      const origin = mapRelightUvToCanvas({ x: 0.5, y: 0.5 });
+      const px = mapRelightUvToCanvas({ x: 0.5 + (step * longSide) / width, y: 0.5 });
+      const py = mapRelightUvToCanvas({ x: 0.5, y: 0.5 + (step * longSide) / height });
+      return {
+        ex: { x: (px.x - origin.x) / step, y: (px.y - origin.y) / step },
+        ey: { x: (py.x - origin.x) / step, y: (py.y - origin.y) / step },
+      };
+    }, [mapRelightUvToCanvas, selectedImage?.width, selectedImage?.height]);
+
+    const showRelightLights = isRelightPickerActive && isRelightToolOpen;
+
+    useEffect(() => {
+      if (isRelightPickerActive && !isRelightToolOpen) {
+        setEditor({ isRelightPickerActive: false });
+      }
+    }, [isRelightPickerActive, isRelightToolOpen, setEditor]);
+
+    useEffect(() => {
+      if (!isRelightPickerActive) return;
+
+      const handlePointerDown = (e: PointerEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('.konvajs-content') || target.closest('[data-relight-lights]')) return;
+        setEditor({ isRelightPickerActive: false });
+      };
+
+      window.addEventListener('pointerdown', handlePointerDown, true);
+      return () => window.removeEventListener('pointerdown', handlePointerDown, true);
+    }, [isRelightPickerActive, setEditor]);
+
+    relightApiRef.current = { add: addRelightLight, move: moveRelightLight };
+
     const getCropDimensions = () => {
       if (!crop || !uncroppedImageRenderSize?.width || !uncroppedImageRenderSize?.height) {
         return { width: 0, height: 0 };
@@ -3193,6 +3397,7 @@ const ImageCanvas = memo(
     };
 
     const effectiveCursor = useMemo(() => {
+      if (isRelightPickerActive) return 'crosshair';
       if (isWbPickerActive) return 'crosshair';
       if (isParametricActive) return 'crosshair';
       if (isInitialDrawing) return 'crosshair';
@@ -3218,6 +3423,7 @@ const ImageCanvas = memo(
 
       return cursorStyle;
     }, [
+      isRelightPickerActive,
       isWbPickerActive,
       isInitialDrawing,
       isBrushActive,
@@ -3453,7 +3659,7 @@ const ImageCanvas = memo(
             </div>
           </div>
 
-          {(isMasking || isAiEditing || isWbPickerActive) && (
+          {(isMasking || isAiEditing || isWbPickerActive || showRelightLights || showCenterMarker) && (
             <div
               data-mask-interactive=""
               style={{
@@ -3554,6 +3760,37 @@ const ImageCanvas = memo(
                           strokeWidth={2}
                           dash={[4, 4]}
                           listening={false}
+                        />
+                      )}
+                      {showRelightLights &&
+                        (adjustments.relightLights || []).map((light: RelightLight) => (
+                          <RelightLightShape
+                            key={light.id}
+                            light={light}
+                            pos={mapRelightUvToCanvas(light)}
+                            basis={relightBasis}
+                            zoomScale={effectiveZoomScale}
+                            isActive={light.id === activeRelightLightId}
+                            onSelect={() => setEditor({ activeRelightLightId: light.id })}
+                            onMove={(pos) => moveRelightLight(light.id, pos)}
+                            onAim={(angle, elevation) => aimRelightLight(light.id, angle, elevation)}
+                            onDragStateChange={(isDragging) => setEditor({ isSliderDragging: isDragging })}
+                            onHoverChange={setIsMaskHovered}
+                            onTouchInteraction={() => setIsMaskTouchInteracting(true)}
+                          />
+                        ))}
+                      {showCenterMarker && centerMarkerConfig && (
+                        <CenterMarkerShape
+                          pos={centerMarkerPos}
+                          imageWidth={imageRenderSize.width}
+                          imageHeight={imageRenderSize.height}
+                          {...centerMarkerConfig.getContour(adjustments)}
+                          zoomScale={effectiveZoomScale}
+                          onMove={setCenterMarker}
+                          onReset={() => setCenterMarker(null)}
+                          onDragStateChange={(isDragging) => setEditor({ isSliderDragging: isDragging })}
+                          onHoverChange={setIsMaskHovered}
+                          onTouchInteraction={() => setIsMaskTouchInteracting(true)}
                         />
                       )}
                       {isBrushActive &&

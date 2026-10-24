@@ -52,7 +52,7 @@ interface ColorSwatchProps {
   onClick: (name: string) => void;
 }
 
-const ColorSwatch = ({ color, name, isActive, ariaLabel, onClick }: ColorSwatchProps) => {
+export const ColorSwatch = ({ color, name, isActive, ariaLabel, onClick }: ColorSwatchProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -502,7 +502,8 @@ export default function ColorPanel({
 
   // Kelvin 模式：色温/色调以绝对值（2000–50000K / ±150）呈现，存入 adjustments.whiteBalance；
   // 相对模式保持原有 -100..100 滑块，若存在绝对白平衡则换算回相对值显示。
-  const kelvinAsShot = !isForMask && getWhiteBalanceMode(appSettings) === WhiteBalanceMode.Kelvin ? asShotWhiteBalance : undefined;
+  const kelvinAsShot =
+    !isForMask && getWhiteBalanceMode(appSettings) === WhiteBalanceMode.Kelvin ? asShotWhiteBalance : undefined;
   const isKelvinMode = !!kelvinAsShot;
   const displayedWhiteBalance = kelvinAsShot
     ? resolveWhiteBalance(kelvinAsShot, adjustments)
@@ -534,170 +535,182 @@ export default function ColorPanel({
 
   return (
     <div className="space-y-4">
-      <div className="p-2 bg-bg-tertiary rounded-md">
-        <div className="flex justify-between items-center mb-2">
-          <Text variant={TextVariants.heading}>{t('adjustments.color.whiteBalance')}</Text>
-          {!isForMask && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={toggleWhiteBalanceMode}
-                className={`w-6 h-6 flex items-center justify-center rounded-md text-xs font-semibold transition-colors ${
-                  isKelvinMode ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
-                }`}
-                data-tooltip={t('adjustments.color.kelvinModeTooltip')}
-              >
-                K
-              </button>
-              {toggleWbPicker && (
+      {adjustmentVisibility.whiteBalance !== false && (
+        <div className="p-2 bg-bg-tertiary rounded-md">
+          <div className="flex justify-between items-center mb-2">
+            <Text variant={TextVariants.heading}>{t('adjustments.color.whiteBalance')}</Text>
+            {!isForMask && (
+              <div className="flex items-center gap-1">
                 <button
-                  onClick={toggleWbPicker}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    isWbPickerActive ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
+                  onClick={toggleWhiteBalanceMode}
+                  className={`w-6 h-6 flex items-center justify-center rounded-md text-xs font-semibold transition-colors ${
+                    isKelvinMode ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
                   }`}
-                  data-tooltip={t('adjustments.color.wbPickerTooltip')}
+                  data-tooltip={t('adjustments.color.kelvinModeTooltip')}
                 >
-                  <Pipette size={16} />
+                  K
                 </button>
+                {toggleWbPicker && (
+                  <button
+                    onClick={toggleWbPicker}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      isWbPickerActive ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
+                    }`}
+                    data-tooltip={t('adjustments.color.wbPickerTooltip')}
+                  >
+                    <Pipette size={16} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          <Slider
+            key={isKelvinMode ? 'kelvinTemperature' : 'temperature'}
+            defaultValue={kelvinAsShot?.temperature}
+            label={t('adjustments.color.temperature')}
+            max={kelvinAsShot ? MAX_TEMPERATURE : RELATIVE_RANGE}
+            min={kelvinAsShot ? MIN_TEMPERATURE : -RELATIVE_RANGE}
+            onChange={(e: SliderChangeEvent) => handleWhiteBalanceChange('temperature', e.target.value)}
+            scale={kelvinAsShot ? kelvinSliderScale : undefined}
+            step={kelvinAsShot ? 50 : 1}
+            suffix={kelvinAsShot ? 'K' : undefined}
+            value={displayedWhiteBalance.temperature}
+            trackClassName="temperature-gradient-track"
+            onDragStateChange={onDragStateChange}
+          />
+          <Slider
+            key={isKelvinMode ? 'kelvinTint' : 'tint'}
+            defaultValue={kelvinAsShot?.tint}
+            label={t('adjustments.color.tint')}
+            max={tintRange}
+            min={-tintRange}
+            onChange={(e: SliderChangeEvent) => handleWhiteBalanceChange('tint', e.target.value)}
+            step={1}
+            value={displayedWhiteBalance.tint}
+            trackClassName="tint-gradient-track"
+            onDragStateChange={onDragStateChange}
+          />
+        </div>
+      )}
+
+      {adjustmentVisibility.colorPresence !== false && (
+        <div className="p-2 bg-bg-tertiary rounded-md">
+          <Text variant={TextVariants.heading} className="mb-2">
+            {t('adjustments.color.presence')}
+          </Text>
+          <Slider
+            label={t('adjustments.color.vibrance')}
+            max={100}
+            min={-100}
+            onChange={(e: any) => handleAdjustmentChange(ColorAdjustment.Vibrance, e.target.value)}
+            step={1}
+            value={adjustments.vibrance || 0}
+            onDragStateChange={onDragStateChange}
+          />
+          <Slider
+            label={t('adjustments.color.saturation')}
+            max={100}
+            min={-100}
+            onChange={(e: any) => handleAdjustmentChange(ColorAdjustment.Saturation, e.target.value)}
+            step={1}
+            value={adjustments.saturation || 0}
+            onDragStateChange={onDragStateChange}
+          />
+        </div>
+      )}
+
+      {adjustmentVisibility.hue !== false && (
+        <div className="p-2 bg-bg-tertiary rounded-md">
+          <Text variant={TextVariants.heading} className="mb-2">
+            {isForMask ? t('adjustments.color.localHue') : t('adjustments.color.hue')}
+          </Text>
+          <Slider
+            label={t('adjustments.color.hue')}
+            max={180}
+            min={-180}
+            onChange={(e: any) => handleAdjustmentChange(ColorAdjustment.Hue, e.target.value)}
+            step={1}
+            value={adjustments.hue || 0}
+            trackClassName="hue-range-track"
+            onDragStateChange={onDragStateChange}
+          />
+        </div>
+      )}
+
+      {adjustmentVisibility.colorGrading !== false && (
+        <div className="p-2 bg-bg-tertiary rounded-md">
+          <Text variant={TextVariants.heading} className="mb-3">
+            {t('adjustments.color.colorGrading')}
+          </Text>
+          <ColorGradingPanel
+            adjustments={adjustments}
+            setAdjustments={setAdjustments}
+            appSettings={appSettings}
+            onDragStateChange={onDragStateChange}
+          />
+        </div>
+      )}
+
+      {adjustmentVisibility.colorMixer !== false && (
+        <div className="p-2 bg-bg-tertiary rounded-md">
+          <div className="flex justify-between items-center mb-3">
+            <Text variant={TextVariants.heading}>{t('adjustments.color.colorMixer')}</Text>
+            <button
+              onClick={toggleHslPicker}
+              className={`p-1.5 rounded-md transition-colors ${
+                isHslPickerActive ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
+              }`}
+              data-tooltip={t(
+                isHslPickerActive ? 'adjustments.color.hslPickActive' : 'adjustments.color.hslPickTooltip',
               )}
-            </div>
-          )}
+            >
+              <Pipette size={16} />
+            </button>
+          </div>
+          <div className="flex justify-between mb-4 px-1">
+            {HSL_COLORS.map(({ name, color, label }) => (
+              <ColorSwatch
+                color={color}
+                isActive={activeColor === name}
+                key={name}
+                name={name}
+                onClick={setActiveColor}
+                ariaLabel={t('adjustments.color.ariaSelectColor', { name: label })}
+              />
+            ))}
+          </div>
+          <Slider
+            label={t('adjustments.color.hue')}
+            max={100}
+            min={-100}
+            onChange={(e: any) => handleHslChange(ColorAdjustment.Hue, e.target.value)}
+            step={1}
+            value={currentHsl.hue}
+            trackClassName={hue_slider}
+            onDragStateChange={onDragStateChange}
+          />
+          <Slider
+            label={t('adjustments.color.saturation')}
+            max={100}
+            min={-100}
+            onChange={(e: any) => handleHslChange(ColorAdjustment.Saturation, e.target.value)}
+            step={1}
+            value={currentHsl.saturation}
+            trackClassName={saturation_slider}
+            onDragStateChange={onDragStateChange}
+          />
+          <Slider
+            label={t('adjustments.color.luminance')}
+            max={100}
+            min={-100}
+            onChange={(e: any) => handleHslChange(ColorAdjustment.Luminance, e.target.value)}
+            step={1}
+            value={currentHsl.luminance}
+            trackClassName={luminance_slider}
+            onDragStateChange={onDragStateChange}
+          />
         </div>
-        <Slider
-          key={isKelvinMode ? 'kelvinTemperature' : 'temperature'}
-          defaultValue={kelvinAsShot?.temperature}
-          label={t('adjustments.color.temperature')}
-          max={kelvinAsShot ? MAX_TEMPERATURE : RELATIVE_RANGE}
-          min={kelvinAsShot ? MIN_TEMPERATURE : -RELATIVE_RANGE}
-          onChange={(e: SliderChangeEvent) => handleWhiteBalanceChange('temperature', e.target.value)}
-          scale={kelvinAsShot ? kelvinSliderScale : undefined}
-          step={kelvinAsShot ? 50 : 1}
-          suffix={kelvinAsShot ? 'K' : undefined}
-          value={displayedWhiteBalance.temperature}
-          trackClassName="temperature-gradient-track"
-          onDragStateChange={onDragStateChange}
-        />
-        <Slider
-          key={isKelvinMode ? 'kelvinTint' : 'tint'}
-          defaultValue={kelvinAsShot?.tint}
-          label={t('adjustments.color.tint')}
-          max={tintRange}
-          min={-tintRange}
-          onChange={(e: SliderChangeEvent) => handleWhiteBalanceChange('tint', e.target.value)}
-          step={1}
-          value={displayedWhiteBalance.tint}
-          trackClassName="tint-gradient-track"
-          onDragStateChange={onDragStateChange}
-        />
-      </div>
-
-      <div className="p-2 bg-bg-tertiary rounded-md">
-        <Text variant={TextVariants.heading} className="mb-2">
-          {t('adjustments.color.presence')}
-        </Text>
-        <Slider
-          label={t('adjustments.color.vibrance')}
-          max={100}
-          min={-100}
-          onChange={(e: any) => handleAdjustmentChange(ColorAdjustment.Vibrance, e.target.value)}
-          step={1}
-          value={adjustments.vibrance || 0}
-          onDragStateChange={onDragStateChange}
-        />
-        <Slider
-          label={t('adjustments.color.saturation')}
-          max={100}
-          min={-100}
-          onChange={(e: any) => handleAdjustmentChange(ColorAdjustment.Saturation, e.target.value)}
-          step={1}
-          value={adjustments.saturation || 0}
-          onDragStateChange={onDragStateChange}
-        />
-      </div>
-
-      <div className="p-2 bg-bg-tertiary rounded-md">
-        <Text variant={TextVariants.heading} className="mb-2">
-          {isForMask ? t('adjustments.color.localHue') : t('adjustments.color.hue')}
-        </Text>
-        <Slider
-          label={t('adjustments.color.hue')}
-          max={180}
-          min={-180}
-          onChange={(e: any) => handleAdjustmentChange(ColorAdjustment.Hue, e.target.value)}
-          step={1}
-          value={adjustments.hue || 0}
-          trackClassName="hue-range-track"
-          onDragStateChange={onDragStateChange}
-        />
-      </div>
-
-      <div className="p-2 bg-bg-tertiary rounded-md">
-        <Text variant={TextVariants.heading} className="mb-3">
-          {t('adjustments.color.colorGrading')}
-        </Text>
-        <ColorGradingPanel
-          adjustments={adjustments}
-          setAdjustments={setAdjustments}
-          appSettings={appSettings}
-          onDragStateChange={onDragStateChange}
-        />
-      </div>
-
-      <div className="p-2 bg-bg-tertiary rounded-md">
-        <div className="flex justify-between items-center mb-3">
-          <Text variant={TextVariants.heading}>{t('adjustments.color.colorMixer')}</Text>
-          <button
-            onClick={toggleHslPicker}
-            className={`p-1.5 rounded-md transition-colors ${
-              isHslPickerActive ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
-            }`}
-            data-tooltip={t(isHslPickerActive ? 'adjustments.color.hslPickActive' : 'adjustments.color.hslPickTooltip')}
-          >
-            <Pipette size={16} />
-          </button>
-        </div>
-        <div className="flex justify-between mb-4 px-1">
-          {HSL_COLORS.map(({ name, color, label }) => (
-            <ColorSwatch
-              color={color}
-              isActive={activeColor === name}
-              key={name}
-              name={name}
-              onClick={setActiveColor}
-              ariaLabel={t('adjustments.color.ariaSelectColor', { name: label })}
-            />
-          ))}
-        </div>
-        <Slider
-          label={t('adjustments.color.hue')}
-          max={100}
-          min={-100}
-          onChange={(e: any) => handleHslChange(ColorAdjustment.Hue, e.target.value)}
-          step={1}
-          value={currentHsl.hue}
-          trackClassName={hue_slider}
-          onDragStateChange={onDragStateChange}
-        />
-        <Slider
-          label={t('adjustments.color.saturation')}
-          max={100}
-          min={-100}
-          onChange={(e: any) => handleHslChange(ColorAdjustment.Saturation, e.target.value)}
-          step={1}
-          value={currentHsl.saturation}
-          trackClassName={saturation_slider}
-          onDragStateChange={onDragStateChange}
-        />
-        <Slider
-          label={t('adjustments.color.luminance')}
-          max={100}
-          min={-100}
-          onChange={(e: any) => handleHslChange(ColorAdjustment.Luminance, e.target.value)}
-          step={1}
-          value={currentHsl.luminance}
-          trackClassName={luminance_slider}
-          onDragStateChange={onDragStateChange}
-        />
-      </div>
+      )}
 
       {!isForMask && adjustmentVisibility.colorCalibration !== false && (
         <ColorCalibrationPanel

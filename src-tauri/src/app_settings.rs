@@ -384,10 +384,18 @@ pub fn default_tagging_shortcuts_option() -> Option<Vec<String>> {
 
 pub fn default_adjustment_visibility() -> HashMap<String, bool> {
     let mut map = HashMap::new();
+    map.insert("whiteBalance".to_string(), true);
+    map.insert("colorPresence".to_string(), true);
+    map.insert("hue".to_string(), true);
+    map.insert("colorGrading".to_string(), true);
+    map.insert("colorMixer".to_string(), true);
     map.insert("sharpening".to_string(), true);
     map.insert("presence".to_string(), true);
     map.insert("noiseReduction".to_string(), true);
     map.insert("chromaticAberration".to_string(), false);
+    map.insert("creative".to_string(), true);
+    map.insert("lensBlur".to_string(), true);
+    map.insert("lut".to_string(), true);
     map.insert("vignette".to_string(), true);
     map.insert("colorCalibration".to_string(), false);
     map.insert("grain".to_string(), true);

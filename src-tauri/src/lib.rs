@@ -20,9 +20,11 @@ mod color_range_mask;
 mod culling;
 mod denoising;
 mod detect_straighten;
+mod effect_maps;
 mod exif_processing;
 mod export_processing;
 mod file_management;
+mod fog;
 mod focus_stacking;
 mod formats;
 mod gpu_processing;
@@ -42,6 +44,7 @@ mod multi_exposure;
 mod negative_conversion;
 mod panorama_stitching;
 mod panorama_utils;
+mod relight;
 mod preset_converter;
 mod raw_processing;
 mod split_toning;
@@ -823,7 +826,9 @@ fn generate_uncropped_preview(
         };
 
         let warped_image = apply_geometry_warp(patched_image, &adjustments_clone);
-        let blurred_image = crate::lens_blur::apply_lens_blur(warped_image, &adjustments_clone);
+        let relit_image = crate::relight::apply_relight(warped_image, &adjustments_clone);
+        let fogged_image = crate::fog::apply_fog(relit_image, &adjustments_clone);
+        let blurred_image = crate::lens_blur::apply_lens_blur(fogged_image, &adjustments_clone);
         let orientation_steps = adjustments_clone["orientationSteps"].as_u64().unwrap_or(0) as u8;
         let coarse_rotated_image = apply_coarse_rotation(blurred_image, orientation_steps);
 
@@ -2457,6 +2462,7 @@ pub fn run() {
             ai_commands::check_ai_connector_status,
             ai_commands::test_ai_connector_connection,
             ai_commands::generate_full_image_depth_map,
+            ai_commands::generate_relight_normal_map,
             inpainting::invoke_generative_replace_with_mask_def,
             inpainting::generate_manual_cleanup_patch,
             inpainting::generate_liquify_patch,

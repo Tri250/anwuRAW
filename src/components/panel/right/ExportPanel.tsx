@@ -11,11 +11,13 @@ import Dropdown from '../../ui/Dropdown';
 import Slider from '../../ui/Slider';
 import ImagePicker from '../../ui/ImagePicker';
 import {
+  DEFAULT_EXPORT_DPI,
   ExportPreset,
   ExportSettings,
   FileFormat,
   FILE_FORMATS,
   FILENAME_VARIABLES,
+  MAX_EXPORT_DPI,
   Status,
   ExportState,
   FileFormats,
@@ -237,11 +239,23 @@ export default function ExportPanel({
     setColorSpace,
     bitDepth,
     setBitDepth,
+    dpi,
+    setDpi,
     handleApplyPreset,
     currentSettingsObject,
   } = useExportSettings();
 
   const adjustmentsRef = useRef(useEditorStore.getState().adjustments);
+
+  // DPI 输入：受控字符串 + 失焦回显合法值（Jpeg/Png/Tiff 有效）
+  const [dpiInput, setDpiInput] = useState(String(DEFAULT_EXPORT_DPI));
+  const handleDpiChange = (value: string) => {
+    setDpiInput(value);
+    const parsed = Number(value.trim());
+    if (Number.isInteger(parsed) && parsed > 0 && parsed <= MAX_EXPORT_DPI) {
+      setDpi(parsed);
+    }
+  };
 
   const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
   const initDone = useRef(false);
@@ -382,6 +396,7 @@ export default function ExportPanel({
     const exportSettings: ExportSettings = {
       filenameTemplate,
       jpegQuality,
+      dpi,
       keepMetadata,
       preserveTimestamps,
       preserveFolders,
@@ -476,6 +491,7 @@ export default function ExportPanel({
     const exportSettings: ExportSettings = {
       filenameTemplate: finalFilenameTemplate,
       jpegQuality,
+      dpi,
       keepMetadata,
       preserveTimestamps,
       preserveFolders,
@@ -643,6 +659,24 @@ export default function ExportPanel({
                     value={jpegQuality}
                     fillOrigin="min"
                   />
+                </div>
+              )}
+              {[FileFormats.Jpeg, FileFormats.Png, FileFormats.Tiff].includes(fileFormat as FileFormats) && (
+                <div className="flex items-center gap-2">
+                  <Text variant={TextVariants.label} className="flex-1">
+                    {t('export.file.resolution')}
+                  </Text>
+                  <input
+                    aria-label={t('export.file.resolution')}
+                    className="w-16 bg-surface border border-surface rounded-md p-1.5 text-sm text-text-primary text-right focus:ring-accent focus:border-accent"
+                    disabled={isExporting}
+                    inputMode="numeric"
+                    onBlur={() => setDpiInput(String(dpi))}
+                    onChange={(e) => handleDpiChange(e.target.value)}
+                    type="text"
+                    value={dpiInput}
+                  />
+                  <Text variant={TextVariants.label}>{t('export.file.dpi')}</Text>
                 </div>
               )}
             </Section>

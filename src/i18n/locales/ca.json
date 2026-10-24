@@ -242,6 +242,11 @@
       "bokehShape": "Forma del bokeh",
       "creative": "Creatiu",
       "feather": "Esvaïment",
+      "fog": "Boira",
+      "fogDensity": "Densitat",
+      "fogHeight": "Boira baixa",
+      "fogStart": "Inici",
+      "fogVariation": "Variació",
       "glow": "Resplendor",
       "grain": "Gra",
       "halation": "Halació",
@@ -250,9 +255,34 @@
       "lightFlares": "Esclats de llum",
       "lut": "LUT",
       "midpoint": "Punt mitjà",
+      "relight": "Reil·luminar",
+      "relightAddLight": "Afegeix llum",
+      "relightAmbient": "Ambient",
+      "relightAngle": "Angle",
+      "relightColor": "Color de la llum",
+      "relightCone": "Con",
+      "relightDepth": "Profunditat",
+      "relightDuplicateLight": "Duplica la llum",
+      "relightElevation": "Elevació",
+      "relightFalloff": "Atenuació",
+      "relightHint": "Afegeix o selecciona una llum i fes clic o arrossega a la imatge per col·locar-la.",
+      "relightIntensity": "Intensitat",
+      "relightLight": "Llum {{index}}",
+      "relightRemoveLight": "Elimina la llum",
+      "relightShadowSoftness": "Suavitat de les ombres",
+      "relightShadows": "Ombres",
+      "relightShine": "Brillantor",
+      "relightSoftness": "Suavitat",
+      "relightType": "Tipus de llum",
+      "relightTypes": {
+        "directional": "Direccional",
+        "point": "Puntual",
+        "spot": "Focus"
+      },
       "roughness": "Rugositat",
       "roundness": "Rodonesa",
       "size": "Mida",
+      "spatial": "Espacial",
       "vignette": "Vinyetatge"
     },
     "splitToning": {
@@ -570,7 +600,8 @@
         "useBasicInpaint": "Utilitzar inpainting bàsic",
         "onDeviceNotice": "On-device AI repair. Works offline — your photo never leaves this device."
       },
-      "touchUpTitle": "Retocs"
+      "touchUpTitle": "Retocs",
+      "generatingNormalMap": "Calculant el mapa de normals IA..."
     },
     "crop": {
       "aspectRatioHeading": "Relació d'aspecte",
@@ -1014,7 +1045,9 @@
     },
     "file": {
       "quality": "Qualitat",
-      "qualityLossless": "Qualitat (Sense pèrdua)"
+      "qualityLossless": "Qualitat (Sense pèrdua)",
+      "resolution": "Resolució",
+      "dpi": "PPP"
     },
     "labels": {
       "image": "Imatge",
@@ -2185,7 +2218,8 @@
     "renameFolderFailed": "Error en canviar el nom de la carpeta: {{error}}",
     "restoreSessionFailed": "No s’ha pogut restaurar la sessió. És possible que una carpeta s’hagi mogut o suprimit.",
     "saveChangesFailed": "Error en desar els canvis: {{error}}",
-    "unsupportedFormat": "S’han detectat formats de fitxer no compatibles: {{formats}}"
+    "unsupportedFormat": "S’han detectat formats de fitxer no compatibles: {{formats}}",
+    "normalMapFailed": "Error en generar el mapa de normals: {{error}}"
   },
   "ui": {
     "bottomBar": {

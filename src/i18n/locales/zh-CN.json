@@ -242,6 +242,11 @@
       "bokehShape": "散景形状",
       "creative": "创意",
       "feather": "羽化",
+      "fog": "雾",
+      "fogDensity": "密度",
+      "fogHeight": "地面雾",
+      "fogStart": "起始距离",
+      "fogVariation": "变化",
       "glow": "发光",
       "grain": "颗粒",
       "halation": "光晕",
@@ -250,9 +255,34 @@
       "lightFlares": "光线耀斑",
       "lut": "LUT",
       "midpoint": "中点",
+      "relight": "重新打光",
+      "relightAddLight": "添加灯光",
+      "relightAmbient": "环境光",
+      "relightAngle": "角度",
+      "relightColor": "灯光颜色",
+      "relightCone": "光锥",
+      "relightDepth": "深度",
+      "relightDuplicateLight": "复制灯光",
+      "relightElevation": "仰角",
+      "relightFalloff": "衰减",
+      "relightHint": "添加或选择一个灯光，然后在图像上点击或拖动以放置。",
+      "relightIntensity": "强度",
+      "relightLight": "灯光 {{index}}",
+      "relightRemoveLight": "移除灯光",
+      "relightShadowSoftness": "阴影柔和度",
+      "relightShadows": "阴影",
+      "relightShine": "光泽",
+      "relightSoftness": "柔和度",
+      "relightType": "灯光类型",
+      "relightTypes": {
+        "directional": "平行光",
+        "point": "点光源",
+        "spot": "聚光灯"
+      },
       "roughness": "粗糙度",
       "roundness": "圆度",
       "size": "大小",
+      "spatial": "空间",
       "vignette": "暗角"
     },
     "splitToning": {
@@ -575,7 +605,8 @@
         "selectionPropertiesTitle": "选区属性",
         "useBasicInpaint": "使用基础图像修复"
       },
-      "touchUpTitle": "润色"
+      "touchUpTitle": "润色",
+      "generatingNormalMap": "正在计算 AI 法线贴图..."
     },
     "crop": {
       "aspectRatioHeading": "宽高比",
@@ -1019,7 +1050,9 @@
     },
     "file": {
       "quality": "质量",
-      "qualityLossless": "质量（无损）"
+      "qualityLossless": "质量（无损）",
+      "resolution": "分辨率",
+      "dpi": "DPI"
     },
     "labels": {
       "image": "图像",
@@ -2201,7 +2234,8 @@
     "renameFolderFailed": "重命名文件夹失败：{{error}}",
     "restoreSessionFailed": "恢复会话失败。文件夹可能已被移动或删除。",
     "saveChangesFailed": "保存修改失败：{{error}}",
-    "unsupportedFormat": "检测到不支持的文件格式：{{formats}}"
+    "unsupportedFormat": "检测到不支持的文件格式：{{formats}}",
+    "normalMapFailed": "生成法线贴图失败：{{error}}"
   },
   "ui": {
     "bottomBar": {
