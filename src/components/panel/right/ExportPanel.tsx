@@ -615,7 +615,8 @@ export default function ExportPanel({
               <div className="grid grid-cols-3 gap-2">
                 {FILE_FORMATS.map((format: FileFormat) => (
                   <button
-                    className={`px-2 py-1.5 rounded-md transition-colors ${fileFormat === format.id ? 'bg-accent' : 'bg-surface hover:bg-card-active'} disabled:opacity-50`}
+                    // py-2.5：约 40px 触控目标（无 data-tooltip，不触发 Android 命中扩容规则）
+                    className={`px-2 py-2.5 rounded-md transition-colors ${fileFormat === format.id ? 'bg-accent' : 'bg-surface hover:bg-card-active'} disabled:opacity-50`}
                     disabled={isExporting}
                     key={format.id}
                     onClick={() => setFileFormat(format.id)}
@@ -659,7 +660,7 @@ export default function ExportPanel({
                 <div className="flex flex-wrap gap-2 mt-2">
                   {FILENAME_VARIABLES.map((variable: string) => (
                     <button
-                      className="px-2 py-1 bg-surface text-text-secondary text-xs rounded-md hover:bg-card-active transition-colors disabled:opacity-50"
+                      className="px-2 py-1.5 bg-surface text-text-secondary text-xs rounded-md hover:bg-card-active transition-colors disabled:opacity-50"
                       disabled={isExporting}
                       key={variable}
                       onClick={() => handleVariableClick(variable)}

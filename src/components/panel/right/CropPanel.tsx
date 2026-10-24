@@ -542,7 +542,9 @@ export default function CropPanel() {
                 {PRESETS.map((preset: CropPreset) => (
                   <motion.div
                     className={clsx(
-                      'px-2 py-1.5 rounded-md transition-colors text-center cursor-pointer',
+                      // py-2.5：约 40px 触控目标；div 元素不触发 Android 的
+                      // button[data-tooltip] 命中扩容规则，需自身保证触控面积
+                      'px-2 py-2.5 rounded-md transition-colors text-center cursor-pointer',
                       isPresetActive(preset) ? 'bg-accent' : 'bg-surface hover:bg-card-active',
                     )}
                     key={preset.name}
@@ -558,7 +560,7 @@ export default function CropPanel() {
               <div>
                 <motion.div
                   className={clsx(
-                    'w-full px-2 py-1.5 rounded-md transition-colors cursor-pointer text-center',
+                    'w-full px-2 py-2.5 rounded-md transition-colors cursor-pointer text-center',
                     isCustomActive ? 'bg-accent' : 'bg-surface hover:bg-card-active',
                   )}
                   onClick={() => {
@@ -585,7 +587,7 @@ export default function CropPanel() {
                 >
                   <div className="flex items-center justify-center gap-2">
                     <input
-                      className="w-full bg-bg-primary text-center rounded-md p-1 border border-surface focus:border-accent focus:ring-accent text-text-secondary focus:text-text-primary"
+                      className="w-full bg-bg-primary text-center rounded-md p-2 border border-surface focus:border-accent focus:ring-accent text-text-secondary focus:text-text-primary"
                       min="0"
                       name="customW"
                       onBlur={handleApplyCustomRatio}
@@ -599,7 +601,7 @@ export default function CropPanel() {
                     />
                     <X size={16} className={`shrink-0 ${TEXT_COLOR_KEYS[TextColors.secondary]}`} />
                     <input
-                      className="w-full bg-bg-primary text-center rounded-md p-1 border border-surface focus:border-accent focus:ring-accent text-text-secondary focus:text-text-primary"
+                      className="w-full bg-bg-primary text-center rounded-md p-2 border border-surface focus:border-accent focus:ring-accent text-text-secondary focus:text-text-primary"
                       min="0"
                       name="customH"
                       onBlur={handleApplyCustomRatio}

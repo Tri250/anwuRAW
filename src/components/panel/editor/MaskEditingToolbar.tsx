@@ -111,7 +111,9 @@ export default function MaskEditingToolbar({
     : null;
 
   const buttonBase =
-    'flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors';
+    // h-10：40px 触控目标（HIG 标准）；工具栏按钮用 title= 不触发 Android 的
+    // button[data-tooltip] 命中扩容规则，需自身保证足够触控面积
+    'flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors';
 
   const iconButton = (active = false) =>
     clsx(
@@ -137,6 +139,9 @@ export default function MaskEditingToolbar({
         step={1}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
+        // touch-action none：工具栏容器可横向滚动，手指水平拖 thumb 时
+        // 必须禁止浏览器把该手势判定为容器滚动，否则滑杆拖不动/跳动
+        style={{ touchAction: 'none' }}
       />
       <span className="w-7 min-w-7 shrink-0 text-right tabular-nums text-text-primary">{value}</span>
     </label>
@@ -214,6 +219,7 @@ export default function MaskEditingToolbar({
               value={strengthValue ?? 40}
               onChange={(e) => onStrengthChange(Number(e.target.value))}
               title={t('editor.masks.toolbar.strength')}
+              style={{ touchAction: 'none' }}
             />
             <span className="w-7 min-w-7 text-right tabular-nums text-text-primary">{strengthValue}</span>
           </label>
