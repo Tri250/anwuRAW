@@ -33,6 +33,7 @@ interface BottomBarProps {
   isResetDisabled?: boolean;
   isResizing?: boolean;
   flag?: ImageFlag | null;
+  layoutMode?: 'compact' | 'wide' | 'full';
   multiSelectedPaths?: Array<string>;
   onClearSelection?(): void;
   onContextMenu?(event: any, path: string): void;
@@ -143,6 +144,7 @@ export default function BottomBar({
   isRatingDisabled = false,
   isResizing,
   flag,
+  layoutMode = 'full',
   multiSelectedPaths = [],
   onClearSelection,
   onContextMenu,
@@ -701,35 +703,35 @@ export default function BottomBar({
           )}
 
           <div className="flex items-center gap-1">
-            {!isAndroid && (
-              <>
-                <PanelToggleButton
-                  onClick={toggleLeft}
-                  Icon={PanelLeft}
-                  tooltip={isLeftOpen ? t('ui.bottomBar.tooltips.collapseLeft') : t('ui.bottomBar.tooltips.expandLeft')}
-                />
+            {layoutMode === 'full' && (
+              <PanelToggleButton
+                onClick={toggleLeft}
+                Icon={PanelLeft}
+                tooltip={isLeftOpen ? t('ui.bottomBar.tooltips.collapseLeft') : t('ui.bottomBar.tooltips.expandLeft')}
+              />
+            )}
 
-                {showFilmstrip && (
-                  <PanelToggleButton
-                    onClick={toggleBottom}
-                    Icon={PanelBottom}
-                    tooltip={
-                      isBottomOpen
-                        ? t('ui.bottomBar.tooltips.collapseFilmstrip')
-                        : t('ui.bottomBar.tooltips.expandFilmstrip')
-                    }
-                    disabled={isLibraryView}
-                  />
-                )}
+            {layoutMode !== 'compact' && showFilmstrip && (
+              <PanelToggleButton
+                onClick={toggleBottom}
+                Icon={PanelBottom}
+                tooltip={
+                  isBottomOpen
+                    ? t('ui.bottomBar.tooltips.collapseFilmstrip')
+                    : t('ui.bottomBar.tooltips.expandFilmstrip')
+                }
+                disabled={isLibraryView}
+              />
+            )}
 
-                <PanelToggleButton
-                  onClick={toggleRight}
-                  Icon={PanelRight}
-                  tooltip={
-                    isRightOpen ? t('ui.bottomBar.tooltips.collapseRight') : t('ui.bottomBar.tooltips.expandRight')
-                  }
-                />
-              </>
+            {(layoutMode === 'full' || layoutMode === 'wide') && (
+              <PanelToggleButton
+                onClick={toggleRight}
+                Icon={PanelRight}
+                tooltip={
+                  isRightOpen ? t('ui.bottomBar.tooltips.collapseRight') : t('ui.bottomBar.tooltips.expandRight')
+                }
+              />
             )}
           </div>
         </div>

@@ -245,9 +245,11 @@ export default function PanelSwitcher({
 export function MobilePanelSwitcher({
   activePanel,
   onPanelSelect,
+  placement = 'bottom',
 }: {
   activePanel: Panel | null;
-  onPanelSelect: (id: Panel | null) => void;
+  onPanelSelect: (id: Panel) => void;
+  placement?: 'bottom' | 'right';
 }) {
   const { t } = useTranslation();
   const MOBILE_PANELS = [
@@ -260,10 +262,16 @@ export function MobilePanelSwitcher({
     Panel.Export,
   ];
 
+  const isVertical = placement === 'right';
+
   return (
     <div
-      data-mobile-panel-switcher
-      className="flex items-stretch gap-0.5 p-1.5 border-t border-surface shrink-0"
+      className={clsx(
+        'flex items-center p-1.5 gap-1 shrink-0 custom-scrollbar',
+        isVertical
+          ? 'flex-col overflow-y-auto h-full border-l border-surface'
+          : 'flex-row overflow-x-auto w-full border-t border-surface',
+      )}
     >
       {MOBILE_PANELS.map((id) => {
         const Icon = PANEL_ICONS[id];
@@ -272,33 +280,17 @@ export function MobilePanelSwitcher({
         return (
           <button
             key={id}
-            // 面板常驻展开（v1.6.21 反馈「面板不要折叠」）：重复点击已激活 tab
-            // 仅重新选中该面板，不再折叠面板；切换目标面板也走同一入口
             onClick={() => onPanelSelect(id)}
             aria-label={t(PANEL_TITLES[id])}
             aria-pressed={isActive}
             className={clsx(
-              // 均分布局（flex-1）：7 个 tab 在 360px 手机屏上每格约 48px，全部可见、
-              // 无需横向滚动即可呼出任意面板（旧版 overflow-x-auto 会截断预设/导出，
-              // 是「面板不好呼出」的主因）；触控目标高度保持 ≥48px（HIG 标准）
-              'relative flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-xl',
-              'transition-[color,transform] duration-150 active:scale-95',
-              isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary',
+              'p-2 rounded-md shrink-0 transition-colors',
+              isActive
+                ? 'bg-surface text-text-primary'
+                : 'text-text-secondary hover:bg-surface hover:text-text-primary',
             )}
           >
-            {isActive && (
-              <motion.div
-                layoutId="mobile-panel-indicator"
-                // pointer-events-none：与 PanelTab 保持一致，active indicator 只做视觉背景，
-                // 不拦截按钮点击/touch 事件（Android WebView 中 absolute 覆盖层会消费 pointer）
-                className="absolute inset-0 bg-surface rounded-lg pointer-events-none"
-                transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-              />
-            )}
-            <Icon size={20} className="relative z-10 shrink-0" />
-            <span className="relative z-10 w-full text-center text-[10px] leading-none select-none truncate">
-              {t(PANEL_TITLES[id])}
-            </span>
+            <Icon size={20} />
           </button>
         );
       })}
