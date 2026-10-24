@@ -184,6 +184,13 @@ export default function CompositionOverlays({
     );
   };
 
+  const renderCenter = () => (
+    <g style={{ opacity: mode === 'center' ? opacity : 0, transition: 'opacity 300ms ease-in-out' }}>
+      <line x1={width / 2} y1={0} x2={width / 2} y2={height} {...strokeProps} />
+      <line x1={0} y1={height / 2} x2={width} y2={height / 2} {...strokeProps} />
+    </g>
+  );
+
   return (
     <svg
       width={width}
@@ -201,6 +208,7 @@ export default function CompositionOverlays({
       {renderPhiGrid()}
       {renderGoldenTriangle()}
       {renderGoldenSpiral()}
+      {renderCenter()}
       {renderArmature()}
       {renderDiagonal()}
     </svg>

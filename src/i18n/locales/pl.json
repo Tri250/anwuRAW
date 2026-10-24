@@ -635,6 +635,10 @@
           "desc": "Armatura",
           "name": "Armatura"
         },
+        "center": {
+          "desc": "Linie środkowe",
+          "name": "Środek"
+        },
         "diagonal": {
           "desc": "Linie ukośne",
           "name": "Linie ukośne"
