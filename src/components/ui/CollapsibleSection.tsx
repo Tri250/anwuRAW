@@ -9,6 +9,7 @@ import { useLongPressMenu } from '../../hooks/useLongPressMenu';
 interface CollapsibleSectionProps {
   canToggleVisibility?: boolean;
   children: any;
+  disableCollapse?: boolean;
   isContentVisible: boolean;
   isOpen: boolean;
   onContextMenu?: any;
@@ -20,6 +21,7 @@ interface CollapsibleSectionProps {
 export default function CollapsibleSection({
   canToggleVisibility = true,
   children,
+  disableCollapse = false,
   isContentVisible,
   isOpen,
   onContextMenu,
@@ -105,7 +107,9 @@ export default function CollapsibleSection({
             longPress.triggeredRef.current = false;
             return;
           }
-          onToggle();
+          if (!disableCollapse) {
+            onToggle();
+          }
         }}
         onContextMenu={(e: any) => {
           longPress.cancel();
@@ -144,10 +148,12 @@ export default function CollapsibleSection({
             </div>
           )}
         </div>
-        <ChevronDown
-          className={clsx('text-accent transition-transform duration-300', { 'rotate-180': isOpen })}
-          size={20}
-        />
+        {!disableCollapse && (
+          <ChevronDown
+            className={clsx('text-accent transition-transform duration-300', { 'rotate-180': isOpen })}
+            size={20}
+          />
+        )}
       </div>
       <div ref={wrapperRef} className="overflow-hidden transition-all duration-300 ease-in-out">
         <div

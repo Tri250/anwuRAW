@@ -27,12 +27,12 @@ describe('MobilePanelSwitcher', () => {
     expect(onPanelSelect).toHaveBeenCalledWith(Panel.Adjustments);
   });
 
-  it('TC-M-PANEL-03 点击已激活面板:回调携带 null(收起面板)', () => {
+  it('TC-M-PANEL-03 点击已激活面板:回调携带当前面板 id(常驻展开不再收起)', () => {
     const onPanelSelect = vi.fn();
     render(<MobilePanelSwitcher activePanel={Panel.Adjustments} onPanelSelect={onPanelSelect} />);
 
     fireEvent.click(screen.getByRole('button', { name: '调整' }));
-    expect(onPanelSelect).toHaveBeenCalledWith(null);
+    expect(onPanelSelect).toHaveBeenCalledWith(Panel.Adjustments);
   });
 
   it('TC-M-PANEL-04 激活面板 aria-pressed=true,其余为 false', () => {

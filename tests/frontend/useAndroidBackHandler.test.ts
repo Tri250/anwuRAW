@@ -80,7 +80,7 @@ describe('useAndroidBackHandler', () => {
     expect(useUIStore.getState().confirmModalState.isOpen).toBe(false);
   });
 
-  it('编辑器中浏览型紧凑面板展开时,返回键收起面板而非退出编辑器', () => {
+  it('编辑器中浏览型紧凑面板展开时,返回键保持面板常驻并派发 Escape', () => {
     const handler = mount();
     useUIStore.setState({ activeView: 'editor', activePanel: Panel.Adjustments });
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
@@ -88,9 +88,11 @@ describe('useAndroidBackHandler', () => {
     const result = handleBack(handler);
 
     expect(result).toBe(true);
-    expect(useUIStore.getState().activePanel).toBeNull();
-    // 面板收起后不应再派发 Escape（避免连带退出编辑器）
-    expect(dispatchSpy).not.toHaveBeenCalled();
+    // v1.6.21 面板常驻展开：返回键不再收起面板，activePanel 保持原状
+    expect(useUIStore.getState().activePanel).toBe(Panel.Adjustments);
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    const event = dispatchSpy.mock.calls[0][0] as KeyboardEvent;
+    expect(event.key).toBe('Escape');
     dispatchSpy.mockRestore();
   });
 

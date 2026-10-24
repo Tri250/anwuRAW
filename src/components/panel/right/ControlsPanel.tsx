@@ -37,12 +37,15 @@ export default function Controls() {
     useWaveformControls();
   const { setAdjustments, handleAutoAdjustments, handleLutSelect, setLutPreviewOverride } = useEditorActions();
 
-  const { appSettings, theme } = useSettingsStore(
+  const { appSettings, theme, osPlatform } = useSettingsStore(
     useShallow((state) => ({
       appSettings: state.appSettings,
       theme: state.theme,
+      osPlatform: state.osPlatform,
     })),
   );
+
+  const isAndroid = osPlatform === 'android';
 
   const { collapsibleSectionsState, setUI } = useUIStore(
     useShallow((state) => ({
@@ -156,6 +159,8 @@ export default function Controls() {
   };
 
   const handleToggleSection = (section: string) => {
+    // Android 端取消折叠：分区始终展开，点击标题不再折叠
+    if (isAndroid) return;
     setCollapsibleState((prev: any) => {
       const isOpening = !prev[section];
       if (appSettings?.enableFocusMode && isOpening) {
@@ -321,8 +326,9 @@ export default function Controls() {
             return (
               <div className="shrink-0 group" key={sectionName}>
                 <CollapsibleSection
+                  disableCollapse={isAndroid}
                   isContentVisible={sectionVisibility[sectionName as keyof SectionVisibility]}
-                  isOpen={collapsibleSectionsState[sectionName as keyof typeof collapsibleSectionsState]}
+                  isOpen={isAndroid ? true : collapsibleSectionsState[sectionName as keyof typeof collapsibleSectionsState]}
                   onContextMenu={(e: any) => handleSectionContextMenu(e, sectionName)}
                   onToggle={() => handleToggleSection(sectionName)}
                   onToggleVisibility={() => handleToggleVisibility(sectionName)}
