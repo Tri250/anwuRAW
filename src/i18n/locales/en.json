@@ -1467,6 +1467,7 @@
       "descReplace": "Overwrites all selected settings, resetting the rest to their defaults.",
       "groups": {
         "chromaticAberration": "Chromatic Aberration",
+        "channelMixer": "Channel Mixer",
         "clarityDehaze": "Clarity & Dehaze",
         "colorCalibration": "Color Calibration",
         "colorGrading": "Color Grading",

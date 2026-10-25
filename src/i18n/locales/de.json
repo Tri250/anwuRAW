@@ -1455,6 +1455,7 @@
       "descReplace": "Überschreibt alle ausgewählten Einstellungen und setzt den Rest auf Standardwerte zurück.",
       "groups": {
         "chromaticAberration": "Chromatische Aberration",
+        "channelMixer": "Kanalmixer",
         "clarityDehaze": "Klarheit & Dunst entfernen",
         "colorCalibration": "Farbkalibrierung",
         "colorGrading": "Color Grading",

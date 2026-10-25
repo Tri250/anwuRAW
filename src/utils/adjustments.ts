@@ -1036,6 +1036,7 @@ export const ADJUSTMENT_GROUPS: Record<string, AdjustmentGroup[]> = {
     { label: 'modals.copyPaste.groups.colorMixer', keys: [ColorAdjustment.Hsl] },
     { label: 'modals.copyPaste.groups.colorCalibration', keys: ['colorCalibration'] },
   ],
+  channel_mixer: [{ label: 'modals.copyPaste.groups.channelMixer', keys: ['channelMixer'] }],
   details: [
     {
       label: 'modals.copyPaste.groups.clarityDehaze',

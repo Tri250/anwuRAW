@@ -2359,7 +2359,11 @@ function SettingsPanel({
         onMouseLeave={() => setIsMaskControlHovered(false)}
         className="flex flex-col gap-2"
       >
-        {Object.keys(ADJUSTMENT_SECTIONS).map((sectionName) => {
+        {/* 蒙版调整走 GPU WGSL（MaskAdjustments），后端不含通道混合器字段，
+            暴露该 section 只会产生静默无效 UI，故在蒙版上下文中隐藏 */}
+        {Object.keys(ADJUSTMENT_SECTIONS)
+          .filter((sectionName) => sectionName !== 'channel_mixer')
+          .map((sectionName) => {
           const SectionComponent: any = ADJUSTMENT_SECTION_COMPONENTS[sectionName];
           const title = t(`editor.adjustments.sections.${sectionName}`);
           return (

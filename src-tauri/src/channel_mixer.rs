@@ -169,14 +169,44 @@ pub fn apply_channel_mixer_u8(img: &mut RgbImage, settings: &ChannelMixerSetting
     let _ = h;
 }
 
+/// 对单个 u8 像素的 RGB 三元组应用混合（含 0-255 clamp）。
+#[inline]
+fn mix_pixel_u8(r_in: u8, g_in: u8, b_in: u8, c: &[f32; 9]) -> [u8; 3] {
+    let (r, g, b) = (r_in as f32, g_in as f32, b_in as f32);
+    [
+        (r * c[0] + g * c[1] + b * c[2]).clamp(0.0, 255.0) as u8,
+        (r * c[3] + g * c[4] + b * c[5]).clamp(0.0, 255.0) as u8,
+        (r * c[6] + g * c[7] + b * c[8]).clamp(0.0, 255.0) as u8,
+    ]
+}
+
 /// 对 DynamicImage 应用通道混合器并返回新图像（sRGB 空间，用于最终输出前的 CPU 管线）。
+/// 带透明通道的图像（PNG/WebP 等）仅混合 RGB，alpha 原样保留。
 pub fn apply_to_dynamic(img: &DynamicImage, settings: &ChannelMixerSettings) -> DynamicImage {
     if settings.is_identity() {
         return img.clone();
     }
-    let mut rgb = img.to_rgb8();
-    apply_channel_mixer_u8(&mut rgb, settings);
-    DynamicImage::ImageRgb8(rgb)
+    if img.color().has_alpha() {
+        let mut rgba = img.to_rgba8();
+        let coeffs = settings.as_coefficients();
+        let (w, _h) = rgba.dimensions();
+        let raw = rgba.as_mut();
+        raw.par_chunks_mut((w as usize) * 4).for_each(|row| {
+            for x in 0..(w as usize) {
+                let idx = x * 4;
+                let [r, g, b] = mix_pixel_u8(row[idx], row[idx + 1], row[idx + 2], &coeffs);
+                row[idx] = r;
+                row[idx + 1] = g;
+                row[idx + 2] = b;
+                // alpha 保持不变
+            }
+        });
+        DynamicImage::ImageRgba8(rgba)
+    } else {
+        let mut rgb = img.to_rgb8();
+        apply_channel_mixer_u8(&mut rgb, settings);
+        DynamicImage::ImageRgb8(rgb)
+    }
 }
 
 #[tauri::command]
@@ -205,7 +235,7 @@ pub async fn apply_channel_mixer_command(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use image::{Rgb, RgbImage};
+    use image::{Rgb, RgbImage, Rgba, RgbaImage};
 
     fn gradient_image() -> DynamicImage {
         DynamicImage::ImageRgb8(RgbImage::from_fn(16, 16, |x, y| {
@@ -279,5 +309,32 @@ mod tests {
         let out = apply_to_dynamic(&img, &settings);
         let px = *out.to_rgb8().get_pixel(0, 0);
         assert_eq!(px.0[0], 90, "R = input G");
+    }
+
+    #[test]
+    fn tc_cm_preserves_alpha() {
+        // 带透明通道的图像：RGB 正常混合，alpha 必须逐像素保留
+        let img = DynamicImage::ImageRgba8(RgbaImage::from_fn(1, 1, |_, _| Rgba([100, 40, 20, 128])));
+        let settings = ChannelMixerSettings {
+            red_from_red: 200.0,
+            ..identity_settings()
+        };
+        let out = apply_to_dynamic(&img, &settings);
+        assert!(matches!(out, DynamicImage::ImageRgba8(_)), "输出必须保持 RGBA8");
+        let px = *out.to_rgba8().get_pixel(0, 0);
+        assert_eq!(px.0[0], 200, "R: 100 * 200%");
+        assert_eq!(px.0[1], 40, "G unchanged");
+        assert_eq!(px.0[2], 20, "B unchanged");
+        assert_eq!(px.0[3], 128, "alpha 必须保留");
+    }
+
+    #[test]
+    fn tc_cm_rgba_gradient_full_alpha_path() {
+        // RGBA 渐变图整图处理，确保行步长(x*4)与并行分块正确
+        let img = DynamicImage::ImageRgba8(RgbaImage::from_fn(16, 16, |x, y| {
+            Rgba([(x * 16) as u8, (y * 16) as u8, ((x + y) * 8) as u8, 255 - (x * 8) as u8])
+        }));
+        let out = apply_to_dynamic(&img, &identity_settings());
+        assert_eq!(out.to_rgba8().as_raw(), img.to_rgba8().as_raw());
     }
 }

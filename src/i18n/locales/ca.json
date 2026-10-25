@@ -1455,6 +1455,7 @@
       "descReplace": "Sobreescriu tota la configuració seleccionada, restablint la resta als seus valors predeterminats.",
       "groups": {
         "chromaticAberration": "Aberració cromàtica",
+        "channelMixer": "Mesclador de canals",
         "clarityDehaze": "Claredat i Eliminar boira",
         "colorCalibration": "Calibratge de color",
         "colorGrading": "Gradació de color",

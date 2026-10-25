@@ -1479,6 +1479,7 @@
       "descReplace": "Sobrescribe todos los ajustes seleccionados, restableciendo el resto a sus valores predeterminados.",
       "groups": {
         "chromaticAberration": "Aberración cromática",
+        "channelMixer": "Mezclador de canales",
         "clarityDehaze": "Claridad y Borrar neblina",
         "colorCalibration": "Calibración de color",
         "colorGrading": "Gradación de color",

@@ -1455,6 +1455,7 @@
       "descReplace": "選択したすべての設定を上書きし、残りの設定をデフォルトにリセットします。",
       "groups": {
         "chromaticAberration": "色収差",
+        "channelMixer": "チャンネルミキサー",
         "clarityDehaze": "明瞭度とかすみの除去",
         "colorCalibration": "カラーキャリブレーション",
         "colorGrading": "カラーグレーディング",

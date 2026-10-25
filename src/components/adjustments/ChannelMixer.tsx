@@ -7,7 +7,6 @@ import { TextVariants } from '../../types/typography';
 interface ChannelMixerProps {
   adjustments: Adjustments;
   setAdjustments: (a: Partial<Adjustments>) => void;
-  isForMask?: boolean;
   onDragStateChange?: (isDragging: boolean) => void;
 }
 

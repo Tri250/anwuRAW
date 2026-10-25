@@ -1479,6 +1479,7 @@
       "descReplace": "Écrase tous les paramètres sélectionnés, réinitialisant les autres à leurs valeurs par défaut.",
       "groups": {
         "chromaticAberration": "Aberration chromatique",
+        "channelMixer": "Mélangeur de canaux",
         "clarityDehaze": "Clarté & Correction du voile",
         "colorCalibration": "Étalonnage des couleurs",
         "colorGrading": "Colorimétrie",

@@ -1455,6 +1455,7 @@
       "descReplace": "선택한 모든 설정을 덮어쓰고 나머지는 기본값으로 초기화합니다.",
       "groups": {
         "chromaticAberration": "색수차",
+        "channelMixer": "채널 믹서",
         "clarityDehaze": "명료도 및 디헤이즈",
         "colorCalibration": "색상 보정",
         "colorGrading": "컬러 그레이딩",

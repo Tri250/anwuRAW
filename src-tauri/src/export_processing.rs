@@ -769,11 +769,19 @@ fn encode_image_to_bytes(
                 .map_err(|e| e.to_string())?;
         }
         "png" => {
-            // PNG 根据 bit_depth 选择 8-bit 或 16-bit
+            // PNG 根据 bit_depth 与源图 alpha 选择编码布局：
+            // 带透明通道的图像（PNG/WebP 导入）必须保留 RGBA，否则透明区域会被静默丢弃
+            let has_alpha = image.color().has_alpha();
             let image_to_encode = if bit_depth >= 16 {
-                DynamicImage::ImageRgb16(image.to_rgb16())
+                if has_alpha {
+                    DynamicImage::ImageRgba16(image.to_rgba16())
+                } else {
+                    DynamicImage::ImageRgb16(image.to_rgb16())
+                }
+            } else if has_alpha {
+                DynamicImage::ImageRgba8(image.to_rgba8())
             } else {
-                image.to_rgb8().into()
+                DynamicImage::ImageRgb8(image.to_rgb8())
             };
             image_to_encode
                 .write_to(&mut cursor, image::ImageFormat::Png)
@@ -783,10 +791,29 @@ fn encode_image_to_bytes(
             }
         }
         "tiff" => {
-            // TIFF 根据 bit_depth 选择 8-bit 或 16-bit
+            // TIFF 根据 bit_depth 与源图 alpha 选择编码布局（RGBA 同样保留透明通道）
             let (width, height) = image.dimensions();
             let mut encoder = TiffEncoder::new(&mut cursor).map_err(|e| e.to_string())?;
-            if bit_depth >= 16 {
+            let has_alpha = image.color().has_alpha();
+            if has_alpha {
+                if bit_depth >= 16 {
+                    write_tiff::<colortype::RGBA16, _>(
+                        &mut encoder,
+                        width,
+                        height,
+                        image.to_rgba16().as_raw(),
+                        dpi,
+                    )?;
+                } else {
+                    write_tiff::<colortype::RGBA8, _>(
+                        &mut encoder,
+                        width,
+                        height,
+                        image.to_rgba8().as_raw(),
+                        dpi,
+                    )?;
+                }
+            } else if bit_depth >= 16 {
                 write_tiff::<colortype::RGB16, _>(
                     &mut encoder,
                     width,

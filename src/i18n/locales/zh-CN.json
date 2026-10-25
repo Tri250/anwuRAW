@@ -1467,6 +1467,7 @@
       "descReplace": "覆盖所有选中的设置，其余重置为默认值。",
       "groups": {
         "chromaticAberration": "色差",
+        "channelMixer": "通道混合器",
         "clarityDehaze": "清晰度与去雾",
         "colorCalibration": "颜色校准",
         "colorGrading": "颜色分级",

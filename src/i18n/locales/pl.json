@@ -1507,6 +1507,7 @@
       "descReplace": "Nadpisuje wszystkie wybrane ustawienia, przywracając resztę do wartości domyślnych.",
       "groups": {
         "chromaticAberration": "Aberracja chromatyczna",
+        "channelMixer": "Mikser kanałów",
         "clarityDehaze": "Przejrzystość i Usuwanie mgły",
         "colorCalibration": "Kalibracja kolorów",
         "colorGrading": "Gradacja kolorów",

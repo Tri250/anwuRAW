@@ -1479,6 +1479,7 @@
       "descReplace": "Substitui todas as configurações selecionadas, redefinindo o resto para seus padrões.",
       "groups": {
         "chromaticAberration": "Aberração Cromática",
+        "channelMixer": "Misturador de canais",
         "clarityDehaze": "Claridade e Desembaçar",
         "colorCalibration": "Calibração de Cores",
         "colorGrading": "Gradação de Cores",
