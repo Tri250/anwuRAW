@@ -2204,6 +2204,20 @@
     "title": "Ustawienia",
     "tooltips": {
       "goHome": "Przejdź do strony głównej"
+    },
+    "aiDownload": {
+      "title": "Pobieranie modeli AI",
+      "endpoint": "Źródło pobierania",
+      "endpointDesc": "Źródło pobierania modeli AI. Tryb „Auto” kolejno próbuje ModelScope → hf-mirror → HuggingFace.",
+      "optAuto": "Automatycznie (zalecane)",
+      "optModelscope": "ModelScope (Chiny, najszybsze)",
+      "optHfMirror": "hf-mirror.com (mirror Chin)",
+      "optHuggingface": "HuggingFace (oficjalne)",
+      "optCustom": "Własny URL",
+      "customUrl": "Własny adres URL punktu końcowego",
+      "customUrlDesc": "Pełny bazowy adres URL repozytorium modeli (obsługiwane linki /resolve/ zgodne z HuggingFace).",
+      "proxy": "Proxy pobierania",
+      "proxyDesc": "Opcjonalny serwer proxy HTTP/SOCKS do pobierania, np. http://127.0.0.1:7890 (domyślny port Clash). Puste = połączenie bezpośrednie."
     }
   },
   "tethering": {

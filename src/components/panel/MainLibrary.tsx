@@ -39,6 +39,7 @@ import { ImportState, Status } from '../ui/ExportImportProperties';
 import Text from '../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../types/typography';
 import { useLibraryStore } from '../../store/useLibraryStore';
+import { useProcessStore } from '../../store/useProcessStore';
 import { useUIStore } from '../../store/useUIStore';
 import SettingsPanel from './SettingsPanel';
 
@@ -182,6 +183,7 @@ function DisplayModeSwitch({ displayMode, setDisplayMode, t, isAndroid = false }
 
 export default function MainLibrary(props: MainLibraryProps) {
   const { t } = useTranslation();
+  const aiModelDownloadProgress = useProcessStore((state) => state.aiModelDownloadProgress);
   const setUI = useUIStore((state) => state.setUI);
   const [appVersion, setAppVersion] = useState('');
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
@@ -655,7 +657,7 @@ export default function MainLibrary(props: MainLibraryProps) {
           <Loader2 className="h-12 w-12 text-secondary animate-spin mb-4" />
           <Text variant={TextVariants.heading} color={TextColors.secondary}>
             {props.aiModelDownloadStatus
-              ? t('library.status.downloading', { status: props.aiModelDownloadStatus })
+              ? `${aiModelDownloadProgress?.total ? `${Math.round((aiModelDownloadProgress.received / aiModelDownloadProgress.total) * 100)}% · ` : ''}${t('library.status.downloading', { status: props.aiModelDownloadStatus })}`
               : props.isIndexing && props.indexingProgress.total > 0
                 ? t('library.status.indexing', {
                     current: props.indexingProgress.current,

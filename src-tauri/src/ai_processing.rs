@@ -19,19 +19,30 @@ use tokenizers::Tokenizer;
 use tokio::sync::Mutex as TokioMutex;
 
 // --- 模型仓库端点（按「国内优先」排序） ---
-// hf-mirror.com 是官方 HuggingFace Hub API 兼容镜像，国内访问速度快
+// ModelScope（魔搭）：阿里运营的国内模型社区，国内 CDN 直连速度最快；
+// 需作者将 CyberTimon/RapidRAW-Models 镜像到 Tri250/RapidRAW-Models 仓库
+// hf-mirror.com 是官方 HuggingFace Hub API 兼容镜像，国内访问较快但高峰期不稳
 // huggingface.co 是官方主站，作为降级后备
 const MODEL_REPO: &str = "CyberTimon/RapidRAW-Models";
+const MODELSCOPE_ENDPOINT: &str = "https://modelscope.cn/models/Tri250/RapidRAW-Models";
 const HF_MIRROR_ENDPOINT: &str = "https://hf-mirror.com";
 const HF_OFFICIAL_ENDPOINT: &str = "https://huggingface.co";
 
 fn build_hf_url(endpoint: &str, filename: &str) -> String {
-    format!(
-        "{}/{}/resolve/main/{}?download=true",
-        endpoint.trim_end_matches('/'),
-        MODEL_REPO,
-        filename
-    )
+    let ep = endpoint.trim_end_matches('/');
+    if ep.contains("modelscope.cn") {
+        // ModelScope 文件直链：{base}/resolve/master/{file}（base 已含 /resolve/ 时直接拼接）
+        if ep.contains("/resolve/") {
+            format!("{}/{}", ep, filename)
+        } else {
+            format!("{}/resolve/master/{}", ep, filename)
+        }
+    } else {
+        format!(
+            "{}/{}/resolve/main/{}?download=true",
+            ep, MODEL_REPO, filename
+        )
+    }
 }
 
 // --- 从 AppHandle 读取用户配置的模型下载端点并解析 ---
@@ -49,18 +60,28 @@ fn endpoints_from_handle(app_handle: &tauri::AppHandle) -> Vec<String> {
     resolve_model_endpoints(user_setting.as_deref())
 }
 
-// --- 端点解析：支持 "auto" / "hf-mirror" / "huggingface" / 自定义 URL ---
+// --- 端点解析：支持 "auto" / "modelscope" / "hf-mirror" / "huggingface" / 自定义 URL ---
 fn resolve_model_endpoints(user_setting: Option<&str>) -> Vec<String> {
     let user = user_setting.map(|s| s.trim()).filter(|s| !s.is_empty());
     match user {
+        Some("modelscope") => vec![MODELSCOPE_ENDPOINT.to_string()],
         Some("hf-mirror") | Some("mirror") => vec![HF_MIRROR_ENDPOINT.to_string()],
         Some("huggingface") | Some("official") => vec![HF_OFFICIAL_ENDPOINT.to_string()],
         Some(custom) if custom != "auto" && custom != "default" => vec![custom.to_string()],
         _ => vec![
+            MODELSCOPE_ENDPOINT.to_string(),
             HF_MIRROR_ENDPOINT.to_string(),
             HF_OFFICIAL_ENDPOINT.to_string(),
         ],
     }
+}
+
+// --- 读取用户配置的下载代理（空 = 不使用代理，如 http://127.0.0.1:7890） ---
+fn model_proxy_from_handle(app_handle: &tauri::AppHandle) -> Option<String> {
+    crate::app_settings::load_settings(app_handle.clone())
+        .ok()
+        .map(|s| s.model_proxy.trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 // --- 模型文件元数据 ---
@@ -212,50 +233,13 @@ fn get_models_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
     Ok(models_dir)
 }
 
-fn persist_downloaded_asset(dest: &Path, bytes: &[u8]) -> Result<()> {
-    if bytes.is_empty() {
-        return Err(anyhow::anyhow!(
-            "Downloaded asset for {} was empty",
-            dest.display()
-        ));
-    }
-
-    let parent = dest.parent().ok_or_else(|| {
-        anyhow::anyhow!(
-            "Cannot determine parent directory for downloaded asset {}",
-            dest.display()
-        )
-    })?;
-    fs::create_dir_all(parent)?;
-
-    let file_name = dest
-        .file_name()
-        .and_then(|name| name.to_str())
-        .ok_or_else(|| anyhow::anyhow!("Invalid downloaded asset path {}", dest.display()))?;
-    let tmp_path = dest.with_file_name(format!(".{}.download", file_name));
-
-    {
-        let mut file = fs::File::create(&tmp_path)?;
-        file.write_all(bytes)?;
-        file.sync_all()?;
-    }
-
-    fs::rename(&tmp_path, dest).or_else(|rename_error| -> std::io::Result<()> {
-        if dest.exists() {
-            fs::remove_file(dest)?;
-            fs::rename(&tmp_path, dest)?;
-            Ok(())
-        } else {
-            Err(rename_error)
-        }
-    })?;
-    Ok(())
-}
-
 async fn download_model_with_endpoints(
+    app_handle: &tauri::AppHandle,
     endpoints: &[String],
     filename: &str,
     dest: &Path,
+    model_name: &str,
+    proxy: Option<&str>,
 ) -> Result<()> {
     const MAX_RETRIES_PER_ENDPOINT: u32 = 3;
     const RETRY_BACKOFF_MS: u64 = 1500;
@@ -269,7 +253,7 @@ async fn download_model_with_endpoints(
                 "[AI] Downloading {} from {} (attempt {}/{})",
                 filename, endpoint, attempt, MAX_RETRIES_PER_ENDPOINT
             );
-            match download_single(&url, dest).await {
+            match download_single(&url, dest, proxy, app_handle, model_name).await {
                 Ok(_) => {
                     // 成功后把 last_error 清掉，不再尝试其它端点
                     return Ok(());
@@ -296,15 +280,50 @@ async fn download_model_with_endpoints(
     Err(last_error.unwrap_or_else(|| anyhow!("All model download endpoints failed")))
 }
 
-async fn download_single(url: &str, dest: &Path) -> Result<()> {
-    let client = reqwest::Client::builder()
-        .timeout(tokio::time::Duration::from_secs(120))
-        .connect_timeout(tokio::time::Duration::from_secs(20))
-        .build()?;
+/// 流式下载单个文件：
+/// - chunk 流式写盘（不再整包缓冲进内存，350MB 级模型不再撑爆内存）
+/// - 超时语义改为「30s 无新数据」空闲超时 + 20s 连接超时，不再设总超时
+///   （国内低速链路下载数百 MB 模型可长时间进行）
+/// - 支持断点续传（.download 临时文件 + Range 请求）
+/// - 每 2MB 上报一次 ai-model-download-progress 进度事件
+/// - 完成后原子 rename 到目标路径
+async fn download_single(
+    url: &str,
+    dest: &Path,
+    proxy: Option<&str>,
+    app_handle: &tauri::AppHandle,
+    model_name: &str,
+) -> Result<()> {
+    use futures_util::StreamExt;
 
-    // 支持断点续传：检查已下载的部分
-    let existing_size = if dest.exists() {
-        fs::metadata(dest)?.len()
+    let mut builder = reqwest::Client::builder()
+        .connect_timeout(tokio::time::Duration::from_secs(20))
+        .read_timeout(tokio::time::Duration::from_secs(30));
+    if let Some(p) = proxy
+        && let Ok(proxy_obj) = reqwest::Proxy::all(p)
+    {
+        builder = builder.proxy(proxy_obj);
+    }
+    let client = builder.build()?;
+
+    let parent = dest.parent().ok_or_else(|| {
+        anyhow::anyhow!(
+            "Cannot determine parent directory for downloaded asset {}",
+            dest.display()
+        )
+    })?;
+    fs::create_dir_all(parent)?;
+
+    let file_name = dest
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| anyhow::anyhow!("Invalid downloaded asset path {}", dest.display()))?
+        .to_string();
+    let tmp_path = dest.with_file_name(format!(".{}.download", file_name));
+
+    // 断点续传：.download 临时文件保留未完成的字节
+    let existing_size = if tmp_path.exists() {
+        fs::metadata(&tmp_path)?.len()
     } else {
         0
     };
@@ -316,32 +335,69 @@ async fn download_single(url: &str, dest: &Path) -> Result<()> {
 
     let response = request.send().await?;
     let status = response.status();
+    if !(status.is_success() || status == reqwest::StatusCode::PARTIAL_CONTENT) {
+        let body = response.text().await.unwrap_or_default();
+        let _ = fs::remove_file(&tmp_path);
+        return Err(anyhow::anyhow!(
+            "HTTP {} for {}: {}",
+            status,
+            url,
+            &body[..body.len().min(200)]
+        ));
+    }
 
-    let bytes = if status == reqwest::StatusCode::PARTIAL_CONTENT {
-        // 断点续传：读取新的 bytes 追加到已有文件
-        let new_bytes = response.bytes().await?;
-        let mut file = fs::OpenOptions::new().append(true).open(dest)?;
-        file.write_all(&new_bytes)?;
-        // 返回整个文件用于后续 persist
-        fs::read(dest)?.into()
+    let total = response.content_length().map(|len| len + existing_size);
+    let mut file = if status == reqwest::StatusCode::PARTIAL_CONTENT {
+        fs::OpenOptions::new().append(true).open(&tmp_path)?
     } else {
-        // 全新下载（或服务器不支持 Range）
-        if dest.exists() {
-            let _ = fs::remove_file(dest);
-        }
-        if !status.is_success() {
-            let body = response.text().await.unwrap_or_default();
-            return Err(anyhow::anyhow!(
-                "HTTP {} for {}: {}",
-                status,
-                url,
-                &body[..body.len().min(200)]
-            ));
-        }
-        response.bytes().await?
+        // 全新下载（或服务器不支持 Range）：丢弃旧临时文件
+        let _ = fs::remove_file(&tmp_path);
+        fs::File::create(&tmp_path)?
     };
 
-    persist_downloaded_asset(dest, &bytes)
+    let mut stream = response.bytes_stream();
+    let mut received: u64 = if status == reqwest::StatusCode::PARTIAL_CONTENT {
+        existing_size
+    } else {
+        0
+    };
+    let mut last_emit = received;
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk?;
+        if chunk.is_empty() {
+            continue;
+        }
+        file.write_all(&chunk)?;
+        received += chunk.len() as u64;
+        if received - last_emit >= 2 * 1024 * 1024 {
+            last_emit = received;
+            let _ = app_handle.emit(
+                "ai-model-download-progress",
+                serde_json::json!({ "model": model_name, "received": received, "total": total }),
+            );
+        }
+    }
+    file.sync_all()?;
+    drop(file);
+
+    if received == 0 {
+        let _ = fs::remove_file(&tmp_path);
+        return Err(anyhow::anyhow!(
+            "Downloaded asset for {} was empty",
+            dest.display()
+        ));
+    }
+
+    fs::rename(&tmp_path, dest).or_else(|rename_error| -> std::io::Result<()> {
+        if dest.exists() {
+            fs::remove_file(dest)?;
+            fs::rename(&tmp_path, dest)?;
+            Ok(())
+        } else {
+            Err(rename_error)
+        }
+    })?;
+    Ok(())
 }
 
 fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool> {
@@ -413,8 +469,17 @@ async fn download_and_verify_model(
             println!("Model {} has incorrect hash. Re-downloading.", model_name);
             fs::remove_file(&dest_path)?;
         }
+        let proxy = model_proxy_from_handle(app_handle);
         let _ = app_handle.emit("ai-model-download-start", model_name);
-        let download_result = download_model_with_endpoints(endpoints, filename, &dest_path).await;
+        let download_result = download_model_with_endpoints(
+            app_handle,
+            endpoints,
+            filename,
+            &dest_path,
+            model_name,
+            proxy.as_deref(),
+        )
+        .await;
         let _ = app_handle.emit("ai-model-download-finish", model_name);
         download_result?;
 
@@ -646,11 +711,15 @@ pub async fn get_or_init_clip_models(
 
     let clip_tokenizer_path = models_dir.join(CLIP_TOKENIZER_FILENAME);
     if !clip_tokenizer_path.exists() {
+        let proxy = model_proxy_from_handle(app_handle);
         let _ = app_handle.emit("ai-model-download-start", "CLIP Tokenizer");
         let download_result = download_model_with_endpoints(
+            app_handle,
             &endpoints,
             CLIP_TOKENIZER_FILENAME,
             &clip_tokenizer_path,
+            "CLIP Tokenizer",
+            proxy.as_deref(),
         )
         .await;
         let _ = app_handle.emit("ai-model-download-finish", "CLIP Tokenizer");
@@ -1709,8 +1778,6 @@ pub fn run_depth_anything_model(
     Ok(depth_map)
 }
 
-// chunks_exact(3) 用于逐点解包 XYZ，as_chunks 的数组分块在此无额外收益
-#[allow(clippy::chunks_exact_to_as_chunks)]
 fn build_normal_depth(points: &[f32], mask: &[f32]) -> Vec<u8> {
     let valid =
         |point: &[f32], m: f32| m >= 0.5 && point.iter().all(|v| v.is_finite()) && point[2] > 0.0;
@@ -1744,8 +1811,6 @@ fn build_normal_depth(points: &[f32], mask: &[f32]) -> Vec<u8> {
         .collect()
 }
 
-// chunks_exact(3) 用于逐点解包法线 XYZ，as_chunks 的数组分块在此无额外收益
-#[allow(clippy::chunks_exact_to_as_chunks)]
 pub fn run_normal_model(
     image: &DynamicImage,
     normal_session: &Mutex<Session>,

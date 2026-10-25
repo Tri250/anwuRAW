@@ -29,6 +29,7 @@ export default function DetailsPanel({
     state.selectedImage ? state.aiDenoiseProgress[state.selectedImage.path] : undefined,
   );
   const aiModelDownloadStatus = useProcessStore((state) => state.aiModelDownloadStatus);
+  const aiModelDownloadProgress = useProcessStore((state) => state.aiModelDownloadProgress);
   const setEditor = useEditorStore((state) => state.setEditor);
 
   const handleAdjustmentChange = (key: string, value: string) => {
@@ -172,7 +173,9 @@ export default function DetailsPanel({
                           </Text>
                         </div>
                         <Text variant={TextVariants.small} className="text-accent">
-                          {aiModelDownloadStatus || `${Math.round(aiDenoiseProgress * 100)}%`}
+                          {aiModelDownloadStatus
+                            ? `${aiModelDownloadProgress?.total ? `${Math.round((aiModelDownloadProgress.received / aiModelDownloadProgress.total) * 100)}% · ` : ''}${aiModelDownloadStatus}`
+                            : `${Math.round(aiDenoiseProgress * 100)}%`}
                         </Text>
                       </div>
                     ) : (

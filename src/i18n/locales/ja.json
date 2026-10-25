@@ -2132,6 +2132,20 @@
     "title": "設定",
     "tooltips": {
       "goHome": "ホームへ移動"
+    },
+    "aiDownload": {
+      "title": "AIモデルのダウンロード",
+      "endpoint": "ダウンロード元",
+      "endpointDesc": "AIモデルのダウンロード元。自動では ModelScope → hf-mirror → HuggingFace の順に試行します。",
+      "optAuto": "自動（推奨）",
+      "optModelscope": "ModelScope（中国、最速）",
+      "optHfMirror": "hf-mirror.com（中国ミラー）",
+      "optHuggingface": "HuggingFace（公式）",
+      "optCustom": "カスタム URL",
+      "customUrl": "カスタムエンドポイント URL",
+      "customUrlDesc": "モデルリポジトリのベース URL（HuggingFace 互換の /resolve/ リンクに対応）。",
+      "proxy": "ダウンロードプロキシ",
+      "proxyDesc": "モデルダウンロード用の HTTP/SOCKS プロキシ（例：http://127.0.0.1:7890、Clash の既定ポート）。空欄で直接接続。"
     }
   },
   "tethering": {

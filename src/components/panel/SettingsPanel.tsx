@@ -49,6 +49,8 @@ import { open } from '@tauri-apps/plugin-shell';
 import { RotateCcw } from 'lucide-react';
 import { useUIStore } from '../../store/useUIStore';
 
+const KNOWN_MODEL_ENDPOINTS = ['auto', 'modelscope', 'hf-mirror', 'huggingface'];
+
 interface ConfirmModalState {
   confirmText: string;
   confirmVariant: string;
@@ -562,6 +564,16 @@ export default function SettingsPanel({
 
   const [aiProvider, setAiProvider] = useState(appSettings?.aiProvider || 'cpu');
   const [aiConnectorAddress, setAiConnectorAddress] = useState<string>(appSettings?.aiConnectorAddress || '');
+  const [modelEndpoint, setModelEndpoint] = useState<string>(() => {
+    const v = appSettings?.modelEndpoint || 'auto';
+    return KNOWN_MODEL_ENDPOINTS.includes(v) ? v : v ? 'custom' : 'auto';
+  });
+  const [customEndpoint, setCustomEndpoint] = useState<string>(
+    appSettings?.modelEndpoint && !KNOWN_MODEL_ENDPOINTS.includes(appSettings.modelEndpoint)
+      ? appSettings.modelEndpoint
+      : '',
+  );
+  const [modelProxy, setModelProxy] = useState<string>(appSettings?.modelProxy || '');
   const [newShortcut, setNewShortcut] = useState('');
   const [newAiTag, setNewAiTag] = useState('');
 
@@ -657,6 +669,29 @@ export default function SettingsPanel({
     [t],
   );
 
+  const modelEndpointOptions = useMemo<OptionItem<string>[]>(
+    () => [
+      { value: 'auto', label: t('settings.aiDownload.optAuto') },
+      { value: 'modelscope', label: t('settings.aiDownload.optModelscope') },
+      { value: 'hf-mirror', label: t('settings.aiDownload.optHfMirror') },
+      { value: 'huggingface', label: t('settings.aiDownload.optHuggingface') },
+      { value: 'custom', label: t('settings.aiDownload.optCustom') },
+    ],
+    [t],
+  );
+
+  const handleModelEndpointChange = (value: string) => {
+    setModelEndpoint(value);
+    if (value === 'custom') {
+      if (customEndpoint.trim()) {
+        onSettingsChange({ ...appSettings, modelEndpoint: customEndpoint.trim() });
+      }
+    } else {
+      setCustomEndpoint('');
+      onSettingsChange({ ...appSettings, modelEndpoint: value });
+    }
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -682,6 +717,20 @@ export default function SettingsPanel({
     }
     if (appSettings?.aiProvider !== aiProvider) {
       setAiProvider(appSettings?.aiProvider || 'cpu');
+    }
+    if (appSettings?.modelProxy !== modelProxy) {
+      setModelProxy(appSettings?.modelProxy || '');
+    }
+    const ep = appSettings?.modelEndpoint || 'auto';
+    if (KNOWN_MODEL_ENDPOINTS.includes(ep)) {
+      setModelEndpoint(ep);
+      setCustomEndpoint('');
+    } else if (ep) {
+      setModelEndpoint('custom');
+      setCustomEndpoint(ep);
+    } else {
+      setModelEndpoint('auto');
+      setCustomEndpoint('');
     }
     setProcessingSettings({
       editorPreviewResolution: appSettings?.editorPreviewResolution || 1920,
@@ -1422,6 +1471,76 @@ export default function SettingsPanel({
                           ))}
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                    <Text variant={TextVariants.title} color={TextColors.accent} className="mb-8">
+                      {t('settings.aiDownload.title')}
+                    </Text>
+                    <div className="space-y-8">
+                      <SettingItem
+                        label={t('settings.aiDownload.endpoint')}
+                        description={t('settings.aiDownload.endpointDesc')}
+                      >
+                        <Dropdown
+                          onChange={handleModelEndpointChange}
+                          options={modelEndpointOptions}
+                          value={modelEndpoint}
+                          triggerClassName="bg-bg-primary"
+                        />
+                      </SettingItem>
+
+                      <AnimatePresence>
+                        {modelEndpoint === 'custom' && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                            className="overflow-hidden"
+                          >
+                            <SettingItem
+                              label={t('settings.aiDownload.customUrl')}
+                              description={t('settings.aiDownload.customUrlDesc')}
+                            >
+                              <Input
+                                className="grow"
+                                id="model-endpoint-custom"
+                                onBlur={() => {
+                                  const v = customEndpoint.trim();
+                                  if (v) onSettingsChange({ ...appSettings, modelEndpoint: v });
+                                }}
+                                onChange={(e: any) => setCustomEndpoint(e.target.value)}
+                                onKeyDown={(e: any) => e.stopPropagation()}
+                                placeholder="https://hf-mirror.com/CyberTimon/RapidRAW-Models"
+                                type="text"
+                                value={customEndpoint}
+                                bgClassName="bg-bg-primary"
+                              />
+                            </SettingItem>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      <SettingItem
+                        label={t('settings.aiDownload.proxy')}
+                        description={t('settings.aiDownload.proxyDesc')}
+                      >
+                        <Input
+                          className="grow"
+                          id="model-download-proxy"
+                          onBlur={() =>
+                            onSettingsChange({ ...appSettings, modelProxy: modelProxy.trim() })
+                          }
+                          onChange={(e: any) => setModelProxy(e.target.value)}
+                          onKeyDown={(e: any) => e.stopPropagation()}
+                          placeholder="http://127.0.0.1:7890"
+                          type="text"
+                          value={modelProxy}
+                          bgClassName="bg-bg-primary"
+                        />
+                      </SettingItem>
                     </div>
                   </div>
 

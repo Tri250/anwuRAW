@@ -2165,6 +2165,20 @@
     "title": "Paramètres",
     "tooltips": {
       "goHome": "Aller à l'accueil"
+    },
+    "aiDownload": {
+      "title": "Téléchargement des modèles IA",
+      "endpoint": "Source de téléchargement",
+      "endpointDesc": "Source de téléchargement des modèles IA. « Auto » essaie ModelScope → hf-mirror → HuggingFace dans l’ordre.",
+      "optAuto": "Automatique (recommandé)",
+      "optModelscope": "ModelScope (Chine, le plus rapide)",
+      "optHfMirror": "hf-mirror.com (miroir Chine)",
+      "optHuggingface": "HuggingFace (officiel)",
+      "optCustom": "URL personnalisée",
+      "customUrl": "URL du point de terminaison personnalisé",
+      "customUrlDesc": "URL de base complète du dépôt de modèles (liens /resolve/ compatibles HuggingFace pris en charge).",
+      "proxy": "Proxy de téléchargement",
+      "proxyDesc": "Proxy HTTP/SOCKS facultatif pour les téléchargements, ex. http://127.0.0.1:7890 (port Clash par défaut). Laisser vide pour une connexion directe."
     }
   },
   "tethering": {

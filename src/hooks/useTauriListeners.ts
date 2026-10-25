@@ -139,8 +139,18 @@ export function useTauriListeners({
       listen('ai-model-download-start', (event: any) => {
         if (isEffectActive) useProcessStore.getState().setProcess({ aiModelDownloadStatus: event.payload });
       }),
+      listen<{ model: string; received: number; total: number | null }>(
+        'ai-model-download-progress',
+        (event) => {
+          if (!isEffectActive) return;
+          useProcessStore.getState().setProcess({
+            aiModelDownloadProgress: { received: event.payload.received, total: event.payload.total },
+          });
+        },
+      ),
       listen('ai-model-download-finish', () => {
-        if (isEffectActive) useProcessStore.getState().setProcess({ aiModelDownloadStatus: null });
+        if (isEffectActive)
+          useProcessStore.getState().setProcess({ aiModelDownloadStatus: null, aiModelDownloadProgress: null });
       }),
       listen<{ path: string; progress: number }>('ai-denoise-progress', (event) => {
         if (!isEffectActive) return;

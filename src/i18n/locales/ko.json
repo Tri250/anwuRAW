@@ -2132,6 +2132,20 @@
     "title": "설정",
     "tooltips": {
       "goHome": "홈으로 이동"
+    },
+    "aiDownload": {
+      "title": "AI 모델 다운로드",
+      "endpoint": "다운로드 소스",
+      "endpointDesc": "AI 모델 다운로드 경로입니다. 자동 모드는 ModelScope → hf-mirror → HuggingFace 순으로 시도합니다.",
+      "optAuto": "자동 (권장)",
+      "optModelscope": "ModelScope (중국, 가장 빠름)",
+      "optHfMirror": "hf-mirror.com (중국 미러)",
+      "optHuggingface": "HuggingFace (공식)",
+      "optCustom": "사용자 지정 URL",
+      "customUrl": "사용자 지정 엔드포인트 URL",
+      "customUrlDesc": "모델 저장소 기본 URL 전체(HuggingFace 호환 /resolve/ 링크 지원).",
+      "proxy": "다운로드 프록시",
+      "proxyDesc": "모델 다운로드용 HTTP/SOCKS 프록시(예: http://127.0.0.1:7890, Clash 기본 포트). 비워 두면 직접 연결됩니다."
     }
   },
   "tethering": {

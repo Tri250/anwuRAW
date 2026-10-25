@@ -194,6 +194,8 @@ export type GroupingMode = 'off' | GroupPreference;
 export interface AppSettings {
   aiConnectorAddress?: string;
   aiProvider?: string;
+  modelEndpoint?: string;
+  modelProxy?: string;
   decorations?: any;
   editorPreviewResolution?: number;
   smallThumbnailResolution?: number;

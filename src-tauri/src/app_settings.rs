@@ -450,10 +450,13 @@ pub struct AppSettings {
     pub thumbnail_size: Option<String>,
     pub thumbnail_aspect_ratio: Option<String>,
     pub ai_provider: Option<String>,
-    /// AI 模型下载端点：auto（默认，国内优先 hf-mirror + huggingface 降级）
-    /// 可选值：auto | hf-mirror | huggingface | 自定义 URL
+    /// AI 模型下载端点：auto（默认，国内优先 ModelScope + hf-mirror + huggingface 降级）
+    /// 可选值：auto | modelscope | hf-mirror | huggingface | 自定义 URL
     #[serde(default = "default_model_endpoint")]
     pub model_endpoint: String,
+    /// AI 模型下载代理：空 = 不使用代理（如 http://127.0.0.1:7890）
+    #[serde(default)]
+    pub model_proxy: String,
     #[serde(default = "default_adjustment_visibility")]
     pub adjustment_visibility: HashMap<String, bool>,
     #[serde(default = "default_open_tree_sections")]

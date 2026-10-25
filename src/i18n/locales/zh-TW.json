@@ -2132,6 +2132,20 @@
     "title": "設定",
     "tooltips": {
       "goHome": "返回首頁"
+    },
+    "aiDownload": {
+      "title": "AI 模型下載",
+      "endpoint": "下載來源",
+      "endpointDesc": "AI 模型檔案的下載來源。自動模式按 ModelScope → hf-mirror → HuggingFace 順序嘗試。",
+      "optAuto": "自動（建議）",
+      "optModelscope": "ModelScope 魔搭（大陸最快）",
+      "optHfMirror": "hf-mirror.com（大陸鏡像）",
+      "optHuggingface": "HuggingFace 官方",
+      "optCustom": "自訂 URL",
+      "customUrl": "自訂端點位址",
+      "customUrlDesc": "完整的模型儲存庫基礎 URL（相容 HuggingFace /resolve/ 連結格式）。",
+      "proxy": "下載代理",
+      "proxyDesc": "選用的 HTTP/SOCKS 代理，如 http://127.0.0.1:7890（Clash 預設連接埠）。留空則直連。"
     }
   },
   "tethering": {

@@ -2147,6 +2147,20 @@
     "title": "设置",
     "tooltips": {
       "goHome": "返回首页"
+    },
+    "aiDownload": {
+      "title": "AI 模型下载",
+      "endpoint": "下载源",
+      "endpointDesc": "AI 模型文件的下载来源。自动模式按 ModelScope → hf-mirror → HuggingFace 顺序尝试。",
+      "optAuto": "自动（推荐）",
+      "optModelscope": "ModelScope 魔搭（国内最快）",
+      "optHfMirror": "hf-mirror.com（国内镜像）",
+      "optHuggingface": "HuggingFace 官方",
+      "optCustom": "自定义 URL",
+      "customUrl": "自定义端点地址",
+      "customUrlDesc": "完整的模型仓库基础 URL（兼容 HuggingFace /resolve/ 链接格式）。",
+      "proxy": "下载代理",
+      "proxyDesc": "可选的 HTTP/SOCKS 代理，如 http://127.0.0.1:7890（Clash 默认端口）。留空则直连。"
     }
   },
   "tethering": {

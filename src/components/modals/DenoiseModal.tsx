@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, XCircle, Loader2, Save, RefreshCw, ZoomIn, ZoomOut, Move, Grip } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useProcessStore } from '../../store/useProcessStore';
 import Button from '../ui/Button';
 import Dropdown from '../ui/Dropdown';
 import Slider from '../ui/Slider';
@@ -225,6 +226,7 @@ export default function DenoiseModal({
   targetPaths,
 }: DenoiseModalProps) {
   const { t } = useTranslation();
+  const aiModelDownloadProgress = useProcessStore((state) => state.aiModelDownloadProgress);
   const [isMounted, setIsMounted] = useState(false);
   const [show, setShow] = useState(false);
   const [intensity, setIntensity] = useState<number>(15);
@@ -256,7 +258,7 @@ export default function DenoiseModal({
     isBatch && batchProgress
       ? t('modals.denoise.batchProgressText', { current: batchProgress.current, total: batchProgress.total })
       : aiModelDownloadStatus?.includes('NIND')
-        ? t('modals.denoise.downloadingText', { status: aiModelDownloadStatus })
+        ? `${aiModelDownloadProgress?.total ? `${Math.round((aiModelDownloadProgress.received / aiModelDownloadProgress.total) * 100)}% · ` : ''}${t('modals.denoise.downloadingText', { status: aiModelDownloadStatus })}`
         : progressMessage || t('modals.denoise.initializing');
 
   useEffect(() => {

@@ -2132,6 +2132,20 @@
     "title": "Configuració",
     "tooltips": {
       "goHome": "Anar a l'inici"
+    },
+    "aiDownload": {
+      "title": "Baixada de models d’IA",
+      "endpoint": "Font de baixada",
+      "endpointDesc": "Origen de baixada dels models d’IA. «Auto» prova ModelScope → hf-mirror → HuggingFace en ordre.",
+      "optAuto": "Automàtic (recomanat)",
+      "optModelscope": "ModelScope (Xina, el més ràpid)",
+      "optHfMirror": "hf-mirror.com (rèplica de la Xina)",
+      "optHuggingface": "HuggingFace (oficial)",
+      "optCustom": "URL personalitzada",
+      "customUrl": "URL del punt final personalitzat",
+      "customUrlDesc": "URL base completa del repositori de models (s’admeten enllaços /resolve/ compatibles amb HuggingFace).",
+      "proxy": "Servidor intermediari de baixada",
+      "proxyDesc": "Proxy HTTP/SOCKS opcional per a baixades, p. ex. http://127.0.0.1:7890 (port per defecte de Clash). Buit = connexió directa."
     }
   },
   "tethering": {

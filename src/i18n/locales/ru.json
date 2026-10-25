@@ -2204,6 +2204,20 @@
     "title": "Настройки",
     "tooltips": {
       "goHome": "На главную"
+    },
+    "aiDownload": {
+      "title": "Загрузка моделей ИИ",
+      "endpoint": "Источник загрузки",
+      "endpointDesc": "Источник загрузки моделей ИИ. В режиме «Авто» выполняется попытка ModelScope → hf-mirror → HuggingFace по порядку.",
+      "optAuto": "Авто (рекомендуется)",
+      "optModelscope": "ModelScope (Китай, быстрее всего)",
+      "optHfMirror": "hf-mirror.com (зеркало для Китая)",
+      "optHuggingface": "HuggingFace (официальный)",
+      "optCustom": "Своя URL",
+      "customUrl": "Свой URL эндпоинта",
+      "customUrlDesc": "Полный базовый URL репозитория моделей (поддерживаются ссылки /resolve/ в формате HuggingFace).",
+      "proxy": "Прокси для загрузки",
+      "proxyDesc": "Необязательный HTTP/SOCKS-прокси для загрузки моделей, напр. http://127.0.0.1:7890 (порт Clash по умолчанию). Пусто — прямое подключение."
     }
   },
   "tethering": {
