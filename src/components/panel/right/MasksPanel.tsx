@@ -458,7 +458,7 @@ export default function MasksPanel() {
       } else if (activeMaskId) onSelectMask(null);
       else if (activeMaskContainerId) onSelectContainer(null);
     };
-    if (activeMaskContainerId || renamingId) setCustomEscapeHandler(() => handler);
+    if (activeMaskContainerId || renamingId) setCustomEscapeHandler(handler);
     else setCustomEscapeHandler(null);
     return () => setCustomEscapeHandler(null);
   }, [activeMaskContainerId, activeMaskId, renamingId, onSelectContainer, onSelectMask, setCustomEscapeHandler]);
@@ -1013,6 +1013,12 @@ export default function MasksPanel() {
           <Text variant={TextVariants.title}>{t('editor.masks.maskingTitle')}</Text>
           <div className="flex items-center gap-1">
             <button
+              aria-label={
+                isAdjustmentsPanelVisible
+                  ? t('editor.masks.toggleAnalyticsInAdjustments')
+                  : t('editor.masks.toggleAnalyticsTooltip')
+              }
+              aria-pressed={isWaveformVisible}
               className={clsx(
                 'p-2 rounded-full transition-colors',
                 isAdjustmentsPanelVisible
@@ -1023,6 +1029,7 @@ export default function MasksPanel() {
               )}
               onClick={onToggleWaveform}
               disabled={isAdjustmentsPanelVisible}
+              type="button"
               data-tooltip={
                 isAdjustmentsPanelVisible
                   ? t('editor.masks.toggleAnalyticsInAdjustments')
@@ -1032,9 +1039,11 @@ export default function MasksPanel() {
               <ChartArea size={18} />
             </button>
             <button
+              aria-label={t('editor.masks.resetMaskingTooltip')}
               className="p-2 rounded-full hover:bg-surface transition-colors"
               onClick={handleResetAllMasks}
               data-tooltip={t('editor.masks.resetMaskingTooltip')}
+              type="button"
             >
               <RotateCcw size={18} />
             </button>
@@ -1343,15 +1352,23 @@ function DraggableGridItem({ maskType, onClick, onRightClick, activeMaskContaine
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      onClick={onClick}
+      aria-disabled={maskType.disabled || undefined}
+      onClick={maskType.disabled ? undefined : onClick}
       onContextMenu={(event) => {
         event.preventDefault();
         event.stopPropagation();
+      }}
+      onKeyDown={(event) => {
+        if (maskType.disabled || (event.key !== 'Enter' && event.key !== ' ')) return;
+        event.preventDefault();
+        onClick();
       }}
       onMouseDown={(event) => {
         if (event.button !== 2) return;
         onRightClick(event);
       }}
+      role="button"
+      tabIndex={maskType.disabled ? -1 : 0}
       className={`bg-surface text-text-primary rounded-lg p-2 flex flex-col items-center justify-center gap-2 aspect-square transition-colors
         ${maskType.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-card-active active:bg-accent/20'} 
         ${isDragging ? 'opacity-50' : ''}`}
@@ -1577,11 +1594,21 @@ function ContainerRow({
       >
         <Text
           as="div"
+          aria-expanded={isExpanded}
+          aria-label={`${container.name} · ${isExpanded ? t('editor.masks.collapseMask') : t('editor.masks.expandMask')}`}
           color={hasActiveChild || isExpanded ? TextColors.primary : TextColors.secondary}
           onClick={(e) => {
             e.stopPropagation();
             onToggle();
           }}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            e.stopPropagation();
+            onToggle();
+          }}
+          role="button"
+          tabIndex={0}
           className="p-0.5 rounded transition-colors cursor-pointer"
         >
           {isExpanded ? <FolderOpen size={18} /> : <FolderIcon size={18} />}
@@ -1616,6 +1643,8 @@ function ContainerRow({
         </div>
         <div className="flex opacity-0 group-hover:opacity-100 transition-opacity touch-visible-on-nohover">
           <button
+            aria-label={container.visible ? t('editor.masks.actions.hideMask') : t('editor.masks.actions.showMask')}
+            aria-pressed={container.visible}
             className="p-1 hover:text-text-primary text-text-secondary"
             onMouseEnter={() => setIsMaskControlHovered(true)}
             onMouseLeave={() => setIsMaskControlHovered(false)}
@@ -1628,6 +1657,7 @@ function ContainerRow({
             {container.visible ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
           <button
+            aria-label={t('editor.masks.actions.deleteMask')}
             className="p-1 hover:text-red-500 text-text-secondary"
             onClick={(e) => {
               e.stopPropagation();
@@ -1879,6 +1909,8 @@ function SubMaskRow({
           {isAnalyzing ? (
             <motion.div
               key="analyzing"
+              role="status"
+              aria-label={t('editor.masks.analyzing')}
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.5 }}
@@ -1935,6 +1967,13 @@ function SubMaskRow({
       <div className="flex opacity-0 group-hover:opacity-100 transition-opacity touch-visible-on-nohover">
         {index > 1 && (
           <button
+            aria-label={
+              subMask.mode === SubMaskMode.Additive
+                ? t('editor.masks.actions.switchToSubtract')
+                : subMask.mode === SubMaskMode.Subtractive
+                  ? t('editor.masks.actions.switchToIntersect')
+                  : t('editor.masks.actions.switchToAdd')
+            }
             className="p-1 hover:text-text-primary text-text-secondary"
             data-tooltip={
               subMask.mode === SubMaskMode.Additive
@@ -1965,6 +2004,8 @@ function SubMaskRow({
           </button>
         )}
         <button
+          aria-label={subMask.visible ? t('editor.masks.actions.hideComponent') : t('editor.masks.actions.showComponent')}
+          aria-pressed={subMask.visible}
           className="p-1 hover:text-text-primary text-text-secondary"
           data-tooltip={
             subMask.visible ? t('editor.masks.actions.hideComponent') : t('editor.masks.actions.showComponent')
@@ -1979,6 +2020,7 @@ function SubMaskRow({
           {subMask.visible ? <Eye size={16} /> : <EyeOff size={16} />}
         </button>
         <button
+          aria-label={t('editor.ai.actions.deleteComponent')}
           className="p-1 hover:text-red-500 text-text-secondary"
           data-tooltip={t('editor.ai.actions.deleteComponent')}
           onClick={(e) => {
@@ -2283,6 +2325,9 @@ function SettingsPanel({
               {isAiMask && aiModelDownloadStatus && (
                 <Text
                   as="div"
+                  aria-atomic="true"
+                  aria-live="polite"
+                  role="status"
                   variant={TextVariants.small}
                   color={TextColors.accent}
                   weight={TextWeights.medium}

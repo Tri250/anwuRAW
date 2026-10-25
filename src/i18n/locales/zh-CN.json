@@ -585,6 +585,8 @@
         "autoErase_other": "自动消除 {{count}}"
       },
       "resetInpaintingTooltip": "重置图像修复",
+      "expandEdit": "展开编辑",
+      "collapseEdit": "折叠编辑",
       "settings": {
         "aiModelDownloading": "AI 模型下载中：",
         "basicInpaintTooltipDisabled": "生成式后端不可用或未配置。需要基础图像修复。",
@@ -808,6 +810,9 @@
       },
       "rangeTitle": "范围与全局",
       "resetMaskingTooltip": "重置蒙版",
+      "expandMask": "展开蒙版",
+      "analyzing": "正在分析蒙版",
+      "collapseMask": "折叠蒙版",
       "settings": {
         "aiModelDownloading": "AI 模型下载中：",
         "applyPreset": "应用预设",
@@ -970,6 +975,8 @@
         "masks": "蒙版"
       },
       "title": "预设",
+      "expandFolder": "展开文件夹",
+      "collapseFolder": "折叠文件夹",
       "tooltips": {
         "explore": "探索社区预设",
         "export": "将所有预设导出为 .rrpreset 文件",

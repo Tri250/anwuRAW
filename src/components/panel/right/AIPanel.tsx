@@ -523,7 +523,7 @@ export default function AIPanel() {
       } else if (activeSubMaskId) onSelectSubMask(null);
       else if (activePatchContainerId) onSelectPatchContainer(null);
     };
-    if (activePatchContainerId || renamingId) setCustomEscapeHandler(() => handler);
+    if (activePatchContainerId || renamingId) setCustomEscapeHandler(handler);
     else setCustomEscapeHandler(null);
     return () => setCustomEscapeHandler(null);
   }, [
@@ -1130,9 +1130,11 @@ export default function AIPanel() {
         <div className="p-3 flex justify-between items-center shrink-0 border-b border-surface">
           <Text variant={TextVariants.title}>{t('editor.ai.inpaintingTitle')}</Text>
           <button
+            aria-label={t('editor.ai.resetInpaintingTooltip')}
             className="p-2 rounded-full hover:bg-surface transition-colors"
             onClick={handleResetAllAiEdits}
             data-tooltip={t('editor.ai.resetInpaintingTooltip')}
+            type="button"
           >
             <RotateCcw size={18} />
           </button>
@@ -1404,7 +1406,15 @@ function DraggableGridItem({ maskType, isGenerating, onClick }: any) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      onClick={onClick}
+      aria-disabled={maskType.disabled || isGenerating || undefined}
+      onClick={maskType.disabled || isGenerating ? undefined : onClick}
+      onKeyDown={(event) => {
+        if (maskType.disabled || isGenerating || (event.key !== 'Enter' && event.key !== ' ')) return;
+        event.preventDefault();
+        onClick();
+      }}
+      role="button"
+      tabIndex={maskType.disabled || isGenerating ? -1 : 0}
       className={`bg-surface text-text-primary rounded-lg p-2 flex flex-col items-center justify-center gap-2 aspect-square transition-colors
             ${
               maskType.disabled || isGenerating
@@ -1614,6 +1624,12 @@ function ContainerRow({
       >
         <Text
           as="div"
+          aria-expanded={isStandalone ? undefined : isExpanded}
+          aria-label={
+            isStandalone
+              ? container.name
+              : `${container.name} · ${isExpanded ? t('editor.ai.collapseEdit') : t('editor.ai.expandEdit')}`
+          }
           color={hasActiveChild || isExpanded || isStandalone ? TextColors.primary : TextColors.secondary}
           onClick={(e) => {
             e.stopPropagation();
@@ -1624,12 +1640,27 @@ function ContainerRow({
               onToggle();
             }
           }}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (isStandalone) {
+              onSelectContainer(container.id);
+              onSelectSubMask(firstSubMask.id);
+            } else {
+              onToggle();
+            }
+          }}
+          role="button"
+          tabIndex={0}
           className="relative w-5 h-5 shrink-0 flex items-center justify-center p-0.5 rounded transition-colors cursor-pointer"
         >
           <AnimatePresence mode="wait" initial={false}>
             {container.isLoading ? (
               <motion.div
                 key="loader"
+                aria-label={t('editor.ai.settings.generating')}
+                role="status"
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
@@ -1693,6 +1724,8 @@ function ContainerRow({
         </div>
         <div className="flex opacity-0 group-hover:opacity-100 transition-opacity touch-visible-on-nohover">
           <button
+            aria-label={container.visible ? t('editor.ai.actions.hideEdit') : t('editor.ai.actions.showEdit')}
+            aria-pressed={container.visible}
             className="p-1 hover:text-text-primary text-text-secondary"
             data-tooltip={container.visible ? t('editor.ai.actions.hideEdit') : t('editor.ai.actions.showEdit')}
             onClick={(e) => {
@@ -1703,6 +1736,7 @@ function ContainerRow({
             {container.visible ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
           <button
+            aria-label={t('editor.ai.actions.deleteEdit')}
             className="p-1 hover:text-red-500 text-text-secondary"
             data-tooltip={t('editor.ai.actions.deleteEdit')}
             onClick={(e) => {
@@ -2000,6 +2034,13 @@ function SubMaskRow({
       <div className="flex opacity-0 group-hover:opacity-100 transition-opacity touch-visible-on-nohover">
         {index > 1 && (
           <button
+            aria-label={
+              subMask.mode === SubMaskMode.Additive
+                ? t('editor.ai.actions.switchToSubtract')
+                : subMask.mode === SubMaskMode.Subtractive
+                  ? t('editor.ai.actions.switchToIntersect')
+                  : t('editor.ai.actions.switchToAdd')
+            }
             className="p-1 hover:text-text-primary text-text-secondary"
             data-tooltip={
               subMask.mode === SubMaskMode.Additive
@@ -2030,6 +2071,7 @@ function SubMaskRow({
           </button>
         )}
         <button
+          aria-label={t('editor.ai.actions.deleteComponent')}
           className="p-1 hover:text-red-500 text-text-secondary"
           data-tooltip={t('editor.ai.actions.deleteComponent')}
           onClick={(e) => {
@@ -2123,6 +2165,9 @@ function SettingsPanel({
             {aiModelDownloadStatus && aiModelDownloadStatus.includes('Inpainting') && (
               <Text
                 as="div"
+                aria-atomic="true"
+                aria-live="polite"
+                role="status"
                 variant={TextVariants.small}
                 color={TextColors.accent}
                 weight={TextWeights.medium}
@@ -2197,6 +2242,7 @@ function SettingsPanel({
             </div>
 
             <Button
+              aria-busy={isGeneratingAi || displayContainer.isLoading}
               className="w-full"
               disabled={isGeneratingAi || displayContainer.isLoading || displayContainer.subMasks.length === 0}
               onClick={handleGenerateClick}
@@ -2253,6 +2299,9 @@ function SettingsPanel({
               {isAiMask && aiModelDownloadStatus && (
                 <Text
                   as="div"
+                  aria-atomic="true"
+                  aria-live="polite"
+                  role="status"
                   variant={TextVariants.small}
                   color={TextColors.accent}
                   weight={TextWeights.medium}

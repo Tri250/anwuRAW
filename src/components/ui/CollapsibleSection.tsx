@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, type KeyboardEvent } from 'react';
 import { ChevronDown, Eye, EyeOff } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -89,6 +89,15 @@ export default function CollapsibleSection({
     onToggleVisibility();
   };
 
+  const handleHeaderKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    // 只处理标题行本身获得焦点时的按键，避免眼睛按钮的 Enter/Space 冒泡再次触发展开
+    if (e.target !== e.currentTarget || disableCollapse) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggle();
+    }
+  };
+
   // Android 无右键：长按分区标题打开分区上下文菜单（重置本分区等），
   // 只挂在标题行而非整个分区，避免长按滑块/输入时误弹菜单
   const longPress = useLongPressMenu(title, (e: any) => onContextMenu?.(e));
@@ -96,11 +105,16 @@ export default function CollapsibleSection({
   return (
     <div className="bg-surface rounded-lg overflow-hidden shrink-0" onContextMenu={onContextMenu}>
       <div
+        aria-expanded={disableCollapse ? undefined : isOpen}
+        aria-label={disableCollapse ? undefined : title}
         className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-card-active transition-colors duration-200"
         onPointerDown={longPress.onPointerDown}
         onPointerMove={longPress.onPointerMove}
         onPointerUp={longPress.onPointerUp}
         onPointerCancel={longPress.onPointerCancel}
+        onKeyDown={handleHeaderKeyDown}
+        role={disableCollapse ? undefined : 'button'}
+        tabIndex={disableCollapse ? undefined : 0}
         onClick={() => {
           // 长按已弹出菜单：吞掉这次 click，避免同时折叠/展开分区
           if (longPress.triggeredRef.current) {
@@ -131,6 +145,12 @@ export default function CollapsibleSection({
           {canToggleVisibility && (
             <div className="w-6 h-6 flex items-center justify-center">
               <button
+                aria-label={
+                  isContentVisible
+                    ? t('ui.collapsibleSection.disableSection')
+                    : t('ui.collapsibleSection.enableSection')
+                }
+                aria-pressed={isContentVisible}
                 className={clsx(
                   // section-visibility-toggle：Android 端命中区扩容锚点（见 styles.css）
                   'section-visibility-toggle p-1 rounded-full text-text-secondary hover:bg-bg-primary z-10 transition-opacity duration-300',
@@ -142,6 +162,7 @@ export default function CollapsibleSection({
                     ? t('ui.collapsibleSection.disableSection')
                     : t('ui.collapsibleSection.enableSection')
                 }
+                type="button"
               >
                 {isContentVisible ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>

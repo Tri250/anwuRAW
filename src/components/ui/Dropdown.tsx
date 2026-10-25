@@ -39,11 +39,19 @@ const Dropdown = <T extends React.Key>({
   const resolvedPlaceholder = placeholder ?? t('ui.dropdown.placeholder');
   const resolvedSearchPlaceholder = searchPlaceholder ?? t('ui.dropdown.searchPlaceholder');
   const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const optionRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [focusOption, setFocusOption] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const selectedOption = options.find((opt) => opt.value === value) || null;
+  const filteredOptions = useMemo(() => {
+    if (!searchTerm) return options;
+    return options.filter((opt) => opt.label.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [options, searchTerm]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -64,19 +72,54 @@ const Dropdown = <T extends React.Key>({
     if (!isOpen) {
       setSearchTerm('');
       setShowSearch(false);
+      setActiveIndex(-1);
+      setFocusOption(false);
+      optionRefs.current.clear();
     }
   }, [isOpen]);
+
+  // 方向键导航时把真实焦点移动到选项；鼠标打开时焦点仍停留在触发按钮
+  useEffect(() => {
+    if (!isOpen || !focusOption || activeIndex < 0) return;
+    optionRefs.current.get(activeIndex)?.focus();
+  }, [activeIndex, focusOption, isOpen, filteredOptions.length]);
 
   const handleSelect = (option: OptionItem<T>) => {
     if (option.disabled) return;
     onChange(option.value);
     setIsOpen(false);
+    triggerRef.current?.focus();
   };
 
-  const filteredOptions = useMemo(() => {
-    if (!searchTerm) return options;
-    return options.filter((opt) => opt.label.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [options, searchTerm]);
+  const moveActiveOption = (direction: 1 | -1) => {
+    const total = filteredOptions.length;
+    if (total === 0) return;
+
+    let next = activeIndex;
+    for (let step = 0; step < total; step += 1) {
+      next = next < 0 ? (direction > 0 ? 0 : total - 1) : (next + direction + total) % total;
+      if (!filteredOptions[next].disabled) {
+        setActiveIndex(next);
+        setFocusOption(true);
+        return;
+      }
+    }
+  };
+
+  const moveActiveToEdge = (edge: 'start' | 'end') => {
+    const total = filteredOptions.length;
+    if (total === 0) return;
+    const indexes = edge === 'start' ? [...Array(total).keys()] : [...Array(total).keys()].reverse();
+    const next = indexes.find((index) => !filteredOptions[index].disabled);
+    if (next !== undefined) {
+      setActiveIndex(next);
+      setFocusOption(true);
+    }
+  };
+
+  const openDropdown = () => {
+    setIsOpen(true);
+  };
 
   const isPrintableKey = (e: React.KeyboardEvent<Element>): boolean => {
     if (e.metaKey || e.ctrlKey || e.altKey) return false;
@@ -84,14 +127,42 @@ const Dropdown = <T extends React.Key>({
   };
 
   const handleContainerKeyDown = (e: React.KeyboardEvent) => {
+    const isSearchInput = e.target === searchInputRef.current;
+
     if (e.key === 'Escape') {
       e.stopPropagation();
       setIsOpen(false);
+      triggerRef.current?.focus();
+      return;
+    }
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isOpen) {
+        openDropdown();
+        // 首次打开时从选中项之后开始，避免重复停在已选项
+        setActiveIndex(-1);
+      }
+      moveActiveOption(e.key === 'ArrowDown' ? 1 : -1);
+      return;
+    }
+
+    if (e.key === 'Home' || e.key === 'End') {
+      if (isSearchInput) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isOpen) openDropdown();
+      moveActiveToEdge(e.key === 'Home' ? 'start' : 'end');
       return;
     }
 
     if (e.key === 'Enter') {
-      if (isOpen && filteredOptions.length === 1) {
+      if (isOpen && activeIndex >= 0 && filteredOptions[activeIndex] && !filteredOptions[activeIndex].disabled) {
+        e.stopPropagation();
+        e.preventDefault();
+        handleSelect(filteredOptions[activeIndex]);
+      } else if (isOpen && filteredOptions.length === 1) {
         e.stopPropagation();
         e.preventDefault();
         handleSelect(filteredOptions[0]);
@@ -99,7 +170,7 @@ const Dropdown = <T extends React.Key>({
       return;
     }
 
-    if (e.target === searchInputRef.current) return;
+    if (isSearchInput) return;
 
     if (isPrintableKey(e)) {
       e.stopPropagation();
@@ -107,6 +178,8 @@ const Dropdown = <T extends React.Key>({
 
       setIsOpen(true);
       setShowSearch(true);
+      setActiveIndex(-1);
+      setFocusOption(false);
       setSearchTerm((prev) => prev + e.key);
     }
   };
@@ -114,6 +187,7 @@ const Dropdown = <T extends React.Key>({
   return (
     <div className={`relative ${className}`} ref={dropdownRef} onKeyDown={handleContainerKeyDown}>
       <button
+        ref={triggerRef}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         disabled={disabled}
@@ -122,7 +196,11 @@ const Dropdown = <T extends React.Key>({
           'focus:ring-accent focus:border-accent focus:outline-hidden focus:ring-2',
           triggerClassName || 'bg-surface',
         )}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setActiveIndex(-1);
+          setFocusOption(false);
+        }}
         type="button"
       >
         <Text as="span" variant={TextVariants.label} color={TextColors.primary}>
@@ -144,6 +222,7 @@ const Dropdown = <T extends React.Key>({
             transition={{ duration: 0.1, ease: 'easeOut' }}
           >
             <div
+              aria-label={resolvedPlaceholder}
               aria-orientation="vertical"
               className="bg-surface/95 backdrop-blur-md rounded-lg shadow-xl p-2 max-h-80 overflow-y-auto"
               role="listbox"
@@ -152,18 +231,27 @@ const Dropdown = <T extends React.Key>({
                 <Input
                   ref={searchInputRef}
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setActiveIndex(-1);
+                    setFocusOption(false);
+                  }}
                   placeholder={resolvedSearchPlaceholder}
                   autoFocus={true}
                   className="mb-2"
                 />
               )}
 
-              {filteredOptions.map((option: OptionItem<T>) => {
+              {filteredOptions.map((option: OptionItem<T>, index: number) => {
                 const isSelected = value === option.value;
+                const isActive = activeIndex === index;
                 return (
                   <button
                     key={option.value}
+                    ref={(element) => {
+                      if (element) optionRefs.current.set(index, element);
+                      else optionRefs.current.delete(index);
+                    }}
                     onClick={() => handleSelect(option)}
                     disabled={option.disabled}
                     className={clsx(
@@ -171,12 +259,15 @@ const Dropdown = <T extends React.Key>({
                       'transition-colors duration-150',
                       {
                         'bg-bg-primary': isSelected,
-                        'hover:bg-bg-primary': !option.disabled,
+                        'bg-card-active': isActive && !isSelected,
+                        'hover:bg-bg-primary': !option.disabled && !isActive,
                         'opacity-40 cursor-not-allowed': option.disabled,
                       },
                     )}
+                    onMouseEnter={() => setActiveIndex(index)}
                     role="option"
                     aria-selected={isSelected}
+                    tabIndex={-1}
                   >
                     <Text color={TextColors.primary} weight={isSelected ? TextWeights.semibold : TextWeights.normal}>
                       {option.label}

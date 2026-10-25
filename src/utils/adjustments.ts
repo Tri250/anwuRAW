@@ -961,7 +961,8 @@ export const normalizeLoadedAdjustments = (loadedAdjustments: Adjustments): any 
     fogGlow: loadedAdjustments.fogGlow ?? INITIAL_ADJUSTMENTS.fogGlow,
     fogTemperature: loadedAdjustments.fogTemperature ?? INITIAL_ADJUSTMENTS.fogTemperature,
     fogTint: loadedAdjustments.fogTint ?? INITIAL_ADJUSTMENTS.fogTint,
-    lensCorrectionMode: loadedAdjustments.lensCorrectionMode || 'manual',
+    lensCorrectionMode:
+      loadedAdjustments.lensCorrectionMode === 'auto' ? 'auto' : 'manual',
     lensMaker: loadedAdjustments.lensMaker ?? INITIAL_ADJUSTMENTS.lensMaker,
     lensModel: loadedAdjustments.lensModel ?? INITIAL_ADJUSTMENTS.lensModel,
     lensDistortionAmount: loadedAdjustments.lensDistortionAmount ?? INITIAL_ADJUSTMENTS.lensDistortionAmount,

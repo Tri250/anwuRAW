@@ -1,0 +1,59 @@
+﻿用例编号,模块,测试套件,交互场景,用例标题,状态,耗时(ms)
+TC-UX-COM-001,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 折叠分区,标题行暴露 button 语义与 aria-expanded，Enter 可折叠,通过,93
+TC-UX-COM-002,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 折叠分区,Space 也可折叠，且不会触发页面滚动默认行为,通过,14
+TC-UX-COM-003,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 折叠分区,眼睛按钮有可访问名称与 aria-pressed，点击只切换可见性不折叠,通过,12
+TC-UX-COM-004,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 折叠分区,禁用手风琴时（Android）标题不再是 button，也不显示折叠箭头,通过,10
+TC-UX-COM-005,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 下拉选择,ArrowDown 打开列表并聚焦第一个可用选项，跳过 disabled 项,通过,57
+TC-UX-COM-006,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 下拉选择,ArrowUp 从末尾进入，连续方向键在可用选项间循环,通过,52
+TC-UX-COM-007,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 下拉选择,Home/End 跳到首个/末个可用选项,通过,60
+TC-UX-COM-008,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 下拉选择,Enter 选择当前选项，关闭列表并把焦点还给触发按钮,通过,151
+TC-UX-COM-009,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 下拉选择,Escape 关闭列表且不改变选择，焦点回到触发按钮,通过,134
+TC-UX-COM-010,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 下拉选择,键入可打印字符打开搜索并过滤，Enter 选择唯一结果,通过,16
+TC-UX-COM-011,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 下拉选择,点击外部关闭列表，触发按钮 aria-expanded 同步,通过,14
+TC-UX-COM-012,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 滑块,range 输入暴露可访问名称，数值显示作为可编辑按钮,通过,14
+TC-UX-COM-013,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 滑块,Enter 进入数值编辑，输入后 Enter 提交数值,通过,20
+TC-UX-COM-014,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 滑块,数值编辑中 ArrowUp/ArrowDown 按 step 调整,通过,15
+TC-UX-COM-015,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 滑块,悬停标签显示重置提示，点击标签恢复默认值,通过,9
+TC-UX-COM-016,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 滑块,禁用时 range 原生 disabled，数值显示不可聚焦且无按钮语义,通过,7
+TC-UX-COM-017,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 开关与分隔条,点击开关标签切换，禁用时 input 原生 disabled,通过,14
+TC-UX-COM-018,公共交互原语,interactionPrimitives.test.tsx,UX 交互原语 · 开关与分隔条,分隔条暴露 separator 语义与方向,通过,5
+TC-UX-ADJ-001,调整,controlsPanel.test.tsx,调整面板 · 键盘与可访问交互体验,分区标题可用 Enter 折叠/展开，aria-expanded 同步,通过,84
+TC-UX-ADJ-002,调整,controlsPanel.test.tsx,调整面板 · 键盘与可访问交互体验,眼睛按钮暴露名称与 aria-pressed，键盘触发不会折叠分区,通过,32
+TC-UX-ADJ-003,调整,controlsPanel.test.tsx,调整面板 · 键盘与可访问交互体验,顶部工具栏图标按钮具备可访问名称，波形按钮暴露 aria-pressed,通过,105
+TC-UX-ADJ-004,调整,controlsPanel.test.tsx,调整面板 · 键盘与可访问交互体验,Android 取消折叠时标题不再暴露 button 语义,通过,55
+TC-UX-CROP-001,裁剪与变换,cropPanel.test.tsx,裁剪与变换 · 用户交互体验,裁剪预设为原生按钮，选中态通过 aria-pressed 暴露并支持键盘激活,通过,152
+TC-UX-CROP-002,裁剪与变换,cropPanel.test.tsx,裁剪与变换 · 用户交互体验,方向与几何磁贴均为可聚焦按钮，键盘可旋转与翻转,通过,234
+TC-UX-CROP-003,裁剪与变换,cropPanel.test.tsx,裁剪与变换 · 用户交互体验,自动裁剪开关与旋转归零按钮具备可访问名称和禁用反馈,通过,177
+TC-UX-CROP-004,裁剪与变换,cropPanel.test.tsx,裁剪与变换 · 用户交互体验,自由比例下方向切换禁用并说明原因，选择比例后恢复可用,通过,164
+TC-UX-CROP-005,裁剪与变换,cropPanel.test.tsx,裁剪与变换 · 用户交互体验,拉直与 AI 拉直入口以可访问名称和按下态反馈状态,通过,69
+TC-UX-CROP-006,裁剪与变换,cropPanel.test.tsx,裁剪与变换 · 用户交互体验,变换模态以 dialog 语义暴露模态名称,通过,78
+TC-UX-CROP-007,裁剪与变换,cropPanel.test.tsx,裁剪与变换 · 用户交互体验,镜头校正模态以 dialog 语义暴露模态名称,通过,136
+TC-UX-MASK-001,蒙版,masksPanelUi.test.tsx,蒙版 · 用户交互体验,创建入口以按钮语义暴露，Enter 与 Space 均可创建蒙版,通过,177
+TC-UX-MASK-002,蒙版,masksPanelUi.test.tsx,蒙版 · 用户交互体验,工具栏分析按钮暴露禁用原因与按下态，重置按钮具备可访问名称,通过,31
+TC-UX-MASK-003,蒙版,masksPanelUi.test.tsx,蒙版 · 用户交互体验,容器展开器支持键盘折叠/展开，并同步 aria-expanded,通过,391
+TC-UX-MASK-004,蒙版,masksPanelUi.test.tsx,蒙版 · 用户交互体验,容器与组件的显隐、模式按钮通过名称和 aria-pressed 反馈状态,通过,394
+TC-UX-MASK-005,蒙版,masksPanelUi.test.tsx,蒙版 · 用户交互体验,蒙版属性分区可通过键盘折叠并更新 aria-expanded,通过,262
+TC-UX-MASK-006,蒙版,masksPanelUi.test.tsx,蒙版 · 用户交互体验,AI 模型下载进度以 status 区域礼貌播报,通过,102
+TC-UX-AI-001,图像修复,aiPanel.test.tsx,图像修复 · 用户交互体验,创建入口为可聚焦按钮，Enter/Space 可创建，生成中呈 aria-disabled,通过,83
+TC-UX-AI-002,图像修复,aiPanel.test.tsx,图像修复 · 用户交互体验,工具栏重置按钮具备可访问名称,通过,21
+TC-UX-AI-003,图像修复,aiPanel.test.tsx,图像修复 · 用户交互体验,容器展开器支持键盘折叠/展开并同步 aria-expanded,通过,64
+TC-UX-AI-004,图像修复,aiPanel.test.tsx,图像修复 · 用户交互体验,容器显隐、组件模式与删除按钮通过名称和 aria-pressed 反馈状态,通过,71
+TC-UX-AI-005,图像修复,aiPanel.test.tsx,图像修复 · 用户交互体验,生成式替换分区支持键盘折叠并暴露 aria-expanded,通过,55
+TC-UX-AI-006,图像修复,aiPanel.test.tsx,图像修复 · 用户交互体验,生成中按钮暴露 aria-busy，下载进度以 status 区域播报,通过,49
+TC-UX-PRESET-001,预设,presetsPanelUi.test.tsx,预设 · 用户交互体验,预设项以按钮语义暴露选中态，Enter 与 Space 均可应用,通过,90
+TC-UX-PRESET-002,预设,presetsPanelUi.test.tsx,预设 · 用户交互体验,预设项内的滑块按键不会误触发预设应用,通过,44
+TC-UX-PRESET-003,预设,presetsPanelUi.test.tsx,预设 · 用户交互体验,收藏星标暴露名称与按下态，点击后即时同步,通过,655
+TC-UX-PRESET-004,预设,presetsPanelUi.test.tsx,预设 · 用户交互体验,收藏筛选按钮同步 aria-pressed 与提示名称,通过,45
+TC-UX-PRESET-005,预设,presetsPanelUi.test.tsx,预设 · 用户交互体验,头部导入、导出、新建与社区入口均具备可访问名称,通过,61
+TC-UX-PRESET-006,预设,presetsPanelUi.test.tsx,预设 · 用户交互体验,空列表时禁用收藏筛选与导出，并说明可用操作,通过,31
+TC-UX-PRESET-007,预设,presetsPanelUi.test.tsx,预设 · 用户交互体验,文件夹展开器支持键盘与 aria-expanded，并播报展开状态,通过,84
+TC-UX-PRESET-008,预设,presetsPanelUi.test.tsx,预设 · 用户交互体验,加载状态位于 polite status 区域,通过,8
+TC-UX-EXP-001,导出,exportPanelUi.test.tsx,导出 · 键盘、焦点与状态反馈体验,格式按钮暴露 aria-pressed，切换后仅当前格式为按下态,通过,86
+TC-UX-EXP-002,导出,exportPanelUi.test.tsx,导出 · 键盘、焦点与状态反馈体验,色彩空间与位深按钮暴露 aria-pressed，选择后状态同步,通过,72
+TC-UX-EXP-003,导出,exportPanelUi.test.tsx,导出 · 键盘、焦点与状态反馈体验,高级选项按钮同步 aria-expanded 与 aria-controls,通过,51
+TC-UX-EXP-004,导出,exportPanelUi.test.tsx,导出 · 键盘、焦点与状态反馈体验,底部状态是 polite live region，导出中主按钮 aria-busy,通过,15
+TC-UX-EXP-005,导出,exportPanelUi.test.tsx,导出 · 键盘、焦点与状态反馈体验,质量滑块可用键盘进入数值编辑并提交，aria 名称可定位,通过,385
+TC-UX-EXP-006,导出,exportPanelUi.test.tsx,导出 · 文件命名与终态播报体验,多图时文件名模板输入具备可访问名称，变量按钮可插入占位符,通过,112
+TC-UX-EXP-007,导出,exportPanelUi.test.tsx,导出 · 文件命名与终态播报体验,导出成功终态通过隐藏 status 区域礼貌播报,通过,20
+TC-UX-EXP-008,导出,exportPanelUi.test.tsx,导出 · 文件命名与终态播报体验,导出失败终态播报具体错误，并保留主按钮可读状态,通过,19
+TC-UX-EXP-009,导出,exportPanelUi.test.tsx,导出 · 文件命名与终态播报体验,导出进行中格式选择禁用且主按钮暴露 aria-busy,通过,81

@@ -603,6 +603,13 @@ const Slider = ({
   };
 
   const numericValue = isNaN(Number(value)) ? 0 : Number(value);
+  const accessibleLabel = typeof label === 'string' ? label : undefined;
+
+  const handleValueKeyDown = (e: React.KeyboardEvent<HTMLSpanElement>) => {
+    if (disabled || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    handleValueClick();
+  };
 
   return (
     // slider-row / slider-value-display：Android 端触控扩容锚点（见 styles.css），
@@ -638,6 +645,7 @@ const Slider = ({
         <div className="w-14 text-right shrink-0">
           {isEditing ? (
             <input
+              aria-label={accessibleLabel}
               className="w-full text-sm text-right bg-card-active border border-gray-500 rounded-sm px-1 py-0 outline-none focus:ring-1 focus:ring-blue-500 text-text-primary"
               // 软键盘优化：数值编辑用数字键盘，且不需要自动大写/纠错
               inputMode="decimal"
@@ -657,10 +665,14 @@ const Slider = ({
             />
           ) : (
             <span
+              aria-label={accessibleLabel ? `${accessibleLabel}: ${numericValue}${suffix ?? ''}` : undefined}
               className={`slider-value-display text-sm text-text-primary w-full text-right select-none whitespace-nowrap ${disabled ? '' : 'cursor-text'}`}
+              data-tooltip={disabled ? undefined : t('ui.slider.clickToEdit')}
               onClick={disabled ? undefined : handleValueClick}
               onDoubleClick={disabled ? undefined : handleReset}
-              data-tooltip={disabled ? undefined : t('ui.slider.clickToEdit')}
+              onKeyDown={disabled ? undefined : handleValueKeyDown}
+              role={disabled ? undefined : 'button'}
+              tabIndex={disabled ? undefined : 0}
             >
               {decimalPlaces > 0 && numericValue === 0 ? '0' : numericValue.toFixed(decimalPlaces)}
               {suffix && <span className="text-[10px] align-top inline-block mt-0.5 ml-0.5">{suffix}</span>}
@@ -684,9 +696,11 @@ const Slider = ({
         />
         <input
           ref={rangeInputRef}
+          aria-label={accessibleLabel}
           className={`absolute top-1/2 left-0 w-full h-7 -translate-y-1/2 appearance-none bg-transparent cursor-pointer m-0 p-0 slider-input z-10 ${
             isDragging ? 'slider-thumb-active' : ''
           } ${disabled ? 'cursor-not-allowed' : ''}`}
+          disabled={disabled}
           style={{ margin: 0, touchAction: isDragging ? 'none' : 'pan-y' }}
           max={String(maxPosition)}
           min={String(minPosition)}

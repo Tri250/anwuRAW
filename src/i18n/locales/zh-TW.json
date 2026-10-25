@@ -580,6 +580,8 @@
         "autoErase_other": "自動消除 {{count}}"
       },
       "resetInpaintingTooltip": "重置影像修復",
+      "expandEdit": "展開編輯",
+      "collapseEdit": "摺疊編輯",
       "settings": {
         "aiModelDownloading": "AI 模型下載中：",
         "basicInpaintTooltipDisabled": "生成式後端不可用或未配置。需要基礎影像修復。",
@@ -814,6 +816,9 @@
       },
       "rangeTitle": "範圍與全域",
       "resetMaskingTooltip": "重置遮色片",
+      "expandMask": "展開遮色片",
+      "analyzing": "正在分析遮色片",
+      "collapseMask": "摺疊遮色片",
       "settings": {
         "aiModelDownloading": "AI 模型下載中：",
         "applyPreset": "應用預設",
@@ -965,6 +970,8 @@
         "masks": "遮色片"
       },
       "title": "預設",
+      "expandFolder": "展開資料夾",
+      "collapseFolder": "摺疊資料夾",
       "tooltips": {
         "explore": "探索社群預設",
         "export": "將所有預設匯出為 .rrpreset 檔案",

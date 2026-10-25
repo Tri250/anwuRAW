@@ -10,7 +10,7 @@ import {
 
 export type SwitcherPlacement = 'bottom' | 'right' | 'left' | 'top';
 
-interface CollapsibleSectionsState {
+export interface CollapsibleSectionsState {
   basic: boolean;
   color: boolean;
   curves: boolean;

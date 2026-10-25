@@ -585,6 +585,8 @@
         "autoErase_other": "Auto Erase {{count}}"
       },
       "resetInpaintingTooltip": "Reset Inpainting",
+      "expandEdit": "Expand Edit",
+      "collapseEdit": "Collapse Edit",
       "settings": {
         "aiModelDownloading": "AI Model Downloading: ",
         "basicInpaintTooltipDisabled": "Generative backend not available or not configured. Basic inpainting is required.",
@@ -808,6 +810,9 @@
       },
       "rangeTitle": "Ranges & Global",
       "resetMaskingTooltip": "Reset Masking",
+      "expandMask": "Expand Mask",
+      "analyzing": "Analyzing mask",
+      "collapseMask": "Collapse Mask",
       "settings": {
         "aiModelDownloading": "AI Model Downloading: ",
         "applyPreset": "Apply Preset",
@@ -970,6 +975,8 @@
         "masks": "Masks"
       },
       "title": "Presets",
+      "expandFolder": "Expand Folder",
+      "collapseFolder": "Collapse Folder",
       "tooltips": {
         "explore": "Explore Community Presets",
         "export": "Export all presets to .rrpreset file",

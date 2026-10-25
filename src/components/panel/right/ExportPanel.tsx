@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from 'react';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { FileInput, CheckCircle, XCircle, Loader, Ban, ChevronDown, ChevronRight, Settings, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import debounce from 'lodash.debounce';
 import Switch from '../../ui/Switch';
 import Button from '../../ui/Button';
@@ -36,7 +37,9 @@ interface ExportPanelProps {
   exportState: ExportState;
   multiSelectedPaths: Array<string>;
   selectedImage: SelectedImage | null;
-  setExportState(state: any): void;
+  setExportState(
+    updater: Partial<ExportState> | ((current: ExportState) => Partial<ExportState>),
+  ): void;
   appSettings: AppSettings | null;
   onSettingsChange: (settings: AppSettings) => void;
   rootPaths: string[];
@@ -45,7 +48,7 @@ interface ExportPanelProps {
 }
 
 interface SectionProps {
-  children: any;
+  children: ReactNode;
   title: string;
 }
 
@@ -160,7 +163,7 @@ function WatermarkPreview({
   );
 }
 
-const formatBytes = (bytes: number, t: any, decimals = 2) => {
+const formatBytes = (bytes: number, t: TFunction, decimals = 2) => {
   if (!+bytes) return `0 ${t('export.bytes.bytes')}`;
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
@@ -256,6 +259,10 @@ export default function ExportPanel({
       setDpi(parsed);
     }
   };
+  // 应用导出预设/上次设置后同步受控输入框，避免 DPI 已回填但界面仍显示 300
+  useEffect(() => {
+    setDpiInput(String(dpi));
+  }, [dpi]);
 
   const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
   const initDone = useRef(false);
@@ -316,20 +323,24 @@ export default function ExportPanel({
 
   useEffect(() => {
     const fetchDims = async () => {
-      if (!enableWatermark || numImages === 0 || !isVisible || !isPanelReallyActive) return;
+      if (!enableWatermark || numImages === 0 || !isVisible) return;
+      // 图库导出浮层不受右侧面板激活状态约束
+      if (!isPanelReallyActive && !isLibraryContext) return;
       if (!isLibraryContext && selectedImage && selectedImage.width && selectedImage.height) {
         setImageAspectRatio(selectedImage.width / selectedImage.height);
         return;
       }
       try {
-        const dims: any = await invoke('get_image_dimensions', { path: pathsToExport[0] });
+        const dims: { width: number; height: number } = await invoke('get_image_dimensions', {
+          path: pathsToExport[0],
+        });
         if (dims.width > 0 && dims.height > 0) setImageAspectRatio(dims.width / dims.height);
       } catch {
         setImageAspectRatio(3 / 2);
       }
     };
     fetchDims();
-  }, [pathsToExport, isLibraryContext, selectedImage, enableWatermark, numImages, isVisible]);
+  }, [pathsToExport, isLibraryContext, selectedImage, enableWatermark, numImages, isVisible, isPanelReallyActive]);
 
   useEffect(() => {
     const fetchWatermarkDimensions = async () => {
@@ -391,7 +402,7 @@ export default function ExportPanel({
   );
 
   useEffect(() => {
-    if (!isPanelReallyActive) return;
+    if (!isPanelReallyActive && !isLibraryContext) return;
 
     const exportSettings: ExportSettings = {
       filenameTemplate,
@@ -459,6 +470,9 @@ export default function ExportPanel({
     exportMasks,
     preserveFolders,
     isLibraryContext,
+    dpi,
+    colorSpace,
+    bitDepth,
   ]);
 
   const handleVariableClick = (variable: string) => {
@@ -515,7 +529,8 @@ export default function ExportPanel({
     const lastExportPath = appSettings?.exportPresets?.find((p) => p.id === '__last_used__')?.lastExportPath;
 
     try {
-      const selectedFormat: any = FILE_FORMATS.find((f) => f.id === fileFormat);
+      const selectedFormat = FILE_FORMATS.find((f) => f.id === fileFormat);
+      if (!selectedFormat) return;
 
       let outputFolderOrFile = '';
       const shouldChooseOutputFile = numImages === 1 && !preserveFolders;
@@ -631,6 +646,7 @@ export default function ExportPanel({
               <div className="grid grid-cols-3 gap-2">
                 {FILE_FORMATS.map((format: FileFormat) => (
                   <button
+                    aria-pressed={fileFormat === format.id}
                     className={`px-2 py-1.5 rounded-md transition-colors ${fileFormat === format.id ? 'bg-accent' : 'bg-surface hover:bg-card-active'} disabled:opacity-50`}
                     disabled={isExporting}
                     key={format.id}
@@ -683,6 +699,7 @@ export default function ExportPanel({
             {numImages > 1 && (
               <Section title={t('export.sections.fileNaming')}>
                 <input
+                  aria-label={t('export.sections.fileNaming')}
                   className="w-full bg-surface border border-surface rounded-md p-2 text-sm text-text-primary focus:ring-accent focus:border-accent"
                   disabled={isExporting}
                   onChange={(e) => setFilenameTemplate(e.target.value)}
@@ -770,6 +787,7 @@ export default function ExportPanel({
                         return (
                           <button
                             key={cs}
+                            aria-pressed={active}
                             disabled={isExporting}
                             title={descs[cs]}
                             className={`text-left text-xs px-2 py-1.5 rounded-md border transition-colors disabled:opacity-50 ${
@@ -806,9 +824,11 @@ export default function ExportPanel({
                       <div className="grid grid-cols-2 gap-1.5">
                         {[8, 16].map((b) => {
                           const active = bitDepth === (b as 8 | 16);
+                          const bitDepthLabel = `${b}-bit`;
                           return (
                             <button
                               key={b}
+                              aria-pressed={active}
                               disabled={isExporting}
                               className={`text-center text-xs px-2 py-1.5 rounded-md border transition-colors disabled:opacity-50 ${
                                 active
@@ -817,7 +837,7 @@ export default function ExportPanel({
                               }`}
                               onClick={() => setBitDepth(b as 8 | 16)}
                             >
-                              {b}-bit
+                              {bitDepthLabel}
                             </button>
                           );
                         })}
@@ -931,6 +951,8 @@ export default function ExportPanel({
               </Text>
               <div className="bg-surface rounded-xl overflow-hidden">
                 <button
+                  aria-controls="export-advanced-options"
+                  aria-expanded={isAdvancedExpanded}
                   onClick={() => setIsAdvancedExpanded(!isAdvancedExpanded)}
                   disabled={isExporting}
                   className="w-full flex items-center justify-between p-3.5 hover:bg-card-active transition-colors"
@@ -950,6 +972,7 @@ export default function ExportPanel({
                 <AnimatePresence initial={false}>
                   {isAdvancedExpanded && (
                     <motion.div
+                      id="export-advanced-options"
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -1006,7 +1029,15 @@ export default function ExportPanel({
       </div>
 
       <div className="p-3 border-t border-surface shrink-0 space-y-2">
-        <Text as="div" variant={TextVariants.small} color={TextColors.primary} className="text-center">
+        <Text
+          as="div"
+          aria-atomic="true"
+          aria-live="polite"
+          role="status"
+          variant={TextVariants.small}
+          color={TextColors.primary}
+          className="text-center"
+        >
           {isEstimating ? (
             <span className="italic">{t('export.status.estimatingSize')}</span>
           ) : estimatedSize !== null ? (
@@ -1019,7 +1050,23 @@ export default function ExportPanel({
             </span>
           ) : null}
         </Text>
+        <Text
+          as="div"
+          aria-atomic="true"
+          aria-live="polite"
+          role={status === Status.Success || status === Status.Error || status === Status.Cancelled ? 'status' : undefined}
+          className="sr-only"
+        >
+          {status === Status.Success
+            ? t('export.status.success')
+            : status === Status.Error
+              ? errorMessage || t('export.status.failed')
+              : status === Status.Cancelled
+                ? t('export.status.cancelled')
+                : ''}
+        </Text>
         <Button
+          aria-busy={status === Status.Exporting || status === Status.Cancelling}
           className={`group rounded-md h-11 w-full flex items-center text-md font-bold! justify-center ${
             status === Status.Exporting
               ? 'bg-red-600/80 hover:bg-red-600 text-white'

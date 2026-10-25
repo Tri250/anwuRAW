@@ -245,7 +245,10 @@ export const MASTER_RECIPES: MasterRecipeDef[] = [
  */
 export const recipeToAdjustmentValues = (recipe: MasterRecipeDef): Partial<Adjustments> => ({
   ...recipe.values,
-  hsl: recipe.hsl,
+  // 深拷贝 HSL 通道,避免调用方写入调整状态时污染模块级配方常量
+  hsl: Object.fromEntries(
+    Object.entries(recipe.hsl).map(([channel, values]) => [channel, { ...values }]),
+  ) as Adjustments['hsl'],
   lutName: recipe.name,
   lutIntensity: 100,
   lutIsSceneReferred: false,

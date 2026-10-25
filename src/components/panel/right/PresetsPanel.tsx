@@ -315,6 +315,8 @@ function PresetItemDisplay({
 
           {onToggleFavorite && (
             <button
+              aria-label={preset.favorite ? t('editor.presets.menu.unfavorite') : t('editor.presets.menu.favorite')}
+              aria-pressed={Boolean(preset.favorite)}
               className="absolute bottom-1 left-1 z-20 p-1 rounded-full bg-black/30 backdrop-blur-xs transition-colors hover:bg-black/50"
               onClick={(e) => {
                 e.stopPropagation();
@@ -322,6 +324,7 @@ function PresetItemDisplay({
               }}
               onPointerDown={(e) => e.stopPropagation()}
               data-tooltip={preset.favorite ? t('editor.presets.menu.unfavorite') : t('editor.presets.menu.favorite')}
+              type="button"
             >
               <Star
                 size={12}
@@ -452,6 +455,16 @@ function DraggablePresetItem({
     <div
       {...listeners}
       {...attributes}
+      aria-label={preset.name}
+      aria-pressed={isActive}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        if (!longPress.triggeredRef.current) onApply(preset);
+      }}
       onPointerDown={(e: any) => {
         (listeners as any)?.onPointerDown?.(e);
         longPress.onPointerDown(e);
@@ -507,6 +520,7 @@ function DraggablePresetItem({
 }
 
 function DroppableFolderItem({ folder, onContextMenu, children, onToggle, isExpanded }: DroppableFolderItemProps) {
+  const { t } = useTranslation();
   // Android 触屏禁用 dnd 拖拽：与长按菜单互斥
   const isAndroid = useOsPlatform() === 'android';
   const {
@@ -564,7 +578,22 @@ function DroppableFolderItem({ folder, onContextMenu, children, onToggle, isExpa
           onContextMenu(e, { folder });
         }}
       >
-        <div className="p-1 cursor-grab" ref={setDraggableNodeRef} {...listeners} {...attributes}>
+        <div
+          aria-expanded={isExpanded}
+          aria-label={`${folder.name} · ${isExpanded ? t('editor.presets.collapseFolder') : t('editor.presets.expandFolder')}`}
+          className="p-1 cursor-grab"
+          onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            e.stopPropagation();
+            onToggle(folder.id);
+          }}
+          ref={setDraggableNodeRef}
+          {...listeners}
+          {...attributes}
+          role="button"
+          tabIndex={0}
+        >
           {isExpanded ? (
             <FolderOpen
               className="text-primary"
@@ -1120,6 +1149,12 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
 
     const targetFolderId = overType === PresetListType.Folder ? overId : overParentId;
 
+    // 文件夹拖到文件夹：同层级重排（此前会落入下方条件判断的空档而静默失败）
+    if (activeType === PresetListType.Folder && overType === PresetListType.Folder) {
+      reorderItems(activeId, overId);
+      return;
+    }
+
     if (activeType === PresetListType.Preset && targetFolderId) {
       if (activeParentId !== targetFolderId) {
         movePreset(activeId, targetFolderId);
@@ -1403,6 +1438,8 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
           <Text variant={TextVariants.title}>{t('editor.presets.title')}</Text>
           <div className="flex items-center gap-1">
             <button
+              aria-label={showFavoritesOnly ? t('editor.presets.filter.showAll') : t('editor.presets.filter.favorites')}
+              aria-pressed={showFavoritesOnly}
               className={`p-2 rounded-full transition-colors ${
                 showFavoritesOnly ? 'bg-surface-hover text-amber-400' : 'hover:bg-surface'
               }`}
@@ -1411,37 +1448,46 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
               data-tooltip={
                 showFavoritesOnly ? t('editor.presets.filter.showAll') : t('editor.presets.filter.favorites')
               }
+              type="button"
             >
               <Star size={18} className={showFavoritesOnly ? 'fill-amber-400' : ''} />
             </button>
             <button
+              aria-label={t('editor.presets.tooltips.explore')}
               className="p-2 rounded-full hover:bg-surface transition-colors"
               onClick={onNavigateToCommunity}
               data-tooltip={t('editor.presets.tooltips.explore')}
+              type="button"
             >
               <Users size={18} />
             </button>
             <button
+              aria-label={t('editor.presets.tooltips.import')}
               className="p-2 rounded-full hover:bg-surface transition-colors"
               disabled={isLoading}
               onClick={handleImportPresets}
               data-tooltip={t('editor.presets.tooltips.import')}
+              type="button"
             >
               <FileUp size={18} />
             </button>
             <button
+              aria-label={t('editor.presets.tooltips.export')}
               className="p-2 rounded-full hover:bg-surface transition-colors"
               disabled={presets.length === 0 || isLoading}
               onClick={handleExportAllPresets}
               data-tooltip={t('editor.presets.tooltips.export')}
+              type="button"
             >
               <FileDown size={18} />
             </button>
             <button
+              aria-label={t('editor.presets.tooltips.saveNew')}
               className="p-2 rounded-full hover:bg-surface transition-colors"
               disabled={isLoading}
               onClick={() => setConfigureModalState({ isOpen: true, preset: null })}
               data-tooltip={t('editor.presets.tooltips.saveNew')}
+              type="button"
             >
               <Plus size={18} />
             </button>
@@ -1463,6 +1509,9 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
           ) : isLoading && presets.length === 0 ? (
             <Text
               as="div"
+              aria-atomic="true"
+              aria-live="polite"
+              role="status"
               variant={TextVariants.heading}
               color={TextColors.secondary}
               weight={TextWeights.normal}

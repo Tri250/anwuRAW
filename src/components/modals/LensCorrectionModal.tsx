@@ -971,11 +971,14 @@ export default function LensCorrectionModal({
       <AnimatePresence>
         {show && (
           <motion.div
+            aria-label={t('modals.lensCorrection.title')}
+            aria-modal="true"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="bg-surface rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden"
+            role="dialog"
           >
             <div className="grow min-h-0 overflow-hidden">{renderContent()}</div>
             <div className="shrink-0 p-4 flex justify-end gap-3 border-t border-surface bg-bg-secondary z-20">

@@ -510,9 +510,11 @@ export default function CropPanel() {
       <div className="p-3 flex justify-between items-center shrink-0 border-b border-surface">
         <Text variant={TextVariants.title}>{t('editor.crop.title')}</Text>
         <button
+          aria-label={t('editor.crop.resetTooltip')}
           className="p-2 rounded-full hover:bg-surface transition-colors"
           onClick={handleReset}
           data-tooltip={t('editor.crop.resetTooltip')}
+          type="button"
         >
           <RotateCcw size={18} />
         </button>
@@ -526,17 +528,21 @@ export default function CropPanel() {
                 {t('editor.crop.aspectRatioHeading')}
                 <div className="flex items-center gap-2">
                   <button
+                    aria-label={getOverlayTooltip()}
                     className="p-1.5 rounded-md hover:bg-surface transition-colors"
                     onClick={handleOverlayCycle}
                     data-tooltip={getOverlayTooltip()}
+                    type="button"
                   >
                     <Grid3x3 size={16} />
                   </button>
                   <button
+                    aria-label={getOrientationTooltip()}
                     className="p-1.5 rounded-md hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isOrientationToggleDisabled}
                     onClick={handleOrientationToggle}
                     data-tooltip={getOrientationTooltip()}
+                    type="button"
                   >
                     {orientation === Orientation.Vertical ? (
                       <RectangleVertical size={16} />
@@ -548,24 +554,27 @@ export default function CropPanel() {
               </Text>
               <div className="grid grid-cols-3 gap-2">
                 {PRESETS.map((preset: CropPreset) => (
-                  <motion.div
+                  <motion.button
+                    aria-pressed={isPresetActive(preset)}
                     className={clsx(
                       // 与上游 v1.6.6 一致：px-2 py-1.5 预设按钮
-                      'px-2 py-1.5 rounded-md transition-colors text-center cursor-pointer',
+                      'w-full px-2 py-1.5 rounded-md transition-colors text-center cursor-pointer',
                       isPresetActive(preset) ? 'bg-accent' : 'bg-surface hover:bg-card-active',
                     )}
                     key={preset.name}
                     onClick={() => handlePresetClick(preset)}
+                    type="button"
                     data-tooltip={preset.tooltip}
                     whileTap={{ scale: 0.98 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                   >
                     <Text color={isPresetActive(preset) ? TextColors.button : TextColors.secondary}>{preset.name}</Text>
-                  </motion.div>
+                  </motion.button>
                 ))}
               </div>
               <div>
-                <motion.div
+                <motion.button
+                  aria-pressed={isCustomActive}
                   className={clsx(
                     'w-full px-2 py-1.5 rounded-md transition-colors cursor-pointer text-center',
                     isCustomActive ? 'bg-accent' : 'bg-surface hover:bg-card-active',
@@ -579,13 +588,14 @@ export default function CropPanel() {
                     applyAspectRatio(newAspectRatio);
                   }}
                   data-tooltip={t('editor.crop.presets.custom.tooltip')}
+                  type="button"
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 >
                   <Text color={isCustomActive ? TextColors.button : TextColors.secondary}>
                     {t('editor.crop.presets.custom.name')}
                   </Text>
-                </motion.div>
+                </motion.button>
                 <div
                   className={clsx(
                     'mt-2 bg-surface p-2 rounded-md transition-opacity',
@@ -603,6 +613,7 @@ export default function CropPanel() {
                       onKeyDown={handleCustomInputKeyDown}
                       placeholder={t('editor.crop.custom.wPlaceholder')}
                       data-tooltip={t('editor.crop.custom.wTooltip')}
+                      aria-label={t('editor.crop.custom.wTooltip')}
                       type="number"
                       value={customW}
                     />
@@ -617,6 +628,7 @@ export default function CropPanel() {
                       onKeyDown={handleCustomInputKeyDown}
                       placeholder={t('editor.crop.custom.hPlaceholder')}
                       data-tooltip={t('editor.crop.custom.hTooltip')}
+                      aria-label={t('editor.crop.custom.hTooltip')}
                       type="number"
                       value={customH}
                     />
@@ -634,6 +646,8 @@ export default function CropPanel() {
                   label={
                     <div className="flex items-center gap-2">
                       <button
+                        aria-label={t('editor.crop.tooltips.straighten')}
+                        aria-pressed={isStraightenActive}
                         onClick={() => {
                           setEditor((state) => ({
                             isStraightenActive: !state.isStraightenActive,
@@ -646,21 +660,26 @@ export default function CropPanel() {
                             : 'text-text-secondary hover:bg-card-active hover:text-text-primary',
                         )}
                         data-tooltip={t('editor.crop.tooltips.straighten')}
+                        type="button"
                       >
                         <Ruler size={14} />
                       </button>
                       <button
+                        aria-label={t('editor.crop.tooltips.resetFineRotation')}
                         className="p-1.5 rounded-md text-text-secondary transition-colors cursor-pointer hover:bg-card-active hover:text-text-primary"
                         onClick={resetFineRotation}
                         data-tooltip={t('editor.crop.tooltips.resetFineRotation')}
                         disabled={displayRotation === 0}
+                        type="button"
                       >
                         <RotateCcw size={14} />
                       </button>
                       <button
+                        aria-label={t('editor.crop.tooltips.aiStraighten')}
                         className="p-1.5 rounded-md text-text-secondary transition-colors cursor-pointer hover:bg-card-active hover:text-text-primary"
                         onClick={handleAiStraighten}
                         data-tooltip={t('editor.crop.tooltips.aiStraighten')}
+                        type="button"
                       >
                         <Wand2 size={14} />
                       </button>
@@ -681,6 +700,7 @@ export default function CropPanel() {
                 <span className="text-xs text-text-secondary">{t('editor.crop.autoCropAfterRotate')}</span>
                 <button
                   type="button"
+                  aria-label={t('editor.crop.autoCropAfterRotate')}
                   onClick={() => setAutoCropAfterRotate((v) => !v)}
                   className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
                     autoCropAfterRotate ? 'bg-accent' : 'bg-text-muted/40'
@@ -701,27 +721,33 @@ export default function CropPanel() {
                 {t('editor.crop.orientationHeading')}
               </Text>
               <div className="grid grid-cols-2 gap-2">
-                <motion.div
+                <motion.button
+                  aria-label={t('editor.crop.labels.rotateLeft')}
                   className="flex flex-col items-center justify-center p-3 cursor-pointer rounded-lg transition-colors bg-surface text-text-secondary hover:bg-card-active hover:text-text-primary"
                   onClick={() => handleRotate(-90)}
                   data-tooltip={t('editor.crop.tooltips.rotateLeft')}
+                  type="button"
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 >
                   <RotateCcw size={20} className="transition-none" />
                   <span className="text-xs mt-2 transition-none">{t('editor.crop.labels.rotateLeft')}</span>
-                </motion.div>
-                <motion.div
+                </motion.button>
+                <motion.button
+                  aria-label={t('editor.crop.labels.rotateRight')}
                   className="flex flex-col items-center justify-center p-3 cursor-pointer rounded-lg transition-colors bg-surface text-text-secondary hover:bg-card-active hover:text-text-primary"
                   onClick={() => handleRotate(90)}
                   data-tooltip={t('editor.crop.tooltips.rotateRight')}
+                  type="button"
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 >
                   <RotateCw size={20} className="transition-none" />
                   <span className="text-xs mt-2 transition-none">{t('editor.crop.labels.rotateRight')}</span>
-                </motion.div>
-                <motion.div
+                </motion.button>
+                <motion.button
+                  aria-label={t('editor.crop.labels.flipHoriz')}
+                  aria-pressed={flipHorizontal}
                   className={clsx(
                     'flex flex-col items-center justify-center p-3 cursor-pointer rounded-lg transition-colors',
                     flipHorizontal
@@ -735,13 +761,16 @@ export default function CropPanel() {
                     }))
                   }
                   data-tooltip={t('editor.crop.tooltips.flipHoriz')}
+                  type="button"
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 >
                   <FlipHorizontal size={20} className="transition-none" />
                   <span className="text-xs mt-2 transition-none">{t('editor.crop.labels.flipHoriz')}</span>
-                </motion.div>
-                <motion.div
+                </motion.button>
+                <motion.button
+                  aria-label={t('editor.crop.labels.flipVert')}
+                  aria-pressed={flipVertical}
                   className={clsx(
                     'flex flex-col items-center justify-center p-3 cursor-pointer rounded-lg transition-colors',
                     flipVertical
@@ -750,12 +779,13 @@ export default function CropPanel() {
                   )}
                   onClick={() => setAdjustments((prev: Adjustments) => ({ ...prev, flipVertical: !prev.flipVertical }))}
                   data-tooltip={t('editor.crop.tooltips.flipVert')}
+                  type="button"
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 >
                   <FlipVertical size={20} className="transition-none" />
                   <span className="text-xs mt-2 transition-none">{t('editor.crop.labels.flipVert')}</span>
-                </motion.div>
+                </motion.button>
               </div>
             </div>
 
@@ -764,26 +794,30 @@ export default function CropPanel() {
                 {t('editor.crop.geometryHeading')}
               </Text>
               <div className="grid grid-cols-2 gap-2">
-                <motion.div
+                <motion.button
+                  aria-label={t('editor.crop.labels.transform')}
                   className="flex flex-col items-center justify-center p-3 cursor-pointer rounded-lg transition-colors bg-surface text-text-secondary hover:bg-card-active hover:text-text-primary group"
                   onClick={() => setIsTransformModalOpen(true)}
                   data-tooltip={t('editor.crop.tooltips.transform')}
+                  type="button"
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 >
                   <Scan size={20} className="transition-none" />
                   <span className="text-xs mt-2 transition-none">{t('editor.crop.labels.transform')}</span>
-                </motion.div>
-                <motion.div
+                </motion.button>
+                <motion.button
+                  aria-label={t('editor.crop.labels.lens')}
                   className="flex flex-col items-center justify-center p-3  cursor-pointer rounded-lg transition-colors bg-surface text-text-secondary hover:bg-card-active hover:text-text-primary group"
                   onClick={() => setIsLensModalOpen(true)}
                   data-tooltip={t('editor.crop.tooltips.lens')}
+                  type="button"
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 >
                   <Aperture size={20} className="transition-none" />
                   <span className="text-xs mt-2 transition-none">{t('editor.crop.labels.lens')}</span>
-                </motion.div>
+                </motion.button>
               </div>
             </div>
 
