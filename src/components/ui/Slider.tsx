@@ -134,6 +134,18 @@ const Slider = ({
   const isDraggingRef = useRef(false);
   isDraggingRef.current = isDragging;
 
+  // 卸载兜底：拖动中组件被卸载（切换面板/section/进入裁剪等）时，
+  // window 监听已随 effect 清理，isDragging 不再有机会回落，
+  // 必须显式复位全局拖动标志，否则 isSliderDragging 永久卡 true
+  // （快捷键全失效 + 预览冻结）
+  useEffect(() => {
+    return () => {
+      if (isDraggingRef.current) {
+        onDragStateChangeRef.current(false);
+      }
+    };
+  }, []);
+
   // Android 触屏守护：React 17+ 将 onTouchMove 注册为 passive 监听，
   // handleTouchMove 中的 preventDefault() 实际无效；且 touch-action 在手势开始时
   // 已按当时值锁定，拖动中动态切为 none 也不生效。必须由原生层按手势趋势

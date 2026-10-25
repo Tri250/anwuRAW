@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
+import { hapticFeedback } from '../../utils/haptics';
 import { useDraggable, useDroppable, useDndMonitor } from '@dnd-kit/core';
 import {
   SlidersHorizontal,
@@ -280,7 +281,10 @@ export function MobilePanelSwitcher({
         return (
           <button
             key={id}
-            onClick={() => onPanelSelect(id)}
+            onClick={() => {
+              hapticFeedback(8);
+              onPanelSelect(id);
+            }}
             aria-label={t(PANEL_TITLES[id])}
             aria-pressed={isActive}
             className={clsx(

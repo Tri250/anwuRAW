@@ -40,6 +40,21 @@ const ColorWheel = ({
 
   const isDragging = isWheelDragging || isSliderDragging;
 
+  // 卸载兜底：复合拖动标志（色轮或内部滑杆）在组件卸载时显式复位，
+  // 防止 isSliderDragging 永久卡 true（快捷键失效 + 预览冻结）
+  const isDraggingRef = useRef(false);
+  isDraggingRef.current = isDragging;
+  const onDragStateChangeRef = useRef(onDragStateChange);
+  onDragStateChangeRef.current = onDragStateChange;
+
+  useEffect(() => {
+    return () => {
+      if (isDraggingRef.current) {
+        onDragStateChangeRef.current?.(false);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       modifierState.current = {

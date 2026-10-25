@@ -22,6 +22,7 @@ import { useLibraryStore } from '../../../store/useLibraryStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { findGroupVariants, getVariantLabel } from '../../../utils/imageGrouping';
 import { useContextMenu } from '../../../context/ContextMenuContext';
+import { hapticFeedback } from '../../../utils/haptics';
 
 interface EditorToolbarProps {
   canRedo: boolean;
@@ -385,7 +386,10 @@ const EditorToolbar = memo(
         <div className="flex items-center gap-2 shrink-0 z-40">
           <button
             className="bg-surface text-text-primary p-2 rounded-full hover:bg-card-active transition-colors shrink-0"
-            onClick={onBackToLibrary}
+            onClick={() => {
+              hapticFeedback(8);
+              onBackToLibrary();
+            }}
             onKeyDown={handleButtonKeyDown}
             data-tooltip={t('editor.toolbar.tooltips.backToLibrary')}
             data-bench-id="back-to-library"
@@ -622,7 +626,10 @@ const EditorToolbar = memo(
             <button
               className="bg-surface text-text-primary p-2 rounded-full hover:bg-card-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!canUndo}
-              onClick={onUndo}
+              onClick={() => {
+                hapticFeedback(8);
+                onUndo();
+              }}
               onKeyDown={handleButtonKeyDown}
               onContextMenu={(e) => {
                 e.preventDefault();
@@ -636,7 +643,10 @@ const EditorToolbar = memo(
             <button
               className="bg-surface text-text-primary p-2 rounded-full hover:bg-card-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!canRedo}
-              onClick={onRedo}
+              onClick={() => {
+                hapticFeedback(8);
+                onRedo();
+              }}
               onKeyDown={handleButtonKeyDown}
               onContextMenu={(e) => {
                 e.preventDefault();
@@ -712,7 +722,10 @@ const EditorToolbar = memo(
                 ? 'bg-accent text-button-text hover:bg-accent/90 hover:text-button-text'
                 : 'bg-surface hover:bg-card-active text-text-primary',
             )}
-            onClick={onToggleShowOriginal}
+            onClick={() => {
+              hapticFeedback(8);
+              onToggleShowOriginal();
+            }}
             onKeyDown={handleButtonKeyDown}
             data-tooltip={
               showOriginal ? t('editor.toolbar.tooltips.showEdited') : t('editor.toolbar.tooltips.showOriginal')
@@ -762,7 +775,10 @@ const EditorToolbar = memo(
                     ? 'bg-accent text-button-text hover:bg-accent/90 hover:text-button-text'
                     : 'bg-surface hover:bg-card-active text-text-primary',
                 )}
-                onClick={onToggleCompare}
+                onClick={() => {
+                  hapticFeedback(8);
+                  onToggleCompare();
+                }}
                 onKeyDown={handleButtonKeyDown}
                 data-tooltip={
                   isComparing ? t('editor.toolbar.tooltips.closeCompare') : t('editor.toolbar.tooltips.compare')
@@ -772,7 +788,10 @@ const EditorToolbar = memo(
               </button>
               <button
                 className="bg-surface text-text-primary p-2 rounded-full hover:bg-card-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-                onClick={onToggleFullScreen}
+                onClick={() => {
+                  hapticFeedback(8);
+                  onToggleFullScreen();
+                }}
                 onKeyDown={handleButtonKeyDown}
                 data-tooltip={t('editor.toolbar.tooltips.fullscreen')}
               >

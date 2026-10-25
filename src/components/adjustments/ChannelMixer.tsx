@@ -147,7 +147,14 @@ export default function ChannelMixer({ adjustments, setAdjustments, onDragStateC
               title={`${t(row.labelKey)} · ${t('adjustments.channelMixer.reset', 'Reset')}`}
               aria-label={`${t(row.labelKey)} ${t('adjustments.channelMixer.reset', 'Reset')}`}
             >
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: row.color }} />
+              <span
+                className={`w-3 h-3 rounded-full transition-opacity ${
+                  row.outputs.every((output) => current[output.key] === defaultIdentity[output.key])
+                    ? 'opacity-40'
+                    : 'opacity-100'
+                }`}
+                style={{ backgroundColor: row.color }}
+              />
             </button>
             {row.outputs.map((output) => (
               <div key={output.key} className="min-w-0">

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { hapticFeedback } from '../utils/haptics';
 
 /**
  * 触屏长按打开右键菜单。
@@ -28,11 +29,7 @@ export function useLongPressMenu(path: string, onContextMenu?: any) {
         timerRef.current = null;
         triggeredRef.current = true;
         // 触觉反馈：国内 App 标准手感，提示用户长按已触发（WebView 可能无 vibrate 能力，安全调用）
-        try {
-          navigator.vibrate?.(10);
-        } catch {
-          /* 忽略不支持振动的环境 */
-        }
+        hapticFeedback(10);
         onContextMenu?.(
           { preventDefault() {}, stopPropagation() {}, clientX: e.clientX, clientY: e.clientY },
           path,
