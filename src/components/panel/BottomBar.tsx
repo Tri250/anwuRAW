@@ -14,6 +14,7 @@ import { useLibraryStore } from '../../store/useLibraryStore';
 import { useUIStore } from '../../store/useUIStore';
 import { COLOR_LABELS } from '../../utils/adjustments';
 import { FLAG_ICONS } from '../../utils/imageFlags';
+import { hapticFeedback } from '../../utils/haptics';
 
 interface BottomBarProps {
   avoidBottomInset?: boolean;
@@ -168,6 +169,32 @@ export default function BottomBar({
   totalImages,
 }: BottomBarProps) {
   const { t } = useTranslation();
+
+  // 触觉反馈：星级/旗标/复制/粘贴/设置/导出等底部操作与工具栏手感统一
+  const handleRate = (rate: number) => {
+    hapticFeedback(8);
+    onRate(rate);
+  };
+  const handleToggleFlag = (flag: ImageFlag) => {
+    hapticFeedback(8);
+    onToggleFlag?.(flag);
+  };
+  const handleCopy = () => {
+    hapticFeedback(8);
+    onCopy();
+  };
+  const handlePaste = () => {
+    hapticFeedback(8);
+    onPaste();
+  };
+  const handleOpenCopyPasteSettings = () => {
+    hapticFeedback(8);
+    onOpenCopyPasteSettings?.();
+  };
+  const handleExportClick = () => {
+    hapticFeedback(8);
+    onExportClick?.();
+  };
 
   const { isInstantTransition, uiVisibility, setUI } = useUIStore(
     useShallow((state) => ({
@@ -390,10 +417,10 @@ export default function BottomBar({
         {/* Android 360dp 小屏：5 颗星 + 复制/粘贴/设置/导出 容易横向溢出，
             收紧间距确保最右侧的导出按钮不被裁出屏幕 */}
         <div className={clsx('flex items-center', isAndroid ? 'gap-2' : 'gap-4')}>
-          <StarRating rating={rating} onRate={onRate} disabled={isRatingDisabled} isAndroid={isAndroid} />
+          <StarRating rating={rating} onRate={handleRate} disabled={isRatingDisabled} isAndroid={isAndroid} />
           <FlagToggles
             flag={flag ?? null}
-            onToggle={(option) => onToggleFlag?.(option)}
+            onToggle={handleToggleFlag}
             inactiveClassName="text-text-secondary hover:text-accent"
             disabled={isRatingDisabled}
           />
@@ -402,7 +429,7 @@ export default function BottomBar({
             <button
               className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
               disabled={isCopyDisabled}
-              onClick={onCopy}
+              onClick={handleCopy}
               data-tooltip={t('ui.bottomBar.tooltips.copySettings')}
             >
               <AnimatePresence mode="wait" initial={false}>
@@ -435,7 +462,7 @@ export default function BottomBar({
             <button
               className="relative w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
               disabled={isPasteDisabled}
-              onClick={onPaste}
+              onClick={handlePaste}
               data-tooltip={t('ui.bottomBar.tooltips.pasteSettings')}
             >
               <AnimatePresence mode="wait" initial={false}>
@@ -467,7 +494,7 @@ export default function BottomBar({
 
             <button
               className="w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90"
-              onClick={onOpenCopyPasteSettings}
+              onClick={handleOpenCopyPasteSettings}
               data-tooltip={t('ui.bottomBar.tooltips.copyPasteSettings')}
             >
               <Settings size={18} />
@@ -479,7 +506,7 @@ export default function BottomBar({
               <button
                 className="w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-[color,background-color,transform] duration-150 active:scale-90 disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
                 disabled={isExportDisabled}
-                onClick={onExportClick}
+                onClick={handleExportClick}
                 aria-label={t('editor.switcher.tooltips.export')}
                 data-tooltip={t('editor.switcher.tooltips.export')}
               >
