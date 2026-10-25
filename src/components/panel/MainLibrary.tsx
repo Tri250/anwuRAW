@@ -41,10 +41,11 @@ import { TextColors, TextVariants, TextWeights } from '../../types/typography';
 import { useLibraryStore } from '../../store/useLibraryStore';
 import { useProcessStore } from '../../store/useProcessStore';
 import { useUIStore } from '../../store/useUIStore';
-import SettingsPanel from './SettingsPanel';
 
 import LibraryGrid from './library/LibraryGrid';
 import { SearchInput, ViewOptionsDropdown } from './library/LibraryHeader';
+
+const SettingsPanel = React.lazy(() => import('./SettingsPanel'));
 
 export interface ColumnWidths {
   thumbnail: number;
@@ -393,13 +394,21 @@ export default function MainLibrary(props: MainLibraryProps) {
 
             <div className="w-full h-full flex flex-col p-8 lg:p-16 overflow-y-auto custom-scrollbar relative z-10">
               {isSettingsOpen && props.appSettings ? (
-                <SettingsPanel
-                  appSettings={props.appSettings}
-                  onBack={() => setUI({ isSettingsOpen: false })}
-                  onLibraryRefresh={props.onLibraryRefresh}
-                  onSettingsChange={props.onSettingsChange}
-                  rootPaths={props.rootPaths}
-                />
+                <React.Suspense
+                  fallback={
+                    <div aria-hidden="true" className="flex flex-1 items-center justify-center p-8">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                    </div>
+                  }
+                >
+                  <SettingsPanel
+                    appSettings={props.appSettings}
+                    onBack={() => setUI({ isSettingsOpen: false })}
+                    onLibraryRefresh={props.onLibraryRefresh}
+                    onSettingsChange={props.onSettingsChange}
+                    rootPaths={props.rootPaths}
+                  />
+                </React.Suspense>
               ) : (
                 <>
                   <div className="my-auto text-left relative z-10">

@@ -173,7 +173,6 @@ export default function CropPanel() {
     return () => {
       if (autoCropTimerRef.current) clearTimeout(autoCropTimerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rotation, autoCropAfterRotate, orientationSteps, aspectRatio]);
 
   useEffect(() => {

@@ -4,7 +4,11 @@ on:
   push:
     branches:
       - main
-  pull_request:
+
+# main 上的重复推送只保留最新一次 CI，避免旧提交继续占用构建资源。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:

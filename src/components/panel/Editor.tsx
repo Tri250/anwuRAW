@@ -634,7 +634,9 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         const dt = Math.min(time - lastTime, 32);
         lastTime = time;
 
-        let { positionX: x, positionY: y, scale } = transformStateRef.current;
+        const { positionX, positionY, scale } = transformStateRef.current;
+        let x = positionX;
+        let y = positionY;
         const bounds = getTransformBounds(scale);
 
         x += vx * dt;
@@ -1769,7 +1771,6 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     }
 
     requestMaskOverlay(maskDefForOverlay, imageRenderSize, adjustments);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     overlayTriggerHash,
     requestMaskOverlay,

@@ -47,6 +47,14 @@ export default defineConfig(async () => ({
               name: 'canvas-vendor',
               test: /node_modules\/(konva|react-konva|js-yaml)\//,
             },
+            {
+              name: 'clerk-vendor',
+              test: /node_modules\/@clerk\//,
+            },
+            {
+              name: 'ui-vendor',
+              test: /node_modules\/(@dnd-kit|@uiw|lucide-react|react-window|react-image-crop|react-toastify|simple-icons|uuid|lodash)\//,
+            },
           ],
         },
       },

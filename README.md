@@ -885,6 +885,42 @@ rapidraw export /path/to/photos --output /path/to/output_dir --adjustments /path
 | `--keep-metadata`      | Retain EXIF/capture metadata in exported files                         | `false`           |
 | `--adjustments <path>` | Path to a custom JSON file containing adjustments to override sidecars | _(Auto-detected)_ |
 
+## Installation, Verification & Uninstall
+
+Release assets are published with a `SHA256SUMS.txt` file. Verify downloads before installing:
+
+```bash
+# macOS / Linux
+shasum -a 256 -c SHA256SUMS.txt
+
+# Windows PowerShell
+Get-FileHash .\01_win-x64_anwuRAW_*.exe -Algorithm SHA256
+```
+
+### Windows
+
+Download `01_win-x64_anwuRAW_*.exe` and run the NSIS installer. The installer is configured for **current-user** installation, so administrator rights are not required. Uninstall via **Settings → Apps → anwuRAW → Uninstall**. User library photos and sidecar files are never deleted by the uninstaller.
+
+### macOS
+
+Open the `.dmg`, drag anwuRAW to **Applications**, then launch it. Release builds are currently unsigned and not notarized; if Gatekeeper blocks the first launch, use **right-click → Open** or allow the app in **System Settings → Privacy & Security**. Uninstall by quitting the app and moving it from **Applications** to Trash.
+
+Application data lives in `~/Library/Application Support/io.github.CyberTimon.RapidRAW`; caches live in `~/Library/Caches/io.github.CyberTimon.RapidRAW`. Remove these folders manually only if you also want to reset settings and caches.
+
+### Linux
+
+- **Debian/Ubuntu:** `sudo apt install ./03_linux-x64_*_amd64.deb`
+- **Fedora/RHEL:** `sudo dnf install ./03_linux-x64_*_x86_64.rpm`
+- **AppImage:** `chmod +x 03_linux-x64_*.AppImage && ./03_linux-x64_*.AppImage`
+
+Uninstall with your package manager (for example `sudo apt remove anwu-raw` or `sudo dnf remove anwu-raw`), or delete the AppImage. User data is stored in `~/.local/share/io.github.CyberTimon.RapidRAW` and caches in `~/.cache/io.github.CyberTimon.RapidRAW`; they are intentionally left in place on uninstall.
+
+The `_tethering` builds require `libgphoto2` as described above. AppImage users on Ubuntu 24.04 may also need the `libfuse2` compatibility package.
+
+### Android
+
+Install the APK from the release page (sideloading requires enabling installation from your file manager/browser). Uninstall through the system app settings. If a release was built without Android signing secrets, the APK is debug-signed and should be treated as a test build rather than a production distribution artifact.
+
 ## System Requirements
 
 RapidRAW is built to be lightweight and cross-platform. The minimum (tested) requirements are:

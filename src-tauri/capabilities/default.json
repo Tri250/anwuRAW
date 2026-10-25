@@ -15,7 +15,6 @@
     "core:window:allow-set-decorations",
     "process:default",
     "os:default",
-    "fs:default",
     "shell:default"
   ]
 }

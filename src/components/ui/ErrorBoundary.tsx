@@ -31,7 +31,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         return this.props.fallback;
       }
       return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-bg-primary text-text-primary p-8">
+        <div
+          aria-live="assertive"
+          className="w-full h-screen flex flex-col items-center justify-center bg-bg-primary text-text-primary p-8"
+          role="alert"
+        >
           <h1 className="text-2xl font-bold mb-4">应用加载出现问题</h1>
           <p className="text-text-secondary mb-6">请重启应用。如果问题持续，请检查网络连接或重新安装。</p>
           {this.state.error && (
@@ -46,6 +50,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           )}
           <button
             onClick={() => window.location.reload()}
+            type="button"
             className="mt-6 px-6 py-2 bg-accent text-button-text rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
             重新加载

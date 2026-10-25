@@ -1,4 +1,13 @@
-import { type PointerEvent as ReactPointerEvent, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import {
+  type PointerEvent as ReactPointerEvent,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import i18n from 'i18next';
 import { listen } from '@tauri-apps/api/event';
@@ -20,10 +29,8 @@ import { MotionConfig } from 'framer-motion';
 
 import TitleBar from './window/TitleBar';
 import FolderTree from './components/panel/right/FolderTree';
-import SettingsPanel from './components/panel/SettingsPanel';
 import ExportPanel from './components/panel/right/ExportPanel';
 import GlobalTooltip from './components/ui/GlobalTooltip';
-import AppModals from './components/modals/AppModals';
 
 import SidePanelArea from './components/panel/SidePanelArea';
 import { PANEL_ICONS } from './components/panel/PanelSwitcher';
@@ -82,6 +89,16 @@ import ImageProcessingManager from './components/managers/ImageProcessingManager
 import ImageLoaderManager from './components/managers/ImageLoaderManager';
 
 const CLERK_PUBLISHABLE_KEY = 'pk_test_YnJpZWYtc2Vhc25haWwtMTIuY2xlcmsuYWNjb3VudHMuZGV2JA'; // local dev key
+
+// 设置页体积较大且仅在用户打开时渲染，按需加载可明显减小首屏主包。
+const SettingsPanel = lazy(() => import('./components/panel/SettingsPanel'));
+const AppModals = lazy(() => import('./components/modals/AppModals'));
+
+const PanelLoadingFallback = () => (
+  <div aria-hidden="true" className="flex flex-1 items-center justify-center p-8">
+    <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+  </div>
+);
 
 const insertChildrenIntoTree = (node: any, targetPath: string, newChildren: any[]): any => {
   if (!node) return null;
@@ -312,13 +329,10 @@ function App() {
     const { originalSize, adjustments } = useEditorStore.getState();
     // 可用下限：保证滑杆等控件可操作的最低高度(按视口收缩 160~220px)
     const usabilityFloor =
-      viewportSize.height > 0
-        ? Math.max(160, Math.min(220, Math.round(viewportSize.height * 0.25)))
-        : 220;
+      viewportSize.height > 0 ? Math.max(160, Math.min(220, Math.round(viewportSize.height * 0.25))) : 220;
     // 默认封顶 45% 视口：横图完整显示后剩余空间可达 55%+，不封顶会被面板全部吃掉
     // (v1.6.20 反馈「面板太高、预览太小」的主因)；预览区因此始终保有约一半屏幕
-    const defaultCap =
-      viewportSize.height > 0 ? Math.round(viewportSize.height * 0.45) : 420;
+    const defaultCap = viewportSize.height > 0 ? Math.round(viewportSize.height * 0.45) : 420;
 
     if (!selectedImage || originalSize.width === 0 || originalSize.height === 0 || viewportSize.width === 0) {
       return Math.min(defaultCap, Math.max(usabilityFloor, Math.round(viewportSize.height * 0.4)));
@@ -333,11 +347,7 @@ function App() {
     }
     const desiredImageHeight = viewportSize.width / effectiveRatio;
     // Android 紧凑布局顶部实际高度：p-2(8) + 工具栏 h-12(48) + gap-2(8) + p-2(8) = 72
-    const topUiEstimation = useCompactPanels
-      ? 72
-      : !appSettings?.decorations && !isWindowFullScreen
-        ? 110
-        : 60;
+    const topUiEstimation = useCompactPanels ? 72 : !appSettings?.decorations && !isWindowFullScreen ? 110 : 60;
     const totalDesiredTopHeight = desiredImageHeight + topUiEstimation;
     const calculatedBottomHeight = Math.round(viewportSize.height - totalDesiredTopHeight);
     // 剩余空间充足(横图) → 面板封顶，多余空间让给预览区；
@@ -1033,19 +1043,23 @@ function App() {
                   // 图库导出浮层：紧凑 Android 没有右侧面板切换器，全屏浮层保证导出入口可达；
                   // 桌面端从底栏导出按钮进入时同样使用该浮层，行为一致
                   <div className="absolute inset-0 z-50 flex bg-bg-secondary rounded-lg bottom-inset-safe">
-                    <div className="w-full h-full flex flex-col p-3 overflow-hidden">{renderAppPanel(Panel.Export)}</div>
+                    <div className="w-full h-full flex flex-col p-3 overflow-hidden">
+                      {renderAppPanel(Panel.Export)}
+                    </div>
                   </div>
                 )}
                 {isSettingsOpen && appSettings && hasRoots && (
                   <div className="absolute inset-0 z-50 flex bg-bg-secondary rounded-lg">
                     <div className="w-full h-full flex flex-col p-4 lg:p-8 overflow-y-auto custom-scrollbar bottom-inset-safe">
-                      <SettingsPanel
-                        appSettings={appSettings}
-                        onBack={() => setUI({ isSettingsOpen: false })}
-                        onLibraryRefresh={handleLibraryRefresh}
-                        onSettingsChange={handleSettingsChange}
-                        rootPaths={rootPaths}
-                      />
+                      <Suspense fallback={<PanelLoadingFallback />}>
+                        <SettingsPanel
+                          appSettings={appSettings}
+                          onBack={() => setUI({ isSettingsOpen: false })}
+                          onLibraryRefresh={handleLibraryRefresh}
+                          onSettingsChange={handleSettingsChange}
+                          rootPaths={rootPaths}
+                        />
+                      </Suspense>
                     </div>
                   </div>
                 )}
@@ -1074,30 +1088,32 @@ function App() {
             </DragOverlay>
           </DndContext>
         </div>
-        <AppModals
-          handleImageSelect={handleImageSelect}
-          handleSavePanorama={handleSavePanorama}
-          handleStartPanorama={handleStartPanorama}
-          handleStartFocusStack={handleStartFocusStack}
-          handleSaveFocusStack={handleSaveFocusStack}
-          handleSaveHdr={handleSaveHdr}
-          handleStartHdr={handleStartHdr}
-          refreshImageList={handleLibraryRefresh}
-          handleApplyDenoise={handleApplyDenoise}
-          handleBatchDenoise={handleBatchDenoise}
-          handleSaveDenoisedImage={handleSaveDenoisedImage}
-          handleCreateFolder={handleCreateFolder}
-          handleRenameFolder={handleRenameFolder}
-          handleSaveRename={handleSaveRename}
-          handleStartImport={handleStartImport}
-          handleSetColorLabel={handleSetColorLabel}
-          handleSetFlag={handleSetFlag}
-          handleRate={handleRate}
-          executeDelete={executeDelete}
-          handleSaveCollage={handleSaveCollage}
-          handleCreateAlbumItem={handleCreateAlbumItem}
-          handleRenameAlbumItem={handleRenameAlbumItem}
-        />
+        <Suspense fallback={null}>
+          <AppModals
+            handleImageSelect={handleImageSelect}
+            handleSavePanorama={handleSavePanorama}
+            handleStartPanorama={handleStartPanorama}
+            handleStartFocusStack={handleStartFocusStack}
+            handleSaveFocusStack={handleSaveFocusStack}
+            handleSaveHdr={handleSaveHdr}
+            handleStartHdr={handleStartHdr}
+            refreshImageList={handleLibraryRefresh}
+            handleApplyDenoise={handleApplyDenoise}
+            handleBatchDenoise={handleBatchDenoise}
+            handleSaveDenoisedImage={handleSaveDenoisedImage}
+            handleCreateFolder={handleCreateFolder}
+            handleRenameFolder={handleRenameFolder}
+            handleSaveRename={handleSaveRename}
+            handleStartImport={handleStartImport}
+            handleSetColorLabel={handleSetColorLabel}
+            handleSetFlag={handleSetFlag}
+            handleRate={handleRate}
+            executeDelete={executeDelete}
+            handleSaveCollage={handleSaveCollage}
+            handleCreateAlbumItem={handleCreateAlbumItem}
+            handleRenameAlbumItem={handleRenameAlbumItem}
+          />
+        </Suspense>
         <ToastContainer
           position="bottom-right"
           autoClose={5000}

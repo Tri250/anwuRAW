@@ -21,7 +21,9 @@ on:
 # 防止同一 ref 上重叠触发多个发布流程（例如同时推送 tag 与手动 dispatch），
 # 避免重复创建 draft release 与并发上传导致资产冲突。
 concurrency:
-  group: release-${{ github.ref }}
+  # 按解析后的 tag 去重：workflow_dispatch 的 github.ref 是分支名，
+  # 与 tag push/release 事件不同，若按 github.ref 分组会让同一版本并发构建。
+  group: release-${{ github.event.release.tag_name || github.event.inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -32,6 +34,7 @@ jobs:
   ensure-release:
     if: github.event_name != 'release'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     # 必须在 job 级别声明 outputs，否则下游 needs.ensure-release.outputs.* 恒为空，
@@ -282,9 +285,77 @@ jobs:
     needs: [ensure-release, release]
     if: ${{ !cancelled() && (github.event_name == 'release' || needs.ensure-release.result == 'success') && needs.release.result == 'success' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
+      - name: Verify release assets and generate SHA256SUMS
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${{ needs.ensure-release.outputs.tag || github.ref_name }}"
+          release_id="${{ needs.ensure-release.outputs.release-id }}"
+          if [[ -z "$release_id" ]]; then
+            release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" -q '.id' 2>/dev/null || true)"
+          fi
+          if ! [[ "$release_id" =~ ^[0-9]+$ ]]; then
+            echo "::error::Cannot resolve numeric release id for tag $tag (got: ${release_id:-<empty>})."
+            exit 1
+          fi
+
+          assets_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets" --paginate)"
+
+          # 防止 tauri-action 因 release-id 解析失败而静默跳过上传，导致“发布成功但资产缺失”。
+          expected=(
+            01_win-x64
+            02_macos-arm64
+            02_macos-arm64_tethering
+            02_macos-intel
+            02_macos-intel_tethering
+            03_linux-x64_22.04
+            03_linux-x64_22.04_tethering
+            03_linux-x64_24.04
+            03_linux-x64_24.04_tethering
+            04_android-arm64
+          )
+          missing=0
+          for prefix in "${expected[@]}"; do
+            # 用「前缀 + _anwuRAW_v」精确匹配，避免把 _tethering 资产误当成标准资产。
+            if ! jq -e --arg re "^${prefix}_anwuRAW_v[0-9]" '.[] | select(.name | test($re))' <<<"$assets_json" >/dev/null; then
+              echo "::error::Missing release asset matching ${prefix}_anwuRAW_v*"
+              missing=1
+            fi
+          done
+          if [[ "$missing" -ne 0 ]]; then
+            exit 1
+          fi
+
+          # 所有已上传资产必须带 sha256 digest，否则生成的校验文件不完整。
+          missing_digest="$(jq -r '.[] | select(.state == "uploaded" and ((.digest // "") | startswith("sha256:") | not)) | .name' <<<"$assets_json")"
+          if [[ -n "$missing_digest" ]]; then
+            echo "::error::Release assets without sha256 digest:"
+            echo "$missing_digest"
+            exit 1
+          fi
+
+          jq -r '.[] | select(.state == "uploaded" and .name != "SHA256SUMS.txt") | "\(.digest | sub("^sha256:"; ""))  \(.name)"' <<<"$assets_json" \
+            | sort -k2 > "$RUNNER_TEMP/SHA256SUMS.txt"
+          lines="$(wc -l < "$RUNNER_TEMP/SHA256SUMS.txt")"
+          echo "Generated SHA256SUMS.txt with ${lines} entries."
+
+          # 幂等替换同名校验文件（重跑 release workflow 时不产生重复资产）。
+          stale_ids="$(jq -r '.[] | select(.name == "SHA256SUMS.txt") | .id' <<<"$assets_json")"
+          for aid in $stale_ids; do
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/assets/${aid}" >/dev/null 2>&1 || true
+          done
+          gh api --method POST \
+            "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?name=SHA256SUMS.txt" \
+            -H "Content-Type: text/plain" \
+            --input "$RUNNER_TEMP/SHA256SUMS.txt" >/dev/null
+          echo "Uploaded SHA256SUMS.txt to release ${release_id}."
+
       - name: Publish draft release
         shell: bash
         env:

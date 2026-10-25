@@ -42,6 +42,10 @@ module.exports = [
     },
     rules: {
       'no-unused-vars': 'off',
+      // 显式 any 在 Tauri 动态命令载荷中大量存在；隐式 any 仍由 tsc --strict 拦截。
+      '@typescript-eslint/no-explicit-any': 'off',
+      // 该规则会把“先给默认值再在分支中覆盖”的防御式写法判为错误，保留为提示。
+      'no-useless-assignment': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },

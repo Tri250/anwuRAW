@@ -72,6 +72,7 @@ on:
 jobs:
   build:
     runs-on: ${{ inputs.platform }}
+    timeout-minutes: 120
     permissions:
       contents: write
     steps:
@@ -338,6 +339,7 @@ jobs:
             src-tauri/target/${{ inputs.target || 'release' }}/**/*.deb
             src-tauri/target/${{ inputs.target || 'release' }}/**/*.AppImage
             src-tauri/target/${{ inputs.target || 'release' }}/**/*.dmg
+            src-tauri/target/${{ inputs.target || 'release' }}/**/*.app.tar.gz
           retention-days: 7
           compression-level: 6
           if-no-files-found: warn
