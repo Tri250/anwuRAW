@@ -1885,7 +1885,7 @@ function SubMaskRow({
               transition={{ duration: 0.15 }}
               className="absolute"
             >
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 size={16} className="animate-spin text-accent" />
             </motion.div>
           ) : showNumber ? (
             <motion.span

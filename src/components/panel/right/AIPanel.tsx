@@ -1624,18 +1624,42 @@ function ContainerRow({
               onToggle();
             }
           }}
-          className="p-0.5 rounded transition-colors cursor-pointer"
+          className="relative w-5 h-5 shrink-0 flex items-center justify-center p-0.5 rounded transition-colors cursor-pointer"
         >
-          {isStandalone ? (
-            (() => {
-              const StandaloneIcon = MASK_ICON_MAP[firstSubMask.type as Mask] || Circle;
-              return <StandaloneIcon size={18} />;
-            })()
-          ) : isExpanded ? (
-            <FolderOpen size={18} />
-          ) : (
-            <Wand2 size={18} />
-          )}
+          <AnimatePresence mode="wait" initial={false}>
+            {container.isLoading ? (
+              <motion.div
+                key="loader"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={{ duration: 0.15 }}
+                className="absolute flex items-center justify-center"
+              >
+                <Loader2 size={18} className="animate-spin text-accent" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="icon"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={{ duration: 0.15 }}
+                className="absolute flex items-center justify-center"
+              >
+                {isStandalone ? (
+                  (() => {
+                    const StandaloneIcon = MASK_ICON_MAP[firstSubMask.type as Mask] || Circle;
+                    return <StandaloneIcon size={18} />;
+                  })()
+                ) : isExpanded ? (
+                  <FolderOpen size={18} />
+                ) : (
+                  <Wand2 size={18} />
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Text>
         <div
           className="flex-1 min-w-0 cursor-pointer"
@@ -1926,7 +1950,7 @@ function SubMaskRow({
               transition={{ duration: 0.15 }}
               className="absolute"
             >
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 size={16} className="animate-spin text-accent" />
             </motion.div>
           ) : showNumber ? (
             <motion.span
