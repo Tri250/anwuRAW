@@ -321,13 +321,17 @@ mod tests {
     #[test]
     fn tc_cm_preserves_alpha() {
         // 带透明通道的图像：RGB 正常混合，alpha 必须逐像素保留
-        let img = DynamicImage::ImageRgba8(RgbaImage::from_fn(1, 1, |_, _| Rgba([100, 40, 20, 128])));
+        let img =
+            DynamicImage::ImageRgba8(RgbaImage::from_fn(1, 1, |_, _| Rgba([100, 40, 20, 128])));
         let settings = ChannelMixerSettings {
             red_from_red: 200.0,
             ..identity_settings()
         };
         let out = apply_to_dynamic(&img, &settings);
-        assert!(matches!(out, DynamicImage::ImageRgba8(_)), "输出必须保持 RGBA8");
+        assert!(
+            matches!(out, DynamicImage::ImageRgba8(_)),
+            "输出必须保持 RGBA8"
+        );
         let px = *out.to_rgba8().get_pixel(0, 0);
         assert_eq!(px.0[0], 200, "R: 100 * 200%");
         assert_eq!(px.0[1], 40, "G unchanged");
@@ -338,7 +342,8 @@ mod tests {
     #[test]
     fn tc_cm_partial_json_fills_identity() {
         // 旧 sidecar 部分字段：缺失字段必须回落到恒等值，而不是解析失败被静默跳过
-        let partial: ChannelMixerSettings = serde_json::from_str(r#"{"red_from_red": 200.0}"#).unwrap();
+        let partial: ChannelMixerSettings =
+            serde_json::from_str(r#"{"red_from_red": 200.0}"#).unwrap();
         assert_eq!(partial.red_from_red, 200.0);
         assert_eq!(partial.green_from_green, 100.0, "缺失字段回落恒等值");
         assert_eq!(partial.blue_from_blue, 100.0, "缺失字段回落恒等值");
@@ -355,7 +360,12 @@ mod tests {
     fn tc_cm_rgba_gradient_full_alpha_path() {
         // RGBA 渐变图整图处理，确保行步长(x*4)与并行分块正确
         let img = DynamicImage::ImageRgba8(RgbaImage::from_fn(16, 16, |x, y| {
-            Rgba([(x * 16) as u8, (y * 16) as u8, ((x + y) * 8) as u8, 255 - (x * 8) as u8])
+            Rgba([
+                (x * 16) as u8,
+                (y * 16) as u8,
+                ((x + y) * 8) as u8,
+                255 - (x * 8) as u8,
+            ])
         }));
         let out = apply_to_dynamic(&img, &identity_settings());
         assert_eq!(out.to_rgba8().as_raw(), img.to_rgba8().as_raw());

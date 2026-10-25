@@ -1561,7 +1561,10 @@ pub fn generate_mask_overlay(
     }
 }
 
-pub fn build_full_source_image(base_image: &DynamicImage, is_raw: bool) -> std::borrow::Cow<'_, DynamicImage> {
+pub fn build_full_source_image(
+    base_image: &DynamicImage,
+    is_raw: bool,
+) -> std::borrow::Cow<'_, DynamicImage> {
     let mut image = Cow::Borrowed(base_image);
     if is_raw {
         crate::image_processing::apply_cpu_default_raw_processing(image.to_mut());

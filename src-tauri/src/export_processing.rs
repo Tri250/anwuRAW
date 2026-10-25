@@ -16,8 +16,6 @@ use std::sync::{Arc, Mutex};
 
 use image::codecs::jpeg::{JpegEncoder, PixelDensity};
 use image::{DynamicImage, GenericImageView, GrayImage, ImageBuffer, ImageFormat, Luma, imageops};
-use tiff::encoder::{Rational, TiffEncoder, TiffValue, colortype};
-use tiff::tags::ResolutionUnit;
 use jxl_encoder::{
     LosslessConfig, LossyConfig, PixelLayout,
     api::{calibrated_jxl_quality, quality_to_distance},
@@ -26,6 +24,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::Emitter;
 use tauri::Manager;
+use tiff::encoder::{Rational, TiffEncoder, TiffValue, colortype};
+use tiff::tags::ResolutionUnit;
 
 use crate::AppState;
 use crate::exif_processing;

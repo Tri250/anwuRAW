@@ -1401,7 +1401,11 @@ pub fn is_effect_enabled(adjustments: &serde_json::Value, _tool: &str, enabled_k
         .and_then(|v| v.get("effects"))
         .and_then(|s| s.as_bool())
         .unwrap_or(true);
-    effects_visible && adjustments.get(enabled_key).and_then(|v| v.as_bool()).unwrap_or(false)
+    effects_visible
+        && adjustments
+            .get(enabled_key)
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
 }
 
 pub fn is_geometry_identity(params: &GeometryParams) -> bool {

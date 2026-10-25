@@ -1709,10 +1709,11 @@ pub fn run_depth_anything_model(
     Ok(depth_map)
 }
 
+// chunks_exact(3) 用于逐点解包 XYZ，as_chunks 的数组分块在此无额外收益
+#[allow(clippy::chunks_exact_to_as_chunks)]
 fn build_normal_depth(points: &[f32], mask: &[f32]) -> Vec<u8> {
-    let valid = |point: &[f32], m: f32| {
-        m >= 0.5 && point.iter().all(|v| v.is_finite()) && point[2] > 0.0
-    };
+    let valid =
+        |point: &[f32], m: f32| m >= 0.5 && point.iter().all(|v| v.is_finite()) && point[2] > 0.0;
 
     let mut depths: Vec<f32> = points
         .chunks_exact(3)
@@ -1743,7 +1744,12 @@ fn build_normal_depth(points: &[f32], mask: &[f32]) -> Vec<u8> {
         .collect()
 }
 
-pub fn run_normal_model(image: &DynamicImage, normal_session: &Mutex<Session>) -> Result<RgbaImage> {
+// chunks_exact(3) 用于逐点解包法线 XYZ，as_chunks 的数组分块在此无额外收益
+#[allow(clippy::chunks_exact_to_as_chunks)]
+pub fn run_normal_model(
+    image: &DynamicImage,
+    normal_session: &Mutex<Session>,
+) -> Result<RgbaImage> {
     let resized_image = if image.width().max(image.height()) > NORMAL_MAX_SIZE {
         image.resize(NORMAL_MAX_SIZE, NORMAL_MAX_SIZE, FilterType::Triangle)
     } else {
