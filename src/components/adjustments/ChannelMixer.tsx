@@ -61,7 +61,9 @@ const CHANNEL_ROWS: ChannelRow[] = [
 export default function ChannelMixer({ adjustments, setAdjustments, onDragStateChange }: ChannelMixerProps) {
   const { t } = useTranslation();
 
-  const current: ChannelMixerSettings = adjustments.channelMixer || defaultIdentity;
+  // 防御性合并：旧 sidecar / 外部导入的 channelMixer 可能缺字段，
+  // 直接使用会让 Slider 收到 undefined（渲染 NaN），先补齐恒等默认值
+  const current: ChannelMixerSettings = { ...defaultIdentity, ...(adjustments.channelMixer || {}) };
 
   const handleSliderChange = (key: keyof ChannelMixerSettings) => (e: { target: { value: string | number } }) => {
     setAdjustments({

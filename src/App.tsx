@@ -296,7 +296,13 @@ function App() {
   const useCompactPanels = layoutMode === 'compact';
   const useWidePanels = layoutMode === 'wide';
 
-  const compactEditorPanelMinHeight = 220;
+  // === 面板尺寸回归 v1.6.20 ===
+  // 紧凑面板最小高度：小视口(如 Android 手机横屏 ~360px 高)按视口比例收缩,
+  // 否则固定 220px 下限会让横屏下面板始终占据过半屏幕且无法拖小
+  const compactEditorPanelMinHeight = Math.min(
+    220,
+    viewportSize.height > 0 ? Math.max(120, Math.round(viewportSize.height * 0.35)) : 220,
+  );
   const compactEditorPanelMaxHeight =
     viewportSize.height > 0
       ? Math.max(compactEditorPanelMinHeight, Math.min(Math.round(viewportSize.height * 0.85), 850))
@@ -304,10 +310,18 @@ function App() {
 
   const getDynamicCompactPanelHeight = () => {
     const { originalSize, adjustments } = useEditorStore.getState();
-    const halfScreenHeight = viewportSize.height > 0 ? Math.round(viewportSize.height * 0.5) : 340;
+    // 可用下限：保证滑杆等控件可操作的最低高度(按视口收缩 160~220px)
+    const usabilityFloor =
+      viewportSize.height > 0
+        ? Math.max(160, Math.min(220, Math.round(viewportSize.height * 0.25)))
+        : 220;
+    // 默认封顶 45% 视口：横图完整显示后剩余空间可达 55%+，不封顶会被面板全部吃掉
+    // (v1.6.20 反馈「面板太高、预览太小」的主因)；预览区因此始终保有约一半屏幕
+    const defaultCap =
+      viewportSize.height > 0 ? Math.round(viewportSize.height * 0.45) : 420;
 
     if (!selectedImage || originalSize.width === 0 || originalSize.height === 0 || viewportSize.width === 0) {
-      return halfScreenHeight;
+      return Math.min(defaultCap, Math.max(usabilityFloor, Math.round(viewportSize.height * 0.4)));
     }
     let effectiveRatio = originalSize.width / originalSize.height;
     const orientationSteps = adjustments?.orientationSteps || 0;
@@ -318,10 +332,17 @@ function App() {
       effectiveRatio = adjustments.aspectRatio;
     }
     const desiredImageHeight = viewportSize.width / effectiveRatio;
-    const topUiEstimation = !appSettings?.decorations && !isWindowFullScreen ? 110 : 60;
+    // Android 紧凑布局顶部实际高度：p-2(8) + 工具栏 h-12(48) + gap-2(8) + p-2(8) = 72
+    const topUiEstimation = useCompactPanels
+      ? 72
+      : !appSettings?.decorations && !isWindowFullScreen
+        ? 110
+        : 60;
     const totalDesiredTopHeight = desiredImageHeight + topUiEstimation;
     const calculatedBottomHeight = Math.round(viewportSize.height - totalDesiredTopHeight);
-    return Math.max(halfScreenHeight, calculatedBottomHeight);
+    // 剩余空间充足(横图) → 面板封顶，多余空间让给预览区；
+    // 剩余不足(竖图) → 面板取可用下限，预览尽量显示完整画面
+    return Math.min(defaultCap, Math.max(usabilityFloor, calculatedBottomHeight));
   };
 
   const compactEditorPanelDefaultHeight = getDynamicCompactPanelHeight();
@@ -329,7 +350,11 @@ function App() {
     compactEditorPanelMinHeight,
     Math.min(compactEditorPanelHeightOverride ?? compactEditorPanelDefaultHeight, compactEditorPanelMaxHeight),
   );
-  const compactEditorPanelCollapsedHeight = 96;
+  // 折叠态高度须装下内部固定控件（Android 根字号 106.25% 下的实测值）：
+  // MobilePanelSwitcher(p-2 + 图标/标签按钮 ≈73px) + BottomBar(h-12 + 顶边框 ≈52px)
+  // ≈ 125px。148px（v1.6.20 值）保留余量，避免 Android 字体缩放/横屏时
+  // 底部按钮被 overflow-hidden 切掉
+  const compactEditorPanelCollapsedHeight = 148;
 
   const { handleCopyAdjustments, handlePasteAdjustments, handleResetAdjustments, handleZoomChange } =
     useEditorActions();

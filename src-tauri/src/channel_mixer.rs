@@ -27,8 +27,15 @@ use image::{DynamicImage, RgbImage};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
+/// serde 缺省值：恒等矩阵。部分字段缺失的旧 sidecar / 手改 JSON 自动补齐恒等值，
+/// 避免整体解析失败导致 apply_post_gpu_adjustments 静默跳过（滑杆有值却无效果）。
+fn identity_default() -> ChannelMixerSettings {
+    ChannelMixerSettings::identity()
+}
+
 /// 9 个权重百分比（-200 ~ +200 表示 -2.0 ~ +2.0）。
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
+#[serde(default = "identity_default")]
 #[repr(C)]
 pub struct ChannelMixerSettings {
     pub red_from_red: f32,
@@ -326,6 +333,22 @@ mod tests {
         assert_eq!(px.0[1], 40, "G unchanged");
         assert_eq!(px.0[2], 20, "B unchanged");
         assert_eq!(px.0[3], 128, "alpha 必须保留");
+    }
+
+    #[test]
+    fn tc_cm_partial_json_fills_identity() {
+        // 旧 sidecar 部分字段：缺失字段必须回落到恒等值，而不是解析失败被静默跳过
+        let partial: ChannelMixerSettings = serde_json::from_str(r#"{"red_from_red": 200.0}"#).unwrap();
+        assert_eq!(partial.red_from_red, 200.0);
+        assert_eq!(partial.green_from_green, 100.0, "缺失字段回落恒等值");
+        assert_eq!(partial.blue_from_blue, 100.0, "缺失字段回落恒等值");
+        assert!(!partial.is_identity());
+        // 完整恒等 JSON 仍解析为恒等
+        let full: ChannelMixerSettings = serde_json::from_str(
+            r#"{"red_from_red":100.0,"red_from_green":0.0,"red_from_blue":0.0,"green_from_red":0.0,"green_from_green":100.0,"green_from_blue":0.0,"blue_from_red":0.0,"blue_from_green":0.0,"blue_from_blue":100.0}"#,
+        )
+        .unwrap();
+        assert!(full.is_identity());
     }
 
     #[test]
