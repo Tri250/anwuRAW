@@ -83,7 +83,7 @@ sysinfo = "0.39.5"
 [target.'cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))'.dependencies]
 trash = "5.2.6"
 tauri-plugin-single-instance = "2.4.2"
-reqwest = { version = "0.13", default-features = false, features = ["json", "multipart", "rustls"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "multipart", "rustls", "stream"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
 gphoto2 = { git = "https://github.com/CyberTimon/libgphoto2-rs", optional = true }
@@ -96,7 +96,7 @@ ndk-context = "0.1"
 jni = "0.21"
 jni22 = { package = "jni", version = "0.22" }
 rustls-platform-verifier = "0.7"
-reqwest = { version = "0.13", default-features = false, features = ["json", "multipart", "rustls"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "multipart", "rustls", "stream"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 gtk = "0.18.2"

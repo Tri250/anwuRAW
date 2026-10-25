@@ -588,6 +588,7 @@ impl Default for AppSettings {
             thumbnail_aspect_ratio: Some("cover".to_string()),
             ai_provider: Some("cpu".to_string()),
             model_endpoint: default_model_endpoint(),
+            model_proxy: String::new(),
             adjustment_visibility: default_adjustment_visibility(),
             open_tree_sections: default_open_tree_sections(),
             copy_paste_settings: CopyPasteSettings::default(),
