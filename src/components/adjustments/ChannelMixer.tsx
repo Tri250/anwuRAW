@@ -80,6 +80,21 @@ export default function ChannelMixer({ adjustments, setAdjustments, onDragStateC
     });
   };
 
+  // 恒等矩阵时重置无实际效果，禁用按钮给出明确状态反馈
+  const isIdentity = (Object.keys(defaultIdentity) as Array<keyof ChannelMixerSettings>).every(
+    (key) => current[key] === defaultIdentity[key],
+  );
+
+  // 点击行首输出通道圆点：仅重置该输出行的 3 个输入权重
+  const handleRowReset = (row: ChannelRow) => {
+    setAdjustments({
+      channelMixer: {
+        ...current,
+        ...Object.fromEntries(row.outputs.map((output) => [output.key, defaultIdentity[output.key]])),
+      } as ChannelMixerSettings,
+    });
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -89,7 +104,8 @@ export default function ChannelMixer({ adjustments, setAdjustments, onDragStateC
         <button
           type="button"
           onClick={handleReset}
-          className="px-2.5 py-1 text-xs rounded-md bg-surface-secondary text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
+          disabled={isIdentity}
+          className="px-2.5 py-1 text-xs rounded-md bg-surface-secondary text-text-secondary hover:bg-surface hover:text-text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface-secondary disabled:hover:text-text-secondary"
           title={t('adjustments.channelMixer.reset', 'Reset / 重置')}
         >
           {t('adjustments.channelMixer.reset', 'Reset')}
@@ -123,10 +139,16 @@ export default function ChannelMixer({ adjustments, setAdjustments, onDragStateC
       <div className="space-y-2">
         {CHANNEL_ROWS.map((row) => (
           <div key={row.labelKey} className="grid grid-cols-[2.5rem_1fr_1fr_1fr] items-start gap-1">
-            {/* 输出通道彩色圆点标签 */}
-            <div className="flex items-center justify-center pt-1">
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: row.color }} title={t(row.labelKey)} />
-            </div>
+            {/* 输出通道彩色圆点：点击重置该行（悬停有提示，触屏点按即用） */}
+            <button
+              type="button"
+              onClick={() => handleRowReset(row)}
+              className="flex items-center justify-center pt-1 cursor-pointer"
+              title={`${t(row.labelKey)} · ${t('adjustments.channelMixer.reset', 'Reset')}`}
+              aria-label={`${t(row.labelKey)} ${t('adjustments.channelMixer.reset', 'Reset')}`}
+            >
+              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: row.color }} />
+            </button>
             {row.outputs.map((output) => (
               <div key={output.key} className="min-w-0">
                 <Slider

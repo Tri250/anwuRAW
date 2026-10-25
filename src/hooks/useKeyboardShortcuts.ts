@@ -667,6 +667,11 @@ export const useKeyboardShortcuts = ({
         document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
       if (isInputFocused) return;
 
+      // 滑杆/色轮拖动中屏蔽全部快捷键：拖动未落定时 undo/redo/Escape/Delete
+      // 会与进行中的拖动互相覆盖（isSliderDragging 期间预览更新本就被冻结），
+      // 先阻断快捷键，等 pointerup 落定后再响应
+      if (state.editor.isSliderDragging) return;
+
       for (const builtin of builtinShortcuts) {
         if (builtin.match(event, state)) {
           builtin.execute(event, state);

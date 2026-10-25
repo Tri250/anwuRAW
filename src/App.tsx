@@ -715,15 +715,13 @@ function App() {
 
   const handlePanelSelect = useCallback(
     (panelId: Panel | null) => {
-      // 移动端紧凑面板:点击已激活面板图标收起(activePanel=null → 面板回落到折叠高度)
-      if (!panelId) {
-        setUI({ activePanel: null });
-        return;
-      }
+      // 面板常驻展开：不提供任何收起路径（上滑/下滑呼出手势已移除），
+      // null 仅作类型兼容守卫直接忽略，activePanel 永不置空
+      if (!panelId) return;
       setPanel(panelId);
       setEditor({ activeMaskId: null, activeAiSubMaskId: null, isWbPickerActive: false });
     },
-    [setPanel, setEditor, setUI],
+    [setPanel, setEditor],
   );
 
   const handleToggleFolder = useCallback(
