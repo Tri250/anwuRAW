@@ -2083,24 +2083,7 @@
       "title": "Tagging"
     },
     "thanks": {
-      "description": "Ein großes Dankeschön an die folgenden Projekte, die für die Entwicklung von RapidRAW sehr wichtig waren:",
-      "list": {
-        "birefnet": "Für das hochauflösende Segmentierungsmodell der KI-Vordergrunderkennung.",
-        "darktable": "Für Referenzimplementierungen, die Teile dieser Arbeit leiteten.",
-        "depth": "Für das Modell zur monokularen Tiefenschätzung (Tiefenmasken).",
-        "efficientsam3": "Für das effiziente, aus SAM 3 destillierte Segmentierungsmodell der KI-Himmel- und Textmasken.",
-        "lama": "Für das leistungsstarke Bild-Inpainting-Modell.",
-        "lensfun": "Für die unschätzbare Open-Source-Bibliothek für Objektivkorrektur.",
-        "libgphoto2": "Für die umfassende Kamera-Kommunikationsbibliothek, die RapidRAWs Tethering und Fernauslösung ermöglicht.",
-        "mediapipe": "Für die schnellen Gesichtslandmarken- und Segmentierungsmodelle, die die KI-Gesichtsmasken ermöglichen.",
-        "negpy": "Für die Inspiration hinter der Negativumwandlungslogik.",
-        "nind": "Für die Bereitstellung von KI-Modellen für die Rauschreduzierung.",
-        "rawler": "Für die hervorragende Rust-Crate zur RAW-Bildverarbeitung.",
-        "sam2": "Für das grundlegende Modell der KI-Motiverkennung.",
-        "spektrafilm": "Für die spektralbasierten Filmemulations-LUTs von Andrea Volpato, die RapidRAWs integrierte Filmemulationen ermöglichen. Lizenziert unter CC BY-SA 4.0.",
-        "you": "Dafür, dass Sie RapidRAW nutzen. Ihr Interesse hält dieses Projekt am Leben.",
-        "youLabel": "Ihnen"
-      },
+      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
       "title": "Besonderer Dank"
     },
     "themes": {

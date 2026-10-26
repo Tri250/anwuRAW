@@ -463,7 +463,9 @@
         "quickErase": "クイック消去 {{count}}",
         "quickErase_one": "クイック消去 {{count}}",
         "quickErase_other": "クイック消去 {{count}}",
-        "retouch": "レタッチ {{count}}"
+        "retouch": "レタッチ {{count}}",
+        "clone_one": "クローン {{count}}",
+        "heal_one": "修復 {{count}}"
       },
       "resetInpaintingTooltip": "インペインティングをリセット",
       "settings": {
@@ -1073,7 +1075,8 @@
       "thumbnailPending": "AI処理待ち",
       "title": "AI処理",
       "unprocessed_other": "{{count}}枚の画像にAI処理が必要です",
-      "waiting": "AI処理を準備中…"
+      "waiting": "AI処理を準備中…",
+      "unprocessed_one": "{{count}}枚の画像にAI処理が必要です"
     },
     "community": {
       "actionSave": "保存",
@@ -1119,7 +1122,8 @@
     "filterExit": {
       "hiddenSingle": "{{name}} はフィルターに一致しなくなりました",
       "hiddenMultiple_other": "{{count}} 枚の画像がフィルターに一致しなくなりました",
-      "undo": "元に戻す"
+      "undo": "元に戻す",
+      "hiddenMultiple_one": "{{count}} 枚の画像がフィルターに一致しなくなりました"
     },
     "filters": {
       "edited": {
@@ -1281,7 +1285,8 @@
       },
       "openInLibrary": "ライブラリで開く",
       "recent": "最近",
-      "title": "ジョブ"
+      "title": "ジョブ",
+      "images_one": "{{count}} 枚"
     },
     "reject": {
       "deleteConfirm": "除外した画像を削除",
@@ -2078,24 +2083,7 @@
       "title": "タグ付け"
     },
     "thanks": {
-      "description": "RapidRAWの開発において、非常に重要な役割を果たしてくれた以下のプロジェクトに心より感謝いたします:",
-      "list": {
-        "birefnet": "AIによる手前の自動検出を支える、高解像度のセグメンテーションモデルを提供しています。",
-        "darktable": "一部の実装において参考にさせていただきました。",
-        "depth": "AI奥行きマスクを可能にする、単眼深度推定モデルを提供しています。",
-        "efficientsam3": "AIによる空とテキストのマスクを支える、SAM 3から蒸留された効率的なプロンプト対応セグメンテーションモデルを提供しています。",
-        "lama": "コンテンツに応じた塗りつぶしやオブジェクト削除を実現する、シンプルかつ強力な画像インペインティングモデルを提供しています。",
-        "lensfun": "自動レンズ補正に不可欠な、オープンソースライブラリと膨大なデータベースを提供しています。",
-        "libgphoto2": "RapidRAW のテザリングおよびリモート撮影機能を支える、包括的なカメラ通信ライブラリを提供してくださったことに。",
-        "mediapipe": "AI顔マスクを支える高速な顔ランドマークおよびセグメンテーションモデルに。",
-        "negpy": "ネガ反転アルゴリズムのヒントとなりました。",
-        "nind": "AIノイズ低減機能を支えるAIモデルを提供しています。",
-        "rawler": "RAWファイル処理の基盤となる優れたRustライブラリを提供しています。",
-        "sam2": "AI被写体検出機能の基盤となるモデルを提供しています。",
-        "spektrafilm": "RapidRAW の内蔵フィルムエミュレーションを支える、Andrea Volpato 氏によるスペクトルベースのフィルムエミュレーション LUT を提供してくださったことに。ライセンスは CC BY-SA 4.0 です。",
-        "you": "RapidRAWをご利用、ご支援いただきありがとうございます。皆様のご関心こそが、プロジェクトの存続と発展の支えです。",
-        "youLabel": "皆様"
-      },
+      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
       "title": "特別な謝辞"
     },
     "themes": {

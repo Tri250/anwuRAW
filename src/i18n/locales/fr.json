@@ -2120,24 +2120,7 @@
       "title": "Marquage"
     },
     "thanks": {
-      "description": "Un grand merci aux projets suivants qui ont été très importants dans le développement de RapidRAW :",
-      "list": {
-        "birefnet": "Pour le modèle de segmentation haute résolution qui alimente la détection du premier plan par l'IA.",
-        "darktable": "Pour certaines implémentations de référence qui ont guidé une partie de ce travail.",
-        "depth": "Pour le puissant modèle d'estimation de profondeur monoculaire qui permet les capacités de masquage de profondeur par l'IA.",
-        "efficientsam3": "Pour le modèle de segmentation efficace guidé par texte, distillé de SAM 3, qui alimente les masques de ciel et de texte par l'IA.",
-        "lama": "Pour le modèle d'inpainting d'image puissant & simple, qui permet le remplissage génératif et la suppression d'objets.",
-        "lensfun": "Pour son inestimable bibliothèque open-source et sa base de données complète pour la correction automatique de l'objectif.",
-        "libgphoto2": "Pour la bibliothèque complète de communication avec les appareils photo qui alimente le tethering et la capture à distance de RapidRAW.",
-        "mediapipe": "Pour les modèles rapides de points faciaux et de segmentation qui alimentent les masques de visage IA.",
-        "negpy": "Pour l'inspiration derrière la logique de conversion de négatif.",
-        "nind": "Pour avoir fourni les modèles d'IA qui propulsent les capacités de réduction de bruit par IA dans RapidRAW.",
-        "rawler": "Pour l'excellente crate Rust qui fournit la base du traitement des fichiers RAW dans ce projet.",
-        "sam2": "Pour avoir fourni le modèle de base utilisé pour les capacités de détection de sujet par IA.",
-        "spektrafilm": "Pour les LUTs d'émulation de film à base spectrale d'Andrea Volpato, qui alimentent les émulations intégrées de RapidRAW. Sous licence CC BY-SA 4.0.",
-        "you": "À vous, pour l'utilisation et le soutien de RapidRAW. Votre intérêt maintient ce projet vivant et en évolution.",
-        "youLabel": "Vous"
-      },
+      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
       "title": "Remerciements spéciaux"
     },
     "themes": {

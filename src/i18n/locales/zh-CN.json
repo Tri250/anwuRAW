@@ -453,8 +453,10 @@
         "aiEdit_one": "AI 编辑 {{count}}",
         "aiEdit_other": "AI 编辑 {{count}}",
         "clone": "克隆 {{count}}",
+        "clone_one": "克隆 {{count}}",
         "clone_other": "克隆 {{count}}",
         "heal": "修复 {{count}}",
+        "heal_one": "修复 {{count}}",
         "heal_other": "修复 {{count}}",
         "invertedName": "{{name}} 反转",
         "liquify": "液化 {{count}}",
@@ -848,7 +850,7 @@
     },
     "toolbar": {
       "history": "历史记录",
-      "switchToVariant": "Switch to {{label}}",
+      "switchToVariant": "切换到 {{label}}",
       "tooltips": {
         "aperture": "光圈",
         "backToLibrary": "返回图库",
@@ -1073,6 +1075,7 @@
       "thumbnailPending": "等待 AI 处理",
       "title": "AI 处理",
       "unprocessed_other": "{{count}} 张图像需要 AI 处理",
+      "unprocessed_one": "{{count}} 张图像需要 AI 处理",
       "waiting": "正在准备 AI 处理…"
     },
     "community": {
@@ -1119,6 +1122,7 @@
     "filterExit": {
       "hiddenSingle": "{{name}} 已不再符合筛选条件",
       "hiddenMultiple_other": "{{count}} 张图像已不再符合筛选条件",
+      "hiddenMultiple_one": "{{count}} 张图像已不再符合筛选条件",
       "undo": "撤销"
     },
     "filters": {
@@ -1226,12 +1230,12 @@
           "gte": "此评分及以上",
           "lte": "此评分及以下"
         },
-        "groupEditedFiles": "Include edited files in groups",
-        "groupIgnoreMetadata": "Ignore mismatched EXIF dates",
-        "groupOff": "Off",
-        "groupPreferJpeg": "Prefer JPEG",
-        "groupPreferRaw": "Prefer RAW",
-        "groupRawJpeg": "Group RAW + JPEG",
+        "groupEditedFiles": "分组中包含已编辑文件",
+        "groupIgnoreMetadata": "忽略不匹配的 EXIF 日期",
+        "groupOff": "关闭",
+        "groupPreferJpeg": "优先 JPEG",
+        "groupPreferRaw": "优先 RAW",
+        "groupRawJpeg": "RAW + JPEG 成组",
         "metadataAlways": "始终",
         "metadataHover": "悬停时",
         "metadataOff": "关闭",
@@ -1271,6 +1275,7 @@
       "emptyHint": "导出、导入、文件传输和 AI 任务会显示在这里。",
       "errorCopied": "错误已复制到剪贴板",
       "images_other": "{{count}} 张图片",
+      "images_one": "{{count}} 张图片",
       "kinds": {
         "aiTagging": "AI 标签",
         "copy": "复制文件",
@@ -2078,24 +2083,7 @@
       "title": "标签"
     },
     "thanks": {
-      "description": "衷心感谢以下项目，它们在 RapidRAW 的开发过程中非常重要：",
-      "list": {
-        "birefnet": "为提供高分辨率分割模型，用于 AI 前景检测功能。",
-        "darktable": "为部分参考实现提供了指导。",
-        "depth": "为强大的单目深度估计模型提供支持，实现了 AI 深度蒙版功能。",
-        "efficientsam3": "为提供从 SAM 3 蒸馏而来的高效提示式分割模型，用于 AI 天空和文本蒙版。",
-        "lama": "为强大且简单的图像修复模型提供支持，实现了内容感知填充和对象移除。",
-        "lensfun": "为无价的开源库和全面的数据库提供支持，实现了自动镜头校正。",
-        "libgphoto2": "感谢提供全面的相机通信库，为 RapidRAW 的联机拍摄与远程控制子系统提供支持。",
-        "mediapipe": "感谢其快速的面部关键点和分割模型，为 AI 面部蒙版提供支持。",
-        "negpy": "为负片转换逻辑提供了灵感。",
-        "nind": "为 AI 模型提供支持，驱动了 RapidRAW 中的 AI 降噪功能。",
-        "rawler": "为优秀的 Rust 库提供支持，构成了本项目 RAW 文件处理的基础。",
-        "sam2": "为提供基础模型，用于 AI 主体检测功能。",
-        "spektrafilm": "感谢 Andrea Volpato 提供基于光谱的胶片模拟 LUT，为 RapidRAW 的内置胶片模拟提供支持。采用 CC BY-SA 4.0 许可。",
-        "you": "感谢您使用和支持 RapidRAW。您的关注使本项目持续发展。",
-        "youLabel": "您"
-      },
+      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
       "title": "特别鸣谢"
     },
     "themes": {

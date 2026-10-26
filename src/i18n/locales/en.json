@@ -2083,24 +2083,7 @@
       "title": "Tagging"
     },
     "thanks": {
-      "description": "A huge thank you to the following projects that were very important in the development of RapidRAW:",
-      "list": {
-        "birefnet": "For the high-resolution segmentation model that powers the AI foreground detection.",
-        "darktable": "For some reference implementations that guided parts of this work.",
-        "depth": "For the powerful monocular depth estimation model that enables the AI depth masking capabilities.",
-        "efficientsam3": "For the efficient promptable segmentation model distilled from SAM 3 that powers the AI sky and text masks.",
-        "lama": "For the powerful & simple image inpainting model, which enables content-aware fill and object removal.",
-        "lensfun": "For its invaluable open-source library and comprehensive database for automatic lens correction.",
-        "libgphoto2": "For the comprehensive camera communication library powering RapidRAW's tethering and remote capture subsystem.",
-        "mediapipe": "For the fast face landmark and segmentation models that power the AI face masks.",
-        "negpy": "For the inspiration behind the negative conversion logic.",
-        "nind": "For providing AI models that power the AI noise reduction capabilities in RapidRAW.",
-        "rawler": "For the excellent Rust crate that provides the foundation for RAW file processing in this project.",
-        "sam2": "For providing the foundation model used for the AI subject detection capabilities.",
-        "spektrafilm": "For the spectrally-based film emulation LUTs by Andrea Volpato, used to power RapidRAW's built-in film emulations. Licensed CC BY-SA 4.0.",
-        "you": "For using and supporting RapidRAW. Your interest keeps this project alive and evolving.",
-        "youLabel": "You"
-      },
+      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
       "title": "Special Thanks"
     },
     "themes": {

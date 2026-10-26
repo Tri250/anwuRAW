@@ -2056,24 +2056,7 @@
       "title": "Tagging"
     },
     "thanks": {
-      "description": "Veel dank aan de volgende projecten die zeer belangrijk waren bij de ontwikkeling van RapidRAW:",
-      "list": {
-        "birefnet": "Voor het segmentatiemodel met hoge resolutie dat de AI-voorgronddetectie aandrijft.",
-        "darktable": "Voor enkele referentie-implementaties die delen van dit werk hebben geleid.",
-        "depth": "Voor het krachtige monoculaire diepteschattingsmodel dat de AI-dieptemaskering mogelijk maakt.",
-        "efficientsam3": "Voor het efficiënte, uit SAM 3 gedistilleerde segmentatiemodel met tekstprompts dat de AI-lucht- en tekstmaskers aandrijft.",
-        "lama": "Voor het krachtige en eenvoudige afbeeldingsinpainting-model dat inhoudsgebaseerde opvulling en objectverwijdering mogelijk maakt.",
-        "lensfun": "Voor de onschatbare open-source bibliotheek en uitgebreide database voor automatische lenscorrectie.",
-        "libgphoto2": "Voor de uitgebreide cameracommuicatiebibliotheek die het tethering- en afstandsbedieningssysteem van RapidRAW aandrijft.",
-        "mediapipe": "Voor de snelle gezichtslandmark- en segmentatiemodellen achter de AI-gezichtsmaskers.",
-        "negpy": "Voor de inspiratie achter de negatief-omzetlogica.",
-        "nind": "Voor het leveren van AI-modellen die de AI-ruisonderdrukkingmogelijkheden in RapidRAW aandrijven.",
-        "rawler": "Voor de uitstekende Rust-crate die de basis vormt voor RAW-bestandsverwerking in dit project.",
-        "sam2": "Voor het leveren van het basismodel dat wordt gebruikt voor de AI-onderwerpdetectiemogelijkheden.",
-        "spektrafilm": "Voor de spectraalgebaseerde filmemulatie-LUT's door Andrea Volpato, gebruikt voor de ingebouwde filmemulaties van RapidRAW. Gelicenseerd onder CC BY-SA 4.0.",
-        "you": "Voor het gebruiken en ondersteunen van RapidRAW. Uw interesse houdt dit project levend en evoluerend.",
-        "youLabel": "U"
-      },
+      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
       "title": "Speciale dank"
     },
     "themes": {

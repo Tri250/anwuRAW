@@ -2159,24 +2159,7 @@
       "title": "Tagowanie"
     },
     "thanks": {
-      "description": "Ogromne podziękowania dla następujących projektów, które były niezwykle ważne przy tworzeniu RapidRAW:",
-      "list": {
-        "birefnet": "Za model segmentacji w wysokiej rozdzielczości, który napędza wykrywanie pierwszego planu przez AI.",
-        "darktable": "Za kilka referencyjnych implementacji, które posłużyły za wskazówki.",
-        "depth": "Za zaawansowany model szacowania głębi, który włącza maskowanie oparte na głębi za pomocą AI.",
-        "efficientsam3": "Za wydajny model segmentacji sterowany tekstem, wydestylowany z SAM 3, który napędza maski nieba i tekstu AI.",
-        "lama": "Za niesamowity model do inpaintingu obrazu, umożliwiający usuwanie obiektów z uwzględnieniem kontekstu.",
-        "lensfun": "Za nieocenioną bibliotekę open-source z bogatą bazą obiektywów do automatycznej korekcji.",
-        "libgphoto2": "Za kompleksową bibliotekę komunikacji z aparatami, napędzającą tethering i zdalne wyzwalanie w RapidRAW.",
-        "mediapipe": "Za szybkie modele punktów charakterystycznych twarzy i segmentacji, które napędzają maski twarzy AI.",
-        "negpy": "Za inspirację stojącą za rozwiązaniem do inwersji negatywów.",
-        "nind": "Za dostarczenie modeli AI, które stanowią silnik odszumiający RapidRAW.",
-        "rawler": "Za świetną bibliotekę w Rust, dostarczającą fundament dla przetwarzania plików RAW w tym projekcie.",
-        "sam2": "Za dostarczenie bazowego modelu do wykrywania i wycinania obiektów za pomocą AI.",
-        "spektrafilm": "Za oparte na danych spektralnych LUT-y emulacji filmu autorstwa Andrei Volpato, napędzające wbudowane emulacje filmowe RapidRAW. Licencja CC BY-SA 4.0.",
-        "you": "Za to, że używasz i wspierasz RapidRAW. Twoje zainteresowanie sprawia, że ten projekt nadal ewoluuje.",
-        "youLabel": "Ty"
-      },
+      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
       "title": "Szczególne podziękowania"
     },
     "themes": {

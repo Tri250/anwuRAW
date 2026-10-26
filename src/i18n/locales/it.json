@@ -2123,24 +2123,7 @@
       "title": "Tag"
     },
     "thanks": {
-      "description": "Un enorme grazie ai seguenti progetti che sono stati molto importanti nello sviluppo di RapidRAW:",
-      "list": {
-        "birefnet": "Per il modello di segmentazione ad alta risoluzione che alimenta il rilevamento AI del primo piano.",
-        "darktable": "Per alcune implementazioni di riferimento che hanno guidato parti di questo lavoro.",
-        "depth": "Per il potente modello di stima della profondità monoculare che abilita le funzionalità di mascheratura di profondità AI.",
-        "efficientsam3": "Per l'efficiente modello di segmentazione guidato da prompt, distillato da SAM 3, che alimenta le maschere AI di cielo e testo.",
-        "lama": "Per il potente e semplice modello di inpainting delle immagini, che permette il riempimento in base al contenuto e la rimozione di oggetti.",
-        "lensfun": "Per la sua inestimabile libreria open source e il database completo per la correzione automatica dell'obiettivo.",
-        "libgphoto2": "Per la completa libreria di comunicazione con le fotocamere che alimenta il tethering e lo scatto remoto di RapidRAW.",
-        "mediapipe": "Per i rapidi modelli di punti del viso e segmentazione che alimentano le maschere viso IA.",
-        "negpy": "Per l'ispirazione dietro alla logica di conversione dei negativi.",
-        "nind": "Per aver fornito i modelli AI che alimentano le capacità di riduzione del rumore AI in RapidRAW.",
-        "rawler": "Per l'eccellente crate Rust che fornisce le basi per l'elaborazione dei file RAW in questo progetto.",
-        "sam2": "Per aver fornito il modello fondamentale usato per le funzionalità di rilevamento del soggetto tramite AI.",
-        "spektrafilm": "Per le LUT di emulazione pellicola su base spettrale di Andrea Volpato, che alimentano le emulazioni integrate di RapidRAW. Concesse in licenza CC BY-SA 4.0.",
-        "you": "Per utilizzare e supportare RapidRAW. Il tuo interesse mantiene questo progetto vivo e in evoluzione.",
-        "youLabel": "Te"
-      },
+      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
       "title": "Ringraziamenti Speciali"
     },
     "themes": {

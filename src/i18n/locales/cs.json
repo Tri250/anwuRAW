@@ -2090,24 +2090,7 @@
       "title": "Označování"
     },
     "thanks": {
-      "description": "Velké poděkování patří následujícím projektům, které byly velmi důležité při vývoji RapidRAW:",
-      "list": {
-        "birefnet": "Za segmentační model s vysokým rozlišením, který pohání detekci popředí pomocí AI.",
-        "darktable": "Pro některé referenční implementace, které vedly části této práce.",
-        "depth": "Pro výkonný monokulární model odhadu hloubky, který umožňuje AI hloubkové maskování.",
-        "efficientsam3": "Za efektivní segmentační model ovládaný textem, odvozený od SAM 3, který pohání AI masky oblohy a textu.",
-        "lama": "Pro výkonný a jednoduchý model malování snímků, který umožňuje výplň a odstraňování objektů s ohledem na obsah.",
-        "lensfun": "Pro svou neocenitelnou open-source knihovnu a komplexní databázi pro automatickou korekci objektivů.",
-        "libgphoto2": "Pro komplexní knihovnu pro komunikaci s fotoaparátem, která pohání tethering a vzdálené snímání v RapidRAW.",
-        "mediapipe": "Za rychlé modely obličejových bodů a segmentace, které pohánějí AI masky obličeje.",
-        "negpy": "Pro inspiraci negativní konverzní logiky.",
-        "nind": "Za poskytování modelů AI, které pohánějí funkce redukce šumu AI v RapidRAW.",
-        "rawler": "Za vynikající přepravku Rust, která poskytuje základ pro zpracování souborů RAW v tomto projektu.",
-        "sam2": "Za poskytnutí základního modelu používaného pro schopnosti detekce předmětů AI.",
-        "spektrafilm": "Pro spektrálně založené filmové emulační LUT od Andrey Volpata, použité pro vestavěné filmové emulace v RapidRAW. Licence CC BY-SA 4.0.",
-        "you": "Za používání a podporu RapidRAW. Váš zájem udržuje tento projekt živý a rozvíjející se.",
-        "youLabel": "Vy"
-      },
+      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
       "title": "Zvláštní poděkování"
     },
     "themes": {
