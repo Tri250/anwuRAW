@@ -168,6 +168,16 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
     ],
   },
   [Mask.QuickEraser]: { parameters: [] },
+  [Mask.Clone]: { showBrushTools: true, parameters: [] },
+  [Mask.Heal]: { showBrushTools: true, parameters: [] },
+  [Mask.Liquify]: {
+    showBrushTools: true,
+    parameters: [{ key: 'pressure', min: 1, max: 100, step: 1, defaultValue: 40 }],
+  },
+  [Mask.Retouch]: {
+    showBrushTools: true,
+    parameters: [{ key: 'intensity', min: 1, max: 100, step: 1, defaultValue: 40 }],
+  },
 };
 
 const BrushTools = ({
@@ -834,7 +844,7 @@ export default function MasksPanel() {
         } else if (overData?.type === 'SubMask') {
           const container = adjustments.masks.find((m) => m.id === overData.parentId);
           if (container) {
-            const targetIndex = container.subMasks.findIndex((sm) => sm.id === over.id);
+            const targetIndex = container.subMasks.findIndex((sm) => sm.id === over!.id);
             handleAddSubMask(overData.parentId!, dragData.maskType!, SubMaskMode.Additive, targetIndex);
           }
         } else {
@@ -933,7 +943,7 @@ export default function MasksPanel() {
 
           if (sourceContainerId === targetContainerId) {
             if (overData?.type === 'SubMask') {
-              const overSubMaskIndex = sourceContainer.subMasks.findIndex((sm) => sm.id === over.id);
+              const overSubMaskIndex = sourceContainer.subMasks.findIndex((sm) => sm.id === over!.id);
               const insertIndex = overSubMaskIndex >= 0 ? overSubMaskIndex : sourceContainer.subMasks.length;
               sourceContainer.subMasks.splice(insertIndex, 0, movedSubMask);
             } else {
@@ -941,7 +951,7 @@ export default function MasksPanel() {
             }
           } else {
             if (overData?.type === 'SubMask') {
-              const overSubMaskIndex = targetContainer.subMasks.findIndex((sm) => sm.id === over.id);
+              const overSubMaskIndex = targetContainer.subMasks.findIndex((sm) => sm.id === over!.id);
               const insertIndex = overSubMaskIndex >= 0 ? overSubMaskIndex : targetContainer.subMasks.length;
               targetContainer.subMasks.splice(insertIndex, 0, movedSubMask);
             } else {
@@ -1265,7 +1275,7 @@ export default function MasksPanel() {
               >
                 {(() => {
                   const sm = activeDragItem.item as SubMask;
-                  const Icon = MASK_ICON_MAP[sm.type] || Circle;
+                  const Icon = MASK_ICON_MAP[sm.type as Mask] || Circle;
                   return <Icon size={16} className={`shrink-0 ml-1 ${TEXT_COLOR_KEYS[TextColors.secondary]}`} />;
                 })()}
                 <span className="flex-1 truncate">{getSubMaskName(activeDragItem.item as SubMask)}</span>
@@ -1696,7 +1706,7 @@ function SubMaskRow({
     setNodeRef(node);
     setDroppableRef(node);
   };
-  const MaskIcon = MASK_ICON_MAP[subMask.type] || Circle;
+  const MaskIcon = MASK_ICON_MAP[subMask.type as Mask] || Circle;
   const { showContextMenu } = useContextMenu();
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2017,7 +2027,7 @@ function SettingsPanel({
     updateSubMask(activeSubMask.id, { parameters: newParams });
   };
 
-  const subMaskConfig = activeSubMask ? SUB_MASK_CONFIG[activeSubMask.type] || {} : {};
+  const subMaskConfig = activeSubMask ? SUB_MASK_CONFIG[activeSubMask.type as Mask] || {} : {};
   const isAiMask =
     activeSubMask &&
     [Mask.AiSubject, Mask.AiForeground, Mask.AiSky, Mask.AiDepth, Mask.AiText, Mask.AiFace].includes(
@@ -2133,7 +2143,7 @@ function SettingsPanel({
     };
 
     const isPasteAllowed = copiedSectionAdjustments && copiedSectionAdjustments.section === sectionName;
-    const sectionTitle = t(`editor.adjustments.sections.${sectionName}`);
+    const sectionTitle = t(`editor.adjustments.sections.${sectionName}` as any);
 
     const pasteLabel = copiedSectionAdjustments
       ? t('editor.masks.settings.pasteSectionSettings', { section: sectionTitle })
@@ -2345,7 +2355,7 @@ function SettingsPanel({
                   label={
                     param.key === 'feather' && activeSubMask.type === Mask.AiDepth
                       ? t('editor.masks.params.globalFeather')
-                      : t('editor.masks.params.' + param.key)
+                      : t(('editor.masks.params.' + param.key) as any)
                   }
                   min={param.min}
                   max={param.max}
@@ -2388,7 +2398,7 @@ function SettingsPanel({
         className="flex flex-col gap-2"
       >
         {visibleSections.map((sectionName) => {
-          const title = t(`editor.adjustments.sections.${sectionName}`);
+          const title = t(`editor.adjustments.sections.${sectionName}` as any);
           return (
             <CollapsibleSection
               key={sectionName}

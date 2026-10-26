@@ -355,7 +355,7 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
           submenu: [
             { label: t('contextMenus.editor.noLabel'), onClick: () => handleSetColorLabel(null) },
             ...COLOR_LABELS.map((label: Color) => ({
-              label: t(`contextMenus.colors.${label.name}`),
+              label: t(`contextMenus.colors.${label.name}` as any),
               color: label.color,
               onClick: () => handleSetColorLabel(label.name),
             })),
@@ -842,7 +842,7 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
           submenu: [
             { label: t('contextMenus.editor.noLabel'), onClick: () => handleSetColorLabel(null, finalSelection) },
             ...COLOR_LABELS.map((label: Color) => ({
-              label: t(`contextMenus.colors.${label.name}`),
+              label: t(`contextMenus.colors.${label.name}` as any),
               color: label.color,
               onClick: () => handleSetColorLabel(label.name, finalSelection),
             })),

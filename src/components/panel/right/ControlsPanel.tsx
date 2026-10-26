@@ -206,7 +206,7 @@ export default function Controls() {
     };
 
     const isPasteAllowed = copiedSectionAdjustments && copiedSectionAdjustments.section === sectionName;
-    const translatedSection = t(`editor.adjustments.sections.${sectionName}`);
+    const translatedSection = t(`editor.adjustments.sections.${sectionName}` as any);
 
     const pasteLabel = copiedSectionAdjustments
       ? t('editor.adjustments.actions.pasteLabel', { section: translatedSection })
@@ -295,7 +295,7 @@ export default function Controls() {
       <div className="grow overflow-y-scroll p-3 flex flex-col gap-2">
         {selectedImage ? (
           visibleSections.map((sectionName: string) => {
-            const title = t(`editor.adjustments.sections.${sectionName}`);
+            const title = t(`editor.adjustments.sections.${sectionName}` as any);
 
             return (
               <div className="shrink-0 group" key={sectionName}>

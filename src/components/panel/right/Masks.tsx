@@ -300,7 +300,7 @@ export function NewMaskDropZone({ isOver, textKey }: { isOver: boolean; textKey:
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className={`p-3 rounded-lg text-center ${isOver ? 'border border-accent/80 bg-bg-tertiary/50' : ''}`}
     >
-      <Text weight={TextWeights.medium}>{t(textKey)}</Text>
+      <Text weight={TextWeights.medium}>{t(textKey as any)}</Text>
     </motion.div>
   );
 }

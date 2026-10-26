@@ -385,7 +385,7 @@ function AlbumTreeNode({
 
   let ItemIcon = isGroup ? (isExpanded ? FolderOpen : Folder) : AlbumIcon;
   if (item.icon && ALBUM_ICONS[item.icon]) {
-    ItemIcon = ALBUM_ICONS[item.icon];
+    ItemIcon = ALBUM_ICONS[item.icon] as typeof ItemIcon;
   }
   if (isDropTarget) {
     ItemIcon = MoveRight;
@@ -562,7 +562,7 @@ function TreeNode({
   let ResolvedIcon = isOpen ? FolderOpen : Folder;
 
   if (currentFolderIconKey && ALBUM_ICONS[currentFolderIconKey]) {
-    ResolvedIcon = ALBUM_ICONS[currentFolderIconKey];
+    ResolvedIcon = ALBUM_ICONS[currentFolderIconKey] as typeof ResolvedIcon;
   }
 
   if (isDropTarget) {
@@ -806,7 +806,9 @@ export default function FolderTree({
   const filteredAlbumTree = useMemo(() => {
     let base = albumTree;
     if (isSearching) {
-      base = base.map((item: any) => filterAlbumTree(item, trimmedQuery)).filter((t: any) => t !== null);
+      base = base
+        .map((item: any) => filterAlbumTree(item, trimmedQuery))
+        .filter((t: any): t is AlbumItem => t !== null);
     }
     return base;
   }, [albumTree, trimmedQuery, isSearching]);

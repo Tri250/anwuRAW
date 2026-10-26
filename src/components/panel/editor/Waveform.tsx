@@ -598,7 +598,7 @@ function Waveform({
                   <button
                     key={mode}
                     onClick={() => setDisplayMode(mode)}
-                    data-tooltip={t(tooltip)}
+                    data-tooltip={t(tooltip as any)}
                     className={`${baseButtonClass} ${displayMode === mode ? textActiveClass : inactiveButtonClass}`}
                   >
                     {displayMode === mode && (

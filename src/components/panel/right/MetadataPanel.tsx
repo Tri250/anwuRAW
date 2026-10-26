@@ -551,7 +551,7 @@ export default function MetadataPanel() {
                           return (
                             <EditableMetadataItem
                               key={field.key}
-                              label={t(`editor.metadata.fields.${field.label}`)}
+                              label={t(`editor.metadata.fields.${field.label}` as any)}
                               value={displayValue}
                               onSave={(newVal) => {
                                 handleUpdateExif(targetPaths, { [field.key]: newVal });

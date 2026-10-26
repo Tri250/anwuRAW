@@ -9,6 +9,7 @@ import { useProcessStore } from '../store/useProcessStore';
 import { THEMES, DEFAULT_THEME_ID, ThemeProps } from '../utils/themes';
 import { COPYABLE_ADJUSTMENT_KEYS, withAdjustmentLayout } from '../utils/adjustments';
 import {
+  AlbumItem,
   FilterCriteria,
   Invokes,
   LibraryViewMode,
@@ -210,7 +211,7 @@ export const useAppInitialization = ({
 
         if (settings?.pinnedFolders && settings.pinnedFolders.length > 0) {
           try {
-            const trees = await invoke(Invokes.GetPinnedFolderTrees, {
+            const trees = await invoke<AlbumItem[]>(Invokes.GetPinnedFolderTrees, {
               paths: settings.pinnedFolders,
               expandedFolders: settings.lastFolderState?.expandedFolders || [],
               showImageCounts: settings.enableFolderImageCounts || settings.folderTreeSort?.key === 'imageCount',
