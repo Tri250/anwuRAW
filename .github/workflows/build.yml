@@ -155,8 +155,10 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Setup Android signing
+      - id: android-signing
+        name: Setup Android signing
         if: inputs.mobile == 'android' && github.event_name != 'pull_request'
+        shell: bash
         env:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -169,6 +171,7 @@ jobs:
             echo "${ANDROID_KEY_BASE64}" | base64 -d > $RUNNER_TEMP/keystore.jks
             echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
             echo "✅ Android release signing configured from secrets."
+            echo "signed=true" >> "$GITHUB_OUTPUT"
           else
             echo "⚠️ Android release signing secrets not configured. Generating a temporary debug keystore..."
             DEBUG_KS=$RUNNER_TEMP/debug.keystore
@@ -178,6 +181,7 @@ jobs:
             echo "storeFile=$DEBUG_KS" >> keystore.properties
             echo "storePassword=android" >> keystore.properties
             echo "✅ Debug keystore created at $DEBUG_KS"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: rustup install target
@@ -239,6 +243,12 @@ jobs:
           version="$(node -e "const fs=require('fs'); const conf=JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json','utf8')); process.stdout.write(conf.version || '')")"
           arch="${{ inputs.target }}"
           arch="${arch%%-*}"
+          # 未配置签名 secrets 时 Gradle 依旧产出 release 包，但用的是每次构建临时生成的
+          # 调试密钥签名。资产名必须带 _debug 标记，否则用户会误判为生产签名包：
+          # 这类包无法覆盖安装到其它密钥签名的旧版本，也不可直接上架分发。
+          if [[ '${{ steps.android-signing.outputs.signed }}' != 'true' ]]; then
+            arch="${arch}_debug"
+          fi
           template='${{ steps.patch-release-name.outputs.platform }}'
 
           find src-tauri/gen/android/app/build/outputs -type f \( -name '*.apk' -o -name '*.aab' \) | while read -r file; do
