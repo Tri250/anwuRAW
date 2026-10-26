@@ -56,6 +56,11 @@ pub struct GpuImageCache {
     pub width: u32,
     pub height: u32,
     pub transform_hash: u64,
+    /// 源图像像素缓冲的指针与长度：仅靠 transform_hash + 尺寸无法区分
+    /// 两张参数相同但内容不同的图片（会导致读到上一张图的纹理 → 花屏）。
+    pub source_ptr: usize,
+    pub source_len: usize,
+    pub is_raw: bool,
 }
 
 pub struct GpuProcessorState {

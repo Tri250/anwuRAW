@@ -1833,10 +1833,23 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         t_luma_nr, t_color_nr, scale, is_raw
     );
 
-    let sharpness_blurred = textureLoad(sharpness_blur_texture, id.xy, 0).rgb;
-    let tonal_blurred = textureLoad(tonal_blur_texture, id.xy, 0).rgb;
-    let clarity_blurred = textureLoad(clarity_blur_texture, id.xy, 0).rgb;
-    let structure_blurred = textureLoad(structure_blur_texture, id.xy, 0).rgb;
+    // 只在对应效果真的生效时才采样模糊纹理。CPU 侧会跳过没有用到的模糊
+    // pass 并绑定 1x1 占位纹理，这里如果无条件 textureLoad 就会读到越界/占位
+    // 数据（部分移动驱动会返回垃圾值 → 花屏），同时白白增加带宽。
+    var sharpness_blurred = vec3<f32>(0.0);
+    var tonal_blurred = vec3<f32>(0.0);
+    if (abs(t_sharpness) >= 0.0005) {
+        sharpness_blurred = textureLoad(sharpness_blur_texture, id.xy, 0).rgb;
+        tonal_blurred = textureLoad(tonal_blur_texture, id.xy, 0).rgb;
+    }
+    var clarity_blurred = vec3<f32>(0.0);
+    if (t_halation > 0.0) {
+        clarity_blurred = textureLoad(clarity_blur_texture, id.xy, 0).rgb;
+    }
+    var structure_blurred = vec3<f32>(0.0);
+    if (t_glow > 0.0 || t_dehaze != 0.0) {
+        structure_blurred = textureLoad(structure_blur_texture, id.xy, 0).rgb;
+    }
 
     var locally_contrasted_rgb = initial_linear_rgb;
 

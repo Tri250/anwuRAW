@@ -1,4 +1,5 @@
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
 use std::time::Instant;
 
 use half::f16;
@@ -12,6 +13,93 @@ use wgpu::util::{DeviceExt, TextureDataOrder};
 use crate::image_processing::{AllAdjustments, GpuContext, MAX_MASKS};
 use crate::lut_processing::Lut;
 use crate::{AppState, GpuImageCache};
+
+/// 设备丢失 / 显存耗尽标记。置位后下一次初始化上下文时会整体重建
+/// device、processor 与 image cache，避免继续使用失效的 GPU 资源输出花屏。
+static GPU_DEVICE_LOST: AtomicBool = AtomicBool::new(false);
+
+/// 锁定 Optional<Mutex>，若上一次 panic 导致中毒则直接清空自我修复，
+/// 而不是继续复用可能已经损坏的 GPU 状态。
+fn lock_or_reset<'a, T>(
+    mutex: &'a std::sync::Mutex<Option<T>>,
+    name: &str,
+) -> std::sync::MutexGuard<'a, Option<T>> {
+    mutex.lock().unwrap_or_else(|poisoned| {
+        log::warn!(
+            "{} lock was poisoned (previous panic). Wiping it to self-heal.",
+            name
+        );
+        let mut guard = poisoned.into_inner();
+        *guard = None;
+        guard
+    })
+}
+
+/// 等待 GPU 完成当前提交。Vulkan 驱动在移动端冷启动或显存紧张时
+/// 可能先返回 Timeout，此时需要重试而不是直接失败。
+fn wait_for_gpu(device: &wgpu::Device, label: &str) {
+    for attempt in 0..3 {
+        match device.poll(wgpu::PollType::Wait {
+            submission_index: None,
+            timeout: Some(std::time::Duration::from_secs(10)),
+        }) {
+            // 队列已空，或等待的目标提交已经完成：GPU 状态可用。
+            Ok(wgpu::PollStatus::QueueEmpty | wgpu::PollStatus::WaitSucceeded) => return,
+            Ok(wgpu::PollStatus::Poll) => {
+                log::warn!(
+                    "GPU poll for {} still in flight (attempt {})",
+                    label,
+                    attempt + 1
+                );
+            }
+            Err(wgpu::PollError::Timeout) => {
+                log::warn!("GPU wait for {} timed out (attempt {})", label, attempt + 1);
+            }
+            Err(e) => {
+                log::error!(
+                    "GPU wait for {} failed: {} (attempt {})",
+                    label,
+                    e,
+                    attempt + 1
+                );
+                GPU_DEVICE_LOST.store(true, Ordering::Release);
+                return;
+            }
+        }
+    }
+}
+
+/// 分块渲染的块边长与重叠量。
+/// 桌面用 2048 换吞吐；Android 的移动 GPU 显存预算低，1024 可以把模糊链
+/// （5 张 tile 尺寸 RGBA16F 纹理）的峰值从约 210MB 压到约 65MB，
+/// 这正是"渲染后花屏 / 被系统回收"的主要压力来源。
+/// tile 纹理尺寸与 tile 循环必须使用同一组常量，因此集中在此定义。
+const TILE_SIZE: u32 = if cfg!(target_os = "android") {
+    1024
+} else {
+    2048
+};
+const TILE_OVERLAP: u32 = 128;
+
+/// 仅在需要原生 WGPU 上屏（桌面）时才分配的两张全尺寸纹理。
+/// Android/Linux 预览走 CPU 回读，永远不需要它们，早期版本白白占用
+/// 数百 MB 显存，是中低端机型花屏/被系统杀掉的直接诱因。
+struct DisplayTextures {
+    working_texture: wgpu::Texture,
+    output_texture: wgpu::Texture,
+    output_texture_view: wgpu::TextureView,
+}
+
+/// 模糊链用到的 5 张 tile 尺寸 Rgba16Float 纹理。
+/// 以 2304x2304 计，单张约 42MB，5 张约 210MB —— 只有真的用到
+/// 锐化/柔化/清晰度/结构/辉光时才值得分配。
+struct BlurTextures {
+    ping_pong: wgpu::TextureView,
+    sharpness: wgpu::TextureView,
+    tonal: wgpu::TextureView,
+    clarity: wgpu::TextureView,
+    structure: wgpu::TextureView,
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct Roi {
@@ -142,7 +230,36 @@ pub fn get_or_init_gpu_context(
     #[cfg(not(any(target_os = "android", target_os = "linux")))]
     let app_handle = _app_handle;
 
-    let mut context_lock = state.gpu_context.lock().unwrap_or_else(|e| e.into_inner());
+    let mut context_lock = lock_or_reset(&state.gpu_context, "GPU context");
+    if GPU_DEVICE_LOST.swap(false, Ordering::AcqRel) {
+        log::warn!("GPU device was lost or ran out of memory. Rebuilding all GPU state.");
+        if let Some(context) = context_lock.take() {
+            if let Ok(mut display) = context.display.lock() {
+                *display = None;
+            }
+        }
+        // 这里已经持有 gpu_context，绝不能再阻塞等待另外两把锁：
+        // 另一个预览/导出线程可能正握着它们，硬等就是死锁。
+        // 抢不到锁就保留标记，下一帧再重建。
+        let processor_cleared = match state.gpu_processor.try_lock() {
+            Ok(mut guard) => {
+                *guard = None;
+                true
+            }
+            Err(_) => false,
+        };
+        let cache_cleared = match state.gpu_image_cache.try_lock() {
+            Ok(mut guard) => {
+                *guard = None;
+                true
+            }
+            Err(_) => false,
+        };
+        if !processor_cleared || !cache_cleared {
+            log::warn!("GPU resources busy; deferring full rebuild to the next frame");
+            GPU_DEVICE_LOST.store(true, Ordering::Release);
+        }
+    }
     if let Some(context) = &*context_lock {
         return Ok(context.clone());
     }
@@ -212,6 +329,15 @@ pub fn get_or_init_gpu_context(
         format!("Failed to find a wgpu adapter: {}", e)
     })?;
 
+    let info = adapter.get_info();
+    log::info!(
+        "Using wgpu adapter '{}' ({:?}, backend {:?}, device type {:?})",
+        info.name,
+        info.vendor,
+        info.backend,
+        info.device_type
+    );
+
     let mut required_features = wgpu::Features::empty();
     if adapter
         .features()
@@ -236,6 +362,35 @@ pub fn get_or_init_gpu_context(
         }
         e.to_string()
     })?;
+
+    device.on_uncaptured_error(Arc::new(|err: wgpu::Error| {
+        // 未捕获的 GPU 错误意味着后续命令缓冲可能已经处于不确定状态。
+        // OutOfMemory / Internal 直接标记重建；Validation 多为可恢复的用法问题，
+        // 只记日志，避免一次越界告警就把整条 GPU 通道拆掉。
+        match err {
+            wgpu::Error::Validation { description, .. } => {
+                log::error!("[wgpu-error] validation: {}", description);
+            }
+            wgpu::Error::OutOfMemory { .. } => {
+                log::error!("[wgpu-error] out of memory — flagging GPU state for rebuild");
+                GPU_DEVICE_LOST.store(true, Ordering::Release);
+            }
+            wgpu::Error::Internal { description, .. } => {
+                log::error!(
+                    "[wgpu-error] internal: {} — flagging GPU state for rebuild",
+                    description
+                );
+                GPU_DEVICE_LOST.store(true, Ordering::Release);
+            }
+        }
+    }));
+
+    // 设备被驱动重置或系统回收时，wgpu 会静默丢弃后续所有命令：回读缓冲区
+    // 里留的是未初始化的显存，屏幕上就是花屏。必须显式监听并重建。
+    device.set_device_lost_callback(|reason, message| {
+        log::error!("[wgpu] device lost ({:?}) — {}", reason, message);
+        GPU_DEVICE_LOST.store(true, Ordering::Release);
+    });
 
     if let Some(p) = &flag_path {
         let _ = std::fs::remove_file(p);
@@ -460,29 +615,46 @@ fn read_texture_data_roi(
     buffer_slice.map_async(wgpu::MapMode::Read, move |result| {
         let _ = tx.send(result);
     });
-    device
-        .poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: Some(std::time::Duration::from_secs(60)),
-        })
-        .map_err(|e| format!("Failed while polling mapped GPU buffer: {}", e))?;
-    let map_result = rx
-        .recv()
-        .map_err(|e| format!("Failed receiving GPU map result: {}", e))?;
-    map_result.map_err(|e| e.to_string())?;
-
-    let padded_data = buffer_slice.get_mapped_range().to_vec();
-    output_buffer.unmap();
-
-    if padded_bytes_per_row == unpadded_bytes_per_row {
-        Ok(padded_data)
-    } else {
-        let mut unpadded_data = Vec::with_capacity((unpadded_bytes_per_row * size.height) as usize);
-        for chunk in padded_data.chunks(padded_bytes_per_row as usize) {
-            unpadded_data.extend_from_slice(&chunk[..unpadded_bytes_per_row as usize]);
-        }
-        Ok(unpadded_data)
+    if let Err(e) = device.poll(wgpu::PollType::Wait {
+        submission_index: None,
+        timeout: Some(std::time::Duration::from_secs(60)),
+    }) {
+        GPU_DEVICE_LOST.store(true, Ordering::Release);
+        return Err(format!("Failed while polling mapped GPU buffer: {}", e));
     }
+    // 用超时接收而不是 recv()：驱动卡死时宁可让这一帧失败并保留上一帧，
+    // 也不要阻塞预览工作线程（那会让界面停留在半张已回收的位图上）。
+    let map_result = match rx.recv_timeout(std::time::Duration::from_secs(60)) {
+        Ok(result) => result,
+        Err(e) => {
+            GPU_DEVICE_LOST.store(true, Ordering::Release);
+            return Err(format!("Timed out waiting for GPU readback: {}", e));
+        }
+    };
+    if let Err(e) = map_result {
+        GPU_DEVICE_LOST.store(true, Ordering::Release);
+        return Err(format!("GPU buffer mapping failed: {}", e));
+    }
+
+    // 设备在 map 成功后丢失时，get_mapped_range() 会 panic；这里兜住并转为错误。
+    let unpadded = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let mapped = buffer_slice.get_mapped_range();
+        let data = if padded_bytes_per_row == unpadded_bytes_per_row {
+            mapped.to_vec()
+        } else {
+            let mut unpadded_data =
+                Vec::with_capacity((unpadded_bytes_per_row * size.height) as usize);
+            for chunk in mapped.chunks(padded_bytes_per_row as usize) {
+                unpadded_data.extend_from_slice(&chunk[..unpadded_bytes_per_row as usize]);
+            }
+            unpadded_data
+        };
+        drop(mapped);
+        data
+    }))
+    .map_err(|_| "GPU device was lost while reading back the image".to_string())?;
+    output_buffer.unmap();
+    Ok(unpadded)
 }
 
 fn to_rgba_f16(img: &DynamicImage) -> Vec<f16> {
@@ -565,18 +737,17 @@ pub struct GpuProcessor {
     dummy_blur_view: wgpu::TextureView,
     dummy_lut_view: wgpu::TextureView,
     dummy_lut_sampler: wgpu::Sampler,
-    ping_pong_view: wgpu::TextureView,
-    sharpness_blur_view: wgpu::TextureView,
-    tonal_blur_view: wgpu::TextureView,
-    clarity_blur_view: wgpu::TextureView,
-    structure_blur_view: wgpu::TextureView,
+
+    /// tile 尺寸的模糊纹理组，第一次真的需要模糊时才分配。
+    tile_texture_size: wgpu::Extent3d,
+    blurs: OnceLock<BlurTextures>,
 
     pub tile_output_texture: wgpu::Texture,
     pub tile_output_texture_view: wgpu::TextureView,
-    pub working_texture: wgpu::Texture,
-    pub working_texture_view: wgpu::TextureView,
-    pub output_texture: wgpu::Texture,
-    pub output_texture_view: wgpu::TextureView,
+
+    /// 全尺寸图片的像素尺寸，按需（仅桌面原生上屏时）分配显存。
+    full_image_size: wgpu::Extent3d,
+    display_textures: OnceLock<DisplayTextures>,
 }
 
 const FLARE_MAP_SIZE: u32 = 512;
@@ -1065,9 +1236,6 @@ impl GpuProcessor {
         let dummy_lut_view = dummy_lut_texture.create_view(&Default::default());
         let dummy_lut_sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
 
-        const TILE_SIZE: u32 = 2048;
-        const TILE_OVERLAP: u32 = 128;
-
         let clamped_tile_width = max_width.min(TILE_SIZE + TILE_OVERLAP * 2);
         let clamped_tile_height = max_height.min(TILE_SIZE + TILE_OVERLAP * 2);
 
@@ -1083,47 +1251,6 @@ impl GpuProcessor {
             depth_or_array_layers: 1,
         };
 
-        let reusable_texture_desc = wgpu::TextureDescriptor {
-            label: None,
-            size: clamped_tile_size,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba16Float,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::STORAGE_BINDING,
-            view_formats: &[],
-        };
-
-        let ping_pong_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Ping Pong Texture"),
-            ..reusable_texture_desc
-        });
-        let ping_pong_view = ping_pong_texture.create_view(&Default::default());
-
-        let sharpness_blur_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Sharpness Blur Texture"),
-            ..reusable_texture_desc
-        });
-        let sharpness_blur_view = sharpness_blur_texture.create_view(&Default::default());
-
-        let tonal_blur_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Tonal Blur Texture"),
-            ..reusable_texture_desc
-        });
-        let tonal_blur_view = tonal_blur_texture.create_view(&Default::default());
-
-        let clarity_blur_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Clarity Blur Texture"),
-            ..reusable_texture_desc
-        });
-        let clarity_blur_view = clarity_blur_texture.create_view(&Default::default());
-
-        let structure_blur_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Structure Blur Texture"),
-            ..reusable_texture_desc
-        });
-        let structure_blur_view = structure_blur_texture.create_view(&Default::default());
-
         let tile_output_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Tile Output Texture"),
             size: clamped_tile_size,
@@ -1137,36 +1264,6 @@ impl GpuProcessor {
             view_formats: &[],
         });
         let tile_output_texture_view = tile_output_texture.create_view(&Default::default());
-
-        let working_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Working Output Texture"),
-            size: full_image_size,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING
-                | wgpu::TextureUsages::STORAGE_BINDING
-                | wgpu::TextureUsages::COPY_DST
-                | wgpu::TextureUsages::COPY_SRC,
-            view_formats: &[],
-        });
-        let working_texture_view = working_texture.create_view(&Default::default());
-
-        let output_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Full Output Texture"),
-            size: full_image_size,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING
-                | wgpu::TextureUsages::STORAGE_BINDING
-                | wgpu::TextureUsages::COPY_DST
-                | wgpu::TextureUsages::COPY_SRC,
-            view_formats: &[],
-        });
-        let output_texture_view = output_texture.create_view(&Default::default());
 
         Ok(Self {
             context,
@@ -1196,17 +1293,69 @@ impl GpuProcessor {
             dummy_blur_view,
             dummy_lut_view,
             dummy_lut_sampler,
-            ping_pong_view,
-            sharpness_blur_view,
-            tonal_blur_view,
-            clarity_blur_view,
-            structure_blur_view,
+            tile_texture_size: clamped_tile_size,
+            blurs: OnceLock::new(),
             tile_output_texture,
             tile_output_texture_view,
-            working_texture,
-            working_texture_view,
-            output_texture,
-            output_texture_view,
+            full_image_size,
+            display_textures: OnceLock::new(),
+        })
+    }
+
+    /// 惰性分配模糊纹理组：没有任何锐化/清晰度/结构/辉光需求时完全不占显存。
+    fn blur_textures(&self) -> &BlurTextures {
+        self.blurs.get_or_init(|| {
+            let device = &self.context.device;
+            let view = |label: &'static str| {
+                device
+                    .create_texture(&wgpu::TextureDescriptor {
+                        label: Some(label),
+                        size: self.tile_texture_size,
+                        mip_level_count: 1,
+                        sample_count: 1,
+                        dimension: wgpu::TextureDimension::D2,
+                        format: wgpu::TextureFormat::Rgba16Float,
+                        usage: wgpu::TextureUsages::TEXTURE_BINDING
+                            | wgpu::TextureUsages::STORAGE_BINDING,
+                        view_formats: &[],
+                    })
+                    .create_view(&Default::default())
+            };
+            BlurTextures {
+                ping_pong: view("Ping Pong Texture"),
+                sharpness: view("Sharpness Blur Texture"),
+                tonal: view("Tonal Blur Texture"),
+                clarity: view("Clarity Blur Texture"),
+                structure: view("Structure Blur Texture"),
+            }
+        })
+    }
+
+    /// 桌面原生上屏（output_to_display）才需要的两张全尺寸纹理。
+    /// 延迟到第一次真正用到时分配，Android/Linux 预览路径永远不会触发。
+    pub fn display_textures(&self) -> &DisplayTextures {
+        self.display_textures.get_or_init(|| {
+            let descriptor = |label: &'static str| wgpu::TextureDescriptor {
+                label: Some(label),
+                size: self.full_image_size,
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8Unorm,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING
+                    | wgpu::TextureUsages::COPY_DST
+                    | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            };
+            let device = &self.context.device;
+            let working_texture = device.create_texture(&descriptor("Working Output Texture"));
+            let output_texture = device.create_texture(&descriptor("Full Output Texture"));
+            let output_texture_view = output_texture.create_view(&Default::default());
+            DisplayTextures {
+                working_texture,
+                output_texture,
+                output_texture_view,
+            }
         })
     }
 
@@ -1227,15 +1376,32 @@ impl GpuProcessor {
         let scale = (width.min(height) as f32) / 1080.0;
         const MAX_MASK_BINDINGS: u32 = 1;
 
-        let bounds = request.roi.unwrap_or(Roi {
+        // ROI 由前端以归一化坐标给出，四舍五入后可能越界一两个像素；
+        // 这里强制夹到图片范围内，否则输出缓冲尾部会保留未写入的零值，
+        // 表现为预览边缘的黑条/花屏。
+        let requested = request.roi.unwrap_or(Roi {
             x: 0,
             y: 0,
             width,
             height,
         });
+        let bounds = if width == 0 || height == 0 {
+            requested
+        } else {
+            let x = requested.x.min(width.saturating_sub(1));
+            let y = requested.y.min(height.saturating_sub(1));
+            Roi {
+                x,
+                y,
+                width: requested.width.min(width - x).max(1),
+                height: requested.height.min(height - y).max(1),
+            }
+        };
         let out_width = bounds.width;
         let out_height = bounds.height;
-        let mask_layer_count = request.mask_bitmaps.len().clamp(2, MAX_MASKS) as u32;
+        // 至少 1 层：没有蒙版时以前会强制分配 2 层全尺寸 R8 纹理，
+        // 在 50MP 图上就是 100MB 无用的显存占用。
+        let mask_layer_count = (request.mask_bitmaps.len() as u32).clamp(1, MAX_MASKS as u32);
         let full_texture_size = wgpu::Extent3d {
             width,
             height,
@@ -1316,8 +1482,31 @@ impl GpuProcessor {
             (self.dummy_lut_view.clone(), self.dummy_lut_sampler.clone())
         };
 
-        let adjustments = request.adjustments;
-        if adjustments.global.flare_amount > 0.0 {
+        let mut adjustments = request.adjustments;
+        // mask_count 必须与真正上传的蒙版纹理层数一致，否则 shader 会越界读取
+        // 蒙版纹理数组 —— 部分移动 GPU 驱动对越界 layer 返回随机数据，直接表现为花屏。
+        let active_mask_count = (adjustments.mask_count as usize).min(mask_layer_count as usize);
+        adjustments.mask_count = active_mask_count as u32;
+        let active_masks = &adjustments.mask_adjustments[..active_mask_count];
+
+        // 只跑真正需要的模糊/眩光通道。以前每一帧无条件执行 4 次全 tile 模糊，
+        // 是 Android 上显存峰值与卡顿的主要来源之一。
+        let wants_sharpness = adjustments.global.sharpness.abs() >= 0.0005
+            || active_masks.iter().any(|m| m.sharpness.abs() >= 0.0005);
+        let wants_halation = adjustments.global.halation_amount > 0.0
+            || active_masks.iter().any(|m| m.halation_amount > 0.0);
+        let wants_structure = adjustments.global.glow_amount > 0.0
+            || adjustments.global.dehaze != 0.0
+            || active_masks
+                .iter()
+                .any(|m| m.glow_amount > 0.0 || m.dehaze != 0.0);
+        let mask_flare = active_masks
+            .iter()
+            .map(|m| m.flare_amount)
+            .fold(0.0_f32, f32::max);
+        let flare_strength = adjustments.global.flare_amount.max(mask_flare);
+        let wants_flare = flare_strength > 0.0;
+        if wants_flare {
             let mut encoder = device.create_command_encoder(&Default::default());
 
             let aspect_ratio = if height > 0 {
@@ -1326,7 +1515,7 @@ impl GpuProcessor {
                 1.0
             };
             let f_params = FlareParams {
-                amount: adjustments.global.flare_amount,
+                amount: flare_strength,
                 is_raw: adjustments.global.is_raw_image,
                 exposure: adjustments.global.exposure,
                 brightness: adjustments.global.brightness,
@@ -1416,8 +1605,10 @@ impl GpuProcessor {
             queue.submit(Some(encoder.finish()));
         }
 
-        const TILE_SIZE: u32 = 2048;
-        const TILE_OVERLAP: u32 = 128;
+        // 只有真的需要模糊时才分配 5 张 tile 尺寸纹理
+        // （桌面约 210MB，Android tile 缩小后约 65MB）。
+        let blur_textures =
+            (wants_sharpness || wants_halation || wants_structure).then(|| self.blur_textures());
 
         let mut final_pixels = vec![
             0u8;
@@ -1457,13 +1648,10 @@ impl GpuProcessor {
                 let input_width = input_x_end - input_x_start;
                 let input_height = input_y_end - input_y_start;
 
-                let input_texture_size = wgpu::Extent3d {
-                    width: input_width,
-                    height: input_height,
-                    depth_or_array_layers: 1,
-                };
-
-                let run_blur = |base_radius: f32, output_view: &wgpu::TextureView| -> bool {
+                let run_blur = |base_radius: f32,
+                                ping_pong: &wgpu::TextureView,
+                                output_view: &wgpu::TextureView|
+                 -> bool {
                     let radius = (base_radius * scale).ceil().max(1.0) as u32;
                     if radius == 0 {
                         return false;
@@ -1493,7 +1681,7 @@ impl GpuProcessor {
                             },
                             wgpu::BindGroupEntry {
                                 binding: 1,
-                                resource: wgpu::BindingResource::TextureView(&self.ping_pong_view),
+                                resource: wgpu::BindingResource::TextureView(ping_pong),
                             },
                             wgpu::BindGroupEntry {
                                 binding: 2,
@@ -1515,7 +1703,7 @@ impl GpuProcessor {
                         entries: &[
                             wgpu::BindGroupEntry {
                                 binding: 0,
-                                resource: wgpu::BindingResource::TextureView(&self.ping_pong_view),
+                                resource: wgpu::BindingResource::TextureView(ping_pong),
                             },
                             wgpu::BindGroupEntry {
                                 binding: 1,
@@ -1539,10 +1727,30 @@ impl GpuProcessor {
                     true
                 };
 
-                let did_create_sharpness_blur = run_blur(1.0, &self.sharpness_blur_view);
-                let did_create_tonal_blur = run_blur(3.5, &self.tonal_blur_view);
-                let did_create_clarity_blur = run_blur(8.0, &self.clarity_blur_view);
-                let did_create_structure_blur = run_blur(40.0, &self.structure_blur_view);
+                // 未被使用的模糊通道一律绑定 1x1 占位纹理，shader 侧也保证
+                // 不会去采样它（见 shader.wgsl 中的条件 textureLoad）。
+                let (sharpness_view, tonal_view, clarity_view, structure_view) =
+                    match blur_textures.as_ref() {
+                        Some(b) => {
+                            let sharpness =
+                                wants_sharpness && run_blur(1.0, &b.ping_pong, &b.sharpness);
+                            let tonal = wants_sharpness && run_blur(3.5, &b.ping_pong, &b.tonal);
+                            let clarity = wants_halation && run_blur(8.0, &b.ping_pong, &b.clarity);
+                            let structure =
+                                wants_structure && run_blur(40.0, &b.ping_pong, &b.structure);
+                            let dummy = &self.dummy_blur_view;
+                            (
+                                if sharpness { &b.sharpness } else { dummy },
+                                if tonal { &b.tonal } else { dummy },
+                                if clarity { &b.clarity } else { dummy },
+                                if structure { &b.structure } else { dummy },
+                            )
+                        }
+                        None => {
+                            let dummy = &self.dummy_blur_view;
+                            (dummy, dummy, dummy, dummy)
+                        }
+                    };
 
                 let mut main_encoder = device.create_command_encoder(&Default::default());
 
@@ -1586,38 +1794,22 @@ impl GpuProcessor {
 
                 bind_group_entries.push(wgpu::BindGroupEntry {
                     binding: 5 + MAX_MASK_BINDINGS,
-                    resource: wgpu::BindingResource::TextureView(if did_create_sharpness_blur {
-                        &self.sharpness_blur_view
-                    } else {
-                        &self.dummy_blur_view
-                    }),
+                    resource: wgpu::BindingResource::TextureView(sharpness_view),
                 });
                 bind_group_entries.push(wgpu::BindGroupEntry {
                     binding: 6 + MAX_MASK_BINDINGS,
-                    resource: wgpu::BindingResource::TextureView(if did_create_tonal_blur {
-                        &self.tonal_blur_view
-                    } else {
-                        &self.dummy_blur_view
-                    }),
+                    resource: wgpu::BindingResource::TextureView(tonal_view),
                 });
                 bind_group_entries.push(wgpu::BindGroupEntry {
                     binding: 7 + MAX_MASK_BINDINGS,
-                    resource: wgpu::BindingResource::TextureView(if did_create_clarity_blur {
-                        &self.clarity_blur_view
-                    } else {
-                        &self.dummy_blur_view
-                    }),
+                    resource: wgpu::BindingResource::TextureView(clarity_view),
                 });
                 bind_group_entries.push(wgpu::BindGroupEntry {
                     binding: 8 + MAX_MASK_BINDINGS,
-                    resource: wgpu::BindingResource::TextureView(if did_create_structure_blur {
-                        &self.structure_blur_view
-                    } else {
-                        &self.dummy_blur_view
-                    }),
+                    resource: wgpu::BindingResource::TextureView(structure_view),
                 });
 
-                let use_flare = adjustments.global.flare_amount > 0.0;
+                let use_flare = wants_flare;
                 bind_group_entries.push(wgpu::BindGroupEntry {
                     binding: 9 + MAX_MASK_BINDINGS,
                     resource: wgpu::BindingResource::TextureView(if use_flare {
@@ -1672,7 +1864,7 @@ impl GpuProcessor {
                             aspect: wgpu::TextureAspect::All,
                         },
                         wgpu::TexelCopyTextureInfo {
-                            texture: &self.working_texture,
+                            texture: &self.display_textures().working_texture,
                             mip_level: 0,
                             origin: wgpu::Origin3d {
                                 x: x_start,
@@ -1692,21 +1884,29 @@ impl GpuProcessor {
                 queue.submit(Some(main_encoder.finish()));
 
                 if !skip_cpu_readback {
+                    // 精确回读 tile 有效区域（而不是整块含 overlap 的输入区），
+                    // 少一次 ~tile 尺寸的 padded staging 拷贝，也避免多读越界行。
                     let processed_tile_data = read_texture_data_roi(
                         device,
                         queue,
                         &self.tile_output_texture,
-                        wgpu::Origin3d::ZERO,
-                        input_texture_size,
+                        wgpu::Origin3d {
+                            x: crop_x_start,
+                            y: crop_y_start,
+                            z: 0,
+                        },
+                        wgpu::Extent3d {
+                            width: tile_width,
+                            height: tile_height,
+                            depth_or_array_layers: 1,
+                        },
                     )?;
 
                     for row in 0..tile_height {
                         let final_y = y_start + row - bounds.y;
                         let final_x = x_start - bounds.x;
                         let final_row_offset = (final_y * out_width + final_x) as usize * 4;
-                        let source_y = crop_y_start + row;
-                        let source_row_offset =
-                            (source_y * input_width + crop_x_start) as usize * 4;
+                        let source_row_offset = (row * tile_width) as usize * 4;
                         let copy_bytes = (tile_width * 4) as usize;
 
                         final_pixels[final_row_offset..final_row_offset + copy_bytes]
@@ -1991,16 +2191,21 @@ fn process_and_get_dynamic_image_inner(
         return Ok(base_image.clone());
     }
 
-    let mut processor_lock = state
-        .gpu_processor
-        .lock()
-        .unwrap_or_else(|e| e.into_inner());
+    let mut processor_lock = lock_or_reset(&state.gpu_processor, "GPU processor");
     let mut needs_new_processor = false;
     let new_width = (width + 255) & !255;
     let new_height = (height + 255) & !255;
 
     if let Some(p) = processor_lock.as_ref() {
-        if p.width < width || p.height < height {
+        // 尺寸不够必须重建；分配远大于当前需求（>3 倍像素）时也重建，
+        // 否则导出一张 50MP 大图后，几百 MB 的 tile/模糊纹理会一直挂在显存里，
+        // 在 Android 上直接把后续渲染挤到 OOM → 花屏。
+        let allocated_pixels = p.width as u64 * p.height as u64;
+        let needed_pixels = width as u64 * height as u64;
+        if p.width < width
+            || p.height < height
+            || allocated_pixels > needed_pixels.saturating_mul(3)
+        {
             needs_new_processor = true;
         }
     } else {
@@ -2014,13 +2219,11 @@ fn process_and_get_dynamic_image_inner(
             new_height
         );
 
+        // 先等 GPU 把已有提交跑完，再释放旧纹理：在 Vulkan/Mobile 驱动上
+        // 边用边释放是花屏与设备丢失的常见来源。
+        wait_for_gpu(&context.device, "processor rebuild");
         let old_processor = processor_lock.take();
         drop(old_processor);
-
-        let _ = context.device.poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: Some(std::time::Duration::from_millis(500)),
-        });
 
         let new_processor = GpuProcessor::new(context.clone(), new_width, new_height)?;
 
@@ -2034,15 +2237,22 @@ fn process_and_get_dynamic_image_inner(
     let processor_state = processor_lock.as_ref().unwrap();
     let processor = &processor_state.processor;
 
-    let mut cache_lock = state
-        .gpu_image_cache
-        .lock()
-        .unwrap_or_else(|e| e.into_inner());
+    let mut cache_lock = lock_or_reset(&state.gpu_image_cache, "GPU image cache");
     let mut needs_new_cache = false;
     let is_raw = request.adjustments.global.is_raw_image;
+    // 仅用 transform_hash + 尺寸判断缓存命中是不够的：两张不同照片如果
+    // 裁剪/参数恰好一致（例如连拍或复制参数后切图），会直接复用上一张图的
+    // GPU 纹理 → 屏幕上出现"半张旧图 / 花屏"。因此再加上源缓冲的指针与长度。
+    let source_ptr = base_image.as_bytes().as_ptr() as usize;
+    let source_len = base_image.as_bytes().len();
 
     if let Some(cache) = &*cache_lock {
-        if cache.transform_hash != transform_hash || cache.width != width || cache.height != height
+        if cache.transform_hash != transform_hash
+            || cache.width != width
+            || cache.height != height
+            || cache.is_raw != (is_raw == 1)
+            || cache.source_ptr != source_ptr
+            || cache.source_len != source_len
         {
             needs_new_cache = true;
         }
@@ -2051,13 +2261,9 @@ fn process_and_get_dynamic_image_inner(
     }
 
     if needs_new_cache {
+        wait_for_gpu(&context.device, "image cache rebuild");
         let old_cache = cache_lock.take();
         drop(old_cache);
-
-        let _ = context.device.poll(wgpu::PollType::Wait {
-            submission_index: None,
-            timeout: Some(std::time::Duration::from_millis(500)),
-        });
 
         let img_rgba_f16 = to_rgba_f16(base_image);
         let texture_size = wgpu::Extent3d {
@@ -2093,6 +2299,9 @@ fn process_and_get_dynamic_image_inner(
             width,
             height,
             transform_hash,
+            source_ptr,
+            source_len,
+            is_raw: is_raw == 1,
         });
     }
 
@@ -2100,7 +2309,7 @@ fn process_and_get_dynamic_image_inner(
 
     let skip_readback = output_to_display;
 
-    let (processed_pixels, out_w, out_h, out_x, out_y) = processor.run(
+    let (processed_pixels, out_w, out_h, out_x, out_y) = match processor.run(
         &cache.texture_view,
         &cache.gf_coeffs_view,
         &cache.gf_dehaze_view,
@@ -2109,7 +2318,21 @@ fn process_and_get_dynamic_image_inner(
         request,
         skip_readback,
         output_to_display,
-    )?;
+    ) {
+        Ok(result) => result,
+        Err(e) => {
+            // 渲染失败后不要留下"半新半旧"的 GPU 状态：标记设备失效，
+            // 下一次 get_or_init_gpu_context 会整体重建 device/processor/cache，
+            // 这一帧直接返回错误让前端保留上一张已知正确的画面。
+            log::error!(
+                "[{}] GPU render failed, marking GPU state for rebuild: {}",
+                caller_id,
+                e
+            );
+            GPU_DEVICE_LOST.store(true, Ordering::Release);
+            return Err(e);
+        }
+    };
 
     let mut final_encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
         label: Some("Final Passes Encoder"),
@@ -2135,7 +2358,7 @@ fn process_and_get_dynamic_image_inner(
 
         final_encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
-                texture: &processor.working_texture,
+                texture: &processor.display_textures().working_texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d {
                     x: out_x,
@@ -2166,9 +2389,10 @@ fn process_and_get_dynamic_image_inner(
     }
 
     if output_to_display {
+        let display_textures = processor.display_textures();
         final_encoder.copy_texture_to_texture(
             wgpu::TexelCopyTextureInfo {
-                texture: &processor.working_texture,
+                texture: &display_textures.working_texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d {
                     x: out_x,
@@ -2178,7 +2402,7 @@ fn process_and_get_dynamic_image_inner(
                 aspect: wgpu::TextureAspect::All,
             },
             wgpu::TexelCopyTextureInfo {
-                texture: &processor.output_texture,
+                texture: &display_textures.output_texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d {
                     x: out_x,
@@ -2292,7 +2516,9 @@ fn process_and_get_dynamic_image_inner(
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&processor.output_texture_view),
+                    resource: wgpu::BindingResource::TextureView(
+                        &processor.display_textures().output_texture_view,
+                    ),
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,

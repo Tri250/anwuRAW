@@ -506,9 +506,12 @@ fn process_preview_job(
         unscaled_crop_offset.1 * effective_scale,
     );
 
+    // 蒙版索引必须与 mask_count 一一对应：某一张蒙版暂时生成失败时，
+    // 用全黑（零影响）占位，而不是从数组里删掉它 —— 否则后面所有蒙版
+    // 会整体错位一位，把 A 蒙版的参数作用到 B 蒙版的范围上（表现为花屏/错色）。
     let mask_bitmaps: Vec<ImageBuffer<Luma<u8>, Vec<u8>>> = mask_definitions
         .iter()
-        .filter_map(|def| {
+        .map(|def| {
             get_cached_or_generate_mask(
                 &state,
                 def,
@@ -518,6 +521,13 @@ fn process_preview_job(
                 scaled_crop_offset,
                 &adjustments_clone,
             )
+            .unwrap_or_else(|| {
+                ImageBuffer::<Luma<u8>, Vec<u8>>::from_pixel(
+                    preview_width,
+                    preview_height,
+                    Luma([0u8]),
+                )
+            })
         })
         .collect();
 
@@ -867,7 +877,7 @@ fn generate_uncropped_preview(
 
         let mask_bitmaps: Vec<ImageBuffer<Luma<u8>, Vec<u8>>> = mask_definitions
             .iter()
-            .filter_map(|def| {
+            .map(|def| {
                 get_cached_or_generate_mask(
                     &state,
                     def,
@@ -877,6 +887,13 @@ fn generate_uncropped_preview(
                     (0.0, 0.0),
                     &adjustments_clone,
                 )
+                .unwrap_or_else(|| {
+                    ImageBuffer::<Luma<u8>, Vec<u8>>::from_pixel(
+                        preview_width,
+                        preview_height,
+                        Luma([0u8]),
+                    )
+                })
             })
             .collect();
 
@@ -1209,7 +1226,7 @@ fn generate_preset_preview(
 
     let mask_bitmaps: Vec<ImageBuffer<Luma<u8>, Vec<u8>>> = mask_definitions
         .iter()
-        .filter_map(|def| {
+        .map(|def| {
             get_cached_or_generate_mask(
                 &state,
                 def,
@@ -1219,6 +1236,9 @@ fn generate_preset_preview(
                 scaled_crop_offset,
                 &js_adjustments,
             )
+            .unwrap_or_else(|| {
+                ImageBuffer::<Luma<u8>, Vec<u8>>::from_pixel(img_w, img_h, Luma([0u8]))
+            })
         })
         .collect();
 
@@ -1384,7 +1404,7 @@ async fn generate_all_community_previews(
 
             let mask_bitmaps: Vec<ImageBuffer<Luma<u8>, Vec<u8>>> = mask_definitions
                 .iter()
-                .filter_map(|def| {
+                .map(|def| {
                     generate_mask_bitmap(
                         def,
                         img_w,
@@ -1393,6 +1413,9 @@ async fn generate_all_community_previews(
                         actual_scaled_crop_offset,
                         None,
                     )
+                    .unwrap_or_else(|| {
+                        ImageBuffer::<Luma<u8>, Vec<u8>>::from_pixel(img_w, img_h, Luma([0u8]))
+                    })
                 })
                 .collect();
 
@@ -1679,7 +1702,7 @@ async fn generate_preview_for_path(
             resolve_warped_image_for_masks(&state, &js_adjustments, &mask_definitions);
         let mask_bitmaps: Vec<ImageBuffer<Luma<u8>, Vec<u8>>> = mask_definitions
             .iter()
-            .filter_map(|def| {
+            .map(|def| {
                 generate_mask_bitmap(
                     def,
                     img_w,
@@ -1688,6 +1711,9 @@ async fn generate_preview_for_path(
                     unscaled_crop_offset,
                     warped_image.as_deref(),
                 )
+                .unwrap_or_else(|| {
+                    ImageBuffer::<Luma<u8>, Vec<u8>>::from_pixel(img_w, img_h, Luma([0u8]))
+                })
             })
             .collect();
 

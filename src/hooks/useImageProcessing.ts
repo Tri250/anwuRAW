@@ -10,6 +10,59 @@ import { Invokes, Panel } from '../components/ui/AppProperties';
 import { debouncedSave } from './useEditorActions';
 import { globalImageCache } from '../utils/ImageLRUCache';
 
+/**
+ * 校验后端回传的 JPEG 是否完整（SOI 开头、EOI 结尾）。
+ * Android 上显存吃紧时 GPU 回读可能给出被截断/错位的字节流，
+ * 直接塞进 blob URL 让 WebView 解码，画面就会变成"花屏"。
+ * 校验不过就丢弃这一帧，保留上一帧已知正确的画面。
+ */
+function isCompleteJpeg(buffer: ArrayBuffer, offset = 0): boolean {
+  const length = buffer.byteLength - offset;
+  if (length < 32) return false;
+  const bytes = new Uint8Array(buffer);
+  return (
+    bytes[offset] === 0xff &&
+    bytes[offset + 1] === 0xd8 &&
+    bytes[bytes.length - 2] === 0xff &&
+    bytes[bytes.length - 1] === 0xd9
+  );
+}
+
+/** ROI 补丁头（24 字节小端）：rx, ry, w, h, fullW, fullH */
+interface RoiHeader {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fullWidth: number;
+  fullHeight: number;
+}
+
+function parseRoiHeader(buffer: ArrayBuffer): RoiHeader | null {
+  if (buffer.byteLength <= 24) return null;
+  const view = new DataView(buffer);
+  const header: RoiHeader = {
+    x: view.getUint32(0, true),
+    y: view.getUint32(4, true),
+    width: view.getUint32(8, true),
+    height: view.getUint32(12, true),
+    fullWidth: view.getUint32(16, true),
+    fullHeight: view.getUint32(20, true),
+  };
+  const sane =
+    header.fullWidth > 0 &&
+    header.fullHeight > 0 &&
+    header.width > 0 &&
+    header.height > 0 &&
+    header.x >= 0 &&
+    header.y >= 0 &&
+    header.x + header.width <= header.fullWidth &&
+    header.y + header.height <= header.fullHeight;
+  if (!sane) return null;
+  if (!isCompleteJpeg(buffer, 24)) return null;
+  return header;
+}
+
 export function useImageProcessing(
   transformWrapperRef: any,
   prevAdjustmentsRef: React.RefObject<any>,
@@ -35,6 +88,7 @@ export function useImageProcessing(
   const activeView = useUIStore((state) => state.activeView);
   const activePanel = useUIStore((state) => state.activePanel);
   const appSettings = useSettingsStore((state) => state.appSettings);
+  const osPlatform = useSettingsStore((state) => state.osPlatform);
   const multiSelectedPaths = useLibraryStore((state) => state.multiSelectedPaths);
 
   const inFlightCountRef = useRef(0);
@@ -213,13 +267,12 @@ export function useImageProcessing(
           }
 
           if (dragging) {
-            const view = new DataView(buffer);
-            const patchX = view.getUint32(0, true);
-            const patchY = view.getUint32(4, true);
-            const patchW = view.getUint32(8, true);
-            const patchH = view.getUint32(12, true);
-            const fullW = view.getUint32(16, true);
-            const fullH = view.getUint32(20, true);
+            const header = parseRoiHeader(buffer);
+            if (!header) {
+              // 帧不完整或 ROI 越界：丢弃，继续显示上一帧，绝不把垃圾数据交给 WebView。
+              console.warn('[preview] discarded invalid interactive frame');
+              return;
+            }
 
             const imageBuffer = buffer.slice(24);
             const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
@@ -227,18 +280,23 @@ export function useImageProcessing(
 
             setEditor((state) => {
               const patch = state.interactivePatch;
-              if (patch && patch.url) setTimeout(() => URL.revokeObjectURL(patch.url), 100);
+              if (patch && patch.url) setTimeout(() => URL.revokeObjectURL(patch.url), 600);
               return {
                 interactivePatch: {
                   url,
-                  normX: patchX / fullW,
-                  normY: patchY / fullH,
-                  normW: patchW / fullW,
-                  normH: patchH / fullH,
+                  normX: header.x / header.fullWidth,
+                  normY: header.y / header.fullHeight,
+                  normW: header.width / header.fullWidth,
+                  normH: header.height / header.fullHeight,
                 },
               };
             });
           } else {
+            if (!isCompleteJpeg(buffer)) {
+              console.warn('[preview] discarded invalid full frame');
+              return;
+            }
+
             const blob = new Blob([buffer], { type: 'image/jpeg' });
             const url = URL.createObjectURL(blob);
 
@@ -250,11 +308,13 @@ export function useImageProcessing(
             setEditor((state) => {
               const prevUrl = state.finalPreviewUrl;
               if (prevUrl && prevUrl.startsWith('blob:') && !globalImageCache.isProtected(prevUrl)) {
+                // 撤销延迟要明显长于交叉淡入时间：Android WebView 解码大图更慢，
+                // 过早 revoke 会让仍在引用中的 blob 失效，出现半张图/花屏。
                 setTimeout(() => {
                   if (!globalImageCache.isProtected(prevUrl)) {
                     URL.revokeObjectURL(prevUrl);
                   }
-                }, 250);
+                }, 1200);
               }
               return { finalPreviewUrl: url };
             });
@@ -262,7 +322,7 @@ export function useImageProcessing(
             setEditor((state) => {
               const patch = state.interactivePatch;
               if (patch && patch.url) {
-                setTimeout(() => URL.revokeObjectURL(patch.url), 500);
+                setTimeout(() => URL.revokeObjectURL(patch.url), 1200);
               }
               return { interactivePatch: null };
             });
@@ -352,6 +412,13 @@ export function useImageProcessing(
       targetRes = Math.ceil(targetRes / 256) * 256;
     }
 
+    // Android 上预览分辨率直接决定 GPU 纹理、模糊链与回读缓冲的显存规模；
+    // 大屏平板叠加高 DPI 时容易算出 4000px 级别的目标值，把渲染挤到
+    // 内存压力区（移动端表现为花屏/被系统回收），因此设一个上限。
+    if (osPlatform === 'android') {
+      targetRes = Math.min(targetRes, 2560);
+    }
+
     return Math.round(targetRes);
   }, [
     appSettings?.enableZoomHifi,
@@ -361,6 +428,7 @@ export function useImageProcessing(
     displaySize.width,
     displaySize.height,
     originalSize,
+    osPlatform,
   ]);
 
   const requestHiFiZoom = useMemo(
