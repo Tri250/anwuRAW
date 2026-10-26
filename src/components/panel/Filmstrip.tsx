@@ -124,6 +124,10 @@ const FilmstripThumbnail = memo(
           }
         };
         img.src = thumbData;
+
+        return () => {
+          img.onload = null;
+        };
       }
     }, [thumbData, thumbnailAspectRatio, path, setRatio]);
 
@@ -387,7 +391,7 @@ const FilmstripList = ({
   const [gridHandle, setGridHandle] = useGridCallbackRef();
   const ratioMapRef = useRef<Record<string, number>>({});
   const [ratioMapVersion, setRatioMapVersion] = useState(0);
-  const visibleRange = useRef({ start: 0, stop: 0 });
+  const visibleRange = useRef({ start: -1, stop: -1 });
   const prevSelectedPath = useRef<string | null>(null);
   const isReadyForSmooth = useRef(false);
   const resizeEndTimer = useRef<number | null>(null);
@@ -538,7 +542,7 @@ const FilmstripList = ({
 
   const isItemVisible = useCallback((index: number) => {
     const { start, stop } = visibleRange.current;
-    return index > start && index < stop;
+    return index >= start && index <= stop;
   }, []);
 
   const performSafeScroll = useCallback(

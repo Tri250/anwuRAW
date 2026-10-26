@@ -23,6 +23,8 @@ interface ImmichState {
   loadAlbums(): Promise<void>;
 }
 
+let albumsRequestId = 0;
+
 export const useImmichStore = create<ImmichState>((set, get) => ({
   isConfigured: false,
   albums: [],
@@ -55,13 +57,19 @@ export const useImmichStore = create<ImmichState>((set, get) => ({
   },
 
   loadAlbums: async () => {
+    const requestId = ++albumsRequestId;
     set({ isLoading: true, error: null });
     try {
-      set({ albums: await listImmichAlbums() });
+      const albums = await listImmichAlbums();
+      if (requestId !== albumsRequestId) return;
+      set({ albums });
     } catch (err) {
+      if (requestId !== albumsRequestId) return;
       set({ error: String(err) });
     } finally {
-      set({ isLoading: false });
+      if (requestId === albumsRequestId) {
+        set({ isLoading: false });
+      }
     }
   },
 }));

@@ -140,6 +140,10 @@ export default function CollageModal({ isOpen, onClose, onSave, sourceImages }: 
   useEffect(() => {
     if (!isOpen || sourceImages.length === 0) return;
 
+    // 竞态防护：modal 关闭或依赖变化后，仍在途的异步加载不得再写入状态或泄漏 blob URL
+    let cancelled = false;
+    const pendingUrls: string[] = [];
+
     const loadImages = async () => {
       setIsLoading(true);
       setError(null);
@@ -154,6 +158,7 @@ export default function CollageModal({ isOpen, onClose, onSave, sourceImages }: 
           });
           const blob = new Blob([new Uint8Array(imageData)], { type: 'image/jpeg' });
           const url = URL.createObjectURL(blob);
+          pendingUrls.push(url);
 
           return new Promise<LoadedImage>((resolve, reject) => {
             const img = new Image();
@@ -167,6 +172,7 @@ export default function CollageModal({ isOpen, onClose, onSave, sourceImages }: 
         });
 
         const results = await Promise.all(imagePromises);
+        if (cancelled) return;
         if (results.length === 1) {
           const img = results[0];
           const ratio = img.width / img.height;
@@ -181,17 +187,20 @@ export default function CollageModal({ isOpen, onClose, onSave, sourceImages }: 
         });
         setImageStates(initialStates);
       } catch (err: any) {
+        if (cancelled) return;
         console.error('Failed to load images:', err);
         setError(err.message || 'Could not load images.');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     const timerId = setTimeout(loadImages, 300);
     return () => {
+      cancelled = true;
       clearTimeout(timerId);
       Object.values(imageElementsRef.current).forEach((img) => URL.revokeObjectURL(img.src));
+      pendingUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [isOpen, sourceImages, t]);
 

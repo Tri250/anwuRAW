@@ -17,6 +17,24 @@ export default function RenameFileModal({ filesToRename, isOpen, onClose, onSave
   const [isMounted, setIsMounted] = useState(false);
   const [show, setShow] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  // 防止双击/Enter+click 重复触发 onSave（避免重复执行批量重命名）
+  const submittedRef = useRef(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      submittedRef.current = false;
+    }
+  }, [isOpen]);
+
+  const handleSave = useCallback(() => {
+    const trimmed = nameTemplate.trim();
+    if (!trimmed || submittedRef.current) {
+      return;
+    }
+    submittedRef.current = true;
+    onSave(trimmed);
+    onClose();
+  }, [nameTemplate, onSave, onClose]);
 
   const fileCount = filesToRename.length;
   const isSingleFile = fileCount === 1;
@@ -44,14 +62,6 @@ export default function RenameFileModal({ filesToRename, isOpen, onClose, onSave
       return () => clearTimeout(timer);
     }
   }, [isOpen, filesToRename, isSingleFile]);
-
-  const handleSave = useCallback(() => {
-    const trimmed = nameTemplate.trim();
-    if (trimmed) {
-      onSave(trimmed);
-      onClose();
-    }
-  }, [nameTemplate, onSave, onClose]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

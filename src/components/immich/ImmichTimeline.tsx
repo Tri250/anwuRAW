@@ -24,7 +24,12 @@ export default function ImmichTimeline({
     const byYear = new Map<string, { month: string; count: number }[]>();
     for (const bucket of timeline) {
       const year = bucket.timeBucket.slice(0, 4);
-      byYear.set(year, [...(byYear.get(year) ?? []), { month: bucket.timeBucket, count: bucket.count }]);
+      const months = byYear.get(year);
+      if (months) {
+        months.push({ month: bucket.timeBucket, count: bucket.count });
+      } else {
+        byYear.set(year, [{ month: bucket.timeBucket, count: bucket.count }]);
+      }
     }
     return [...byYear.entries()];
   }, [timeline]);

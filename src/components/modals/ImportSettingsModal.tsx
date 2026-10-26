@@ -37,7 +37,21 @@ export default function ImportSettingsModal({ fileCount, isOpen, onClose, onSave
     }
   }, [isOpen]);
 
+  // 防止双击/Enter+click 重复触发 onSave（避免重复启动导入任务）
+  const submittedRef = useRef(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      submittedRef.current = false;
+    }
+  }, [isOpen]);
+
   const handleSave = useCallback(() => {
+    // 空文件名模板会让后端生成空文件名，禁止提交
+    if (!filenameTemplate.trim() || submittedRef.current) {
+      return;
+    }
+    submittedRef.current = true;
     onSave({
       filenameTemplate,
       organizeByDate,
@@ -180,7 +194,8 @@ export default function ImportSettingsModal({ fileCount, isOpen, onClose, onSave
             {t('modals.importSettings.cancel')}
           </button>
           <button
-            className="px-4 py-2 rounded-md bg-accent shadow-shiny text-button-text font-semibold hover:bg-accent-hover transition-colors"
+            className="px-4 py-2 rounded-md bg-accent shadow-shiny text-button-text font-semibold hover:bg-accent-hover disabled:bg-gray-500 disabled:text-white disabled:cursor-not-allowed transition-colors"
+            disabled={!filenameTemplate.trim()}
             onClick={handleSave}
           >
             {t('modals.importSettings.startImport')}

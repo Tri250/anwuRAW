@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Save, X, Check } from 'lucide-react';
@@ -26,7 +26,16 @@ export default function ExportPresetsList({
   const [newPresetName, setNewPresetName] = useState('');
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const [isSaved, setIsSaved] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presets = appSettings?.exportPresets || [];
+
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) {
+        clearTimeout(savedTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleSelect = (id: string) => {
     setSelectedPresetId(id);
@@ -74,7 +83,10 @@ export default function ExportPresetsList({
     onSettingsChange(updatedSettings);
 
     setIsSaved(true);
-    setTimeout(() => {
+    if (savedTimerRef.current) {
+      clearTimeout(savedTimerRef.current);
+    }
+    savedTimerRef.current = setTimeout(() => {
       setIsSaved(false);
     }, 1500);
   };

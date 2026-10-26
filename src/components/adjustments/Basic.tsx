@@ -192,7 +192,7 @@ function BasicAdjustments({
         />
       ) : (
         <ToneMapperSwitch
-          selectedMapper={adjustments.toneMapper || 'agx'}
+          selectedMapper={adjustments.toneMapper || 'basic'}
           onMapperChange={handleToneMapperChange}
           exposureValue={adjustments.exposure}
           onExposureChange={(value) => handleAdjustmentChange(BasicAdjustment.Exposure, value)}

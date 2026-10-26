@@ -67,9 +67,10 @@ export default function EditorView({
   requestThumbnails,
   renderAppPanel,
 }: EditorViewProps) {
-  const { selectedImage } = useEditorStore(
+  const { selectedImage, copiedAdjustments } = useEditorStore(
     useShallow((state) => ({
       selectedImage: state.selectedImage,
+      copiedAdjustments: state.copiedAdjustments,
     })),
   );
 
@@ -119,7 +120,7 @@ export default function EditorView({
       isFilmstripVisible={uiVisibility.filmstrip}
       isLoading={isViewLoading}
       isPasted={isPasted}
-      isPasteDisabled={useEditorStore.getState().copiedAdjustments === null}
+      isPasteDisabled={copiedAdjustments === null}
       isRatingDisabled={!selectedImage}
       isResizing={isResizing}
       multiSelectedPaths={multiSelectedPaths}

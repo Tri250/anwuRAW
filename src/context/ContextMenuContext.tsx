@@ -202,6 +202,8 @@ function MenuItem({ option, path, hideContextMenu }: MenuItemProps) {
     }
   };
 
+  useEffect(() => () => clearTimeout(hoverTimeoutRef.current), []);
+
   if (option.type === OPTION_SEPARATOR) {
     return <div className="h-px bg-text-secondary/20 my-1 mx-2" />;
   }

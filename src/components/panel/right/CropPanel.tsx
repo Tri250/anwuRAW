@@ -484,7 +484,7 @@ export default function CropPanel() {
       if (preferPortrait) {
         newAspectRatio = targetRatio > 1 ? 1 / targetRatio : targetRatio;
       } else {
-        newAspectRatio = targetRatio > 1 ? targetRatio : targetRatio;
+        newAspectRatio = targetRatio;
       }
     }
 
@@ -549,6 +549,7 @@ export default function CropPanel() {
 
   const handleFineRotationChange = (e: { target: { value: number | string } }) => {
     const newFineRotation = parseFloat(String(e.target.value));
+    if (isNaN(newFineRotation)) return;
     if (isRotationActive) {
       updateLocalRotation(newFineRotation);
     } else {

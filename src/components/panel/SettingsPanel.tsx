@@ -103,6 +103,9 @@ interface MyLens {
 const EXECUTE_TIMEOUT = 3000;
 const DEFAULT_BASELINE_EXPOSURE = 0.7;
 
+// 修改后必须重启应用才能生效的处理设置（仍会立即持久化到设置文件）
+const RESTART_REQUIRED_KEYS = ['processingBackend', 'linuxGpuOptimization', 'useWgpuRenderer', 'thumbnailWorkerThreads'];
+
 const resolutions: OptionItem<number>[] = [
   { value: 720, label: '720px' },
   { value: 1280, label: '1280px' },
@@ -661,7 +664,9 @@ export default function SettingsPanel({
       linuxGpuOptimization: appSettings?.linuxGpuOptimization ?? false,
       highResZoomMultiplier: appSettings?.highResZoomMultiplier || 1.0,
       useFullDpiRendering: appSettings?.useFullDpiRendering ?? false,
-      useWgpuRenderer: appSettings?.useWgpuRenderer ?? true,
+      // 与初始 state 保持一致的平台 fallback（linux/android 默认关闭），避免 UI 值跳变
+      useWgpuRenderer:
+        appSettings?.useWgpuRenderer ?? (osPlatform === 'linux' || osPlatform === 'android' ? false : true),
       thumbnailWorkerThreads: appSettings?.thumbnailWorkerThreads ?? 4,
       imageCacheSize: appSettings?.imageCacheSize ?? 5,
       rawPreprocessingColorNr: appSettings?.rawPreprocessingColorNr ?? 0.5,
@@ -669,8 +674,9 @@ export default function SettingsPanel({
       applyPreprocessingToNonRaws: appSettings?.applyPreprocessingToNonRaws ?? false,
       useAppleRaw9: appSettings?.useAppleRaw9 ?? false,
     });
-    setRestartRequired(false);
-  }, [appSettings]);
+    // 注意：这里不能重置 restartRequired —— 任意设置变更都会触发本 effect，
+    // 会把用户尚未重启生效的修改提示（及未保存的选择）意外清除。
+  }, [appSettings, osPlatform]);
 
   useEffect(() => {
     invoke<string[]>('get_lensfun_makers').then(setLensMakers).catch(console.error);
@@ -679,13 +685,11 @@ export default function SettingsPanel({
   const handleProcessingSettingChange = async (key: string, value: any) => {
     setProcessingSettings((prev) => ({ ...prev, [key]: value }));
 
-    if (
-      key === 'processingBackend' ||
-      key === 'linuxGpuOptimization' ||
-      key === 'useWgpuRenderer' ||
-      key === 'thumbnailWorkerThreads'
-    ) {
-      setRestartRequired(true);
+    if (RESTART_REQUIRED_KEYS.includes(key)) {
+      // 立即持久化（重启后才生效）。改回当前已保存的值时撤销重启提示，
+      // 避免提示被其它设置变更意外清除（effect 中不再重置 restartRequired）。
+      await onSettingsChange({ ...appSettings, [key]: value });
+      setRestartRequired(value !== (appSettings as Record<string, unknown>)?.[key]);
     } else {
       await onSettingsChange({ ...appSettings, [key]: value });
       if (
@@ -762,7 +766,7 @@ export default function SettingsPanel({
   const effectiveRootPaths = rootPaths?.length > 0 ? rootPaths : appSettings?.rootFolders || [];
 
   const shortcutTagVariants = {
-    visible: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } },
+    visible: { opacity: 1, scale: 1, transition: { type: 'spring' as const, stiffness: 500, damping: 30 } },
     exit: { opacity: 0, scale: 0.8, transition: { duration: 0.15 } },
   };
 

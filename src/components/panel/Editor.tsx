@@ -294,7 +294,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         selectedImage.width,
         selectedImage.height,
         orientationSteps,
-        adjustments.aspectRatio || W / H,
+        adjustments.aspectRatio || (W > 0 && H > 0 ? W / H : 1),
         rotation,
       ) ?? { unit: 'px', x: 0, y: 0, width: W, height: H }
     );
@@ -2119,6 +2119,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
       const W = isSwapped ? selectedImage.height : selectedImage.width;
       const H = isSwapped ? selectedImage.width : selectedImage.height;
       const rotation = liveRotation !== null && liveRotation !== undefined ? liveRotation : adjustments.rotation || 0;
+
+      if (!W || !H) return;
 
       const MIN_CROP_PX = 64;
       const minPctW = (MIN_CROP_PX / W) * 100;

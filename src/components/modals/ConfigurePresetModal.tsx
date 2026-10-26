@@ -139,11 +139,23 @@ export default function ConfigurePresetModal({ isOpen, onClose, onSave, initialP
     }
   }, [isOpen, initialPreset]);
 
-  const handleSave = useCallback(() => {
-    if (name.trim()) {
-      onSave(name.trim(), includeMasks, includeCropTransform, presetType);
-      onClose();
+  // 防止双击/Enter+click 重复触发 onSave（避免重复创建同名预设）
+  const submittedRef = useRef(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      submittedRef.current = false;
     }
+  }, [isOpen]);
+
+  const handleSave = useCallback(() => {
+    const trimmed = name.trim();
+    if (!trimmed || submittedRef.current) {
+      return;
+    }
+    submittedRef.current = true;
+    onSave(trimmed, includeMasks, includeCropTransform, presetType);
+    onClose();
   }, [name, includeMasks, includeCropTransform, presetType, onSave, onClose]);
 
   const handleKeyDown = useCallback(

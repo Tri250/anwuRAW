@@ -161,7 +161,7 @@ export function DepthRangePicker({
       document.documentElement.style.touchAction = previousTouchAction;
       document.documentElement.style.userSelect = previousUserSelect;
 
-      requestAnimationFrame(() => setDragValues(null));
+      rafRef.current = requestAnimationFrame(() => setDragValues(null));
 
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);

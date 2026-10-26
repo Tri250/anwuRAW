@@ -478,7 +478,7 @@ function EffectsPanel({
                           handleAdjustmentChange(Effect.LensBlurAmount, e.target.value)
                         }
                         step={1}
-                        value={adjustments.lensBlurAmount ?? 50}
+                        value={adjustments.lensBlurAmount ?? 40}
                         onDragStateChange={onDragStateChange}
                         fillOrigin="min"
                       />
@@ -642,6 +642,7 @@ function EffectsPanel({
                                       e.stopPropagation();
                                       handleRemoveLight(light.id);
                                     }}
+                                    aria-label={t('adjustments.effects.relightRemoveLight')}
                                     data-tooltip={t('adjustments.effects.relightRemoveLight')}
                                   >
                                     <X size={10} />
@@ -946,7 +947,7 @@ function EffectsPanel({
               <LUTControl
                 lutPath={adjustments.lutPath || null}
                 lutName={adjustments.lutName || null}
-                lutIntensity={adjustments.lutIntensity || 100}
+                lutIntensity={adjustments.lutIntensity ?? 100}
                 onLutSelect={handleLutSelect}
                 onLutHover={onLutHover}
                 onIntensityChange={handleLutIntensityChange}

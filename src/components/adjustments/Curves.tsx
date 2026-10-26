@@ -815,7 +815,10 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
 
   const getParametricMarkers = (key: keyof ParametricCurveSettings) =>
     inactiveChannels
-      .filter((channel) => parametricCurves[channel]?.[key] !== DEFAULT_PARAMETRIC_CURVE_SETTINGS[key])
+      .filter(
+        (channel) =>
+          !!parametricCurves[channel] && parametricCurves[channel]?.[key] !== DEFAULT_PARAMETRIC_CURVE_SETTINGS[key],
+      )
       .map((channel) => ({ channel, color: CHANNEL_COLORS[channel], value: parametricCurves[channel][key] }));
 
   if (!activePoints) {
@@ -921,8 +924,8 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
             {inactiveChannels
               .filter((channel) =>
                 isParametricMode
-                  ? !isDefaultParametricCurve(parametricCurves[channel])
-                  : !isDefaultCurve(adjustments.curves?.[channel]),
+                  ? !!parametricCurves[channel] && !isDefaultParametricCurve(parametricCurves[channel])
+                  : !!adjustments.curves?.[channel] && !isDefaultCurve(adjustments.curves?.[channel]),
               )
               .map((channel) => (
                 <path

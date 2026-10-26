@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import clsx from 'clsx';
 import { useDraggable, useDroppable, useDndMonitor } from '@dnd-kit/core';
 import {
@@ -30,7 +31,7 @@ export const PANEL_ICONS: Record<Panel, LucideIcon> = {
   [Panel.Tethering]: Camera,
 };
 
-const PANEL_TITLES: Record<Panel, string> = {
+const PANEL_TITLES: Record<Panel, ParseKeys> = {
   [Panel.Metadata]: 'editor.switcher.tooltips.info',
   [Panel.Adjustments]: 'editor.switcher.tooltips.adjust',
   [Panel.Crop]: 'editor.switcher.tooltips.crop',

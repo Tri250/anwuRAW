@@ -948,7 +948,7 @@ const RowComponent = ({
     return () => clearInterval(interval);
   }, [cloudPathsKey, queueThumbnailRequest]);
 
-  if (row.type === 'footer') return null;
+  if (!row || row.type === 'footer') return null;
   const shiftedStyle = {
     ...style,
     transform: (style.transform as string).replace(
@@ -1089,4 +1089,4 @@ const RowComponent = ({
   );
 };
 
-export const Row = React.memo(RowComponent);
+export const Row = RowComponent;

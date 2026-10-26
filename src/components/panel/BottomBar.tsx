@@ -24,6 +24,8 @@ import { useLibraryActions } from '../../hooks/useLibraryActions';
 import { useUIStore } from '../../store/useUIStore';
 import { COLOR_LABELS } from '../../utils/adjustments';
 
+const ALL_COLORS = [...COLOR_LABELS, { name: 'none', color: '#9ca3af' }];
+
 interface BottomBarProps {
   filmstripHeight?: number;
   imageList?: Array<ImageFile>;
@@ -253,7 +255,6 @@ export default function BottomBar({
   );
   const ratingOp = RATING_OPERATORS[filterCriteria.ratingOperator ?? 'gte'];
 
-  const allColors = [...COLOR_LABELS, { name: 'none', color: '#9ca3af' }];
   const currentHeight = filmstripHeight ?? 120;
   const isCollapsed = !isFilmstripVisible;
   const effectiveHeight = isFilmstripVisible ? currentHeight : 0;
@@ -593,7 +594,7 @@ export default function BottomBar({
                 <div className="h-4 w-px bg-border-color"></div>
 
                 <div className="flex items-center gap-1.5">
-                  {allColors.map((color) => {
+                  {ALL_COLORS.map((color) => {
                     const isSelected = (filterCriteria.colors || []).includes(color.name);
 
                     const tooltipTitle =

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, XCircle, Loader2, Users, Trash2, Star, Tag } from 'lucide-react';
@@ -135,15 +135,22 @@ export default function CullingModal({
       });
       suggestions.blurryImages.forEach((img) => initialRejects.add(img.path));
       setSelectedRejects(initialRejects);
+      // 仅含模糊图片时 similar 标签页不渲染，若停留在默认 'similar' 会导致内容区空白
+      setActiveTab(suggestions.similarGroups.length > 0 ? 'similar' : 'blurry');
     }
   }, [stage, suggestions]);
 
+  const startCullingRef = useRef(false);
   const handleStartCulling = useCallback(async () => {
+    if (startCullingRef.current) return;
+    startCullingRef.current = true;
     try {
       await invoke(Invokes.CullImages, { paths: imagePaths, settings });
     } catch (err) {
       console.error('Culling failed to start:', err);
       onError(String(err));
+    } finally {
+      startCullingRef.current = false;
     }
   }, [imagePaths, settings, onError]);
 
@@ -236,20 +243,25 @@ export default function CullingModal({
     </>
   );
 
-  const renderProgress = () => (
-    <div className="flex flex-col items-center justify-center h-48">
-      <Loader2 className="w-16 h-16 text-accent animate-spin" />
-      <p className="mt-4 text-text-primary">{progress?.stage || t('modals.culling.starting')}</p>
-      {progress && progress.total > 0 && (
-        <div className="w-full bg-surface rounded-full h-2.5 mt-2">
-          <div
-            className="bg-accent h-2.5 rounded-full"
-            style={{ width: `${(progress.current / progress.total) * 100}%` }}
-          />
-        </div>
-      )}
-    </div>
-  );
+  const renderProgress = () => {
+    // 后端 culling.rs 的 CullingProgress 实际携带 stage 字段，但共享的 Progress 类型
+    // （AppProperties.tsx，文件集外）未声明该属性，这里做安全收窄访问。
+    const stage = progress ? (progress as Progress & { stage?: string }).stage : undefined;
+    return (
+      <div className="flex flex-col items-center justify-center h-48">
+        <Loader2 className="w-16 h-16 text-accent animate-spin" />
+        <p className="mt-4 text-text-primary">{stage || t('modals.culling.starting')}</p>
+        {progress && progress.total > 0 && (
+          <div className="w-full bg-surface rounded-full h-2.5 mt-2">
+            <div
+              className="bg-accent h-2.5 rounded-full"
+              style={{ width: `${((progress.current ?? 0) / progress.total) * 100}%` }}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderResults = () => {
     if (error) {

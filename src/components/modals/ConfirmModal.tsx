@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import Button from '../ui/Button';
@@ -49,8 +49,13 @@ export default function ConfirmModal({
     }
   }, [isOpen]);
 
+  // 确认按钮可被双击/Enter+click 重复触发；按回调引用去重，确保每个确认动作只执行一次，
+  // 同时不影响链式确认（每次打开都会传入新的 onConfirm 闭包）。
+  const confirmedCallbackRef = useRef<(() => void) | null>(null);
+
   const handleConfirm = useCallback(() => {
-    if (onConfirm) {
+    if (onConfirm && confirmedCallbackRef.current !== onConfirm) {
+      confirmedCallbackRef.current = onConfirm;
       onConfirm();
     }
     onClose();

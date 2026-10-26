@@ -410,6 +410,7 @@ export default function ExportPanel({
   const numImages = pathsToExport.length;
 
   useEffect(() => {
+    let cancelled = false;
     const fetchDims = async () => {
       if (!enableWatermark || numImages === 0 || !isVisible || !isPanelReallyActive) return;
       if (!isLibraryContext && selectedImage && selectedImage.width && selectedImage.height) {
@@ -418,15 +419,19 @@ export default function ExportPanel({
       }
       try {
         const dims: any = await invoke('get_image_dimensions', { path: pathsToExport[0] });
-        if (dims.width > 0 && dims.height > 0) setImageAspectRatio(dims.width / dims.height);
+        if (!cancelled && dims.width > 0 && dims.height > 0) setImageAspectRatio(dims.width / dims.height);
       } catch {
-        setImageAspectRatio(3 / 2);
+        if (!cancelled) setImageAspectRatio(3 / 2);
       }
     };
     fetchDims();
-  }, [pathsToExport, isLibraryContext, selectedImage, enableWatermark, numImages, isVisible]);
+    return () => {
+      cancelled = true;
+    };
+  }, [pathsToExport, isLibraryContext, selectedImage, enableWatermark, numImages, isVisible, isPanelReallyActive]);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchWatermarkDimensions = async () => {
       if (!watermarkPath) {
         setWatermarkImageAspectRatio(1);
@@ -436,12 +441,15 @@ export default function ExportPanel({
         const dimensions: { width: number; height: number } = await invoke('get_image_dimensions', {
           path: watermarkPath,
         });
-        setWatermarkImageAspectRatio(dimensions.height > 0 ? dimensions.width / dimensions.height : 1);
+        if (!cancelled) setWatermarkImageAspectRatio(dimensions.height > 0 ? dimensions.width / dimensions.height : 1);
       } catch (error) {
-        setWatermarkImageAspectRatio(1);
+        if (!cancelled) setWatermarkImageAspectRatio(1);
       }
     };
     fetchWatermarkDimensions();
+    return () => {
+      cancelled = true;
+    };
   }, [watermarkPath]);
 
   const anchorOptions = useMemo(

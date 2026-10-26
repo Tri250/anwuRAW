@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Text from '../ui/Text';
 import { TextVariants } from '../../types/typography';
@@ -43,9 +43,22 @@ export default function RenameFolderModal({
     }
   }, [isOpen, currentName]);
 
+  // 防止双击/Enter+click 重复触发 onSave（避免重复执行重命名）
+  const submittedRef = useRef(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      submittedRef.current = false;
+    }
+  }, [isOpen]);
+
   const handleSave = useCallback(() => {
+    if (submittedRef.current) {
+      return;
+    }
     const trimmed = name.trim();
     if (trimmed && trimmed !== currentName) {
+      submittedRef.current = true;
       onSave(trimmed);
     }
     onClose();

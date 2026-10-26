@@ -2580,9 +2580,7 @@ const ImageCanvas = memo(
           const isAltPressedLocal = e.evt.altKey || (window as any).altKeyDown;
           let effectiveTool;
 
-          if (isAiSubjectActive) {
-            effectiveTool = ToolType.AiSeletor;
-          } else if (isAltPressedLocal) {
+          if (isAltPressedLocal) {
             effectiveTool = baseTool === ToolType.Brush ? ToolType.Eraser : ToolType.Brush;
           } else {
             effectiveTool = baseTool;
@@ -3062,12 +3060,15 @@ const ImageCanvas = memo(
           newParams.radiusY = 100;
         } else if (activeSubMask.type === Mask.Linear) {
           if (!newParams.range || newParams.range < 10) {
-            const handleDist = Math.min(effectiveImageDimensions.width, effectiveImageDimensions.height) * 0.2;
-            newParams.startX = dragStartPointer.current!.x + handleDist;
-            newParams.startY = dragStartPointer.current!.y;
-            newParams.endX = dragStartPointer.current!.x - handleDist;
-            newParams.endY = dragStartPointer.current!.y;
-            newParams.range = 100;
+            const startPoint = dragStartPointer.current;
+            if (startPoint) {
+              const handleDist = Math.min(effectiveImageDimensions.width, effectiveImageDimensions.height) * 0.2;
+              newParams.startX = startPoint.x + handleDist;
+              newParams.startY = startPoint.y;
+              newParams.endX = startPoint.x - handleDist;
+              newParams.endY = startPoint.y;
+              newParams.range = 100;
+            }
           }
         }
 

@@ -948,25 +948,23 @@ function CullingPreview({
   );
 }
 
-const Row = React.memo(
-  ({
-    index,
-    style,
-    imageList,
-    multiSelectedPaths,
-    activePath,
-    onContextMenu,
-    onImageDoubleClick,
-    thumbnailAspectRatio,
-    imageRatings,
-    onImageClick,
-    queueThumbnailRequest,
-    hoveredCullingPath,
-  }: any) => {
-    const image: ImageFile = imageList[index];
-    const isSelected = multiSelectedPaths.includes(image.path);
-    const imagePath = image?.path;
-    const isCloudPlaceholder = !!image?.is_cloud_placeholder;
+const Row = ({
+  index,
+  style,
+  imageList,
+  multiSelectedPaths,
+  activePath,
+  onContextMenu,
+  onImageDoubleClick,
+  thumbnailAspectRatio,
+  imageRatings,
+  onImageClick,
+  queueThumbnailRequest,
+  hoveredCullingPath,
+}: any) => {
+  const image: ImageFile = imageList[index];
+  const imagePath = image?.path;
+  const isCloudPlaceholder = !!image?.is_cloud_placeholder;
 
     useEffect(() => {
       if (!image || !queueThumbnailRequest) return;
@@ -980,6 +978,9 @@ const Row = React.memo(
       }, 5000);
       return () => clearInterval(interval);
     }, [imagePath, isCloudPlaceholder, queueThumbnailRequest]);
+
+    if (!image) return null;
+    const isSelected = multiSelectedPaths.includes(image.path);
 
     return (
       <div style={style} className="p-2 box-border">
@@ -1003,8 +1004,7 @@ const Row = React.memo(
         </div>
       </div>
     );
-  },
-);
+};
 
 export default function CullingView(props: any) {
   const { t } = useTranslation();
@@ -1116,14 +1116,15 @@ export default function CullingView(props: any) {
   );
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
     const updateHeight = () => {
-      if (containerRef.current) {
-        setListHeight(containerRef.current.clientHeight);
-      }
+      setListHeight(container.clientHeight);
     };
     updateHeight();
-    window.addEventListener('resize', updateHeight);
-    return () => window.removeEventListener('resize', updateHeight);
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(container);
+    return () => observer.disconnect();
   }, []);
 
   const resize = useCallback((mouseMoveEvent: MouseEvent) => {

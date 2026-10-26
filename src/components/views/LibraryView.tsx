@@ -120,6 +120,8 @@ export default function LibraryView({
     })),
   );
 
+  const copiedAdjustments = useEditorStore((state) => state.copiedAdjustments);
+
   const handleMainLibraryImportClick = useCallback(
     () => handleImportClick(currentFolderPath as string),
     [handleImportClick, currentFolderPath],
@@ -183,7 +185,7 @@ export default function LibraryView({
             isLibraryView={true}
             layoutMode={layoutMode}
             isPasted={isPasted}
-            isPasteDisabled={useEditorStore.getState().copiedAdjustments === null || multiSelectedPaths.length === 0}
+            isPasteDisabled={copiedAdjustments === null || multiSelectedPaths.length === 0}
             isRatingDisabled={multiSelectedPaths.length === 0}
             isResetDisabled={multiSelectedPaths.length === 0}
             multiSelectedPaths={multiSelectedPaths}

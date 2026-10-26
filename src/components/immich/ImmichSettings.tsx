@@ -55,19 +55,25 @@ export default function ImmichSettings() {
   const savedServerUrl = appSettings?.immich?.serverUrl?.trim() ?? '';
 
   useEffect(() => {
+    let cancelled = false;
     if (!savedServerUrl) {
       setKeyInfo({ apiKey: '', inCredentialStore: false });
       return;
     }
     getImmichApiKey()
       .then((info) => {
+        if (cancelled) return;
         setKeyInfo(info);
         setApiKey(info.apiKey);
       })
       .catch((err) => {
+        if (cancelled) return;
         setKeyInfo({ apiKey: '', inCredentialStore: false });
         setStatus({ kind: 'error', message: String(err) });
       });
+    return () => {
+      cancelled = true;
+    };
   }, [savedServerUrl]);
 
   useEffect(() => {
