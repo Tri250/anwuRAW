@@ -24,7 +24,7 @@
     clippy::collapsible_if,
     clippy::excessive_precision
 )]
-use image::{DynamicImage, Rgb, RgbImage};
+use image::{DynamicImage, Rgb, RgbImage, RgbaImage};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -133,55 +133,97 @@ fn hue_sat_to_oklab_ab(hue_deg: f32, sat_pct: f32) -> (f32, f32) {
     (a / norm * strength, oklab_b / norm * strength)
 }
 
+/// 对单像素应用分离色调（OKLab 空间叠加 a/b 偏移），返回新的 RGB。
+fn split_tone_pixel(
+    r_in: u8,
+    g_in: u8,
+    b_in: u8,
+    sh_ab: (f32, f32),
+    hi_ab: (f32, f32),
+    settings: &SplitToningSettings,
+) -> (u8, u8, u8) {
+    let (l, a, oklab_b) = srgb_to_oklab(
+        r_in as f32 / 255.0,
+        g_in as f32 / 255.0,
+        b_in as f32 / 255.0,
+    );
+
+    // L ≈ 亮度 (OKLab 的 L 与感知亮度高度相关)
+    let w_hi = settings.highlight_weight(l);
+    let w_sh = 1.0 - w_hi;
+
+    // 叠加色偏
+    let a_out = a + sh_ab.0 * w_sh + hi_ab.0 * w_hi;
+    let b_out = oklab_b + sh_ab.1 * w_sh + hi_ab.1 * w_hi;
+
+    let (r_o, g_o, b_o) = oklab_to_srgb(l, a_out, b_out);
+    (
+        (r_o.clamp(0.0, 1.0) * 255.0) as u8,
+        (g_o.clamp(0.0, 1.0) * 255.0) as u8,
+        (b_o.clamp(0.0, 1.0) * 255.0) as u8,
+    )
+}
+
 /// 对 u8 RGB sRGB 图像应用分离色调。
 pub fn apply_split_toning_u8(img: &mut RgbImage, settings: &SplitToningSettings) {
     if !settings.enabled {
         return;
     }
-    let (w, h) = img.dimensions();
+    let (w, _h) = img.dimensions();
     let w_usize = w as usize;
 
-    let (sh_ab_a, sh_ab_b) = hue_sat_to_oklab_ab(settings.shadows_hue, settings.shadows_saturation);
-    let (hi_ab_a, hi_ab_b) =
-        hue_sat_to_oklab_ab(settings.highlights_hue, settings.highlights_saturation);
+    let sh_ab = hue_sat_to_oklab_ab(settings.shadows_hue, settings.shadows_saturation);
+    let hi_ab = hue_sat_to_oklab_ab(settings.highlights_hue, settings.highlights_saturation);
 
     let raw = img.as_mut();
-    raw.par_chunks_mut(w_usize * 3)
-        .enumerate()
-        .for_each(|(_y, row)| {
-            for x in 0..w_usize {
-                let idx = x * 3;
-                let r_in = row[idx] as f32 / 255.0;
-                let g_in = row[idx + 1] as f32 / 255.0;
-                let b_in = row[idx + 2] as f32 / 255.0;
+    raw.par_chunks_mut(w_usize * 3).for_each(|row| {
+        for x in 0..w_usize {
+            let idx = x * 3;
+            let (r, g, b) =
+                split_tone_pixel(row[idx], row[idx + 1], row[idx + 2], sh_ab, hi_ab, settings);
+            row[idx] = r;
+            row[idx + 1] = g;
+            row[idx + 2] = b;
+        }
+    });
+}
 
-                let (l, a, oklab_b) = srgb_to_oklab(r_in, g_in, b_in);
+/// 对 u8 RGBA sRGB 图像应用分离色调（alpha 通道保持不变）。
+pub fn apply_split_toning_rgba8(img: &mut RgbaImage, settings: &SplitToningSettings) {
+    if !settings.enabled {
+        return;
+    }
+    let (w, _h) = img.dimensions();
+    let w_usize = w as usize;
 
-                // L ≈ 亮度 (OKLab 的 L 与感知亮度高度相关)
-                let w_hi = settings.highlight_weight(l);
-                let w_sh = 1.0 - w_hi;
+    let sh_ab = hue_sat_to_oklab_ab(settings.shadows_hue, settings.shadows_saturation);
+    let hi_ab = hue_sat_to_oklab_ab(settings.highlights_hue, settings.highlights_saturation);
 
-                // 叠加色偏
-                let a_out = a + sh_ab_a * w_sh + hi_ab_a * w_hi;
-                let b_out = oklab_b + sh_ab_b * w_sh + hi_ab_b * w_hi;
-
-                let (r_o, g_o, b_o) = oklab_to_srgb(l, a_out, b_out);
-                row[idx] = (r_o.clamp(0.0, 1.0) * 255.0) as u8;
-                row[idx + 1] = (g_o.clamp(0.0, 1.0) * 255.0) as u8;
-                row[idx + 2] = (b_o.clamp(0.0, 1.0) * 255.0) as u8;
-            }
-        });
-    let _ = h;
+    let raw = img.as_mut();
+    raw.par_chunks_mut(w_usize * 4).for_each(|row| {
+        for x in 0..w_usize {
+            let idx = x * 4;
+            let (r, g, b) =
+                split_tone_pixel(row[idx], row[idx + 1], row[idx + 2], sh_ab, hi_ab, settings);
+            row[idx] = r;
+            row[idx + 1] = g;
+            row[idx + 2] = b;
+            // alpha 保持不变
+        }
+    });
 }
 
 /// 对 DynamicImage 应用分离色调并返回新图像。
+/// 统一在 RGBA8 上处理并保留 alpha：主预览路径（lib.rs）在编码前严格匹配
+/// DynamicImage::ImageRgba8，旧实现无条件 to_rgb8 返回 ImageRgb8，会让整条
+/// apply_adjustments 命令报错、前端丢弃该帧 —— 表现为"启用分离色调后画面卡住/花屏"。
 pub fn apply_to_dynamic(img: &DynamicImage, settings: &SplitToningSettings) -> DynamicImage {
     if !settings.enabled {
         return img.clone();
     }
-    let mut rgb = img.to_rgb8();
-    apply_split_toning_u8(&mut rgb, settings);
-    DynamicImage::ImageRgb8(rgb)
+    let mut rgba = img.to_rgba8();
+    apply_split_toning_rgba8(&mut rgba, settings);
+    DynamicImage::ImageRgba8(rgba)
 }
 
 /// 占位 Rgb 类型以抑制未使用 warning（后续可能扩展）。

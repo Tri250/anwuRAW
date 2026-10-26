@@ -3650,12 +3650,14 @@ pub fn apply_post_gpu_adjustments(
 
     // Channel Mixer
     // channel_mixer::ChannelMixerSettings 没有 enabled 字段，用 is_identity 判断
+    let mut modified = false;
     if is_visible("channel_mixer")
         && let Some(cm_val) = js_adjustments.get("channelMixer")
         && let Ok(cm) = serde_json::from_value::<ChannelMixerSettings>(cm_val.clone())
         && !cm.is_identity()
     {
         img = crate::channel_mixer::apply_to_dynamic(&img, &cm);
+        modified = true;
     }
     // Split Toning
     if is_visible("split_toning")
@@ -3664,6 +3666,13 @@ pub fn apply_post_gpu_adjustments(
         && st.enabled
     {
         img = crate::split_toning::apply_to_dynamic(&img, &st);
+        modified = true;
+    }
+    // 主预览路径（lib.rs apply_adjustments）在编码前严格匹配 DynamicImage::ImageRgba8。
+    // 后处理一旦降级成 ImageRgb8，整条命令会报错、前端丢弃该帧保留旧画面，
+    // 表现为"启用调整后花屏/卡住"。恒等路径不做转换，保持 GPU 回读原样零开销。
+    if modified && !matches!(img, DynamicImage::ImageRgba8(_)) {
+        img = DynamicImage::ImageRgba8(img.to_rgba8());
     }
     img
 }
@@ -3823,17 +3832,20 @@ mod algorithm_tests {
             "sectionVisibility": { "channel_mixer": true, "split_toning": true }
         });
         let out = apply_post_gpu_adjustments(img.clone(), &js);
-        if let DynamicImage::ImageRgb8(buf) = &out {
+        // 输入是 Rgba32F（含 alpha），输出必须保持 RGBA8 —— 旧版 channel_mixer/
+        // split_toning 会降级成 Rgb8 并让主预览路径报错（花屏根因之一）
+        if let DynamicImage::ImageRgba8(buf) = &out {
             let px0 = buf.get_pixel(0, 0);
             assert_eq!(px0[0], 255, "0.5*200% = 1.0 -> 255 (clamp)");
             assert_eq!(px0[1], 0);
+            assert_eq!(px0[3], 255, "alpha must be preserved");
             let px1 = buf.get_pixel(1, 0);
             // 0.1*200% = 0.2 (R), G/B 不变（u8 量化容差 1）
             assert!((px1[0] as i32 - 51).abs() <= 1, "R = {}", px1[0]);
             assert!((px1[1] as i32 - 51).abs() <= 1, "G = {}", px1[1]);
             assert!((px1[2] as i32 - 77).abs() <= 1, "B = {}", px1[2]);
         } else {
-            panic!("expected Rgb8 output");
+            panic!("expected Rgba8 output");
         }
     }
 }

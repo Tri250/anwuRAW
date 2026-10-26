@@ -2334,6 +2334,19 @@ fn process_and_get_dynamic_image_inner(
         }
     };
 
+    // [毒帧防线] 渲染/回读期间若触发设备丢失或 wgpu 错误（on_uncaptured_error /
+    // set_device_lost_callback / wait_for_gpu 均会置位 GPU_DEVICE_LOST），tile 回读的
+    // buffer map 仍可能"成功"，但拿到的是未初始化显存 —— 编码成 JPEG 后就是花屏。
+    // 丢弃该帧返回错误，让前端保留上一张已知正确的画面；下一次 get_or_init_gpu_context
+    // 会整体重建 device/processor/cache 后恢复正常出帧。
+    if GPU_DEVICE_LOST.load(Ordering::Acquire) {
+        log::error!(
+            "[{}] GPU device lost during render; discarding frame to prevent corruption",
+            caller_id
+        );
+        return Err("GPU device lost during rendering; frame discarded".to_string());
+    }
+
     let mut final_encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
         label: Some("Final Passes Encoder"),
     });
