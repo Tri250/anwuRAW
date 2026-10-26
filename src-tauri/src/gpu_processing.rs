@@ -233,10 +233,10 @@ pub fn get_or_init_gpu_context(
     let mut context_lock = lock_or_reset(&state.gpu_context, "GPU context");
     if GPU_DEVICE_LOST.swap(false, Ordering::AcqRel) {
         log::warn!("GPU device was lost or ran out of memory. Rebuilding all GPU state.");
-        if let Some(context) = context_lock.take() {
-            if let Ok(mut display) = context.display.lock() {
-                *display = None;
-            }
+        if let Some(context) = context_lock.take()
+            && let Ok(mut display) = context.display.lock()
+        {
+            *display = None;
         }
         // 这里已经持有 gpu_context，绝不能再阻塞等待另外两把锁：
         // 另一个预览/导出线程可能正握着它们，硬等就是死锁。
@@ -1333,7 +1333,7 @@ impl GpuProcessor {
 
     /// 桌面原生上屏（output_to_display）才需要的两张全尺寸纹理。
     /// 延迟到第一次真正用到时分配，Android/Linux 预览路径永远不会触发。
-    pub fn display_textures(&self) -> &DisplayTextures {
+    fn display_textures(&self) -> &DisplayTextures {
         self.display_textures.get_or_init(|| {
             let descriptor = |label: &'static str| wgpu::TextureDescriptor {
                 label: Some(label),
