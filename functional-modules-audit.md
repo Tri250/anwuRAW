@@ -343,3 +343,43 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 3. **`hdr-error`/`focus-stack-error`**：前端监听器为冗余（后端以 promise rejection 报错），可择机统一为事件模型。
 4. **`focus-stack-report`**：逐帧对齐质量报告事件暂无消费者，可在焦点堆栈结果弹窗中展示逐帧质量信息。
 5. **`no-explicit-any`**：前端存在约 300 处存量 any，建议渐进式收紧（重点：IPC 返回值全部加泛型标注）。
+
+---
+
+## 十、调整模块专项自检（第六轮 · 100% 覆盖复核）
+
+范围与第五轮一致：5 大分区（Basic/Curves/Color/Details/Effects）+ `AdjustmentSection`/`AdjustmentSubSection` + `adjustments.ts` + `defaultAdjustments.json` + `backendPayload.ts`，并回溯 Rust `get_global_adjustments_from_json` / `get_mask_adjustments_from_json` / `SCALES` / shader `apply_curve`、`apply_hsl_panel`。本轮补齐第五轮未通读的 `Curves.tsx`、`AdjustmentSection.tsx`、`AdjustmentSubSection.tsx`，实现组件级 100% 通读。
+
+### 10.1 覆盖率核对（通过）
+
+- **Basic**：8 个字段（toneMapper/exposure/contrast/highlights/shadows/whites/blacks/brightness）全部有 UI 入口；`hideTonemapper`（蒙版 / `tonemapperOverrideEnabled`）退化路径正确；`ToneMapperSwitch` 标签点击重置 = 切回 basic + exposure 归零。
+- **Curves**：point/parametric 双模式、四通道切换、曲线拖拽（含 Shift/Alt 精调、端点吸附、右键删除内点、双击复位）、参数化三段分割线拖拽（minGap=10、边界 10/90、双击复位）、右键菜单（复制/粘贴/单通道复位/全部复位、point↔parametric 互贴）全链路可用；`pointCurves` 暂存与 `curves` 烘焙互不污染。
+- **Color**：白平衡双模式（Relative ±100 / Kelvin `MIN_TEMPERATURE`–`MAX_TEMPERATURE`、`MAX_TINT=150`）、Pipette、presence、hue ±180（Rust 侧 scale=1.0 按角度直传，shader `apply_hue_shift` 按度数旋转，量纲一致）、3-way/global 色轮、blending 50 / balance 0、HSL 8 通道（顺序与 Rust `parse_hsl_adjustments` 索引 0–7 完全一致）、色彩校准三原色。
+- **Details**：锐化/阈值、clarity/dehaze/structure/centré、亮度/色彩降噪（蒙版允许 -100）、AI 降噪、CA、负片 6 参数（UTF/权重/曝光/对比）全部有消费点。
+- **Effects**：creative（flare 对蒙版隐藏）、spatial（lensBlur/relight/fog，`isAiFree` 隐藏；深度图/法线图生成失败自动回关开关 toast；`DepthRangePicker` 镜像映射与存储值往返一致）、LUT、vignette（center marker）、grain。
+- **容器层**：`ADJUSTMENT_SECTION_TOOLS` 的 id 与全部 `AdjustmentSubSection id` 逐一匹配；`getToolIds` 对 `spatial` 正确展开 lensBlur/relight/fog；`VisibilityToggle` 已 `stopPropagation`，不会误触折叠；工具聚焦模式折叠同分区兄弟项逻辑正确。
+- **默认值**：以 `defaultValue=` 机器化比对全部 44 处 Slider，与 `defaultAdjustments.json` 逐项核对（含 Details 负片权重 1、fog 50/0/50/0/25/25、grain 0/25/50、vignette 0/50/0/50、relight light 60/0/30/135/60/40/50 等）。
+
+### 10.2 修复（3 项）
+
+27. **曲线点数超过 GPU 固定容量导致越界**（Curves.tsx / adjustments.ts / image_processing.rs）：shader 曲线为 `array<Point, 16>`，但 UI 原先允许无限加点，且 Rust `*_curve_count = points.len()` 未裁剪——超过 16 点时 shader 会按 count 越界读取（`apply_curve` 的 `last` 索引落到数组外），造成整幅画面异常。修复：① UI 新增 `MAX_CURVE_POINTS = 16`，达上限禁止继续加点、粘贴时 `slice(0, 16)`；② 载入侧 `deepCloneCurves` 统一裁剪到 16 点并保证至少 2 点（UI 与渲染一致）；③ Rust 全局/蒙版两处 count 改为 `.min(16)` 兜底。
+28. **Lens Blur 默认值回退不一致**（Effects.tsx）：`value={adjustments.lensBlurAmount ?? 50}` 与 `defaultValue={40}`、JSON 默认 40 冲突。第五轮曾以「字段恒存在、回退不可达」裁决保持原样，本轮按「UI 三重语义必须自洽」原则修正为 `?? 40`。
+29. **色调映射器缺省回退与后端不一致**（Basic.tsx）：`selectedMapper={adjustments.toneMapper || 'agx'}`，而 JSON 默认、双击重置与 Rust 缺省均为 `basic`。当字段为空串等假值时 UI 显示 agx、渲染走 basic。修正为 `|| 'basic'`。
+
+### 10.3 裁决记录（复核后确认非缺陷）
+
+- Curves 拖拽 effect 闭包只经 ref 读取实时数据（`localPointsRef`/`localParametricSettingsRef`/`parametricCurvesRef`/`activeChannelRef`），不读陈旧 state。
+- 拖拽结束仅清空 ref，`localPoints` 由 `[adjustments.curves[channel], draggingPointIndex]` effect 统一回收，无残留。
+- point↔parametric 切换以 `pointCurves` 暂存、`curves` 烘焙，双向往返不丢失；`updateParametricValue` 同时写 `parametricCurve` 与 `curves`，后端只消费 `curves`，闭环。
+- `adjustments.vibrance || 0` 等 3 处：0 即默认值，无副作用。
+- `ColorGrading` 的 `defaultValue` 传 `HueSatLum` 对象给 `ColorWheel`（非 `Slider`），类型与运行期行为正确。
+- `lensBlurMinDepth/MaxDepth/Fade` 的镜像映射与 `DepthRangePicker` 默认 0/80/20/20 对应存储 100/20/20/20，往返一致。
+- HSL 色相语义：前端 ±100 × Rust 0.3 × shader 2.0 = ±60°，与 RawLab（`dh*0.3`，±30°）不同但本仓库内部自洽，非缺陷。
+
+### 10.4 验证
+
+- `npx tsc --noEmit`：**0 错误**
+- `npm run build`：**成功**（2583 模块）
+- `npm run i18n:runtime-check`：`adjustments.*` 无任何告警；脚本仍报 198 条存量复数回退（与本轮无关）
+- Rust 语法：`rustup run 1.94.1 rustfmt --edition 2024 --emit stdout src/image_processing.rs`：**解析通过**（`cargo check` 仍受 1.98 工具链限制，见第九节第 1 条）
+

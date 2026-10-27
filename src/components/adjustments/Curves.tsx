@@ -273,6 +273,8 @@ function convertParametricToPoints(settings: ParametricCurveSettings): Array<Coo
 const FINE_ADJUSTMENT_MULTIPLIER = 0.2;
 const POINT_HIT_RADIUS_PX = 12;
 const MIN_POINT_GAP_X = 1;
+// The GPU shader stores curves as fixed-size arrays of 16 points.
+const MAX_CURVE_POINTS = 16;
 
 const hasFineAdjustmentModifier = (event: MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent) =>
   'shiftKey' in event && (event.shiftKey || event.altKey);
@@ -578,6 +580,8 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
     const x = Math.max(0, Math.min(255, ((clientX - rect.left) / rect.width) * 255));
     const y = Math.max(0, Math.min(255, 255 - ((clientY - rect.top) / rect.height) * 255));
 
+    if (activePoints.length >= MAX_CURVE_POINTS) return;
+
     if (activePoints.some((p: Coord) => Math.abs(p.x - x) < MIN_POINT_GAP_X)) return;
 
     onDragStateChange?.(true);
@@ -723,7 +727,7 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
 
     const handlePaste = () => {
       if (!curveClipboard) return;
-      const newPoints = curveClipboard.map((p) => ({ ...p }));
+      const newPoints = curveClipboard.slice(0, MAX_CURVE_POINTS).map((p) => ({ ...p }));
       setLocalPoints(newPoints);
       localPointsRef.current = newPoints;
       setAdjustments((prev: any) => ({ ...prev, curves: { ...prev.curves, [activeChannel]: newPoints } }));

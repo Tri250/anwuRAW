@@ -629,23 +629,22 @@ export const INITIAL_ADJUSTMENTS: Adjustments = defaultAdjustments satisfies Rec
   unknown
 > as unknown as Adjustments;
 
+const MAX_CURVE_POINTS = 16;
+const DEFAULT_CURVE_POINTS: Array<Coord> = [
+  { x: 0, y: 0 },
+  { x: 255, y: 255 },
+];
+
+const cloneCurvePoints = (points: any): Array<Coord> => {
+  const cloned = (Array.isArray(points) ? points : []).slice(0, MAX_CURVE_POINTS).map((p: Coord) => ({ ...p }));
+  return cloned.length >= 2 ? cloned : DEFAULT_CURVE_POINTS.map((p: Coord) => ({ ...p }));
+};
+
 const deepCloneCurves = (curves: any): Curves => ({
-  blue: curves?.blue?.map((p: Coord) => ({ ...p })) || [
-    { x: 0, y: 0 },
-    { x: 255, y: 255 },
-  ],
-  green: curves?.green?.map((p: Coord) => ({ ...p })) || [
-    { x: 0, y: 0 },
-    { x: 255, y: 255 },
-  ],
-  luma: curves?.luma?.map((p: Coord) => ({ ...p })) || [
-    { x: 0, y: 0 },
-    { x: 255, y: 255 },
-  ],
-  red: curves?.red?.map((p: Coord) => ({ ...p })) || [
-    { x: 0, y: 0 },
-    { x: 255, y: 255 },
-  ],
+  blue: cloneCurvePoints(curves?.blue),
+  green: cloneCurvePoints(curves?.green),
+  luma: cloneCurvePoints(curves?.luma),
+  red: cloneCurvePoints(curves?.red),
 });
 
 const deepCloneParametric = (pCurve: any): ParametricCurve => ({

@@ -478,7 +478,7 @@ function EffectsPanel({
                           handleAdjustmentChange(Effect.LensBlurAmount, e.target.value)
                         }
                         step={1}
-                        value={adjustments.lensBlurAmount ?? 50}
+                        value={adjustments.lensBlurAmount ?? 40}
                         onDragStateChange={onDragStateChange}
                         fillOrigin="min"
                       />
