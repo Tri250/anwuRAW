@@ -1,6 +1,7 @@
 const js = require('@eslint/js');
 const tseslint = require('typescript-eslint');
 const i18next = require('eslint-plugin-i18next');
+const reactHooks = require('eslint-plugin-react-hooks');
 
 const tsFiles = ['**/*.{ts,tsx}'];
 
@@ -30,6 +31,7 @@ module.exports = [
     files: tsFiles,
     plugins: {
       i18next,
+      'react-hooks': reactHooks,
     },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -42,6 +44,9 @@ module.exports = [
     },
     rules: {
       'no-unused-vars': 'off',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },

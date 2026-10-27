@@ -85,14 +85,9 @@ function RegionDroppableContainer({
       const x = activeRect.left + activeRect.width / 2 - rect.left;
       const y = activeRect.top + activeRect.height / 2 - rect.top;
 
-      let intendedPlacement: SwitcherPlacement = 'bottom';
-      if (side === 'left') {
-        const isTopLeft = y < (-rect.height / rect.width) * x + rect.height;
-        intendedPlacement = isTopLeft ? 'left' : 'bottom';
-      } else {
-        const isTopRight = y < (rect.height / rect.width) * x;
-        intendedPlacement = isTopRight ? 'right' : 'bottom';
-      }
+      const isTopLeft = side === 'left' ? y < (-rect.height / rect.width) * x + rect.height : false;
+      const isTopRight = side === 'left' ? false : y < (rect.height / rect.width) * x;
+      const intendedPlacement: SwitcherPlacement = isTopLeft ? 'left' : isTopRight ? 'right' : 'bottom';
 
       if (hoverPlacementRef.current !== intendedPlacement) {
         hoverPlacementRef.current = intendedPlacement;
@@ -242,14 +237,9 @@ function SplitOverlayDropzone({
       const x = activeRect.left + activeRect.width / 2 - rect.left;
       const y = activeRect.top + activeRect.height / 2 - rect.top;
 
-      let intendedPlacement: SwitcherPlacement = 'bottom';
-      if (side === 'left') {
-        const isTopLeft = y < (-rect.height / rect.width) * x + rect.height;
-        intendedPlacement = isTopLeft ? 'left' : 'bottom';
-      } else {
-        const isTopRight = y < (rect.height / rect.width) * x;
-        intendedPlacement = isTopRight ? 'right' : 'bottom';
-      }
+      const isTopLeft = side === 'left' ? y < (-rect.height / rect.width) * x + rect.height : false;
+      const isTopRight = side === 'left' ? false : y < (rect.height / rect.width) * x;
+      const intendedPlacement: SwitcherPlacement = isTopLeft ? 'left' : isTopRight ? 'right' : 'bottom';
 
       if (hoverPlacementRef.current !== intendedPlacement) {
         hoverPlacementRef.current = intendedPlacement;

@@ -15,7 +15,6 @@ import {
   pointerWithin,
 } from '@dnd-kit/core';
 import {
-  Ban,
   Circle,
   ClipboardPaste,
   Copy,
@@ -210,10 +209,10 @@ const ConnectionStatus = ({
   // 触屏无 hover：Android 上改为点击状态行切换详情展开。
   const isAndroid = useOsPlatform() === 'android';
 
-  let statusColor = 'bg-green-500';
-  let statusText = t('editor.ai.connection.ready');
-  let titleText = t('editor.ai.connection.backendLabel');
-  let hoverContent: React.ReactNode = null;
+  let statusColor: string;
+  let statusText: string;
+  let titleText: string;
+  let hoverContent: React.ReactNode;
 
   if (aiProvider === 'cloud') {
     titleText = t('editor.ai.connection.cloudLabel');
@@ -1982,6 +1981,7 @@ function SettingsPanel({
 
   useEffect(() => {
     if (container) setPrompt(container.prompt || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-sync only when the selected patch changes, not on every prompt keystroke
   }, [container?.id]);
 
   const isQuickErasePatch = displayContainer.subMasks?.some((sm: SubMask) => sm.type === Mask.QuickEraser);

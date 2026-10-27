@@ -445,6 +445,7 @@ const FilmstripList = ({
     }
 
     return baseHeight;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ratioMapVersion is a deliberate cache-buster for the mutable ratioMapRef
   }, [data.imageList, data.thumbnailAspectRatio, height, width, ratioMapVersion]);
 
   const getColumnWidth = useCallback(
@@ -456,6 +457,7 @@ const FilmstripList = ({
           : (imagePath !== undefined && ratioMapRef.current[imagePath]) || 1.5;
       return itemHeight * ratio + ITEM_GAP;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ratioMapVersion is a deliberate cache-buster for the mutable ratioMapRef
     [data.imageList, data.thumbnailAspectRatio, itemHeight, ratioMapVersion],
   );
 

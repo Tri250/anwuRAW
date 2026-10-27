@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string -- the crash fallback is intentionally English and must not depend on i18n */
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface ErrorBoundaryProps {

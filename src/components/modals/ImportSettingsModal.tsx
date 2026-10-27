@@ -45,7 +45,7 @@ export default function ImportSettingsModal({ fileCount, isOpen, onClose, onSave
       deleteAfterImport,
     });
     onClose();
-  }, [onSave, onClose, filenameTemplate, organizeByDate, dateFolderFormat, deleteAfterImport, fileCount]);
+  }, [onSave, onClose, filenameTemplate, organizeByDate, dateFolderFormat, deleteAfterImport]);
 
   const handleKeyDown = useCallback(
     (e: any) => {

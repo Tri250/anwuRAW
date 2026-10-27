@@ -7,7 +7,6 @@ import {
   Star as StarIcon,
   ZoomIn,
   ZoomOut,
-  Maximize,
   Link,
   SquarePen,
   Tag,
@@ -317,13 +316,16 @@ function CullingPreview({
     }
   }, [syncViewport.isActive, syncViewport.zoom, syncViewport.pan]);
 
-  const updateViewport = (newZoom: number, newPan: { x: number; y: number }) => {
-    setZoom(newZoom);
-    setPan(newPan);
-    if (syncViewport.isActive) {
-      setSyncViewport((prev) => ({ ...prev, isActive: true, zoom: newZoom, pan: newPan }));
-    }
-  };
+  const updateViewport = useCallback(
+    (newZoom: number, newPan: { x: number; y: number }) => {
+      setZoom(newZoom);
+      setPan(newPan);
+      if (syncViewport.isActive) {
+        setSyncViewport((prev) => ({ ...prev, isActive: true, zoom: newZoom, pan: newPan }));
+      }
+    },
+    [syncViewport.isActive, setSyncViewport],
+  );
 
   useEffect(() => {
     if (!isDragging) return;
@@ -354,7 +356,7 @@ function CullingPreview({
       window.removeEventListener('mousemove', handleWindowMouseMove);
       window.removeEventListener('mouseup', handleWindowMouseUp);
     };
-  }, [isDragging, setSyncViewport]);
+  }, [isDragging, setSyncViewport, updateViewport]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;

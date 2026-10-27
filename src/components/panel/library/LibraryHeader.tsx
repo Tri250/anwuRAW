@@ -142,7 +142,7 @@ const SegmentedSwitch = ({ options, value, onChange }: SegmentedSwitchProps) => 
     } else {
       setBubbleStyle({ x: targetX, width: targetWidth, opacity: hasSelection ? 1 : 0 });
     }
-  }, [value, options, hasSelection]);
+  }, [value, options, selectedIndex, hasSelection]);
 
   return (
     <div className="w-full bg-bg-primary p-1 rounded-md">

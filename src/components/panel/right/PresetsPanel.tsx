@@ -47,9 +47,8 @@ import Slider from '../../ui/Slider';
 import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { Adjustments, INITIAL_ADJUSTMENTS, ADJUSTMENT_GROUPS, MaskContainer } from '../../../utils/adjustments';
 import { hasAiSubMasks, mergeAiMaskResults, stripAiMaskResults } from '../../../utils/maskUtils';
-import { Invokes, OPTION_SEPARATOR, Panel, Preset, SelectedImage } from '../../ui/AppProperties';
+import { Invokes, OPTION_SEPARATOR, Preset } from '../../ui/AppProperties';
 import { useEditorStore } from '../../../store/useEditorStore';
-import { useUIStore } from '../../../store/useUIStore';
 import { debouncedSave, useEditorActions } from '../../../hooks/useEditorActions';
 
 interface DroppableFolderItemProps {
@@ -266,7 +265,6 @@ const mixAdjustments = (presetObj: any, intensity: number, initialObj: any = INI
 function PresetItemDisplay({
   preset,
   previewUrl,
-  isGeneratingPreviews,
   isActive,
   intensity,
   onIntensityChange,
@@ -1186,7 +1184,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     const isFolder = !!item.folder;
     const data = isFolder ? item.folder : item.preset;
 
-    let options = [];
+    let options;
     if (isFolder) {
       options = [
         {

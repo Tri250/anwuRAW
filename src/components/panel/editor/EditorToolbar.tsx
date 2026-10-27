@@ -156,7 +156,7 @@ const EditorToolbar = memo(
       const variants = findGroupVariants(imageList, selectedImage.group_id);
       if (variants.length < 2) return [];
       return variants.map((v) => ({ path: v.path, label: getVariantLabel(v.path) }));
-    }, [groupingMode, selectedImage.path, imageList, onImageSelect]);
+    }, [groupingMode, selectedImage.path, selectedImage.group_id, imageList, onImageSelect]);
 
     const { baseName, isVirtualCopy, vcId, exifData, hasExif } = useMemo(() => {
       const path = selectedImage.path;

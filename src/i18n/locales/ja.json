@@ -67,13 +67,13 @@
       "whiteBalance": "ホワイトバランス"
     },
     "curves": {
-      "channelTitle": "{{channel}} チャンネル",
       "channels": {
         "blue": "ブルー",
         "green": "グリーン",
         "luma": "ルミナンス",
         "red": "レッド"
       },
+      "channelTitle": "{{channel}} チャンネル",
       "copyParametric": "{{channel}} パラメトリックカーブをコピー",
       "copyPoint": "{{channel}} ポイントカーブをコピー",
       "curveDataUnavailable": "カーブデータがありません。",
@@ -97,12 +97,12 @@
     },
     "details": {
       "aiDenoise": "AIノイズ除去",
-      "classicDenoise": "クラシックノイズ除去",
       "aiDenoiseDetail": "ディテール",
       "blueYellow": "ブルー/イエロー",
       "centre": "中央",
       "chromaticAberration": "色収差",
       "clarity": "明瞭度",
+      "classicDenoise": "クラシックノイズ除去",
       "color": "カラー",
       "convertNegative": "ネガを反転",
       "dehaze": "かすみの除去",
@@ -453,8 +453,10 @@
         "aiEdit_one": "AI編集 {{count}}",
         "aiEdit_other": "AI編集 {{count}}",
         "clone": "クローン {{count}}",
+        "clone_one": "クローン {{count}}",
         "clone_other": "クローン {{count}}",
         "heal": "修復 {{count}}",
+        "heal_one": "修復 {{count}}",
         "heal_other": "修復 {{count}}",
         "invertedName": "{{name}} 反転",
         "liquify": "ゆがみ {{count}}",
@@ -464,8 +466,7 @@
         "quickErase_one": "クイック消去 {{count}}",
         "quickErase_other": "クイック消去 {{count}}",
         "retouch": "レタッチ {{count}}",
-        "clone_one": "クローン {{count}}",
-        "heal_one": "修復 {{count}}"
+        "retouch_other": "レタッチ {{count}}"
       },
       "resetInpaintingTooltip": "インペインティングをリセット",
       "settings": {
@@ -505,8 +506,8 @@
         "hPlaceholder": "H",
         "hTooltip": "高さ",
         "removeTooltip": "保存したアスペクト比を削除",
-        "saveTooltip": "アスペクト比をプリセットとして保存",
         "savedTooltip": "保存したアスペクト比 {{ratio}}",
+        "saveTooltip": "アスペクト比をプリセットとして保存",
         "wPlaceholder": "W",
         "wTooltip": "幅"
       },
@@ -626,10 +627,16 @@
       "cancel": "キャンセル",
       "drawingActive": "描画中",
       "hint": "垂直または水平であるべき写真の縁に沿って描画します。",
+      "lineLabel": "{{type}}ガイド #{{index}}",
+      "linesCount": "{{current}} / {{max}}",
       "linesStatus": "アクティブなガイドライン",
       "toast": {
         "angleRejected": "線の角度が水平または垂直から離れすぎています",
         "maxLines": "垂直線と水平線はそれぞれ最大2本まで許可されています"
+      },
+      "types": {
+        "horizontal": "水平",
+        "vertical": "垂直"
       }
     },
     "layout": {
@@ -706,8 +713,8 @@
         "copySectionSettings": "{{section}}設定をコピー",
         "faceParts": {
           "bodySkin": "体の肌",
-          "eyeWhites": "白目",
           "eyebrows": "眉",
+          "eyeWhites": "白目",
           "faceSkin": "顔の肌",
           "hair": "髪",
           "iris": "虹彩と瞳孔",
@@ -735,6 +742,19 @@
         "createNew": "新規の {{name}} マスクを作成",
         "selectNewSourcePoint": "{{modifier}} + クリックで新しいソースポイントを選択"
       }
+    },
+    "masterRecipes": {
+      "amount": "強さ",
+      "close": "閉じる",
+      "filmHint": "内蔵のフィルムルックを選び、現在の写真に直接適用します。",
+      "loadingLuts": "LUTを読み込み中...",
+      "missingLut": "{{name}} のLUTが見つかりません。色パラメータのみ適用されました。",
+      "openTooltip": "マスターレシピとフィルムレシピ",
+      "tabs": {
+        "film": "フィルムルック",
+        "master": "マスターレシピ"
+      },
+      "title": "レシピ"
     },
     "metadata": {
       "author": {
@@ -779,8 +799,8 @@
       "organization": {
         "addTagPlaceholder": "タグを追加...",
         "colorLabel": "カラーラベル",
-        "noTags": "タグなし",
         "none": "なし",
+        "noTags": "タグなし",
         "rating": "評価",
         "ratingLabels": "評価とラベル",
         "tags": "タグ",
@@ -790,12 +810,6 @@
     },
     "presets": {
       "amount": "適用量",
-      "toasts": {
-        "exportFailed": "プリセットの書き出しに失敗しました",
-        "exportSuccess": "プリセットを書き出しました",
-        "importFailed": "プリセットの読み込みに失敗しました",
-        "importFailures": "{{num}} 個のプリセットファイルの読み込みに失敗しました"
-      },
       "dialog": {
         "allPresetFiles": "すべてのプリセットファイル",
         "exportAllTitle": "すべてのプリセットを書き出し",
@@ -829,6 +843,12 @@
         "masks": "マスク"
       },
       "title": "プリセット",
+      "toasts": {
+        "exportFailed": "プリセットの書き出しに失敗しました",
+        "exportSuccess": "プリセットを書き出しました",
+        "importFailed": "プリセットの読み込みに失敗しました",
+        "importFailures": "{{num}} 個のプリセットファイルの読み込みに失敗しました"
+      },
       "tooltips": {
         "explore": "コミュニティのプリセットを検索",
         "export": "すべてのプリセットを .rrpreset ファイルとして書き出し",
@@ -966,12 +986,12 @@
       "estimatedSize": "推定ファイルサイズ: ~{{size}}",
       "estimatedTotalSize": "推定合計サイズ: ~{{size}}",
       "estimatingSize": "サイズを推定中...",
+      "exporting": "書き出し中…",
+      "exportingProgress": "書き出し中… ({{current}}/{{total}})",
       "exportMultiple": "{{count}} 件の {{label}} を書き出し",
       "exportMultiple_one": "{{count}} 件 of {{label}} を書き出し",
       "exportMultiple_other": "{{count}} 件の {{label}} を書き出し",
       "exportSingle": "{{label}} を書き出し",
-      "exporting": "書き出し中…",
-      "exportingProgress": "書き出し中… ({{current}}/{{total}})",
       "failed": "書き出しに失敗しました",
       "noImageSelected": "書き出す画像が選択されていません。",
       "noImagesSelected": "画像が選択されていません。",
@@ -1080,9 +1100,9 @@
       "thumbnailPaused": "AI処理を一時停止中",
       "thumbnailPending": "AI処理待ち",
       "title": "AI処理",
+      "unprocessed_one": "{{count}}枚の画像にAI処理が必要です",
       "unprocessed_other": "{{count}}枚の画像にAI処理が必要です",
-      "waiting": "AI処理を準備中…",
-      "unprocessed_one": "{{count}}枚の画像にAI処理が必要です"
+      "waiting": "AI処理を準備中…"
     },
     "community": {
       "actionSave": "保存",
@@ -1114,8 +1134,8 @@
       "iso": "ISO",
       "metadata": "メタデータ",
       "noMetadataAvailable": "メタデータがありません",
-      "noTagsAdded": "タグが追加されていません",
       "none": "なし",
+      "noTagsAdded": "タグが追加されていません",
       "rateAndLabel": "評価とラベル",
       "rating": "評価",
       "selectImagesToCompare": "比較する画像を選択",
@@ -1126,10 +1146,10 @@
       "vc": "VC"
     },
     "filterExit": {
-      "hiddenSingle": "{{name}} はフィルターに一致しなくなりました",
+      "hiddenMultiple_one": "{{count}} 枚の画像がフィルターに一致しなくなりました",
       "hiddenMultiple_other": "{{count}} 枚の画像がフィルターに一致しなくなりました",
-      "undo": "元に戻す",
-      "hiddenMultiple_one": "{{count}} 枚の画像がフィルターに一致しなくなりました"
+      "hiddenSingle": "{{name}} はフィルターに一致しなくなりました",
+      "undo": "元に戻す"
     },
     "filters": {
       "edited": {
@@ -1231,11 +1251,6 @@
         "filterByFileType": "ファイル形式でフィルター",
         "filterByFlag": "フラグでフィルター",
         "filterByRating": "評価でフィルター",
-        "ratingOperator": {
-          "eq": "この評価のみ",
-          "gte": "この評価以上",
-          "lte": "この評価以下"
-        },
         "groupEditedFiles": "Include edited files in groups",
         "groupIgnoreMetadata": "Ignore mismatched EXIF dates",
         "groupOff": "Off",
@@ -1246,6 +1261,11 @@
         "metadataHover": "ホバー時に表示",
         "metadataOff": "オフ",
         "noLabel": "ラベルなし",
+        "ratingOperator": {
+          "eq": "この評価のみ",
+          "gte": "この評価以上",
+          "lte": "この評価以下"
+        },
         "recursive": "再帰的",
         "showMetadata": "メタデータを表示",
         "sortAscending": "昇順で並べ替え",
@@ -1258,12 +1278,12 @@
     },
     "items": {
       "cloudPlaceholder": "iCloudに保存されています — 未ダウンロード",
-      "immichPlaceholder": "Immichに保存されています — 未ダウンロード",
       "collapseFolder": "フォルダを折りたたむ",
       "currentFolder": "現在のフォルダ",
       "expandFolder": "フォルダを展開",
       "imagesCount_one": "1 枚の画像",
       "imagesCount_other": "{{count}} 枚の画像",
+      "immichPlaceholder": "Immichに保存されています — 未ダウンロード",
       "rejected": "除外",
       "tooltipAperture": "絞り値",
       "tooltipFocalLength": "焦点距離",
@@ -1280,6 +1300,7 @@
       "empty": "実行中のジョブはありません",
       "emptyHint": "書き出し、読み込み、ファイル転送、AI 処理がここに表示されます。",
       "errorCopied": "エラーをクリップボードにコピーしました",
+      "images_one": "{{count}} 枚",
       "images_other": "{{count}} 枚",
       "kinds": {
         "aiTagging": "AI タグ付け",
@@ -1291,8 +1312,7 @@
       },
       "openInLibrary": "ライブラリで開く",
       "recent": "最近",
-      "title": "ジョブ",
-      "images_one": "{{count}} 枚"
+      "title": "ジョブ"
     },
     "reject": {
       "deleteConfirm": "除外した画像を削除",
@@ -1361,6 +1381,11 @@
       "goHome": "ホームへ移動",
       "importImages": "画像をインポート",
       "select": "選択"
+    },
+    "viewMode": {
+      "culling": "選別表示",
+      "grid": "グリッド表示",
+      "list": "リスト表示"
     }
   },
   "masks": {
@@ -1494,9 +1519,9 @@
       "applyButton_one": "1 枚の画像に適用",
       "applyButton_other": "{{count}} 枚の画像に適用",
       "bestImage": "ベスト画像",
+      "blurryImagesTab": "ぼやけた画像",
       "blurThreshold": "ブレのしきい値",
       "blurThresholdDesc": "この値以下のシャープネススコアを持つ画像にフラグを立てます。高いほど厳密になります。",
-      "blurryImagesTab": "ぼやけた画像",
       "cancel": "キャンセル",
       "close": "閉じる",
       "cullingFailed": "選別失敗",
@@ -1885,16 +1910,23 @@
     },
     "processing": {
       "advanced": {
-        "heading": "詳細",
-        "headingDesc": "サムネイル、キャッシュ、書き出しのパフォーマンス調整です。ほとんどの場合は既定値のままで問題ありません。",
-        "title": "詳細設定",
         "auto": "自動",
+        "exportMemoryLimit": "書き出しメモリ上限",
+        "exportMemoryLimitDesc": "一括書き出しが使用できる空きメモリの割合です。大きな書き出し中も他のアプリを快適に使いたい場合は下げてください。",
         "exportThreads": "並列書き出し",
         "exportThreadsDesc": "同時に書き出す画像の数です。自動では CPU に合わせて値を選びます。大きな書き出しが失敗する場合や GPU のメモリが少ない場合は下げてください。",
-        "exportMemoryLimit": "書き出しメモリ上限",
-        "exportMemoryLimitDesc": "一括書き出しが使用できる空きメモリの割合です。大きな書き出し中も他のアプリを快適に使いたい場合は下げてください。"
+        "heading": "詳細",
+        "headingDesc": "サムネイル、キャッシュ、書き出しのパフォーマンス調整です。ほとんどの場合は既定値のままで問題ありません。",
+        "title": "詳細設定"
       },
       "ai": {
+        "aiFree": {
+          "description": "すべてのAI機能をオフにします。AI関連のコントロールはすべてインターフェースから非表示になり、RapidRAWは純粋な従来型のRAWエディターとして動作します。",
+          "feature1": "AIマスク、レンズぼかし、生成編集をUIに表示しません",
+          "feature2": "既存のAI編集は引き続き通常どおり反映されます",
+          "feature3": "よりすっきりとした集中しやすいインターフェース",
+          "title": "AIなし"
+        },
         "cloud": {
           "description": "手軽さを求める方には、セルフホストの手間をかけずに高品質な結果を得られる、オプションのサブスクリプションをおすすめします。最も便利かつプロジェクト開発への貢献につながる方法です。",
           "feature1": "セットアップ不要で究極の快適性",
@@ -1943,13 +1975,6 @@
           "gpuAccelerationDesc": "ノイズ除去、マスク、深度マップや法線マップ、タグ付けなどの内蔵AI機能をグラフィックカードで実行し、大幅に高速化します。クラッシュやAIの結果がおかしい場合は無効にしてください。",
           "gpuAccelerationLabel": "AIモデルにGPUを使用",
           "title": "内蔵AI"
-        },
-        "aiFree": {
-          "description": "すべてのAI機能をオフにします。AI関連のコントロールはすべてインターフェースから非表示になり、RapidRAWは純粋な従来型のRAWエディターとして動作します。",
-          "feature1": "AIマスク、レンズぼかし、生成編集をUIに表示しません",
-          "feature2": "既存のAI編集は引き続き通常どおり反映されます",
-          "feature3": "よりすっきりとした集中しやすいインターフェース",
-          "title": "AIなし"
         },
         "description": "RapidRAWのAIは、優れた柔軟性を備えています。高速なローカル処理から本格的なセルフホストまで、最適なワークフローを選択してください。",
         "providers": {
@@ -2067,8 +2092,8 @@
     "tagging": {
       "addCustomPlaceholder": "カスタムAIタグを入力（カンマ区切り）...",
       "addCustomTooltip": "AIタグを追加",
-      "addShortcutTooltip": "ショートカットを追加",
       "addShortcutsPlaceholder": "ショートカットを入力（カンマ区切り）...",
+      "addShortcutTooltip": "ショートカットを追加",
       "aiTagging": "AIタグ付け",
       "aiTaggingDesc": "AI（CLIP）モデルを使用した自動画像タグ付けを有効にします。追加のモデルがダウンロードされ、フォルダ閲覧時のパフォーマンスに影響します。タグはフォルダ内検索に使用されます。",
       "amount": "適用度",

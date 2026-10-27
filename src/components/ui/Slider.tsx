@@ -320,6 +320,7 @@ const Slider = ({
       window.removeEventListener('touchend', handlePointerUp);
       window.removeEventListener('touchcancel', handlePointerUp);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onPointerUp is a caller-provided callback; re-registering the drag listeners on every render would interrupt an active drag
   }, [disabled, isDragging]);
 
   useEffect(() => {
@@ -368,6 +369,7 @@ const Slider = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- displayValue is the animation's own output; depending on it would restart the tween on every frame
   }, [value, isDragging]);
 
   useEffect(() => {

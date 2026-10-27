@@ -32,10 +32,7 @@ export const stripAiMaskResults = (masks: Array<MaskContainer>): Array<MaskConta
     }),
   }));
 
-export const mergeAiMaskResults = (
-  masks: Array<MaskContainer>,
-  source: Array<MaskContainer>,
-): Array<MaskContainer> => {
+export const mergeAiMaskResults = (masks: Array<MaskContainer>, source: Array<MaskContainer>): Array<MaskContainer> => {
   const results = new Map(
     source
       .flatMap((container) => container.subMasks)
@@ -56,7 +53,7 @@ export const mergeAiMaskResults = (
 export const createSubMask = (
   type: Mask,
   imageDimensions: ImageDimensions,
-  mode: SubMaskMode = SubMaskMode.Additive
+  mode: SubMaskMode = SubMaskMode.Additive,
 ): SubMask => {
   const { width, height } = imageDimensions || { width: 1000, height: 1000 };
   const common = {

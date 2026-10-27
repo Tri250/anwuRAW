@@ -552,7 +552,8 @@ function App() {
     });
     invoke(Invokes.CheckAIConnectorStatus).catch((err) => console.error('AI connector status check failed:', err));
     const interval = setInterval(
-      () => invoke(Invokes.CheckAIConnectorStatus).catch((err) => console.error('AI connector status check failed:', err)),
+      () =>
+        invoke(Invokes.CheckAIConnectorStatus).catch((err) => console.error('AI connector status check failed:', err)),
       10000,
     );
     return () => {

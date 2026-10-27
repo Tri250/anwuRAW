@@ -25,8 +25,11 @@ export function useImageLoader(cachedEditStateRef: React.RefObject<any>) {
 
   const isWgpuActive = appSettings?.useWgpuRenderer !== false && selectedImage?.isReady && hasRenderedFirstFrame;
 
+  const selectedImagePath = selectedImage?.path;
+  const isSelectedImageReady = selectedImage?.isReady;
+
   useEffect(() => {
-    if (selectedImage && !selectedImage.isReady && selectedImage.path) {
+    if (selectedImagePath && !isSelectedImageReady) {
       let isEffectActive = true;
 
       const loadMetadataEarly = async () => {
@@ -34,7 +37,7 @@ export function useImageLoader(cachedEditStateRef: React.RefObject<any>) {
           useEditorStore.getState().patchesSentToBackend.clear();
           await invoke('clear_session_caches').catch((e) => console.warn('Cache clear failed:', e));
 
-          const metadata: any = await invoke(Invokes.LoadMetadata, { path: selectedImage.path });
+          const metadata: any = await invoke(Invokes.LoadMetadata, { path: selectedImagePath });
           if (!isEffectActive) return;
 
           let initialAdjusts;
@@ -53,7 +56,7 @@ export function useImageLoader(cachedEditStateRef: React.RefObject<any>) {
 
       const loadFullImageData = async () => {
         try {
-          const loadImageResult: any = await invoke(Invokes.LoadImage, { path: selectedImage.path });
+          const loadImageResult: any = await invoke(Invokes.LoadImage, { path: selectedImagePath });
           if (!isEffectActive) return;
 
           const { width, height } = loadImageResult;
@@ -77,7 +80,7 @@ export function useImageLoader(cachedEditStateRef: React.RefObject<any>) {
           }
 
           setEditor((state) => {
-            if (state.selectedImage && state.selectedImage.path === selectedImage.path) {
+            if (state.selectedImage && state.selectedImage.path === selectedImagePath) {
               return {
                 selectedImage: {
                   ...state.selectedImage,
@@ -120,8 +123,8 @@ export function useImageLoader(cachedEditStateRef: React.RefObject<any>) {
       };
     }
   }, [
-    selectedImage?.path,
-    selectedImage?.isReady,
+    selectedImagePath,
+    isSelectedImageReady,
     appSettings?.editorPreviewResolution,
     resetHistory,
     setEditor,

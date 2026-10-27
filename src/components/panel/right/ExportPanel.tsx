@@ -355,10 +355,13 @@ export default function ExportPanel({
   const padRatioWidthValue = padRatioWidthField.parsed;
   const padRatioHeightValue = padRatioHeightField.parsed;
   const isPadValid = !enablePad || (padRatioWidthValue !== null && padRatioHeightValue !== null);
-  const padSettings =
-    enablePad && padRatioWidthValue !== null && padRatioHeightValue !== null
-      ? { ratioWidth: padRatioWidthValue, ratioHeight: padRatioHeightValue, color: padColor }
-      : null;
+  const padSettings = useMemo(
+    () =>
+      enablePad && padRatioWidthValue !== null && padRatioHeightValue !== null
+        ? { ratioWidth: padRatioWidthValue, ratioHeight: padRatioHeightValue, color: padColor }
+        : null,
+    [enablePad, padRatioWidthValue, padRatioHeightValue, padColor],
+  );
 
   const dpiField = useParsedTextField(dpi, setDpi, parseDpi);
 
@@ -369,15 +372,18 @@ export default function ExportPanel({
   const borderHorizontalValue = borderHorizontalField.parsed;
   const borderVerticalValue = borderVerticalField.parsed;
   const isBorderValid = !enableBorder || (borderHorizontalValue !== null && borderVerticalValue !== null);
-  const borderSettings =
-    enableBorder && borderHorizontalValue !== null && borderVerticalValue !== null
-      ? {
-          basis: borderBasis,
-          horizontalPercent: borderHorizontalValue,
-          verticalPercent: borderVerticalValue,
-          color: borderColor,
-        }
-      : null;
+  const borderSettings = useMemo(
+    () =>
+      enableBorder && borderHorizontalValue !== null && borderVerticalValue !== null
+        ? {
+            basis: borderBasis,
+            horizontalPercent: borderHorizontalValue,
+            verticalPercent: borderVerticalValue,
+            color: borderColor,
+          }
+        : null,
+    [enableBorder, borderBasis, borderHorizontalValue, borderVerticalValue, borderColor],
+  );
 
   const [estimatedSize, setEstimatedSize] = useState<number | null>(null);
   const [isEstimating, setIsEstimating] = useState<boolean>(false);
@@ -403,15 +409,17 @@ export default function ExportPanel({
   const isCancelling = status === Status.Cancelling;
   const isLibraryContext = !!onClose;
 
+  const selectedImagePath = selectedImage?.path;
+
   const pathsToExport = useMemo(() => {
     return isLibraryContext
       ? multiSelectedPaths
       : multiSelectedPaths.length > 0
         ? multiSelectedPaths
-        : selectedImage
-          ? [selectedImage.path]
+        : selectedImagePath
+          ? [selectedImagePath]
           : [];
-  }, [isLibraryContext, multiSelectedPaths, selectedImage?.path]);
+  }, [isLibraryContext, multiSelectedPaths, selectedImagePath]);
 
   const numImages = pathsToExport.length;
 
@@ -443,7 +451,7 @@ export default function ExportPanel({
           path: watermarkPath,
         });
         setWatermarkImageAspectRatio(dimensions.height > 0 ? dimensions.width / dimensions.height : 1);
-      } catch (error) {
+      } catch {
         setWatermarkImageAspectRatio(1);
       }
     };
@@ -482,7 +490,7 @@ export default function ExportPanel({
             currentEditAdjustments: currentAdj || null,
           });
           setEstimatedSize(size);
-        } catch (err) {
+        } catch {
           setEstimatedSize(null);
         } finally {
           setIsEstimating(false);
@@ -550,10 +558,12 @@ export default function ExportPanel({
     resizeValue,
     dontEnlarge,
     enablePad,
+    padSettings,
     padRatioWidthField.text,
     padRatioHeightField.text,
     padColor,
     enableBorder,
+    borderSettings,
     borderBasis,
     borderHorizontalField.text,
     borderVerticalField.text,

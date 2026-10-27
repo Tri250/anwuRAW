@@ -276,7 +276,7 @@ function computeGroupedLibrary(
   const compareNames = (a: ImageFile, b: ImageFile) => nameCollator.compare(names.get(a)!, names.get(b)!);
 
   list.sort((a, b) => {
-    let comparison = 0;
+    let comparison: number;
 
     switch (key) {
       case 'date_taken': {

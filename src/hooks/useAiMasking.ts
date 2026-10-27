@@ -32,6 +32,9 @@ const getTransformAdjustments = (adj: Adjustments) => ({
 export function useAiMasking() {
   const { setAdjustments } = useEditorActions();
   const setEditor = useEditorStore((state) => state.setEditor);
+  const effectActiveMaskId = useEditorStore((state) => state.activeMaskId);
+  const effectActiveAiSubMaskId = useEditorStore((state) => state.activeAiSubMaskId);
+  const effectSelectedImagePath = useEditorStore((state) => state.selectedImage?.path);
   const getToken = useCloudStore((s) => s.getToken);
   const registerAiTask = useProcessStore((state) => state.registerAiTask);
   const unregisterAiTask = useProcessStore((state) => state.unregisterAiTask);
@@ -551,11 +554,7 @@ export function useAiMasking() {
         path: selectedImage.path,
       }).catch((err) => console.error('Failed to precompute AI subject mask:', err));
     }
-  }, [
-    useEditorStore.getState().activeMaskId,
-    useEditorStore.getState().activeAiSubMaskId,
-    useEditorStore.getState().selectedImage?.path,
-  ]);
+  }, [effectActiveMaskId, effectActiveAiSubMaskId, effectSelectedImagePath]);
 
   return {
     updateSubMask,

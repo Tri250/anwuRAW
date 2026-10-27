@@ -15,7 +15,7 @@ import ConfirmModal from './ConfirmModal';
 import ImportSettingsModal from './ImportSettingsModal';
 import CullingModal from './CullingModal';
 import CollageModal from './CollageModal';
-import { AppSettings, Invokes, ImageFlag, AlbumItem, Album, AlbumGroup } from '../ui/AppProperties';
+import { AppSettings, ImageFlag, AlbumItem, AlbumGroup } from '../ui/AppProperties';
 import { CopyPasteSettings } from '../../utils/adjustments';
 
 export interface AppModalsProps {

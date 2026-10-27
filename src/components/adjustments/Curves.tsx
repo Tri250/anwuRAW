@@ -504,6 +504,7 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
       window.removeEventListener('touchend', handleUp);
       window.removeEventListener('touchcancel', handleUp);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the drag listeners must stay mounted for the whole gesture; curve/callback values are read through refs and stable store actions
   }, [draggingPointIndex, draggingSplitKey, isParametricMode]);
 
   const isLightTheme = theme === Theme.Light || theme === Theme.Arctic;

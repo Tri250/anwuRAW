@@ -521,11 +521,6 @@ export interface CullingSuggestions {
   failedPaths: string[];
 }
 
-interface KeybindHandler {
-  shouldFire?: () => boolean;
-  execute: (event: KeyboardEvent) => void;
-}
-
 export type AlbumItem = Album | AlbumGroup;
 
 export interface Album {

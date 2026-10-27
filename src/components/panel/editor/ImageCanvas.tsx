@@ -1645,10 +1645,9 @@ const ImageCanvas = memo(
           setDisplayState((prev) => ({ base: prev.base, fade: newSrc }));
           setIsFadingIn(false);
 
-          let frame1: number;
           let frame2: number;
 
-          frame1 = requestAnimationFrame(() => {
+          const frame1 = requestAnimationFrame(() => {
             frame2 = requestAnimationFrame(() => {
               setIsFadingIn(true);
             });
@@ -1669,6 +1668,7 @@ const ImageCanvas = memo(
           setIsFadingIn(false);
         }
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- displayState.base is read once here; depending on it would re-trigger the crossfade mid-transition
     }, [finalPreviewUrl, selectedImage.thumbnailUrl, isSliderDragging]);
 
     useEffect(() => {
@@ -1906,7 +1906,7 @@ const ImageCanvas = memo(
       const selectedMask = activeContainer.subMasks.find((m: SubMask) => m.id === activeId);
       const otherMasks = activeContainer.subMasks.filter((m: SubMask) => m.id !== activeId);
       return selectedMask ? [...otherMasks, selectedMask] : activeContainer.subMasks;
-    }, [activeContainer, activeMaskId, activeAiSubMaskId, isMasking, isAiEditing]);
+    }, [activeContainer, activeMaskId, activeAiSubMaskId, isMasking]);
 
     const directPatchMarkers = useMemo(() => {
       const markers: any[] = [];
@@ -2967,7 +2967,6 @@ const ImageCanvas = memo(
         isMasking,
         localInitialDrawParams,
         brushImageSpaceSize,
-        baseTool,
         getCanvasPointer,
         effectiveZoomScale,
         isInsideImage,
@@ -3192,7 +3191,6 @@ const ImageCanvas = memo(
       isGuidedPerspectiveActive,
       isCropping,
       draftGuideLine,
-      selectedImage,
       setAdjustments,
       isInitialDrawing,
       activeAiSubMaskId,
@@ -3205,12 +3203,7 @@ const ImageCanvas = memo(
       mapUvToScreen,
       t,
       imageRenderSize,
-      imageRenderSize.scale,
-      isAiEditing,
       isBrushActive,
-      isCloneOrHealActive,
-      isLiquifyActive,
-      isRetouchActive,
       isDirectPatchActive,
       triggerDirectPatch,
       activeLineFlow,
@@ -3221,8 +3214,6 @@ const ImageCanvas = memo(
       effectiveImageDimensions,
       localInitialDrawParams,
       brushImageSpaceSize,
-      brushStageSize,
-      baseTool,
       isWbPickerActive,
       isInsideImage,
       applyWbPick,

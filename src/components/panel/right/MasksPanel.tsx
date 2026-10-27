@@ -1,12 +1,4 @@
-import {
-  type ChangeEvent,
-  type PointerEvent as ReactPointerEvent,
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-} from 'react';
+import { type ChangeEvent, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { v4 as uuidv4 } from 'uuid';
 import clsx from 'clsx';
@@ -337,7 +329,7 @@ export default function MasksPanel() {
     })),
   );
 
-  const { isResizingWaveform, onToggleWaveform, setActiveWaveformChannel, setWaveformHeight, handleWaveformResize } =
+  const { isResizingWaveform, onToggleWaveform, setActiveWaveformChannel, handleWaveformResize } =
     useWaveformControls();
 
   const setBrushSettings = useCallback(
@@ -1931,7 +1923,6 @@ function SettingsPanel({
   isSettingsSectionOpen,
   setSettingsSectionOpen,
   presets,
-  handleGenerateAiDepthMask,
   handleGenerateAiTextMask,
   handleGenerateAiFaceMask,
   handleCancelAiTask,
@@ -1946,6 +1937,7 @@ function SettingsPanel({
 
   useEffect(() => {
     setTextPrompt(activeSubMask?.parameters?.prompt || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-sync only when the selected sub-mask changes, not on every prompt keystroke
   }, [activeSubMask?.id]);
 
   const placeholderContainer = {
@@ -2350,7 +2342,7 @@ function SettingsPanel({
                   label={
                     param.key === 'feather' && activeSubMask.type === Mask.AiDepth
                       ? t('editor.masks.params.globalFeather')
-                      : t('editor.masks.params.' + param.key as ParseKeys)
+                      : t(('editor.masks.params.' + param.key) as ParseKeys)
                   }
                   min={param.min}
                   max={param.max}

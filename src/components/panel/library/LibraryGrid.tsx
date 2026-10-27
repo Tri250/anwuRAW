@@ -401,7 +401,11 @@ export default function LibraryGrid(props: any) {
   const handleToggleRecursiveFolder = useCallback((path: string) => {
     setCollapsedRecursiveFolders((prev) => {
       const next = new Set(prev);
-      next.has(path) ? next.delete(path) : next.add(path);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
       return next;
     });
   }, []);
@@ -492,6 +496,7 @@ export default function LibraryGrid(props: any) {
       isListView,
       headerHeight,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ratioMapVersion is a deliberate cache-buster for the mutable ratioMapRef
   }, [
     gridSize.width,
     imageList,

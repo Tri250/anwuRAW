@@ -163,7 +163,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
       clearLibrarySelection();
     }
     setUI({ activeView: 'library', slideDirection: 1 });
-  }, [refs]);
+  }, [cachedEditStateRef, transformWrapperRef]);
 
   const handleImageSelect = useCallback(
     async (path: string, openInEditor: boolean = true) => {
@@ -335,7 +335,15 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         return { interactivePatch: null };
       });
     },
-    [refs],
+    [
+      cachedEditStateRef,
+      currentResRef,
+      isBackendReadyRef,
+      latestRenderedJobIdRef,
+      prevAdjustmentsRef,
+      previewJobIdRef,
+      selectedImagePathRef,
+    ],
   );
 
   const handleSelectSubfolder = useCallback(
@@ -454,7 +462,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         }
       }
     },
-    [clearThumbnailQueue, refs],
+    [clearThumbnailQueue],
   );
 
   const handleSelectAlbum = useCallback(

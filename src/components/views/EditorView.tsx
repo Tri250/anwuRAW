@@ -14,7 +14,7 @@ import { useLibraryStore } from '../../store/useLibraryStore';
 import { useProcessStore } from '../../store/useProcessStore';
 import { getImageFlag } from '../../utils/imageFlags';
 
-import { ImageFile, Orientation, Panel, ThumbnailAspectRatio } from '../ui/AppProperties';
+import { ImageFile, Orientation, ThumbnailAspectRatio } from '../ui/AppProperties';
 
 interface EditorViewProps {
   transformWrapperRef: RefObject<any>;

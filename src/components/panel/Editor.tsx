@@ -161,7 +161,6 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   const isFullScreen = useUIStore((s) => s.isFullScreen);
   const activePanel = useUIStore((s) => s.activePanel);
   const isInstantTransition = useUIStore((s) => s.isInstantTransition);
-  const setUI = useUIStore((s) => s.setUI);
   const isLoading = useLibraryStore((s) => s.isViewLoading);
   const selectedImage = useEditorStore((s) => s.selectedImage);
   const adjustments = useEditorStore(useShallow((s) => omitTonalAdjustments(s.adjustments)));
@@ -345,7 +344,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, []);
+  }, [setEditor]);
 
   useEffect(() => {
     const clearCropResizeStart = () => {
@@ -661,7 +660,9 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         const dt = Math.min(time - lastTime, 32);
         lastTime = time;
 
-        let { positionX: x, positionY: y, scale } = transformStateRef.current;
+        const { positionX, positionY, scale } = transformStateRef.current;
+        let x = positionX;
+        let y = positionY;
         const bounds = getTransformBounds(scale);
 
         x += vx * dt;
@@ -979,6 +980,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     liveRotation,
     getEffectiveCrop,
     setAdjustments,
+    setEditor,
   ]);
 
   const handlePointerDown = useCallback(
@@ -1067,7 +1069,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
 
       if (e.pointerType === 'mouse') e.currentTarget.setPointerCapture(e.pointerId);
     },
-    [isPanningDisabled, isBrushActive, isCropping, getEffectiveCrop],
+    [isPanningDisabled, isBrushActive, isCropping, getEffectiveCrop, setAdjustments, setEditor],
   );
 
   useEffect(() => {
@@ -1141,8 +1143,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         lastPanPos.current = { x: e.clientX, y: e.clientY };
 
         const bounds = getTransformBounds(transformStateRef.current.scale);
-        let curX = transformStateRef.current.positionX;
-        let curY = transformStateRef.current.positionY;
+        const curX = transformStateRef.current.positionX;
+        const curY = transformStateRef.current.positionY;
 
         if (curX < bounds.minX && dx < 0) dx *= 0.35;
         if (curX > bounds.maxX && dx > 0) dx *= 0.35;
@@ -1169,8 +1171,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
           const panX = midX - lastPinch.current.midX;
           const panY = midY - lastPinch.current.midY;
 
-          let newX = mouseX - (mouseX - transformStateRef.current.positionX) * ratio + panX;
-          let newY = mouseY - (mouseY - transformStateRef.current.positionY) * ratio + panY;
+          const newX = mouseX - (mouseX - transformStateRef.current.positionX) * ratio + panX;
+          const newY = mouseY - (mouseY - transformStateRef.current.positionY) * ratio + panY;
 
           const bounded = clampToBounds(newX, newY, newScale);
           applyTransform(bounded.x, bounded.y, bounded.scale);
@@ -1268,7 +1270,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         }
       }
     },
-    [getTransformBounds, startPhysicsLoop, handleStraighten],
+    [getTransformBounds, startPhysicsLoop, handleStraighten, setEditor],
   );
 
   const handleClick = useCallback(
@@ -1921,7 +1923,10 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
       return;
     }
 
-    const { aspectRatio, orientationSteps = 0, crop: currentAdjCrop, rotation = 0 } = adjustments;
+    const aspectRatio = adjustments.aspectRatio;
+    const orientationSteps = adjustments.orientationSteps || 0;
+    const currentAdjCrop = adjustments.crop;
+    const rotation = adjustments.rotation || 0;
     const effectiveRotation = liveRotation !== null && liveRotation !== undefined ? liveRotation : rotation;
 
     const geometryChanged =
@@ -2095,7 +2100,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     const cropBaseWidth = isSwapped ? selectedImage.height : selectedImage.width;
     const cropBaseHeight = isSwapped ? selectedImage.width : selectedImage.height;
 
-    const { crop: pixelCrop } = adjustments;
+    const pixelCrop = adjustments.crop;
 
     if (pixelCrop) {
       const pct: PercentCrop = {
@@ -2348,14 +2353,14 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         const expandEdge = (edge: 'L' | 'T' | 'R' | 'B', target: number) => {
           let low = 0,
             high = 1;
-          let startVal = edge === 'L' ? currL : edge === 'T' ? currT : edge === 'R' ? currR : currB;
+          const startVal = edge === 'L' ? currL : edge === 'T' ? currT : edge === 'R' ? currR : currB;
           let bestVal = startVal;
 
           for (let i = 0; i < 15; i++) {
-            let mid = (low + high) / 2;
-            let testVal = startVal + (target - startVal) * mid;
+            const mid = (low + high) / 2;
+            const testVal = startVal + (target - startVal) * mid;
 
-            let testCrop: PercentCrop = {
+            const testCrop: PercentCrop = {
               unit: '%',
               x: edge === 'L' ? testVal : currL,
               y: edge === 'T' ? testVal : currT,

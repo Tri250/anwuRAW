@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, type CSSProperties } from 'react';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -167,7 +167,7 @@ export default function PanelSwitcher({
         }
       }
 
-      let style: any = {};
+      let style: CSSProperties;
       if (tabs.length === 0) {
         style = isVertical ? { top: 4, left: 4, right: 4, height: 2 } : { left: 4, top: 4, bottom: 4, width: 2 };
       } else if (insertIndex < tabs.length) {
@@ -263,10 +263,14 @@ export function MobilePanelSwitcher({
   const isVertical = placement === 'right';
 
   return (
-    <div className={clsx(
-      'flex items-center p-1.5 gap-1 shrink-0 custom-scrollbar',
-      isVertical ? 'flex-col overflow-y-auto h-full border-l border-surface' : 'flex-row overflow-x-auto w-full border-t border-surface',
-    )}>
+    <div
+      className={clsx(
+        'flex items-center p-1.5 gap-1 shrink-0 custom-scrollbar',
+        isVertical
+          ? 'flex-col overflow-y-auto h-full border-l border-surface'
+          : 'flex-row overflow-x-auto w-full border-t border-surface',
+      )}
+    >
       {MOBILE_PANELS.map((id) => {
         const Icon = PANEL_ICONS[id];
         const isActive = activePanel === id;

@@ -741,10 +741,7 @@ export default function FolderTree({
   const [searchQuery, setSearchQuery] = useState('');
   const [isHovering, setIsHovering] = useState(false);
   const pinnedFolders = appSettings?.pinnedFolders || [];
-  const openSections = useMemo(
-    () => appSettings?.openTreeSections ?? ['current'],
-    [appSettings?.openTreeSections],
-  );
+  const openSections = useMemo(() => appSettings?.openTreeSections ?? ['current'], [appSettings?.openTreeSections]);
   const showImageCounts = appSettings?.enableFolderImageCounts ?? false;
   const folderIcons = appSettings?.folderIcons || {};
   const folderTreeSort: FolderTreeSort = useMemo(
@@ -816,7 +813,9 @@ export default function FolderTree({
   const filteredAlbumTree = useMemo(() => {
     let base = albumTree;
     if (isSearching) {
-      base = base.map((item: any) => filterAlbumTree(item, trimmedQuery)).filter((t: any): t is AlbumItem => t !== null);
+      base = base
+        .map((item: any) => filterAlbumTree(item, trimmedQuery))
+        .filter((t: any): t is AlbumItem => t !== null);
     }
     return base;
   }, [albumTree, trimmedQuery, isSearching]);

@@ -170,7 +170,7 @@ const KeybindRow = ({
     };
     window.addEventListener('keydown', handler, { capture: true });
     return () => window.removeEventListener('keydown', handler, { capture: true });
-  }, [recording, def.action, onSave, onStartRecording]);
+  }, [recording, def.action, onSave, onStartRecording, osPlatform]);
 
   const displayCombo =
     currentCombo !== undefined ? (currentCombo.length ? currentCombo : null) : getDefaultCombo(def, osPlatform);
@@ -670,6 +670,7 @@ export default function SettingsPanel({
       useAppleRaw9: appSettings?.useAppleRaw9 ?? false,
     });
     setRestartRequired(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- local draft state must not be overwritten while the user is editing the fields
   }, [appSettings]);
 
   useEffect(() => {

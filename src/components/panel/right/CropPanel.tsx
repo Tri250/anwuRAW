@@ -37,7 +37,6 @@ import Text from '../../ui/Text';
 import Slider from '../../ui/Slider';
 import Switch from '../../ui/Switch';
 import Dropdown from '../../ui/Dropdown';
-import Button from '../../ui/Button';
 import { TEXT_COLOR_KEYS, TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
@@ -1168,7 +1167,10 @@ export default function CropPanel() {
                                         : 'text-text-secondary',
                                     )}
                                   >
-                                    {adjustments.guidedPerspective.lines.length} / 4
+                                    {t('editor.guided.linesCount', {
+                                      current: adjustments.guidedPerspective.lines.length,
+                                      max: 4,
+                                    })}
                                   </span>
                                 </div>
                                 <div className="flex flex-col gap-1 mt-1">
@@ -1190,7 +1192,13 @@ export default function CropPanel() {
                                           weight={TextWeights.medium}
                                           className="truncate select-none text-xs capitalize"
                                         >
-                                          {line.type} Guide #{idx + 1}
+                                          {t('editor.guided.lineLabel', {
+                                            type:
+                                              line.type === 'vertical'
+                                                ? t('editor.guided.types.vertical')
+                                                : t('editor.guided.types.horizontal'),
+                                            index: idx + 1,
+                                          })}
                                         </Text>
                                       </div>
                                       <button

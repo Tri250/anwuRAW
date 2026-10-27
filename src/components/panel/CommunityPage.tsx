@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { ArrowLeft, CheckCircle2, ChevronDown, Loader2, Search, Users, Layers, Crop } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, Search, Users } from 'lucide-react';
 import { siGithub } from 'simple-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
