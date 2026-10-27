@@ -276,7 +276,40 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 
 ---
 
-## 五、遗留事项（不影响当前功能）
+## 七、调整模块（Adjustments）专项自检（第五轮 · 100% 覆盖）
+
+范围：5 大分区 20 个子分区约 90 个参数（Basic/Curves/Color/Details/Effects + AdjustmentSection/AdjustmentSubSection + adjustments.ts + defaultAdjustments.json）。
+
+### 7.1 全链路逐字段核对（通过）
+
+- **全局路径**：`Adjustments` 接口 ↔ `prepareAdjustmentsPayload`（backendPayload.ts，effect map `__cached__:` 去重 + patchData 按需发送）↔ Rust `get_global_adjustments_from_json`。Rust 侧全部 `get_val(tool, key)` 的 tool 名与前端 `ADJUSTMENT_SECTION_TOOLS` id（basic/colorPresence/hue/presence/sharpening/noiseReduction/chromaticAberration/creative/vignette/grain/lut/curves/colorGrading/colorMixer/colorCalibration）一一对应；`is_tool_active` 的 `unwrap_or(true)` 语义与前端 `activeTools[tool] !== false` 一致。
+- **独立模块路径**：AI 降噪（ai_denoise.rs：enabled/method/amount/detail + 哈希入 cache_utils）、负片转换（negative_conversion.rs PARAM_KEYS）、镜头模糊（lens_blur.rs 全 8 参数 + 深度图）、重打光（relight.rs lights 数组 + 法线图）、雾效（fog.rs 全 10 参数）全部有消费点，无死字段。
+- **蒙版路径**：`get_mask_adjustments_from_json` 读取的 MaskAdjustments 字段与蒙版面板 isForMask 分支完全吻合（centré/CA/负片/空间效果按设计对蒙版隐藏）。
+- **镜头模糊深度语义三方自洽**：UI DepthRangePicker 镜像映射（显示近/远方向 = `100 - 存储 blur band`）↔ 存储值 ↔ Rust `depth_to_signed_coc`（低 d=远景模糊、`max_depth+max_fade` 近景模糊、中间为清晰带），含两侧 fade 与重置默认值（20/100/20/20）全部往返一致。
+- **默认值/重置**：defaultAdjustments.json 与所有 Slider `defaultValue`（双击重置）逐一比对一致；Basic 七滑块缺省 defaultValue=0 恰为正确默认；ToneMapperSwitch/BokehShapeSwitch/DepthRangePicker 标签点击重置逻辑正确。
+- **复制粘贴/预设**：ADJUSTMENT_GROUPS 覆盖全部可复制字段（含 curves/pointCurves/parametricCurve/curveMode、colorCalibration、负片 6 字段）；`areSectionPropsEqual` 按 SECTION_KEY_OWNERS 分区精准 memo，无漏更新。
+- **auto-adjust**：`CalculateAutoAdjustments` 结果经 `mergeActiveTools` 合并，不破坏工具开关状态。
+
+### 7.2 修复（1 项）
+
+26. **LUT 强度为 0 时 UI 显示错误**（Effects.tsx）：`lutIntensity={adjustments.lutIntensity || 100}` 在用户把强度拖到 0 时回退显示 100（实际已生效 0=关闭 LUT），改为 `?? 100`。同文件其余 `??` 回退值与 defaultAdjustments.json 一致。
+
+### 7.3 裁决记录（非缺陷）
+
+- Color.tsx `adjustments.vibrance || 0` 等 3 处：0 即默认值，回退无副作用。
+- Curves.tsx `handleMove` effect 依赖 `[draggingPointIndex, draggingSplitKey, isParametricMode]`：拖拽期数据全部经 ref（localPointsRef/parametricCurvesRef/activeChannelRef）传递，闭包不读陈旧 state。
+- `parametricCurve` 双写策略（前端烘焙进 `curves` 点数组）已验证闭环；模式切换 point↔parametric 经 `pointCurves` 暂存往返无丢失。
+- `lensBlurAmount ?? 50`（json 默认 40）：normalizeLoadedAdjustments 保证字段恒存在，回退不可达，保持原样。
+
+### 7.4 验证
+
+- `npx tsc --noEmit`：**0 错误**
+- `npm run build`：**成功**（沙箱重置导致 node_modules 丢失，已完整重装 394 包后构建通过）
+- `npm run i18n:runtime-check`：**通过**（仅存量复数回退提示，非错误）
+
+---
+
+## 八、遗留事项（不影响当前功能）
 
 1. **Rust 工具链**：`rust-toolchain.toml` 钉住 `1.98`，沙箱镜像最高提供 1.94.1，`cargo check`（1.94.1 + `--ignore-rust-version`）已实测失败，失败点均为环境限制、与仓库代码无关：① 依赖 `sysinfo 0.39.6` 使用不稳定特性 `cfg_select!`，需 rustc ≥1.95；② `build.rs` 需从 HuggingFace 下载 `libonnxruntime.so`，沙箱网络不可达。GTK/webkit 系统库已安装。本次未修改任何 Rust 文件，建议在装有 1.98 且可访问 HuggingFace 的环境跑一次 `cargo check` 复核后端。
 2. **主 JS 包 4.8MB**：vite 提示超 500kB，可考虑对 AI 面板/社区页/Immich 等做动态 import 分包。
