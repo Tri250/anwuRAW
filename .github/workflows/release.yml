@@ -2,7 +2,23 @@ name: 'Release: Build & Package App'
 
 on:
   release:
-    types: [created]
+    types: [published]
+  # Allows (re)building a release on demand, e.g. when the `release` event did
+  # not fire or a single platform needs to be retried.
+  workflow_dispatch:
+    inputs:
+      release-id:
+        description: 'Release ID to upload the bundles to (draft releases are supported)'
+        required: false
+        type: string
+      tag:
+        description: 'Tag to build from and upload to (e.g. v1.6.7)'
+        required: false
+        type: string
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -11,11 +27,11 @@ jobs:
       matrix:
         include:
           - platform: 'windows-latest'
-            builds-args: '--bundles nsis'
+            args: '--bundles nsis'
             target: ''
             asset-prefix: '01'
           - platform: 'windows-11-arm'
-            builds-args: '--bundles nsis'
+            args: '--bundles nsis'
             target: 'aarch64-pc-windows-msvc'
             asset-prefix: '01'
           - platform: 'macos-14'
@@ -52,20 +68,20 @@ jobs:
             target: ''
             args: '--features tethering'
             asset-prefix: '03_tethering'
-          - platform: 'ubuntu-latest'
-            mobile: 'android'
-            target: 'aarch64-linux-android'
-            args: '--target aarch64'
-            asset-prefix: '04'
+          # Android is intentionally not part of the release matrix: it needs
+          # ANDROID_KEY_* signing secrets plus the ONNX Runtime Android libs in
+          # src-tauri/libs, neither of which is committed. build.yml still
+          # supports `mobile: android` for manually configured environments.
     uses: ./.github/workflows/build.yml
     with:
-      release-id: ${{ github.event.release.id }}
+      release-id: ${{ github.event.release.id || inputs.release-id }}
+      ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
+      tag-name: ${{ github.event.release.tag_name || inputs.tag }}
       platform: ${{ matrix.platform }}
       target: ${{ matrix.target }}
       build-args: ${{ matrix.args }}
       asset-name-pattern: '[name]_v[version]_[platform]_[arch][ext]'
       asset-prefix: ${{ matrix.asset-prefix }}
-      mobile: ${{ matrix.mobile }}
     secrets: inherit
     permissions:
       contents: write

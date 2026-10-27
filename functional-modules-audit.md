@@ -383,3 +383,80 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - `npm run i18n:runtime-check`：`adjustments.*` 无任何告警；脚本仍报 198 条存量复数回退（与本轮无关）
 - Rust 语法：`rustup run 1.94.1 rustfmt --edition 2024 --emit stdout src/image_processing.rs`：**解析通过**（`cargo check` 仍受 1.98 工具链限制，见第九节第 1 条）
 
+---
+
+## 十一、调整模块专项自检（第七轮 · 100% 覆盖复核续）
+
+范围：在第六轮基础上补齐后端与 shader 的逐函数复核，并把「字段是否存在默认值」纳入机器化校验。
+
+### 11.1 复核范围（全部通读）
+
+- 前端：`adjustments.ts`（`Adjustments` / `MaskAdjustments` / `normalizeLoadedAdjustments` / `ADJUSTMENT_GROUPS` / `ADJUSTMENT_SECTIONS` / `SECTION_KEY_OWNERS` / 工具开关）、`defaultAdjustments.json` 全部 118 个键、5 大分区组件、`AdjustmentSection` / `AdjustmentSubSection` / `AdjustmentSectionsSubMenu`、`DepthRangePicker` / `ColorWheel` / `Slider`、`whiteBalance.ts`、`backendPayload.ts`、`useEditorActions.ts`、`ControlsPanel` / `MasksPanel` 的 props 注入。
+- 后端：`SCALES`、`parse_hsl_adjustments`、`parse_color_grade_settings`、`convert_points_to_aligned`、`get_global_adjustments_from_json`、`get_mask_adjustments_from_json`、`get_all_adjustments_from_json`。
+- shader：`apply_noise_reduction`、蒙版参数累加循环、`apply_curve`、`apply_hsl_panel`、vignette、grain、`hsv_to_rgb`。
+
+### 11.2 机器化验证（通过）
+
+- **接口默认值完备性**：`Adjustments` 接口全部非可选字段均能在 `defaultAdjustments.json` 找到默认值（0 缺失）；JSON 无接口外多余键（`centré`/`centréX`/`centréY` 为 Unicode 键名，正则采样差异，非缺陷）。`INITIAL_ADJUSTMENTS` 由 `satisfies Record<DeclaredKeys<Adjustments>, unknown>` 在编译期保证键完备。
+- **i18n**：`src/components/adjustments|ui`、`src/utils` 内 `adjustments.*` 调用共 142 个键，`en` / `zh-CN` 均无缺失。
+- **字段双向贯通**：`defaultAdjustments.json` 的键在 `src/` 与 `src-tauri/src/` 均有消费点，无「仅前端」「仅后端」孤儿字段。
+
+### 11.3 结论
+
+本轮未发现新的功能性缺陷，未修改代码；第六轮修复 27（曲线点数 GPU 越界）、28（Lens Blur 默认值）、29（色调映射器缺省）复核仍在位。
+
+### 11.4 裁决记录
+
+- 蒙版降噪允许 -100：shader 在累加后 `clamp(0,1)`，负值语义为「相对全局削减」，不是反向加噪，内部自洽。
+- 蒙版容器复用 `INITIAL_MASK_ADJUSTMENTS` 引用：所有写入点均为不可变展开（`{ ...cur }`），无就地修改，不会污染全局默认值。
+- 蒙版路径不暴露 vignette/grain/LUT/空间效果/CA/负片/centré，与 `MaskAdjustments` 结构及 Rust 解析范围一致。
+
+### 11.5 验证
+
+- `npx tsc --noEmit`：**0 错误**
+- `npx eslint`（调整模块相关路径）：96 条均为存量 `no-explicit-any`，无新增类型/逻辑问题
+- Rust：`rustfmt --edition 2024` 解析通过
+
+---
+
+## 十二、全局稳定性 / 性能 / 兼容性 / 权限 / 安装卸载 / Release 工作流自检（第八轮）
+
+### 12.1 CI 与 Release 工作流（修复 4 项）
+
+30. **Windows 打包参数丢失（关键）**：`ci.yml` / `pr-ci.yml` / `release.yml` 的 Windows 矩阵行误写为 `builds-args`，而调用处读取 `matrix.args`，导致 `--bundles nsis` 从未传入。Windows 因此回落到 `bundle.targets: "all"`，触发 WiX MSI 构建；`src-tauri/resources/film_luts/大师·*.cube` 等中文资源名超出 WiX 默认代码页 1252，`light.exe` 报 `LGHT0311` 并使 Windows 构建失败（实测日志 D:\a\anwuRAW\anwuRAW\src-tauri\target\release\wix\x64\main.wxs(324)）。修复：三处统一改为 `args`。
+31. **Release 无法可靠触发**：原 `release.yml` 仅监听 `release: created`，草稿发布不会触发，且无手动重跑入口。修复：监听 `release: published`，新增 `workflow_dispatch`（`release-id` / `tag` 输入），并用 `concurrency` 按 tag 串行化；`release-id` / `ref` / `tag-name` 显式下传，避免 `workflow_dispatch` 时 `github.ref` 指向分支导致 tag 解析错误。
+32. **Android 任务必然失败**：仓库未配置 `ANDROID_KEY_*` secrets，`src-tauri/libs` 亦被 `.gitignore` 排除（无 ONNX Runtime Android 库），且 hosted runner 的 `setup-android` 会重新下载 cmdline-tools（实测 7 分钟后 aborted）。修复：从 `ci.yml` / `pr-ci.yml` / `release.yml` 矩阵移除 Android 条目，`build.yml` 保留 `mobile: android` 能力供自建环境使用。
+33. **CI 成本与超时**：push/PR 每次重复执行完整 12 平台打包（单次 2 小时以上）。修复：CI 收敛为 Linux/Windows/macOS 三个代表目标（发布矩阵仍覆盖全平台），新增 `concurrency` 取消过期运行，`build.yml` 增加 `timeout-minutes: 180`，依赖安装改为 `npm ci` 保证可复现。
+
+### 12.2 稳定性（修复 2 项）
+
+34. **渲染崩溃白屏**：新增 `src/components/ui/ErrorBoundary.tsx` 并在 `main.tsx` 包裹 `<App />`；捕获渲染期异常，经 `frontendLogBridge` 记录后提供 Reload，避免 WebView 只剩空白页。
+35. **发布前不做类型校验**：`npm run build` 原为纯 `vite build`（esbuild 会剥离类型）。修复为 `tsc --noEmit && vite build`，类型错误在打包前阻断。
+
+### 12.3 性能（1 项）
+
+36. **单包 4.85 MB**：`vite.config.mjs` 增加 `manualChunks`，按 motion / canvas / dnd / i18n / icons / clerk / web3 / tauri / color / react 拆分。构建结果：入口 `index` 2.26 MB（gzip 666 kB）+ `vendor` 1.93 MB（gzip 710 kB）+ 分包若干，主包体积下降 53%，首屏可并行加载且升级后命中缓存；`chunkSizeWarningLimit` 调整为 2500。
+
+### 12.4 兼容性 / 权限 / 安装卸载（核查通过）
+
+- **权限**：`capabilities/default.json` 覆盖前端实际使用的 `os` / `process` / `dialog` / `shell` / `http`（仅放行 `clerk.getrapidraw.com`、`www.getrapidraw.com`）；`desktop-cloud` 限定桌面三平台并授予 `clerk:default`。前端未使用 `fs` / `store`，其 Rust 插件注册不产生前端越权入口。
+- **安装**：Windows 使用 NSIS（per-user，免管理员）；Linux `deb`/`rpm`/`AppImage`；macOS `dmg`/`app`，文件关联覆盖 20+ RAW 扩展名。
+- **卸载**：NSIS 生成卸载器并注册「应用和功能」；单实例插件保证升级时不重复驻留。
+- **已知限制**：本地裸跑 `tauri build`（Windows）仍会尝试 MSI，因中文 LUT 资源名受 WiX 1252 代码页限制而失败；CI/Release 已固定 `--bundles nsis`，不影响发布产物。
+
+### 12.5 发布流程（本轮执行）
+
+1. 变更提交并快进合并 `main`，推送远端。
+2. 创建 `v1.6.7` 草案 Release（尚无历史 tag）。
+3. 手动 dispatch `release.yml`（携带 `release-id` / `tag`）触发全平台构建，构建产物上传至该 Release。
+4. 构建成功后发布（publish）该 Release，并持续轮询 Actions 状态直至闭环。
+
+### 12.6 验证
+
+- `npx tsc --noEmit`：**0 错误**
+- `npm run build`：**成功**（2584 模块；入口 2.26 MB + vendor 1.93 MB + 8 个分包）
+- 工作流 YAML：5 个文件全部通过语法解析
+- `prettier --check`（新增/修改文件）：**通过**
+- `eslint`（新增文件）：0 error（2 条 `i18next/no-literal-string` warning，属错误兜底 UI 的英文文案）
+
+

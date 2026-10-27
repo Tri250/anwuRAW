@@ -31,6 +31,10 @@ on:
         required: false
         type: string
         default: ${{ github.ref }}
+      tag-name:
+        required: false
+        type: string
+        default: ''
       mobile:
         required: false
         type: string
@@ -39,6 +43,7 @@ on:
 jobs:
   build:
     runs-on: ${{ inputs.platform }}
+    timeout-minutes: 180
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -113,7 +118,7 @@ jobs:
           link-to-sdk: true
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
 
       - name: Setup Android signing
         if: inputs.mobile == 'android' && github.event_name != 'pull_request'
@@ -202,8 +207,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          tag_ref="${{ inputs.ref }}"
-          tag_name="${tag_ref#refs/tags/}"
+          tag_name="${{ inputs.tag-name }}"
+          if [[ -z "$tag_name" ]]; then
+            tag_name="${{ inputs.ref }}"
+            tag_name="${tag_name#refs/tags/}"
+          fi
           gh release upload "$tag_name" "$RUNNER_TEMP"/android-release-assets/* --clobber
 
       - name: Upload Android Artifacts

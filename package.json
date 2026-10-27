@@ -2,9 +2,12 @@
   "name": "rapidraw",
   "author": "Timon Käch",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc --noEmit && vite build",
     "tauri": "tauri",
     "start": "tauri dev",
     "start:tethering": "tauri dev -- --features tethering",
