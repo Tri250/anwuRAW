@@ -345,33 +345,47 @@ fn parse_cube(reader: impl BufRead) -> anyhow::Result<Lut> {
                             parts.len()
                         ));
                     }
-                    let r: f32 = parts[0].parse().map_err(|e| {
-                        anyhow!(
-                            "Failed to parse R value on line {}: '{}'. Error: {}",
+                    // .cube 格式允许一行写入多个 RGB 三元组：内置大师 LUT 就是
+                    // 每个 z 切片用 33 行、每行 33 个像素（99 个数）。若只取前三个，
+                    // 三元组数量只有 1/33，会触发下方 size mismatch 报错，整份 LUT
+                    // 解析失败——这正是“应用大师配方后画面异常/全黑”的根因。
+                    if parts.len() % 3 != 0 {
+                        return Err(anyhow!(
+                            "Invalid data line on line {}: '{}'. Expected RGB triplets, found {} values",
                             line_num,
                             line,
-                            e
-                        )
-                    })?;
-                    let g: f32 = parts[1].parse().map_err(|e| {
-                        anyhow!(
-                            "Failed to parse G value on line {}: '{}'. Error: {}",
-                            line_num,
-                            line,
-                            e
-                        )
-                    })?;
-                    let b: f32 = parts[2].parse().map_err(|e| {
-                        anyhow!(
-                            "Failed to parse B value on line {}: '{}'. Error: {}",
-                            line_num,
-                            line,
-                            e
-                        )
-                    })?;
-                    data.push(r);
-                    data.push(g);
-                    data.push(b);
+                            parts.len()
+                        ));
+                    }
+                    for chunk in parts.chunks(3) {
+                        let r: f32 = chunk[0].parse().map_err(|e| {
+                            anyhow!(
+                                "Failed to parse R value on line {}: '{}'. Error: {}",
+                                line_num,
+                                line,
+                                e
+                            )
+                        })?;
+                        let g: f32 = chunk[1].parse().map_err(|e| {
+                            anyhow!(
+                                "Failed to parse G value on line {}: '{}'. Error: {}",
+                                line_num,
+                                line,
+                                e
+                            )
+                        })?;
+                        let b: f32 = chunk[2].parse().map_err(|e| {
+                            anyhow!(
+                                "Failed to parse B value on line {}: '{}'. Error: {}",
+                                line_num,
+                                line,
+                                e
+                            )
+                        })?;
+                        data.push(r);
+                        data.push(g);
+                        data.push(b);
+                    }
                 }
             }
         }
@@ -851,4 +865,59 @@ pub fn load_and_parse_lut(path: String, state: State<AppState>) -> Result<LutPar
     cache.insert(path, Arc::new(lut));
 
     Ok(LutParseResult { size: lut_size })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn parse_cube_accepts_multiple_triplets_per_line() {
+        // 2x2x2 恒等 LUT，把每 4 个像素写在同一行，模拟内置大师 LUT 的排版。
+        let mut body = String::from("LUT_3D_SIZE 2\n");
+        for z in 0..2 {
+            for y in 0..2 {
+                let line: Vec<String> = (0..2)
+                    .map(|x| format!("{} {} {}", x as f32, y as f32, z as f32))
+                    .collect();
+                body.push_str(&line.join(" "));
+                body.push('\n');
+            }
+        }
+        let lut = parse_cube(Cursor::new(body.into_bytes())).expect("多三元组单行必须能被解析");
+        assert_eq!(lut.size, 2);
+        assert_eq!(lut.data.len(), 2 * 2 * 2 * 3);
+    }
+
+    #[test]
+    fn parse_cube_rejects_incomplete_triplet() {
+        let body = "LUT_3D_SIZE 2\n0 0 0 1 0\n".to_string();
+        assert!(parse_cube(Cursor::new(body.into_bytes())).is_err());
+    }
+
+    #[test]
+    fn parses_all_bundled_master_luts() {
+        // 回归保护：内置大师 LUT 采用“每行 33 个像素”的排版，必须全部可解析，
+        // 否则应用大师配方时 LUT 会被静默跳过（历史上表现为画面异常/全黑）。
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/master_luts");
+        let mut checked = 0usize;
+        for entry in std::fs::read_dir(&dir).expect("master_luts 目录应存在") {
+            let path = entry.expect("读取目录项失败").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("cube") {
+                continue;
+            }
+            let lut = parse_lut_file(path.to_str().expect("路径应为 UTF-8"))
+                .unwrap_or_else(|e| panic!("内置 LUT 解析失败 {:?}: {}", path, e));
+            assert_eq!(lut.size, 33, "内置 LUT 尺寸应为 33³: {:?}", path);
+            assert_eq!(
+                lut.data.len(),
+                33 * 33 * 33 * 3,
+                "LUT 数据量不完整: {:?}",
+                path
+            );
+            checked += 1;
+        }
+        assert_eq!(checked, 14, "内置大师 LUT 数量应为 14");
+    }
 }
