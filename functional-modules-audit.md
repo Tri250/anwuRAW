@@ -451,7 +451,12 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 3. 手动 dispatch `release.yml`（携带 `release-id` / `tag`）触发全平台构建，构建产物上传至该 Release。
 4. 构建成功后发布（publish）该 Release，并持续轮询 Actions 状态直至闭环。
 
-### 12.6 验证
+### 12.6 发布幂等性（修复 37）
+
+- **问题**：`release: published` 事件在「先 dispatch 构建、再 publish 草案」的流程下会再次触发全矩阵重建（12 平台、约 1.6 GB 资产重复上传），且同名资产覆盖存在失败风险。
+- **修复**：新增 `precheck` 任务统计该 Release 已有资产数；`release` 任务仅在 `workflow_dispatch` 或资产数为 0 时执行。首次从空草案 publish 仍照常构建；手动 dispatch 永远构建，保证部分失败可重试。
+
+### 12.7 验证
 
 - `npx tsc --noEmit`：**0 错误**
 - `npm run build`：**成功**（2584 模块；入口 2.26 MB + vendor 1.93 MB + 8 个分包）
