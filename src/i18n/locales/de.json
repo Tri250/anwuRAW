@@ -790,6 +790,12 @@
     },
     "presets": {
       "amount": "Stärke",
+      "toasts": {
+        "exportFailed": "Vorgaben konnten nicht exportiert werden",
+        "exportSuccess": "Vorgaben exportiert",
+        "importFailed": "Vorgaben konnten nicht importiert werden",
+        "importFailures": "{{num}} Vorgabedatei(en) konnten nicht importiert werden"
+      },
       "dialog": {
         "allPresetFiles": "Alle Vorgabendateien",
         "exportAllTitle": "Alle Vorgaben exportieren",

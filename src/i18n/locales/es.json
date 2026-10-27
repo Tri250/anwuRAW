@@ -811,6 +811,12 @@
     },
     "presets": {
       "amount": "Cantidad",
+      "toasts": {
+        "exportFailed": "Error al exportar ajustes preestablecidos",
+        "exportSuccess": "Ajustes preestablecidos exportados",
+        "importFailed": "Error al importar ajustes preestablecidos",
+        "importFailures": "Error al importar {{num}} archivo(s) de ajustes preestablecidos"
+      },
       "dialog": {
         "allPresetFiles": "Todos los archivos de ajustes",
         "exportAllTitle": "Exportar todos los ajustes preestablecidos",

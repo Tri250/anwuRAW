@@ -437,3 +437,9 @@
     text-shadow: 0 0 18px rgba(255, 255, 255, 0.3);
   }
 }
+
+/* Android 触屏无 hover：强制显示依赖 group-hover 展开的操作按钮。
+   未分层规则在级联中优先于 Tailwind 工具类（opacity-0 等），无需 !important。 */
+html.android .group-hover\:opacity-100 {
+  opacity: 1;
+}

@@ -832,6 +832,12 @@
     },
     "presets": {
       "amount": "Siła",
+      "toasts": {
+        "exportFailed": "Eksportowanie presetów nie powiodło się",
+        "exportSuccess": "Presety wyeksportowano",
+        "importFailed": "Importowanie presetów nie powiodło się",
+        "importFailures": "Nie udało się zaimportować plików presetów: {{num}}"
+      },
       "dialog": {
         "allPresetFiles": "Wszystkie pliki presetów",
         "exportAllTitle": "Eksportuj wszystkie presety",

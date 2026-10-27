@@ -549,4 +549,34 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - Android 上生成式修复依赖云端订阅或局域网 ai-connector，均非离线能力；内置基础修复（inpaint）可用。
 - 触屏设备上其余 hover 提示（如 `data-tooltip`）依赖 WebView 的长按/悬停模拟，未逐一改造；本轮只处理了不可达的功能性按钮（清除、状态详情）。
 
+## 十五、Android 六大模块用户体验专项（第十一轮 · 触屏可达性 / 操作反馈 / 交互闭环）
+
+继第十轮功能完整性自检后，本轮以用户体验为专项视角复核六大模块：触屏可达性残留、操作反馈缺失、系统栏适配、返回键交互闭环。
+
+### 15.1 UX 缺陷与修复（53–55）
+
+53. **hover 展开操作按钮触屏不可达（蒙版/图像修复/调整模块 · 高频）**：`MasksPanel` 蒙版行操作按钮组（重命名/删除等，1568/1854 行）、`AIPanel` 编辑历史行操作组（1631/1908 行）、`CropPanel` 宽高比预设芯片删除按钮（894 行）、`FocusStackModal` 预览缩放工具条（132 行）均为 `opacity-0 group-hover:opacity-100` 模式，触屏永远无法显示。修复：`App.tsx` 在 Android 上为 `<html>` 注入 `android` 类，`styles.css` 末尾新增未分层规则 `html.android .group-hover\:opacity-100 { opacity: 1 }` 一处覆盖全部 hover 展开按钮（未分层规则在级联中优先于 Tailwind 工具类，无需 `!important`；桌面行为完全不变）。顺带受益：CullingView 评分工具条、TetheringPanel 缩放条等库内其他 hover 门控控件。
+54. **预设导入失败无用户反馈（预设模块）**：`handleImportPresets` 的失败列表仅 `console.error`，硬错误也仅控制台记录，用户导入失败毫无感知。修复：失败数 > 0 时 `toast.error` 提示数量；catch 分支 `toast.error` 兜底。导出同理：`handleExport` / `handleExportAllPresets` 成功后 `toast.success`（Android 上文件静默落入 Downloads/RapidRaw，无反馈用户无从知晓），失败 `toast.error`。
+55. **预设导入/导出反馈缺少多语言文案（i18n）**：新增 `editor.presets.toasts.*` 4 键（exportSuccess / exportFailed / importFailed / importFailures），15 个语种全部补齐，术语与各语种既有 "preset" 译法一致（如 de: Vorgabe、fr: paramètre prédéfini、pt: predefinição）；`{{num}}` 替代 `count` 传参以规避 i18next 复数后缀查找（ru/pl/cs 无需 `_one/_few/_other` 三连键）。
+
+### 15.2 复核确认（无需修复）
+
+- **系统栏安全区**：`MainActivity.kt` 已 `enableEdgeToEdge()` + `OnApplyWindowInsetsListener` 对 root 按 systemBars + IME 动态 setPadding，状态栏/导航栏/键盘均不遮挡内容；`safeMarginBackgroundColor` 与主题背景一致。
+- **误触缩放**：`index.html` viewport 已含 `maximum-scale=1.0, user-scalable=no`。
+- **返回键闭环**：弹窗逐层关闭（含第十轮补的 focusStack）→ 无弹窗时派发 Escape → `useKeyboardShortcuts` Escape 链（拉直 → 自定义 handler → AI 子蒙版 → 蒙版 → 裁剪面板 → 全屏 → 退出编辑器 → 图库回首页）。编辑器退出为静默返回：调整自动持久化到 sidecar，无数据丢失，与桌面行为一致。
+- **长按上下文菜单**：预设/蒙版行的 `onContextMenu` 在 Android WebView（Chromium）长按触发，配合 `select-none` 无文本选择冲突。
+- **布局适配**：App 已有 compact/wide/full 三档 Android 布局（竖屏窄屏 compact、≥1000px full），元数据/调整/蒙版等面板在 compact 模式下以底部面板呈现。
+
+### 15.3 验证
+
+- `npx tsc --noEmit`：0 错误。
+- `npm run build`：success。
+- `npm run i18n:runtime-check`：通过（仅存量多语言复数回退提示，退出码 0）。
+- `eslint`（5 个变更文件）：101 个问题全部为存量 `no-explicit-any` 等风格告警，逐一比对行号确认无一来自本轮变更行；`ImagePicker.tsx` 0 问题。
+
+### 15.4 已知限制
+
+- `data-tooltip` 工具提示仍为 hover 触发（GlobalTooltip），触屏不可达；均为说明性文案而非功能入口，维持现状。
+- 长按触发 contextmenu 依赖 Chromium WebView 默认行为，未做自定义长按手势；个别 WebView 版本若长按行为异常，预设/蒙版行操作仍可通过 `html.android` 强显的行内按钮完成（蒙版/AI 行）或菜单按钮完成（预设行有独立菜单入口的除外，其行内删除/重命名走长按）。
+
 

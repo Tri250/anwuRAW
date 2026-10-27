@@ -790,6 +790,12 @@
     },
     "presets": {
       "amount": "數量",
+      "toasts": {
+        "exportFailed": "匯出預設失敗",
+        "exportSuccess": "預設已匯出",
+        "importFailed": "匯入預設失敗",
+        "importFailures": "{{num}} 個預設檔案匯入失敗"
+      },
       "dialog": {
         "allPresetFiles": "所有預設檔案",
         "exportAllTitle": "匯出所有預設",

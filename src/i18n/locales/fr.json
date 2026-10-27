@@ -811,6 +811,12 @@
     },
     "presets": {
       "amount": "Quantité",
+      "toasts": {
+        "exportFailed": "Échec de l'export des paramètres prédéfinis",
+        "exportSuccess": "Paramètres prédéfinis exportés",
+        "importFailed": "Échec de l'import des paramètres prédéfinis",
+        "importFailures": "Échec de l'importation de {{num}} fichier(s) de paramètres prédéfinis"
+      },
       "dialog": {
         "allPresetFiles": "Tous les fichiers de paramètres prédéfinis",
         "exportAllTitle": "Exporter tous les paramètres prédéfinis",

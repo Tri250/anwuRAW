@@ -273,6 +273,12 @@ function App() {
   });
 
   const isAndroid = osPlatform === 'android';
+
+  // 触屏无 hover：Android 上经全局样式强制显示依赖 group-hover 展开的操作按钮。
+  useEffect(() => {
+    document.documentElement.classList.toggle('android', isAndroid);
+  }, [isAndroid]);
+
   const COMPACT_EDITOR_MAX_WIDTH = 900;
   const ANDROID_COMPACT_MAX_WIDTH = 600;
   const ANDROID_FULL_MIN_WIDTH = 1000;

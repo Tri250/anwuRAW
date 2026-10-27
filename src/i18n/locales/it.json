@@ -813,6 +813,12 @@
     },
     "presets": {
       "amount": "Quantità",
+      "toasts": {
+        "exportFailed": "Esportazione dei predefiniti non riuscita",
+        "exportSuccess": "Predefiniti esportati",
+        "importFailed": "Importazione dei predefiniti non riuscita",
+        "importFailures": "Importazione di {{num}} file di predefiniti non riuscita"
+      },
       "dialog": {
         "allPresetFiles": "Tutti i File Predefiniti",
         "exportAllTitle": "Esporta Tutti i Predefiniti",

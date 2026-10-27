@@ -811,6 +811,12 @@
     },
     "presets": {
       "amount": "Intensidade",
+      "toasts": {
+        "exportFailed": "Falha ao exportar predefinições",
+        "exportSuccess": "Predefinições exportadas",
+        "importFailed": "Falha ao importar predefinições",
+        "importFailures": "Falha ao importar {{num}} ficheiro(s) de predefinições"
+      },
       "dialog": {
         "allPresetFiles": "Todos os Arquivos de Predefinições",
         "exportAllTitle": "Exportar Todas as Predefinições",

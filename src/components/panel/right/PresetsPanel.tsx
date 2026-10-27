@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { toast } from 'react-toastify';
 import {
   DndContext,
   DragOverlay,
@@ -1111,6 +1112,10 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
 
       const { failures } = await importPresetsFromFiles(paths);
 
+      if (failures.length > 0) {
+        toast.error(t('editor.presets.toasts.importFailures', { num: failures.length }));
+      }
+
       setFolderPreviewsGenerated(new Set<string>());
       setPreviews({});
 
@@ -1119,6 +1124,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
       );
     } catch (error) {
       console.error('Failed to import presets:', error);
+      toast.error(t('editor.presets.toasts.importFailed'));
     }
   };
 
@@ -1141,9 +1147,11 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
 
       if (filePath) {
         await exportPresetsToFile(itemsToExport, filePath);
+        toast.success(t('editor.presets.toasts.exportSuccess'));
       }
     } catch (error) {
       console.error(`Failed to export ${isFolder ? PresetListType.Folder : PresetListType.Preset}:`, error);
+      toast.error(t('editor.presets.toasts.exportFailed'));
     }
   };
 
@@ -1163,9 +1171,11 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
 
       if (filePath) {
         await exportPresetsToFile(presets, filePath);
+        toast.success(t('editor.presets.toasts.exportSuccess'));
       }
     } catch (error) {
       console.error('Failed to export all presets:', error);
+      toast.error(t('editor.presets.toasts.exportFailed'));
     }
   };
 

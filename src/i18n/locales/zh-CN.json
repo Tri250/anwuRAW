@@ -803,6 +803,12 @@
     },
     "presets": {
       "amount": "数量",
+      "toasts": {
+        "exportFailed": "导出预设失败",
+        "exportSuccess": "预设已导出",
+        "importFailed": "导入预设失败",
+        "importFailures": "{{num}} 个预设文件导入失败"
+      },
       "dialog": {
         "allPresetFiles": "所有预设文件",
         "exportAllTitle": "导出所有预设",

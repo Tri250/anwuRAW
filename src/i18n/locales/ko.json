@@ -790,6 +790,12 @@
     },
     "presets": {
       "amount": "양",
+      "toasts": {
+        "exportFailed": "프리셋 내보내기 실패",
+        "exportSuccess": "프리셋을 내보냈습니다",
+        "importFailed": "프리셋 가져오기 실패",
+        "importFailures": "{{num}}개의 프리셋 파일 가져오기 실패"
+      },
       "dialog": {
         "allPresetFiles": "모든 프리셋 파일",
         "exportAllTitle": "모든 프리셋 내보내기",

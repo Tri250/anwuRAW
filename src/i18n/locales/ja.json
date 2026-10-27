@@ -790,6 +790,12 @@
     },
     "presets": {
       "amount": "適用量",
+      "toasts": {
+        "exportFailed": "プリセットの書き出しに失敗しました",
+        "exportSuccess": "プリセットを書き出しました",
+        "importFailed": "プリセットの読み込みに失敗しました",
+        "importFailures": "{{num}} 個のプリセットファイルの読み込みに失敗しました"
+      },
       "dialog": {
         "allPresetFiles": "すべてのプリセットファイル",
         "exportAllTitle": "すべてのプリセットを書き出し",

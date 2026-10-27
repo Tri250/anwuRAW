@@ -791,6 +791,12 @@
     },
     "presets": {
       "amount": "Quantitat",
+      "toasts": {
+        "exportFailed": "Error en exportar ajusts preestablerts",
+        "exportSuccess": "Ajusts preestablerts exportats",
+        "importFailed": "Error en importar ajusts preestablerts",
+        "importFailures": "Error en importar {{num}} fitxer(s) d'ajusts preestablerts"
+      },
       "dialog": {
         "allPresetFiles": "Tots els fitxers d'ajustos preestablerts",
         "exportAllTitle": "Exportar tots els ajustos preestablerts",

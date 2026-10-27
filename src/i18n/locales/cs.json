@@ -791,6 +791,12 @@
     },
     "presets": {
       "amount": "Množství",
+      "toasts": {
+        "exportFailed": "Export presetů se nezdařil",
+        "exportSuccess": "Presety byly exportovány",
+        "importFailed": "Import presetů se nezdařil",
+        "importFailures": "Import {{num}} souborů presetů se nezdařil"
+      },
       "dialog": {
         "allPresetFiles": "Všechny soubory s presety",
         "exportAllTitle": "Exportovat všechny presety",

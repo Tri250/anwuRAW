@@ -803,6 +803,12 @@
     },
     "presets": {
       "amount": "Amount",
+      "toasts": {
+        "exportFailed": "Failed to export presets",
+        "exportSuccess": "Presets exported",
+        "importFailed": "Failed to import presets",
+        "importFailures": "{{num}} preset file(s) failed to import"
+      },
       "dialog": {
         "allPresetFiles": "All Preset Files",
         "exportAllTitle": "Export All Presets",
