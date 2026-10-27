@@ -193,6 +193,11 @@ export function useTauriListeners({
         progressBuffer.current = null;
         useProcessStore.getState().setProcess({ thumbnailProgress: { current: 0, total: 0 } });
       }),
+      listen('thumbnail-generation-error', (event: any) => {
+        if (!isEffectActive) return;
+        const { path, reason } = event.payload || {};
+        console.error(`Thumbnail generation failed for ${path}: ${reason}`);
+      }),
       listen('thumbnail-generated', (event: any) => {
         if (!isEffectActive) return;
         const { path, thumbnailPath, previewPath, rating, is_edited, data } = event.payload;
@@ -255,6 +260,13 @@ export function useTauriListeners({
       listen<Progress>('indexing-progress', (event) => {
         if (isEffectActive && aiTaggingJobId)
           useProcessStore.getState().updateJob(aiTaggingJobId, { progress: event.payload });
+      }),
+      listen('indexing-error', (event: any) => {
+        if (isEffectActive) {
+          if (aiTaggingJobId) useProcessStore.getState().removeJob(aiTaggingJobId);
+          aiTaggingJobId = null;
+          toast.error(`AI Tagging Failed: ${event.payload}`);
+        }
       }),
       listen('indexing-cancelled', () => {
         if (isEffectActive && aiTaggingJobId) useProcessStore.getState().removeJob(aiTaggingJobId);
@@ -421,6 +433,11 @@ export function useTauriListeners({
             if (state.panoramaModalState.finalImageBase64 || state.panoramaModalState.error) return state;
             return { panoramaModalState: { ...state.panoramaModalState, progressMessage: event.payload } };
           });
+        }
+      }),
+      listen('panorama-warning', (event: any) => {
+        if (isEffectActive) {
+          toast.warning(String(event.payload));
         }
       }),
       listen('panorama-complete', (event: any) => {

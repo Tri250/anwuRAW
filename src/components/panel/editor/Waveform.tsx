@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { AlertOctagon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import { DisplayMode } from '../../../utils/adjustments';
 import { useEditorStore } from '../../../store/useEditorStore';
 
@@ -598,7 +599,7 @@ function Waveform({
                   <button
                     key={mode}
                     onClick={() => setDisplayMode(mode)}
-                    data-tooltip={t(tooltip)}
+                    data-tooltip={t(tooltip as ParseKeys)}
                     className={`${baseButtonClass} ${displayMode === mode ? textActiveClass : inactiveButtonClass}`}
                   >
                     {displayMode === mode && (

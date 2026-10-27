@@ -741,7 +741,7 @@ export default function LibraryGrid(props: any) {
             rowHeight={getItemSize}
             onScroll={(e: React.UIEvent<HTMLElement>) => handleScroll(e.currentTarget.scrollTop)}
             className="custom-scrollbar"
-            rowComponent={Row}
+            rowComponent={Row as unknown as (props: any) => React.ReactElement | null}
             rowProps={memoizedRowProps}
           />
         </div>

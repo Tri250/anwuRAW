@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { Check, ChevronDown, ChevronRight, Plus, Star, Tag, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import clsx from 'clsx';
 import { Invokes } from '../../ui/AppProperties';
 import FlagToggles from '../../ui/FlagToggles';
@@ -551,7 +552,7 @@ export default function MetadataPanel() {
                           return (
                             <EditableMetadataItem
                               key={field.key}
-                              label={t(`editor.metadata.fields.${field.label}`)}
+                              label={t(`editor.metadata.fields.${field.label}` as ParseKeys)}
                               value={displayValue}
                               onSave={(newVal) => {
                                 handleUpdateExif(targetPaths, { [field.key]: newVal });

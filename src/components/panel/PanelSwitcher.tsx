@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import clsx from 'clsx';
 import { useDraggable, useDroppable, useDndMonitor } from '@dnd-kit/core';
 import {
@@ -82,7 +83,7 @@ function PanelTab({ panel, region, side }: { panel: Panel; region: PanelRegion; 
         isDragging && 'opacity-30',
       )}
       onClick={handleClick}
-      data-tooltip={t(PANEL_TITLES[panel])}
+      data-tooltip={t(PANEL_TITLES[panel] as ParseKeys)}
       style={{ touchAction: 'none' }}
     >
       {isActive && (

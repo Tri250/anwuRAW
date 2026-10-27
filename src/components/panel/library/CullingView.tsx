@@ -1271,7 +1271,7 @@ export default function CullingView(props: any) {
             listRef={setListHandle}
             rowCount={imageList.length}
             rowHeight={sidebarWidth - 16}
-            rowComponent={Row}
+            rowComponent={Row as unknown as (props: any) => React.ReactElement | null}
             rowProps={rowProps}
             className="custom-scrollbar"
           />

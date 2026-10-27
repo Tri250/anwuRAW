@@ -143,7 +143,12 @@ export const useAppInitialization = ({
           !settings.copyPasteSettings.includedAdjustments ||
           settings.copyPasteSettings.includedAdjustments.length === 0
         ) {
-          settings.copyPasteSettings = { mode: 'merge', includedAdjustments: COPYABLE_ADJUSTMENT_KEYS };
+          settings.copyPasteSettings = {
+            mode: 'merge',
+            includedAdjustments: COPYABLE_ADJUSTMENT_KEYS,
+            knownAdjustments: [],
+            autoSync: false,
+          };
         }
 
         if (!settings.language) {
@@ -210,7 +215,7 @@ export const useAppInitialization = ({
 
         if (settings?.pinnedFolders && settings.pinnedFolders.length > 0) {
           try {
-            const trees = await invoke(Invokes.GetPinnedFolderTrees, {
+            const trees = await invoke<any[]>(Invokes.GetPinnedFolderTrees, {
               paths: settings.pinnedFolders,
               expandedFolders: settings.lastFolderState?.expandedFolders || [],
               showImageCounts: settings.enableFolderImageCounts || settings.folderTreeSort?.key === 'imageCount',
