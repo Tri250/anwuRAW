@@ -68,10 +68,14 @@ jobs:
             target: ''
             args: '--features tethering'
             asset-prefix: '03_tethering'
-          # Android is intentionally not part of the release matrix: it needs
-          # ANDROID_KEY_* signing secrets plus the ONNX Runtime Android libs in
-          # src-tauri/libs, neither of which is committed. build.yml still
-          # supports `mobile: android` for manually configured environments.
+          # Android (arm64-v8a). build.rs downloads and bundles the ONNX Runtime
+          # library for this ABI, and the APK is signed with the ANDROID_KEY_*
+          # secrets when configured, otherwise with a generated debug keystore.
+          - platform: 'ubuntu-latest'
+            target: ''
+            args: ''
+            mobile: 'android'
+            asset-prefix: '04'
     uses: ./.github/workflows/build.yml
     with:
       release-id: ${{ github.event.release.id || inputs.release-id }}
@@ -80,6 +84,7 @@ jobs:
       platform: ${{ matrix.platform }}
       target: ${{ matrix.target }}
       build-args: ${{ matrix.args }}
+      mobile: ${{ matrix.mobile }}
       asset-name-pattern: '[name]_v[version]_[platform]_[arch][ext]'
       asset-prefix: ${{ matrix.asset-prefix }}
     secrets: inherit

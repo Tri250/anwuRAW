@@ -54,8 +54,16 @@ android {
             }
         }
         getByName("release") {
-            signingConfig = signingConfigs.getByName("release")
-            
+            // Fall back to the debug keystore when no keystore.properties is
+            // present so local/CI builds without signing secrets still produce
+            // an installable APK instead of failing on a null storeFile.
+            signingConfig =
+                if (rootProject.file("keystore.properties").exists()) {
+                    signingConfigs.getByName("release")
+                } else {
+                    signingConfigs.getByName("debug")
+                }
+
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }

@@ -1,6 +1,54 @@
 name: build
 
 on:
+  # Manual entry point for retrying a single platform (e.g. Android) without
+  # rebuilding the whole release matrix.
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Runner label (e.g. ubuntu-latest, windows-latest, macos-14)'
+        required: true
+        type: string
+      target:
+        description: 'Rust target triple, empty for the host default'
+        required: false
+        type: string
+        default: ''
+      build-args:
+        description: 'Extra `tauri build` arguments'
+        required: false
+        type: string
+        default: ''
+      mobile:
+        description: 'Set to "android" to build the Android bundle'
+        required: false
+        type: string
+        default: ''
+      release-id:
+        description: 'Release ID to upload the bundles to'
+        required: false
+        type: string
+        default: ''
+      tag-name:
+        description: 'Tag used when uploading Android assets via gh'
+        required: false
+        type: string
+        default: ''
+      asset-prefix:
+        description: 'Prefix for asset names (e.g. 04)'
+        required: false
+        type: string
+        default: ''
+      asset-name-pattern:
+        description: 'Asset name pattern, e.g. [name]_v[version]_[platform]_[arch][ext]'
+        required: false
+        type: string
+        default: ''
+      ref:
+        description: 'Git ref to build, empty uses the dispatched ref'
+        required: false
+        type: string
+        default: ''
   workflow_call:
     inputs:
       platform:
@@ -44,6 +92,8 @@ jobs:
   build:
     runs-on: ${{ inputs.platform }}
     timeout-minutes: 180
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -103,12 +153,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        if: inputs.mobile == 'android'
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools'
-
       - name: Setup Android NDK
         if: inputs.mobile == 'android'
         uses: nttld/setup-ndk@v1
@@ -117,21 +161,73 @@ jobs:
           ndk-version: r26d
           link-to-sdk: true
 
+      # The runner image already ships the Android SDK; re-downloading
+      # cmdline-tools via android-actions/setup-android used to abort after ~7
+      # minutes on hosted runners. Only make sure the required packages exist.
+      - name: Verify Android SDK
+        if: inputs.mobile == 'android'
+        shell: bash
+        timeout-minutes: 15
+        run: |
+          set -euo pipefail
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [[ -z "$sdk_root" ]]; then
+            echo "::error::ANDROID_HOME / ANDROID_SDK_ROOT is not set on this runner"
+            exit 1
+          fi
+          echo "ANDROID_HOME=$sdk_root"
+          sdkmanager="$sdk_root/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$sdkmanager" ]]; then
+            sdkmanager="$(command -v sdkmanager || true)"
+          fi
+          if [[ -z "$sdkmanager" || ! -x "$sdkmanager" ]]; then
+            echo "::error::sdkmanager not found"
+            exit 1
+          fi
+          yes | "$sdkmanager" --licenses >/dev/null 2>&1 || true
+          "$sdkmanager" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          ls "$sdk_root/platforms" "$sdk_root/build-tools"
+          echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-<unset>}"
+
       - name: Install frontend dependencies
         run: npm ci
 
       - name: Setup Android signing
         if: inputs.mobile == 'android' && github.event_name != 'pull_request'
+        shell: bash
+        env:
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
           cd src-tauri/gen/android
-          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
-          echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
-          echo "${{ secrets.ANDROID_KEY_BASE64 }}" | base64 -d > $RUNNER_TEMP/keystore.jks
-          echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
+          if [[ -n "${ANDROID_KEY_BASE64:-}" ]]; then
+            echo "keyAlias=${ANDROID_KEY_ALIAS}" > keystore.properties
+            echo "password=${ANDROID_KEY_PASSWORD}" >> keystore.properties
+            printf '%s' "${ANDROID_KEY_BASE64}" | base64 -d > "$RUNNER_TEMP/keystore.jks"
+            echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
+            echo "Using the release keystore from repository secrets."
+          else
+            keytool -genkeypair -v -keystore "$RUNNER_TEMP/debug.keystore" \
+              -alias androiddebugkey -storepass android -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US" >/dev/null
+            echo "keyAlias=androiddebugkey" > keystore.properties
+            echo "password=android" >> keystore.properties
+            echo "storeFile=$RUNNER_TEMP/debug.keystore" >> keystore.properties
+            echo "::warning::No ANDROID_KEY_* secrets configured; the APK is signed with a generated debug keystore."
+          fi
 
       - name: rustup install target
-        if: ${{ inputs.target != '' }}
-        run: rustup target add ${{ inputs.target }}
+        if: ${{ inputs.target != '' || inputs.mobile == 'android' }}
+        shell: bash
+        run: |
+          if [[ "${{ inputs.mobile }}" == "android" ]]; then
+            rustup target add aarch64-linux-android
+          else
+            rustup target add ${{ inputs.target }}
+          fi
 
       - id: patch-release-name
         shell: bash
@@ -164,16 +260,18 @@ jobs:
           releaseId: ${{ inputs.release-id }}
           retryAttempts: 3
 
+      # build.rs downloads the ONNX Runtime Android library, copies it into
+      # gen/android/app/src/main/jniLibs and exports ORT_LIB_LOCATION itself, so
+      # no ORT_* env is needed here. `--target aarch64` keeps the build to the
+      # single ABI that build.rs actually provides.
       - name: Build Android
         if: ${{ inputs.mobile == 'android' }}
         shell: bash
+        timeout-minutes: 120
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-          ORT_SKIP_DOWNLOAD: '1'
-          ORT_LIB_LOCATION: ${{ format('{0}/src-tauri/libs/arm64-v8a', github.workspace) }}
-          ORT_STRATEGY: manual
         run: |
-          npx tauri android build --verbose ${{ inputs.build-args }}
+          npx tauri android build --verbose --target aarch64 ${{ inputs.build-args }}
 
       - name: Prepare Android Release Assets
         if: ${{ inputs.mobile == 'android' && inputs.release-id != '' }}
@@ -186,11 +284,16 @@ jobs:
 
           app_name="RapidRAW"
           version="$(node -e "const fs=require('fs'); const conf=JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json','utf8')); process.stdout.write(conf.version || '')")"
-          arch="${{ inputs.target }}"
-          arch="${arch%%-*}"
+          if [[ "${{ inputs.mobile }}" == "android" ]]; then
+            arch="arm64-v8a"
+          else
+            arch="${{ inputs.target }}"
+            arch="${arch%%-*}"
+          fi
           template='${{ steps.patch-release-name.outputs.platform }}'
 
-          find src-tauri/gen/android/app/build/outputs -type f \( -name '*.apk' -o -name '*.aab' \) | while read -r file; do
+          find src-tauri/gen/android/app/build/outputs -type f \
+            \( -name '*.apk' -o -name '*.aab' \) -path '*release*' | while read -r file; do
             ext=".${file##*.}"
             asset_name="${template//\[name\]/$app_name}"
             asset_name="${asset_name//\[version\]/$version}"
