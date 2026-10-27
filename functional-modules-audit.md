@@ -136,33 +136,43 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 
 ---
 
-## 三、核心功能操作链路（自检确认）
+## 三、核心功能操作链路（深度自检 · 16 条）
 
-| 链路 | 路径 | 状态 |
-|---|---|---|
-| 预览渲染 | adjustments 变更 → useImageProcessing 防抖 → `apply_adjustments` → 后端 5 级缓存管线 → 预览字节 / wgpu transform → ImageCanvas | ✅ |
-| 缩放 HiFi | zoom → calculateTargetRes → 防抖重渲染 → release_original_preview | ✅ |
-| 图库→编辑器 | handleImageSelect → 前端 LRU 命中?→ is_image_cached → load_image → load_metadata | ✅ |
-| 缩略图 | useThumbnails → update_thumbnail_queue → 后端队列 → thumbnail-generated → rAF 批量刷入 store | ✅ |
-| 导出 | ExportPanel → export_images → batch-export-progress → export-complete/error/cancelled | ✅ |
-| 导入 | import_files → import-start/progress/complete → 刷新树与列表 | ✅ |
-| AI 蒙版 | 面板 → generate_ai_*_mask / queue_ai_jobs → ai-job-result → 合并 subMask.parameters | ✅ |
-| AI 去噪 | ai_denoise → progress/ready/error → adjustments 刷新 | ✅ |
-| AI 标签 | start_background_indexing → indexing-started/progress/error/finished → 刷新列表 | ✅ |
-| 全景/HDR/堆栈 | 触发 → progress/complete 事件 + promise catch 双兜底 → 保存 → 刷新 | ✅ |
-| Immich 同步 | immich-sync/upload/library-changed/trash/edits-conflict → useImmichEvents → 刷新/提示 | ✅ |
-| 相机联机 | tether_list/connect/capture/preview → TetheringPanel | ✅ |
-| 分析订阅 | subscribe_analytics（Channel 二进制）→ 直方图/波形 | ✅ |
-| 外部编辑 | external-edit-session 事件 → ExternalEditBar → finish → 覆盖保存 | ✅ |
-| 启动 | frontend_ready → LaunchPayload（单实例/文件关联/外部编辑会话恢复） | ✅ |
+> 第二轮深度自检方法：对每条链路做代码级端到端追踪 —— 前端触发点 → invoke 命令名/参数签名 → 后端 handler → emit 事件与 serde 载荷字段 → 前端监听解构 → store 回写 → UI 复位。
+> 全量交叉核对结论：**前端 109 个 `Invokes` 枚举 + 33 处字符串直调命令，全部与 `generate_handler!` 注册表及 Rust 签名匹配（0 断链）**；后端约 50 个 emit 事件的前端解构字段与 serde 序列化逐一比对（含 `rename_all = "camelCase"` 结构），除已修复项外全部一致。
 
-**事件交叉核对结论**：后端约 50 个 emit 事件全部有前端消费者（本次修复 3 个缺口，见下）；
-`hdr-error` / `focus-stack-error` 后端不发（由 promise rejection 兜底，监听器保留无害）；
-`focus-stack-report` 为信息性逐帧对齐报告，暂无 UI 消费，保留作调试用途。
+| # | 链路 | 端到端路径（已逐点核实） | 闭环结论 |
+|---|---|---|---|
+| 1 | 启动初始化 | `frontend_ready` → `LaunchPayload{openWithFile, editSession}`（`rename_all="camelCase"` 已核实）→ useAppInitialization 恢复工作区/根目录/过滤 → `open-with-file`/`external-edit-session` 事件双通道兜底 → useProcessStore | ✅ |
+| 2 | 导入 | `import_files({sourcePaths, destinationFolder, settings})` → `import-start{total}` → `import-progress{current,total,path}` → `import-complete`/`import-error` → 刷新文件夹树+当前目录列表 → 进度 UI 5s 复位 | ✅ |
+| 3 | 缩略图 | useThumbnails 防抖队列（去重/上限500/机械盘反向排序）→ `update_thumbnail_queue` → `thumbnail-progress{current,total}`、`thumbnail-generated{path,thumbnailPath,previewPath,rating,is_edited}`（immich 同构）→ rAF 批量写 store → `thumbnail-generation-complete/error` 收尾 | ✅ |
+| 4 | 评级筛选 | `set_rating/flag/color_label_for_paths` → 侧车写入 → `image-metadata-loaded{path,rating,flag,is_edited,tags,needs_ai}` → 缓冲批写 imageRatings/imageList → FilterCriteria 重算刷新 | ✅ |
+| 5 | 文件操作 | 删除（含关联/虚拟副本判定）→ 编辑器内删当前图：下一张→上一张→回图库；图库删：清 selection；重命名/移动后刷新树+列表+当前编辑图重定向 | ✅ |
+| 6 | 图库→编辑器 | `is_image_cached` → 前端 LRU（isFrontendCached && cached 已修复）→ `load_image` → `load_metadata` → editor store → 返回图库时 LRU 回写 + blob URL 保护/回收 | ✅ |
+| 7 | 预览渲染 | adjustments → 50ms 防抖 → `apply_adjustments`（5 级缓存管线）→ jobId 竞态防护 + `selectedImagePathRef` 归属判定 → finalPreviewUrl/interactivePatch；裁剪视图走 `generate_uncropped_preview` invoke 返回值（throttle 30ms + jobId 防护） | ✅（本轮删除该链路遗留的死事件监听，见修复 15） |
+| 8 | 缩放 HiFi | calculateTargetRes（DPR/原始尺寸封顶/256 对齐）→ `requestHiFiZoom` 防抖 → 只升不降（targetRes > currentRes 才渲染）→ 对比模式退出时 `release_original_preview` + originalPreview 释放 | ✅ |
+| 9 | 蒙版编辑 | MasksPanel 容器/子蒙版 → `adjustments.masks` → backendPayload 序列化（patchesSentToBackend 去重）→ mask_generation 位图 → 补丁回传；删除蒙版清理 activeId + 取消 AI 任务 | ✅ |
+| 10 | AI 蒙版 | 直接路径：`generate_ai_{subject,foreground,sky,text,face}_mask` 参数逐一比对签名 ✅；`generate_ai_depth_mask`（minDepth/maxDepth/minFade/maxFade/feather）✅；队列路径：`queue_ai_jobs` → `ai-jobs-status{failed}` / `ai-jobs-pending{added,removed,resolved}` / `ai-job-result{path,subMasks,maps,noResults}` → 合并 subMask.parameters；错误路径 toast + finally 注销任务 | ✅（本轮修复排队入口无 catch，见修复 16） |
+| 11 | AI 去噪 | `ai-denoise-progress{path,progress}` / `ai-denoise-ready(path)` / `ai-denoise-error{path,error}` 字段逐一比对 ✅ → 进度表增删 + 当前图 adjustments 刷新；错误时 `aiDenoiseEnabled=false` 防止反复失败 | ✅ |
+| 12 | AI 标签 | `start_background_indexing` → `indexing-started/progress{current,total}` → 任务徽标（startJob/updateJob）→ `indexing-finished` 置 Success + 刷新列表；`indexing-error` 清徽标 + toast；`indexing-cancelled` 清徽标 | ✅ |
+| 13 | 合成工具 | `stitch_panorama`/`merge_hdr`/`stitch_focus_stack` → `*-progress`/`*-complete{base64[,depthMap]}`/`*-error`/`panorama-warning`（载荷字段逐一比对 ✅）→ promise catch 双兜底 → 保存命令 → 刷新列表 → 模态复位 | ✅ |
+| 14 | 导出 | `export_images` 8 参数逐一比对 ✅ → `batch-export-progress{current,total,path}` → `export-complete/error/cancelled/cancelling` → setExportState 5s 自动复位 + 任务中心 syncStatusJob；取消链路 handleCancel→`cancel_export`→失败回滚 Exporting | ✅ |
+| 15 | Immich 同步 | `immich-download{path,state,error}` / `immich-sync` / `immich-upload` / `immich-library-changed`(1.5s 防抖刷新) / `immich-trash{error}` / `immich-edits-fetched{path,rating}` / `immich-edits-conflict{path,fileName}` 全部字段比对 ✅；关窗前 flushImmichEdits 确认框 | ✅ |
+| 16 | 相机联机 | `tether_list/get_settings/connect/set_setting/capture/get_preview/autofocus` 7 命令全注册 ✅（无事件，invoke 轮询模型）；相机拔出由轮询+调用失败双检测 → handleDisconnect 复位 UI + toast | ✅ |
+| 附属 | 外部编辑 | `external-edit-session{source,output,format,jpegQuality}`（camelCase 已核实）→ ExternalEditBar → finish → 单张 export → Success 后 exit(0)，Error/Cancelled 复位 isFinishing | ✅ |
+| 附属 | 分析订阅 | `subscribe_analytics`（Channel 二进制）→ 序列号防乱序 + path 归属判定 → histogram/waveform 写 store | ✅ |
+
+**本轮深度自检额外结论（有证据、经评估不构成缺陷）**：
+- `hdr-progress` 监听强制 `isOpen: true`：合并任务仍在后台运行时把结果带回给用户属合理恢复行为，与 panorama 的守卫语义一致。
+- `hdr-error`/`focus-stack-error` 前端监听器冗余（后端以 promise rejection 报错）：防御性保留，无害。
+- `focus-stack-report`：逐帧对齐质量调试信息，保留。
+- 事件中枢 useEffect 清理（`listeners.forEach(unlisten)`、rAF/计时器取消、缓冲区清空）逐项核实无泄漏。
 
 ---
 
-## 四、本次自检发现并修复的问题（14 项）
+## 四、自检发现并修复的问题
+
+### 第一轮（14 项）
 
 ### A. 功能链路缺陷（真实行为修复）
 1. **缩略图缓存目录建立失败被静默吞掉** — 后端发 `thumbnail-generation-error`，前端从未监听 → 已在 useTauriListeners 接通（console 记录）。
@@ -184,8 +194,13 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 13. **framer-motion spring 变体** — `type: 'spring' as const`（SettingsPanel、TaggingSubMenu）。
 14. **动态 i18n key / react-window / 图标组件类型** — 沿用仓库既有 `as ParseKeys` 惯例（8 个文件 11 处）；ALBUM_ICONS 改为 `ComponentType<{size?, className?}>`；相册树过滤加类型谓词；react-window `rowComponent` 兼容性转换（CullingView/LibraryGrid）；`invoke<any[]>` 标注（GetPinnedFolderTrees ×2）；`invoke<Record<string, any>>`（AI 蒙版 ×2）。
 
+### 第二轮 · 16 链路深度自检（3 项）
+15. **`preview-update-uncropped` 死事件监听（链路 7）** — useTauriListeners 订阅了该事件并把 payload 直接当 URL 写入 store，但 Rust 全仓库无任何 emit（裁剪预览实际走 `generate_uncropped_preview` invoke 返回值模型）。监听器与现有数据流矛盾、属旧事件模型遗留 → 已删除并留注释说明真实数据流。
+16. **AI 任务排队入口无错误反馈（链路 10）** — LibraryHeader「Process images」按钮 `invoke(queue_ai_jobs)`（后端 `async fn -> Result<(), String>`）无 catch，排队失败时产生 unhandled rejection、用户点击无任何反应 → 已补 `.catch` + toast.error。
+17. **AI 连接器状态轮询无 catch（附属加固）** — App.tsx 启动即调 + 每 10s 轮询 `check_ai_connector_status`，invoke 失败（如 WebView 重载竞态）时产生未处理 rejection → 两处调用均已补 `.catch(console.error)`。
+
 ### 验证结果
-- `npx tsc --noEmit`：**60+ 错误 → 0**
+- `npx tsc --noEmit`：**60+ 错误 → 0**（两轮修复后保持 0）
 - `npm run build`（vite 生产构建）：**通过**（2580 模块）
 - `npm run i18n:runtime-check`：**通过**（动态 key 全部存在于 en.json）
 - ESLint：改动文件无新增告警（存量 `no-explicit-any` 为仓库既有风格，非本次引入）

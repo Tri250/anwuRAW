@@ -544,8 +544,11 @@ function App() {
     const unlisten = listen('ai-connector-status-update', (event: any) => {
       setEditor({ isAIConnectorConnected: event.payload.connected });
     });
-    invoke(Invokes.CheckAIConnectorStatus);
-    const interval = setInterval(() => invoke(Invokes.CheckAIConnectorStatus), 10000);
+    invoke(Invokes.CheckAIConnectorStatus).catch((err) => console.error('AI connector status check failed:', err));
+    const interval = setInterval(
+      () => invoke(Invokes.CheckAIConnectorStatus).catch((err) => console.error('AI connector status check failed:', err)),
+      10000,
+    );
     return () => {
       clearInterval(interval);
       unlisten.then((f) => f());

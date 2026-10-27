@@ -1250,7 +1250,11 @@ function AiJobsSection({ unprocessedPaths }: { unprocessedPaths: string[] }) {
           </Text>
           <button
             className={AI_JOB_ICON_BUTTON_CLASS}
-            onClick={() => invoke(Invokes.QueueAiJobs, { paths: unprocessedPaths })}
+            onClick={() =>
+              invoke(Invokes.QueueAiJobs, { paths: unprocessedPaths }).catch((err) =>
+                toast.error(`Failed to queue AI jobs: ${err}`),
+              )
+            }
             data-tooltip={t('library.aiJobs.process')}
           >
             <Play size={16} />

@@ -174,9 +174,8 @@ export function useTauriListeners({
     };
 
     const listeners = [
-      listen('preview-update-uncropped', (event: any) => {
-        if (isEffectActive) useEditorStore.getState().setEditor({ uncroppedAdjustedPreviewUrl: event.payload });
-      }),
+      // 注：uncropped 预览数据流走 invoke(generate_uncropped_preview) 返回值（useImageProcessing），
+      // 后端无对应 emit 事件，不要在此订阅。
       listen('open-with-file', (event: any) => {
         if (isEffectActive) useProcessStore.getState().setProcess({ initialFileToOpen: event.payload as string });
       }),
