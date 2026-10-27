@@ -788,6 +788,19 @@
       },
       "title": "Metadata"
     },
+    "masterRecipes": {
+      "amount": "Amount",
+      "close": "Close",
+      "filmHint": "Pick a built-in film look and apply it directly to the current photo.",
+      "loadingLuts": "Loading LUTs...",
+      "missingLut": "No LUT found for {{name}}; colour parameters were applied on their own.",
+      "openTooltip": "Master & film recipes",
+      "tabs": {
+        "film": "Film Looks",
+        "master": "Master Recipes"
+      },
+      "title": "Recipes"
+    },
     "presets": {
       "amount": "Amount",
       "dialog": {

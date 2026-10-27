@@ -14,6 +14,7 @@ interface LutEntry {
   name: string;
   path: string;
   isBuiltIn: boolean;
+  isSceneReferred: boolean;
 }
 
 interface LutPreview {
@@ -25,14 +26,15 @@ interface LUTControlProps {
   lutPath: string | null;
   lutName: string | null;
   lutIntensity: number;
-  onLutSelect: (path: string, isBuiltIn: boolean) => void;
-  onLutHover?: (path: string | null, isBuiltIn?: boolean) => void;
+  onLutSelect: (path: string, isBuiltIn: boolean, isSceneReferred: boolean) => void;
+  onLutHover?: (path: string | null, isSceneReferred?: boolean) => void;
   onIntensityChange: (intensity: number) => void;
   onClear: () => void;
   onDragStateChange?: (isDragging: boolean) => void;
 }
 
 const PREVIEW_SIZE = 112;
+const MAX_LUT_INTENSITY = 200;
 const SUPPORTED_EXTENSIONS = ['cube', '3dl', 'png', 'jpg', 'jpeg', 'tiff'];
 
 export default function LUTControl({
@@ -107,7 +109,7 @@ export default function LUTControl({
       return;
     }
     const cacheKey = `${selectedImagePath}|${entries
-      .map((entry) => `${entry.path}:${entry.isBuiltIn ? 1 : 0}`)
+      .map((entry) => `${entry.path}:${entry.isBuiltIn ? 1 : 0}:${entry.isSceneReferred ? 1 : 0}`)
       .join(',')}`;
     const cached = previewCache.current.get(cacheKey);
     if (cached) {
@@ -118,7 +120,11 @@ export default function LUTControl({
     let isActive = true;
     setIsLoadingPreviews(true);
     invoke<LutPreview[]>('generate_lut_previews', {
-      luts: entries.map((entry) => ({ path: entry.path, isBuiltIn: entry.isBuiltIn })),
+      luts: entries.map((entry) => ({
+        path: entry.path,
+        isBuiltIn: entry.isBuiltIn,
+        isSceneReferred: entry.isSceneReferred,
+      })),
       size: PREVIEW_SIZE,
     })
       .then((results) => {
@@ -201,7 +207,7 @@ export default function LUTControl({
     if (entry.path === lutPath) {
       onClear();
     } else {
-      onLutSelect(entry.path, entry.isBuiltIn);
+      onLutSelect(entry.path, entry.isBuiltIn, entry.isSceneReferred);
     }
   };
 
@@ -214,7 +220,7 @@ export default function LUTControl({
     return (
       <button
         key={entry.path}
-        onMouseEnter={() => onLutHover?.(entry.path, entry.isBuiltIn)}
+        onMouseEnter={() => onLutHover?.(entry.path, entry.isSceneReferred)}
         onMouseLeave={() => onLutHover?.(null)}
         onClick={() => handleSwatchClick(entry)}
         onContextMenu={entry.isBuiltIn ? undefined : (e) => handleContextMenu(e, entry)}
@@ -277,7 +283,7 @@ export default function LUTControl({
               <Slider
                 label={t('ui.lut.intensity')}
                 min={0}
-                max={100}
+                max={MAX_LUT_INTENSITY}
                 step={1}
                 value={lutIntensity}
                 defaultValue={100}

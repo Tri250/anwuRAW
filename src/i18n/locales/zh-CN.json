@@ -788,6 +788,19 @@
       },
       "title": "元数据"
     },
+    "masterRecipes": {
+      "amount": "强度",
+      "close": "关闭",
+      "filmHint": "从内置胶片预设中选择一款，直接应用到当前照片。",
+      "loadingLuts": "正在加载 LUT...",
+      "missingLut": "未找到 {{name}} 的 LUT 文件，已仅应用色彩参数。",
+      "openTooltip": "大师配方与胶片配方",
+      "tabs": {
+        "film": "胶片配方",
+        "master": "大师配方"
+      },
+      "title": "配方"
+    },
     "presets": {
       "amount": "数量",
       "dialog": {

@@ -447,7 +447,7 @@ export interface HueSatLum {
   luminance: number;
 }
 
-interface Hsl {
+export interface Hsl {
   [index: string]: HueSatLum;
   aquas: HueSatLum;
   blues: HueSatLum;

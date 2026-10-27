@@ -34,6 +34,7 @@ pub struct LutEntry {
     pub name: String,
     pub path: String,
     pub is_built_in: bool,
+    pub is_scene_referred: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -41,6 +42,40 @@ pub struct LutEntry {
 pub struct LutPreviewRequest {
     pub path: String,
     pub is_built_in: bool,
+    #[serde(default)]
+    pub is_scene_referred: bool,
+}
+
+/// Log-encoded LUTs (F-Log2 / V-Log) take a scene-referred input, so they run before tone mapping.
+/// Display-referred LUTs declare `Gamma: sRGB to sRGB` and must run after tone mapping instead.
+fn detect_lut_is_scene_referred(path: &Path) -> bool {
+    let Ok(file) = File::open(path) else {
+        return true;
+    };
+    let mut reader = BufReader::new(file);
+    let mut line = String::new();
+    let mut inspected = 0;
+    while inspected < 12 {
+        line.clear();
+        match reader.read_line(&mut line) {
+            Ok(0) => break,
+            Ok(_) => {}
+            Err(_) => return true,
+        }
+        inspected += 1;
+        let trimmed = line.trim();
+        if !trimmed.starts_with('#') {
+            continue;
+        }
+        if trimmed
+            .replace(' ', "")
+            .to_lowercase()
+            .contains("gamma:srgbto")
+        {
+            return false;
+        }
+    }
+    true
 }
 
 #[derive(Serialize)]
@@ -104,6 +139,7 @@ pub fn list_luts_in_dir(dir: &Path, is_built_in: bool) -> anyhow::Result<Vec<Lut
                 name,
                 path: strip_verbatim(&path).to_string_lossy().into_owned(),
                 is_built_in,
+                is_scene_referred: detect_lut_is_scene_referred(&path),
             });
         }
     }
@@ -560,6 +596,7 @@ fn list_luts_in_cache() -> anyhow::Result<Vec<LutEntry>> {
                 name,
                 path: strip_verbatim(&path).to_string_lossy().into_owned(),
                 is_built_in: false,
+                is_scene_referred: detect_lut_is_scene_referred(&path),
             });
         }
     }
@@ -689,7 +726,7 @@ pub async fn generate_lut_previews(
                 let mut swatch_lut_json = serde_json::json!({
                     "lutPath": "preview",
                     "lutIntensity": 100,
-                    "lutIsSceneReferred": request.is_built_in,
+                    "lutIsSceneReferred": request.is_scene_referred,
                     "sectionVisibility": { "effects": true }
                 });
                 mark_baseline_exposure(&mut swatch_lut_json);

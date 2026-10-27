@@ -309,9 +309,36 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 
 ---
 
-## 八、遗留事项（不影响当前功能）
+## 八、大师配方 / 胶片配方集成（本轮 · 移植自 RawLab）
 
-1. **Rust 工具链**：`rust-toolchain.toml` 钉住 `1.98`，沙箱镜像最高提供 1.94.1，`cargo check`（1.94.1 + `--ignore-rust-version`）已实测失败，失败点均为环境限制、与仓库代码无关：① 依赖 `sysinfo 0.39.6` 使用不稳定特性 `cfg_select!`，需 rustc ≥1.95；② `build.rs` 需从 HuggingFace 下载 `libonnxruntime.so`，沙箱网络不可达。GTK/webkit 系统库已安装。本次未修改任何 Rust 文件，建议在装有 1.98 且可访问 HuggingFace 的环境跑一次 `cargo check` 复核后端。
+来源：https://github.com/Tri250/koudaixiangce（RawLab，GPL-3.0-only）。本仓库 AGPL-3.0 与其兼容，署名见 `src-tauri/resources/licenses/RawLab-NOTICE.md`。
+
+### 8.1 资源
+- `public/master-recipes/*.png`：14 张 256×256 配方插图，文件名与配方 id 一一对应。
+- `src/utils/masterRecipes.json`：14 条配方目录（与 RawLab `Shared/master-recipes.json` 逐字节等价）。
+- `src-tauri/resources/film_luts/大师·*.cube`：14 个 33-grid LUT（由 RawLab 65-grid 降采样，头部标注 `Gamma: sRGB to sRGB`）。
+
+### 8.2 前端
+- `src/utils/masterRecipes.ts`：`recipeToAdjustments` 统一量纲换算——`exposure / 0.8`（滑块 ±5 ↔ ±4 EV）、`tint / 1.5`（相对单位 ↔ tint 计数）、HSL 八通道（红橙黄绿青蓝紫洋红 ↔ reds…magentas，±100 同量纲）；`resolveMasterLutPath` 按 `大师·<name>` 精确匹配并模糊回退。
+- `src/components/modals/MasterRecipesModal.tsx`：双 Tab（大师配方 / 胶片配方）。大师 Tab 为 14 配方网格，点击应用 6 个控件 + 24 个 HSL + LUT；强度滑块 0–200% 同步缩放全部参数与 `lutIntensity`；再次点击同一配方回滚到应用前快照。胶片 Tab 复用 `LUTControl`。
+- 入口：`PresetsPanel` 头部工具栏新增 `Sparkles` 按钮（`editor.masterRecipes.openTooltip`），弹窗挂载于面板内。
+
+### 8.3 后端与色彩空间修正（含既有缺陷）
+- `lut_processing.rs`：`LutEntry` / `LutPreviewRequest` 新增 `is_scene_referred`；新增 `detect_lut_is_scene_referred` 读取文件头 12 行，含 `Gamma: sRGB to sRGB` 判为 display-referred（tone mapping 之后应用），否则视为 log 编码（tone mapping 之前采样）。
+- **修复既有缺陷**：原前端把所有内置 LUT 一律按 `isBuiltIn → lutIsSceneReferred=true` 处理，导致 `大师·*.cube` 这类 display-referred LUT 在 tone mapping 前被错误采样（偏色/对比异常）。现由文件头判定并经 `LutEntry`、`generate_lut_previews` 透传，`LUTControl` / `useEditorActions` 的第二参数由 `isBuiltIn` 改为 `isSceneReferred`。
+- LUT 强度上限由 100 提升到 200（`MAX_LUT_INTENSITY`），与配方强度语义一致。
+
+### 8.4 验证
+- `npx tsc --noEmit`：**0 错误**
+- `npm run build`：**成功**（2583 模块；`dist/master-recipes/` 含 14 张插图）
+- `npm run i18n:runtime-check`：本轮新增 `editor.masterRecipes` 无告警；脚本仍报 198 条**存量**复数回退问题（ca/cs/es/fr/pl/pt/ru 的 `_few`/`_many` 解析回退 en），与本轮改动无关
+- `cargo check`：**未执行成功**——`rust-toolchain.toml` 钉住 1.98，沙箱镜像最高 1.94.1 且 1.98 包 404（环境限制，见第九节）
+
+---
+
+## 九、遗留事项（不影响当前功能）
+
+1. **Rust 工具链**：`rust-toolchain.toml` 钉住 `1.98`，沙箱镜像最高提供 1.94.1，`cargo check`（1.94.1 + `--ignore-rust-version`）已实测失败，失败点均为环境限制、与仓库代码无关：① 依赖 `sysinfo 0.39.6` 使用不稳定特性 `cfg_select!`，需 rustc ≥1.95；② `build.rs` 需从 HuggingFace 下载 `libonnxruntime.so`，沙箱网络不可达。GTK/webkit 系统库已安装。第八节已修改 `lut_processing.rs`（新增 `is_scene_referred` 字段与文件头判定），需在装有 1.98 且可访问 HuggingFace 的环境跑一次 `cargo check` 复核后端。
 2. **主 JS 包 4.8MB**：vite 提示超 500kB，可考虑对 AI 面板/社区页/Immich 等做动态 import 分包。
 3. **`hdr-error`/`focus-stack-error`**：前端监听器为冗余（后端以 promise rejection 报错），可择机统一为事件模型。
 4. **`focus-stack-report`**：逐帧对齐质量报告事件暂无消费者，可在焦点堆栈结果弹窗中展示逐帧质量信息。

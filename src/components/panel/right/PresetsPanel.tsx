@@ -32,9 +32,11 @@ import {
   Wrench,
   Palette,
   Settings2,
+  Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConfigurePresetModal from '../../modals/ConfigurePresetModal';
+import MasterRecipesModal from '../../modals/MasterRecipesModal';
 import CreateFolderModal from '../../modals/CreateFolderModal';
 import RenameFolderModal from '../../modals/RenameFolderModal';
 import Button from '../../ui/Button';
@@ -576,6 +578,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
   const [isGeneratingPreviews, setIsGeneratingPreviews] = useState(false);
   const [configureModalState, setConfigureModalState] = useState<ModalState>({ isOpen: false, preset: null });
   const [isAddFolderModalOpen, setIsAddFolderModalOpen] = useState(false);
+  const [isMasterRecipesOpen, setIsMasterRecipesOpen] = useState(false);
   const [renameFolderState, setRenameFolderState] = useState<FolderState>({ isOpen: false, folder: null });
   const [expandedFolders, setExpandedFolders] = useState(new Set<string>());
   const [activeItem, setActiveItem] = useState<any>(null);
@@ -1268,6 +1271,13 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
           <Text variant={TextVariants.title}>{t('editor.presets.title')}</Text>
           <div className="flex items-center gap-1">
             <button
+              className="p-2 rounded-full text-accent hover:bg-surface transition-colors"
+              onClick={() => setIsMasterRecipesOpen(true)}
+              data-tooltip={t('editor.masterRecipes.openTooltip')}
+            >
+              <Sparkles size={18} />
+            </button>
+            <button
               className="p-2 rounded-full hover:bg-surface transition-colors"
               onClick={onNavigateToCommunity}
               data-tooltip={t('editor.presets.tooltips.explore')}
@@ -1426,6 +1436,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
           onClose={() => setRenameFolderState({ isOpen: false, folder: null })}
           onSave={handleRenameFolderSave}
         />
+        <MasterRecipesModal isOpen={isMasterRecipesOpen} onClose={() => setIsMasterRecipesOpen(false)} />
       </div>
       <DragOverlay>
         {activeItem ? (

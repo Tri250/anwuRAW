@@ -245,7 +245,7 @@ export function useEditorActions() {
   );
 
   const handleLutSelect = useCallback(
-    async (path: string, isBuiltIn: boolean = false) => {
+    async (path: string, isSceneReferred: boolean = true) => {
       const isAndroid = useSettingsStore.getState().osPlatform === 'android';
       try {
         const result: { size: number } = await invoke('load_and_parse_lut', { path });
@@ -259,7 +259,7 @@ export function useEditorActions() {
           lutName: name,
           lutSize: result.size,
           lutIntensity: 100,
-          lutIsSceneReferred: isBuiltIn,
+          lutIsSceneReferred: isSceneReferred,
           activeTools: setToolActive(getActiveTools(prev), 'lut', true),
         }));
       } catch (err) {
@@ -270,7 +270,7 @@ export function useEditorActions() {
   );
 
   const setLutPreviewOverride = useCallback(
-    (path: string | null, isBuiltIn: boolean = false) => {
+    (path: string | null, isSceneReferred: boolean = true) => {
       setEditor((state) => {
         if (!path) return { previewOverride: null };
         const name = path.split(/[\\/]/).pop() || 'LUT';
@@ -280,7 +280,7 @@ export function useEditorActions() {
             lutPath: path,
             lutName: name,
             lutIntensity: state.adjustments.lutIntensity,
-            lutIsSceneReferred: isBuiltIn,
+            lutIsSceneReferred: isSceneReferred,
           },
         };
       });
