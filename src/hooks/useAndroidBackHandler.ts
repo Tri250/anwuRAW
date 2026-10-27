@@ -82,6 +82,20 @@ export function useAndroidBackHandler() {
         ui.setUI({ collageModalState: { isOpen: false, sourceImages: [] } });
         return;
       }
+      if (ui.focusStackModalState.isOpen) {
+        ui.setUI({
+          focusStackModalState: {
+            isOpen: false,
+            isProcessing: false,
+            progressMessage: '',
+            finalImageBase64: null,
+            depthMapBase64: null,
+            sourcePaths: [],
+            error: null,
+          },
+        });
+        return;
+      }
 
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true }));
     };

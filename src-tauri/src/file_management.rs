@@ -3417,16 +3417,25 @@ fn parse_preset_file(file_path: &str) -> Result<Vec<PresetItem>, String> {
     let lower_path = file_path.to_lowercase();
     let is_legacy = lower_path.ends_with(".xmp") || lower_path.ends_with(".lrtemplate");
 
+    // Android SAF 文件选择返回 content:// URI，需经 ContentResolver 读字节。
+    let read_to_string = |p: &str, err_ctx: &str| -> Result<String, String> {
+        #[cfg(target_os = "android")]
+        if is_android_content_uri(p) {
+            let bytes = read_android_content_uri(p)?;
+            return String::from_utf8(bytes)
+                .map_err(|e| format!("Failed to read preset file: {}", e));
+        }
+        fs::read_to_string(p).map_err(|e| format!("{}: {}", err_ctx, e))
+    };
+
     if !is_legacy {
-        let content = fs::read_to_string(file_path)
-            .map_err(|e| format!("Failed to read preset file: {}", e))?;
+        let content = read_to_string(file_path, "Failed to read preset file")?;
         let preset_file: PresetFile = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse preset file: {}", e))?;
         return Ok(preset_file.presets);
     }
 
-    let content = fs::read_to_string(file_path)
-        .map_err(|e| format!("Failed to read legacy preset file: {}", e))?;
+    let content = read_to_string(file_path, "Failed to read legacy preset file")?;
 
     let xmp_content = if lower_path.ends_with(".lrtemplate") {
         if let Some(caps) = regex!(r#"(?s)s.xmp = "(.*)""#).captures(&content) {
@@ -3557,6 +3566,17 @@ pub fn handle_export_presets_to_file(
 
     let json_string = serde_json::to_string_pretty(&preset_file)
         .map_err(|e| format!("Failed to serialize presets: {}", e))?;
+
+    // Android 无保存对话框：前端传纯文件名，落到 Downloads/RapidRaw。
+    #[cfg(target_os = "android")]
+    if !std::path::Path::new(&file_path).is_absolute() {
+        return crate::android_integration::save_file_bytes_to_android_downloads(
+            &file_path,
+            "application/json",
+            json_string.as_bytes(),
+        );
+    }
+
     fs::write(file_path, json_string).map_err(|e| format!("Failed to write preset file: {}", e))
 }
 

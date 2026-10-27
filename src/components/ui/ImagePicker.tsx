@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Text from './Text';
 import { TextVariants } from '../../types/typography';
+import { useOsPlatform } from '../../hooks/useOsPlatform';
 
 interface ImagePickerProps {
   imageName: string | null;
@@ -13,6 +14,8 @@ interface ImagePickerProps {
 
 export default function ImagePicker({ imageName, onImageSelect, onClear, label }: ImagePickerProps) {
   const { t } = useTranslation();
+  // 触屏无 hover：Android 上清除按钮常显，桌面保持 hover 展开。
+  const isAndroid = useOsPlatform() === 'android';
 
   const handleSelectFile = async () => {
     try {
@@ -51,10 +54,14 @@ export default function ImagePicker({ imageName, onImageSelect, onClear, label }
           {imageName && (
             <button
               onClick={onClear}
-              className="flex items-center justify-center p-0.5 rounded-full bg-bg-tertiary hover:bg-surface
+              className={
+                isAndroid
+                  ? 'flex items-center justify-center p-0.5 rounded-full bg-bg-tertiary hover:bg-surface w-6 ml-1 opacity-100 overflow-hidden transition-all duration-200 ease-in-out'
+                  : `flex items-center justify-center p-0.5 rounded-full bg-bg-tertiary hover:bg-surface
                          w-0 ml-0 opacity-0 group-hover:w-6 group-hover:ml-0 group-hover:opacity-100
                          overflow-hidden pointer-events-none group-hover:pointer-events-auto
-                         transition-all duration-200 ease-in-out"
+                         transition-all duration-200 ease-in-out`
+              }
               data-tooltip={t('ui.imagePicker.clearImage')}
             >
               <X size={14} />

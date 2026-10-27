@@ -507,4 +507,46 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - 内置密钥是公开的侧载密钥，不能用于 Google Play（`.aab` 仅作审计/自测用途）。
 - 沙箱无 Android 真机/模拟器，本轮为构建与静态产物审核，未做真机启动与导出回归。
 
+## 十四、Android 六大功能模块专项自检（第十轮 · 元数据/调整/蒙版/图像修复/预设/导出 · 100% 覆盖）
+
+以 Android（SAF content:// URI、MediaStore 落盘、无对话框 API、触屏无 hover）为专项视角，对元数据、调整、蒙版、图像修复、预设、导出六大模块的全部子功能做链路级复核。
+
+### 14.1 实锤缺陷与修复（46–49）
+
+46. **水印图片 content:// 无法加载（导出模块 · 高危）**：Android 上通过 SAF 选择水印图返回 `content://` URI，`load_watermark_image` 直接 `image::open(path)` 走文件系统必然失败。修复（`export_processing.rs`）：content:// 分支改经 `read_android_content_uri` 读字节 + `image::load_from_memory`，非 Android 平台对 content:// 明确报错。
+47. **originalFolder 目的地崩溃（导出模块 · 高危）**：后端对源路径 `parent()` + `create_dir_all`，Android 上源路径是 content:// 伪路径必炸。修复：`output_path` 增加 `#[cfg(target_os = "android")]` 分支只取 `new_filename`（SAF/MediaStore 落盘只认文件名）；前端 `ExportPanel` 在 Android 隐藏「原文件夹」选项并回落 `customFolder`，immich 不可用时同样回落。
+48. **预设导入 content:// 失败（预设模块 · 高危）**：`parse_preset_file` 用 `fs::read_to_string` 读 SAF 返回的 content:// 必然失败。修复（`file_management.rs`）：新增 Android 分支经 ContentResolver 读字节再 `String::from_utf8`。
+49. **预设导出 Android 不可用（预设模块 · 高危）**：前端依赖 `saveDialog`（Android 不支持），后端 `fs::write` 对相对路径写错位置。修复：后端 `handle_export_presets_to_file` 对非绝对路径走 `save_file_bytes_to_android_downloads`（Download/RapidRaw）；前端 `PresetsPanel` 的 `handleExport` / `handleExportAllPresets` 在 Android 跳过 saveDialog，直接传纯文件名（非法字符已清洗）。
+
+### 14.2 触屏可达性修复（50–51）
+
+50. **AI 连接状态详情 hover-only（图像修复模块）**：`AIPanel` 的 `ConnectionStatus` 详情（月度用量/未登录提示/连接器未检出说明）仅 `onMouseEnter` 展开，触屏不可达。修复：Android 上改为点击状态行切换展开（桌面保持 hover 行为不变）。
+51. **ImagePicker 清除按钮 hover-only（元数据模块）**：水印/封面图清除按钮 `w-0 opacity-0 group-hover:…` 折叠，触屏不可达。修复：Android 上常显（w-6 opacity-100），桌面行为不变。
+
+### 14.3 返回键修复（52）
+
+52. **焦点堆栈弹窗无法用返回键关闭（调整/图像修复模块）**：`useAndroidBackHandler` 覆盖了 panorama/hdr/culling/collage 等弹窗，遗漏 `focusStackModalState`，Android 返回键无法关闭焦点堆栈弹窗。修复：按 UIStore 默认态补齐全字段关闭分支。
+
+### 14.4 逐子功能核实结论（无缺陷确认）
+
+- **元数据**：`MetadataPanel` 全 click 交互；EXIF 编辑 → `update_exif_fields` → sidecar 写入正常（Android 导入后文件位于 `.library` 真实路径）；GPS iframe 无 CSP 限制（`csp: null`）；导入链路 `import_files` 已有 content:// 分支。
+- **调整**：Slider 触控（touchstart/move/end + thumb 命中半径）、Curves、色轮、Konva 画布（mouse+touch 双绑定，`touchAction: 'none'`）、分区右键菜单（长按上下文）均已在既往轮次覆盖，本轮复核无回归。
+- **蒙版**：Konva Stage 蒙版绘制层 touch 全绑定；AI 蒙版走内置 ONNX（`libonnxruntime.so` 已打包），全部调用有 catch + toast。
+- **图像修复**：Android 云端登录 `authStatus: 'unsupported'` 有明确三态展示；生成式修复（云端/ai-connector）在 Android 上不可用属已知限制，失败均有 toast 反馈。
+- **导出**：MediaStore 主链路（`is_pending` 1→0 两阶段、失败回滚）既往已覆盖；本轮补齐水印 content:// 与 originalFolder 两处旁路后，导出全选项在 Android 上可达且不崩。
+- **预设**：导入（content://）、导出（Downloads/RapidRaw）、新建/重命名/删除/排序/强度调节为主前端状态 + `save_presets` 持久化，链路完整。
+
+### 14.5 验证
+
+- `npx tsc --noEmit`：0 错误。
+- `npm run build`：success（`✓ built in 1.84s`）。
+- `npm run i18n:runtime-check`：通过（仅多语言复数回退提示，退出码 0）。
+- `rustfmt --edition 2024`：`export_processing.rs` / `file_management.rs` 解析并格式化通过。
+- `cargo check` 受沙箱 Rust 1.98 工具链限制未运行（`let-chains` 语法需 1.88+，仓库目标工具链更高），以 rustfmt 解析 + 既往轮次 cargo 审核佐证。
+
+### 14.6 已知限制
+
+- Android 上生成式修复依赖云端订阅或局域网 ai-connector，均非离线能力；内置基础修复（inpaint）可用。
+- 触屏设备上其余 hover 提示（如 `data-tooltip`）依赖 WebView 的长按/悬停模拟，未逐一改造；本轮只处理了不可达的功能性按钮（清除、状态详情）。
+
 

@@ -12,6 +12,7 @@ import {
 } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
 import { PresetImportFailure, PresetListType, usePresets, UserPreset } from '../../../hooks/usePresets';
+import { useOsPlatform } from '../../../hooks/useOsPlatform';
 import { useContextMenu } from '../../../context/ContextMenuContext';
 import {
   CopyPlus,
@@ -552,6 +553,8 @@ function RootDroppableArea({
 
 export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProps) {
   const { t } = useTranslation();
+  const osPlatform = useOsPlatform();
+  const isAndroid = osPlatform === 'android';
   const selectedImage = useEditorStore((s) => s.selectedImage);
   const adjustments = useEditorStore((s) => s.adjustments);
   const setEditor = useEditorStore((s) => s.setEditor);
@@ -1125,13 +1128,16 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     const itemsToExport = [item];
 
     try {
-      const filePath = await saveDialog({
-        defaultPath: `${name}.rrpreset`.replace(/[<>:"/\\|?*]/g, '_'),
-        filters: [{ name: t('editor.presets.dialog.presetFile'), extensions: ['rrpreset'] }],
-        title: t('editor.presets.dialog.exportTitle', {
-          type: isFolder ? t('editor.presets.types.folder') : t('editor.presets.types.preset'),
-        }),
-      });
+      // Android 无保存对话框：直接传纯文件名，后端落盘到 Downloads/RapidRaw。
+      const filePath = isAndroid
+        ? `${name}.rrpreset`.replace(/[<>:"/\\|?*]/g, '_')
+        : await saveDialog({
+            defaultPath: `${name}.rrpreset`.replace(/[<>:"/\\|?*]/g, '_'),
+            filters: [{ name: t('editor.presets.dialog.presetFile'), extensions: ['rrpreset'] }],
+            title: t('editor.presets.dialog.exportTitle', {
+              type: isFolder ? t('editor.presets.types.folder') : t('editor.presets.types.preset'),
+            }),
+          });
 
       if (filePath) {
         await exportPresetsToFile(itemsToExport, filePath);
@@ -1146,11 +1152,14 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
       return;
     }
     try {
-      const filePath = await saveDialog({
-        defaultPath: 'all_presets.rrpreset',
-        filters: [{ name: t('editor.presets.dialog.presetFile'), extensions: ['rrpreset'] }],
-        title: t('editor.presets.dialog.exportAllTitle'),
-      });
+      // Android 无保存对话框：直接传纯文件名，后端落盘到 Downloads/RapidRaw。
+      const filePath = isAndroid
+        ? 'all_presets.rrpreset'
+        : await saveDialog({
+            defaultPath: 'all_presets.rrpreset',
+            filters: [{ name: t('editor.presets.dialog.presetFile'), extensions: ['rrpreset'] }],
+            title: t('editor.presets.dialog.exportAllTitle'),
+          });
 
       if (filePath) {
         await exportPresetsToFile(presets, filePath);

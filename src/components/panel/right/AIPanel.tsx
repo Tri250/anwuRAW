@@ -70,6 +70,7 @@ import { useUIStore } from '../../../store/useUIStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
 import { useAiMasking } from '../../../hooks/useAiMasking';
 import { useCloudUsage } from '../../../hooks/useCloudUsage';
+import { useOsPlatform } from '../../../hooks/useOsPlatform';
 
 export const STANDALONE_MASK_TYPES: Mask[] = [Mask.Clone, Mask.Heal, Mask.Liquify, Mask.Retouch];
 
@@ -206,6 +207,8 @@ const ConnectionStatus = ({
 }: ConnectionStatusProps) => {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
+  // 触屏无 hover：Android 上改为点击状态行切换详情展开。
+  const isAndroid = useOsPlatform() === 'android';
 
   let statusColor = 'bg-green-500';
   let statusText = t('editor.ai.connection.ready');
@@ -267,9 +270,10 @@ const ConnectionStatus = ({
 
   return (
     <div
-      className="bg-surface rounded-lg"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`bg-surface rounded-lg ${isAndroid && hoverContent ? 'cursor-pointer' : ''}`}
+      onMouseEnter={isAndroid ? undefined : () => setIsHovered(true)}
+      onMouseLeave={isAndroid ? undefined : () => setIsHovered(false)}
+      onClick={isAndroid && hoverContent ? () => setIsHovered((v) => !v) : undefined}
     >
       <div className={`flex items-center gap-2 px-4 ${hoverContent ? 'pt-2' : 'py-2'}`}>
         <div className={`w-2.5 h-2.5 rounded-full ${statusColor}`} />

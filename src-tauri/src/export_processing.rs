@@ -204,6 +204,7 @@ impl Drop for WatermarkCacheGuard {
 }
 
 fn load_watermark_image(path: &str) -> Result<Arc<DynamicImage>, String> {
+    let is_android_content_uri = crate::android_integration::is_android_content_uri(path);
     let metadata = fs::metadata(path).ok();
     let modified = metadata.as_ref().and_then(|m| m.modified().ok());
     let len = metadata.as_ref().map(|m| m.len());
@@ -216,8 +217,23 @@ fn load_watermark_image(path: &str) -> Result<Arc<DynamicImage>, String> {
     {
         return Ok(Arc::clone(&entry.image));
     }
-    let image =
-        Arc::new(image::open(path).map_err(|e| format!("Failed to open watermark image: {}", e))?);
+    // Android SAF 选图返回 content:// URI，无法走文件系统，需经 ContentResolver 读字节。
+    let image = if is_android_content_uri {
+        #[cfg(target_os = "android")]
+        {
+            let bytes = crate::android_integration::read_android_content_uri(path)?;
+            Arc::new(
+                image::load_from_memory(&bytes)
+                    .map_err(|e| format!("Failed to open watermark image: {}", e))?,
+            )
+        }
+        #[cfg(not(target_os = "android"))]
+        {
+            return Err("content:// watermark paths are only supported on Android".to_string());
+        }
+    } else {
+        Arc::new(image::open(path).map_err(|e| format!("Failed to open watermark image: {}", e))?)
+    };
     *cache = Some(WatermarkCacheEntry {
         path: path.to_string(),
         modified,
@@ -1829,31 +1845,41 @@ pub(crate) async fn export_images_impl(
 
                 let mut output_path =
                     if export_settings.destination_type.as_deref() == Some("originalFolder") {
-                        let mut dir = source_path
-                            .parent()
-                            .unwrap_or(std::path::Path::new(""))
-                            .to_path_buf();
-                        if let Some(sub) = &export_settings.subfolder {
-                            let mut trimmed = sub.trim();
+                        // Android 上源路径可能是 content:// URI（无文件系统语义），SAF 落盘
+                        // 只认 file_name，因此跳过子目录创建，避免对伪路径 create_dir_all。
+                        #[cfg(target_os = "android")]
+                        {
+                            let _ = &source_path;
+                            std::path::PathBuf::from(&new_filename)
+                        }
+                        #[cfg(not(target_os = "android"))]
+                        {
+                            let mut dir = source_path
+                                .parent()
+                                .unwrap_or(std::path::Path::new(""))
+                                .to_path_buf();
+                            if let Some(sub) = &export_settings.subfolder {
+                                let mut trimmed = sub.trim();
 
-                            while trimmed.starts_with('/') || trimmed.starts_with('\\') {
-                                trimmed = &trimmed[1..];
+                                while trimmed.starts_with('/') || trimmed.starts_with('\\') {
+                                    trimmed = &trimmed[1..];
+                                }
+
+                                if !trimmed.is_empty() {
+                                    dir = dir.join(trimmed);
+                                }
                             }
 
-                            if !trimmed.is_empty() {
-                                dir = dir.join(trimmed);
+                            if let Err(e) = std::fs::create_dir_all(&dir) {
+                                return Err(format!(
+                                    "Failed to create export subdirectory '{}': {}",
+                                    dir.display(),
+                                    e
+                                ));
                             }
-                        }
 
-                        if let Err(e) = std::fs::create_dir_all(&dir) {
-                            return Err(format!(
-                                "Failed to create export subdirectory '{}': {}",
-                                dir.display(),
-                                e
-                            ));
+                            dir.join(&new_filename)
                         }
-
-                        dir.join(&new_filename)
                     } else if is_explicit_file_path && total_paths == 1 {
                         output_folder_path.clone()
                     } else if export_settings.preserve_folders {

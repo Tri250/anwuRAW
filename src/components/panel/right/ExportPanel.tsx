@@ -387,7 +387,13 @@ export default function ExportPanel({
   const osPlatform = useOsPlatform();
   const isAndroid = osPlatform === 'android';
   const canExportToImmich = useImmichExportAvailable() && !isAndroid;
-  const destination = destinationType === 'immich' && !canExportToImmich ? 'customFolder' : destinationType;
+  // Android 无文件系统目的地语义（SAF/MediaStore 落盘），originalFolder 一律回落 customFolder。
+  const destination =
+    destinationType === 'immich' && !canExportToImmich
+      ? 'customFolder'
+      : isAndroid && destinationType === 'originalFolder'
+        ? 'customFolder'
+        : destinationType;
   const immichExport = useImmichExportChoice();
   const activePanels = useUIStore((state) => state.activePanels);
   const isPanelReallyActive = Object.values(activePanels).includes(Panel.Export);
@@ -789,7 +795,7 @@ export default function ExportPanel({
                 <Dropdown
                   options={[
                     { label: t('export.destination.customFolder'), value: 'customFolder' },
-                    { label: t('export.destination.originalFolder'), value: 'originalFolder' },
+                    ...(!isAndroid ? [{ label: t('export.destination.originalFolder'), value: 'originalFolder' }] : []),
                     ...(canExportToImmich ? [{ label: t('immich.export.destination'), value: 'immich' }] : []),
                   ]}
                   value={destination || 'customFolder'}
