@@ -497,7 +497,9 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - 首轮 Android 单平台构建 `40481633957`（`ec876661`）：**success**，`Fetch ONNX Runtime` → `Build Android` → `Prepare/Upload Android Release Assets` 全绿，Release 新增 `.apk` / `.aab` 两个资产。
 - 同一提交的 `CI Build`（`40481598892`）与 `Lint`（`40481598656`）：均 success。
 - 仓库内置密钥可通过 `keytool -list` 读取（1 条 `PrivateKeyEntry`），CI 复用同一指纹。
-- 签名/对齐校验与 `minSdk` 变更后的产物由第九轮重跑构建验证。
+- 修复后重跑 `40485547444`（`3f67153d`）：**success**，`Setup Android signing`（日志 `Using the checked-in sideload keystore.`）→ `Build Android` → `Verify Android bundle` → `Upload Android Release Assets` 全绿；Release 资产被同名覆盖（`.apk` 83.7 MB / `.aab` 43.4 MB）。
+- `apksigner` 输出：`Verified using v2 scheme: true`，`V2 Signer: certificate DN = CN=RapidRAW, OU=Sideload, O=RapidRAW, C=CN`，`SHA-256 = bbe05dfbddf4630c9f72c49e1be7a4efeb553a69edde7bb50d8436b587b53891`，与内置密钥指纹一致；`zipalign -c -P 16` 通过。
+- 合并后清单 `android:minSdkVersion="29"`，`targetSdk 36`。
 
 ### 13.5 已知限制
 
