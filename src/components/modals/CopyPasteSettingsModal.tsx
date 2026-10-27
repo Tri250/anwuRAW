@@ -208,9 +208,9 @@ export default function CopyPasteSettingsModal({ isOpen, onClose, onSave, settin
               isVisible={show}
             />
             <Text variant={TextVariants.small} className="mt-2">
-              <b>{t('modals.copyPaste.modeMerge')}:</b> {t('modals.copyPaste.descMerge')}
+              <b>{t('modals.copyPaste.modeMergeLabel')}</b> {t('modals.copyPaste.descMerge')}
               <br />
-              <b>{t('modals.copyPaste.modeReplace')}:</b> {t('modals.copyPaste.descReplace')}
+              <b>{t('modals.copyPaste.modeReplaceLabel')}</b> {t('modals.copyPaste.descReplace')}
             </Text>
           </div>
 

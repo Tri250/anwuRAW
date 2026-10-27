@@ -703,3 +703,36 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 ### 18.4 结论
 
 v1.6.7 达到交付门禁：类型、构建、ESLint、Prettier、i18n（键完整性 + 复数 + 占位符）、rustfmt、cargo check（all-targets）、cargo clippy（all-features, `-D warnings`）全部通过；IPC 与事件链无悬空引用；15 语种无缺失键。剩余仅 `no-explicit-any` 的 warn 级基线。
+
+## 十九、i18next-cli lint 专项复核（第十四轮续）
+
+第十八轮只跑了 CI 使用的 `i18n:check`（键完整性 + 复数 + 占位符），未覆盖 `npm run i18n:lint`——后者专门扫描 JSX 中未经 `t()` 的字面量、属性文案与翻译拼接。补跑后发现 24 条问题（22 error + 2 warning），逐条修复。
+
+### 19.1 修复（65–67）
+
+65. **窗口控制按钮 aria-label 未国际化**（`TitleBar.tsx`，9 处）：macOS 红/黄/绿圆点、Linux、Windows 三套标题栏的 `Close window` / `Minimize window` / `Maximize window` 全部硬编码英文，屏幕阅读器在非英文界面下读到英文。新增 `ui.windowControls.close|minimize|maximize` 三键（15 语种），组件接入 `useTranslation`；品牌名 `RapidRAW` 提升为模块常量 `APP_NAME`（JSX 中为表达式，既不触发 ESLint 字面量规则，也无需双份 disable 注释）。
+66. **预览图 `alt` / 导航 `aria-label` 硬编码**（7 处）：
+    - `PanoramaModal` / `HdrModal` / `FocusStackModal` 的处理中源图 `alt="Source preview"` → 共享键 `common.sourcePreviewAlt`；
+    - `PanoramaModal` 结果图 `alt="Stitched Panorama"`、`HdrModal` 结果图 `alt="Merged HDR"` → `modals.panorama.resultAlt` / `modals.hdr.resultAlt`；
+    - `CullingModal` 结果区 `aria-label="Tabs"`、代表图 `alt="Representative"` → `modals.culling.tabsAria` / `modals.culling.representative`；
+    - `ImageCanvas` 蒙版叠加层与裁剪预览 `alt` → `editor.canvas.maskOverlayAlt` / `editor.canvas.cropPreviewAlt`；
+    - `MetadataPanel` 虚拟副本角标硬编码 `VC` → 复用既有 `ui.filmstrip.virtualCopyAbbreviation`（避免与胶片条缩写分叉）。
+      共新增 12 键 + 复用 1 键，15 语种合计 180 条译文（含繁体/日/韩/俄/波兰/捷克等全量真实翻译）。
+67. **翻译拼接中的标点归属**（`CopyPasteSettingsModal.tsx`）：原文 `<b>{t('modeMerge')}:</b>` 把冒号放在译文之外——法语需窄不换行空格（`Fusionner :`）、中文需全角冒号，硬编码半角冒号必然错版。改为 `modeMergeLabel` / `modeReplaceLabel` 两键，冒号随译文走（法语使用 U+00A0）；`modeMerge` / `modeReplace` 仍供粘贴模式开关复用，无重复键冲突。
+    另：`ErrorBoundary.tsx` 的崩溃兜底文案（`Something went wrong` / `Reload`）确认必须不依赖 i18n（i18n 初始化失败时仍需可读），以 `i18next-instrument-ignore-next-line` 显式标注为有意不翻译。
+
+### 19.2 复核确认
+
+- `npm run i18n:lint`：**0 error**，仅剩 2 条 warning（`MainLibrary` 欢迎语标题/描述以 `<br/>` 分行、`CopyPasteSettingsModal` 标签+说明相邻）。两者均为「标题 + 独立句」结构，非跨语言语序相关的句子切分，且标点已归属各译文，判定为误报；工具仅以 error 决定退出码，故 `i18n:lint` 退出码 0。
+- 语种键集扫描：15 语种 **0 空值**；zh-CN / zh-TW / ja / ko 缺 `editor.ai.patches.retouch_one` 属 CLDR 正确行为（CJK 仅有 `other` 复数类别）；波兰语/俄语/捷克语多出 `_few`/`_many`、罗曼语系多出 `_many` 同理，均由 `check-runtime.mjs` 校验通过。
+
+### 19.3 补充验证
+
+- `npm run i18n:check`：退出码 0，`Validated 1554 plural resolutions and 25910 placeholder sets across 15 locales.`（占位符集合数因新增键由 25742 增至 25910）
+- `npx tsc --noEmit`：0 错误；`npx eslint .`：0 error；`npm run format:check`：通过；`npm run build`：成功（index 2.29 MB / 674 kB gzip）
+- `npm ls --depth=0`：无 invalid / unmet 依赖；`npm audit --registry=https://registry.npmjs.org --omit=dev`：**0 vulnerabilities**（环境默认 npmmirror 未实现 audit 接口，改用官方源）
+- `npx tauri info`：Tauri 配置解析通过，webkit2gtk / rsvg2 等运行时依赖齐备
+
+### 19.4 已知限制（非本轮引入）
+
+- 52 处 `toast.*` 诊断消息（`useAiMasking` 13、`useEditorActions` 8、`useLibraryActions` 8、`useFileOperations` 6、`useAppNavigation` 4、`useTauriListeners` 4、`App` 3、`Effects` 3 等）仍为英文，且大多拼接 Rust 侧英文错误串；完整本地化需后端错误码化，属于跨层改造，交付版维持现状并在此登记。

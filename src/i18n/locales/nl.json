@@ -174,6 +174,9 @@
       "vignette": "Vignet"
     }
   },
+  "common": {
+    "sourcePreviewAlt": "Bronvoorbeeld"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Lege groep)"
@@ -491,6 +494,10 @@
         "useBasicInpaint": "Basis inpainting gebruiken"
       },
       "touchUpTitle": "Retoucheren"
+    },
+    "canvas": {
+      "cropPreviewAlt": "Uitsnedevoorbeeld",
+      "maskOverlayAlt": "Maskanoverlay"
     },
     "compare": {
       "horizontal": "Boven / onder splitsen",
@@ -1494,7 +1501,9 @@
       },
       "includedAdjustments": "Opgenomen aanpassingen",
       "modeMerge": "Samenvoegen",
+      "modeMergeLabel": "Samenvoegen:",
       "modeReplace": "Vervangen",
+      "modeReplaceLabel": "Vervangen:",
       "pasteMode": "Plakmodus",
       "save": "Opslaan",
       "selectAll": "Alles selecteren",
@@ -1536,6 +1545,7 @@
       "groupSimilar": "Vergelijkbare afbeeldingen groeperen",
       "noIssuesDesc": "Alle afbeeldingen lijken uniek en scherp te zijn.",
       "noIssuesFound": "Geen problemen gevonden!",
+      "representative": "Representatieve afbeelding",
       "score": "Score: {{score}}",
       "sharpness": "Scherpte: {{sharpness}}",
       "similarGroupsTab": "Vergelijkbare groepen",
@@ -1543,6 +1553,7 @@
       "similarityThresholdDesc": "Lager is strenger (exacte duplicaten). Hoger is losser (bijna-duplicaten). Een waarde van 24-32 wordt aanbevolen.",
       "startCulling": "Selectie starten",
       "starting": "Starten...",
+      "tabsAria": "Tabbladen met selectieresultaten",
       "title": "Afbeeldingen selecteren"
     },
     "focusStack": {
@@ -1573,6 +1584,7 @@
       "initializing": "Initialiseren...",
       "merging": "HDR samenvoegen",
       "openInEditor": "Openen in editor",
+      "resultAlt": "Samengevoegde HDR",
       "retry": "Opnieuw",
       "save": "Opslaan",
       "savedSuccess": "HDR succesvol opgeslagen!",
@@ -1637,6 +1649,7 @@
       "failed": "Panorama mislukt",
       "initializing": "Initialiseren...",
       "openInEditor": "Openen in editor",
+      "resultAlt": "Samengevoegd panorama",
       "retry": "Opnieuw",
       "save": "Opslaan",
       "savedSuccess": "Panorama succesvol opgeslagen!",
@@ -2271,6 +2284,11 @@
         "showClipping": "Uitknipwaarschuwingen weergeven",
         "vectorscope": "Vectoroscoop"
       }
+    },
+    "windowControls": {
+      "close": "Venster sluiten",
+      "maximize": "Venster maximaliseren",
+      "minimize": "Venster minimaliseren"
     }
   }
 }

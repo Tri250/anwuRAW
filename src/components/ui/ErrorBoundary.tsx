@@ -37,6 +37,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
 
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-neutral-950 p-8 text-center text-neutral-200">
+        {/* i18next-instrument-ignore-next-line */}
         <h1 className="text-xl font-semibold">Something went wrong</h1>
         <p className="max-w-lg text-sm break-words text-neutral-400">{error.message}</p>
         <button
@@ -44,6 +45,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
           onClick={this.handleReload}
           className="rounded-md bg-neutral-800 px-4 py-2 text-sm transition-colors hover:bg-neutral-700"
         >
+          {/* i18next-instrument-ignore-next-line */}
           Reload
         </button>
       </div>

@@ -174,6 +174,9 @@
       "vignette": "暗角"
     }
   },
+  "common": {
+    "sourcePreviewAlt": "源图预览"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "（空组）"
@@ -490,6 +493,10 @@
         "useBasicInpaint": "使用基础图像修复"
       },
       "touchUpTitle": "润色"
+    },
+    "canvas": {
+      "cropPreviewAlt": "裁剪预览",
+      "maskOverlayAlt": "蒙版叠加层"
     },
     "compare": {
       "horizontal": "上下分割",
@@ -1493,7 +1500,9 @@
       },
       "includedAdjustments": "包含的调整",
       "modeMerge": "合并",
+      "modeMergeLabel": "合并：",
       "modeReplace": "替换",
+      "modeReplaceLabel": "替换：",
       "pasteMode": "粘贴模式",
       "save": "保存",
       "selectAll": "全选",
@@ -1535,6 +1544,7 @@
       "groupSimilar": "分组相似图像",
       "noIssuesDesc": "所有图像似乎都是唯一且清晰的。",
       "noIssuesFound": "未发现问题！",
+      "representative": "代表图",
       "score": "评分：{{score}}",
       "sharpness": "锐度：{{sharpness}}",
       "similarGroupsTab": "相似组",
@@ -1542,6 +1552,7 @@
       "similarityThresholdDesc": "值越低越严格（完全重复）。值越高越宽松（近似重复）。建议值 24-32。",
       "startCulling": "开始筛选",
       "starting": "启动中...",
+      "tabsAria": "筛片结果标签页",
       "title": "筛选图像"
     },
     "focusStack": {
@@ -1572,6 +1583,7 @@
       "initializing": "初始化中...",
       "merging": "合并 HDR 中",
       "openInEditor": "在编辑器中打开",
+      "resultAlt": "合并后的 HDR",
       "retry": "重试",
       "save": "保存",
       "savedSuccess": "HDR 保存成功！",
@@ -1636,6 +1648,7 @@
       "failed": "全景图拼接失败",
       "initializing": "初始化中...",
       "openInEditor": "在编辑器中打开",
+      "resultAlt": "拼接全景图",
       "retry": "重试",
       "save": "保存",
       "savedSuccess": "全景图保存成功！",
@@ -2270,6 +2283,11 @@
         "showClipping": "显示裁剪警告",
         "vectorscope": "矢量示波器"
       }
+    },
+    "windowControls": {
+      "close": "关闭窗口",
+      "maximize": "最大化窗口",
+      "minimize": "最小化窗口"
     }
   }
 }

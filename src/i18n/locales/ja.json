@@ -174,6 +174,9 @@
       "vignette": "周辺光量補正"
     }
   },
+  "common": {
+    "sourcePreviewAlt": "元画像のプレビュー"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(空のグループ)"
@@ -490,6 +493,10 @@
         "useBasicInpaint": "簡易インペインティングを使用"
       },
       "touchUpTitle": "タッチアップ"
+    },
+    "canvas": {
+      "cropPreviewAlt": "切り抜きプレビュー",
+      "maskOverlayAlt": "マスクオーバーレイ"
     },
     "compare": {
       "horizontal": "上下に分割",
@@ -1493,7 +1500,9 @@
       },
       "includedAdjustments": "対象の補正項目",
       "modeMerge": "マージ",
+      "modeMergeLabel": "統合:",
       "modeReplace": "置換",
+      "modeReplaceLabel": "置換:",
       "pasteMode": "貼り付けモード",
       "save": "保存",
       "selectAll": "すべて選択",
@@ -1535,6 +1544,7 @@
       "groupSimilar": "類似画像をグループ化",
       "noIssuesDesc": "すべての画像が個性的で鮮明なようです。",
       "noIssuesFound": "問題は見つかりませんでした！",
+      "representative": "代表画像",
       "score": "スコア: {{score}}",
       "sharpness": "シャープネス: {{sharpness}}",
       "similarGroupsTab": "類似グループ",
@@ -1542,6 +1552,7 @@
       "similarityThresholdDesc": "低いほど厳密（完全な重複）になります。高いほど緩やか（類似画像）になります。24-32の値を推奨します。",
       "startCulling": "選別を開始",
       "starting": "開始中...",
+      "tabsAria": "選別結果のタブ",
       "title": "画像を選別"
     },
     "focusStack": {
@@ -1572,6 +1583,7 @@
       "initializing": "初期化中...",
       "merging": "HDR統合中",
       "openInEditor": "エディタで開く",
+      "resultAlt": "合成された HDR",
       "retry": "再試行",
       "save": "保存",
       "savedSuccess": "HDRを正常に保存しました！",
@@ -1636,6 +1648,7 @@
       "failed": "パノラマ作成に失敗しました",
       "initializing": "初期化中...",
       "openInEditor": "エディタで開く",
+      "resultAlt": "合成パノラマ",
       "retry": "再試行",
       "save": "保存",
       "savedSuccess": "パノラマを正常に保存しました！",
@@ -2270,6 +2283,11 @@
         "showClipping": "白とび・黒つぶれ警告を表示",
         "vectorscope": "ベクトルスコープ"
       }
+    },
+    "windowControls": {
+      "close": "ウィンドウを閉じる",
+      "maximize": "ウィンドウを最大化",
+      "minimize": "ウィンドウを最小化"
     }
   }
 }

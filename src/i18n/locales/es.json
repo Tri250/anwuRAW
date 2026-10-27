@@ -174,6 +174,9 @@
       "vignette": "Viñeteado"
     }
   },
+  "common": {
+    "sourcePreviewAlt": "Vista previa de origen"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Grupo vacío)"
@@ -514,6 +517,10 @@
         "useBasicInpaint": "Usar Inpainting básico"
       },
       "touchUpTitle": "Retoques"
+    },
+    "canvas": {
+      "cropPreviewAlt": "Vista previa del recorte",
+      "maskOverlayAlt": "Superposición de máscara"
     },
     "compare": {
       "horizontal": "Dividir arriba / abajo",
@@ -1526,7 +1533,9 @@
       },
       "includedAdjustments": "Ajustes incluidos",
       "modeMerge": "Fusionar",
+      "modeMergeLabel": "Combinar:",
       "modeReplace": "Reemplazar",
+      "modeReplaceLabel": "Reemplazar:",
       "pasteMode": "Modo de pegado",
       "save": "Guardar",
       "selectAll": "Seleccionar todo",
@@ -1570,6 +1579,7 @@
       "groupSimilar": "Agrupar imágenes similares",
       "noIssuesDesc": "Todas las imágenes parecen ser únicas y nítidas.",
       "noIssuesFound": "¡No se encontraron problemas!",
+      "representative": "Imagen representativa",
       "score": "Puntuación: {{score}}",
       "sharpness": "Nitidez: {{sharpness}}",
       "similarGroupsTab": "Grupos similares",
@@ -1577,6 +1587,7 @@
       "similarityThresholdDesc": "Más bajo es más estricto (duplicados exactos). Más alto es más flexible (casi duplicados). Se recomienda un valor de 24-32.",
       "startCulling": "Iniciar cribado",
       "starting": "Iniciando...",
+      "tabsAria": "Pestañas de resultados de selección",
       "title": "Cribar imágenes"
     },
     "focusStack": {
@@ -1609,6 +1620,7 @@
       "initializing": "Inicializando...",
       "merging": "Combinando HDR",
       "openInEditor": "Abrir en el editor",
+      "resultAlt": "HDR combinado",
       "retry": "Reintentar",
       "save": "Guardar",
       "savedSuccess": "¡HDR guardado con éxito!",
@@ -1674,6 +1686,7 @@
       "failed": "Panorama fallido",
       "initializing": "Inicializando...",
       "openInEditor": "Abrir en el editor",
+      "resultAlt": "Panorama unido",
       "retry": "Reintentar",
       "save": "Guardar",
       "savedSuccess": "¡Panorama guardado con éxito!",
@@ -2313,6 +2326,11 @@
         "showClipping": "Mostrar advertencias de recorte",
         "vectorscope": "Vectorescopio"
       }
+    },
+    "windowControls": {
+      "close": "Cerrar ventana",
+      "maximize": "Maximizar ventana",
+      "minimize": "Minimizar ventana"
     }
   }
 }

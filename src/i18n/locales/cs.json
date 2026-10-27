@@ -174,6 +174,9 @@
       "vignette": "Viněta"
     }
   },
+  "common": {
+    "sourcePreviewAlt": "Náhled zdroje"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Prázdná skupina)"
@@ -537,6 +540,10 @@
         "useBasicInpaint": "Použijte základní retuš"
       },
       "touchUpTitle": "Retuše"
+    },
+    "canvas": {
+      "cropPreviewAlt": "Náhled ořezu",
+      "maskOverlayAlt": "Překryv masky"
     },
     "compare": {
       "horizontal": "Rozdělit nahoře / dole",
@@ -1558,7 +1565,9 @@
       },
       "includedAdjustments": "Zahrnuté úpravy",
       "modeMerge": "Sloučit",
+      "modeMergeLabel": "Sloučit:",
       "modeReplace": "Nahradit",
+      "modeReplaceLabel": "Nahradit:",
       "pasteMode": "Režim vkládání",
       "save": "Uložit",
       "selectAll": "Vybrat vše",
@@ -1604,6 +1613,7 @@
       "groupSimilar": "Seskupit podobné snímky",
       "noIssuesDesc": "Všechny snímky se zdají být jedinečné a ostré.",
       "noIssuesFound": "Nebyly nalezeny žádné problémy!",
+      "representative": "Reprezentativní snímek",
       "score": "Skóre: {{score}}",
       "sharpness": "Ostrost: {{sharpness}}",
       "similarGroupsTab": "Skupiny podobných snímků",
@@ -1611,6 +1621,7 @@
       "similarityThresholdDesc": "Nižší hodnota je přísnější (přesné duplikáty). Vyšší hodnota je volnější (téměř duplikáty). Doporučená hodnota je 24–32.",
       "startCulling": "Spustit třídění",
       "starting": "Spouštění...",
+      "tabsAria": "Karty výsledků třídění",
       "title": "Třídění snímků"
     },
     "focusStack": {
@@ -1645,6 +1656,7 @@
       "initializing": "Inicializace...",
       "merging": "Sloučení HDR",
       "openInEditor": "Otevřít v Editoru",
+      "resultAlt": "Sloučené HDR",
       "retry": "Zkuste to znovu",
       "save": "Uložit",
       "savedSuccess": "HDR bylo úspěšně uloženo!",
@@ -1711,6 +1723,7 @@
       "failed": "Panorama se nezdařilo",
       "initializing": "Inicializace...",
       "openInEditor": "Otevřít v Editoru",
+      "resultAlt": "Sešitá panoráma",
       "retry": "Zkuste to znovu",
       "save": "Uložit",
       "savedSuccess": "Panorama úspěšně uloženo!",
@@ -2355,6 +2368,11 @@
         "showClipping": "Zobrazit upozornění na oříznutí",
         "vectorscope": "Vektoroskop"
       }
+    },
+    "windowControls": {
+      "close": "Zavřít okno",
+      "maximize": "Maximalizovat okno",
+      "minimize": "Minimalizovat okno"
     }
   }
 }

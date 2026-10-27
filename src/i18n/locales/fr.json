@@ -174,6 +174,9 @@
       "vignette": "Vignettage"
     }
   },
+  "common": {
+    "sourcePreviewAlt": "Aperçu de la source"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Groupe vide)"
@@ -514,6 +517,10 @@
         "useBasicInpaint": "Utiliser l'inpainting simple"
       },
       "touchUpTitle": "Retouches"
+    },
+    "canvas": {
+      "cropPreviewAlt": "Aperçu du recadrage",
+      "maskOverlayAlt": "Superposition du masque"
     },
     "compare": {
       "horizontal": "Scinder haut / bas",
@@ -1527,7 +1534,9 @@
       },
       "includedAdjustments": "Ajustements inclus",
       "modeMerge": "Fusionner",
+      "modeMergeLabel": "Fusionner :",
       "modeReplace": "Remplacer",
+      "modeReplaceLabel": "Remplacer :",
       "pasteMode": "Mode de collage",
       "save": "Enregistrer",
       "selectAll": "Tout sélectionner",
@@ -1571,6 +1580,7 @@
       "groupSimilar": "Grouper les images similaires",
       "noIssuesDesc": "Toutes les images semblent uniques et nettes.",
       "noIssuesFound": "Aucun problème trouvé !",
+      "representative": "Image représentative",
       "score": "Score : {{score}}",
       "sharpness": "Netteté : {{sharpness}}",
       "similarGroupsTab": "Groupes similaires",
@@ -1578,6 +1588,7 @@
       "similarityThresholdDesc": "Une valeur plus basse est plus stricte (doublons exacts). Une valeur plus élevée est plus souple (quasi-doublons). Une valeur de 24 à 32 est recommandée.",
       "startCulling": "Démarrer le tri",
       "starting": "Démarrage...",
+      "tabsAria": "Onglets des résultats de sélection",
       "title": "Trier les images"
     },
     "focusStack": {
@@ -1610,6 +1621,7 @@
       "initializing": "Initialisation...",
       "merging": "Fusion HDR",
       "openInEditor": "Ouvrir dans l'éditeur",
+      "resultAlt": "HDR fusionné",
       "retry": "Réessayer",
       "save": "Enregistrer",
       "savedSuccess": "HDR enregistré avec succès !",
@@ -1675,6 +1687,7 @@
       "failed": "Échec du panorama",
       "initializing": "Initialisation...",
       "openInEditor": "Ouvrir dans l'éditeur",
+      "resultAlt": "Panorama assemblé",
       "retry": "Réessayer",
       "save": "Enregistrer",
       "savedSuccess": "Panorama enregistré avec succès !",
@@ -2314,6 +2327,11 @@
         "showClipping": "Afficher les avertissements d'écrêtage",
         "vectorscope": "Vecteurscope"
       }
+    },
+    "windowControls": {
+      "close": "Fermer la fenêtre",
+      "maximize": "Agrandir la fenêtre",
+      "minimize": "Réduire la fenêtre"
     }
   }
 }

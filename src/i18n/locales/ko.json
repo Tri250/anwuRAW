@@ -174,6 +174,9 @@
       "vignette": "비네트"
     }
   },
+  "common": {
+    "sourcePreviewAlt": "원본 미리보기"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(빈 그룹)"
@@ -490,6 +493,10 @@
         "useBasicInpaint": "기본 인페인팅 사용"
       },
       "touchUpTitle": "터치업"
+    },
+    "canvas": {
+      "cropPreviewAlt": "자르기 미리보기",
+      "maskOverlayAlt": "마스크 오버레이"
     },
     "compare": {
       "horizontal": "상하 분할",
@@ -1493,7 +1500,9 @@
       },
       "includedAdjustments": "포함된 조정값",
       "modeMerge": "병합",
+      "modeMergeLabel": "병합:",
       "modeReplace": "교체",
+      "modeReplaceLabel": "바꾸기:",
       "pasteMode": "붙여넣기 모드",
       "save": "저장",
       "selectAll": "모두 선택",
@@ -1535,6 +1544,7 @@
       "groupSimilar": "유사한 이미지 그룹화",
       "noIssuesDesc": "모든 이미지가 고유하고 선명한 것으로 보입니다.",
       "noIssuesFound": "문제를 찾을 수 없습니다!",
+      "representative": "대표 이미지",
       "score": "점수: {{score}}",
       "sharpness": "선명도: {{sharpness}}",
       "similarGroupsTab": "유사한 그룹",
@@ -1542,6 +1552,7 @@
       "similarityThresholdDesc": "값이 낮을수록 더 엄격합니다 (완전 중복). 높을수록 더 느슨합니다 (유사 중복). 24~32 값을 권장합니다.",
       "startCulling": "선별 시작",
       "starting": "시작 중...",
+      "tabsAria": "선별 결과 탭",
       "title": "이미지 선별"
     },
     "focusStack": {
@@ -1572,6 +1583,7 @@
       "initializing": "초기화 중...",
       "merging": "HDR 병합 중",
       "openInEditor": "편집기에서 열기",
+      "resultAlt": "병합된 HDR",
       "retry": "다시 시도",
       "save": "저장",
       "savedSuccess": "HDR이 성공적으로 저장되었습니다!",
@@ -1636,6 +1648,7 @@
       "failed": "파노라마 실패",
       "initializing": "초기화 중...",
       "openInEditor": "편집기에서 열기",
+      "resultAlt": "이어붙인 파노라마",
       "retry": "다시 시도",
       "save": "저장",
       "savedSuccess": "파노라마가 성공적으로 저장되었습니다!",
@@ -2270,6 +2283,11 @@
         "showClipping": "클리핑 경고 표시",
         "vectorscope": "벡터스코프"
       }
+    },
+    "windowControls": {
+      "close": "창 닫기",
+      "maximize": "창 최대화",
+      "minimize": "창 최소화"
     }
   }
 }
