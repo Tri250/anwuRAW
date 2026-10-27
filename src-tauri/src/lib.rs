@@ -2546,6 +2546,7 @@ pub fn run() {
             save_hdr,
             lut_processing::load_and_parse_lut,
             lut_processing::list_luts,
+            lut_processing::list_master_luts,
             lut_processing::import_luts,
             lut_processing::remove_lut,
             lut_processing::generate_lut_previews,

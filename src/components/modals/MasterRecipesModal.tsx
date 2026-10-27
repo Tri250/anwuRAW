@@ -80,7 +80,7 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
     }
     let isCancelled = false;
     setIsLoadingLuts(true);
-    invoke<Array<LutEntry>>('list_luts')
+    invoke<Array<LutEntry>>('list_master_luts')
       .then((entries) => {
         if (!isCancelled) {
           setLuts(entries);

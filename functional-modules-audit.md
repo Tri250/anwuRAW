@@ -607,4 +607,31 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - host `cargo check` 两级受限：rust-toolchain.toml 锁定 `1.98`（aliyun 镜像 404 无法安装）；镜像内最高可用 `1.94.1` 又低于依赖链 MSRV（sysinfo 需 1.95，部分依赖使用 1.98 的 `cfg_select` 特性），装齐 GTK/webkit 系统库后仍在依赖阶段失败——与第九轮结论一致，沙箱无法完成 Rust 编译验证；本轮改动以 rustfmt 解析 + 机械重构（读取循环原样抽函数）+ 既有 JNI 模式复用佐证，最终以 CI Android 构建为准。
 - 已知限制：若未来版本增删内置 LUT，物化目录中已删除项会残留（仅多显示一个多余内置项，不影响功能）。
 
+## 十七、集成 RawLab 上游仓库配方数据（第十三轮 · 用户指定 github.com/Tri250/koudaixiangce）
+
+用户指定集成 RawLab 多平台仓库（koudaixiangce）的大师配方 / 胶片配方数据到「预设 → 配方」。
+
+### 17.1 数据盘点
+
+- `Shared/master-recipes.json`（14 条）：与本仓 `src/utils/masterRecipes.json` **逐字节一致**（第 8 轮已移植），artwork `public/master-recipes/*.png` 14 张齐备——JSON 数据无需重复集成。
+- `RawLabMac/Resources/MasterRecipes/*.cube`（14 个，65³ / 7.4 MB each / 共 100 MB）：**本仓从未打包**——大师配方 LUT 链路一直是缺的，应用配方时 `resolveMasterLutPath` 恒为 null，弹「missingLut」警告且只有参数部分生效。这才是大师配方「无法正常使用」的真正根因（第 16 轮修复的是 Android 资源路径问题，使 LUT 链路在 Android 上可用；但桌面端同样从未有大师 LUT 文件）。
+- `lutools/` 的 F-Log2 转换 LUT：富士 F-Log2 LOG 曲线转film模拟的技术性转换 LUT，仅适用于 LOG 素材解码，不适用于 RAW 直出流程，**不予集成**（会污染胶片配方列表且颜色错误）。
+- 上游许可证 GPL-3.0：本仓已带 `resources/licenses/RawLab-GPL-3.0.txt` 归属文件，LUT 内注释头原样保留。
+
+### 17.2 集成实施（58）
+
+58. **大师配方专属 LUT 资源包（`resources/master_luts/`）**：
+    - 14 个 LUT 以 `大师·<配方名>.cube` 命名打包（与 `masterLutBaseName` 精确匹配，前端 `resolveMasterLutPath` 零改动）；`tauri.conf.json` `bundle.resources: ["resources"]` 递归自动打包，桌面 / Android（APK assets）同源。
+    - **体积控制**：65³ → 33³ 精确格点抽取（65 = 2×32+1，偶数下标即 33 格点，**零插值误差**），100 MB → 13 MB，与现有胶片 LUT 的 25³–33³ 质量标准一致；`#Gamma:sRGB to sRGB` 等注释头原样保留（`detect_lut_is_scene_referred` 兼容）。
+    - 与胶片 LUT 分目录，不混入胶片配方选择列表。
+    - 后端：`lut_processing.rs` 物化逻辑泛化为 `ensure_bundled_luts_materialized(data_dir, subdir, manifest)`（film / master 共用，Android APK assets 经 JNI 读取物化，第 16 轮链路直接复用）；新增 `master_luts_dir()` 与 `list_master_luts` 命令（`lib.rs` 注册）；`build.rs` 清单生成泛化为双目录循环。
+    - 前端：`MasterRecipesModal` 大师 tab 数据源切至 `list_master_luts`；胶片 tab 内嵌 `LUTControl` 自行调用 `list_luts`，不受影响。
+
+### 17.3 验证
+
+- `rustfmt --edition 2024`：`lut_processing.rs` / `build.rs` / `lib.rs` 解析通过。
+- `npx tsc --noEmit`：0 错误；`npm run build`：成功。
+- LUT 文件结构自检：33³ = 35937 数据行 × 3 分量、DOMAIN 0–1、注释头完整。
+- 依赖确认：`editor.masterRecipes.missingLut` i18n 键存在（修复后正常路径不应再触发）。
+
 

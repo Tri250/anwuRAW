@@ -93,26 +93,33 @@ fn strip_verbatim(path: &Path) -> PathBuf {
     PathBuf::from(s.strip_prefix(r"\\?\").unwrap_or(&s).to_string())
 }
 
-/// 构建期生成的内置胶片 LUT 文件名清单（见 build.rs）。
+/// 构建期生成的内置 LUT 文件名清单（见 build.rs）。
 /// Android 上 APK assets 无法枚举，运行时据此物化资源。
 #[cfg(target_os = "android")]
 static FILM_LUT_MANIFEST: &str = include_str!(concat!(env!("OUT_DIR"), "/film_luts_manifest.txt"));
+#[cfg(target_os = "android")]
+static MASTER_LUT_MANIFEST: &str =
+    include_str!(concat!(env!("OUT_DIR"), "/master_luts_manifest.txt"));
 
-/// Android：把 APK assets 内的内置胶片 LUT 物化到应用数据目录。
+/// Android：把 APK assets 内的内置 LUT 物化到应用数据目录（`resources/<subdir>`）。
 /// bundle.resources 没有真实文件系统路径（std::fs 不可读，与 lensfun_db 走内嵌
 /// 数据同因），物化后 list/preview/加载/删除保护全部复用既有文件链路。
-/// 逐文件跳过已存在的，首次调用复制一次（约 27 MB），后续调用仅做存在性检查。
+/// 逐文件跳过已存在的，首次调用复制一次，后续调用仅做存在性检查。
 #[cfg(target_os = "android")]
-fn ensure_bundled_film_luts_materialized(data_dir: &Path) -> Option<PathBuf> {
-    let target = data_dir.join("resources").join("film_luts");
+fn ensure_bundled_luts_materialized(
+    data_dir: &Path,
+    subdir: &str,
+    manifest: &str,
+) -> Option<PathBuf> {
+    let target = data_dir.join("resources").join(subdir);
     create_dir_all(&target).ok()?;
 
-    for name in FILM_LUT_MANIFEST.lines().filter(|l| !l.trim().is_empty()) {
+    for name in manifest.lines().filter(|l| !l.trim().is_empty()) {
         let dest = target.join(name);
         if dest.exists() {
             continue;
         }
-        let asset_rel_path = format!("resources/film_luts/{}", name);
+        let asset_rel_path = format!("resources/{}/{}", subdir, name);
         if let Ok(bytes) = crate::android_integration::read_android_apk_asset(&asset_rel_path) {
             if !bytes.is_empty() {
                 // 单个文件失败不阻断其余 LUT 的物化。
@@ -127,7 +134,7 @@ fn film_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
     #[cfg(target_os = "android")]
     {
         let data_dir = app_handle.path().app_data_dir().ok()?;
-        ensure_bundled_film_luts_materialized(&data_dir)
+        ensure_bundled_luts_materialized(&data_dir, "film_luts", FILM_LUT_MANIFEST)
     }
     #[cfg(not(target_os = "android"))]
     {
@@ -137,6 +144,35 @@ fn film_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
             .ok()
             .map(|p| strip_verbatim(&p))
     }
+}
+
+/// 大师配方专属 LUT 目录。与胶片 LUT 分离，避免混入胶片配方列表。
+fn master_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
+    #[cfg(target_os = "android")]
+    {
+        let data_dir = app_handle.path().app_data_dir().ok()?;
+        ensure_bundled_luts_materialized(&data_dir, "master_luts", MASTER_LUT_MANIFEST)
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        app_handle
+            .path()
+            .resolve(
+                "resources/master_luts",
+                tauri::path::BaseDirectory::Resource,
+            )
+            .ok()
+            .map(|p| strip_verbatim(&p))
+    }
+}
+
+/// 大师配方 LUT 列表（`resources/master_luts`，全部为内置只读资源）。
+#[tauri::command]
+pub fn list_master_luts(app_handle: AppHandle) -> Result<Vec<LutEntry>, String> {
+    if let Some(master_dir) = master_luts_dir(&app_handle) {
+        return list_luts_in_dir(&master_dir, true).map_err(|e| e.to_string());
+    }
+    Ok(Vec::new())
 }
 
 pub fn get_luts_dir(app_data_dir: &Path) -> anyhow::Result<PathBuf> {

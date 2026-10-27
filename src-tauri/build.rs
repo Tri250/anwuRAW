@@ -230,22 +230,25 @@ fn main() {
         println!("cargo:rustc-link-search=native={}", dest_dir.display());
     }
 
-    // 生成内置胶片 LUT 文件名清单：Android 上 bundle 资源在 APK assets 内无法
-    // 枚举，运行时据此把 LUT 物化到应用数据目录（见 lut_processing::film_luts_dir）。
-    let film_luts_src = manifest_dir.join("resources").join("film_luts");
-    let mut manifest = String::new();
-    if let Ok(entries) = fs::read_dir(&film_luts_src) {
-        let mut names: Vec<String> = entries
-            .filter_map(Result::ok)
-            .filter(|entry| entry.path().is_file())
-            .filter_map(|entry| entry.file_name().to_str().map(str::to_string))
-            .collect();
-        names.sort();
-        manifest = names.join("\n");
+    // 生成内置 LUT 文件名清单（film_luts / master_luts）：Android 上 bundle 资源在
+    // APK assets 内无法枚举，运行时据此把资源物化到应用数据目录（见 lut_processing）。
+    for lut_dir in ["film_luts", "master_luts"] {
+        let src = manifest_dir.join("resources").join(lut_dir);
+        let mut manifest = String::new();
+        if let Ok(entries) = fs::read_dir(&src) {
+            let mut names: Vec<String> = entries
+                .filter_map(Result::ok)
+                .filter(|entry| entry.path().is_file())
+                .filter_map(|entry| entry.file_name().to_str().map(str::to_string))
+                .collect();
+            names.sort();
+            manifest = names.join("\n");
+        }
+        let manifest_path =
+            PathBuf::from(env::var("OUT_DIR").unwrap()).join(format!("{}_manifest.txt", lut_dir));
+        fs::write(&manifest_path, manifest).unwrap();
+        println!("cargo:rerun-if-changed=resources/{}", lut_dir);
     }
-    let manifest_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("film_luts_manifest.txt");
-    fs::write(&manifest_path, manifest).unwrap();
-    println!("cargo:rerun-if-changed=resources/film_luts");
 
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-env-changed=RAPIDRAW_RUNTIME_DIR");
