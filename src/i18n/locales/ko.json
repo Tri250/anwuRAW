@@ -1348,7 +1348,7 @@
     },
     "splash": {
       "addFolder": "폴더 추가",
-      "brand": "RapidRAW",
+      "brand": "带娃的小陈工",
       "continueSession": "세션 계속하기",
       "contribute": "GitHub에서 기여하기",
       "descriptionAndroid": "매우 빠른 GPU 가속 RAW 이미지 편집기입니다. 라이브러리를 열어 시작하세요.",
@@ -2126,7 +2126,7 @@
       "title": "태그 지정"
     },
     "thanks": {
-      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
+      "description": "사진을 사랑하는 개발자로서 사진 애호가를 위한 전문 도구를 만들고 있습니다. 저는 그저 「육아 중인 샤오천공」, 사진을 사랑하는 개발자입니다.",
       "title": "특별한 감사"
     },
     "themes": {

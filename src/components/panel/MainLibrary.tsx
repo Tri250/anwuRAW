@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getVersion } from '@tauri-apps/api/app';
-import { open } from '@tauri-apps/plugin-shell';
 import {
   CheckCheck,
   Folder,
@@ -173,9 +171,6 @@ function ThumbnailProgressCount() {
 export default function MainLibrary(props: MainLibraryProps) {
   const { t } = useTranslation();
   const setUI = useUIStore((state) => state.setUI);
-  const [appVersion, setAppVersion] = useState('');
-  const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
-  const [latestVersion, setLatestVersion] = useState('');
   const [isBusyDelayed, setIsBusyDelayed] = useState(false);
   const [isBusyLoaderMounted, setIsBusyLoaderMounted] = useState(false);
   const [isProgressHovered, setIsProgressHovered] = useState(false);
@@ -296,48 +291,6 @@ export default function MainLibrary(props: MainLibraryProps) {
     }
   }, [isBusyDelayed]);
 
-  useEffect(() => {
-    const compareVersions = (v1: string, v2: string) => {
-      const parts1 = v1.split('.').map(Number);
-      const parts2 = v2.split('.').map(Number);
-      const len = Math.max(parts1.length, parts2.length);
-      for (let i = 0; i < len; i++) {
-        const p1 = parts1[i] || 0;
-        const p2 = parts2[i] || 0;
-        if (p1 < p2) return -1;
-        if (p1 > p2) return 1;
-      }
-      return 0;
-    };
-
-    const checkVersion = async () => {
-      try {
-        const currentVersion = await getVersion();
-        setAppVersion(currentVersion);
-
-        const response = await fetch('https://api.github.com/repos/CyberTimon/RapidRAW/releases/latest');
-        if (!response.ok) {
-          console.error('Failed to fetch latest release info from GitHub.');
-          return;
-        }
-        const data = await response.json();
-        const latestTag = data.tag_name;
-        if (!latestTag) return;
-
-        const latestVersionStr = latestTag.startsWith('v') ? latestTag.substring(1) : latestTag;
-        setLatestVersion(latestVersionStr);
-
-        if (compareVersions(currentVersion, latestVersionStr) < 0) {
-          setIsUpdateAvailable(true);
-        }
-      } catch (error) {
-        console.error('Error checking for updates:', error);
-      }
-    };
-
-    checkVersion();
-  }, []);
-
   if (!props.rootPaths || props.rootPaths.length === 0) {
     if (!props.appSettings) {
       return null;
@@ -446,65 +399,6 @@ export default function MainLibrary(props: MainLibraryProps) {
                       </div>
                     </div>
                   </div>
-
-                  <Text
-                    variant={TextVariants.small}
-                    as="div"
-                    className="absolute bottom-8 left-8 lg:left-16 space-y-1 z-10 drop-shadow-sm"
-                  >
-                    {appVersion && (
-                      <div className="flex items-center space-x-2">
-                        <p>
-                          <span
-                            className={`group transition-all duration-300 ease-in-out rounded-md py-1 ${
-                              isUpdateAvailable
-                                ? 'cursor-pointer border border-yellow-500 px-2 hover:bg-yellow-500/20'
-                                : ''
-                            }`}
-                            onClick={() => {
-                              if (isUpdateAvailable) {
-                                open('https://github.com/CyberTimon/RapidRAW/releases/latest');
-                              }
-                            }}
-                            data-tooltip={
-                              isUpdateAvailable
-                                ? t('library.splash.downloadVersion', { version: latestVersion })
-                                : t('library.splash.latestVersion')
-                            }
-                          >
-                            <span className={isUpdateAvailable ? 'group-hover:hidden' : ''}>
-                              {t('library.splash.version', { version: appVersion })}
-                            </span>
-                            {isUpdateAvailable && (
-                              <span className="hidden group-hover:inline text-yellow-400">
-                                {t('library.splash.newVersionAvailable')}
-                              </span>
-                            )}
-                          </span>
-                        </p>
-                        <span>-</span>
-                        <p>
-                          <a
-                            href="https://ko-fi.com/cybertimon"
-                            className="hover:underline"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {t('library.splash.donate')}
-                          </a>
-                          <span className="mx-1">{t('library.splash.or')}</span>
-                          <a
-                            href="https://github.com/CyberTimon/RapidRAW"
-                            className="hover:underline"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {t('library.splash.contribute')}
-                          </a>
-                        </p>
-                      </div>
-                    )}
-                  </Text>
                 </>
               )}
             </div>

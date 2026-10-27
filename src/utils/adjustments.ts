@@ -999,7 +999,6 @@ export const ADJUSTMENT_SECTIONS: Sections = {
     BasicAdjustment.Exposure,
     'toneMapper',
   ],
-  curves: ['curves', 'pointCurves', 'parametricCurve', 'curveMode'],
   color: [
     ColorAdjustment.Saturation,
     ColorAdjustment.Temperature,
@@ -1011,6 +1010,7 @@ export const ADJUSTMENT_SECTIONS: Sections = {
     'colorCalibration',
     ColorAdjustment.Hue,
   ],
+  curves: ['curves', 'pointCurves', 'parametricCurve', 'curveMode'],
   details: [
     DetailsAdjustment.Clarity,
     DetailsAdjustment.Dehaze,

@@ -1349,7 +1349,7 @@
     },
     "splash": {
       "addFolder": "Add Folder",
-      "brand": "RapidRAW",
+      "brand": "带娃的小陈工",
       "continueSession": "Continue Session",
       "contribute": "Contribute on GitHub",
       "descriptionAndroid": "A blazingly fast, GPU-accelerated RAW image editor. Open the library to begin.",
@@ -2127,7 +2127,7 @@
       "title": "Tagging"
     },
     "thanks": {
-      "description": "一个热爱摄影黑厂大牛马【带娃的小陈工】",
+      "description": "A developer who loves photography, building professional tools for photography enthusiasts. I am simply “Xiao Chen Gong”, a dad on duty and a developer who loves photography.",
       "title": "Special Thanks"
     },
     "themes": {
