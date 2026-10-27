@@ -424,7 +424,7 @@ export default function ExportPanel({
       }
     };
     fetchDims();
-  }, [pathsToExport, isLibraryContext, selectedImage, enableWatermark, numImages, isVisible]);
+  }, [pathsToExport, isLibraryContext, selectedImage, enableWatermark, numImages, isVisible, isPanelReallyActive]);
 
   useEffect(() => {
     const fetchWatermarkDimensions = async () => {
@@ -566,6 +566,8 @@ export default function ExportPanel({
     exportMasks,
     preserveFolders,
     isLibraryContext,
+    destination,
+    subfolder,
   ]);
 
   const handleVariableClick = (variable: string) => {

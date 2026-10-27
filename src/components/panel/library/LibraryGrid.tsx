@@ -500,6 +500,15 @@ export default function LibraryGrid(props: any) {
     collapsedRecursiveFolders,
     thumbnailSize,
     listColumnWidths.thumbnail,
+    listColumnWidths.name,
+    listColumnWidths.date,
+    listColumnWidths.rating,
+    listColumnWidths.shutter,
+    listColumnWidths.aperture,
+    listColumnWidths.iso,
+    listColumnWidths.focal,
+    listColumnWidths.color,
+    showExifCols,
     currentFolderPath,
     thumbnailSizeOptions,
     thumbnailAspectRatio,
@@ -558,7 +567,7 @@ export default function LibraryGrid(props: any) {
     if (savedTop > 0) {
       element.scrollTop = savedTop;
     }
-  }, [listHandle, currentFolderPath]);
+  }, [listHandle, currentFolderPath, gridData]);
 
   const getItemSize = useCallback(
     (index: number) => {

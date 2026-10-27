@@ -236,7 +236,39 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - **TIFF 导出不嵌入 EXIF/XMP 元数据**（exif_processing.rs:1463 上游 FIXME）：little_exif 库暂不支持向 TIFF 写入元数据。JPEG/PNG/WEBP 均正常写入。若需修复须引入 TIFF 重写方案（重 TIFF 结构），属上游功能开发范畴。
 - **culling 对焦分析在 720px 缩略图上计算**（culling.rs:130）：上游权衡，非功能缺失。
 
-### 验证结果
+## 六、功能性自检：缓存失效 + hooks 竞态 + store 逻辑（第四轮）
+
+> 维度：① 后端 5 级缓存失效正确性（cache key 漏字段=调参无效）；② react-hooks 依赖数组/闭包竞态（仓库 eslint 未启用 react-hooks 规则，此类缺陷从未被检测）；③ store action 逻辑。
+
+### 6.1 后端缓存失效核查（通过）
+- `calculate_transform_hash`（cache_utils.rs:285）完整覆盖 orientation/rotation/flip、lensBlur 全参（含深度图）、relight 全参（含法线图）、fog 全参（含深度图）、crop、GEOMETRY_KEYS 18 项、aiPatches、AI 去噪（含 cache_epoch）、负片转换——无失效缺口。
+- `DecodedImageCache` 指纹含文件 len/mtime + 5 项 RAW 解码设置（cache_utils.rs:498-523），联机拍摄同名文件复用与 RAW 设置变更均已防护。
+- `DecodeFlights` 并发去重 Leader/Follower + Drop 唤醒（含 panic 路径）正确。
+
+### 6.2 react-hooks 深度扫描与裁决（51 条告警逐一裁决）
+启用 `eslint-plugin-react-hooks`（--no-save 临时安装）全量扫描 hooks/App/components，**修复 7 处真实缺陷，裁决 44 处为刻意设计**：
+
+**修复（真实功能缺陷）：**
+19. **ImageCanvas 三事件回调闭包过期**（[ImageCanvas.tsx:2686](file:///workspace/src/components/panel/editor/ImageCanvas.tsx#L2686)/2974/3207）——`handleMove`/第二回调/`handleUp` 缺 `uncroppedImageRenderSize`、`isAiSubjectActive`、`mapUvToScreen`、`t` 依赖：透视辅助线拖动、AI 主体蒙版点击定位可能使用陈旧尺寸/映射 → 已补齐。
+20. **App renderAppPanel 持过期导航回调**（[App.tsx:792](file:///workspace/src/App.tsx#L792)）——TetheringPanel 的 `onImageSelect`/`onLibraryRefresh` props 未列入依赖，联机拍摄点击缩略图可能用旧选择器 → 已补。
+21. **ExportPanel 预估不随目的地/子文件夹刷新**（[ExportPanel.tsx:569](file:///workspace/src/components/panel/right/ExportPanel.tsx#L569)）——`destination`/`subfolder` 缺失；水印宽高比探测 `isPanelReallyActive` 缺失（面板激活后不取尺寸）→ 已补。
+22. **LibraryGrid 列表行高不随列宽刷新**（[LibraryGrid.tsx:495](file:///workspace/src/components/panel/library/LibraryGrid.tsx#L495)）——gridData useMemo 只依赖 `listColumnWidths.thumbnail`，实际还读 shutter/aperture/iso/focal/name/date/rating/color 与 `showExifCols`（行高计算 433-437 行）→ 调整列宽/开关 EXIF 列后行高滞留旧值，已补 9 项依赖。
+23. **LibraryGrid 滚动位置恢复可能失效**（[LibraryGrid.tsx:570](file:///workspace/src/components/panel/library/LibraryGrid.tsx#L570)）——恢复 effect 依赖缺 `gridData`：首次进入文件夹时 gridData 晚于 effect 就绪则 savedTop 不应用 → 已补。
+24. **右键菜单自动操作闭包过期**（[useAppContextMenus.ts:408](file:///workspace/src/hooks/useAppContextMenus.ts#L408)/932）——编辑器与缩略图右键菜单缺 `handleAutoLensCorrection`/`handleAutoStraighten(Paths)`/`handleEnableAdjustments` → 已补。
+25. **FolderTree 每 render 重建派生对象**（[FolderTree.tsx:744](file:///workspace/src/components/panel/right/FolderTree.tsx#L744)/750）——`openSections`（`?? ['current']`）与 `folderTreeSort`（`|| {...}`）每 render 新引用，导致 filteredTrees/filteredPinnedTrees useMemo 与分区 effect 每 render 重算（大目录树性能浪费）→ 改为 useMemo 稳定引用。
+
+**裁决为刻意设计（44 条，不修）：** store setter（zustand 稳定引用）/ref 依赖省略（useImageProcessing 核心调度带 eslint-disable 的 14 项精确列表）、版本号失效技巧（Filmstrip ratioMapVersion、Editor overlayTriggerHash 完整序列化蒙版参数并依赖 adjustments）、输入保护（AIPanel/MasksPanel prompt 仅在容器/蒙版切换时同步，防输入中被覆盖）、精确字段依赖（useImageLoader selectedImage?.path）、value 派生索引（LibraryHeader selectedIndex）、debounce 稳定实例（usePresets）、Slider 动画（displayValue 同步另有专门 effect）、初始化单次 effect（useAppInitialization/SettingsPanel）。
+
+### 6.3 store 抽查（通过）
+6 个 store 的 setter 均为 zustand 稳定引用；useUIStore/useLibraryStore/useProcessStore 的 action 在前几轮已审查（movePanel 窄化修复、任务徽标生命周期、缩略图批量写入）。
+
+### 6.4 验证
+- `npx tsc --noEmit`：**0 错误**
+- `npm run build`：**成功**（2580 模块；期间发现并修复了 --no-save 临时安装导致的 `@babel/runtime` 传递依赖缺失，package.json/lock 未变动）
+- `npm run i18n:runtime-check`：**通过**
+- react-hooks 复扫：51 → 40 条，余量全部为已裁决的刻意设计
+
+### 验证结果（历史）
 - `npx tsc --noEmit`：**60+ 错误 → 0**（两轮修复后保持 0）
 - `npm run build`（vite 生产构建）：**通过**（2580 模块）
 - `npm run i18n:runtime-check`：**通过**（动态 key 全部存在于 en.json）

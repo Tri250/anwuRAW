@@ -789,6 +789,8 @@ function App() {
       appSettings,
       handleSettingsChange,
       rootPaths,
+      handleImageSelect,
+      handleLibraryRefresh,
     ],
   );
 
