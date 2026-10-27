@@ -199,6 +199,43 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 16. **AI 任务排队入口无错误反馈（链路 10）** — LibraryHeader「Process images」按钮 `invoke(queue_ai_jobs)`（后端 `async fn -> Result<(), String>`）无 catch，排队失败时产生 unhandled rejection、用户点击无任何反应 → 已补 `.catch` + toast.error。
 17. **AI 连接器状态轮询无 catch（附属加固）** — App.tsx 启动即调 + 每 10s 轮询 `check_ai_connector_status`，invoke 失败（如 WebView 重载竞态）时产生未处理 rejection → 两处调用均已补 `.catch(console.error)`。
 
+## 五、空实现/模拟实现/简化实现专项排查（100% 覆盖）
+
+> 方法：特征扫描（TODO/FIXME/todo!/unimplemented!/mock/stub/placeholder/空函数体/空命令体/硬编码返回/永久禁用）+ 逐模块人工核实（前后端全清单）。
+
+**结论：全清单核查未发现空实现、模拟实现或功能性简化实现；本轮新增修复 1 项可观测性微优化。**
+
+### 5.1 特征扫描结果（全部核实为非缺陷）
+- 前端：TODO/FIXME/mock/占位数据 0 命中；`disabled={true}` 硬编码 0 命中。
+- 后端：`todo!()/unimplemented!()` 0 命中；无空命令体、无硬编码空返回（4 处 `Ok(Vec::new())` 均为文件不存在/空输入的合理处理：albums/presets/rename/LUT 缓存）。
+- 后端 41 处 `placeholder` 命中全部属于 **Immich/iCloud 云占位文件体系**（未下载原片的占位符与占位缩略图），为设计功能。
+- 2 处 FIXME 均为上游调优决策：`exif_processing.rs:1463`（TIFF 格式导出跳过元数据写入——上游 little_exif 库暂不支持 TIFF 写入，见 5.3）、`culling.rs:130`（分析缩放尺寸选择，算法参数而非功能缺失）。
+
+### 5.2 前端 20 处空函数逐一裁决（全部合理）
+| 位置 | 用途 | 裁决 |
+|---|---|---|
+| useCloudStore `routerPush/Replace: () => {}` | tauri-plugin-clerk 要求的 router 适配器，桌面 SPA 无客户端路由 | ✅ 桌面适配器标准用法 |
+| useAppContextMenus 8 处 `onClick: () => {}` | 右键菜单「取消」项，语义即关闭菜单 | ✅ |
+| SettingsPanel onConfirm 默认值 + router 透传 | 可选回调默认参数 | ✅ |
+| Editor `handleWbPicked` | 白平衡拾取完成通知钩子；实际应用逻辑在 ImageCanvas 内部（setAdjustments 温度/色调） | ✅ |
+| Editor syncWgpuRef 初始值 / BottomBar、Slider、CollapsibleSection 默认 props | ref 惰性初始化 / 可选回调默认参数 | ✅ |
+| CullingView `onLoad={NOOP}` | img 加载事件占位，时序处理在别处 | ✅ |
+
+### 5.3 重点深查记录
+1. **`originalFolderDummy`（ExportPanel→Rust）**：前端占位协议值；后端按 `destination_type == "originalFolder"` 分支用源文件父目录输出并创建子目录（export_processing.rs:1831-1856），`output_folder_or_file` 在该模式下被忽略——链路闭环，非断链。
+2. **参数化曲线（parametricCurve）**：Rust 仅消费 `curves` 点数组，但前端 parametric 编辑时同步**烘焙成点曲线**写入 `curves`（Curves.tsx:358-361），`parametricCurve/curveMode/pointCurves` 仅作 UI 模式记忆与复制粘贴清单——渲染闭环。
+3. **调整参数四层接线（Adjustments 接口 ↔ payload ↔ Rust 消费 ↔ 渲染管线）**：逐字段核对无孤儿参数——全局 35+ 字段（exposure…vignette/grain/CA/sharpness+Threshold）、creative 三件套（glow/halation/flare）、四通道曲线、HSL、colorGrading/colorCalibration/toneMapper、LUT 六字段、AI 降噪四字段（ai_denoise.rs）、负片六字段（negative_conversion.rs）、lensBlur/relight/fog（独立模块 + 深度图/法线图生成命令已注册）、几何/变换（get_geometry_params_from_json）、lensfun（缩略图管线 lensMaker 解析）、白平衡（LMS 矩阵）、baselineExposure（并入 exposure）、蒙版/aiPatches（mask_generation 管线）。
+4. **Clerk 云认证链路**：App.tsx 启动 initAuth → SettingsPanel 四态 UI（ready/unavailable/unsupported/loading）→ getToken → fetchUsage 配额（仅 cloud+登录+Pro）→ 云端 inpaint `bearer_auth(token)`（ai_connector.rs:138-174）→ Rust 仅桌面平台注册插件 + capabilities 域名放行——完整闭环。
+5. **Immich 命令覆盖**：前端 ImmichInvokes 10 项 = 后端注册 10 项，一一对应。
+6. **Relight/LensBlur/Fog 面板**：全部滑块经 Effects.tsx + ImageCanvas（画布拖放光源）写入 adjustments，后端 enabled+map 门控消费——接线完整。
+
+### 5.4 本轮修复
+18. **TetheringPanel 重影预览静默吞错**（[TetheringPanel.tsx:315](file:///workspace/src/components/panel/right/TetheringPanel.tsx#L315)）— `.catch(() => {})` 改为 `console.warn`，失败可排查（功能本身不卡死，URL 清理逻辑正确）。
+
+### 5.5 已知上游限制（非代码缺陷，如实记录）
+- **TIFF 导出不嵌入 EXIF/XMP 元数据**（exif_processing.rs:1463 上游 FIXME）：little_exif 库暂不支持向 TIFF 写入元数据。JPEG/PNG/WEBP 均正常写入。若需修复须引入 TIFF 重写方案（重 TIFF 结构），属上游功能开发范畴。
+- **culling 对焦分析在 720px 缩略图上计算**（culling.rs:130）：上游权衡，非功能缺失。
+
 ### 验证结果
 - `npx tsc --noEmit`：**60+ 错误 → 0**（两轮修复后保持 0）
 - `npm run build`（vite 生产构建）：**通过**（2580 模块）

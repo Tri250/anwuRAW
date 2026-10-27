@@ -312,7 +312,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
             setGhostBlobUrl(currentUrl);
           }
         })
-        .catch(() => {});
+        .catch((err) => console.warn('Failed to load ghost image preview:', err));
     } else {
       setGhostBlobUrl(null);
     }
