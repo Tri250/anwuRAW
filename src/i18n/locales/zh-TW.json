@@ -1131,6 +1131,11 @@
       "undo": "復原",
       "hiddenMultiple_one": "{{count}} 張影像已不再符合篩選條件"
     },
+    "viewMode": {
+      "culling": "選片視圖",
+      "grid": "網格視圖",
+      "list": "列表視圖"
+    },
     "filters": {
       "edited": {
         "all": "所有影像",

@@ -101,13 +101,28 @@ export const masterRecipeArtworkUrl = (recipeId: string) => `/master-recipes/${r
 export const resolveMasterLutPath = (
   recipe: MasterRecipe,
   luts: Array<{ name: string; path: string }>,
-): string | null => {
+): string | null => resolveMasterLutEntry(recipe, luts)?.path ?? null;
+
+export interface MasterLutEntryLike {
+  name: string;
+  path: string;
+  isSceneReferred?: boolean;
+}
+
+/**
+ * Resolves the bundled LUT entry for a recipe, preserving the backend-detected
+ * `isSceneReferred` flag so the renderer applies the LUT in the correct stage.
+ */
+export const resolveMasterLutEntry = (
+  recipe: MasterRecipe,
+  luts: Array<MasterLutEntryLike>,
+): MasterLutEntryLike | null => {
   const expected = masterLutBaseName(recipe);
   const exact = luts.find((lut) => lut.name === expected);
   if (exact) {
-    return exact.path;
+    return exact;
   }
   const normalizedName = recipe.name.toLowerCase();
   const fuzzy = luts.find((lut) => lut.name.toLowerCase().includes(normalizedName));
-  return fuzzy ? fuzzy.path : null;
+  return fuzzy ?? null;
 };

@@ -1136,6 +1136,11 @@
       "hiddenMultiple_other": "Snímky ({{count}}) již neodpovídají filtru",
       "undo": "Zpět"
     },
+    "viewMode": {
+      "culling": "Režim výběru",
+      "grid": "Mřížkové zobrazení",
+      "list": "Zobrazení seznamu"
+    },
     "filters": {
       "edited": {
         "all": "Všechny snímky",

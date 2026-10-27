@@ -19,7 +19,7 @@ import {
   masterLutBaseName,
   masterRecipeArtworkUrl,
   recipeToAdjustments,
-  resolveMasterLutPath,
+  resolveMasterLutEntry,
 } from '../../utils/masterRecipes';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useEditorActions } from '../../hooks/useEditorActions';
@@ -114,7 +114,7 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
   );
 
   const handleApplyRecipe = useCallback(
-    (recipe: MasterRecipe) => {
+    async (recipe: MasterRecipe) => {
       if (activeRecipeId === recipe.id) {
         const restore = previousAdjustments.current;
         if (restore) {
@@ -129,23 +129,36 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
       if (!activeRecipeId) {
         previousAdjustments.current = snapshotAdjustments(adjustments);
       }
-
-      const lutPath = resolveMasterLutPath(recipe, luts);
-      const patch = recipeToAdjustments(recipe, RECIPE_INTENSITY_DEFAULT);
       setActiveRecipeId(recipe.id);
       setIntensity(RECIPE_INTENSITY_DEFAULT);
 
-      if (!lutPath) {
+      const patch = recipeToAdjustments(recipe, RECIPE_INTENSITY_DEFAULT);
+      const entry = resolveMasterLutEntry(recipe, luts);
+
+      // 与胶片 LUT 选择一致：先把 LUT 解析进后端缓存并验证可用，再写入渲染状态。
+      // 否则损坏的 LUT 只会在主渲染时加载失败，画面表现为异常甚至全黑。
+      let verifiedLutPath: string | null = null;
+      let verifiedIsSceneReferred = MASTER_LUT_IS_SCENE_REFERRED;
+      if (entry) {
+        try {
+          await invoke('load_and_parse_lut', { path: entry.path });
+          verifiedLutPath = entry.path;
+          verifiedIsSceneReferred = entry.isSceneReferred ?? MASTER_LUT_IS_SCENE_REFERRED;
+        } catch (error) {
+          console.error('Master recipe LUT failed to load:', error);
+          toast.warn(t('editor.masterRecipes.missingLut', { name: recipe.name }));
+        }
+      } else {
         toast.warn(t('editor.masterRecipes.missingLut', { name: recipe.name }));
       }
 
       setAdjustments((prev: Adjustments) => ({
         ...prev,
         ...patch,
-        lutPath,
-        lutName: lutPath ? masterLutBaseName(recipe) : null,
-        lutIntensity: lutPath ? RECIPE_INTENSITY_DEFAULT : 0,
-        lutIsSceneReferred: MASTER_LUT_IS_SCENE_REFERRED,
+        lutPath: verifiedLutPath,
+        lutName: verifiedLutPath ? masterLutBaseName(recipe) : null,
+        lutIntensity: verifiedLutPath ? RECIPE_INTENSITY_DEFAULT : 0,
+        lutIsSceneReferred: verifiedIsSceneReferred,
         activeTools: enableRecipeTools(getActiveTools(prev)),
       }));
     },
@@ -263,7 +276,7 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
                 return (
                   <button
                     key={recipe.id}
-                    onClick={() => handleApplyRecipe(recipe)}
+                    onClick={() => void handleApplyRecipe(recipe)}
                     className={`group flex flex-col overflow-hidden rounded-lg border text-left transition-colors ${
                       isActive ? 'border-accent bg-surface' : 'border-transparent bg-surface/50 hover:bg-surface'
                     }`}

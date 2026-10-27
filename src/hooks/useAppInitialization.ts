@@ -151,8 +151,19 @@ export const useAppInitialization = ({
           };
         }
 
+        let needsSettingsSave = false;
         if (!settings.language) {
           settings.language = getDefaultLanguage(i18n);
+          needsSettingsSave = true;
+        }
+        // 旧版本（≤1.6.8）后端默认 language 为 "en" 且会写入 settings.json，
+        // 升级安装后数据目录保留该值，界面仍是英文。执行一次性迁移。
+        if (!settings.legacyLanguageMigrated && settings.language === 'en') {
+          settings.language = getDefaultLanguage(i18n);
+          settings.legacyLanguageMigrated = true;
+          needsSettingsSave = true;
+        }
+        if (needsSettingsSave) {
           handleSettingsChange(settings);
         }
 

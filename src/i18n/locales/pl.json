@@ -1181,6 +1181,11 @@
       "hiddenMultiple_other": "Obrazy ({{count}}) nie pasują już do filtra",
       "undo": "Cofnij"
     },
+    "viewMode": {
+      "culling": "Widok selekcji",
+      "grid": "Widok siatki",
+      "list": "Widok listy"
+    },
     "filters": {
       "edited": {
         "all": "Wszystkie obrazy",

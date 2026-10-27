@@ -662,6 +662,10 @@ pub struct AppSettings {
     pub exif_overlay: Option<String>,
     #[serde(default)]
     pub language: Option<String>,
+    /// 旧版本（≤1.6.8）曾把默认语言硬编码为 "en" 并随首次保存写入 settings.json，
+    /// 导致升级安装后界面仍是英文。该标记为 false 时前端执行一次 zh-CN 迁移。
+    #[serde(default)]
+    pub legacy_language_migrated: bool,
     #[serde(default)]
     pub folder_tree_sort: Option<FolderTreeSort>,
     #[serde(default)]
@@ -785,7 +789,12 @@ impl Default for AppSettings {
             apply_preprocessing_to_non_raws: Some(false),
             use_apple_raw9: Some(false),
             exif_overlay: Some("off".to_string()),
-            language: Some("en".to_string()),
+            // 首次安装且无 settings.json 时，LoadSettings 返回该默认值。必须为
+            // 简体中文：前端 useAppInitialization 仅在 language 为空时才补默认，
+            // 这里若填 "en" 会绕过前端回退逻辑，导致装完默认英文界面。
+            language: Some("zh-CN".to_string()),
+            // 新安装无需触发"旧版默认 en → zh-CN"的一次性迁移。
+            legacy_language_migrated: true,
             folder_tree_sort: Some(FolderTreeSort::default()),
             library_display_mode: Some("grid".to_string()),
             grouping: Some("off".to_string()),

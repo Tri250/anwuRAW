@@ -1131,6 +1131,11 @@
       "undo": "실행 취소",
       "hiddenMultiple_one": "이미지 {{count}}개가 더 이상 필터와 일치하지 않습니다"
     },
+    "viewMode": {
+      "culling": "선별 뷰",
+      "grid": "그리드 뷰",
+      "list": "리스트 뷰"
+    },
     "filters": {
       "edited": {
         "all": "모든 이미지",

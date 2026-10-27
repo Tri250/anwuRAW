@@ -1125,6 +1125,11 @@
       "hiddenMultiple_other": "{{count}} afbeeldingen komen niet meer overeen met het filter",
       "undo": "Ongedaan maken"
     },
+    "viewMode": {
+      "culling": "Selectieweergave",
+      "grid": "Rasterweergave",
+      "list": "Lijstweergave"
+    },
     "filters": {
       "edited": {
         "all": "Alle afbeeldingen",

@@ -1158,6 +1158,11 @@
       "hiddenMultiple_other": "{{count}} immagini non corrispondono più al filtro",
       "undo": "Annulla"
     },
+    "viewMode": {
+      "culling": "Vista di selezione",
+      "grid": "Vista griglia",
+      "list": "Vista elenco"
+    },
     "filters": {
       "edited": {
         "all": "Tutte le Immagini",

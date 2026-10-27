@@ -1144,6 +1144,11 @@
       "hiddenMultiple_one": "{{count}} 张图像已不再符合筛选条件",
       "undo": "撤销"
     },
+    "viewMode": {
+      "culling": "选片视图",
+      "grid": "网格视图",
+      "list": "列表视图"
+    },
     "filters": {
       "edited": {
         "all": "所有图像",

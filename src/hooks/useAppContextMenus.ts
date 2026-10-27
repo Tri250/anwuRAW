@@ -325,7 +325,8 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
                 setUI({ collageModalState: { isOpen: true, sourceImages: [selectedImage] } });
               },
             },
-            { label: t('contextMenus.editor.cullImage'), icon: Users, disabled: true },
+            // 选片需要多图对比（缩略图菜单要求 ≥2 张），单图编辑器上下文无意义，
+            // 不再展示永远点不动的禁用项。
           ],
         },
         {

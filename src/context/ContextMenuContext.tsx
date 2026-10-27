@@ -143,8 +143,8 @@ function SubMenu({ cancelCloseSubmenu, closeSubmenu, hideContextMenu, options, p
       >
         <div
           className={clsx(
-            'backdrop-blur-md rounded-lg shadow-xl',
-            !CustomComponent && 'bg-surface/95 p-2 w-max min-w-56 max-w-72',
+            'backdrop-blur-md rounded-lg shadow-xl overscroll-contain',
+            !CustomComponent && 'bg-surface/95 p-2 w-max min-w-56 max-w-72 max-h-[70vh] overflow-y-auto',
           )}
           role="menu"
         >
@@ -221,7 +221,9 @@ function MenuItem({ option, path, hideContextMenu }: MenuItemProps) {
             option.onClick();
             hideContextMenu();
           }
-          if (!option.disabled && option.submenu && hasInteractiveSubmenu) {
+          // 触屏（Android 长按）不产生稳定的 mouseenter，点按带子菜单的项时
+          // 通过 click 事件兜底打开子菜单；openSubmenu 幂等，桌面上同样成立。
+          if (!option.disabled && option.submenu) {
             openSubmenu(path);
           }
         }}
@@ -279,7 +281,10 @@ function ContextMenu() {
           style={{ top: y, left: x }}
           transition={{ duration: 0.1, ease: 'easeOut' }}
         >
-          <div className="bg-surface/95 backdrop-blur-md rounded-lg shadow-xl p-2 w-max min-w-64 max-w-80" role="menu">
+          <div
+            className="bg-surface/95 backdrop-blur-md rounded-lg shadow-xl p-2 w-max min-w-64 max-w-80 max-h-[70vh] overflow-y-auto overscroll-contain"
+            role="menu"
+          >
             {options.map((option: any, index: number) => (
               <MenuItem hideContextMenu={hideContextMenu} key={index} option={option} path={[index]} />
             ))}
@@ -356,15 +361,25 @@ export function ContextMenuProvider({ children }: ContextMenuProviderProps) {
       }
     };
 
+    // 菜单自身在小屏（Android）可滚动；捕获阶段需排除菜单内部滚动，否则
+    // 一滚动菜单就被关闭，溢出保护形同虚设。
+    const handleScroll = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('[role="menu"]')) {
+        return;
+      }
+      hideContextMenu();
+    };
+
     if (menuState.isVisible) {
       document.addEventListener('mousedown', handleClickOutside);
-      window.addEventListener('scroll', hideContextMenu, true);
+      window.addEventListener('scroll', handleScroll, true);
       document.addEventListener('keydown', handleKeyDown);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', hideContextMenu, true);
+      window.removeEventListener('scroll', handleScroll, true);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [menuState.isVisible, hideContextMenu]);

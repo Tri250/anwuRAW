@@ -1131,6 +1131,11 @@
       "undo": "元に戻す",
       "hiddenMultiple_one": "{{count}} 枚の画像がフィルターに一致しなくなりました"
     },
+    "viewMode": {
+      "culling": "選別ビュー",
+      "grid": "グリッドビュー",
+      "list": "リストビュー"
+    },
     "filters": {
       "edited": {
         "all": "すべての画像",

@@ -1521,10 +1521,38 @@ impl GpuProcessor {
         let dummy_blur_texture = device.create_texture(&dummy_texture_desc);
         let dummy_blur_view = dummy_blur_texture.create_view(&Default::default());
 
-        let dummy_lut_texture = device.create_texture(&wgpu::TextureDescriptor {
-            dimension: wgpu::TextureDimension::D3,
-            ..dummy_texture_desc
-        });
+        // 占位 LUT 填充为 2x2x2 恒等映射（sample(uv) == uv），即使任何未预见的
+        // 路径仍绑定了它，输出也与原图一致，而不是 textureLoad 返回 0 的纯黑画面。
+        let identity_lut_f16: Vec<f16> = (0..2usize)
+            .flat_map(|z| {
+                (0..2usize).flat_map(move |y| {
+                    (0..2usize).map(move |x| {
+                        [
+                            f16::from_f32(x as f32),
+                            f16::from_f32(y as f32),
+                            f16::from_f32(z as f32),
+                            f16::ONE,
+                        ]
+                    })
+                })
+            })
+            .flatten()
+            .collect();
+        let dummy_lut_texture = device.create_texture_with_data(
+            &context.queue,
+            &wgpu::TextureDescriptor {
+                label: Some("Dummy LUT Texture"),
+                size: wgpu::Extent3d {
+                    width: 2,
+                    height: 2,
+                    depth_or_array_layers: 2,
+                },
+                dimension: wgpu::TextureDimension::D3,
+                ..dummy_texture_desc
+            },
+            TextureDataOrder::MipMajor,
+            bytemuck::cast_slice(&identity_lut_f16),
+        );
         let dummy_lut_view = dummy_lut_texture.create_view(&Default::default());
         let dummy_lut_sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
         let dummy_mask_view = device
@@ -2296,6 +2324,14 @@ impl GpuProcessor {
         output_to_display: bool,
         output_precision: RenderOutputPrecision,
     ) -> Result<(RenderedPixels, u32, u32, u32, u32), String> {
+        let mut request = request;
+        // LUT 加载失败时 request.lut 为 None，但 adjustments.global.has_lut 仍由
+        // lutPath 是否存在决定（见 get_all_adjustments_from_json）。两者不一致会让
+        // shader 采样空的占位 LUT 纹理（textureLoad 返回 0），在 lutIntensity=100 时
+        // mix 因子为 1.0，整幅画面变成纯黑。这里强制对齐：没有真实 LUT 就关闭 LUT 特性。
+        if request.lut.is_none() {
+            request.adjustments.global.has_lut = 0;
+        }
         let input_texture_view = &input.texture_view;
         let gf_coeffs_view = &input.gf_coeffs_view;
         let gf_structure_view = &input.gf_structure_view;

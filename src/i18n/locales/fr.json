@@ -1156,6 +1156,11 @@
       "hiddenMultiple_other": "{{count}} images ne correspondent plus au filtre",
       "undo": "Annuler"
     },
+    "viewMode": {
+      "culling": "Vue de tri",
+      "grid": "Vue grille",
+      "list": "Vue liste"
+    },
     "filters": {
       "edited": {
         "all": "Toutes les images",

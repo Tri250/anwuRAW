@@ -1134,6 +1134,11 @@
       "hiddenMultiple_other": "{{count}} imatges ja no coincideixen amb el filtre",
       "undo": "Desfés"
     },
+    "viewMode": {
+      "culling": "Vista de selecció",
+      "grid": "Vista de quadrícula",
+      "list": "Vista de llista"
+    },
     "filters": {
       "edited": {
         "all": "Totes les imatges",

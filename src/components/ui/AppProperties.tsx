@@ -282,6 +282,7 @@ export interface AppSettings {
   folderIcons?: Record<string, string>;
   exifOverlay?: ExifOverlay;
   language?: string;
+  legacyLanguageMigrated?: boolean;
   fontFamily?: string;
   folderTreeSort?: FolderTreeSort;
   taggingShortcuts?: string[];

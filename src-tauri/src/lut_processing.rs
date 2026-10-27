@@ -117,7 +117,13 @@ fn ensure_bundled_luts_materialized(
     for name in manifest.lines().filter(|l| !l.trim().is_empty()) {
         let dest = target.join(name);
         if dest.exists() {
-            continue;
+            // 上次写入若中断可能留下空文件，会导致后续 LUT 解析失败、画面异常。
+            if let Ok(meta) = std::fs::metadata(&dest)
+                && meta.len() > 0
+            {
+                continue;
+            }
+            let _ = std::fs::remove_file(&dest);
         }
         let asset_rel_path = format!("resources/{}/{}", subdir, name);
         if let Ok(bytes) = crate::android_integration::read_android_apk_asset(&asset_rel_path) {
@@ -587,7 +593,12 @@ pub fn get_or_load_lut(state: &State<AppState>, path: &str) -> Result<Arc<Lut>, 
         return Ok(lut.clone());
     }
 
-    let lut = parse_lut_file(path).map_err(|e| e.to_string())?;
+    let lut = parse_lut_file(path).map_err(|e| {
+        // 解析失败必须留痕：渲染侧会静默降级（不应用 LUT），无日志则极难定位
+        // “应用大师配方后画面异常”一类问题（损坏/不完整/被安全策略拦截的文件）。
+        log::error!("Failed to load LUT '{}': {}", path, e);
+        e.to_string()
+    })?;
     let arc_lut = Arc::new(lut);
     cache.insert(path.to_string(), arc_lut.clone());
     Ok(arc_lut)
