@@ -464,4 +464,45 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - `prettier --check`（新增/修改文件）：**通过**
 - `eslint`（新增文件）：0 error（2 条 `i18next/no-literal-string` warning，属错误兜底 UI 的英文文案）
 
+---
+
+## 十三、Android 发布链路重新纳入与审核自检（第九轮）
+
+### 13.1 阻塞点定位与修复（38–41）
+
+38. **多 ABI 触发 `build.rs` panic（关键）**：Tauri Gradle 插件默认 `defaultAbiList = ["arm64-v8a","armeabi-v7a","x86","x86_64"]`，而 `build.rs` 的 `runtime_libraries()` 只有 `("android","aarch64")` 分支，其余架构直接 `panic!("Unsupported target")`。修复：`gradle.properties` 增加 `abiList=arm64-v8a` / `archList=arm64` / `targetList=aarch64`，构建命令显式 `--target aarch64`，cargo 与 Gradle 同时收敛到单一 ABI。
+39. **无签名密钥导致 Gradle 失败**：仓库未配置 `ANDROID_KEY_*` secrets 时 `signingConfigs.release.storeFile` 为 null，`app/build.gradle.kts` 直接抛错。修复：无 `keystore.properties` 时回落到 debug signingConfig；CI 增加 `Setup Android signing`，有 secrets 用 secrets，否则生成可安装的调试密钥（后续改为内置侧载密钥，见 42）。
+40. **`android-actions/setup-android` 超时**：hosted runner 上该 action 重新下载 cmdline-tools，实测 7 分钟后 `Error: aborted`。修复：删除该 action，改为 `Verify Android SDK` 步骤，直接使用 runner 预置的 `ANDROID_HOME` + 自带 `sdkmanager` 接受许可并安装 `platform-tools` / `platforms;android-36` / `build-tools;36.0.0`。
+41. **`ort-sys` 交叉编译 panic**：`ort-sys 2.0.0-rc.10` 在 `aarch64-linux-android` 无预编译二进制，构建脚本以 `downloaded binaries not available for target` panic。修复：新增 `Fetch ONNX Runtime for Android` 预取步骤，从模型仓库下载 `libonnxruntime-android-arm64-v8a.so` 到 `src-tauri/libs/arm64-v8a/` 并做 SHA-256 校验（`999ecfdb…bd78e`），构建时设置 `ORT_SKIP_DOWNLOAD=1` + `ORT_LIB_LOCATION`，`build.rs` 随后把它复制进 `jniLibs/arm64-v8a`。
+
+### 13.2 产物审核（APK/AAB 内容核查）
+
+- `04_RapidRAW_v1.6.7_android_arm64-v8a.apk`（78.8 MB）与同名 `.aab`（41.5 MB）已上传至 v1.6.7 Release，发布矩阵资产总数 28 → 30。
+- `lib/arm64-v8a/librapidraw_lib.so` 51.6 MB：前端 dist 由 `tauri::generate_context!` 编译期内嵌，因此不在 `assets/` 中，与 Tauri 行为一致。
+- `lib/arm64-v8a/libonnxruntime.so` 18.2 MB：AI 降噪运行库已正确打包，无缺失。
+- `assets/resources/film_luts/`：12 个「大师·」配方 + 富士 F-Log2 系列 + Kodak/SPEKTRAFILM 共 26 个 `.cube` 及许可证；`assets/resources/master_recipes/master-recipes.json` 与 `assets/lensfun_db/` 均在包内。
+- `AndroidManifest.xml`：仅声明 `INTERNET`；FileProvider `exported="false"`；leanback 非必需。导出走 MediaStore，无需存储权限。
+- 应用 ID / 命名空间 `io.github.CyberTimon.RapidRAW`，`targetSdk 36`。
+
+### 13.3 本轮修复与优化（42–45）
+
+42. **签名不稳定（安装/卸载缺陷）**：原兜底每次 CI 重新生成调试密钥，导致每个版本签名不同，用户升级必须卸载。修复：仓库内置侧载密钥 `src-tauri/gen/android/rapidraw-release.keystore`（别名 `rapidraw`，RSA 2048，有效期 30 年，证书 SHA-256 `BB:E0:5D:…:38:91`），`Setup Android signing` 优先级为 secrets > 内置密钥 > 临时调试密钥。同一密钥可保证覆盖升级；如需上架 Play，配置自有 `ANDROID_KEY_*` 后重建即可。
+43. **`minSdk = 24` 与实际能力不符**：导出链路使用 `MediaStore.Downloads`（API 29 新增）及 `relative_path` / `is_pending` 列（API 29 新增），在 Android 7–9 上必然失败。修复：`minSdk` 上调为 29，避免把「装得上但导出必挂」的版本发给旧设备。
+44. **坏包可直达 Release**：新增 `Verify Android bundle` 步骤，构建后对每个 release APK 执行 `apksigner verify --print-certs` 与 `zipalign -c -P 16 4`，签名或 16 KB 页对齐不通过即构建失败，资产不会被上传。
+45. **Release 说明缺失 Android 信息**：更新 v1.6.7 Release 正文，补充产物名称、架构限制、Android 10+ 要求、签名指纹与上架限制，并删除「移除 Android 目标」的过期描述。
+
+### 13.4 验证
+
+- `build.yml` / `release.yml` YAML 语法解析通过（`yaml.safe_load`）。
+- 首轮 Android 单平台构建 `40481633957`（`ec876661`）：**success**，`Fetch ONNX Runtime` → `Build Android` → `Prepare/Upload Android Release Assets` 全绿，Release 新增 `.apk` / `.aab` 两个资产。
+- 同一提交的 `CI Build`（`40481598892`）与 `Lint`（`40481598656`）：均 success。
+- 仓库内置密钥可通过 `keytool -list` 读取（1 条 `PrivateKeyEntry`），CI 复用同一指纹。
+- 签名/对齐校验与 `minSdk` 变更后的产物由第九轮重跑构建验证。
+
+### 13.5 已知限制
+
+- 仅 `arm64-v8a`：`build.rs` 只为该 ABI 提供 ONNX Runtime，32 位与 x86_64 设备无法安装；如需扩展须为对应 ABI 提供运行库并放开 `runtime_libraries()`。
+- 内置密钥是公开的侧载密钥，不能用于 Google Play（`.aab` 仅作审计/自测用途）。
+- 沙箱无 Android 真机/模拟器，本轮为构建与静态产物审核，未做真机启动与导出回归。
+
 
