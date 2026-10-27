@@ -579,4 +579,32 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - `data-tooltip` 工具提示仍为 hover 触发（GlobalTooltip），触屏不可达；均为说明性文案而非功能入口，维持现状。
 - 长按触发 contextmenu 依赖 Chromium WebView 默认行为，未做自定义长按手势；个别 WebView 版本若长按行为异常，预设/蒙版行操作仍可通过 `html.android` 强显的行内按钮完成（蒙版/AI 行）或菜单按钮完成（预设行有独立菜单入口的除外，其行内删除/重命名走长按）。
 
+## 十六、预设 → 配方（大师配方 / 胶片配方）Android 失效修复（第十二轮 · 用户报告回归）
+
+用户报告：Android 端「预设 → 配方」中的大师配方与胶片配方无法正常使用。
+
+### 16.1 根因（56）
+
+56. **bundle 资源在 APK 内无文件系统路径，`list_luts` 内置 LUT 恒为空（关键）**：大师配方与胶片配方共同依赖 `list_luts` 返回的内置 LUT（`resources/film_luts/*.cube`，32 个 / 27 MB）。后端 `film_luts_dir()` 用 `resolve(BaseDirectory::Resource)` + `read_dir`/`fs::read` 遍历读取——该方式只在桌面成立；Android 上 `bundle.resources` 打进 APK `assets/`，没有真实文件系统路径，`read_dir` 得到空集，导致：胶片配方列表为空；大师配方 `resolveMasterLutPath` 全部落空（仅剩参数部分，LUT 缺失）。佐证：镜头校正的 lensfun_db 在 Android 正是同样问题，原作者已改用 `include_dir!` 内嵌数据（`lens_correction.rs:559` "Loading Lensfun DB from embedded assets (Android path)"），而 LUT 链路漏掉了同等处理。
+
+### 16.2 修复（57）
+
+57. **构建期清单 + 运行时物化（`build.rs` / `lut_processing.rs` / `android_integration.rs`）**：
+    - `build.rs` 生成 `film_luts_manifest.txt`（32 个文件名，排序、`rerun-if-changed`）到 `OUT_DIR`。
+    - `lut_processing.rs` 新增 `ensure_bundled_film_luts_materialized()`：首次 `list_luts` 时按清单逐个经 `read_android_apk_asset()` 从 APK assets 读字节写入 `<app_data>/resources/film_luts/`（逐文件跳过已存在、单文件失败不阻断），`film_luts_dir()` 在 Android 返回该目录。物化后 list / 预览 / 加载 / 内置删除保护全部复用既有文件链路，路径跨版本稳定（sidecar 引用不失效）。
+    - `android_integration.rs` 抽出 `read_jni_input_stream()` 共用助手（`read_android_content_uri` 同步重构复用），新增 `read_android_apk_asset()`：经 `context.getAssets().open(rel_path)` + 流式读字节，复用既有 JNI 错误清理/Closeable 关闭模式。
+
+### 16.3 复核确认
+
+- 大师配方目录数据为前端打包 JSON（`masterRecipes.json` import），artwork 走 `public/master-recipes/*.png`（dist 内嵌），Android 均无问题；失效点仅在 LUT 依赖。
+- 配方弹窗两个 tab（大师 / 胶片）均以 `list_luts` 为数据源，单点修复全覆盖。
+- `remove_lut` 对物化内置 LUT 双重保护（`starts_with(film_luts_dir)` + Android 既有「仅允许用户 LUT 目录」守卫）。
+- 首次调用 `list_luts` 物化约 27 MB（JNI 8KB 缓冲流式读），同步执行约 1–3 s，弹窗本有 loading 态；此后仅存在性检查。
+
+### 16.4 验证
+
+- `rustfmt --edition 2024`：`lut_processing.rs` / `android_integration.rs` / `build.rs` 解析通过。
+- host `cargo check` 两级受限：rust-toolchain.toml 锁定 `1.98`（aliyun 镜像 404 无法安装）；镜像内最高可用 `1.94.1` 又低于依赖链 MSRV（sysinfo 需 1.95，部分依赖使用 1.98 的 `cfg_select` 特性），装齐 GTK/webkit 系统库后仍在依赖阶段失败——与第九轮结论一致，沙箱无法完成 Rust 编译验证；本轮改动以 rustfmt 解析 + 机械重构（读取循环原样抽函数）+ 既有 JNI 模式复用佐证，最终以 CI Android 构建为准。
+- 已知限制：若未来版本增删内置 LUT，物化目录中已删除项会残留（仅多显示一个多余内置项，不影响功能）。
+
 

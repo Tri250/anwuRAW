@@ -93,12 +93,50 @@ fn strip_verbatim(path: &Path) -> PathBuf {
     PathBuf::from(s.strip_prefix(r"\\?\").unwrap_or(&s).to_string())
 }
 
+/// 构建期生成的内置胶片 LUT 文件名清单（见 build.rs）。
+/// Android 上 APK assets 无法枚举，运行时据此物化资源。
+#[cfg(target_os = "android")]
+static FILM_LUT_MANIFEST: &str = include_str!(concat!(env!("OUT_DIR"), "/film_luts_manifest.txt"));
+
+/// Android：把 APK assets 内的内置胶片 LUT 物化到应用数据目录。
+/// bundle.resources 没有真实文件系统路径（std::fs 不可读，与 lensfun_db 走内嵌
+/// 数据同因），物化后 list/preview/加载/删除保护全部复用既有文件链路。
+/// 逐文件跳过已存在的，首次调用复制一次（约 27 MB），后续调用仅做存在性检查。
+#[cfg(target_os = "android")]
+fn ensure_bundled_film_luts_materialized(data_dir: &Path) -> Option<PathBuf> {
+    let target = data_dir.join("resources").join("film_luts");
+    create_dir_all(&target).ok()?;
+
+    for name in FILM_LUT_MANIFEST.lines().filter(|l| !l.trim().is_empty()) {
+        let dest = target.join(name);
+        if dest.exists() {
+            continue;
+        }
+        let asset_rel_path = format!("resources/film_luts/{}", name);
+        if let Ok(bytes) = crate::android_integration::read_android_apk_asset(&asset_rel_path) {
+            if !bytes.is_empty() {
+                // 单个文件失败不阻断其余 LUT 的物化。
+                let _ = std::fs::write(&dest, &bytes);
+            }
+        }
+    }
+    Some(target)
+}
+
 fn film_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
-    app_handle
-        .path()
-        .resolve("resources/film_luts", tauri::path::BaseDirectory::Resource)
-        .ok()
-        .map(|p| strip_verbatim(&p))
+    #[cfg(target_os = "android")]
+    {
+        let data_dir = app_handle.path().app_data_dir().ok()?;
+        ensure_bundled_film_luts_materialized(&data_dir)
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        app_handle
+            .path()
+            .resolve("resources/film_luts", tauri::path::BaseDirectory::Resource)
+            .ok()
+            .map(|p| strip_verbatim(&p))
+    }
 }
 
 pub fn get_luts_dir(app_data_dir: &Path) -> anyhow::Result<PathBuf> {

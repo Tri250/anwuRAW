@@ -322,6 +322,42 @@ pub fn resolve_android_content_uri_name(uri_str: &str) -> Result<String, String>
 }
 
 #[cfg(target_os = "android")]
+pub fn read_jni_input_stream(
+    env: &mut JNIEnv<'_>,
+    input_stream: &JObject<'_>,
+) -> Result<Vec<u8>, String> {
+    const BUFFER_SIZE: i32 = 8192;
+
+    let java_buffer = env
+        .new_byte_array(BUFFER_SIZE)
+        .map_err(|e| map_android_jni_error(env, e))?;
+    let mut rust_buffer = vec![0i8; BUFFER_SIZE as usize];
+    let mut bytes = Vec::new();
+
+    loop {
+        let read_count = env
+            .call_method(input_stream, "read", "([B)I", &[(&java_buffer).into()])
+            .and_then(|value| value.i())
+            .map_err(|e| map_android_jni_error(env, e))?;
+
+        if read_count < 0 {
+            break;
+        }
+
+        if read_count == 0 {
+            continue;
+        }
+
+        let read_len = read_count as usize;
+        env.get_byte_array_region(&java_buffer, 0, &mut rust_buffer[..read_len])
+            .map_err(|e| map_android_jni_error(env, e))?;
+        bytes.extend(rust_buffer[..read_len].iter().map(|byte| *byte as u8));
+    }
+
+    Ok(bytes)
+}
+
+#[cfg(target_os = "android")]
 pub fn read_android_content_uri(uri_str: &str) -> Result<Vec<u8>, String> {
     let vm = unsafe { JavaVM::from_raw(android_context().vm().cast()) }
         .map_err(|e| format!("Failed to access Android JVM: {}", e))?;
@@ -348,37 +384,51 @@ pub fn read_android_content_uri(uri_str: &str) -> Result<Vec<u8>, String> {
         ));
     }
 
-    let result = (|| -> Result<Vec<u8>, String> {
-        const BUFFER_SIZE: i32 = 8192;
+    let result = read_jni_input_stream(&mut env, &input_stream);
 
-        let java_buffer = env
-            .new_byte_array(BUFFER_SIZE)
-            .map_err(|e| map_android_jni_error(&mut env, e))?;
-        let mut rust_buffer = vec![0i8; BUFFER_SIZE as usize];
-        let mut bytes = Vec::new();
+    close_android_closeable(&mut env, &input_stream);
+    result
+}
 
-        loop {
-            let read_count = env
-                .call_method(&input_stream, "read", "([B)I", &[(&java_buffer).into()])
-                .and_then(|value| value.i())
-                .map_err(|e| map_android_jni_error(&mut env, e))?;
+/// 读取 APK 内打包资源（bundle.resources 落在 assets/ 下，无文件系统路径）。
+/// `rel_path` 为相对于 assets 根的路径，如 `resources/film_luts/X.cube`。
+#[cfg(target_os = "android")]
+pub fn read_android_apk_asset(rel_path: &str) -> Result<Vec<u8>, String> {
+    let vm = unsafe { JavaVM::from_raw(android_context().vm().cast()) }
+        .map_err(|e| format!("Failed to access Android JVM: {}", e))?;
+    let mut env = vm
+        .attach_current_thread()
+        .map_err(|e| format!("Failed to attach current thread to Android JVM: {}", e))?;
 
-            if read_count < 0 {
-                break;
-            }
+    let context = unsafe { JObject::from_raw(android_context().context().cast()) };
+    let asset_manager = env
+        .call_method(
+            &context,
+            "getAssets",
+            "()Landroid/content/res/AssetManager;",
+            &[],
+        )
+        .and_then(|value| value.l())
+        .map_err(|e| map_android_jni_error(&mut env, e))?;
 
-            if read_count == 0 {
-                continue;
-            }
+    let path_jstr = env
+        .new_string(rel_path)
+        .map_err(|e| map_android_jni_error(&mut env, e))?;
+    let input_stream = env
+        .call_method(
+            &asset_manager,
+            "open",
+            "(Ljava/lang/String;)Ljava/io/InputStream;",
+            &[(&path_jstr).into()],
+        )
+        .and_then(|value| value.l())
+        .map_err(|e| map_android_jni_error(&mut env, e))?;
 
-            let read_len = read_count as usize;
-            env.get_byte_array_region(&java_buffer, 0, &mut rust_buffer[..read_len])
-                .map_err(|e| map_android_jni_error(&mut env, e))?;
-            bytes.extend(rust_buffer[..read_len].iter().map(|byte| *byte as u8));
-        }
+    if input_stream.is_null() {
+        return Err(format!("APK asset not found: {}", rel_path));
+    }
 
-        Ok(bytes)
-    })();
+    let result = read_jni_input_stream(&mut env, &input_stream);
 
     close_android_closeable(&mut env, &input_stream);
     result
