@@ -227,9 +227,11 @@
     ],
     "windows": {
       "nsis": {
-        "installerIcon": "icons/icon.ico"
+        "installerIcon": "icons/icon.ico",
+        "languages": ["SimpChinese", "English"],
+        "displayLanguageSelector": true
       }
     }
   },
-  "version": "1.6.7"
+  "version": "1.6.8"
 }

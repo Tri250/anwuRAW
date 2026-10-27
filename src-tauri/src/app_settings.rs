@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
 use serde::{Deserialize, Serialize};
@@ -822,6 +822,13 @@ pub fn is_tethering_supported() -> bool {
 
 static SETTINGS_CACHE: LazyLock<Mutex<Option<AppSettings>>> = LazyLock::new(|| Mutex::new(None));
 
+// 写入临时文件后原子重命名,避免进程崩溃或断电导致 settings.json 半写损坏。
+fn write_json_atomic(path: &Path, json_string: &str) -> Result<(), String> {
+    let tmp_path = path.with_extension("json.tmp");
+    fs::write(&tmp_path, json_string).map_err(|e| e.to_string())?;
+    fs::rename(&tmp_path, path).map_err(|e| e.to_string())
+}
+
 fn settings_cache() -> std::sync::MutexGuard<'static, Option<AppSettings>> {
     SETTINGS_CACHE.lock().unwrap_or_else(|e| e.into_inner())
 }
@@ -842,7 +849,14 @@ fn read_settings_from_disk(app_handle: &AppHandle) -> Result<AppSettings, String
 
     let mut settings: AppSettings = if path.exists() {
         let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        serde_json::from_str(&content).unwrap_or_default()
+        match serde_json::from_str(&content) {
+            Ok(settings) => settings,
+            Err(_) => {
+                // 保留损坏的配置文件以便排查,再回退到默认值。
+                let _ = fs::copy(&path, path.with_extension("json.corrupt.bak"));
+                AppSettings::default()
+            }
+        }
     } else {
         AppSettings::default()
     };
@@ -897,7 +911,7 @@ fn read_settings_from_disk(app_handle: &AppHandle) -> Result<AppSettings, String
     }
 
     if settings_modified && let Ok(json_string) = serde_json::to_string_pretty(&settings) {
-        let _ = fs::write(&path, json_string);
+        let _ = write_json_atomic(&path, &json_string);
     }
 
     Ok(settings)
@@ -910,7 +924,7 @@ pub fn save_settings(settings: AppSettings, app_handle: AppHandle) -> Result<(),
         .ok();
     let path = get_settings_path(&app_handle)?;
     let json_string = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
-    fs::write(path, json_string).map_err(|e| e.to_string())?;
+    write_json_atomic(&path, &json_string)?;
     *settings_cache() = None;
     crate::immich::apply_settings(&settings.immich);
 
