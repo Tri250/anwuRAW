@@ -19,7 +19,11 @@ android {
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "io.github.CyberTimon.RapidRAW"
-        minSdk = 24
+        // The export path writes through MediaStore.Downloads and uses the
+        // relative_path / is_pending columns, all of which only exist from
+        // API 29; on older releases every export would fail, so Android 10 is
+        // the real minimum.
+        minSdk = 29
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")

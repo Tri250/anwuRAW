@@ -41,7 +41,6 @@ pub struct LutEntry {
 #[serde(rename_all = "camelCase")]
 pub struct LutPreviewRequest {
     pub path: String,
-    pub is_built_in: bool,
     #[serde(default)]
     pub is_scene_referred: bool,
 }

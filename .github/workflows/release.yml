@@ -21,7 +21,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Publishing a draft that was already built (e.g. toggling draft off/on, or
+  # publishing after a manual dispatch) must not rebuild every platform. Manual
+  # dispatches always build, so a partially failed matrix can be retried.
+  precheck:
+    name: Precheck release assets
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    outputs:
+      has-assets: ${{ steps.count.outputs.count != '0' }}
+    permissions:
+      contents: read
+    steps:
+      - name: Count existing release assets
+        id: count
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          release_id="${{ github.event.release.id }}"
+          count=$(gh api "repos/${{ github.repository }}/releases/${release_id}/assets" --jq 'length' 2>/dev/null || echo 0)
+          echo "count=${count}" >> "$GITHUB_OUTPUT"
+          echo "Release ${release_id} already has ${count} asset(s)."
+
   release:
+    needs: precheck
+    if: github.event_name == 'workflow_dispatch' || needs.precheck.outputs.has-assets != 'true'
     strategy:
       fail-fast: false
       matrix:
