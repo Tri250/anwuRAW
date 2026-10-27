@@ -208,6 +208,13 @@ jobs:
             printf '%s' "${ANDROID_KEY_BASE64}" | base64 -d > "$RUNNER_TEMP/keystore.jks"
             echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
             echo "Using the release keystore from repository secrets."
+          elif [[ -f rapidraw-release.keystore ]]; then
+            # The checked-in sideload keystore keeps the APK signature stable
+            # across builds so users can upgrade without uninstalling.
+            echo "keyAlias=rapidraw" > keystore.properties
+            echo "password=rapidraw" >> keystore.properties
+            echo "storeFile=$PWD/rapidraw-release.keystore" >> keystore.properties
+            echo "Using the checked-in sideload keystore."
           else
             keytool -genkeypair -v -keystore "$RUNNER_TEMP/debug.keystore" \
               -alias androiddebugkey -storepass android -keypass android \
@@ -287,6 +294,25 @@ jobs:
           ORT_SKIP_DOWNLOAD: '1'
         run: |
           npx tauri android build --verbose --target aarch64 ${{ inputs.build-args }}
+
+      # Fail the build when the APK is not correctly signed or aligned, so a
+      # broken Android bundle never reaches the release page.
+      - name: Verify Android bundle
+        if: ${{ inputs.mobile == 'android' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t apks < <(find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' -path '*release*')
+          if [[ ${#apks[@]} -eq 0 ]]; then
+            echo "::error::No release APK was produced"
+            exit 1
+          fi
+          build_tools="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)"
+          for apk in "${apks[@]}"; do
+            echo "Verifying $apk"
+            "$build_tools/apksigner" verify --verbose --print-certs "$apk"
+            "$build_tools/zipalign" -c -P 16 4 "$apk"
+          done
 
       - name: Prepare Android Release Assets
         if: ${{ inputs.mobile == 'android' && inputs.release-id != '' }}
