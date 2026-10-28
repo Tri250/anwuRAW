@@ -45,7 +45,10 @@ jobs:
 
   release:
     needs: precheck
-    if: github.event_name == 'workflow_dispatch' || needs.precheck.outputs.has-assets != 'true'
+    # `!cancelled()` drops the implicit success() check so that the
+    # workflow_dispatch path still runs when `precheck` is skipped (it only
+    # executes for `release` events).
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || (needs.precheck.result == 'success' && needs.precheck.outputs.has-assets != 'true')) }}
     strategy:
       fail-fast: false
       matrix:
