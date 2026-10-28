@@ -9,7 +9,7 @@ import { Adjustments, AiPatch, MaskContainer, Coord } from '../utils/adjustments
 import { SubMask } from '../components/panel/right/Masks';
 import { Invokes } from '../components/ui/AppProperties';
 
-const getTransformAdjustments = (adj: Adjustments) => ({
+export const getTransformAdjustments = (adj: Adjustments) => ({
   transformDistortion: adj.transformDistortion,
   transformVertical: adj.transformVertical,
   transformHorizontal: adj.transformHorizontal,

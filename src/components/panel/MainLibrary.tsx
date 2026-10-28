@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Settings,
   Search,
+  Sparkles,
   Users,
   LayoutGrid,
   Columns,
@@ -93,6 +94,7 @@ interface MainLibraryProps {
   thumbnailAspectRatio: ThumbnailAspectRatio;
   thumbnailSize: ThumbnailSize;
   onNavigateToCommunity(): void;
+  onNavigateToStudio(): void;
 }
 
 interface DisplayModeSwitchProps {
@@ -622,6 +624,15 @@ export default function MainLibrary(props: MainLibraryProps) {
                     data-tooltip={t('library.tooltips.select')}
                   >
                     <CheckCheck className="w-6 h-6" />
+                  </Button>
+                )}
+                {!props.isAndroid && (
+                  <Button
+                    className="h-12 w-12 bg-transparent text-text-primary shadow-none p-0 flex items-center justify-center"
+                    onClick={props.onNavigateToStudio}
+                    data-tooltip={t('library.tooltips.studio')}
+                  >
+                    <Sparkles className="w-5 h-5" />
                   </Button>
                 )}
                 {!props.isAndroid && (

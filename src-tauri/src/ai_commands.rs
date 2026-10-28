@@ -28,7 +28,7 @@ use crate::get_cached_full_warped_image;
 const NO_FOREGROUND_FOUND: &str = "No foreground found";
 const NO_SKY_FOUND: &str = "No sky found";
 const NO_MATCH_FOUND: &str = "No match found for";
-const NO_FACES_FOUND: &str = "No faces found";
+pub(crate) const NO_FACES_FOUND: &str = "No faces found";
 const NO_RESULT_ERRORS: [&str; 4] = [
     NO_FOREGROUND_FOUND,
     NO_SKY_FOUND,
@@ -274,7 +274,7 @@ pub fn generate_text_mask(
     })
 }
 
-fn cached_face_analysis(
+pub(crate) fn cached_face_analysis(
     ai_state: &Mutex<Option<AiState>>,
     models: &AiModels,
     cache_key: &str,
@@ -752,6 +752,66 @@ pub async fn generate_ai_face_mask(
     )?;
     check_cancelled(&guard)?;
     Ok(params)
+}
+
+/// F-04d 颈脸肤色统一：对比 faceSkin 与 bodySkin 区域的线性域均值，
+/// 返回可将 bodySkin 向 faceSkin 对齐的 colorGrading.global 滑杆补丁。
+#[tauri::command]
+pub async fn compute_skin_unify(
+    js_adjustments: serde_json::Value,
+    path: String,
+    rotation: f32,
+    flip_horizontal: bool,
+    flip_vertical: bool,
+    orientation_steps: u8,
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<Value, String> {
+    let models = get_or_init_ai_models(
+        &app_handle,
+        &state.ai_state,
+        &state.ai_init_lock,
+        AiMaskModel::Face,
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let warped_image = get_cached_full_warped_image(&state, &js_adjustments)?;
+    let transform = MaskTransform {
+        rotation,
+        flip_horizontal,
+        flip_vertical,
+        orientation_steps,
+    };
+    let cache_key = ai_cache_key(&path, &js_adjustments);
+    let analysis = cached_face_analysis(
+        &state.ai_state,
+        &models,
+        &cache_key,
+        &warped_image,
+        transform,
+    )?;
+    if analysis.faces.is_empty() {
+        return Err(NO_FACES_FOUND.to_string());
+    }
+    let face_mean = crate::color_transfer::region_mean_linear(
+        &warped_image,
+        &compose_face_mask(&warped_image, &analysis, &[FacePart::FaceSkin]),
+    )
+    .ok_or("No face skin pixels found")?;
+    let body_mean = crate::color_transfer::region_mean_linear(
+        &warped_image,
+        &compose_face_mask(&warped_image, &analysis, &[FacePart::BodySkin]),
+    )
+    .ok_or("No body skin pixels found")?;
+    let (hue, saturation, luminance) = crate::color_transfer::tint_sliders_for_shift([
+        face_mean[0] - body_mean[0],
+        face_mean[1] - body_mean[1],
+        face_mean[2] - body_mean[2],
+    ]);
+    Ok(json!({
+        "colorGrading": { "global": { "hue": hue, "saturation": saturation, "luminance": luminance } }
+    }))
 }
 
 #[allow(clippy::too_many_arguments)]

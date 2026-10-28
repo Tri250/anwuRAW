@@ -668,4 +668,68 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - `prettier --check`：通过；`i18n:runtime-check` 报告 198 项复数回退，经 `git stash` 对照确认与基线完全一致（本轮新增键为非复数键，不引入新问题）。
 - 沙箱无 GUI / GPU 上下文，本轮管线结论以静态取证 + 门控一致性验证为主，最终以 CI 多平台构建为准。
 
+## 十九、F-01～F-08 功能需求落地与核查（第十四轮）
+
+### 19.1 F-01 导出 8-bit 抖动 —— 核查结论：现有架构已满足，无需改动
+
+- `shader.wgsl` L381 `dither(coords)`（Bayer 4×4 有序抖动）在 L2121-2124 于 **`HIGH_PRECISION_OUTPUT == 0u`（8-bit 路径）** 才以 1/255 幅度叠加到 `final_rgb`，位于管线最终 `textureStore` 之前。
+- 16-bit 管线（`high_precision_shader_source()` 输出 `rgba16float` + `gpu_processing.rs` L2198/L2284 显式 `constants HIGH_PRECISION_OUTPUT = 1.0`）不执行抖动。
+- 导出与预览共用同一 compute 管线（见 18.1 WYSIWYG 结论），8-bit JPEG/PNG 的编码输入即为抖动后的 8-bit 图像；16-bit TIFF 输出不含抖动。
+- 验收对照：平滑渐变 8-bit 导出已带有序抖动（抑制等距色带）；16-bit TIFF 像素值与无抖动一致。两条 GWT 天然成立。
+
+### 19.2 F-02 宽色域 ICC 导出（已落地）
+
+- `src-tauri/icc/` 捆绑 ProPhoto RGB / Display P3 / Rec2020 ICC；`export_processing.rs` 按导出色彩空间做线性→目标基色转换并 `set_icc_profile` 嵌入对应 profile；sRGB 维持原路径。
+- 前端导出面板新增「色彩空间」选项（`ExportSettings.colorSpace`，含 `last_used` 持久化），文案补齐 15 语言。
+
+### 19.3 F-03 AI 追色（已落地）
+
+- `color_transfer.rs`：Lab 空间 Reinhard 均值-方差匹配 + 直方图辅助，反解为 `wb_log_gain_*` / `colorGrading` / `colorCalibration` / `curves` 等可编辑字段（非破坏、可复位）。
+- `ai_commands.rs` 追色命令 + `Color.tsx` 面板追色按钮（样片→当前图），i18n 15 语言。
+
+### 19.4 F-04 人脸分区精修（已落地）
+
+- 后端：`ai_commands.rs` 基于 FacePart mask 的分区算子（磨皮频率分离引导滤波、牙齿提亮降饱和、眼部局部对比、肤色统一 `compute_skin_unify`），缓存复用 `ai_cache_key` / `cached_face_analysis`。
+- 前端：`MasksPanel` retouch 滑杆组（smoothing / teeth / eyes，`RetouchKind` 具体联合类型）+ 「统一肤色」按钮；每算子生成独立 mask 容器（AiFace submask 限定 parts），滑杆值存 `subMask.parameters.retouch`，效果映射为容器 adjustments——非破坏、可回退、归零即等效原图。
+
+### 19.5 F-05 人脸液化 / 美型（本轮落地）
+
+- 后端 `inpainting.rs::generate_face_liquify_patch`：基于 478 landmark 的参数化 warp。**基准域烘焙**（与 patch 合成空间一致）：landmark 经 `inverse_transform_point` 几何反解（剥离 rotation/flip/orientationSteps）映射回 pre-geometry 域；瘦脸沿脸颊径向内收（`max_disp = slim% × half_w × 0.22`，cosine² 衰减），下颌线沿颌点下方锚点上提（`max_lift = jaw% × face_size × 0.05`）；AABB 裁剪烘焙范围；patch 排除自身（`patch_id`）防回灌；编码 `is_srgb=is_raw` 与笔刷液化一致。
+- `lib.rs` 注册命令；前端 `MasksPanel` 新增「瘦脸 / 下颌线」滑杆（600ms 防抖 + 代际丢弃过期结果，双 0 自动移除 patch）；i18n 15 语言。
+
+### 19.6 F-06 Khronos PBR Neutral 色调映射（已落地）
+
+- `shader.wgsl` 新增 `tonemapper_mode = 2`（PBR Neutral，常量对齐 Khronos 参考实现）；`image_processing.rs` 补 `apply_cpu_pbr_neutral_tonemap` CPU 兜底；`resolve_tonemapper_override` 支持 agx / basic / neutral 三档，预览与导出一致。
+
+### 19.7 F-07 背景瑕疵生成式修复 —— 核查结论：链路完整，无需改动
+
+- 后端：`ai_processing.rs::get_or_init_lama_model`（L1325）→ `run_lama_inpainting`（L1730）→ `inpainting.rs::invoke_generative_replace_with_mask_def` / `generate_manual_cleanup_patch` 全链贯通。
+- 前端：涂抹 mask → QuickErase / Heal / Clone / Generative Replace 入口齐全，输出为独立 patch 图层（非破坏）。
+
+### 19.8 F-08 Studio 批量模式（本轮落地）
+
+- 新增 `src/components/panel/StudioPage.tsx` 三步向导：① 选样片（`LoadMetadata` 读取 adjustments）→ ② 叠加配方（`LoadPresets` 过滤非 tool 类型）→ ③ 勾选客片 →「套用并导出」。
+- 批量链路完全复用既有基础设施：`ApplyAdjustmentsToPaths`（patch 合并写入 sidecar、AI 结果 reconcile）→ `ExportImages`（导出参数继承 `__last_used__` 预设，输出 `studio/` 子目录）→ `batch-export-progress` 进度条 + `CancelExport` 中断。
+- 样片风格合并语义与 `handlePasteAdjustments` 一致（`COPYABLE_ADJUSTMENT_KEYS` 过滤 + 跳过等于默认值的键）；视图经 `useUIStore.activeView === 'studio'` 接入 `LibraryView`，库顶栏 Sparkles 按钮入口；i18n `library.studio.*` 25 键 × 15 语言。
+
+### 19.9 本轮类型与一致性修复
+
+- `Color.tsx`：补 `TextVariants` 导入；`StudioPage` `ExportSettings` 补 `watermark: null`。
+- `MasksPanel`：`RetouchKind` 具体联合类型替代 `string`，使 i18next 严格类型接受模板字符串键。
+- `StudioPage`：`selectedCount` / `done` 改传 `{ n }` 插值（与 15 语言包 `{{n}}` 占位符一致），消除 extract 新增复数键缺失。
+- `color_transfer.rs`：`sort_by` 需 `mut`；`inpainting.rs` 补回被 Edit 吞掉的 `draw_stroke_to_mask` 签名。
+- **`color_profiles.rs`（F-02 测试修复 + 数值正确性）**：
+    - `conversion_maps_grey_to_grey` 失败根因：ProPhoto 原走 native-D50 白点（取整 xy 0.345704/0.358540）推导 colorants，与 Bradford(D65→D50) 适配 sRGB 白的实际输出差异 ~2e-4（Z 分量）→ 灰色经转换偏 17 个 16-bit 码值。修复：ProPhoto 统一改用 Bradford+chad 模型（与 P3/Rec2020 同构）——`target_space_matrix_d50` 全部按 D65 白点构造后 Bradford 适配，`build_rgb_matrix_icc` 恒写 `chad` tag、`wtpt` 改写为 colorants 列和（media white 精确自洽）。灰色转换数学上精确保灰（浮点 ε 级）。
+    - `icc_profiles_have_valid_structure`：测试断言偏移写错（`mntr` 在 header 12-15、`RGB ` 在 16-19，原断言 16/20 起始）。
+    - `srgb_matrix_round_trips_white` → 更名 `srgb_matrix_maps_white_to_d65_xyz`：矩阵把白映射到 XYZ=(0.9505,1,1.089) 是正确行为，原断言误把色度坐标 x=0.3127 当作 X/Y 比值。
+
+### 19.10 验证
+
+- `npx tsc --noEmit`：0 错误；`npm run build`（tsc + vite build）：成功。
+- `cargo +1.98 fmt --all`：通过；`cargo +1.98 clippy --all-targets` / `--lib`：零告警。
+- `cargo +1.98 test`：**12 passed / 0 failed**（含 F-02 color_profiles 6 项：ICC 结构 / 灰色守恒 / 白点矩阵 / TRC 全量程 / 空间解析）。注：test 首次编译曾因沙箱 OOM（SIGKILL）与残留 incremental 缓存链接失败，清缓存 + `--jobs 1` 后正常，非代码问题。
+- `prettier --check`（本轮全部改动文件）：通过。
+- `i18n:check`：`library.studio.*` / `editor.masks.retouch.*` / `library.tooltips.studio` 无缺失；extract 仍报告的 `_few/_many` 缺失为既有基线问题（en.json 已含 `_one/_other`，该工具要求全复数形式，历史轮次即存在），`i18n:runtime-check` exit 0。
+
+
 

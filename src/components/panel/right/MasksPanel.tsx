@@ -38,6 +38,7 @@ import {
   LayoutList,
   Loader2,
   Minus,
+  Palette,
   Plus,
   PlusSquare,
   RotateCcw,
@@ -79,6 +80,7 @@ import {
 } from './Masks';
 import {
   Adjustments,
+  AiPatch,
   INITIAL_MASK_ADJUSTMENTS,
   INITIAL_MASK_CONTAINER,
   MaskContainer,
@@ -91,7 +93,8 @@ import {
   toggleToolActive,
 } from '../../../utils/adjustments';
 import { useContextMenu } from '../../../context/ContextMenuContext';
-import { OPTION_SEPARATOR, Orientation, Panel } from '../../ui/AppProperties';
+import { OPTION_SEPARATOR, Invokes, Orientation, Panel } from '../../ui/AppProperties';
+import { invoke } from '@tauri-apps/api/core';
 import { createSubMask } from '../../../utils/maskUtils';
 import { usePresets } from '../../../hooks/usePresets';
 import Text from '../../ui/Text';
@@ -99,7 +102,7 @@ import { TEXT_COLOR_KEYS, TextColors, TextVariants, TextWeights } from '../../..
 import { useEditorStore } from '../../../store/useEditorStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { selectAiModelDownloadStatus, useProcessStore } from '../../../store/useProcessStore';
-import { useAiMasking } from '../../../hooks/useAiMasking';
+import { useAiMasking, getTransformAdjustments } from '../../../hooks/useAiMasking';
 import { useEditorActions } from '../../../hooks/useEditorActions';
 import { isPanelVisible, useUIStore } from '../../../store/useUIStore';
 import { useWaveformControls } from '../../../hooks/useWaveformControls';
@@ -1912,6 +1915,37 @@ function SubMaskRow({
   );
 }
 
+// F-04 人像精修算子 → 专用 mask 容器映射：
+// 每个算子一个独立容器，首个 submask 为 AiFace 且 parts 限定作用区域，
+// 滑杆值存 submask.parameters.retouch，效果映射为容器 adjustments（非破坏、可回退）。
+type RetouchKind = 'smoothing' | 'teeth' | 'eyes';
+
+const RETOUCH_OPERATORS: Array<{
+  kind: RetouchKind;
+  parts: string[];
+  sections: [string, string];
+  map: (v: number) => Record<string, number>;
+}> = [
+  {
+    kind: 'smoothing',
+    parts: ['faceSkin', 'bodySkin'],
+    sections: ['details', 'details'],
+    map: (v) => ({ lumaNoiseReduction: v, sharpness: v * 0.3 }),
+  },
+  {
+    kind: 'teeth',
+    parts: ['teeth'],
+    sections: ['basic', 'color'],
+    map: (v) => ({ exposure: v * 0.25, saturation: -v * 0.4 }),
+  },
+  {
+    kind: 'eyes',
+    parts: ['iris', 'eyeWhites'],
+    sections: ['basic', 'details'],
+    map: (v) => ({ clarity: v * 0.4, exposure: v * 0.12 }),
+  },
+];
+
 function SettingsPanel({
   container,
   activeSubMask,
@@ -2068,6 +2102,251 @@ function SettingsPanel({
     },
     [containerId, setAdjustments],
   );
+
+  // F-04 人像精修：滑杆读写 + 统一肤色
+  const selectedImage = useEditorStore((state: any) => state.selectedImage);
+  const masksList = useEditorStore((state: any) => state.adjustments?.masks) || [];
+  const retouchValues = useMemo(() => {
+    const next: Record<string, number> = { smoothing: 0, teeth: 0, eyes: 0 };
+    for (const m of masksList) {
+      const sm: any = (m as MaskContainer).subMasks?.[0];
+      const kind = sm?.parameters?.retouchKind;
+      if (sm?.parameters?.retouchFor === containerId && kind && kind in next) {
+        next[kind] = sm.parameters.retouch?.[kind] ?? 0;
+      }
+    }
+    return next;
+  }, [masksList, containerId]);
+
+  const handleRetouchChange = (kind: RetouchKind, value: number) => {
+    if (!isActive || !container) return;
+    const op = RETOUCH_OPERATORS.find((o) => o.kind === kind);
+    if (!op) return;
+    const masks = useEditorStore.getState().adjustments?.masks || [];
+    const existing = masks.find(
+      (m: MaskContainer) =>
+        m.subMasks?.[0]?.parameters?.retouchFor === container.id && m.subMasks?.[0]?.parameters?.retouchKind === kind,
+    );
+    if (value <= 0) {
+      if (existing) {
+        setAdjustments((prev: Adjustments) => ({
+          ...prev,
+          masks: prev.masks.filter((m: MaskContainer) => m.id !== existing.id),
+        }));
+      }
+      return;
+    }
+    const activateSections = (base: any) =>
+      setToolActive(setToolActive(getActiveTools(base), op.sections[0], true), op.sections[1], true);
+    if (existing) {
+      const subMaskId = existing.subMasks[0].id;
+      setAdjustments((prev: Adjustments) => ({
+        ...prev,
+        masks: prev.masks.map((m: MaskContainer) =>
+          m.id === existing.id
+            ? {
+                ...m,
+                adjustments: {
+                  ...m.adjustments,
+                  ...op.map(value),
+                  activeTools: activateSections(m.adjustments),
+                },
+                subMasks: m.subMasks.map((sm: SubMask) =>
+                  sm.id === subMaskId
+                    ? {
+                        ...sm,
+                        parameters: { ...sm.parameters, retouch: { ...(sm.parameters?.retouch || {}), [kind]: value } },
+                      }
+                    : sm,
+                ),
+              }
+            : m,
+        ),
+      }));
+      return;
+    }
+    if (!selectedImage) return;
+    const subMask = createSubMask(Mask.AiFace, selectedImage);
+    subMask.parameters = {
+      ...subMask.parameters,
+      parts: [...op.parts],
+      retouchFor: container.id,
+      retouchKind: kind,
+      retouch: { [kind]: value },
+    };
+    const newContainer: MaskContainer = {
+      ...INITIAL_MASK_CONTAINER,
+      id: uuidv4(),
+      name: t(`editor.masks.retouch.${kind}Container`),
+      subMasks: [subMask],
+      adjustments: {
+        ...INITIAL_MASK_ADJUSTMENTS,
+        ...op.map(value),
+        activeTools: activateSections(INITIAL_MASK_ADJUSTMENTS),
+      },
+    };
+    setAdjustments((prev: Adjustments) => ({ ...prev, masks: [...(prev.masks || []), newContainer] }));
+    handleGenerateAiFaceMask(subMask.id, op.parts);
+  };
+
+  const [unifySkinState, setUnifySkinState] = useState<'idle' | 'running' | 'done' | 'failed'>('idle');
+  const canUnifySkin = isFaceMask && faceParts.includes('faceSkin') && faceParts.includes('bodySkin');
+  const handleUnifySkin = async () => {
+    if (!isActive || !selectedImage) return;
+    setUnifySkinState('running');
+    try {
+      const main = useEditorStore.getState();
+      const result: any = await invoke(Invokes.ComputeSkinUnify, {
+        jsAdjustments: getTransformAdjustments(main.adjustments),
+        path: selectedImage.path,
+        rotation: main.adjustments.rotation ?? 0,
+        flipHorizontal: main.adjustments.flipHorizontal ?? false,
+        flipVertical: main.adjustments.flipVertical ?? false,
+        orientationSteps: main.adjustments.orientationSteps ?? 0,
+      });
+      const global = result?.colorGrading?.global;
+      if (global) {
+        setMaskContainerAdjustments((cur: any) => ({
+          ...cur,
+          colorGrading: {
+            ...INITIAL_MASK_ADJUSTMENTS.colorGrading,
+            ...(cur.colorGrading || {}),
+            global: {
+              ...INITIAL_MASK_ADJUSTMENTS.colorGrading.global,
+              ...((cur.colorGrading || {}).global || {}),
+              ...global,
+            },
+          },
+          activeTools: setToolActive(getActiveTools(cur), 'color', true),
+        }));
+      }
+      setUnifySkinState('done');
+    } catch (e) {
+      console.error('Skin unify failed:', e);
+      setUnifySkinState('failed');
+    }
+  };
+
+  // F-05 人脸液化/美型：滑杆写入 face submask parameters.liquify，
+  // 防抖调用后端按 478 关键点烘焙 liquify patch（aiPatch upsert，双 0 时移除）。
+  const liquifyValues = useMemo(() => {
+    const liq = (container as MaskContainer | undefined)?.subMasks?.[0]?.parameters?.liquify;
+    return { slimFace: liq?.slimFace ?? 0, jawline: liq?.jawline ?? 0 };
+  }, [container]);
+  const faceLiquifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const faceLiquifyGenRef = useRef(0);
+
+  const runFaceLiquify = async () => {
+    if (!isActive || !container || !selectedImage) return;
+    const main = useEditorStore.getState();
+    if (!main.adjustments?.masks?.some((m: MaskContainer) => m.id === container.id)) return;
+    const liq = container.subMasks?.[0]?.parameters?.liquify || {};
+    const slimFace = liq.slimFace ?? 0;
+    const jawline = liq.jawline ?? 0;
+    const patchId = `face-liquify-${container.id}`;
+    const patches = main.adjustments.aiPatches || [];
+    const existing = patches.find((p: AiPatch) => p.id === patchId);
+
+    if (slimFace <= 0 && jawline <= 0) {
+      if (existing) {
+        setAdjustments((prev: Adjustments) => ({
+          ...prev,
+          aiPatches: (prev.aiPatches || []).filter((p: AiPatch) => p.id !== patchId),
+        }));
+      }
+      return;
+    }
+
+    const gen = ++faceLiquifyGenRef.current;
+    if (!existing) {
+      const liquifySubMask = createSubMask(Mask.Liquify, selectedImage);
+      liquifySubMask.parameters = { ...liquifySubMask.parameters, radiusX: 0, radiusY: 0 };
+      setAdjustments((prev: Adjustments) => ({
+        ...prev,
+        aiPatches: [
+          ...(prev.aiPatches || []),
+          {
+            id: patchId,
+            invert: false,
+            isLoading: true,
+            name: t('editor.masks.retouch.faceLiquify'),
+            patchData: null,
+            prompt: '',
+            subMasks: [liquifySubMask],
+            visible: true,
+          },
+        ],
+      }));
+    } else {
+      setAdjustments((prev: Adjustments) => ({
+        ...prev,
+        aiPatches: (prev.aiPatches || []).map((p: AiPatch) => (p.id === patchId ? { ...p, isLoading: true } : p)),
+      }));
+    }
+
+    try {
+      const patchJson: any = await invoke(Invokes.GenerateFaceLiquifyPatch, {
+        jsAdjustments: getTransformAdjustments(main.adjustments),
+        path: selectedImage.path,
+        rotation: main.adjustments.rotation ?? 0,
+        flipHorizontal: main.adjustments.flipHorizontal ?? false,
+        flipVertical: main.adjustments.flipVertical ?? false,
+        orientationSteps: main.adjustments.orientationSteps ?? 0,
+        patchId,
+        slimFace,
+        jawline,
+      });
+      if (gen !== faceLiquifyGenRef.current) return;
+      const patchData = JSON.parse(patchJson);
+      setAdjustments((prev: Adjustments) => ({
+        ...prev,
+        aiPatches: (prev.aiPatches || []).map((p: AiPatch) =>
+          p.id === patchId ? { ...p, patchData, isLoading: false } : p,
+        ),
+      }));
+    } catch (e) {
+      console.error('Face liquify failed:', e);
+      setAdjustments((prev: Adjustments) => ({
+        ...prev,
+        aiPatches: (prev.aiPatches || []).map((p: AiPatch) => (p.id === patchId ? { ...p, isLoading: false } : p)),
+      }));
+    }
+  };
+
+  const scheduleFaceLiquify = () => {
+    if (faceLiquifyTimerRef.current) clearTimeout(faceLiquifyTimerRef.current);
+    faceLiquifyTimerRef.current = setTimeout(runFaceLiquify, 600);
+  };
+
+  useEffect(
+    () => () => {
+      if (faceLiquifyTimerRef.current) clearTimeout(faceLiquifyTimerRef.current);
+    },
+    [],
+  );
+
+  const handleLiquifyChange = (kind: 'slimFace' | 'jawline', value: number) => {
+    if (!isActive || !container) return;
+    setAdjustments((prev: Adjustments) => ({
+      ...prev,
+      masks: prev.masks.map((m: MaskContainer) =>
+        m.id === container.id
+          ? {
+              ...m,
+              subMasks: m.subMasks.map((sm: SubMask, i: number) =>
+                i === 0
+                  ? {
+                      ...sm,
+                      parameters: { ...sm.parameters, liquify: { ...(sm.parameters?.liquify || {}), [kind]: value } },
+                    }
+                  : sm,
+              ),
+            }
+          : m,
+      ),
+    }));
+    scheduleFaceLiquify();
+  };
 
   const handleToggleSection = (section: string) => {
     setCollapsibleState((prev: any) => {
@@ -2268,6 +2547,77 @@ function SettingsPanel({
                   </button>
                 ))}
               </div>
+
+              <div className="mt-2 space-y-3 rounded-lg border border-border/60 p-3">
+                <Text variant={TextVariants.label} className="select-none">
+                  {t('editor.masks.retouch.title')}
+                </Text>
+                {RETOUCH_OPERATORS.map((op) => (
+                  <Slider
+                    key={op.kind}
+                    label={t(`editor.masks.retouch.${op.kind}`)}
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={retouchValues[op.kind] ?? 0}
+                    onChange={(e: any) => handleRetouchChange(op.kind, Number(e.target.value))}
+                    onDragStateChange={onDragStateChange}
+                    fillOrigin="min"
+                  />
+                ))}
+                <div className="border-t border-border/40 pt-1" />
+                <Slider
+                  label={t('editor.masks.retouch.slimFace')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={liquifyValues.slimFace}
+                  onChange={(e: any) => handleLiquifyChange('slimFace', Number(e.target.value))}
+                  onDragStateChange={(dragging: boolean) => {
+                    onDragStateChange?.(dragging);
+                    if (!dragging) scheduleFaceLiquify();
+                  }}
+                  fillOrigin="min"
+                />
+                <Slider
+                  label={t('editor.masks.retouch.jawline')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={liquifyValues.jawline}
+                  onChange={(e: any) => handleLiquifyChange('jawline', Number(e.target.value))}
+                  onDragStateChange={(dragging: boolean) => {
+                    onDragStateChange?.(dragging);
+                    if (!dragging) scheduleFaceLiquify();
+                  }}
+                  fillOrigin="min"
+                />
+                {canUnifySkin && (
+                  <Button className="w-full" disabled={unifySkinState === 'running'} onClick={handleUnifySkin}>
+                    {unifySkinState === 'running' ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span className="ml-2">{t('editor.masks.retouch.unifySkinRunning')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Palette size={16} />
+                        <span className="ml-2">{t('editor.masks.retouch.unifySkin')}</span>
+                      </>
+                    )}
+                  </Button>
+                )}
+                {unifySkinState === 'done' && (
+                  <Text as="div" variant={TextVariants.small} color={TextColors.accent}>
+                    {t('editor.masks.retouch.unifySkinDone')}
+                  </Text>
+                )}
+                {unifySkinState === 'failed' && (
+                  <Text as="div" variant={TextVariants.small} className="text-red-400">
+                    {t('editor.masks.retouch.unifySkinFailed')}
+                  </Text>
+                )}
+              </div>
             </>
           )}
 
@@ -2350,7 +2700,7 @@ function SettingsPanel({
                   label={
                     param.key === 'feather' && activeSubMask.type === Mask.AiDepth
                       ? t('editor.masks.params.globalFeather')
-                      : t('editor.masks.params.' + param.key as ParseKeys)
+                      : t(('editor.masks.params.' + param.key) as ParseKeys)
                   }
                   min={param.min}
                   max={param.max}

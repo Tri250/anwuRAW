@@ -21,10 +21,11 @@ use serde_json::Value;
 use tauri::Emitter;
 use tauri::Manager;
 use tiff::encoder::{Rational, TiffEncoder, TiffValue, colortype};
-use tiff::tags::ResolutionUnit;
+use tiff::tags::{ResolutionUnit, Tag};
 
 use crate::AppState;
 use crate::baseline_exposure::BaselineOptions;
+use crate::color_profiles::{self, ExportColorSpace};
 use crate::exif_processing;
 use crate::file_management::{
     generate_filename_from_template, parse_virtual_path, read_file_mapped,
@@ -129,6 +130,8 @@ pub struct ExportSettings {
     pub jpeg_quality: u8,
     #[serde(default)]
     pub tiff_bit_depth: TiffBitDepth,
+    #[serde(default)]
+    pub color_space: Option<String>,
     pub resize: Option<ResizeOptions>,
     #[serde(default)]
     pub border: Option<BorderOptions>,
@@ -1281,12 +1284,31 @@ fn encode_grayscale_to_png(bitmap: &GrayImage) -> Result<Vec<u8>, String> {
 
 const SRGB_ICC_PROFILE: &[u8] = include_bytes!("../icc/sRGB-v2-magic.icc");
 
+pub fn srgb_icc_profile() -> &'static [u8] {
+    SRGB_ICC_PROFILE
+}
+
 fn encode_image_to_bytes(
     image: &DynamicImage,
     output_format: &str,
     export_settings: &ExportSettings,
 ) -> Result<Vec<u8>, String> {
     let jpeg_quality = export_settings.jpeg_quality;
+    let color_space = ExportColorSpace::parse(export_settings.color_space.as_deref());
+    let space_capable = matches!(
+        output_format.to_lowercase().as_str(),
+        "jpg" | "jpeg" | "png" | "tif" | "tiff"
+    );
+    let wide_gamut = !color_space.is_srgb() && space_capable;
+    let converted =
+        wide_gamut.then(|| color_profiles::convert_srgb_to_color_space(image, color_space));
+    let image: &DynamicImage = converted.as_ref().unwrap_or(image);
+    let icc_profile: &[u8] = if wide_gamut {
+        color_profiles::icc_profile_bytes(color_space)
+    } else {
+        SRGB_ICC_PROFILE
+    };
+    let tiff_icc = wide_gamut.then_some(icc_profile);
     let mut image_bytes = Vec::new();
     let mut cursor = Cursor::new(&mut image_bytes);
 
@@ -1338,7 +1360,7 @@ fn encode_image_to_bytes(
                 .map_or_else(|| Cow::Owned(image.to_rgb8()), Cow::Borrowed);
             let mut encoder = JpegEncoder::new_with_quality(&mut cursor, jpeg_quality);
             encoder
-                .set_icc_profile(SRGB_ICC_PROFILE.to_vec())
+                .set_icc_profile(icc_profile.to_vec())
                 .map_err(|e| e.to_string())?;
             if let Some(dpi) = export_settings.dpi {
                 encoder.set_pixel_density(PixelDensity::dpi(dpi));
@@ -1358,7 +1380,7 @@ fn encode_image_to_bytes(
 
             let mut encoder = PngEncoder::new(&mut cursor);
             encoder
-                .set_icc_profile(SRGB_ICC_PROFILE.to_vec())
+                .set_icc_profile(icc_profile.to_vec())
                 .map_err(|e| e.to_string())?;
             image_to_encode
                 .write_with_encoder(encoder)
@@ -1380,6 +1402,7 @@ fn encode_image_to_bytes(
                         .map_or_else(|| Cow::Owned(image.to_rgb8()), Cow::Borrowed)
                         .as_raw(),
                     export_settings.dpi,
+                    tiff_icc,
                 )?,
                 TiffBitDepth::Sixteen => write_tiff::<colortype::RGB16, _>(
                     &mut encoder,
@@ -1390,6 +1413,7 @@ fn encode_image_to_bytes(
                         .map_or_else(|| Cow::Owned(image.to_rgb16()), Cow::Borrowed)
                         .as_raw(),
                     export_settings.dpi,
+                    tiff_icc,
                 )?,
             }
         }
@@ -1409,6 +1433,7 @@ fn write_tiff<C: colortype::ColorType, W: Write + Seek>(
     height: u32,
     data: &[C::Inner],
     dpi: Option<u16>,
+    icc_profile: Option<&[u8]>,
 ) -> Result<(), String>
 where
     [C::Inner]: TiffValue,
@@ -1424,6 +1449,12 @@ where
                 d: 1,
             },
         );
+    }
+    if let Some(icc) = icc_profile {
+        image
+            .encoder()
+            .write_tag(Tag::IccProfile, icc)
+            .map_err(|e| e.to_string())?;
     }
     image.write_data(data).map_err(|e| e.to_string())
 }
@@ -2264,6 +2295,7 @@ pub async fn run_headless_export(
         destination_type: None,
         subfolder: None,
         dpi: None,
+        color_space: None,
     };
 
     let mut custom_adjustments = None;

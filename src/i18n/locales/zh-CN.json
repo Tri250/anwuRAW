@@ -34,6 +34,11 @@
       },
       "colorGrading": "颜色分级",
       "colorMixer": "颜色混合器",
+      "colorMatch": "AI 追色",
+      "colorMatchDesc": "将样片的色彩风格传递到当前照片（非破坏性）",
+      "colorMatchRunning": "正在计算追色…",
+      "colorMatchDone": "追色已应用 · ΔE 下降 {{reduction}}%",
+      "colorMatchFailed": "追色失败",
       "grading": {
         "balance": "平衡",
         "blending": "混合",
@@ -734,6 +739,22 @@
         "addToCurrent": "将 {{name}} 添加到当前蒙版或创建新蒙版（右键单击）",
         "createNew": "创建新 {{name}} 蒙版",
         "selectNewSourcePoint": "{{modifier}} + 点击选择新的源点"
+      },
+      "retouch": {
+        "title": "人像精修",
+        "smoothing": "磨皮",
+        "teeth": "牙齿美白",
+        "eyes": "眼睛增强",
+        "smoothingContainer": "磨皮",
+        "teethContainer": "牙齿美白",
+        "eyesContainer": "眼睛增强",
+        "unifySkin": "统一肤色",
+        "unifySkinRunning": "正在计算肤色…",
+        "unifySkinDone": "已统一肤色",
+        "unifySkinFailed": "统一肤色失败",
+        "slimFace": "瘦脸",
+        "jawline": "下颌线",
+        "faceLiquify": "人脸液化"
       }
     },
     "metadata": {
@@ -931,7 +952,13 @@
       "resolution": "分辨率",
       "tiffBitDepth": "TIFF 位深",
       "tiffBitDepth16": "16 位",
-      "tiffBitDepth8": "8 位"
+      "tiffBitDepth8": "8 位",
+      "colorSpace": "色彩空间",
+      "colorSpaceDesc": "导出时将转换像素并嵌入所选 ICC 配置文件",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "图像",
@@ -1378,7 +1405,38 @@
       "communityPresets": "社区预设",
       "goHome": "返回首页",
       "importImages": "导入图像",
-      "select": "选择"
+      "select": "选择",
+      "studio": "工作室"
+    },
+    "studio": {
+      "headerTitle": "工作室",
+      "headerDesc": "从样片到全组成片：追色、预设与批量导出的一站式工作台。",
+      "step1": "样片",
+      "step1Desc": "点选一张样片，作为整组照片的风格来源。",
+      "step2": "风格",
+      "step2Desc": "可选：叠加一个预设，与样片调整合并后统一传递。",
+      "step3": "客片",
+      "step3Desc": "勾选要套用风格的客片，一键套用并批量导出。",
+      "noImages": "当前文件夹没有图片，请先导入照片。",
+      "sampleSelected": "已选样片",
+      "loadingMetadata": "正在读取样片调整…",
+      "willCopy": "将复制",
+      "noAdjustments": "无调整（仅导出）",
+      "needSample": "尚未选择样片。",
+      "noPreset": "不使用预设",
+      "presetLabel": "风格预设（可选）",
+      "selectedCount": "已选 {{n}} 张客片",
+      "selectAll": "全选",
+      "clearAll": "清除",
+      "applyAndExport": "套用风格并批量导出",
+      "applying": "正在写入调整…",
+      "exporting": "正在批量导出…",
+      "chooseOutputFolder": "选择输出文件夹",
+      "progressTitle": "进度",
+      "cancelExport": "取消导出",
+      "done": "完成：已导出 {{n}} 张",
+      "exportCancelled": "已取消导出",
+      "failed": "失败"
     }
   },
   "masks": {
@@ -2049,6 +2107,7 @@
         "title": "图像预处理",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral（中性）",
           "basic": "基础"
         },
         "tonemapperOverride": "全局色调映射覆盖",

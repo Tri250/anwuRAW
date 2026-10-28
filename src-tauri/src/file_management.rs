@@ -1857,12 +1857,17 @@ fn generate_thumbnail_data_with_metadata(
             effective_baseline_exposure(adjustments, as_shot(&source_path_str), render.baseline),
         );
         let use_agx = render.tonemapper_override == Some(1);
+        let use_pbr_neutral = render.tonemapper_override == Some(2);
 
-        if use_agx {
+        if use_agx || use_pbr_neutral {
             if !is_raw {
                 owned_image = crate::image_processing::apply_srgb_to_linear(owned_image);
             }
-            crate::image_processing::apply_cpu_agx_tonemap(&mut owned_image);
+            if use_agx {
+                crate::image_processing::apply_cpu_agx_tonemap(&mut owned_image);
+            } else {
+                crate::image_processing::apply_cpu_pbr_neutral_tonemap(&mut owned_image);
+            }
         } else if is_raw {
             apply_cpu_default_raw_processing(&mut owned_image);
         }

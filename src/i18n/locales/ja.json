@@ -34,6 +34,11 @@
       },
       "colorGrading": "カラーグレーディング",
       "colorMixer": "カラーミキサー",
+      "colorMatch": "AI カラーマッチ",
+      "colorMatchDesc": "サンプル写真の色彩スタイルをこの写真に転送します（非破壊）",
+      "colorMatchRunning": "色をマッチング中…",
+      "colorMatchDone": "カラーマッチを適用 · ΔE {{reduction}}% 低減",
+      "colorMatchFailed": "カラーマッチに失敗しました",
       "grading": {
         "balance": "バランス",
         "blending": "ブレンド",
@@ -734,6 +739,22 @@
         "addToCurrent": "{{name}}を現在のマスクに追加、または新規作成 (右クリック)",
         "createNew": "新規の {{name}} マスクを作成",
         "selectNewSourcePoint": "{{modifier}} + クリックで新しいソースポイントを選択"
+      },
+      "retouch": {
+        "title": "ポートレートレタッチ",
+        "smoothing": "肌のなめらかさ",
+        "teeth": "歯のホワイトニング",
+        "eyes": "目の補正",
+        "smoothingContainer": "肌のなめらかさ",
+        "teethContainer": "歯のホワイトニング",
+        "eyesContainer": "目の補正",
+        "unifySkin": "肌色を統一",
+        "unifySkinRunning": "肌色を計算中…",
+        "unifySkinDone": "肌色を統一しました",
+        "unifySkinFailed": "肌色の統一に失敗しました",
+        "slimFace": "顔やせ",
+        "jawline": "フェイスライン",
+        "faceLiquify": "フェイスリキファイ"
       }
     },
     "metadata": {
@@ -918,7 +939,13 @@
       "resolution": "解像度",
       "tiffBitDepth": "TIFF ビット深度",
       "tiffBitDepth16": "16 ビット",
-      "tiffBitDepth8": "8 ビット"
+      "tiffBitDepth8": "8 ビット",
+      "colorSpace": "カラースペース",
+      "colorSpaceDesc": "ピクセルを変換し、選択した ICC プロファイルを埋め込みます",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "画像",
@@ -1365,7 +1392,38 @@
       "communityPresets": "コミュニティプリセット",
       "goHome": "ホームへ移動",
       "importImages": "画像をインポート",
-      "select": "選択"
+      "select": "選択",
+      "studio": "スタジオ"
+    },
+    "studio": {
+      "headerTitle": "スタジオ",
+      "headerDesc": "サンプルから全カットへ：カラー trasfer → プリセット → 一括書き出しをひと画面で。",
+      "step1": "サンプル画像",
+      "step1Desc": "グループ全体のスタイル源となるサンプル画像を 1 枚選びます。",
+      "step2": "スタイル",
+      "step2Desc": "任意：プリセットを追加するとサンプルの調整と合成されます。",
+      "step3": "お客様の写真",
+      "step3Desc": "スタイルを適用する写真を選び、「ワンクリック適用＆一括書き出し」を実行します。",
+      "noImages": "このフォルダには画像がありません。先に画像を読み込んでください。",
+      "sampleSelected": "サンプル選択済み",
+      "loadingMetadata": "サンプルの調整値を読み込み中…",
+      "willCopy": "コピーされる項目",
+      "noAdjustments": "調整なし（書き出しのみ）",
+      "needSample": "まだサンプル画像が選ばれていません。",
+      "noPreset": "プリセットなし",
+      "presetLabel": "スタイルプリセット（任意）",
+      "selectedCount": "{{n}} 枚の写真を選択中",
+      "selectAll": "すべて選択",
+      "clearAll": "解除",
+      "applyAndExport": "スタイルを適用して一括書き出し",
+      "applying": "調整を書き込み中…",
+      "exporting": "一括書き出し中…",
+      "chooseOutputFolder": "出力フォルダを選択",
+      "progressTitle": "進行状況",
+      "cancelExport": "書き出しをキャンセル",
+      "done": "完了：{{n}} 枚を書き出しました",
+      "exportCancelled": "書き出しをキャンセルしました",
+      "failed": "失敗しました"
     }
   },
   "masks": {
@@ -2036,6 +2094,7 @@
         "title": "画像の事前処理",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "標準"
         },
         "tonemapperOverride": "グローバルトーンマッパー上書き",

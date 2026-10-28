@@ -135,6 +135,20 @@ pub struct DetectedFace {
     skin: Vec<f32>,
 }
 
+impl DetectedFace {
+    pub fn landmarks(&self) -> &[[f32; 2]] {
+        &self.landmarks
+    }
+}
+
+/// F-05：MediaPipe FaceMesh 下颌弧线索引（左耳前 → 下巴 → 右耳前，不含耳端点）
+pub const JAW_ARC: [usize; 19] = [
+    93, 132, 58, 172, 136, 150, 149, 176, 148, 152, 377, 400, 378, 379, 365, 397, 288, 361, 323,
+];
+/// 左右耳前参考点，用于确定面部中轴与宽度
+pub const FACE_CHEEK_L: usize = 234;
+pub const FACE_CHEEK_R: usize = 454;
+
 pub struct FaceAnalysis {
     pub path_hash: String,
     pub faces: Vec<DetectedFace>,

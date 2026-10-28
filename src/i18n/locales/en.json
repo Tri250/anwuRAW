@@ -34,6 +34,11 @@
       },
       "colorGrading": "Color Grading",
       "colorMixer": "Color Mixer",
+      "colorMatch": "AI Color Match",
+      "colorMatchDesc": "Transfer the color style of a sample photo onto this photo (non-destructive)",
+      "colorMatchRunning": "Matching colors…",
+      "colorMatchDone": "Color match applied · ΔE reduced {{reduction}}%",
+      "colorMatchFailed": "Color match failed",
       "grading": {
         "balance": "Balance",
         "blending": "Blending",
@@ -734,6 +739,22 @@
         "addToCurrent": "Add {{name}} to Current Mask or Create New (Right-click)",
         "createNew": "Create New {{name}} Mask",
         "selectNewSourcePoint": "{{modifier}} + Click to select a new source point"
+      },
+      "retouch": {
+        "title": "Portrait Retouch",
+        "smoothing": "Skin Smoothing",
+        "teeth": "Teeth Whitening",
+        "eyes": "Eye Enhancement",
+        "smoothingContainer": "Skin Smoothing",
+        "teethContainer": "Teeth Whitening",
+        "eyesContainer": "Eye Enhancement",
+        "unifySkin": "Unify Skin Tone",
+        "unifySkinRunning": "Computing skin tone…",
+        "unifySkinDone": "Skin tone unified",
+        "unifySkinFailed": "Skin tone unification failed",
+        "slimFace": "Slim Face",
+        "jawline": "Jawline",
+        "faceLiquify": "Face Liquify"
       }
     },
     "metadata": {
@@ -931,7 +952,13 @@
       "resolution": "Resolution",
       "tiffBitDepth": "TIFF bit depth",
       "tiffBitDepth16": "16-bit",
-      "tiffBitDepth8": "8-bit"
+      "tiffBitDepth8": "8-bit",
+      "colorSpace": "Color space",
+      "colorSpaceDesc": "Pixels are converted and the selected ICC profile is embedded",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "Image",
@@ -1378,7 +1405,38 @@
       "communityPresets": "Community Presets",
       "goHome": "Go to Home",
       "importImages": "Import Images",
-      "select": "Select"
+      "select": "Select",
+      "studio": "Studio"
+    },
+    "studio": {
+      "headerTitle": "Studio",
+      "headerDesc": "From sample to full set: color matching, presets and batch export in one place.",
+      "step1": "Sample image",
+      "step1Desc": "Pick a sample image as the style source for the whole group.",
+      "step2": "Style",
+      "step2Desc": "Optional: add a preset that merges with the sample adjustments.",
+      "step3": "Client photos",
+      "step3Desc": "Select the photos to style, then apply and batch export in one click.",
+      "noImages": "No images in this folder. Import images first.",
+      "sampleSelected": "Sample selected",
+      "loadingMetadata": "Reading sample adjustments…",
+      "willCopy": "Will copy",
+      "noAdjustments": "no adjustments (export only)",
+      "needSample": "No sample image selected yet.",
+      "noPreset": "No preset",
+      "presetLabel": "Style preset (optional)",
+      "selectedCount": "{{n}} client photos selected",
+      "selectAll": "Select all",
+      "clearAll": "Clear",
+      "applyAndExport": "Apply style & batch export",
+      "applying": "Writing adjustments…",
+      "exporting": "Batch exporting…",
+      "chooseOutputFolder": "Choose output folder",
+      "progressTitle": "Progress",
+      "cancelExport": "Cancel export",
+      "done": "Done: {{n}} images exported",
+      "exportCancelled": "Export cancelled",
+      "failed": "Failed"
     }
   },
   "masks": {
@@ -2049,6 +2107,7 @@
         "title": "Image Preprocessing",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "Basic"
         },
         "tonemapperOverride": "Global Tonemapper Override",

@@ -1509,6 +1509,31 @@ fn no_tonemap(c: vec3<f32>) -> vec3<f32> {
     return c;
 }
 
+// Khronos PBR Neutral tone mapping (brightness-preserving, hue-conserving
+// highlight compression). Reference: modelviewer.dev / glTF PBR Neutral,
+// linear sRGB in, linear sRGB out.
+fn pbr_neutral_tonemap(color_in: vec3<f32>) -> vec3<f32> {
+    const START_COMPRESSION: f32 = 0.8 - 0.04;
+    const DESATURATION: f32 = 0.15;
+
+    var color = color_in;
+    let x = min(color.r, min(color.g, color.b));
+    let offset = select(0.04, x - 6.25 * x * x, x < 0.08);
+    color = color - vec3<f32>(offset);
+
+    let peak = max(color.r, max(color.g, color.b));
+    if (peak < START_COMPRESSION) {
+        return color;
+    }
+
+    let d = 1.0 - START_COMPRESSION;
+    let new_peak = 1.0 - d * d / (peak + d - START_COMPRESSION);
+    color = color * (new_peak / peak);
+
+    let g = 1.0 - 1.0 / (DESATURATION * (peak - new_peak) + 1.0);
+    return mix(color, vec3<f32>(new_peak), vec3<f32>(g));
+}
+
 fn is_default_curve(src: u32, ch: u32, count: u32) -> bool {
     if (count < 2u) {
         return false;
@@ -2026,6 +2051,8 @@ fn main(
     var default_tonemapped: vec3<f32>;
     if (has_feature(F_AGX) && adjustments.global.tonemapper_mode == 1u) {
         default_tonemapped = agx_full_transform(composite_rgb_linear);
+    } else if (has_feature(F_AGX) && adjustments.global.tonemapper_mode == 2u) {
+        default_tonemapped = linear_to_srgb(pbr_neutral_tonemap(composite_rgb_linear));
     } else if (is_raw == 1u) {
         var srgb_emulated = linear_to_srgb(composite_rgb_linear);
         const BRIGHTNESS_GAMMA: f32 = 1.1;

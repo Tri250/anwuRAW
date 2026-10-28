@@ -34,6 +34,11 @@
       },
       "colorGrading": "顏色分級",
       "colorMixer": "顏色混合器",
+      "colorMatch": "AI 追色",
+      "colorMatchDesc": "將樣片的色彩風格傳遞到當前照片（非破壞性）",
+      "colorMatchRunning": "正在計算追色…",
+      "colorMatchDone": "追色已套用 · ΔE 下降 {{reduction}}%",
+      "colorMatchFailed": "追色失敗",
       "grading": {
         "balance": "平衡",
         "blending": "混合",
@@ -734,6 +739,22 @@
         "addToCurrent": "將 {{name}} 新增到當前遮色片或建立新遮色片（右鍵單擊）",
         "createNew": "建立新 {{name}} 遮色片",
         "selectNewSourcePoint": "{{modifier}} + 點擊選擇新的來源點"
+      },
+      "retouch": {
+        "title": "人像精修",
+        "smoothing": "磨皮",
+        "teeth": "牙齒美白",
+        "eyes": "眼睛增強",
+        "smoothingContainer": "磨皮",
+        "teethContainer": "牙齒美白",
+        "eyesContainer": "眼睛增強",
+        "unifySkin": "統一膚色",
+        "unifySkinRunning": "正在計算膚色…",
+        "unifySkinDone": "已統一膚色",
+        "unifySkinFailed": "統一膚色失敗",
+        "slimFace": "瘦臉",
+        "jawline": "下顎線",
+        "faceLiquify": "人臉液化"
       }
     },
     "metadata": {
@@ -918,7 +939,13 @@
       "resolution": "解析度",
       "tiffBitDepth": "TIFF 位元深度",
       "tiffBitDepth16": "16 位元",
-      "tiffBitDepth8": "8 位元"
+      "tiffBitDepth8": "8 位元",
+      "colorSpace": "色彩空間",
+      "colorSpaceDesc": "匯出時將轉換像素並嵌入所選 ICC 設定檔",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "影像",
@@ -1365,7 +1392,38 @@
       "communityPresets": "社群預設",
       "goHome": "返回首頁",
       "importImages": "匯入影像",
-      "select": "選擇"
+      "select": "選擇",
+      "studio": "工作室"
+    },
+    "studio": {
+      "headerTitle": "工作室",
+      "headerDesc": "從樣片到全組成片：追色、預設與批次輸出的一站式工作台。",
+      "step1": "樣片",
+      "step1Desc": "點選一張樣片，作為整組照片的風格來源。",
+      "step2": "風格",
+      "step2Desc": "可選：疊加一個預設，與樣片調整合併後統一傳遞。",
+      "step3": "客片",
+      "step3Desc": "勾選要套用風格的客片，一鍵套用並批次輸出。",
+      "noImages": "目前資料夾沒有圖片，請先匯入照片。",
+      "sampleSelected": "已選樣片",
+      "loadingMetadata": "正在讀取樣片調整…",
+      "willCopy": "將複製",
+      "noAdjustments": "無調整（僅輸出）",
+      "needSample": "尚未選擇樣片。",
+      "noPreset": "不使用預設",
+      "presetLabel": "風格預設（可選）",
+      "selectedCount": "已選 {{n}} 張客片",
+      "selectAll": "全選",
+      "clearAll": "清除",
+      "applyAndExport": "套用風格並批次輸出",
+      "applying": "正在寫入調整…",
+      "exporting": "正在批次輸出…",
+      "chooseOutputFolder": "選擇輸出資料夾",
+      "progressTitle": "進度",
+      "cancelExport": "取消輸出",
+      "done": "完成：已輸出 {{n}} 張",
+      "exportCancelled": "已取消輸出",
+      "failed": "失敗"
     }
   },
   "masks": {
@@ -2036,6 +2094,7 @@
         "title": "影像預處理",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral（中性）",
           "basic": "基礎"
         },
         "tonemapperOverride": "全域色調映射覆蓋",

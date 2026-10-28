@@ -249,6 +249,16 @@ export default function ExportPanel({
     [t],
   );
 
+  const colorSpaceOptions = useMemo(
+    () => [
+      { label: t('export.file.colorSpaceSrgb'), value: 'srgb' },
+      { label: t('export.file.colorSpaceDisplayP3'), value: 'display-p3' },
+      { label: t('export.file.colorSpaceProPhoto'), value: 'prophoto-rgb' },
+      { label: t('export.file.colorSpaceRec2020'), value: 'rec2020' },
+    ],
+    [t],
+  );
+
   const {
     fileFormat,
     setFileFormat,
@@ -314,6 +324,8 @@ export default function ExportPanel({
     setDestinationType,
     subfolder,
     setSubfolder,
+    colorSpace,
+    setColorSpace,
   } = useExportSettings();
 
   const adjustmentsRef = useRef(useEditorStore.getState().adjustments);
@@ -508,6 +520,7 @@ export default function ExportPanel({
       pad: padSettings,
       stripGps,
       exportMasks: exportMasks,
+      colorSpace,
       watermark:
         enableWatermark && watermarkPath
           ? {
@@ -574,6 +587,7 @@ export default function ExportPanel({
     isLibraryContext,
     destination,
     subfolder,
+    colorSpace,
   ]);
 
   const handleVariableClick = (variable: string) => {
@@ -607,6 +621,7 @@ export default function ExportPanel({
       pad: padSettings,
       stripGps,
       exportMasks: exportMasks,
+      colorSpace,
       watermark:
         enableWatermark && watermarkPath
           ? {
@@ -786,6 +801,25 @@ export default function ExportPanel({
                     disabled={isExporting}
                     className="w-full"
                   />
+                </div>
+              )}
+              {[FileFormats.Jpeg, FileFormats.Png, FileFormats.Tiff].includes(fileFormat as FileFormats) && (
+                <div className={isExporting ? 'opacity-50 pointer-events-none' : ''}>
+                  <Text variant={TextVariants.label} className="mb-1">
+                    {t('export.file.colorSpace')}
+                  </Text>
+                  <Dropdown
+                    options={colorSpaceOptions}
+                    value={colorSpace}
+                    onChange={(value) => setColorSpace(value)}
+                    disabled={isExporting}
+                    className="w-full"
+                  />
+                  {colorSpace !== 'srgb' && (
+                    <Text variant={TextVariants.label} className="mt-1 opacity-70">
+                      {t('export.file.colorSpaceDesc')}
+                    </Text>
+                  )}
                 </div>
               )}
             </Section>

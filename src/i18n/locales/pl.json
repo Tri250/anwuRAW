@@ -34,6 +34,11 @@
       },
       "colorGrading": "Gradacja kolorów",
       "colorMixer": "Mikser kolorów",
+      "colorMatch": "Dopasowanie kolorów AI",
+      "colorMatchDesc": "Przenosi styl kolorystyczny przykładowego zdjęcia na to zdjęcie (niedestrukcyjne)",
+      "colorMatchRunning": "Dopasowywanie kolorów…",
+      "colorMatchDone": "Dopasowanie zastosowane · ΔE zmniejszone o {{reduction}}%",
+      "colorMatchFailed": "Dopasowanie kolorów nie powiodło się",
       "grading": {
         "balance": "Balans",
         "blending": "Mieszanie",
@@ -776,6 +781,22 @@
         "addToCurrent": "Dodaj {{name}} do bieżącej maski lub utwórz nową (Prawy przycisk)",
         "createNew": "Utwórz nową maskę {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Kliknij, aby wybrać nowy punkt źródłowy"
+      },
+      "retouch": {
+        "title": "Retusz portretu",
+        "smoothing": "Wygładzanie skóry",
+        "teeth": "Wybielanie zębów",
+        "eyes": "Poprawa oczu",
+        "smoothingContainer": "Wygładzanie skóry",
+        "teethContainer": "Wybielanie zębów",
+        "eyesContainer": "Poprawa oczu",
+        "unifySkin": "Wyrównaj odcień skóry",
+        "unifySkinRunning": "Obliczanie odcienia skóry…",
+        "unifySkinDone": "Wyrównano odcień skóry",
+        "unifySkinFailed": "Nie udało się wyrównać odcienia skóry",
+        "slimFace": "Wąska twarz",
+        "jawline": "Linia żuchwy",
+        "faceLiquify": "Liquify twarzy"
       }
     },
     "metadata": {
@@ -962,7 +983,13 @@
       "resolution": "Rozdzielczość",
       "tiffBitDepth": "Głębia bitowa TIFF",
       "tiffBitDepth16": "16 bitów",
-      "tiffBitDepth8": "8 bitów"
+      "tiffBitDepth8": "8 bitów",
+      "colorSpace": "Przestrzeń kolorów",
+      "colorSpaceDesc": "Piksele są konwertowane, a wybrany profil ICC jest osadzany",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "Obraz",
@@ -1423,7 +1450,38 @@
       "communityPresets": "Presety społeczności",
       "goHome": "Przejdź do strony głównej",
       "importImages": "Importuj obrazy",
-      "select": "Zaznacz"
+      "select": "Zaznacz",
+      "studio": "Studio"
+    },
+    "studio": {
+      "headerTitle": "Studio",
+      "headerDesc": "Od wzorca do całej serii: dopasowanie kolorów, presety i eksport wsadowy w jednym miejscu.",
+      "step1": "Obraz wzorcowy",
+      "step1Desc": "Wybierz obraz wzorcowy jako źródło stylu dla całej grupy.",
+      "step2": "Styl",
+      "step2Desc": "Opcjonalnie: dodaj preset, który zostanie połączony z korektami wzorca.",
+      "step3": "Zdjęcia klientów",
+      "step3Desc": "Zaznacz zdjęcia do wystylizowania, a następnie zastosuj i wyeksportuj wsadowo jednym kliknięciem.",
+      "noImages": "Brak obrazów w tym folderze. Najpierw zaimportuj obrazy.",
+      "sampleSelected": "Wybrano wzorzec",
+      "loadingMetadata": "Odczytywanie korekt wzorca…",
+      "willCopy": "Zostanie skopiowane",
+      "noAdjustments": "brak korekt (tylko eksport)",
+      "needSample": "Nie wybrano jeszcze obrazu wzorcowego.",
+      "noPreset": "Brak presetu",
+      "presetLabel": "Preset stylu (opcjonalny)",
+      "selectedCount": "Wybrano {{n}} zdjęć klientów",
+      "selectAll": "Zaznacz wszystko",
+      "clearAll": "Wyczyść",
+      "applyAndExport": "Zastosuj styl i eksportuj wsadowo",
+      "applying": "Zapisywanie korekt…",
+      "exporting": "Eksport wsadowy…",
+      "chooseOutputFolder": "Wybierz folder wyjściowy",
+      "progressTitle": "Postęp",
+      "cancelExport": "Anuluj eksport",
+      "done": "Gotowe: wyeksportowano {{n}} obrazów",
+      "exportCancelled": "Eksport anulowano",
+      "failed": "Niepowodzenie"
     }
   },
   "masks": {
@@ -2112,6 +2170,7 @@
         "title": "Wstępne przetwarzanie obrazu",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "Podstawowe"
         },
         "tonemapperOverride": "Globalne nadpisywanie mapowania tonów",

@@ -34,6 +34,11 @@
       },
       "colorGrading": "Color Grading",
       "colorMixer": "Mixer Colori",
+      "colorMatch": "Corrispondenza colore IA",
+      "colorMatchDesc": "Trasferisce lo stile colore di una foto campione su questa foto (non distruttivo)",
+      "colorMatchRunning": "Corrispondenza colori…",
+      "colorMatchDone": "Corrispondenza applicata · ΔE ridotto del {{reduction}}%",
+      "colorMatchFailed": "Corrispondenza colore non riuscita",
       "grading": {
         "balance": "Bilanciamento",
         "blending": "Fusione",
@@ -757,6 +762,22 @@
         "addToCurrent": "Aggiungi {{name}} alla Maschera Attuale o Crea Nuova (Tasto Destro)",
         "createNew": "Crea Nuova Maschera {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Clic per selezionare un nuovo punto di origine"
+      },
+      "retouch": {
+        "title": "Ritocco ritratto",
+        "smoothing": "Levigatura della pelle",
+        "teeth": "Sbiancamento denti",
+        "eyes": "Miglioramento occhi",
+        "smoothingContainer": "Levigatura della pelle",
+        "teethContainer": "Sbiancamento denti",
+        "eyesContainer": "Miglioramento occhi",
+        "unifySkin": "Uniforma il tono della pelle",
+        "unifySkinRunning": "Calcolo del tono della pelle…",
+        "unifySkinDone": "Tono della pelle uniformato",
+        "unifySkinFailed": "Uniformazione del tono della pelle non riuscita",
+        "slimFace": "Assottiglia il viso",
+        "jawline": "Linea della mandibola",
+        "faceLiquify": "Liquify del viso"
       }
     },
     "metadata": {
@@ -942,7 +963,13 @@
       "resolution": "Risoluzione",
       "tiffBitDepth": "Profondità bit TIFF",
       "tiffBitDepth16": "16 bit",
-      "tiffBitDepth8": "8 bit"
+      "tiffBitDepth8": "8 bit",
+      "colorSpace": "Spazio colore",
+      "colorSpaceDesc": "I pixel vengono convertiti e il profilo ICC selezionato viene incorporato",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "Immagine",
@@ -1396,7 +1423,38 @@
       "communityPresets": "Predefiniti della Community",
       "goHome": "Torna alla Home page",
       "importImages": "Importa Immagini",
-      "select": "Seleziona"
+      "select": "Seleziona",
+      "studio": "Studio"
+    },
+    "studio": {
+      "headerTitle": "Studio",
+      "headerDesc": "Dal campione alla serie completa: confronto colori, preset ed esportazione in batch in un unico posto.",
+      "step1": "Immagine campione",
+      "step1Desc": "Scegli un’immagine campione come sorgente di stile per l’intero gruppo.",
+      "step2": "Stile",
+      "step2Desc": "Opzionale: aggiungi un preset che si fonderà con le regolazioni del campione.",
+      "step3": "Foto dei clienti",
+      "step3Desc": "Seleziona le foto a cui applicare lo stile, poi applica ed esporta in batch con un clic.",
+      "noImages": "Nessuna immagine in questa cartella. Importa prima le immagini.",
+      "sampleSelected": "Campione selezionato",
+      "loadingMetadata": "Lettura delle regolazioni del campione…",
+      "willCopy": "Verrà copiato",
+      "noAdjustments": "nessuna regolazione (solo esportazione)",
+      "needSample": "Non hai ancora scelto un’immagine campione.",
+      "noPreset": "Nessun preset",
+      "presetLabel": "Preset di stile (opzionale)",
+      "selectedCount": "{{n}} foto dei clienti selezionate",
+      "selectAll": "Seleziona tutto",
+      "clearAll": "Cancella",
+      "applyAndExport": "Applica stile ed esporta in batch",
+      "applying": "Scrittura delle regolazioni…",
+      "exporting": "Esportazione in batch…",
+      "chooseOutputFolder": "Scegli la cartella di destinazione",
+      "progressTitle": "Avanzamento",
+      "cancelExport": "Annulla esportazione",
+      "done": "Fatto: {{n}} immagini esportate",
+      "exportCancelled": "Esportazione annullata",
+      "failed": "Non riuscito"
     }
   },
   "masks": {
@@ -2076,6 +2134,7 @@
         "title": "Pre-elaborazione Immagine",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "Base"
         },
         "tonemapperOverride": "Sovrascrittura Tonemapper Globale",

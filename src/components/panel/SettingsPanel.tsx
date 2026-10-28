@@ -612,6 +612,7 @@ export default function SettingsPanel({
   const tonemapperOptions = useMemo<OptionItem<string>[]>(
     () => [
       { value: 'agx', label: t('settings.processing.preprocessing.tonemapperOptions.agx') },
+      { value: 'pbr_neutral', label: t('settings.processing.preprocessing.tonemapperOptions.pbrNeutral') },
       { value: 'basic', label: t('settings.processing.preprocessing.tonemapperOptions.basic') },
     ],
     [t],

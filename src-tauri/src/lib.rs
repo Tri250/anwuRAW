@@ -35,6 +35,8 @@ mod baseline_exposure;
 mod bm3d;
 mod cache_utils;
 mod camera_tethering;
+mod color_profiles;
+mod color_transfer;
 mod culling;
 mod effect_maps;
 mod exif_processing;
@@ -2587,6 +2589,7 @@ pub fn run() {
             inpainting::invoke_generative_replace_with_mask_def,
             inpainting::generate_manual_cleanup_patch,
             inpainting::generate_liquify_patch,
+            inpainting::generate_face_liquify_patch,
             inpainting::generate_retouch_patch,
             focus_stacking::stitch_focus_stack,
             focus_stacking::save_focus_stack,
@@ -2657,6 +2660,8 @@ pub fn run() {
             tagging::add_tag_for_paths,
             tagging::remove_tag_for_paths,
             culling::cull_images,
+            color_transfer::compute_color_match,
+            ai_commands::compute_skin_unify,
             lens_correction::get_lensfun_makers,
             lens_correction::get_lensfun_lenses_for_maker,
             lens_correction::autodetect_lens,

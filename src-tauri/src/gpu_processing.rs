@@ -957,7 +957,7 @@ fn shader_features(adjustments: &AllAdjustments) -> u32 {
         g.chromatic_aberration_red_cyan.abs() > 0.000001
             || g.chromatic_aberration_blue_yellow.abs() > 0.000001,
     );
-    set(F_AGX, g.tonemapper_mode == 1);
+    set(F_AGX, g.tonemapper_mode == 1 || g.tonemapper_mode == 2);
     features
 }
 

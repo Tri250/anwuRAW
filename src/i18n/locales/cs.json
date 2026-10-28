@@ -34,6 +34,11 @@
       },
       "colorGrading": "Tónování barev",
       "colorMixer": "Míchání barev",
+      "colorMatch": "AI párování barev",
+      "colorMatchDesc": "Přenese barevný styl vzorové fotografie na tuto fotografii (nedestruktivní)",
+      "colorMatchRunning": "Párování barev…",
+      "colorMatchDone": "Párování použito · ΔE sníženo o {{reduction}}%",
+      "colorMatchFailed": "Párování barev se nezdařilo",
       "grading": {
         "balance": "Vyvážení",
         "blending": "Míchání",
@@ -735,6 +740,22 @@
         "addToCurrent": "Přidat {{name}} na aktuální masku nebo vytvořit novou (klikněte pravým tlačítkem)",
         "createNew": "Vytvořit novou {{name}} masku",
         "selectNewSourcePoint": "{{modifier}} + kliknutím vyberete nový zdrojový bod"
+      },
+      "retouch": {
+        "title": "Retuš portrétu",
+        "smoothing": "Vyhlazení pleti",
+        "teeth": "Bělení zubů",
+        "eyes": "Vylepšení očí",
+        "smoothingContainer": "Vyhlazení pleti",
+        "teethContainer": "Bělení zubů",
+        "eyesContainer": "Vylepšení očí",
+        "unifySkin": "Sjednotit odstín pleti",
+        "unifySkinRunning": "Vypočítávání odstínu pleti…",
+        "unifySkinDone": "Odstín pleti sjednocen",
+        "unifySkinFailed": "Sjednocení odstínu pleti selhalo",
+        "slimFace": "Zúžení obličeje",
+        "jawline": "Linie čelisti",
+        "faceLiquify": "Liquidování obličeje"
       }
     },
     "metadata": {
@@ -919,7 +940,13 @@
       "resolution": "Rozlišení",
       "tiffBitDepth": "Bitová hloubka TIFF",
       "tiffBitDepth16": "16bitová",
-      "tiffBitDepth8": "8bitová"
+      "tiffBitDepth8": "8bitová",
+      "colorSpace": "Barevný prostor",
+      "colorSpaceDesc": "Pixely jsou převedeny a vybraný ICC profil je vložen",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "fotografie",
@@ -1372,7 +1399,38 @@
       "communityPresets": "Presety komunity",
       "goHome": "Přejít na domovskou stránku",
       "importImages": "Import snímků",
-      "select": "Vybrat"
+      "select": "Vybrat",
+      "studio": "Studio"
+    },
+    "studio": {
+      "headerTitle": "Studio",
+      "headerDesc": "Od vzoru k zakázce: přenos barev, preset a dávkový export na jednom místě.",
+      "step1": "Vzorový snímek",
+      "step1Desc": "Vyberte vzorový snímek jako zdroj stylu pro celou skupinu.",
+      "step2": "Styl",
+      "step2Desc": "Volitelné: přidejte preset, který se sloučí s úpravami vzoru.",
+      "step3": "Zákaznické snímky",
+      "step3Desc": "Zaškrtněte snímky pro aplikaci stylu a spusťte dávkové zpracování a export.",
+      "noImages": "V této složce nejsou žádné obrázky. Nejprve je importujte.",
+      "sampleSelected": "Vybraný vzor",
+      "loadingMetadata": "Načítají se úpravy vzoru…",
+      "willCopy": "Zkopíruje se",
+      "noAdjustments": "žádné úpravy (pouze export)",
+      "needSample": "Ještě nebyl vybrán vzorový snímek.",
+      "noPreset": "Žádný preset",
+      "presetLabel": "Preset stylu (volitelné)",
+      "selectedCount": "Vybráno {{n}} zákaznických snímků",
+      "selectAll": "Vybrat vše",
+      "clearAll": "Vymazat",
+      "applyAndExport": "Aplikovat styl a dávkově exportovat",
+      "applying": "Zapisují se úpravy…",
+      "exporting": "Dávkový export…",
+      "chooseOutputFolder": "Zvolte výstupní složku",
+      "progressTitle": "Průběh",
+      "cancelExport": "Zrušit export",
+      "done": "Hotovo: exportováno {{n}} obrázků",
+      "exportCancelled": "Export zrušen",
+      "failed": "Selhalo"
     }
   },
   "masks": {
@@ -2043,6 +2101,7 @@
         "title": "Předzpracování obrazu",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "Základní"
         },
         "tonemapperOverride": "Globální přepsání mapování tónů",

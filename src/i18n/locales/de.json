@@ -34,6 +34,11 @@
       },
       "colorGrading": "Color Grading",
       "colorMixer": "Farbmischer",
+      "colorMatch": "KI-Farbübertragung",
+      "colorMatchDesc": "Überträgt den Farbstil eines Beispielfotos auf dieses Foto (nicht destruktiv)",
+      "colorMatchRunning": "Farben werden übertragen…",
+      "colorMatchDone": "Farbübertragung angewendet · ΔE um {{reduction}}% reduziert",
+      "colorMatchFailed": "Farbübertragung fehlgeschlagen",
       "grading": {
         "balance": "Abgleich",
         "blending": "Mischen",
@@ -734,6 +739,22 @@
         "addToCurrent": "{{name}} zur aktuellen Maske hinzufügen oder neu erstellen (Rechtsklick)",
         "createNew": "Neue {{name}}-Maske erstellen",
         "selectNewSourcePoint": "{{modifier}} + Klicken, um einen neuen Quellpunkt auszuwählen"
+      },
+      "retouch": {
+        "title": "Porträt-Retusche",
+        "smoothing": "Hautglättung",
+        "teeth": "Zahnaufhellung",
+        "eyes": "Augenverbesserung",
+        "smoothingContainer": "Hautglättung",
+        "teethContainer": "Zahnaufhellung",
+        "eyesContainer": "Augenverbesserung",
+        "unifySkin": "Hautton anpassen",
+        "unifySkinRunning": "Hautton wird berechnet…",
+        "unifySkinDone": "Hautton angepasst",
+        "unifySkinFailed": "Hauttonanpassung fehlgeschlagen",
+        "slimFace": "Gesicht schmalen",
+        "jawline": "Kinnlinie",
+        "faceLiquify": "Gesichts-Liquify"
       }
     },
     "metadata": {
@@ -918,7 +939,13 @@
       "resolution": "Auflösung",
       "tiffBitDepth": "TIFF-Bittiefe",
       "tiffBitDepth16": "16 Bit",
-      "tiffBitDepth8": "8 Bit"
+      "tiffBitDepth8": "8 Bit",
+      "colorSpace": "Farbraum",
+      "colorSpaceDesc": "Pixel werden konvertiert und das ausgewählte ICC-Profil wird eingebettet",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "Bild",
@@ -1365,7 +1392,38 @@
       "communityPresets": "Community-Vorgaben",
       "goHome": "Zur Startseite",
       "importImages": "Bilder importieren",
-      "select": "Auswählen"
+      "select": "Auswählen",
+      "studio": "Studio"
+    },
+    "studio": {
+      "headerTitle": "Studio",
+      "headerDesc": "Vom Referenzbild zum Kundenset: Farbanpassung, Presets und Stapelexport an einem Ort.",
+      "step1": "Referenzbild",
+      "step1Desc": "Wähle ein Referenzbild als Stilquelle für die gesamte Gruppe.",
+      "step2": "Stil",
+      "step2Desc": "Optional: Ergänze ein Preset, das mit den Anpassungen des Referenzbilds kombiniert wird.",
+      "step3": "Kundenbilder",
+      "step3Desc": "Markiere die Bilder, auf die der Stil angewendet werden soll, und starte Stapelanwendung und -export.",
+      "noImages": "Keine Bilder in diesem Ordner. Bitte zuerst Bilder importieren.",
+      "sampleSelected": "Referenz ausgewählt",
+      "loadingMetadata": "Anpassungen werden gelesen…",
+      "willCopy": "Kopiert wird",
+      "noAdjustments": "keine Anpassungen (nur Export)",
+      "needSample": "Noch kein Referenzbild ausgewählt.",
+      "noPreset": "Kein Preset",
+      "presetLabel": "Stil-Preset (optional)",
+      "selectedCount": "{{n}} Kundenbilder ausgewählt",
+      "selectAll": "Alle auswählen",
+      "clearAll": "Leeren",
+      "applyAndExport": "Stil anwenden & stapelweise exportieren",
+      "applying": "Anpassungen werden geschrieben…",
+      "exporting": "Stapel-export…",
+      "chooseOutputFolder": "Ausgabeordner wählen",
+      "progressTitle": "Fortschritt",
+      "cancelExport": "Export abbrechen",
+      "done": "Fertig: {{n}} Bilder exportiert",
+      "exportCancelled": "Export abgebrochen",
+      "failed": "Fehlgeschlagen"
     }
   },
   "masks": {
@@ -2036,6 +2094,7 @@
         "title": "Bildvorverarbeitung",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "Standard"
         },
         "tonemapperOverride": "Globaler Tonemapper-Override",

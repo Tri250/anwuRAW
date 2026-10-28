@@ -1,12 +1,15 @@
 import { useState, useMemo, memo, CSSProperties } from 'react';
-import { Pipette, Sliders } from 'lucide-react';
+import { Pipette, Sliders, Wand2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
 import Slider, { SliderChangeEvent } from '../ui/Slider';
 import ColorWheel from '../ui/ColorWheel';
 import { ColorAdjustment, ColorCalibration, HueSatLum, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
 import { Adjustments, ColorGrading, getAdjustmentToolOrder, getHiddenAdjustmentTools } from '../../utils/adjustments';
-import { AppSettings } from '../ui/AppProperties';
+import { AppSettings, Invokes } from '../ui/AppProperties';
+import { useEditorStore } from '../../store/useEditorStore';
 import Text from '../ui/Text';
 import AdjustmentSubSection from './AdjustmentSubSection';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -24,7 +27,7 @@ import {
   withKelvinWhiteBalance,
   withRelativeWhiteBalance,
 } from '../../utils/whiteBalance';
-import { TextColors, TextWeights } from '../../types/typography';
+import { TextColors, TextVariants, TextWeights } from '../../types/typography';
 import { areSectionPropsEqual } from '../../utils/adjustments';
 
 interface ColorProps {
@@ -150,6 +153,80 @@ const ColorGradingPanel = ({ adjustments, setAdjustments, onDragStateChange }: C
     }));
   };
 
+  const selectedImage = useEditorStore((state) => state.selectedImage);
+  const [colorMatchState, setColorMatchState] = useState<{ failed: boolean; message: string; running: boolean }>({
+    failed: false,
+    message: '',
+    running: false,
+  });
+
+  const handleColorMatch = async () => {
+    if (!selectedImage || colorMatchState.running) return;
+    setColorMatchState({ failed: false, message: '', running: true });
+    try {
+      const samplePath = await open({
+        title: t('adjustments.color.colorMatch'),
+        multiple: false,
+        filters: [
+          {
+            name: 'Images',
+            extensions: [
+              'jpg',
+              'jpeg',
+              'png',
+              'tif',
+              'tiff',
+              'webp',
+              'avif',
+              'jxl',
+              'heic',
+              'dng',
+              'cr2',
+              'cr3',
+              'nef',
+              'arw',
+              'raf',
+              'orf',
+              'rw2',
+            ],
+          },
+        ],
+      });
+      if (!samplePath) {
+        setColorMatchState({ failed: false, message: '', running: false });
+        return;
+      }
+      const result = await invoke(Invokes.ComputeColorMatch, {
+        samplePath,
+        targetPath: selectedImage.path,
+      });
+      const patch = (result as { adjustments?: Record<string, any> })?.adjustments || {};
+      setAdjustments((prev: Partial<Adjustments>) => ({
+        ...prev,
+        ...(patch.colorGrading
+          ? {
+              colorGrading: {
+                ...(prev.colorGrading || INITIAL_ADJUSTMENTS.colorGrading),
+                ...patch.colorGrading,
+              },
+            }
+          : {}),
+        ...(patch.curves ? { curves: { ...(prev.curves || INITIAL_ADJUSTMENTS.curves), ...patch.curves } } : {}),
+      }));
+      const reduction = Math.round(
+        (result as { metrics?: { deltaEReduction?: number } })?.metrics?.deltaEReduction ?? 0,
+      );
+      setColorMatchState({
+        failed: false,
+        message: t('adjustments.color.colorMatchDone', { reduction }),
+        running: false,
+      });
+    } catch (err) {
+      console.error('Color match failed:', err);
+      setColorMatchState({ failed: true, message: t('adjustments.color.colorMatchFailed'), running: false });
+    }
+  };
+
   const tabs = useMemo(
     () => [
       {
@@ -207,7 +284,27 @@ const ColorGradingPanel = ({ adjustments, setAdjustments, onDragStateChange }: C
         >
           <Sliders size={14} />
         </button>
+
+        <div className="ml-auto">
+          <button
+            onClick={handleColorMatch}
+            disabled={colorMatchState.running || !selectedImage}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-all focus:outline-none bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-bg-secondary/80 disabled:opacity-40"
+            data-tooltip={t('adjustments.color.colorMatchDesc')}
+          >
+            <Wand2 size={14} className={colorMatchState.running ? 'animate-pulse' : ''} />
+          </button>
+        </div>
       </div>
+
+      {colorMatchState.message && (
+        <Text
+          variant={TextVariants.label}
+          className={`mb-3 px-1 ${colorMatchState.failed ? 'text-red-400' : 'opacity-70'}`}
+        >
+          {colorMatchState.message}
+        </Text>
+      )}
 
       <div className="relative w-full mb-4">
         <AnimatePresence mode="wait">

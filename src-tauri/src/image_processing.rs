@@ -2134,7 +2134,11 @@ pub fn resolve_tonemapper_override(settings: &crate::AppSettings, is_raw: bool) 
             .as_deref()
             .unwrap_or("basic")
     };
-    Some(if tm == "agx" { 1 } else { 0 })
+    Some(match tm {
+        "agx" => 1,
+        "pbr_neutral" | "pbrNeutral" => 2,
+        _ => 0,
+    })
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -2266,6 +2270,49 @@ pub fn apply_cpu_agx_tonemap(image: &mut DynamicImage) {
         pixel_chunk[0] = final_color.x.clamp(0.0, 1.0);
         pixel_chunk[1] = final_color.y.clamp(0.0, 1.0);
         pixel_chunk[2] = final_color.z.clamp(0.0, 1.0);
+    });
+}
+
+/// CPU fallback of the Khronos PBR Neutral tone mapper (GPU: `shader.wgsl`
+/// `pbr_neutral_tonemap`). Input is linear sRGB, output is sRGB-encoded,
+/// mirroring `apply_cpu_agx_tonemap` conventions.
+pub fn apply_cpu_pbr_neutral_tonemap(image: &mut DynamicImage) {
+    const START_COMPRESSION: f32 = 0.8 - 0.04;
+    const DESATURATION: f32 = 0.15;
+
+    let f32_image = rgb32f_mut(image);
+
+    f32_image.par_chunks_mut(3).for_each(|pixel_chunk| {
+        let mut color = [pixel_chunk[0], pixel_chunk[1], pixel_chunk[2]];
+
+        let x = color[0].min(color[1]).min(color[2]);
+        let offset = if x < 0.08 { x - 6.25 * x * x } else { 0.04 };
+        for channel in &mut color {
+            *channel -= offset;
+        }
+
+        let peak = color[0].max(color[1]).max(color[2]);
+        if peak >= START_COMPRESSION {
+            let d = 1.0 - START_COMPRESSION;
+            let new_peak = 1.0 - d * d / (peak + d - START_COMPRESSION);
+            for channel in &mut color {
+                *channel *= new_peak / peak;
+            }
+            let g = 1.0 - 1.0 / (DESATURATION * (peak - new_peak) + 1.0);
+            for channel in &mut color {
+                *channel = *channel * (1.0 - g) + new_peak * g;
+            }
+        }
+
+        for (slot, value) in pixel_chunk.iter_mut().zip(color.iter()) {
+            let v = value.max(0.0);
+            let encoded = if v <= 0.0031308 {
+                v * 12.92
+            } else {
+                1.055 * v.powf(1.0 / 2.4) - 0.055
+            };
+            *slot = encoded.clamp(0.0, 1.0);
+        }
     });
 }
 
@@ -2645,8 +2692,11 @@ fn get_global_adjustments_from_json(
         has_lut,
         lut_intensity,
 
-        tonemapper_mode: tonemapper_override
-            .unwrap_or_else(|| if tone_mapper == "agx" { 1 } else { 0 }),
+        tonemapper_mode: tonemapper_override.unwrap_or_else(|| match tone_mapper {
+            "agx" => 1,
+            "pbr_neutral" | "pbrNeutral" => 2,
+            _ => 0,
+        }),
         lut_is_scene_referred,
         vignette_center_x: get_val("vignette", "vignetteCenterX", 1.0, Some(0.5)),
         vignette_center_y: get_val("vignette", "vignetteCenterY", 1.0, Some(0.5)),

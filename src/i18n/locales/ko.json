@@ -34,6 +34,11 @@
       },
       "colorGrading": "컬러 그레이딩",
       "colorMixer": "컬러 믹서",
+      "colorMatch": "AI 색상 매치",
+      "colorMatchDesc": "샘플 사진의 색감을 이 사진에 전송합니다(비파괴)",
+      "colorMatchRunning": "색상 매칭 중…",
+      "colorMatchDone": "색상 매치 적용 · ΔE {{reduction}}% 감소",
+      "colorMatchFailed": "색상 매치 실패",
       "grading": {
         "balance": "밸런스",
         "blending": "블렌딩",
@@ -734,6 +739,22 @@
         "addToCurrent": "{{name}}을(를) 현재 마스크에 추가하거나 새로 만들기 (우클릭)",
         "createNew": "새 {{name}} 마스크 만들기",
         "selectNewSourcePoint": "{{modifier}} + 클릭하여 새 소스 포인트 선택"
+      },
+      "retouch": {
+        "title": "인물 보정",
+        "smoothing": "피부 스무딩",
+        "teeth": "치아 화이트닝",
+        "eyes": "눈 보정",
+        "smoothingContainer": "피부 스무딩",
+        "teethContainer": "치아 화이트닝",
+        "eyesContainer": "눈 보정",
+        "unifySkin": "피부톤 통일",
+        "unifySkinRunning": "피부톤 계산 중…",
+        "unifySkinDone": "피부톤이 통일되었습니다",
+        "unifySkinFailed": "피부톤 통일 실패",
+        "slimFace": "얼굴 날리기",
+        "jawline": "턱선",
+        "faceLiquify": "페이스 리퀴파이"
       }
     },
     "metadata": {
@@ -918,7 +939,13 @@
       "resolution": "해상도",
       "tiffBitDepth": "TIFF 비트 심도",
       "tiffBitDepth16": "16비트",
-      "tiffBitDepth8": "8비트"
+      "tiffBitDepth8": "8비트",
+      "colorSpace": "색 공간",
+      "colorSpaceDesc": "픽셀이 변환되고 선택한 ICC 프로파일이 내장됩니다",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "이미지",
@@ -1365,7 +1392,38 @@
       "communityPresets": "커뮤니티 프리셋",
       "goHome": "홈으로 이동",
       "importImages": "이미지 가져오기",
-      "select": "선택"
+      "select": "선택",
+      "studio": "스튜디오"
+    },
+    "studio": {
+      "headerTitle": "스튜디오",
+      "headerDesc": "샘플에서 전체 컷까지: 색상 매칭, 프리셋, 일괄 내보내기를 한 곳에서.",
+      "step1": "샘플 이미지",
+      "step1Desc": "전체 그룹의 스타일 원본이 될 샘플 이미지를 한 장 선택하세요.",
+      "step2": "스타일",
+      "step2Desc": "선택: 프리셋을 추가하면 샘플 보정과 병합됩니다.",
+      "step3": "고객 사진",
+      "step3Desc": "스타일을 적용할 사진을 선택한 뒤 한 번에 적용하고 일괄 내보냅니다.",
+      "noImages": "이 폴더에 이미지가 없습니다. 먼저 이미지를 가져오세요.",
+      "sampleSelected": "샘플 선택됨",
+      "loadingMetadata": "샘플 보정값을 읽는 중…",
+      "willCopy": "복사될 항목",
+      "noAdjustments": "보정 없음 (내보내기만)",
+      "needSample": "아직 샘플 이미지가 선택되지 않았습니다.",
+      "noPreset": "프리셋 없음",
+      "presetLabel": "스타일 프리셋 (선택)",
+      "selectedCount": "{{n}}장의 사진이 선택됨",
+      "selectAll": "모두 선택",
+      "clearAll": "지우기",
+      "applyAndExport": "스타일 적용 후 일괄 내보내기",
+      "applying": "보정값 기록 중…",
+      "exporting": "일괄 내보내는 중…",
+      "chooseOutputFolder": "출력 폴더 선택",
+      "progressTitle": "진행 상황",
+      "cancelExport": "내보내기 취소",
+      "done": "완료: {{n}}장을 내보냈습니다",
+      "exportCancelled": "내보내기가 취소되었습니다",
+      "failed": "실패"
     }
   },
   "masks": {
@@ -2036,6 +2094,7 @@
         "title": "이미지 전처리",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "기본"
         },
         "tonemapperOverride": "전역 톤매퍼 재정의",

@@ -34,6 +34,11 @@
       },
       "colorGrading": "Kleurgradering",
       "colorMixer": "Kleurenmixer",
+      "colorMatch": "AI-kleurmatch",
+      "colorMatchDesc": "Overzetten van de kleurstijl van een voorbeeldfoto naar deze foto (niet-destructief)",
+      "colorMatchRunning": "Kleuren worden gematcht…",
+      "colorMatchDone": "Kleurmatch toegepast · ΔE met {{reduction}}% verminderd",
+      "colorMatchFailed": "Kleurmatch mislukt",
       "grading": {
         "balance": "Balans",
         "blending": "Menging",
@@ -728,6 +733,22 @@
         "addToCurrent": "{{name}} toevoegen aan huidig masker of nieuw masker maken (rechtermuisknop)",
         "createNew": "Nieuw {{name}} masker maken",
         "selectNewSourcePoint": "{{modifier}} + klik om een nieuw bronpunt te selecteren"
+      },
+      "retouch": {
+        "title": "Portret retoucheren",
+        "smoothing": "Huidgladheid",
+        "teeth": "Tandblekening",
+        "eyes": "Oogverbetering",
+        "smoothingContainer": "Huidgladheid",
+        "teethContainer": "Tandblekening",
+        "eyesContainer": "Oogverbetering",
+        "unifySkin": "Huidtint uniformeren",
+        "unifySkinRunning": "Huidtint berekenen…",
+        "unifySkinDone": "Huidtint gelijkgetrokken",
+        "unifySkinFailed": "Huidtint uniformeren mislukt",
+        "slimFace": "Gezicht versmallen",
+        "jawline": "Kaaklijn",
+        "faceLiquify": "Gezicht-Liquify"
       }
     },
     "metadata": {
@@ -912,7 +933,13 @@
       "resolution": "Resolutie",
       "tiffBitDepth": "TIFF-bitdiepte",
       "tiffBitDepth16": "16-bit",
-      "tiffBitDepth8": "8-bit"
+      "tiffBitDepth8": "8-bit",
+      "colorSpace": "Kleurruimte",
+      "colorSpaceDesc": "Pixels worden geconverteerd en het geselecteerde ICC-profiel wordt ingesloten",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "Afbeelding",
@@ -1342,7 +1369,38 @@
       "communityPresets": "Community-voorinstellingen",
       "goHome": "Naar startpagina",
       "importImages": "Afbeeldingen importeren",
-      "select": "Selecteren"
+      "select": "Selecteren",
+      "studio": "Studio"
+    },
+    "studio": {
+      "headerTitle": "Studio",
+      "headerDesc": "Van voorbeeld naar hele set: kleurmatching, presets en batch-export op één plek.",
+      "step1": "Voorbeeldafbeelding",
+      "step1Desc": "Kies een voorbeeldafbeelding als stijlbron voor de hele groep.",
+      "step2": "Stijl",
+      "step2Desc": "Optioneel: voeg een preset toe die met de aanpassingen van het voorbeeld wordt samengevoegd.",
+      "step3": "Klantfoto’s",
+      "step3Desc": "Vink de foto’s aan waarop de stijl toegepast wordt en start toepassen en batch-export.",
+      "noImages": "Geen afbeeldingen in deze map. Importeer eerst afbeeldingen.",
+      "sampleSelected": "Voorbeeld geselecteerd",
+      "loadingMetadata": "Aanpassingen worden gelezen…",
+      "willCopy": "Wordt gekopieerd",
+      "noAdjustments": "geen aanpassingen (alleen export)",
+      "needSample": "Nog geen voorbeeldafbeelding gekozen.",
+      "noPreset": "Geen preset",
+      "presetLabel": "Stijl-preset (optioneel)",
+      "selectedCount": "{{n}} klantfoto’s geselecteerd",
+      "selectAll": "Alles selecteren",
+      "clearAll": "Wissen",
+      "applyAndExport": "Stijl toepassen & batch-exporteren",
+      "applying": "Aanpassingen worden geschreven…",
+      "exporting": "Batch-exporteren…",
+      "chooseOutputFolder": "Kies uitvoermap",
+      "progressTitle": "Voortgang",
+      "cancelExport": "Export annuleren",
+      "done": "Klaar: {{n}} afbeeldingen geëxporteerd",
+      "exportCancelled": "Export geannuleerd",
+      "failed": "Mislukt"
     }
   },
   "masks": {
@@ -2009,6 +2067,7 @@
         "title": "Afbeeldingsvoorverwerking",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "Basis"
         },
         "tonemapperOverride": "Globale toonmappingoverride",

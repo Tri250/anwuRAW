@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import CommunityPage from '../panel/CommunityPage';
+import StudioPage from '../panel/StudioPage';
 import MainLibrary from '../panel/MainLibrary';
 import BottomBar from '../panel/BottomBar';
 
@@ -125,6 +126,7 @@ export default function LibraryView({
     [handleImportClick, currentFolderPath],
   );
   const handleNavigateToCommunity = useCallback(() => setUI({ activeView: 'community' }), [setUI]);
+  const handleNavigateToStudio = useCallback(() => setUI({ activeView: 'studio' }), [setUI]);
 
   return (
     <div className="flex flex-row grow h-full min-h-0">
@@ -135,6 +137,13 @@ export default function LibraryView({
             supportedTypes={supportedTypes}
             imageList={sortedImageList}
             currentFolderPath={currentFolderPath}
+          />
+        ) : activeView === 'studio' ? (
+          <StudioPage
+            onBackToLibrary={() => setUI({ activeView: 'library' })}
+            imageList={sortedImageList}
+            currentFolderPath={currentFolderPath}
+            rootPaths={rootPaths}
           />
         ) : (
           <MainLibrary
@@ -173,6 +182,7 @@ export default function LibraryView({
             thumbnailAspectRatio={thumbnailAspectRatio}
             thumbnailSize={thumbnailSize}
             onNavigateToCommunity={handleNavigateToCommunity}
+            onNavigateToStudio={handleNavigateToStudio}
           />
         )}
         {rootPaths && rootPaths.length > 0 && (

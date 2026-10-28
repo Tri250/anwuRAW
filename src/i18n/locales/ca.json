@@ -34,6 +34,11 @@
       },
       "colorGrading": "Gradació de color",
       "colorMixer": "Mesclador de colors",
+      "colorMatch": "Igualació de color IA",
+      "colorMatchDesc": "Transfereix l'estil de color d'una foto de mostra a aquesta foto (no destructiu)",
+      "colorMatchRunning": "Igualant colors…",
+      "colorMatchDone": "Igualació aplicada · ΔE reduït un {{reduction}}%",
+      "colorMatchFailed": "Error en la igualació de color",
       "grading": {
         "balance": "Balanç",
         "blending": "Mescla",
@@ -735,6 +740,22 @@
         "addToCurrent": "Afegir {{name}} a la màscara actual o crear-ne una de nova (Clic dret)",
         "createNew": "Crear nova màscara de {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Clic per seleccionar un nou punt d'origen"
+      },
+      "retouch": {
+        "title": "Retoc de retrat",
+        "smoothing": "Suavitzat de la pell",
+        "teeth": "Blanqueig dental",
+        "eyes": "Millora dels ulls",
+        "smoothingContainer": "Suavitzat de la pell",
+        "teethContainer": "Blanqueig dental",
+        "eyesContainer": "Millora dels ulls",
+        "unifySkin": "Uniformitza el to de la pell",
+        "unifySkinRunning": "Calculant el to de la pell…",
+        "unifySkinDone": "To de la pell uniformitzat",
+        "unifySkinFailed": "No s'ha pogut uniformitzar el to de la pell",
+        "slimFace": "Aprimora la cara",
+        "jawline": "Línia de la mandíbula",
+        "faceLiquify": "Liquido facial"
       }
     },
     "metadata": {
@@ -919,7 +940,13 @@
       "resolution": "Resolució",
       "tiffBitDepth": "Profunditat de bits TIFF",
       "tiffBitDepth16": "16 bits",
-      "tiffBitDepth8": "8 bits"
+      "tiffBitDepth8": "8 bits",
+      "colorSpace": "Espai de color",
+      "colorSpaceDesc": "Els píxels es converteixen i s'incrusta el perfil ICC seleccionat",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "Imatge",
@@ -1371,7 +1398,38 @@
       "communityPresets": "Ajustos preestablerts de la comunitat",
       "goHome": "Anar a l'inici",
       "importImages": "Importar imatges",
-      "select": "Seleccionar"
+      "select": "Seleccionar",
+      "studio": "Estudi"
+    },
+    "studio": {
+      "headerTitle": "Estudi",
+      "headerDesc": "De la mostra al lot: coincidència de color, prestatgeries i exportació per lots en un sol lloc.",
+      "step1": "Imatge de mostra",
+      "step1Desc": "Tria una imatge de mostra com a referència d’estil per a tot el grup.",
+      "step2": "Estil",
+      "step2Desc": "Opcional: afegeix una prestatgeria que es combinarà amb els ajustos de la mostra.",
+      "step3": "Fotos del client",
+      "step3Desc": "Marca les fotos on aplicar l’estil i executa l’aplicació i l’exportació per lots.",
+      "noImages": "No hi ha imatges en aquesta carpeta. Importa imatges primer.",
+      "sampleSelected": "Mostra seleccionada",
+      "loadingMetadata": "Llegint els ajustos de la mostra…",
+      "willCopy": "Es copiarà",
+      "noAdjustments": "cap ajust (només exportació)",
+      "needSample": "Encara no has triat cap imatge de mostra.",
+      "noPreset": "Cap prestatgeria",
+      "presetLabel": "Prestatgeria d’estil (opcional)",
+      "selectedCount": "{{n}} fotos del client seleccionades",
+      "selectAll": "Selecciona-ho tot",
+      "clearAll": "Neteja",
+      "applyAndExport": "Aplica l’estil i exporta per lots",
+      "applying": "Aplicant ajustos…",
+      "exporting": "Exportant per lots…",
+      "chooseOutputFolder": "Tria la carpeta de sortida",
+      "progressTitle": "Progrés",
+      "cancelExport": "Cancel·la l’exportació",
+      "done": "Fet: {{n}} imatges exportades",
+      "exportCancelled": "Exportació cancel·lada",
+      "failed": "Ha fallat"
     }
   },
   "masks": {
@@ -2042,6 +2100,7 @@
         "title": "Preprocessament d'imatges",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "Bàsic"
         },
         "tonemapperOverride": "Sobreescriptura global del mapejador de tons",

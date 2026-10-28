@@ -34,6 +34,11 @@
       },
       "colorGrading": "Цветокоррекция",
       "colorMixer": "Смешение цветов",
+      "colorMatch": "ИИ-перенос цвета",
+      "colorMatchDesc": "Переносит цветовой стиль образца на это фото (неразрушающе)",
+      "colorMatchRunning": "Согласование цветов…",
+      "colorMatchDone": "Перенос применён · ΔE снижен на {{reduction}}%",
+      "colorMatchFailed": "Не удалось выполнить перенос цвета",
       "grading": {
         "balance": "Баланс",
         "blending": "Смешивание",
@@ -776,6 +781,22 @@
         "addToCurrent": "Добавить {{name}} к текущей маске или создать новую (правый клик)",
         "createNew": "Создать новую маску: {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Кликните, чтобы выбрать новую исходную точку"
+      },
+      "retouch": {
+        "title": "Ретушь портрета",
+        "smoothing": "Сглаживание кожи",
+        "teeth": "Отбеливание зубов",
+        "eyes": "Улучшение глаз",
+        "smoothingContainer": "Сглаживание кожи",
+        "teethContainer": "Отбеливание зубов",
+        "eyesContainer": "Улучшение глаз",
+        "unifySkin": "Выровнять тон кожи",
+        "unifySkinRunning": "Вычисление тона кожи…",
+        "unifySkinDone": "Тон кожи выровнен",
+        "unifySkinFailed": "Не удалось выровнять тон кожи",
+        "slimFace": "Сужение лица",
+        "jawline": "Линия челюсти",
+        "faceLiquify": "Жидкая пластика лица"
       }
     },
     "metadata": {
@@ -962,7 +983,13 @@
       "resolution": "Разрешение",
       "tiffBitDepth": "Глубина цвета TIFF",
       "tiffBitDepth16": "16 бит",
-      "tiffBitDepth8": "8 бит"
+      "tiffBitDepth8": "8 бит",
+      "colorSpace": "Цветовое пространство",
+      "colorSpaceDesc": "Пиксели преобразуются, выбранный ICC-профиль встраивается",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "Изображение",
@@ -1423,7 +1450,38 @@
       "communityPresets": "Пресеты сообщества",
       "goHome": "На главную",
       "importImages": "Импортировать изображения",
-      "select": "Выбрать"
+      "select": "Выбрать",
+      "studio": "Студия"
+    },
+    "studio": {
+      "headerTitle": "Студия",
+      "headerDesc": "От образца до всей серии: подбор цвета, пресеты и пакетный экспорт в одном месте.",
+      "step1": "Образец",
+      "step1Desc": "Выберите образец — источник стиля для всей группы.",
+      "step2": "Стиль",
+      "step2Desc": "Необязательно: добавьте пресет, который объединится с коррекциями образца.",
+      "step3": "Клиентские снимки",
+      "step3Desc": "Отметьте снимки для стилизации, затем примените стиль и выполните пакетный экспорт одним кликом.",
+      "noImages": "В этой папке нет изображений. Сначала импортируйте изображения.",
+      "sampleSelected": "Образец выбран",
+      "loadingMetadata": "Чтение коррекций образца…",
+      "willCopy": "Будет скопировано",
+      "noAdjustments": "нет коррекций (только экспорт)",
+      "needSample": "Образец ещё не выбран.",
+      "noPreset": "Без пресета",
+      "presetLabel": "Пресет стиля (необязательно)",
+      "selectedCount": "Выбрано снимков: {{n}}",
+      "selectAll": "Выбрать все",
+      "clearAll": "Очистить",
+      "applyAndExport": "Применить стиль и экспортировать пакетно",
+      "applying": "Запись коррекций…",
+      "exporting": "Пакетный экспорт…",
+      "chooseOutputFolder": "Выберите папку вывода",
+      "progressTitle": "Прогресс",
+      "cancelExport": "Отменить экспорт",
+      "done": "Готово: экспортировано изображений: {{n}}",
+      "exportCancelled": "Экспорт отменён",
+      "failed": "Не удалось"
     }
   },
   "masks": {
@@ -2112,6 +2170,7 @@
         "title": "Предварительная обработка снимков",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "Стандартный"
         },
         "tonemapperOverride": "Глобальный принудительный тон-маппер",

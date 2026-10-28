@@ -34,6 +34,11 @@
       },
       "colorGrading": "Gradação de Cores",
       "colorMixer": "Misturador de Cores",
+      "colorMatch": "Correspondência de cor IA",
+      "colorMatchDesc": "Transfere o estilo de cor de uma foto de amostra para esta foto (não destrutivo)",
+      "colorMatchRunning": "Correspondendo cores…",
+      "colorMatchDone": "Correspondência aplicada · ΔE reduzido em {{reduction}}%",
+      "colorMatchFailed": "Falha na correspondência de cor",
       "grading": {
         "balance": "Balanço",
         "blending": "Mesclagem",
@@ -755,6 +760,22 @@
         "addToCurrent": "Adicionar {{name}} à Máscara Atual ou Criar Nova (Botão Direito)",
         "createNew": "Criar Nova Máscara de {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Clique para selecionar um novo ponto de origem"
+      },
+      "retouch": {
+        "title": "Retoque de retrato",
+        "smoothing": "Suavização da pele",
+        "teeth": "Clareamento dental",
+        "eyes": "Realce dos olhos",
+        "smoothingContainer": "Suavização da pele",
+        "teethContainer": "Clareamento dental",
+        "eyesContainer": "Realce dos olhos",
+        "unifySkin": "Unificar tom de pele",
+        "unifySkinRunning": "Calculando tom de pele…",
+        "unifySkinDone": "Tom de pele unificado",
+        "unifySkinFailed": "Falha ao unificar o tom de pele",
+        "slimFace": "Afina o rosto",
+        "jawline": "Linha do maxilar",
+        "faceLiquify": "Liquify facial"
       }
     },
     "metadata": {
@@ -940,7 +961,13 @@
       "resolution": "Resolução",
       "tiffBitDepth": "Profundidade de bits TIFF",
       "tiffBitDepth16": "16 bits",
-      "tiffBitDepth8": "8 bits"
+      "tiffBitDepth8": "8 bits",
+      "colorSpace": "Espaço de cor",
+      "colorSpaceDesc": "Os pixels são convertidos e o perfil ICC selecionado é incorporado",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "Imagem",
@@ -1394,7 +1421,38 @@
       "communityPresets": "Predefinições da Comunidade",
       "goHome": "Ir para Início",
       "importImages": "Importar Imagens",
-      "select": "Selecionar"
+      "select": "Selecionar",
+      "studio": "Estúdio"
+    },
+    "studio": {
+      "headerTitle": "Estúdio",
+      "headerDesc": "Da amostra ao conjunto completo: correspondência de cor, presets e exportação em lote num só lugar.",
+      "step1": "Imagem de amostra",
+      "step1Desc": "Escolha uma imagem de amostra como fonte de estilo para todo o grupo.",
+      "step2": "Estilo",
+      "step2Desc": "Opcional: adicione um preset que será combinado com os ajustes da amostra.",
+      "step3": "Fotografias de clientes",
+      "step3Desc": "Marque as fotos a estilizar e execute a aplicação e exportação em lote com um clique.",
+      "noImages": "Não há imagens nesta pasta. Importe imagens primeiro.",
+      "sampleSelected": "Amostra selecionada",
+      "loadingMetadata": "A ler os ajustes da amostra…",
+      "willCopy": "Será copiado",
+      "noAdjustments": "sem ajustes (apenas exportação)",
+      "needSample": "Ainda não escolheu uma imagem de amostra.",
+      "noPreset": "Sem preset",
+      "presetLabel": "Preset de estilo (opcional)",
+      "selectedCount": "{{n}} fotografias de clientes selecionadas",
+      "selectAll": "Selecionar tudo",
+      "clearAll": "Limpar",
+      "applyAndExport": "Aplicar estilo e exportar em lote",
+      "applying": "A escrever ajustes…",
+      "exporting": "A exportar em lote…",
+      "chooseOutputFolder": "Escolher pasta de destino",
+      "progressTitle": "Progresso",
+      "cancelExport": "Cancelar exportação",
+      "done": "Concluído: {{n}} imagens exportadas",
+      "exportCancelled": "Exportação cancelada",
+      "failed": "Falhou"
     }
   },
   "masks": {
@@ -2074,6 +2132,7 @@
         "title": "Pré-processamento de Imagem",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "Básico"
         },
         "tonemapperOverride": "Substituição Global de Mapeador de Tons",

@@ -70,6 +70,7 @@ export interface ExportSettings {
   destinationType?: string;
   subfolder?: string;
   dpi?: number;
+  colorSpace?: string;
 }
 
 export enum BorderBasis {
@@ -164,4 +165,5 @@ export interface ExportPreset {
   lastExportPath?: string;
   destinationType?: string;
   subfolder?: string;
+  colorSpace?: string;
 }

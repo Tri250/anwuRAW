@@ -3,12 +3,16 @@ use std::io::Cursor;
 use base64::{Engine as _, engine::general_purpose};
 use image::{DynamicImage, GenericImageView, Rgb, RgbImage, RgbaImage};
 use rayon::prelude::*;
-use serde_json::Value;
+use serde_json::{Value, json};
 
+use crate::ai_commands::{MaskTransform, ai_cache_key};
 use crate::ai_connector;
 use crate::ai_processing;
+use crate::ai_processing::{AiMaskModel, get_or_init_ai_models};
 use crate::app_settings::load_settings;
 use crate::app_state::AppState;
+use crate::face_masking::{FACE_CHEEK_L, FACE_CHEEK_R, JAW_ARC};
+use crate::get_cached_full_warped_image;
 use crate::image_loader::prepare_base_image_cow;
 use crate::image_processing::apply_linear_to_srgb;
 use crate::mask_generation::{AiPatchDefinition, MaskDefinition, generate_mask_bitmap};
@@ -1057,6 +1061,257 @@ pub async fn generate_liquify_patch(
     let color_image = RgbImage::from_raw(crop_w, crop_h, color_pixels).unwrap();
     let mask_image = image::GrayImage::from_raw(crop_w, crop_h, mask_pixels).unwrap();
 
+    encode_patch_result(
+        &color_image,
+        &mask_image,
+        min_x_u32,
+        min_y_u32,
+        crop_w,
+        crop_h,
+        is_raw,
+        100,
+        false,
+    )
+}
+
+/// F-05 人脸液化/美型：基于 478 关键点的参数化 warp。
+/// 瘦脸 = 下颌弧线向面部中轴内收；下颌线 = 下巴/颌线上提。
+/// landmark 在几何 warp 域检测，反解几何映射回基准域后，烘焙为 liquify patch
+/// （color+mask，空间与编码约定同笔刷液化），非破坏、可删除回退。
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn generate_face_liquify_patch(
+    js_adjustments: Value,
+    path: String,
+    rotation: f32,
+    flip_horizontal: bool,
+    flip_vertical: bool,
+    orientation_steps: u8,
+    patch_id: String,
+    slim_face: f32,
+    jawline: f32,
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<String, String> {
+    if slim_face <= 0.0 && jawline <= 0.0 {
+        return Err("No liquify strength".to_string());
+    }
+    let models = get_or_init_ai_models(
+        &app_handle,
+        &state.ai_state,
+        &state.ai_init_lock,
+        AiMaskModel::Face,
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+    let warped_image = get_cached_full_warped_image(&state, &js_adjustments)?;
+    let transform = MaskTransform {
+        rotation,
+        flip_horizontal,
+        flip_vertical,
+        orientation_steps,
+    };
+    let cache_key = ai_cache_key(&path, &js_adjustments);
+    let analysis = crate::ai_commands::cached_face_analysis(
+        &state.ai_state,
+        &models,
+        &cache_key,
+        &warped_image,
+        transform,
+    )?;
+    if analysis.faces.is_empty() {
+        return Err(crate::ai_commands::NO_FACES_FOUND.to_string());
+    }
+
+    // warp 域仅施加了几何变换（不含 rotation/flip/orientation），
+    // 将这些项置中性后即可反解几何，把 landmark 映射回基准域。
+    let mut geo_adjustments = js_adjustments.clone();
+    if let Some(obj) = geo_adjustments.as_object_mut() {
+        obj.insert("rotation".to_string(), json!(0.0f64));
+        obj.insert("flipHorizontal".to_string(), json!(false));
+        obj.insert("flipVertical".to_string(), json!(false));
+        obj.insert("orientationSteps".to_string(), json!(0u8));
+    }
+    let (warped_w, warped_h) = warped_image.dimensions();
+    let to_base = |p: [f32; 2]| -> [f32; 2] {
+        let (x, y) = crate::image_processing::inverse_transform_point(
+            p[0] as f64,
+            p[1] as f64,
+            warped_w as f64,
+            warped_h as f64,
+            &geo_adjustments,
+        );
+        [x as f32, y as f32]
+    };
+
+    // 基准域烘焙源（与笔刷液化一致；排除自身 patch 防止回灌）
+    let (source_dynamic, is_raw) = prepare_source_image(&patch_id, &js_adjustments, &state)?;
+    let source_image = source_dynamic.into_rgb8();
+    let (img_w, img_h) = source_image.dimensions();
+
+    struct Stake {
+        x: f32,
+        y: f32,
+        radius: f32,
+        dx: f32,
+        dy: f32,
+        /// 最大位移（像素）
+        pressure: f32,
+    }
+
+    let mut stakes: Vec<Stake> = Vec::new();
+    for face in &analysis.faces {
+        let lm_base: Vec<[f32; 2]> = face.landmarks().iter().map(|p| to_base(*p)).collect();
+        let cheek_l = lm_base[FACE_CHEEK_L];
+        let cheek_r = lm_base[FACE_CHEEK_R];
+        let center_x = (cheek_l[0] + cheek_r[0]) * 0.5;
+        let half_w = ((cheek_r[0] - cheek_l[0]).abs() * 0.5).max(1.0);
+        let mut min_lx = f32::INFINITY;
+        let mut min_ly = f32::INFINITY;
+        let mut max_lx = f32::NEG_INFINITY;
+        let mut max_ly = f32::NEG_INFINITY;
+        for p in &lm_base {
+            min_lx = min_lx.min(p[0]);
+            min_ly = min_ly.min(p[1]);
+            max_lx = max_lx.max(p[0]);
+            max_ly = max_ly.max(p[1]);
+        }
+        let face_size = (max_lx - min_lx).max(max_ly - min_ly).max(1.0);
+        let radius = (face_size * 0.22).max(8.0);
+
+        // 瘦脸：下颌弧线水平内收（权重向两侧渐强、下巴为 0）
+        if slim_face > 0.0 {
+            let max_disp = (slim_face / 100.0) * half_w * 0.22;
+            for &idx in JAW_ARC.iter() {
+                let p = lm_base[idx];
+                let side = ((p[0] - center_x) / half_w).clamp(-1.0, 1.0);
+                let w = side.abs().powf(0.8);
+                if w < 0.05 {
+                    continue;
+                }
+                stakes.push(Stake {
+                    x: p[0],
+                    y: p[1],
+                    radius,
+                    dx: -side.signum(),
+                    dy: 0.0,
+                    pressure: max_disp * w,
+                });
+            }
+        }
+
+        // 下颌线：下巴/近下巴颌点上提（stake 位于颌线下方，向上推）
+        if jawline > 0.0 {
+            let max_lift = (jawline / 100.0) * face_size * 0.05;
+            for &idx in JAW_ARC.iter() {
+                let p = lm_base[idx];
+                let side = ((p[0] - center_x) / half_w).abs().clamp(0.0, 1.0);
+                let w = (1.0 - side).powf(1.5);
+                if w < 0.05 {
+                    continue;
+                }
+                stakes.push(Stake {
+                    x: p[0],
+                    y: p[1] + radius * 0.35,
+                    radius,
+                    dx: 0.0,
+                    dy: -1.0,
+                    pressure: max_lift * w,
+                });
+            }
+        }
+    }
+
+    if stakes.is_empty() {
+        return Err("No liquify stakes".to_string());
+    }
+
+    let mut min_x = img_w as f32;
+    let mut min_y = img_h as f32;
+    let mut max_x = 0.0_f32;
+    let mut max_y = 0.0_f32;
+    let mut max_radius = 0.0_f32;
+    for s in &stakes {
+        min_x = min_x.min(s.x - s.radius);
+        min_y = min_y.min(s.y - s.radius);
+        max_x = max_x.max(s.x + s.radius);
+        max_y = max_y.max(s.y + s.radius);
+        max_radius = max_radius.max(s.radius);
+    }
+    let margin = (max_radius * 1.5).clamp(50.0, 300.0);
+    min_x -= margin;
+    min_y -= margin;
+    max_x += margin;
+    max_y += margin;
+
+    let min_x_u32 = (min_x as i32).clamp(0, img_w as i32 - 1) as u32;
+    let min_y_u32 = (min_y as i32).clamp(0, img_h as i32 - 1) as u32;
+    let max_x_u32 = (max_x as i32).clamp(0, img_w as i32 - 1) as u32;
+    let max_y_u32 = (max_y as i32).clamp(0, img_h as i32 - 1) as u32;
+
+    let crop_w = max_x_u32 - min_x_u32 + 1;
+    let crop_h = max_y_u32 - min_y_u32 + 1;
+
+    let mut color_pixels = vec![0u8; (crop_w * crop_h * 3) as usize];
+    let mut mask_pixels = vec![0u8; (crop_w * crop_h) as usize];
+
+    color_pixels
+        .par_chunks_mut((crop_w * 3) as usize)
+        .zip(mask_pixels.par_chunks_mut(crop_w as usize))
+        .enumerate()
+        .for_each(|(y, (color_row, mask_row))| {
+            let orig_y = y as f32 + min_y_u32 as f32;
+            for x in 0..(crop_w as usize) {
+                let orig_x = x as f32 + min_x_u32 as f32;
+                let mut disp_x = 0.0_f32;
+                let mut disp_y = 0.0_f32;
+                for s in &stakes {
+                    let ddx = orig_x - s.x;
+                    let ddy = orig_y - s.y;
+                    let dist_sq = ddx * ddx + ddy * ddy;
+                    if dist_sq >= s.radius * s.radius {
+                        continue;
+                    }
+                    let dist = dist_sq.sqrt();
+                    let inner = s.radius * 0.5;
+                    let falloff = if dist <= inner {
+                        1.0
+                    } else {
+                        let t = (dist - inner) / (s.radius - inner);
+                        let c = 0.5 * (1.0 + (t * std::f32::consts::PI).cos());
+                        c * c
+                    };
+                    disp_x += s.dx * s.pressure * falloff;
+                    disp_y += s.dy * s.pressure * falloff;
+                }
+
+                let disp_sq = disp_x * disp_x + disp_y * disp_y;
+                if disp_sq > 0.001 {
+                    let displacement = disp_sq.sqrt();
+                    let mask_val = (displacement * 255.0).clamp(0.0, 255.0) as u8;
+                    let px = bilinear_sample(&source_image, orig_x + disp_x, orig_y + disp_y);
+                    color_row[x * 3] = px[0];
+                    color_row[x * 3 + 1] = px[1];
+                    color_row[x * 3 + 2] = px[2];
+                    mask_row[x] = mask_val;
+                } else {
+                    let px = source_image.get_pixel(
+                        (orig_x as u32).min(img_w - 1),
+                        (orig_y as u32).min(img_h - 1),
+                    );
+                    color_row[x * 3] = px[0];
+                    color_row[x * 3 + 1] = px[1];
+                    color_row[x * 3 + 2] = px[2];
+                    mask_row[x] = 0;
+                }
+            }
+        });
+
+    let color_image = RgbImage::from_raw(crop_w, crop_h, color_pixels).unwrap();
+    let mask_image = image::GrayImage::from_raw(crop_w, crop_h, mask_pixels).unwrap();
+
+    // patch 与基准域同编码：RAW 经 apply_linear_to_srgb 后标记 isSrgbEncoded，
+    // 非 RAW 直接使用显示域像素；合成端按标记解码。
     encode_patch_result(
         &color_image,
         &mask_image,

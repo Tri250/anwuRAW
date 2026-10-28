@@ -34,6 +34,11 @@
       },
       "colorGrading": "Colorimétrie",
       "colorMixer": "Mélangeur de couleurs",
+      "colorMatch": "Correspondance couleur IA",
+      "colorMatchDesc": "Transfère le style colorimétrique d'une photo exemple vers cette photo (non destructif)",
+      "colorMatchRunning": "Correspondance des couleurs…",
+      "colorMatchDone": "Correspondance appliquée · ΔE réduit de {{reduction}}%",
+      "colorMatchFailed": "Échec de la correspondance couleur",
       "grading": {
         "balance": "Balance",
         "blending": "Mélange",
@@ -755,6 +760,22 @@
         "addToCurrent": "Ajouter {{name}} au masque actuel ou en créer un nouveau (Clic-droit)",
         "createNew": "Créer un nouveau masque {{name}}",
         "selectNewSourcePoint": "{{modifier}} + Clic pour sélectionner un nouveau point source"
+      },
+      "retouch": {
+        "title": "Retouche portrait",
+        "smoothing": "Lissage de la peau",
+        "teeth": "Blanchiment des dents",
+        "eyes": "Amélioration des yeux",
+        "smoothingContainer": "Lissage de la peau",
+        "teethContainer": "Blanchiment des dents",
+        "eyesContainer": "Amélioration des yeux",
+        "unifySkin": "Uniformiser le teint",
+        "unifySkinRunning": "Calcul du teint…",
+        "unifySkinDone": "Teint uniformisé",
+        "unifySkinFailed": "Échec de l'uniformisation du teint",
+        "slimFace": "Affiner le visage",
+        "jawline": "Ligne de la mâchoire",
+        "faceLiquify": "Liquify du visage"
       }
     },
     "metadata": {
@@ -940,7 +961,13 @@
       "resolution": "Résolution",
       "tiffBitDepth": "Profondeur de bits TIFF",
       "tiffBitDepth16": "16 bits",
-      "tiffBitDepth8": "8 bits"
+      "tiffBitDepth8": "8 bits",
+      "colorSpace": "Espace colorimétrique",
+      "colorSpaceDesc": "Les pixels sont convertis et le profil ICC sélectionné est intégré",
+      "colorSpaceSrgb": "sRGB",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020"
     },
     "labels": {
       "image": "Image",
@@ -1394,7 +1421,38 @@
       "communityPresets": "Paramètres prédéfinis de la communauté",
       "goHome": "Aller à l'accueil",
       "importImages": "Importer des images",
-      "select": "Sélectionner"
+      "select": "Sélectionner",
+      "studio": "Studio"
+    },
+    "studio": {
+      "headerTitle": "Studio",
+      "headerDesc": "De l’échantillon au lot complet : correspondance des couleurs, presets et export par lots au même endroit.",
+      "step1": "Image échantillon",
+      "step1Desc": "Choisissez une image échantillon comme source de style pour tout le groupe.",
+      "step2": "Style",
+      "step2Desc": "Optionnel : ajoutez un preset qui se fusionnera avec les réglages de l’échantillon.",
+      "step3": "Photos client",
+      "step3Desc": "Cochez les photos à styliser, puis appliquez et exportez par lots en un clic.",
+      "noImages": "Aucune image dans ce dossier. Importez d’abord des images.",
+      "sampleSelected": "Échantillon sélectionné",
+      "loadingMetadata": "Lecture des réglages de l’échantillon…",
+      "willCopy": "Sera copié",
+      "noAdjustments": "aucun réglage (export seul)",
+      "needSample": "Aucune image échantillon choisie pour le moment.",
+      "noPreset": "Aucun preset",
+      "presetLabel": "Preset de style (optionnel)",
+      "selectedCount": "{{n}} photos client sélectionnées",
+      "selectAll": "Tout sélectionner",
+      "clearAll": "Effacer",
+      "applyAndExport": "Appliquer le style et exporter par lots",
+      "applying": "Écriture des réglages…",
+      "exporting": "Export par lots…",
+      "chooseOutputFolder": "Choisir le dossier de sortie",
+      "progressTitle": "Progression",
+      "cancelExport": "Annuler l’export",
+      "done": "Terminé : {{n}} images exportées",
+      "exportCancelled": "Export annulé",
+      "failed": "Échec"
     }
   },
   "masks": {
@@ -2073,6 +2131,7 @@
         "title": "Prétraitement de l'image",
         "tonemapperOptions": {
           "agx": "AgX",
+          "pbrNeutral": "PBR Neutral",
           "basic": "Standard"
         },
         "tonemapperOverride": "Surcharge globale du mappeur de tons",
