@@ -1990,30 +1990,6 @@ pub async fn stitch_focus_stack(
         let preview = make_preview(&final_image, 1200)?;
         let depth_preview = make_depth_preview(&result, n)?;
 
-        let (dbg_w, dbg_h) = (result.image.w, result.image.h);
-        let report: Vec<serde_json::Value> = result
-            .poses
-            .iter()
-            .enumerate()
-            .map(|(i, p)| {
-                let det = p.warp.a[0] * p.warp.a[3] - p.warp.a[1] * p.warp.a[2];
-                serde_json::json!({
-                    "frame": i,
-                    "is_reference": i == result.reference,
-                    "quality": p.quality,
-                    "magnification": det.abs().sqrt(),
-                    "shift_px": [p.warp.t[0], p.warp.t[1]],
-                    "k1": p.warp.k1,
-                    "max_displacement_px": p.warp.max_displacement(dbg_w, dbg_h),
-                    "exposure_gain": p.gain,
-                })
-            })
-            .collect();
-        let _ = app_handle.emit(
-            "focus-stack-report",
-            serde_json::json!({ "frames": report }),
-        );
-
         *focus_result_handle.lock().unwrap() = Some(DynamicImage::ImageRgb32F(final_image));
 
         let _ = app_handle.emit(
