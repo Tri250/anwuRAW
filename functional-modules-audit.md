@@ -809,4 +809,5 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 
 - **9 大域 0 断链，本轮未发现需修复问题（fix 清单为空）**。
 - `npx tsc --noEmit`：0 错误；`npm run build`：成功；`i18n:runtime-check`：exit 0（_few/_many 回退为既有基线）。
-- `cargo +1.98.0 clippy --all-targets` + `cargo test --jobs 1`：见下方补录（后台执行）。
+- `cargo +1.98.0 clippy --all-targets`：发现 8 处新增代码 lint 告警（unused_mut / too_many_arguments×2 / needless_range_loop×2 / chunks_exact→as_chunks / collapsible_if / unnecessary_lazy_evaluations），已全部修复（color_profiles.rs、ai_commands.rs、color_transfer.rs、image_processing.rs），复跑 **0 lint 告警**；`cargo fmt --all` 通过；`cargo test` 12 passed / 0 failed。
+- `prettier --check functional-modules-audit.md`：修复全文格式（表格对齐重排，内容无损）。
