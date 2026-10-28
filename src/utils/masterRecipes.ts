@@ -62,7 +62,10 @@ const buildRecipeHsl = (hsl: MasterRecipeHsl): Hsl => {
  * Converts a recipe into the adjustment values written to the store. Only the
  * controls a recipe owns are returned, so unrelated sliders keep their values.
  */
-export const recipeToAdjustments = (recipe: MasterRecipe, strength: number = RECIPE_INTENSITY_DEFAULT): RecipeAdjustmentPatch => {
+export const recipeToAdjustments = (
+  recipe: MasterRecipe,
+  strength: number = RECIPE_INTENSITY_DEFAULT,
+): RecipeAdjustmentPatch => {
   const scale = clamp(strength, 0, RECIPE_INTENSITY_MAX) / RECIPE_INTENSITY_DEFAULT;
   const hsl = buildRecipeHsl(recipe.hsl);
   const scaledHsl = {} as Hsl;

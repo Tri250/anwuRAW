@@ -29,7 +29,7 @@ jobs:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     outputs:
-      has-assets: ${{ steps.count.outputs.count != '0' }}
+      complete: ${{ steps.count.outputs.complete }}
     permissions:
       contents: read
     steps:
@@ -37,18 +37,28 @@ jobs:
         id: count
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ github.event.release.id }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          release_id="${{ github.event.release.id }}"
-          count=$(gh api "repos/${{ github.repository }}/releases/${release_id}/assets" --jq 'length' 2>/dev/null || echo 0)
-          echo "count=${count}" >> "$GITHUB_OUTPUT"
-          echo "Release ${release_id} already has ${count} asset(s)."
+          # A release is only skipped when every bundle of the 13-job matrix is
+          # present (30 assets). Tracking a bare "has assets" flag used to skip
+          # the rebuild for partially uploaded releases, which shipped incomplete
+          # downloads; tauri-action replaces same-named assets, so re-running the
+          # matrix on an incomplete release is safe.
+          expected=30
+          count=$(gh api --paginate "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets" \
+            --jq '.[].id' 2>/dev/null | wc -l | tr -d ' ')
+          count=${count:-0}
+          if [ "${count}" -ge "${expected}" ]; then complete=true; else complete=false; fi
+          echo "complete=${complete}" >> "$GITHUB_OUTPUT"
+          echo "Release ${RELEASE_ID} has ${count}/${expected} asset(s) (complete=${complete})."
 
   release:
     needs: precheck
     # `!cancelled()` drops the implicit success() check so that the
     # workflow_dispatch path still runs when `precheck` is skipped (it only
     # executes for `release` events).
-    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || (needs.precheck.result == 'success' && needs.precheck.outputs.has-assets != 'true')) }}
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || (needs.precheck.result == 'success' && needs.precheck.outputs.complete != 'true')) }}
     strategy:
       fail-fast: false
       matrix:
@@ -117,3 +127,30 @@ jobs:
     secrets: inherit
     permissions:
       contents: write
+
+  # Closed-loop guard: a matrix run is only useful when every platform bundle
+  # reached the release page. Fails loudly instead of leaving users with a
+  # release that silently misses some installers.
+  verify:
+    name: Verify release assets
+    needs: [precheck, release]
+    if: ${{ !cancelled() && needs.release.result == 'success' && (github.event.release.id || inputs.release-id) != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Assert all bundles were uploaded
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ github.event.release.id || inputs.release-id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          expected=30
+          count=$(gh api --paginate "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets" \
+            --jq '.[].id' 2>/dev/null | wc -l | tr -d ' ')
+          count=${count:-0}
+          echo "Release ${RELEASE_ID} has ${count}/${expected} asset(s)."
+          if [ "${count}" -lt "${expected}" ]; then
+            echo "::error::Expected ${expected} release assets, found ${count}."
+            exit 1
+          fi

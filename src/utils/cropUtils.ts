@@ -329,7 +329,8 @@ export function forceCropInBounds(crop: Crop, imageW: number, imageH: number, ro
   }
 
   if (rotation === 0) {
-    let { x, y, width, height } = crop;
+    const { width, height } = crop;
+    let { x, y } = crop;
     x = Math.max(0, Math.min(x, imageW - width));
     y = Math.max(0, Math.min(y, imageH - height));
     return { ...crop, x, y };
