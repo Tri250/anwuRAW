@@ -58,9 +58,9 @@ fn primaries_to_xyz(primaries: [(f64, f64); 3], white: (f64, f64)) -> Mat3 {
     }
     let w = xy_to_xyz(white);
     let s = mul_vec(&invert3(&m), &w);
-    for col in 0..3 {
-        for row in 0..3 {
-            m[row][col] *= s[col];
+    for row_mut in m.iter_mut() {
+        for (v, s_val) in row_mut.iter_mut().zip(s) {
+            *v *= s_val;
         }
     }
     m

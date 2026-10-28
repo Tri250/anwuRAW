@@ -229,7 +229,7 @@ fn analyze_image(img: &DynamicImage) -> ImageStats {
     let enc_f32 = thumb.to_rgb32f();
     let pixel_count = (width * height) as f64;
 
-    let enc_pixels: Vec<[f32; 3]> = enc_f32.as_chunks::<3>().0.iter().copied().collect();
+    let enc_pixels: Vec<[f32; 3]> = enc_f32.as_chunks::<3>().0.to_vec();
 
     let lin_pixels: Vec<[f64; 3]> = enc_pixels
         .iter()
