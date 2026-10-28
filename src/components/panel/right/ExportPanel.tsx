@@ -328,6 +328,16 @@ export default function ExportPanel({
     setColorSpace,
   } = useExportSettings();
 
+  // Wide-gamut conversion is only implemented for JPEG/PNG/TIFF; keep the stored
+  // setting consistent with the selected format instead of silently exporting sRGB.
+  const wideGamutSupported = [FileFormats.Jpeg, FileFormats.Png, FileFormats.Tiff].includes(fileFormat as FileFormats);
+
+  useEffect(() => {
+    if (!wideGamutSupported && colorSpace !== 'srgb') {
+      setColorSpace('srgb');
+    }
+  }, [wideGamutSupported, colorSpace, setColorSpace]);
+
   const adjustmentsRef = useRef(useEditorStore.getState().adjustments);
 
   const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);

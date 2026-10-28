@@ -1308,7 +1308,9 @@ fn encode_image_to_bytes(
     } else {
         SRGB_ICC_PROFILE
     };
-    let tiff_icc = wide_gamut.then_some(icc_profile);
+    // JPEG/PNG always embed the profile (sRGB or wide gamut); TIFF must match so
+    // colour-managed apps do not have to guess an untagged file's colour space.
+    let tiff_icc = Some(icc_profile);
     let mut image_bytes = Vec::new();
     let mut cursor = Cursor::new(&mut image_bytes);
 
