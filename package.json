@@ -3,7 +3,7 @@
   "author": "Timon Käch",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "vite",

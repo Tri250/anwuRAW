@@ -15,7 +15,9 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          # execa@10 (pulled in by i18next-cli) requires Node >= 22
+          # (Set.prototype.union); Node 20 crashes during `npm run i18n:check`.
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
