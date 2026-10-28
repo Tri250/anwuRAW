@@ -2121,6 +2121,8 @@
       "customListDesc": "Si renseignée, l'IA utilisera UNIQUEMENT les étiquettes de cette liste, ignorant la liste intégrée de RapidRAW. Le marquage ne fonctionne qu'en anglais.",
       "maxAiTags": "Maximum d'étiquettes IA",
       "maxAiTagsDesc": "Le nombre maximum d'étiquettes à générer par image.",
+      "concurrentTasks": "Tâches d'étiquetage IA parallèles",
+      "concurrentTasksDesc": "Nombre d'images étiquetées simultanément. Des valeurs plus élevées accélèrent les gros lots mais consomment plus de CPU et de RAM.",
       "noCustomTags": "Aucune étiquette IA personnalisée (Utilisation de la liste intégrée)",
       "noShortcuts": "Aucun raccourci ajouté",
       "removeCustomTooltip": "Supprimer l'étiquette \"{{tag}}\"",

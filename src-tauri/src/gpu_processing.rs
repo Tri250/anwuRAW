@@ -2332,6 +2332,18 @@ impl GpuProcessor {
         if request.lut.is_none() {
             request.adjustments.global.has_lut = 0;
         }
+        // 蒙版级眩光(flare)与全局眩光共用同一张 flare 光照贴图。贴图生成与绑定
+        // 的门控必须把蒙版参数一并纳入，否则仅设置蒙版 flare 时 shader 的 t_flare
+        // 会乘到占位纹理上，蒙版眩光完全失效。
+        let mask_flare_amount = request.adjustments.mask_adjustments
+            [..(request.adjustments.mask_count as usize).min(MAX_MASKS)]
+            .iter()
+            .fold(0.0f32, |acc, m| acc.max(m.flare_amount));
+        let effective_flare_amount = request
+            .adjustments
+            .global
+            .flare_amount
+            .max(mask_flare_amount);
         let input_texture_view = &input.texture_view;
         let gf_coeffs_view = &input.gf_coeffs_view;
         let gf_structure_view = &input.gf_structure_view;
@@ -2392,7 +2404,7 @@ impl GpuProcessor {
         };
 
         let adjustments = request.adjustments;
-        if adjustments.global.flare_amount > 0.0 {
+        if effective_flare_amount > 0.0 {
             let mut encoder = device.create_command_encoder(&Default::default());
 
             let aspect_ratio = if height > 0 {
@@ -2401,7 +2413,7 @@ impl GpuProcessor {
                 1.0
             };
             let f_params = FlareParams {
-                amount: adjustments.global.flare_amount,
+                amount: effective_flare_amount,
                 is_raw: adjustments.global.is_raw_image,
                 exposure: adjustments.global.exposure,
                 brightness: adjustments.global.brightness,
@@ -2735,7 +2747,7 @@ impl GpuProcessor {
                     }),
                 });
 
-                let use_flare = adjustments.global.flare_amount > 0.0;
+                let use_flare = effective_flare_amount > 0.0;
                 bind_group_entries.push(wgpu::BindGroupEntry {
                     binding: 9 + MAX_MASK_BINDINGS,
                     resource: wgpu::BindingResource::TextureView(if use_flare {

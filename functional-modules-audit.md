@@ -634,4 +634,38 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - LUT 文件结构自检：33³ = 35937 数据行 × 3 分量、DOMAIN 0–1、注释头完整。
 - 依赖确认：`editor.masterRecipes.missingLut` i18n 键存在（修复后正常路径不应再触发）。
 
+## 十八、全功能模块未激活项 + 渲染管线 100% 覆盖专项（v1.6.8 发布轮）
+
+### 18.1 审计方法与取证
+
+- **后端命令 vs 前端调用**：`lib.rs` `generate_handler!` 注册 145 项命令，逐项检索前端 `invoke`/`Invokes` 调用点，除仅供内部调用的 `generate_mask_overlay` 外全部有真实入口，无死命令。
+- **组件 / 快捷键**：`src/components/**/*.tsx` 全部被引用挂载；`KEYBIND_DEFINITIONS` 58 项与 `useKeyboardShortcuts` 58 个 handler 一一对应。
+- **算法模块接线**：`highlight_reconstruction` / `hdr_deghosting` / `multi_exposure` / `guided_perspective` / `lens_blur` / `fog` / `relight` / `effect_maps` / `inpainting` / `as_shot` / `baseline_exposure` / `negative_conversion` / `lens_correction` 均被实际调用。
+- **调整参数 100% 消费**：脚本比对 Rust `GlobalAdjustments`（63 字段）与 `MaskAdjustments`（38 字段）在 `shader.wgsl` 中的读取次数，除 padding 外每个字段均被消费（`centré` 按 `repr(C)` 布局对应 WGSL 的 `centre`）。
+- **分块渲染正确性**：`TILE_SIZE = 2048` / `TILE_OVERLAP = 128`，shader 以 `absolute_coord = id.xy + tile_offset` 采样全图输入与预计算纹理（sharpness / tonal / clarity / structure 模糊、guided filter 系数与结构层、haze / airlight、蒙版纹理数组、flare、LUT 3D），无块缝与坐标错位。
+- **导出与预览同管线**：`export_processing.rs` 调用 `process_and_get_dynamic_image_with_precision`，与预览共用同一 compute 管线（WYSIWYG 成立）；16-bit 路径由 `high_precision_shader_source()` 替换输出格式为 `rgba16float` 并关闭 dither。
+- **算法水准评估**：管线含 AgX / Basic 双色调映射、LMS 色域白平衡、guided-filter 局部对比（clarity / structure 分离）、边缘感知降噪（引导滤波 + 细/粗双尺度）、暗通道先验去雾、带光晕抑制的感知域锐化、tetrahedral LUT 插值、颗粒与抖动——覆盖同类国产修图 APP 的主流算法项，参数链路完整。
+
+### 18.2 修复（59–62）
+
+59. **蒙版级眩光（flare）完全失效（渲染管线关键缺陷）**：
+    - 根因：`gpu_processing.rs` 中 flare 光照贴图的生成门控与绑定门控只看 `global.flare_amount > 0`，而 `shader_features()` 的 `F_GLOW_HALATION_FLARE` 已把蒙版 flare 纳入判定。仅设置蒙版 flare 时特性位开启、`t_flare` 有值，但采样到的是 dummy 占位纹理 → 蒙版眩光恒为 0。
+    - 修复：`run()` 入口统一计算 `effective_flare_amount = max(global.flare_amount, 所有激活蒙版的 flare_amount)`，贴图生成（该值同时决定高光阈值与 ghosts 强度）、生成门控、绑定门控全部改用此值；蒙版强度仍由 shader 内 `t_flare += m.flare_amount * influence` 逐像素控制，全局与蒙版可叠加。
+60. **编辑器右键「合并」子菜单为永久禁用死入口**：全景 / HDR / 景深合成三项在编辑器（单图）上下文恒 `disabled: true`，真实入口在缩略图多选右键菜单（需 ≥2 张素材）。移除该子菜单，与既有「选片不再展示永远点不动的禁用项」的设计一致。
+61. **AI 打标并发数（`tagging_thread_count`）后端已实现但前端无入口**：`tagging.rs` 以 `max(thread_count, 1)` 控制并发打标任务。设置 → AI 打标 下新增「并行 AI 打标任务」滑杆（1–8，默认 3），`AppSettings` 增加 `taggingThreadCount`，文案补齐 15 个语言包。
+62. **clippy `manual_is_multiple_of`**：`lut_processing.rs` 的 `parts.len() % 3 != 0` 改为 `!parts.len().is_multiple_of(3)`。
+
+### 18.3 复核确认
+
+- flare 三种组合（全局 / 仅蒙版 / 全局 + 蒙版）下贴图均会生成并绑定真实 `flare_ghosts_view`；未设置 flare 时仍绑定 dummy 纹理，零额外开销。
+- 其余预计算纹理门控（glow / halation / sharpen / 结构、清晰度模糊）此前已通过 `any_term` 把蒙版纳入，本轮补齐 flare 后**全仓库再无 global-only 门控**。
+- `group_associated_files` / `group_preferred_type` 为显式标注 `legacy` + `skip_serializing` 的兼容字段，非未激活功能，维持现状。
+
+### 18.4 验证
+
+- `npx tsc --noEmit`：0 错误；`npm run build`：成功。
+- `cargo +1.98 check --offline` / `cargo +1.98 clippy --all-targets` / `cargo +1.98 fmt --check`：全部通过（clippy 零告警）。
+- `prettier --check`：通过；`i18n:runtime-check` 报告 198 项复数回退，经 `git stash` 对照确认与基线完全一致（本轮新增键为非复数键，不引入新问题）。
+- 沙箱无 GUI / GPU 上下文，本轮管线结论以静态取证 + 门控一致性验证为主，最终以 CI 多平台构建为准。
+
 

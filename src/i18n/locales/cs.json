@@ -2091,6 +2091,8 @@
       "customListDesc": "Pokud je k dispozici, AI použije POUZE značky z tohoto seznamu a přepíše vestavěný seznam RapidRAW. Značkování funguje pouze v angličtině.",
       "maxAiTags": "Maximální počet značek AI",
       "maxAiTagsDesc": "Maximální počet značek vygenerovaných na snímek.",
+      "concurrentTasks": "Paralelní úlohy AI tagování",
+      "concurrentTasksDesc": "Počet současně tagovaných obrázků. Vyšší hodnoty zrychlí velké dávky, ale spotřebují více CPU a RAM.",
       "noCustomTags": "Žádné vlastní značky AI (pomocí vestavěného seznamu)",
       "noShortcuts": "Nebyly přidány žádné zkratky",
       "removeCustomTooltip": "Odebrat značku \"{{tag}}\"",

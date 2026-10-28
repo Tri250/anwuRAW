@@ -1421,6 +1421,27 @@ export default function SettingsPanel({
                                 </SettingItem>
 
                                 <SettingItem
+                                  label={t('settings.tagging.concurrentTasks')}
+                                  description={t('settings.tagging.concurrentTasksDesc')}
+                                >
+                                  <Slider
+                                    label={t('settings.processing.threads')}
+                                    min={1}
+                                    max={8}
+                                    step={1}
+                                    value={appSettings?.taggingThreadCount ?? 3}
+                                    defaultValue={3}
+                                    onChange={(e: any) =>
+                                      onSettingsChange({
+                                        ...appSettings,
+                                        taggingThreadCount: parseInt(e.target.value),
+                                      })
+                                    }
+                                    fillOrigin="min"
+                                  />
+                                </SettingItem>
+
+                                <SettingItem
                                   label={t('settings.tagging.customList')}
                                   description={t('settings.tagging.customListDesc')}
                                 >

@@ -2084,6 +2084,8 @@
       "customListDesc": "이 목록이 제공되면 AI는 RapidRAW의 내장 목록을 무시하고 이 목록의 태그만 사용합니다. 태그 지정은 영어로만 작동합니다.",
       "maxAiTags": "최대 AI 태그 수",
       "maxAiTagsDesc": "이미지당 생성할 최대 태그 수입니다.",
+      "concurrentTasks": "병렬 AI 태깅 작업 수",
+      "concurrentTasksDesc": "동시에 처리할 이미지 수입니다. 값이 높을수록 대량 처리가 빨라지지만 CPU와 메모리를 더 사용합니다.",
       "noCustomTags": "사용자 지정 AI 태그 없음 (내장 목록 사용 중)",
       "noShortcuts": "추가된 단축키 없음",
       "removeCustomTooltip": "\"{{tag}}\" 태그 제거",

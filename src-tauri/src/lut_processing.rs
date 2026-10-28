@@ -349,7 +349,7 @@ fn parse_cube(reader: impl BufRead) -> anyhow::Result<Lut> {
                     // 每个 z 切片用 33 行、每行 33 个像素（99 个数）。若只取前三个，
                     // 三元组数量只有 1/33，会触发下方 size mismatch 报错，整份 LUT
                     // 解析失败——这正是“应用大师配方后画面异常/全黑”的根因。
-                    if parts.len() % 3 != 0 {
+                    if !parts.len().is_multiple_of(3) {
                         return Err(anyhow!(
                             "Invalid data line on line {}: '{}'. Expected RGB triplets, found {} values",
                             line_num,

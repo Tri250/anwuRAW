@@ -235,6 +235,7 @@ export interface AppSettings {
   exportMemoryLimit?: number;
   enableAiTagging?: boolean;
   aiTagCount?: number;
+  taggingThreadCount?: number;
   customAiTags?: string[];
   filterCriteria?: FilterCriteria;
   lastFolderState?: any;

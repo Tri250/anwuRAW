@@ -331,16 +331,8 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
               },
             },
             // 选片需要多图对比（缩略图菜单要求 ≥2 张），单图编辑器上下文无意义，
-            // 不再展示永远点不动的禁用项。
-          ],
-        },
-        {
-          label: t('contextMenus.merge.title'),
-          icon: LayersArrowDown,
-          submenu: [
-            { disabled: true, icon: SquaresUnite, label: t('contextMenus.editor.stitchPanorama') },
-            { disabled: true, icon: Images, label: t('contextMenus.editor.mergeHdr') },
-            { disabled: true, icon: Layers, label: t('contextMenus.merge.focusStack') },
+            // 不再展示永远点不动的禁用项。全景 / HDR / 景深合成同理，它们在
+            // 缩略图多选右键菜单中提供（需要 ≥2 张素材）。
           ],
         },
         { type: OPTION_SEPARATOR },

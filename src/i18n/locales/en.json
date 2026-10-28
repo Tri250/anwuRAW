@@ -2097,6 +2097,8 @@
       "customListDesc": "If provided, the AI will ONLY use tags from this list, overriding RapidRAW’s built-in list. Tagging works only in English.",
       "maxAiTags": "Maximum AI Tags",
       "maxAiTagsDesc": "The maximum number of tags to generate per image.",
+      "concurrentTasks": "Parallel AI Tagging Tasks",
+      "concurrentTasksDesc": "Number of images tagged at the same time. Higher values speed up large batches but use more CPU & RAM.",
       "noCustomTags": "No custom AI tags (Using built-in list)",
       "noShortcuts": "No shortcuts added",
       "removeCustomTooltip": "Remove tag \"{{tag}}\"",

@@ -2084,6 +2084,8 @@
       "customListDesc": "如果提供，AI 將僅使用此列表中的標籤，覆蓋 RapidRAW 內建的標籤列表。標籤功能僅支援英文。",
       "maxAiTags": "最大 AI 標籤數",
       "maxAiTagsDesc": "每張影像生成的最大標籤數量。",
+      "concurrentTasks": "並行 AI 標記任務",
+      "concurrentTasksDesc": "同時處理的影像數量。數值越高，大批量標記越快，但會佔用更多 CPU 與記憶體。",
       "noCustomTags": "無自定義 AI 標籤（使用內建列表）",
       "noShortcuts": "未新增快捷方式",
       "removeCustomTooltip": "移除標籤 \"{{tag}}\"",

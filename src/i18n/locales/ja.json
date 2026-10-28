@@ -2084,6 +2084,8 @@
       "customListDesc": "タグを指定した場合、AIはリスト内のタグのみを使用し、RapidRAWの内蔵リストは使用されません。タグ付け機能は英語のみ対応しています。",
       "maxAiTags": "最大AIタグ数",
       "maxAiTagsDesc": "画像ごとに生成されるAIタグの最大数。",
+      "concurrentTasks": "AIタグ付けの並列タスク数",
+      "concurrentTasksDesc": "同時に処理する画像数。値を大きくすると大量処理が速くなりますが、CPUとメモリを多く使います。",
       "noCustomTags": "カスタムAIタグなし（内蔵リストを使用中）",
       "noShortcuts": "ショートカット未登録",
       "removeCustomTooltip": "タグ「{{tag}}」を削除",

@@ -2084,6 +2084,8 @@
       "customListDesc": "Falls angegeben, verwendet die KI NUR Tags aus dieser Liste. Tagging funktioniert nur auf Englisch.",
       "maxAiTags": "Maximale KI-Tags",
       "maxAiTagsDesc": "Die maximale Anzahl an Tags, die pro Bild generiert werden.",
+      "concurrentTasks": "Parallele KI-Tagging-Aufgaben",
+      "concurrentTasksDesc": "Anzahl gleichzeitig getaggter Bilder. Höhere Werte beschleunigen große Stapel, benötigen aber mehr CPU & RAM.",
       "noCustomTags": "Keine benutzerdefinierten KI-Tags (Interne Liste wird verwendet)",
       "noShortcuts": "Keine Shortcuts hinzugefügt",
       "removeCustomTooltip": "Tag \"{{tag}}\" entfernen",

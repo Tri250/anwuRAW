@@ -2122,6 +2122,8 @@
       "customListDesc": "Se fornecida, a IA usará APENAS etiquetas desta lista, substituindo a lista integrada do RapidRAW. O tagging funciona apenas em inglês.",
       "maxAiTags": "Máximo de Etiquetas de IA",
       "maxAiTagsDesc": "O número máximo de etiquetas para gerar por imagem.",
+      "concurrentTasks": "Tarefas de marcação por IA em paralelo",
+      "concurrentTasksDesc": "Número de imagens marcadas simultaneamente. Valores mais altos aceleram lotes grandes, mas usam mais CPU e RAM.",
       "noCustomTags": "Sem etiquetas de IA personalizadas (Usando a lista integrada)",
       "noShortcuts": "Nenhum atalho adicionado",
       "removeCustomTooltip": "Remover etiqueta \"{{tag}}\"",

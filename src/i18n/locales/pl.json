@@ -2160,6 +2160,8 @@
       "customListDesc": "Jeżeli ją podasz, sztuczna inteligencja wygeneruje TYLKO tagi obecne na tej liście, omijając domyślną listę RapidRAW. Tagowanie działa jedynie w języku angielskim.",
       "maxAiTags": "Maksymalna liczba tagów AI",
       "maxAiTagsDesc": "Maksymalna liczba wygenerowanych tagów na jeden obraz.",
+      "concurrentTasks": "Równoległe zadania tagowania AI",
+      "concurrentTasksDesc": "Liczba jednocześnie tagowanych obrazów. Wyższe wartości przyspieszają duże partie, ale zużywają więcej CPU i RAM.",
       "noCustomTags": "Brak własnych tagów (używana domyślna lista)",
       "noShortcuts": "Brak dodanych skrótów",
       "removeCustomTooltip": "Usuń tag \"{{tag}}\"",

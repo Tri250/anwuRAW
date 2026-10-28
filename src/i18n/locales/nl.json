@@ -2057,6 +2057,8 @@
       "customListDesc": "Als opgegeven, gebruikt de AI ALLEEN tags uit deze lijst, waardoor de ingebouwde lijst van RapidRAW wordt overschreven. Tagging werkt alleen in het Engels.",
       "maxAiTags": "Maximum AI-tags",
       "maxAiTagsDesc": "Het maximale aantal tags dat per afbeelding wordt gegenereerd.",
+      "concurrentTasks": "Parallelle AI-taggingtaken",
+      "concurrentTasksDesc": "Aantal afbeeldingen dat tegelijk wordt getagd. Hogere waarden versnellen grote batches maar gebruiken meer CPU en RAM.",
       "noCustomTags": "Geen aangepaste AI-tags (ingebouwde lijst gebruiken)",
       "noShortcuts": "Geen snelkoppelingen toegevoegd",
       "removeCustomTooltip": "Tag \"{{tag}}\" verwijderen",
