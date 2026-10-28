@@ -33,12 +33,12 @@
         "title": "Farbkalibrierung"
       },
       "colorGrading": "Color Grading",
-      "colorMixer": "Farbmischer",
       "colorMatch": "KI-Farbübertragung",
       "colorMatchDesc": "Überträgt den Farbstil eines Beispielfotos auf dieses Foto (nicht destruktiv)",
-      "colorMatchRunning": "Farben werden übertragen…",
       "colorMatchDone": "Farbübertragung angewendet · ΔE um {{reduction}}% reduziert",
       "colorMatchFailed": "Farbübertragung fehlgeschlagen",
+      "colorMatchRunning": "Farben werden übertragen…",
+      "colorMixer": "Farbmischer",
       "grading": {
         "balance": "Abgleich",
         "blending": "Mischen",
@@ -72,13 +72,13 @@
       "whiteBalance": "Weißabgleich"
     },
     "curves": {
-      "channelTitle": "{{channel}}-Kanal",
       "channels": {
         "blue": "Blau",
         "green": "Grün",
         "luma": "Luma",
         "red": "Rot"
       },
+      "channelTitle": "{{channel}}-Kanal",
       "copyParametric": "Parametrische {{channel}}-Kurve kopieren",
       "copyPoint": "Punktkurve ({{channel}}) kopieren",
       "curveDataUnavailable": "Kurvendaten nicht verfügbar.",
@@ -102,12 +102,12 @@
     },
     "details": {
       "aiDenoise": "KI-Entrauschen",
-      "classicDenoise": "Klassisches Entrauschen",
       "aiDenoiseDetail": "Details",
       "blueYellow": "Blau/Gelb",
       "centre": "Zentriert",
       "chromaticAberration": "Chromatische Aberration",
       "clarity": "Klarheit",
+      "classicDenoise": "Klassisches Entrauschen",
       "color": "Farbe",
       "convertNegative": "Negativ umwandeln",
       "dehaze": "Dunst entfernen",
@@ -162,8 +162,8 @@
       "relightIntensity": "Intensität",
       "relightLight": "Licht {{index}}",
       "relightRemoveLight": "Licht entfernen",
-      "relightShadowSoftness": "Schattenweichheit",
       "relightShadows": "Schatten",
+      "relightShadowSoftness": "Schattenweichheit",
       "relightShine": "Glanz",
       "relightSoftness": "Weichheit",
       "relightType": "Lichttyp",
@@ -470,7 +470,9 @@
         "quickErase": "Schnelles Löschen {{count}}",
         "quickErase_one": "Schnelles Löschen {{count}}",
         "quickErase_other": "Schnelles Löschen {{count}}",
-        "retouch": "Retusche {{count}}"
+        "retouch": "Retusche {{count}}",
+        "retouch_one": "Retusche {{count}}",
+        "retouch_other": "Retusche {{count}}"
       },
       "resetInpaintingTooltip": "Reparieren zurücksetzen",
       "settings": {
@@ -510,8 +512,8 @@
         "hPlaceholder": "H",
         "hTooltip": "Höhe",
         "removeTooltip": "Gespeichertes Seitenverhältnis entfernen",
-        "saveTooltip": "Seitenverhältnis als Vorgabe speichern",
         "savedTooltip": "Gespeichertes Seitenverhältnis {{ratio}}",
+        "saveTooltip": "Seitenverhältnis als Vorgabe speichern",
         "wPlaceholder": "B",
         "wTooltip": "Breite"
       },
@@ -704,6 +706,22 @@
       },
       "rangeTitle": "Bereiche & Global",
       "resetMaskingTooltip": "Maskierung zurücksetzen",
+      "retouch": {
+        "eyes": "Augenverbesserung",
+        "eyesContainer": "Augenverbesserung",
+        "faceLiquify": "Gesichts-Liquify",
+        "jawline": "Kinnlinie",
+        "slimFace": "Gesicht schmalen",
+        "smoothing": "Hautglättung",
+        "smoothingContainer": "Hautglättung",
+        "teeth": "Zahnaufhellung",
+        "teethContainer": "Zahnaufhellung",
+        "title": "Porträt-Retusche",
+        "unifySkin": "Hautton anpassen",
+        "unifySkinDone": "Hautton angepasst",
+        "unifySkinFailed": "Hauttonanpassung fehlgeschlagen",
+        "unifySkinRunning": "Hautton wird berechnet…"
+      },
       "settings": {
         "aiModelDownloading": "KI-Modell wird heruntergeladen: ",
         "applyPreset": "Vorgabe anwenden",
@@ -711,8 +729,8 @@
         "copySectionSettings": "{{section}}-Einstellungen kopieren",
         "faceParts": {
           "bodySkin": "Körperhaut",
-          "eyeWhites": "Augenweiß",
           "eyebrows": "Augenbrauen",
+          "eyeWhites": "Augenweiß",
           "faceSkin": "Gesichtshaut",
           "hair": "Haare",
           "iris": "Iris & Pupille",
@@ -739,23 +757,20 @@
         "addToCurrent": "{{name}} zur aktuellen Maske hinzufügen oder neu erstellen (Rechtsklick)",
         "createNew": "Neue {{name}}-Maske erstellen",
         "selectNewSourcePoint": "{{modifier}} + Klicken, um einen neuen Quellpunkt auszuwählen"
-      },
-      "retouch": {
-        "title": "Porträt-Retusche",
-        "smoothing": "Hautglättung",
-        "teeth": "Zahnaufhellung",
-        "eyes": "Augenverbesserung",
-        "smoothingContainer": "Hautglättung",
-        "teethContainer": "Zahnaufhellung",
-        "eyesContainer": "Augenverbesserung",
-        "unifySkin": "Hautton anpassen",
-        "unifySkinRunning": "Hautton wird berechnet…",
-        "unifySkinDone": "Hautton angepasst",
-        "unifySkinFailed": "Hauttonanpassung fehlgeschlagen",
-        "slimFace": "Gesicht schmalen",
-        "jawline": "Kinnlinie",
-        "faceLiquify": "Gesichts-Liquify"
       }
+    },
+    "masterRecipes": {
+      "amount": "Stärke",
+      "close": "Schließen",
+      "filmHint": "Wähle einen integrierten Filmlook und wende ihn direkt auf das aktuelle Foto an.",
+      "loadingLuts": "LUTs werden geladen...",
+      "missingLut": "Keine LUT für {{name}} gefunden; es wurden nur die Farbparameter angewendet.",
+      "openTooltip": "Master- und Film-Rezepte",
+      "tabs": {
+        "film": "Filmlooks",
+        "master": "Master-Rezepte"
+      },
+      "title": "Rezepte"
     },
     "metadata": {
       "author": {
@@ -800,8 +815,8 @@
       "organization": {
         "addTagPlaceholder": "Tag hinzufügen...",
         "colorLabel": "Farbmarkierung",
-        "noTags": "Keine Tags",
         "none": "Keine",
+        "noTags": "Keine Tags",
         "rating": "Bewertung",
         "ratingLabels": "Bewertung & Markierungen",
         "tags": "Tags",
@@ -811,12 +826,6 @@
     },
     "presets": {
       "amount": "Stärke",
-      "toasts": {
-        "exportFailed": "Vorgaben konnten nicht exportiert werden",
-        "exportSuccess": "Vorgaben exportiert",
-        "importFailed": "Vorgaben konnten nicht importiert werden",
-        "importFailures": "{{num}} Vorgabedatei(en) konnten nicht importiert werden"
-      },
       "dialog": {
         "allPresetFiles": "Alle Vorgabendateien",
         "exportAllTitle": "Alle Vorgaben exportieren",
@@ -850,6 +859,12 @@
         "masks": "Masken"
       },
       "title": "Vorgaben",
+      "toasts": {
+        "exportFailed": "Vorgaben konnten nicht exportiert werden",
+        "exportSuccess": "Vorgaben exportiert",
+        "importFailed": "Vorgaben konnten nicht importiert werden",
+        "importFailures": "{{num}} Vorgabedatei(en) konnten nicht importiert werden"
+      },
       "tooltips": {
         "explore": "Community-Vorgaben entdecken",
         "export": "Alle Vorgaben als .rrpreset exportieren",
@@ -890,19 +905,6 @@
         "undo": "Rückgängig (Strg+Z) oder Verlauf (Rechtsklick)"
       },
       "vc": "VK"
-    },
-    "masterRecipes": {
-      "tabs": {
-        "film": "Filmlooks",
-        "master": "Master-Rezepte"
-      },
-      "amount": "Stärke",
-      "close": "Schließen",
-      "filmHint": "Wähle einen integrierten Filmlook und wende ihn direkt auf das aktuelle Foto an.",
-      "loadingLuts": "LUTs werden geladen...",
-      "missingLut": "Keine LUT für {{name}} gefunden; es wurden nur die Farbparameter angewendet.",
-      "openTooltip": "Master- und Film-Rezepte",
-      "title": "Rezepte"
     }
   },
   "export": {
@@ -946,19 +948,19 @@
       "selectFolderTitle_other": "Ordner zum Exportieren von {{count}} Bildern auswählen"
     },
     "file": {
+      "colorSpace": "Farbraum",
+      "colorSpaceDesc": "Pixel werden konvertiert und das ausgewählte ICC-Profil wird eingebettet",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020",
+      "colorSpaceSrgb": "sRGB",
       "dpi": "DPI",
       "quality": "Qualität",
       "qualityLossless": "Qualität (Verlustfrei)",
       "resolution": "Auflösung",
       "tiffBitDepth": "TIFF-Bittiefe",
       "tiffBitDepth16": "16 Bit",
-      "tiffBitDepth8": "8 Bit",
-      "colorSpace": "Farbraum",
-      "colorSpaceDesc": "Pixel werden konvertiert und das ausgewählte ICC-Profil wird eingebettet",
-      "colorSpaceSrgb": "sRGB",
-      "colorSpaceDisplayP3": "Display-P3",
-      "colorSpaceProPhoto": "ProPhoto RGB",
-      "colorSpaceRec2020": "Rec. 2020"
+      "tiffBitDepth8": "8 Bit"
     },
     "labels": {
       "image": "Bild",
@@ -1006,12 +1008,12 @@
       "estimatedSize": "Geschätzte Dateigröße: ~{{size}}",
       "estimatedTotalSize": "Geschätzte Gesamtgröße: ~{{size}}",
       "estimatingSize": "Größe wird geschätzt...",
+      "exporting": "Wird exportiert…",
+      "exportingProgress": "Wird exportiert… ({{current}}/{{total}})",
       "exportMultiple": "Exportiere {{count}} {{label}}",
       "exportMultiple_one": "Exportiere {{count}} {{label}}",
       "exportMultiple_other": "Exportiere {{count}} {{label}}",
       "exportSingle": "{{label}} exportieren",
-      "exporting": "Wird exportiert…",
-      "exportingProgress": "Wird exportiert… ({{current}}/{{total}})",
       "failed": "Export fehlgeschlagen",
       "noImageSelected": "Kein Bild zum Exportieren ausgewählt.",
       "noImagesSelected": "Keine Bilder ausgewählt.",
@@ -1154,8 +1156,8 @@
       "iso": "ISO",
       "metadata": "Metadaten",
       "noMetadataAvailable": "Keine Metadaten verfügbar",
-      "noTagsAdded": "Keine Tags hinzugefügt",
       "none": "Keine",
+      "noTagsAdded": "Keine Tags hinzugefügt",
       "rateAndLabel": "Bewerten & Markieren",
       "rating": "Bewertung",
       "selectImagesToCompare": "Wählen Sie Bilder zum Vergleichen aus",
@@ -1166,15 +1168,10 @@
       "vc": "VK"
     },
     "filterExit": {
-      "hiddenSingle": "{{name}} entspricht nicht mehr dem Filter",
       "hiddenMultiple_one": "{{count}} Bilder entsprechen nicht mehr dem Filter",
       "hiddenMultiple_other": "{{count}} Bilder entsprechen nicht mehr dem Filter",
+      "hiddenSingle": "{{name}} entspricht nicht mehr dem Filter",
       "undo": "Rückgängig"
-    },
-    "viewMode": {
-      "culling": "Auswahlansicht",
-      "grid": "Rasteransicht",
-      "list": "Listenansicht"
     },
     "filters": {
       "edited": {
@@ -1276,11 +1273,6 @@
         "filterByFileType": "Nach Dateityp filtern",
         "filterByFlag": "Nach Markierung filtern",
         "filterByRating": "Nach Bewertung filtern",
-        "ratingOperator": {
-          "eq": "Genau diese Bewertung",
-          "gte": "Diese Bewertung oder höher",
-          "lte": "Diese Bewertung oder niedriger"
-        },
         "groupEditedFiles": "Include edited files in groups",
         "groupIgnoreMetadata": "Ignore mismatched EXIF dates",
         "groupOff": "Off",
@@ -1291,6 +1283,11 @@
         "metadataHover": "Beim Darüberfahren",
         "metadataOff": "Aus",
         "noLabel": "Keine Markierung",
+        "ratingOperator": {
+          "eq": "Genau diese Bewertung",
+          "gte": "Diese Bewertung oder höher",
+          "lte": "Diese Bewertung oder niedriger"
+        },
         "recursive": "Rekursiv",
         "showMetadata": "Metadaten anzeigen",
         "sortAscending": "Aufsteigend sortieren",
@@ -1303,12 +1300,12 @@
     },
     "items": {
       "cloudPlaceholder": "In iCloud gespeichert — nicht heruntergeladen",
-      "immichPlaceholder": "In Immich gespeichert — nicht heruntergeladen",
       "collapseFolder": "Ordner zuklappen",
       "currentFolder": "Aktueller Ordner",
       "expandFolder": "Ordner aufklappen",
       "imagesCount_one": "1 Bild",
       "imagesCount_other": "{{count}} Bilder",
+      "immichPlaceholder": "In Immich gespeichert — nicht heruntergeladen",
       "rejected": "Abgelehnt",
       "tooltipAperture": "Blende",
       "tooltipFocalLength": "Brennweite",
@@ -1390,6 +1387,36 @@
       "moment": "Das kann einen Moment dauern.",
       "processing": "Bilder werden verarbeitet..."
     },
+    "studio": {
+      "applyAndExport": "Stil anwenden & stapelweise exportieren",
+      "applying": "Anpassungen werden geschrieben…",
+      "cancelExport": "Export abbrechen",
+      "chooseOutputFolder": "Ausgabeordner wählen",
+      "clearAll": "Leeren",
+      "done": "Fertig: {{n}} Bilder exportiert",
+      "exportCancelled": "Export abgebrochen",
+      "exporting": "Stapel-export…",
+      "failed": "Fehlgeschlagen",
+      "headerDesc": "Vom Referenzbild zum Kundenset: Farbanpassung, Presets und Stapelexport an einem Ort.",
+      "headerTitle": "Studio",
+      "loadingMetadata": "Anpassungen werden gelesen…",
+      "needSample": "Noch kein Referenzbild ausgewählt.",
+      "noAdjustments": "keine Anpassungen (nur Export)",
+      "noImages": "Keine Bilder in diesem Ordner. Bitte zuerst Bilder importieren.",
+      "noPreset": "Kein Preset",
+      "presetLabel": "Stil-Preset (optional)",
+      "progressTitle": "Fortschritt",
+      "sampleSelected": "Referenz ausgewählt",
+      "selectAll": "Alle auswählen",
+      "selectedCount": "{{n}} Kundenbilder ausgewählt",
+      "step1": "Referenzbild",
+      "step1Desc": "Wähle ein Referenzbild als Stilquelle für die gesamte Gruppe.",
+      "step2": "Stil",
+      "step2Desc": "Optional: Ergänze ein Preset, das mit den Anpassungen des Referenzbilds kombiniert wird.",
+      "step3": "Kundenbilder",
+      "step3Desc": "Markiere die Bilder, auf die der Stil angewendet werden soll, und starte Stapelanwendung und -export.",
+      "willCopy": "Kopiert wird"
+    },
     "thumbnailFit": {
       "fillSquare": "Quadrat füllen",
       "justified": "Mosaik",
@@ -1408,35 +1435,10 @@
       "select": "Auswählen",
       "studio": "Studio"
     },
-    "studio": {
-      "headerTitle": "Studio",
-      "headerDesc": "Vom Referenzbild zum Kundenset: Farbanpassung, Presets und Stapelexport an einem Ort.",
-      "step1": "Referenzbild",
-      "step1Desc": "Wähle ein Referenzbild als Stilquelle für die gesamte Gruppe.",
-      "step2": "Stil",
-      "step2Desc": "Optional: Ergänze ein Preset, das mit den Anpassungen des Referenzbilds kombiniert wird.",
-      "step3": "Kundenbilder",
-      "step3Desc": "Markiere die Bilder, auf die der Stil angewendet werden soll, und starte Stapelanwendung und -export.",
-      "noImages": "Keine Bilder in diesem Ordner. Bitte zuerst Bilder importieren.",
-      "sampleSelected": "Referenz ausgewählt",
-      "loadingMetadata": "Anpassungen werden gelesen…",
-      "willCopy": "Kopiert wird",
-      "noAdjustments": "keine Anpassungen (nur Export)",
-      "needSample": "Noch kein Referenzbild ausgewählt.",
-      "noPreset": "Kein Preset",
-      "presetLabel": "Stil-Preset (optional)",
-      "selectedCount": "{{n}} Kundenbilder ausgewählt",
-      "selectAll": "Alle auswählen",
-      "clearAll": "Leeren",
-      "applyAndExport": "Stil anwenden & stapelweise exportieren",
-      "applying": "Anpassungen werden geschrieben…",
-      "exporting": "Stapel-export…",
-      "chooseOutputFolder": "Ausgabeordner wählen",
-      "progressTitle": "Fortschritt",
-      "cancelExport": "Export abbrechen",
-      "done": "Fertig: {{n}} Bilder exportiert",
-      "exportCancelled": "Export abgebrochen",
-      "failed": "Fehlgeschlagen"
+    "viewMode": {
+      "culling": "Auswahlansicht",
+      "grid": "Rasteransicht",
+      "list": "Listenansicht"
     }
   },
   "masks": {
@@ -1570,9 +1572,9 @@
       "applyButton_one": "Auf 1 Bild anwenden",
       "applyButton_other": "Auf {{count}} Bilder anwenden",
       "bestImage": "Bestes Bild",
+      "blurryImagesTab": "Unscharfe Bilder",
       "blurThreshold": "Unschärfe-Schwellenwert",
       "blurThresholdDesc": "Bilder mit einem Schärfewert unter diesem Wert werden markiert. Höher ist strenger.",
-      "blurryImagesTab": "Unscharfe Bilder",
       "cancel": "Abbrechen",
       "close": "Schließen",
       "cullingFailed": "Aussortieren fehlgeschlagen",
@@ -1961,16 +1963,23 @@
     },
     "processing": {
       "advanced": {
-        "heading": "Erweitert",
-        "headingDesc": "Leistungsoptimierung für Vorschaubilder, Cache und Exporte. Die Standardwerte passen für die meisten Nutzer.",
-        "title": "Erweiterte Einstellungen",
         "auto": "Automatisch",
+        "exportMemoryLimit": "Speicherlimit für Exporte",
+        "exportMemoryLimitDesc": "Anteil des freien Arbeitsspeichers, den Stapelexporte nutzen dürfen. Verringere ihn, damit andere Apps bei großen Exporten flüssig bleiben.",
         "exportThreads": "Parallele Exporte",
         "exportThreadsDesc": "Anzahl der gleichzeitig exportierten Bilder. Automatisch wählt einen Wert passend zu deiner CPU. Verringere ihn, wenn große Exporte fehlschlagen oder deine GPU wenig Speicher hat.",
-        "exportMemoryLimit": "Speicherlimit für Exporte",
-        "exportMemoryLimitDesc": "Anteil des freien Arbeitsspeichers, den Stapelexporte nutzen dürfen. Verringere ihn, damit andere Apps bei großen Exporten flüssig bleiben."
+        "heading": "Erweitert",
+        "headingDesc": "Leistungsoptimierung für Vorschaubilder, Cache und Exporte. Die Standardwerte passen für die meisten Nutzer.",
+        "title": "Erweiterte Einstellungen"
       },
       "ai": {
+        "aiFree": {
+          "description": "Schaltet alle KI-Funktionen aus. Sämtliche KI-Bedienelemente werden ausgeblendet, sodass RapidRAW als rein klassischer RAW-Editor arbeitet.",
+          "feature1": "Keine KI-Masken, Linsenunschärfe oder generativen Edits in der Oberfläche",
+          "feature2": "Vorhandene KI-Bearbeitungen werden weiterhin normal dargestellt",
+          "feature3": "Eine aufgeräumtere, fokussiertere Oberfläche",
+          "title": "KI-frei"
+        },
         "cloud": {
           "description": "Für diejenigen, die eine einfachere Lösung wünschen, bietet ein optionales Abonnement die gleichen hochwertigen Ergebnisse wie das Selbst-Hosting ohne den Aufwand. Dies ist die bequemste Option und der beste Weg, das Projekt zu unterstützen.",
           "feature1": "Maximaler Komfort, keine Einrichtung",
@@ -2019,13 +2028,6 @@
           "gpuAccelerationDesc": "Führt integrierte KI-Funktionen wie Rauschentfernung, Masken, Tiefen- und Normalenkarten sowie Verschlagwortung auf der Grafikkarte aus, um deutlich schnellere Ergebnisse zu erzielen. Deaktiviere diese Option, wenn Abstürze oder fehlerhafte KI-Ergebnisse auftreten.",
           "gpuAccelerationLabel": "GPU für KI-Modelle verwenden",
           "title": "Integrierte KI"
-        },
-        "aiFree": {
-          "description": "Schaltet alle KI-Funktionen aus. Sämtliche KI-Bedienelemente werden ausgeblendet, sodass RapidRAW als rein klassischer RAW-Editor arbeitet.",
-          "feature1": "Keine KI-Masken, Linsenunschärfe oder generativen Edits in der Oberfläche",
-          "feature2": "Vorhandene KI-Bearbeitungen werden weiterhin normal dargestellt",
-          "feature3": "Eine aufgeräumtere, fokussiertere Oberfläche",
-          "title": "KI-frei"
         },
         "description": "Die KI von RapidRAW ist auf Flexibilität ausgelegt. Wählen Sie Ihren idealen Workflow.",
         "providers": {
@@ -2107,8 +2109,8 @@
         "title": "Bildvorverarbeitung",
         "tonemapperOptions": {
           "agx": "AgX",
-          "pbrNeutral": "PBR Neutral",
-          "basic": "Standard"
+          "basic": "Standard",
+          "pbrNeutral": "PBR Neutral"
         },
         "tonemapperOverride": "Globaler Tonemapper-Override",
         "tonemapperOverrideDesc": "Erzwingt einen spezifischen Tonemapper global für alle Bilder."
@@ -2144,20 +2146,20 @@
     "tagging": {
       "addCustomPlaceholder": "Benutzerdefinierte KI-Tags hinzufügen (kommagetrennt)...",
       "addCustomTooltip": "KI-Tag hinzufügen",
-      "addShortcutTooltip": "Shortcut hinzufügen",
       "addShortcutsPlaceholder": "Shortcuts hinzufügen (kommagetrennt)...",
+      "addShortcutTooltip": "Shortcut hinzufügen",
       "aiTagging": "KI-Tagging",
       "aiTaggingDesc": "Aktiviert automatisches Bild-Tagging mit einem KI-Modell (CLIP). Dies lädt ein zusätzliches Modell herunter und beeinträchtigt die Leistung beim Durchsuchen.",
       "amount": "Betrag",
       "automaticAiTagging": "Automatisches KI-Tagging",
       "clearCustomTooltip": "KI-Tag-Liste löschen",
       "clearShortcutsTooltip": "Shortcut-Tag-Liste löschen",
+      "concurrentTasks": "Parallele KI-Tagging-Aufgaben",
+      "concurrentTasksDesc": "Anzahl gleichzeitig getaggter Bilder. Höhere Werte beschleunigen große Stapel, benötigen aber mehr CPU & RAM.",
       "customList": "Benutzerdefinierte KI-Tag-Liste",
       "customListDesc": "Falls angegeben, verwendet die KI NUR Tags aus dieser Liste. Tagging funktioniert nur auf Englisch.",
       "maxAiTags": "Maximale KI-Tags",
       "maxAiTagsDesc": "Die maximale Anzahl an Tags, die pro Bild generiert werden.",
-      "concurrentTasks": "Parallele KI-Tagging-Aufgaben",
-      "concurrentTasksDesc": "Anzahl gleichzeitig getaggter Bilder. Höhere Werte beschleunigen große Stapel, benötigen aber mehr CPU & RAM.",
       "noCustomTags": "Keine benutzerdefinierten KI-Tags (Interne Liste wird verwendet)",
       "noShortcuts": "Keine Shortcuts hinzugefügt",
       "removeCustomTooltip": "Tag \"{{tag}}\" entfernen",

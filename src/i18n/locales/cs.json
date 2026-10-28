@@ -33,12 +33,12 @@
         "title": "Kalibrace barev"
       },
       "colorGrading": "Tónování barev",
-      "colorMixer": "Míchání barev",
       "colorMatch": "AI párování barev",
       "colorMatchDesc": "Přenese barevný styl vzorové fotografie na tuto fotografii (nedestruktivní)",
-      "colorMatchRunning": "Párování barev…",
       "colorMatchDone": "Párování použito · ΔE sníženo o {{reduction}}%",
       "colorMatchFailed": "Párování barev se nezdařilo",
+      "colorMatchRunning": "Párování barev…",
+      "colorMixer": "Míchání barev",
       "grading": {
         "balance": "Vyvážení",
         "blending": "Míchání",
@@ -48,6 +48,7 @@
         "shadows": "Stíny"
       },
       "hue": "Odstín",
+      "kelvinModeTooltip": "Zobrazit teplotu v Kelvinech",
       "localHue": "Místní odstín",
       "luminance": "Jas",
       "mixerColors": {
@@ -68,17 +69,16 @@
       "vibrance": "Živost",
       "wbPickerTooltip": "Výběr vyvážení bílé",
       "wbPickerWgpuDisabled": "Výběr vyvážení bílé: zakažte WGPU v nastavení.",
-      "whiteBalance": "Vyvážení bílé",
-      "kelvinModeTooltip": "Zobrazit teplotu v Kelvinech"
+      "whiteBalance": "Vyvážení bílé"
     },
     "curves": {
-      "channelTitle": "{{channel}} kanál",
       "channels": {
         "blue": "Modrý",
         "green": "Zelený",
         "luma": "Luma",
         "red": "Červený"
       },
+      "channelTitle": "{{channel}} kanál",
       "copyParametric": "Kopírovat parametrickou křivku ({{channel}})",
       "copyPoint": "Kopírovat bodovou křivku ({{channel}})",
       "curveDataUnavailable": "Údaje o křivce nejsou k dispozici.",
@@ -102,12 +102,12 @@
     },
     "details": {
       "aiDenoise": "AI odšumění",
-      "classicDenoise": "Klasické odšumění",
       "aiDenoiseDetail": "Detail",
       "blueYellow": "Modrá/Žlutá",
       "centre": "Střed",
       "chromaticAberration": "Chromatická aberace",
       "clarity": "Zřetelnost",
+      "classicDenoise": "Klasické odšumění",
       "color": "Barva",
       "convertNegative": "Převést negativ",
       "dehaze": "Odmlžení",
@@ -251,6 +251,8 @@
       "productivity": "Produktivita",
       "rating": "Hodnocení",
       "ratingLabel_one": "{{count}} hvězdička",
+      "ratingLabel_few": "{{count}} hvězdičky",
+      "ratingLabel_many": "{{count}} hvězdičky",
       "ratingLabel_other": "{{count}} hvězdiček",
       "redo": "Znovu",
       "removeDenoise": "Odebrat odšumění",
@@ -259,18 +261,20 @@
       "stitchPanorama": "Složit panorama",
       "tagging": "Otagování",
       "undo": "Zpět",
-      "unflagged": "Bez vlajky",
-      "ratingLabel_few": "{{count}} hvězdičky",
-      "ratingLabel_many": "{{count}} hvězdičky"
+      "unflagged": "Bez vlajky"
     },
     "folders": {
       "changeIcon": "Změnit ikonu",
       "confirm": "Potvrdit",
       "copyHere_one": "Zkopírujte snímek sem",
+      "copyHere_few": "Zkopírujte {{count}} snímky sem",
+      "copyHere_many": "Zkopírujte {{count}} snímku sem",
       "copyHere_other": "Zkopírujte {{count}} snímků sem",
       "deleteFolder": "Smazat složku",
       "importImages": "Import snímků",
       "moveHere_one": "Přesunout snímek sem",
+      "moveHere_few": "Přesunout {{count}} snímky sem",
+      "moveHere_many": "Přesunout {{count}} snímku sem",
       "moveHere_other": "Přesunout {{count}} snímků sem",
       "newFolder": "Nová složka",
       "paste": "Vložit",
@@ -279,19 +283,15 @@
       "removeRoot": "Odebrat kořenovou složku",
       "renameFolder": "Přejmenovat složku",
       "showExplorer": "Zobrazit v Průzkumníku souborů",
-      "unpin": "Odepnout složku",
-      "copyHere_few": "Zkopírujte {{count}} snímky sem",
-      "moveHere_few": "Přesunout {{count}} snímky sem",
-      "copyHere_many": "Zkopírujte {{count}} snímku sem",
-      "moveHere_many": "Přesunout {{count}} snímku sem"
+      "unpin": "Odepnout složku"
     },
     "library": {
       "addCopiedToAlbum_one": "Přidat zkopírovaný snímek do alba",
+      "addCopiedToAlbum_few": "Přidat {{count}} zkopírované snímky do alba",
+      "addCopiedToAlbum_many": "Přidat {{count}} zkopírovaného snímku do alba",
       "addCopiedToAlbum_other": "Přidat {{count}} zkopírovaných snímků do alba",
       "deleteRejected": "Smazat zamítnuté snímky",
-      "refreshView": "Obnovit zobrazení",
-      "addCopiedToAlbum_few": "Přidat {{count}} zkopírované snímky do alba",
-      "addCopiedToAlbum_many": "Přidat {{count}} zkopírovaného snímku do alba"
+      "refreshView": "Obnovit zobrazení"
     },
     "merge": {
       "focusStack": "Skládání ostrosti",
@@ -307,68 +307,68 @@
     "thumbnail": {
       "addToAlbum": "Přidat do alba",
       "autoAdjust_one": "Automaticky upravit",
+      "autoAdjust_few": "Automaticky upravit",
+      "autoAdjust_many": "Automaticky upravit",
       "autoAdjust_other": "Automaticky upravit",
       "autoLensCorrection_one": "Auto korekce objektivu",
+      "autoLensCorrection_few": "Auto korekce objektivu",
+      "autoLensCorrection_many": "Auto korekce objektivu",
       "autoLensCorrection_other": "Auto korekce objektivu",
+      "autoStraighten_one": "Automaticky vyrovnat",
       "autoStraighten_few": "Automaticky vyrovnat",
       "autoStraighten_many": "Automaticky vyrovnat",
-      "autoStraighten_one": "Automaticky vyrovnat",
       "autoStraighten_other": "Automaticky vyrovnat",
       "collage_one": "Editor rámečků",
+      "collage_few": "Vytvořit koláž",
+      "collage_many": "Vytvořit koláž",
       "collage_other": "Vytvořit koláž",
       "confirmDelete": "Potvrdit smazání",
       "confirmDeleteVc": "Potvrdit smazání + virtuální kopie",
       "copyImage_one": "Kopírovat snímek",
+      "copyImage_few": "Kopírovat {{count}} snímky",
+      "copyImage_many": "Kopírovat {{count}} snímku",
       "copyImage_other": "Kopírovat {{count}} snímků",
       "cullImage_one": "Automatické třídění",
+      "cullImage_few": "Automatické třídění",
+      "cullImage_many": "Automatické třídění",
       "cullImage_other": "Automatické třídění",
       "deleteAssociated": "Smazat + Přidružené",
       "deleteImage_one": "Smazat snímek",
+      "deleteImage_few": "Smazat {{count}} snímky",
+      "deleteImage_many": "Smazat {{count}} snímku",
       "deleteImage_other": "Smazat {{count}} snímků",
       "deleteSelected": "Smazat pouze vybrané",
       "denoise_one": "Odšumit",
+      "denoise_few": "Odšumit",
+      "denoise_many": "Odšumit",
       "denoise_other": "Odšumit",
       "duplicateImage": "Duplikovat snímek",
       "enable": "Zapnout",
       "exportImage_one": "Exportovat snímek",
+      "exportImage_few": "Exportovat {{count}} snímky",
+      "exportImage_many": "Exportovat {{count}} snímku",
       "exportImage_other": "Exportovat {{count}} snímků",
       "noAlbums": "Nejsou k dispozici žádná alba",
       "pasteAdjustments_one": "Vložit úpravy",
+      "pasteAdjustments_few": "Vložit úpravy do {{count}} snímků",
+      "pasteAdjustments_many": "Vložit úpravy do {{count}} snímků",
       "pasteAdjustments_other": "Vložit úpravy do {{count}} snímků",
       "physicalCopy": "Fyzická kopie",
       "remove": "Odebrat",
       "removeFromAlbum_one": "Odebrat z alba",
+      "removeFromAlbum_few": "Odebrat {{count}} snímky z alba",
+      "removeFromAlbum_many": "Odebrat {{count}} snímku z alba",
       "removeFromAlbum_other": "Odebrat {{count}} snímků z alba",
       "renameImage_one": "Přejmenovat snímek",
+      "renameImage_few": "Přejmenovat {{count}} snímky",
+      "renameImage_many": "Přejmenovat {{count}} snímku",
       "renameImage_other": "Přejmenovat {{count}} snímků",
       "resetAdjustments_one": "Obnovit úpravy",
+      "resetAdjustments_few": "Obnovit úpravy u {{count}} snímků",
+      "resetAdjustments_many": "Obnovit úpravy u {{count}} snímků",
       "resetAdjustments_other": "Obnovit úpravy u {{count}} snímků",
       "showExplorer": "Zobrazit v Průzkumníku souborů",
-      "virtualCopy": "Virtuální kopie",
-      "copyImage_few": "Kopírovat {{count}} snímky",
-      "deleteImage_few": "Smazat {{count}} snímky",
-      "exportImage_few": "Exportovat {{count}} snímky",
-      "pasteAdjustments_few": "Vložit úpravy do {{count}} snímků",
-      "removeFromAlbum_few": "Odebrat {{count}} snímky z alba",
-      "renameImage_few": "Přejmenovat {{count}} snímky",
-      "resetAdjustments_few": "Obnovit úpravy u {{count}} snímků",
-      "copyImage_many": "Kopírovat {{count}} snímku",
-      "deleteImage_many": "Smazat {{count}} snímku",
-      "exportImage_many": "Exportovat {{count}} snímku",
-      "pasteAdjustments_many": "Vložit úpravy do {{count}} snímků",
-      "removeFromAlbum_many": "Odebrat {{count}} snímku z alba",
-      "renameImage_many": "Přejmenovat {{count}} snímku",
-      "resetAdjustments_many": "Obnovit úpravy u {{count}} snímků",
-      "autoAdjust_few": "Automaticky upravit",
-      "autoAdjust_many": "Automaticky upravit",
-      "autoLensCorrection_few": "Auto korekce objektivu",
-      "autoLensCorrection_many": "Auto korekce objektivu",
-      "collage_few": "Vytvořit koláž",
-      "collage_many": "Vytvořit koláž",
-      "cullImage_few": "Automatické třídění",
-      "cullImage_many": "Automatické třídění",
-      "denoise_few": "Odšumit",
-      "denoise_many": "Odšumit"
+      "virtualCopy": "Virtuální kopie"
     },
     "toasts": {
       "couldNotShowExplorer": "Nelze zobrazit soubor v průzkumníku: {{err}}",
@@ -490,31 +490,35 @@
       "patches": {
         "aiEdit": "AI úpravy {{count}}",
         "aiEdit_one": "AI úprava {{count}}",
+        "aiEdit_few": "AI úpravy {{count}}",
+        "aiEdit_many": "AI úpravy {{count}}",
         "aiEdit_other": "AI úpravy {{count}}",
         "clone": "Klonování {{count}}",
         "clone_one": "Klonování {{count}}",
+        "clone_few": "Klonování {{count}}",
+        "clone_many": "Klonování {{count}}",
         "clone_other": "Klonování {{count}}",
         "heal": "Oprava {{count}}",
         "heal_one": "Oprava {{count}}",
+        "heal_few": "Oprava {{count}}",
+        "heal_many": "Oprava {{count}}",
         "heal_other": "Oprava {{count}}",
         "invertedName": "{{name}} invertován",
         "liquify": "Zkapalnění {{count}}",
         "liquify_one": "Zkapalnění {{count}}",
+        "liquify_few": "Zkapalnění {{count}}",
+        "liquify_many": "Zkapalnění {{count}}",
         "liquify_other": "Zkapalnění {{count}}",
         "quickErase": "Rychlé vymazání {{count}}",
         "quickErase_one": "Rychlé vymazání {{count}}",
+        "quickErase_few": "Rychlé vymazání {{count}}",
+        "quickErase_many": "Rychlé vymazání {{count}}",
         "quickErase_other": "Rychlé vymazání {{count}}",
         "retouch": "Retuš {{count}}",
-        "aiEdit_few": "AI úpravy {{count}}",
-        "aiEdit_many": "AI úpravy {{count}}",
-        "clone_few": "Klonování {{count}}",
-        "clone_many": "Klonování {{count}}",
-        "heal_few": "Oprava {{count}}",
-        "heal_many": "Oprava {{count}}",
-        "liquify_few": "Zkapalnění {{count}}",
-        "liquify_many": "Zkapalnění {{count}}",
-        "quickErase_few": "Rychlé vymazání {{count}}",
-        "quickErase_many": "Rychlé vymazání {{count}}"
+        "retouch_one": "Retuš {{count}}",
+        "retouch_few": "Retuš {{count}}",
+        "retouch_many": "Retuš {{count}}",
+        "retouch_other": "Retuš {{count}}"
       },
       "resetInpaintingTooltip": "Obnovit AI retuš",
       "settings": {
@@ -554,8 +558,8 @@
         "hPlaceholder": "V",
         "hTooltip": "Výška",
         "removeTooltip": "Odebrat uložený poměr stran",
-        "saveTooltip": "Uložit poměr stran jako předvolbu",
         "savedTooltip": "Uložený poměr stran {{ratio}}",
+        "saveTooltip": "Uložit poměr stran jako předvolbu",
         "wPlaceholder": "Š",
         "wTooltip": "Šířka"
       },
@@ -744,12 +748,28 @@
         "invertedName": "{{name}} invertovaný",
         "maskName": "Maska {{count}}",
         "maskName_one": "Maska {{count}}",
-        "maskName_other": "Maska {{count}}",
         "maskName_few": "Masky {{count}}",
-        "maskName_many": "Masky {{count}}"
+        "maskName_many": "Masky {{count}}",
+        "maskName_other": "Maska {{count}}"
       },
       "rangeTitle": "Rozsahy a globální",
       "resetMaskingTooltip": "Resetovat maskování",
+      "retouch": {
+        "eyes": "Vylepšení očí",
+        "eyesContainer": "Vylepšení očí",
+        "faceLiquify": "Liquidování obličeje",
+        "jawline": "Linie čelisti",
+        "slimFace": "Zúžení obličeje",
+        "smoothing": "Vyhlazení pleti",
+        "smoothingContainer": "Vyhlazení pleti",
+        "teeth": "Bělení zubů",
+        "teethContainer": "Bělení zubů",
+        "title": "Retuš portrétu",
+        "unifySkin": "Sjednotit odstín pleti",
+        "unifySkinDone": "Odstín pleti sjednocen",
+        "unifySkinFailed": "Sjednocení odstínu pleti selhalo",
+        "unifySkinRunning": "Vypočítávání odstínu pleti…"
+      },
       "settings": {
         "aiModelDownloading": "Stažení modelu AI: ",
         "applyPreset": "Použít předvolbu",
@@ -757,8 +777,8 @@
         "copySectionSettings": "Kopírovat {{section}} nastavení",
         "faceParts": {
           "bodySkin": "Pleť těla",
-          "eyeWhites": "Bělmo",
           "eyebrows": "Obočí",
+          "eyeWhites": "Bělmo",
           "faceSkin": "Pleť obličeje",
           "hair": "Vlasy",
           "iris": "Duhovka a zornice",
@@ -785,23 +805,20 @@
         "addToCurrent": "Přidat {{name}} na aktuální masku nebo vytvořit novou (klikněte pravým tlačítkem)",
         "createNew": "Vytvořit novou {{name}} masku",
         "selectNewSourcePoint": "{{modifier}} + kliknutím vyberete nový zdrojový bod"
-      },
-      "retouch": {
-        "title": "Retuš portrétu",
-        "smoothing": "Vyhlazení pleti",
-        "teeth": "Bělení zubů",
-        "eyes": "Vylepšení očí",
-        "smoothingContainer": "Vyhlazení pleti",
-        "teethContainer": "Bělení zubů",
-        "eyesContainer": "Vylepšení očí",
-        "unifySkin": "Sjednotit odstín pleti",
-        "unifySkinRunning": "Vypočítávání odstínu pleti…",
-        "unifySkinDone": "Odstín pleti sjednocen",
-        "unifySkinFailed": "Sjednocení odstínu pleti selhalo",
-        "slimFace": "Zúžení obličeje",
-        "jawline": "Linie čelisti",
-        "faceLiquify": "Liquidování obličeje"
       }
+    },
+    "masterRecipes": {
+      "amount": "Intenzita",
+      "close": "Zavřít",
+      "filmHint": "Vyberte vestavěný filmový vzhled a použijte jej přímo na aktuální fotografii.",
+      "loadingLuts": "Načítání LUT...",
+      "missingLut": "Pro {{name}} nebyl nalezen LUT; byly použity pouze barevné parametry.",
+      "openTooltip": "Mistrovské a filmové recepty",
+      "tabs": {
+        "film": "Filmové vzhledy",
+        "master": "Mistrovské recepty"
+      },
+      "title": "Recepty"
     },
     "metadata": {
       "author": {
@@ -846,8 +863,8 @@
       "organization": {
         "addTagPlaceholder": "Přidat značku...",
         "colorLabel": "Barevný štítek",
-        "noTags": "Žádné značky",
         "none": "Žádný",
+        "noTags": "Žádné značky",
         "rating": "Hodnocení",
         "ratingLabels": "Hodnocení a štítky",
         "tags": "Značky",
@@ -857,12 +874,6 @@
     },
     "presets": {
       "amount": "Množství",
-      "toasts": {
-        "exportFailed": "Export presetů se nezdařil",
-        "exportSuccess": "Presety byly exportovány",
-        "importFailed": "Import presetů se nezdařil",
-        "importFailures": "Import {{num}} souborů presetů se nezdařil"
-      },
       "dialog": {
         "allPresetFiles": "Všechny soubory s presety",
         "exportAllTitle": "Exportovat všechny presety",
@@ -896,6 +907,12 @@
         "masks": "Masky"
       },
       "title": "Předvolby",
+      "toasts": {
+        "exportFailed": "Export presetů se nezdařil",
+        "exportSuccess": "Presety byly exportovány",
+        "importFailed": "Import presetů se nezdařil",
+        "importFailures": "Import {{num}} souborů presetů se nezdařil"
+      },
       "tooltips": {
         "explore": "Prozkoumejte předvolby komunity",
         "export": "Exportujte všechny předvolby do souboru .rrpreset",
@@ -936,19 +953,6 @@
         "undo": "Zpět (Ctrl+Z) nebo Historie (kliknutí pravým tlačítkem)"
       },
       "vc": "VC"
-    },
-    "masterRecipes": {
-      "tabs": {
-        "film": "Filmové vzhledy",
-        "master": "Mistrovské recepty"
-      },
-      "amount": "Intenzita",
-      "close": "Zavřít",
-      "filmHint": "Vyberte vestavěný filmový vzhled a použijte jej přímo na aktuální fotografii.",
-      "loadingLuts": "Načítání LUT...",
-      "missingLut": "Pro {{name}} nebyl nalezen LUT; byly použity pouze barevné parametry.",
-      "openTooltip": "Mistrovské a filmové recepty",
-      "title": "Recepty"
     }
   },
   "export": {
@@ -989,24 +993,24 @@
       "saveEditedImageTitle": "Uložit upravený snímek",
       "selectFolderTitle": "Vyberte složku pro export {{count}} fotografií",
       "selectFolderTitle_one": "Vyberte složku pro export {{count}} fotografie",
-      "selectFolderTitle_other": "Vyberte složku pro export {{count}} fotografií",
       "selectFolderTitle_few": "Vyberte složku pro export {{count}} fotografie",
-      "selectFolderTitle_many": "Vyberte složku pro export {{count}} fotografie"
+      "selectFolderTitle_many": "Vyberte složku pro export {{count}} fotografie",
+      "selectFolderTitle_other": "Vyberte složku pro export {{count}} fotografií"
     },
     "file": {
+      "colorSpace": "Barevný prostor",
+      "colorSpaceDesc": "Pixely jsou převedeny a vybraný ICC profil je vložen",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020",
+      "colorSpaceSrgb": "sRGB",
       "dpi": "DPI",
       "quality": "Kvalita",
       "qualityLossless": "Kvalita (bezeztrátová)",
       "resolution": "Rozlišení",
       "tiffBitDepth": "Bitová hloubka TIFF",
       "tiffBitDepth16": "16bitová",
-      "tiffBitDepth8": "8bitová",
-      "colorSpace": "Barevný prostor",
-      "colorSpaceDesc": "Pixely jsou převedeny a vybraný ICC profil je vložen",
-      "colorSpaceSrgb": "sRGB",
-      "colorSpaceDisplayP3": "Display-P3",
-      "colorSpaceProPhoto": "ProPhoto RGB",
-      "colorSpaceRec2020": "Rec. 2020"
+      "tiffBitDepth8": "8bitová"
     },
     "labels": {
       "image": "fotografie",
@@ -1054,18 +1058,18 @@
       "estimatedSize": "Odhadovaná velikost souboru: ~{{size}}",
       "estimatedTotalSize": "Odhadovaná celková velikost: ~{{size}}",
       "estimatingSize": "Odhad velikosti...",
-      "exportMultiple": "Export {{count}} {{label}}",
-      "exportMultiple_one": "Export {{count}} {{label}}",
-      "exportMultiple_other": "Export {{count}} {{label}}",
-      "exportSingle": "Export {{label}}",
       "exporting": "Export…",
       "exportingProgress": "Exportuje se… ({{current}}/{{total}})",
+      "exportMultiple": "Export {{count}} {{label}}",
+      "exportMultiple_one": "Export {{count}} {{label}}",
+      "exportMultiple_few": "Export {{count}} {{label}}",
+      "exportMultiple_many": "Export {{count}} {{label}}",
+      "exportMultiple_other": "Export {{count}} {{label}}",
+      "exportSingle": "Export {{label}}",
       "failed": "Export se nezdařil",
       "noImageSelected": "Pro export nebyl vybrán žádný snímek.",
       "noImagesSelected": "Nejsou vybrány žádné snímky.",
-      "success": "Export byl úspěšný!",
-      "exportMultiple_few": "Export {{count}} {{label}}",
-      "exportMultiple_many": "Export {{count}} {{label}}"
+      "success": "Export byl úspěšný!"
     },
     "title": "Export",
     "watermark": {
@@ -1170,9 +1174,9 @@
       "thumbnailPaused": "AI zpracování pozastaveno",
       "thumbnailPending": "Čeká na AI zpracování",
       "title": "AI zpracování",
+      "unprocessed_one": "{{count}} obrázek vyžaduje AI zpracování",
       "unprocessed_few": "{{count}} obrázky vyžadují AI zpracování",
       "unprocessed_many": "{{count}} obrázku vyžaduje AI zpracování",
-      "unprocessed_one": "{{count}} obrázek vyžaduje AI zpracování",
       "unprocessed_other": "{{count}} obrázků vyžaduje AI zpracování",
       "waiting": "Příprava AI zpracování…"
     },
@@ -1206,8 +1210,8 @@
       "iso": "ISO",
       "metadata": "Metadata",
       "noMetadataAvailable": "Nejsou k dispozici žádná metadata",
-      "noTagsAdded": "Nebyly přidány žádné značky",
       "none": "Žádné",
+      "noTagsAdded": "Nebyly přidány žádné značky",
       "rateAndLabel": "Hodnocení a štítek",
       "rating": "Hodnocení",
       "selectImagesToCompare": "Vyberte snímky k porovnání",
@@ -1218,17 +1222,12 @@
       "vc": "VC"
     },
     "filterExit": {
-      "hiddenSingle": "{{name}} již neodpovídá filtru",
+      "hiddenMultiple_one": "Snímky ({{count}}) již neodpovídají filtru",
       "hiddenMultiple_few": "Snímky ({{count}}) již neodpovídají filtru",
       "hiddenMultiple_many": "Snímky ({{count}}) již neodpovídají filtru",
-      "hiddenMultiple_one": "Snímky ({{count}}) již neodpovídají filtru",
       "hiddenMultiple_other": "Snímky ({{count}}) již neodpovídají filtru",
+      "hiddenSingle": "{{name}} již neodpovídá filtru",
       "undo": "Zpět"
-    },
-    "viewMode": {
-      "culling": "Režim výběru",
-      "grid": "Mřížkové zobrazení",
-      "list": "Zobrazení seznamu"
     },
     "filters": {
       "edited": {
@@ -1330,11 +1329,6 @@
         "filterByFileType": "Filtrovat podle typu souboru",
         "filterByFlag": "Filtrovat podle příznaku",
         "filterByRating": "Filtrovat podle hodnocení",
-        "ratingOperator": {
-          "eq": "Přesně toto hodnocení",
-          "gte": "Toto hodnocení nebo vyšší",
-          "lte": "Toto hodnocení nebo nižší"
-        },
         "groupEditedFiles": "Zahrnout upravené soubory do skupin",
         "groupIgnoreMetadata": "Ignorovat neshodná data EXIF",
         "groupOff": "Vypnuto",
@@ -1345,6 +1339,11 @@
         "metadataHover": "Při najetí myší",
         "metadataOff": "Vypnuto",
         "noLabel": "Žádný štítek",
+        "ratingOperator": {
+          "eq": "Přesně toto hodnocení",
+          "gte": "Toto hodnocení nebo vyšší",
+          "lte": "Toto hodnocení nebo nižší"
+        },
         "recursive": "Rekurzivní",
         "showMetadata": "Zobrazit metadata",
         "sortAscending": "Seřadit vzestupně",
@@ -1357,20 +1356,20 @@
     },
     "items": {
       "cloudPlaceholder": "Uloženo na iCloudu — nestaženo",
-      "immichPlaceholder": "Uloženo v Immichi — nestaženo",
       "collapseFolder": "Sbalit složku",
       "currentFolder": "Aktuální složka",
       "expandFolder": "Rozbalit složku",
       "imagesCount_one": "1 snímek",
+      "imagesCount_few": "{{count}} snímky",
+      "imagesCount_many": "{{count}} snímku",
       "imagesCount_other": "{{count}} snímků",
+      "immichPlaceholder": "Uloženo v Immichi — nestaženo",
       "rejected": "Odmítnuté",
       "tooltipAperture": "Clona",
       "tooltipFocalLength": "Ohnisková vzdálenost",
       "tooltipIso": "ISO",
       "tooltipShutterSpeed": "Rychlost závěrky",
-      "tooltipVirtualCopy": "Virtuální kopie",
-      "imagesCount_few": "{{count}} snímky",
-      "imagesCount_many": "{{count}} snímku"
+      "tooltipVirtualCopy": "Virtuální kopie"
     },
     "jobs": {
       "active": "Probíhá",
@@ -1381,9 +1380,9 @@
       "empty": "Žádné aktivní úlohy",
       "emptyHint": "Zde se zobrazí exporty, importy, přenosy souborů a úlohy AI.",
       "errorCopied": "Chyba zkopírována do schránky",
+      "images_one": "{{count}} obrázek",
       "images_few": "{{count}} obrázky",
       "images_many": "{{count}} obrázku",
-      "images_one": "{{count}} obrázek",
       "images_other": "{{count}} obrázků",
       "kinds": {
         "aiTagging": "AI štítkování",
@@ -1400,15 +1399,15 @@
     "reject": {
       "deleteConfirm": "Smazat odmítnuté",
       "deleteMessage_one": "Opravdu chcete smazat {{count}} odmítnutý snímek? Bude přesunut do koše.",
+      "deleteMessage_few": "Opravdu chcete smazat {{count}} odmítnuté snímky? Budou přesunuty do koše.",
+      "deleteMessage_many": "Opravdu chcete smazat {{count}} odmítnutého snímku? Bude přesunut do koše.",
       "deleteMessage_other": "Opravdu chcete smazat {{count}} odmítnutých snímků? Budou přesunuty do koše.",
       "deleteTitle": "Smazat odmítnuté snímky",
       "noneToDelete": "Nejsou žádné odmítnuté snímky ke smazání.",
       "virtualCopiesWarning_one": "{{count}} virtuální kopie, která není odmítnutá, bude také smazána, protože její originál je odmítnutý.",
-      "virtualCopiesWarning_other": "{{count}} virtuálních kopií, které nejsou odmítnuté, bude také smazáno, protože jejich originály jsou odmítnuté.",
-      "deleteMessage_few": "Opravdu chcete smazat {{count}} odmítnuté snímky? Budou přesunuty do koše.",
       "virtualCopiesWarning_few": "{{count}} virtuální kopie, které nejsou odmítnuté, budou také smazány, protože jejich originály jsou odmítnuté.",
-      "deleteMessage_many": "Opravdu chcete smazat {{count}} odmítnutého snímku? Bude přesunut do koše.",
-      "virtualCopiesWarning_many": "{{count}} virtuální kopie, která není odmítnutá, bude také smazána, protože její originál je odmítnutý."
+      "virtualCopiesWarning_many": "{{count}} virtuální kopie, která není odmítnutá, bude také smazána, protože její originál je odmítnutý.",
+      "virtualCopiesWarning_other": "{{count}} virtuálních kopií, které nejsou odmítnuté, bude také smazáno, protože jejich originály jsou odmítnuté."
     },
     "search": {
       "noResults": "Nebyly nalezeny žádné výsledky",
@@ -1452,6 +1451,36 @@
       "moment": "Může to chvíli trvat.",
       "processing": "Zpracování snímků..."
     },
+    "studio": {
+      "applyAndExport": "Aplikovat styl a dávkově exportovat",
+      "applying": "Zapisují se úpravy…",
+      "cancelExport": "Zrušit export",
+      "chooseOutputFolder": "Zvolte výstupní složku",
+      "clearAll": "Vymazat",
+      "done": "Hotovo: exportováno {{n}} obrázků",
+      "exportCancelled": "Export zrušen",
+      "exporting": "Dávkový export…",
+      "failed": "Selhalo",
+      "headerDesc": "Od vzoru k zakázce: přenos barev, preset a dávkový export na jednom místě.",
+      "headerTitle": "Studio",
+      "loadingMetadata": "Načítají se úpravy vzoru…",
+      "needSample": "Ještě nebyl vybrán vzorový snímek.",
+      "noAdjustments": "žádné úpravy (pouze export)",
+      "noImages": "V této složce nejsou žádné obrázky. Nejprve je importujte.",
+      "noPreset": "Žádný preset",
+      "presetLabel": "Preset stylu (volitelné)",
+      "progressTitle": "Průběh",
+      "sampleSelected": "Vybraný vzor",
+      "selectAll": "Vybrat vše",
+      "selectedCount": "Vybráno {{n}} zákaznických snímků",
+      "step1": "Vzorový snímek",
+      "step1Desc": "Vyberte vzorový snímek jako zdroj stylu pro celou skupinu.",
+      "step2": "Styl",
+      "step2Desc": "Volitelné: přidejte preset, který se sloučí s úpravami vzoru.",
+      "step3": "Zákaznické snímky",
+      "step3Desc": "Zaškrtněte snímky pro aplikaci stylu a spusťte dávkové zpracování a export.",
+      "willCopy": "Zkopíruje se"
+    },
     "thumbnailFit": {
       "fillSquare": "Vyplnit čtverec",
       "justified": "Mozaika",
@@ -1470,35 +1499,10 @@
       "select": "Vybrat",
       "studio": "Studio"
     },
-    "studio": {
-      "headerTitle": "Studio",
-      "headerDesc": "Od vzoru k zakázce: přenos barev, preset a dávkový export na jednom místě.",
-      "step1": "Vzorový snímek",
-      "step1Desc": "Vyberte vzorový snímek jako zdroj stylu pro celou skupinu.",
-      "step2": "Styl",
-      "step2Desc": "Volitelné: přidejte preset, který se sloučí s úpravami vzoru.",
-      "step3": "Zákaznické snímky",
-      "step3Desc": "Zaškrtněte snímky pro aplikaci stylu a spusťte dávkové zpracování a export.",
-      "noImages": "V této složce nejsou žádné obrázky. Nejprve je importujte.",
-      "sampleSelected": "Vybraný vzor",
-      "loadingMetadata": "Načítají se úpravy vzoru…",
-      "willCopy": "Zkopíruje se",
-      "noAdjustments": "žádné úpravy (pouze export)",
-      "needSample": "Ještě nebyl vybrán vzorový snímek.",
-      "noPreset": "Žádný preset",
-      "presetLabel": "Preset stylu (volitelné)",
-      "selectedCount": "Vybráno {{n}} zákaznických snímků",
-      "selectAll": "Vybrat vše",
-      "clearAll": "Vymazat",
-      "applyAndExport": "Aplikovat styl a dávkově exportovat",
-      "applying": "Zapisují se úpravy…",
-      "exporting": "Dávkový export…",
-      "chooseOutputFolder": "Zvolte výstupní složku",
-      "progressTitle": "Průběh",
-      "cancelExport": "Zrušit export",
-      "done": "Hotovo: exportováno {{n}} obrázků",
-      "exportCancelled": "Export zrušen",
-      "failed": "Selhalo"
+    "viewMode": {
+      "culling": "Režim výběru",
+      "grid": "Mřížkové zobrazení",
+      "list": "Zobrazení seznamu"
     }
   },
   "masks": {
@@ -1630,11 +1634,13 @@
       "actionRateZero": "Nastavit hodnocení na 1 hvězdičku",
       "actionReject": "Označit jako odmítnuté",
       "applyButton_one": "Použít na 1 snímek",
+      "applyButton_few": "Použít na {{count}} snímky",
+      "applyButton_many": "Použít na {{count}} snímku",
       "applyButton_other": "Použít na {{count}} snímků",
       "bestImage": "Nejlepší snímek",
+      "blurryImagesTab": "Rozmazané snímky",
       "blurThreshold": "Práh rozmazání",
       "blurThresholdDesc": "Snímky se skóre ostrosti pod touto hodnotou jsou označeny. Vyšší hodnota je přísnější.",
-      "blurryImagesTab": "Rozmazané snímky",
       "cancel": "Zrušit",
       "close": "Zavřít",
       "cullingFailed": "Třídění se nezdařilo",
@@ -1642,6 +1648,8 @@
       "done": "Hotovo",
       "duplicatesHeader": "Duplikáty ({{count}})",
       "duplicatesHeader_one": "Duplikát ({{count}})",
+      "duplicatesHeader_few": "Duplikáty ({{count}})",
+      "duplicatesHeader_many": "Duplikátů ({{count}})",
       "duplicatesHeader_other": "Duplikáty ({{count}})",
       "filterBlurry": "Filtrujte rozmazané snímky",
       "groupHeader": "Skupina {{index}}",
@@ -1655,11 +1663,7 @@
       "similarityThresholdDesc": "Nižší hodnota je přísnější (přesné duplikáty). Vyšší hodnota je volnější (téměř duplikáty). Doporučená hodnota je 24–32.",
       "startCulling": "Spustit třídění",
       "starting": "Spouštění...",
-      "title": "Třídění snímků",
-      "applyButton_few": "Použít na {{count}} snímky",
-      "duplicatesHeader_few": "Duplikáty ({{count}})",
-      "applyButton_many": "Použít na {{count}} snímku",
-      "duplicatesHeader_many": "Duplikátů ({{count}})"
+      "title": "Třídění snímků"
     },
     "focusStack": {
       "cancel": "Zrušit",
@@ -1667,6 +1671,8 @@
       "depthMap": "Hloubková mapa",
       "description": "Zkombinujte více snímků s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
       "descriptionWithCount_one": "Zkombinujte {{count}} snímek s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
+      "descriptionWithCount_few": "Zkombinujte {{count}} snímky s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
+      "descriptionWithCount_many": "Zkombinujte {{count}} snímku s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
       "descriptionWithCount_other": "Zkombinujte {{count}} snímky s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
       "failed": "Skládání zaostření se nezdařilo",
       "initializing": "Inicializace...",
@@ -1676,9 +1682,7 @@
       "savedSuccess": "Složený snímek byl úspěšně uložen!",
       "stacking": "Skládání zaostření",
       "start": "Start",
-      "title": "Skládání zaostření",
-      "descriptionWithCount_few": "Zkombinujte {{count}} snímky s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
-      "descriptionWithCount_many": "Zkombinujte {{count}} snímku s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku."
+      "title": "Skládání zaostření"
     },
     "hdr": {
       "cancel": "Zrušit",
@@ -1686,6 +1690,8 @@
       "description": "Spojte snímky s různou expozicí do jednoho obrazu s vysokým dynamickým rozsahem.",
       "descriptionWithCount": "Spojte {{count}} expoziční snímky do jednoho obrazu s vysokým dynamickým rozsahem.",
       "descriptionWithCount_one": "Spojte {{count}} expoziční snímek do jednoho obrazu s vysokým dynamickým rozsahem.",
+      "descriptionWithCount_few": "Spojte {{count}} expoziční snímky do jednoho obrazu s vysokým dynamickým rozsahem.",
+      "descriptionWithCount_many": "Spojte {{count}} expozičního snímku do jednoho obrazu s vysokým dynamickým rozsahem.",
       "descriptionWithCount_other": "Spojte {{count}} expozičních snímků do jednoho obrazu s vysokým dynamickým rozsahem.",
       "failed": "Sloučení HDR se nezdařilo",
       "initializing": "Inicializace...",
@@ -1696,9 +1702,7 @@
       "savedSuccess": "HDR bylo úspěšně uloženo!",
       "speedNotice": "To může trvat několik minut v závislosti na počtu a velikosti vašich expozic.",
       "start": "Start",
-      "title": "Sloučit do HDR",
-      "descriptionWithCount_few": "Spojte {{count}} expoziční snímky do jednoho obrazu s vysokým dynamickým rozsahem.",
-      "descriptionWithCount_many": "Spojte {{count}} expozičního snímku do jednoho obrazu s vysokým dynamickým rozsahem."
+      "title": "Sloučit do HDR"
     },
     "importSettings": {
       "cancel": "Zrušit",
@@ -1752,6 +1756,8 @@
       "close": "Zavřít",
       "descCount": "Kombinovat {{count}} překrývající se snímky do plynulého panoramatu.",
       "descCount_one": "Kombinovat {{count}} překrývající se snímek do hladkého panoramatu.",
+      "descCount_few": "Kombinovat {{count}} překrývající se snímky do plynulého panoramatu.",
+      "descCount_many": "Kombinovat {{count}} překrývajícího se snímku do plynulého panoramatu.",
       "descCount_other": "Kombinovat {{count}} překrývajících se snímků do hladkého panoramatu.",
       "descGeneric": "Spojte své překrývající se snímky do plynulého panoramatu.",
       "failed": "Panorama se nezdařilo",
@@ -1763,9 +1769,7 @@
       "speedNotice": "To může trvat několik minut v závislosti na počtu a velikosti snímků.",
       "start": "Start",
       "stitchingProgress": "Skládání panorama",
-      "title": "Spojit panorama",
-      "descCount_few": "Kombinovat {{count}} překrývající se snímky do plynulého panoramatu.",
-      "descCount_many": "Kombinovat {{count}} překrývajícího se snímku do plynulého panoramatu."
+      "title": "Spojit panorama"
     },
     "renameAlbum": {
       "placeholder": "Zadejte název nového alba..."
@@ -1778,10 +1782,10 @@
       "save": "Uložit",
       "titleMultiple": "Přejmenovat {{count}} snímky",
       "titleMultiple_one": "Přejmenovat {{count}} snímek",
-      "titleMultiple_other": "Přejmenovat {{count}} snímků",
-      "titleSingle": "Přejmenovat snímek",
       "titleMultiple_few": "Přejmenovat {{count}} snímky",
-      "titleMultiple_many": "Přejmenovat {{count}} snímku"
+      "titleMultiple_many": "Přejmenovat {{count}} snímku",
+      "titleMultiple_other": "Přejmenovat {{count}} snímků",
+      "titleSingle": "Přejmenovat snímek"
     },
     "renameFolder": {
       "cancel": "Zrušit",
@@ -1888,22 +1892,22 @@
         "aiDenoiseSuccess": "Mezipaměť AI odšumění byla úspěšně vymazána.",
         "aiSuccess": "{{count}} souborů aktualizováno. Značky AI odstraněny.",
         "aiSuccess_one": "{{count}} soubor aktualizován. Značky AI odstraněny.",
+        "aiSuccess_few": "{{count}} soubory aktualizovány. Značky AI odstraněny.",
+        "aiSuccess_many": "{{count}} souboru aktualizováno. Značky AI odstraněny.",
         "aiSuccess_other": "{{count}} souborů aktualizováno. Značky AI odstraněny.",
         "allSuccess": "{{count}} souborů aktualizováno. Odstraněny všechny značky kromě barevných.",
         "allSuccess_one": "{{count}} soubor aktualizován. Odstraněny všechny značky kromě barevných.",
+        "allSuccess_few": "{{count}} soubory aktualizovány. Odstraněny všechny značky kromě barevných.",
+        "allSuccess_many": "{{count}} souboru aktualizováno. Odstraněny všechny značky kromě barevných.",
         "allSuccess_other": "{{count}} souborů aktualizováno. Odstraněny všechny značky kromě barevných.",
         "cacheSuccess": "Mezipaměť miniatur byla úspěšně vymazána.",
         "cleared": "Úspěšně vymazáno.",
         "layoutResetSuccess": "Rozložení pracovní plochy bylo obnoveno na výchozí.",
         "sidecarSuccess": "{{count}} sidecar souborů bylo úspěšně odstraněno.",
         "sidecarSuccess_one": "{{count}} sidecar soubor byl úspěšně odstraněn.",
-        "sidecarSuccess_other": "{{count}} sidecar souborů bylo úspěšně odstraněno.",
-        "aiSuccess_few": "{{count}} soubory aktualizovány. Značky AI odstraněny.",
-        "allSuccess_few": "{{count}} soubory aktualizovány. Odstraněny všechny značky kromě barevných.",
         "sidecarSuccess_few": "{{count}} sidecar soubory byly úspěšně odstraněny.",
-        "aiSuccess_many": "{{count}} souboru aktualizováno. Značky AI odstraněny.",
-        "allSuccess_many": "{{count}} souboru aktualizováno. Odstraněny všechny značky kromě barevných.",
-        "sidecarSuccess_many": "{{count}} sidecar souboru bylo úspěšně odstraněno."
+        "sidecarSuccess_many": "{{count}} sidecar souboru bylo úspěšně odstraněno.",
+        "sidecarSuccess_other": "{{count}} sidecar souborů bylo úspěšně odstraněno."
       },
       "storage": {
         "aiDenoise": "AI odšumění",
@@ -2041,16 +2045,23 @@
     },
     "processing": {
       "advanced": {
-        "heading": "Pokročilé",
-        "headingDesc": "Ladění výkonu náhledů, mezipaměti a exportů. Výchozí hodnoty vyhovují většině uživatelů.",
-        "title": "Pokročilá nastavení",
         "auto": "Automaticky",
+        "exportMemoryLimit": "Limit paměti pro export",
+        "exportMemoryLimitDesc": "Podíl volné paměti RAM, který mohou dávkové exporty využít. Snižte jej, aby ostatní aplikace zůstaly při velkých exportech svižné.",
         "exportThreads": "Paralelní exporty",
         "exportThreadsDesc": "Počet obrázků exportovaných současně. Automaticky zvolí hodnotu podle procesoru. Snižte ji, pokud velké exporty selhávají nebo má grafická karta málo paměti.",
-        "exportMemoryLimit": "Limit paměti pro export",
-        "exportMemoryLimitDesc": "Podíl volné paměti RAM, který mohou dávkové exporty využít. Snižte jej, aby ostatní aplikace zůstaly při velkých exportech svižné."
+        "heading": "Pokročilé",
+        "headingDesc": "Ladění výkonu náhledů, mezipaměti a exportů. Výchozí hodnoty vyhovují většině uživatelů.",
+        "title": "Pokročilá nastavení"
       },
       "ai": {
+        "aiFree": {
+          "description": "Vypne všechny funkce AI. Všechny ovládací prvky související s AI jsou v rozhraní skryty, takže RapidRAW funguje jako čistě tradiční editor RAW.",
+          "feature1": "Žádné AI masky, rozostření objektivu ani generativní úpravy v rozhraní",
+          "feature2": "Stávající AI úpravy se nadále zobrazují normálně",
+          "feature3": "Přehlednější a soustředěnější rozhraní",
+          "title": "Bez AI"
+        },
         "cloud": {
           "description": "Pro ty, kteří chtějí jednodušší řešení, poskytuje volitelné předplatné stejně vysoce kvalitní výsledky jako vlastní hosting bez jakýchkoli starostí. Je to nejpohodlnější možnost a nejlepší způsob, jak podpořit projekt.",
           "feature1": "Maximální pohodlí, žádné nastavování",
@@ -2099,13 +2110,6 @@
           "gpuAccelerationDesc": "Spouští vestavěné funkce AI, jako je odšumění, masky, hloubkové a normálové mapy a štítkování, na grafické kartě pro výrazně rychlejší výsledky. Vypněte, pokud dochází k pádům nebo nesprávným výsledkům AI.",
           "gpuAccelerationLabel": "Používat GPU pro modely AI",
           "title": "Vestavěná AI"
-        },
-        "aiFree": {
-          "description": "Vypne všechny funkce AI. Všechny ovládací prvky související s AI jsou v rozhraní skryty, takže RapidRAW funguje jako čistě tradiční editor RAW.",
-          "feature1": "Žádné AI masky, rozostření objektivu ani generativní úpravy v rozhraní",
-          "feature2": "Stávající AI úpravy se nadále zobrazují normálně",
-          "feature3": "Přehlednější a soustředěnější rozhraní",
-          "title": "Bez AI"
         },
         "description": "AI v RapidRAW je vytvořena pro flexibilitu. Vyberte si ideální pracovní postup, od rychlých místních nástrojů po výkonný vlastní hosting.",
         "providers": {
@@ -2187,8 +2191,8 @@
         "title": "Předzpracování obrazu",
         "tonemapperOptions": {
           "agx": "AgX",
-          "pbrNeutral": "PBR Neutral",
-          "basic": "Základní"
+          "basic": "Základní",
+          "pbrNeutral": "PBR Neutral"
         },
         "tonemapperOverride": "Globální přepsání mapování tónů",
         "tonemapperOverrideDesc": "Vynutí určité mapování tónů globálně pro všechny snímky a skryje přepínač mapování tónů na panelu úprav."
@@ -2224,20 +2228,20 @@
     "tagging": {
       "addCustomPlaceholder": "Přidat vlastní značky AI (oddělené čárkami)...",
       "addCustomTooltip": "Přidejte značku AI",
-      "addShortcutTooltip": "Přidat zkratku",
       "addShortcutsPlaceholder": "Přidat zkratky (oddělené čárkami)...",
+      "addShortcutTooltip": "Přidat zkratku",
       "aiTagging": "AI značkování",
       "aiTaggingDesc": "Umožňuje automatické označování snímků pomocí modelu AI (CLIP). Tím se stáhne další model a ovlivní to výkon při procházení složek. Značky se používají k vyhledávání ve složce.",
       "amount": "Počet",
       "automaticAiTagging": "Automatické značkování AI",
       "clearCustomTooltip": "Vymazat seznam značek AI",
       "clearShortcutsTooltip": "Vymazat seznam značek zkratek",
+      "concurrentTasks": "Paralelní úlohy AI tagování",
+      "concurrentTasksDesc": "Počet současně tagovaných obrázků. Vyšší hodnoty zrychlí velké dávky, ale spotřebují více CPU a RAM.",
       "customList": "Vlastní seznam značek AI",
       "customListDesc": "Pokud je k dispozici, AI použije POUZE značky z tohoto seznamu a přepíše vestavěný seznam RapidRAW. Značkování funguje pouze v angličtině.",
       "maxAiTags": "Maximální počet značek AI",
       "maxAiTagsDesc": "Maximální počet značek vygenerovaných na snímek.",
-      "concurrentTasks": "Paralelní úlohy AI tagování",
-      "concurrentTasksDesc": "Počet současně tagovaných obrázků. Vyšší hodnoty zrychlí velké dávky, ale spotřebují více CPU a RAM.",
       "noCustomTags": "Žádné vlastní značky AI (pomocí vestavěného seznamu)",
       "noShortcuts": "Nebyly přidány žádné zkratky",
       "removeCustomTooltip": "Odebrat značku \"{{tag}}\"",
@@ -2330,11 +2334,11 @@
         "pasteSettings": "Vložit úpravy",
         "quickFilter": "Rychlý filtr",
         "rateStars_one": "Hodnotit 1 hvězdičkou",
+        "rateStars_few": "Hodnotit {{count}} hvězdičkami",
+        "rateStars_many": "Hodnotit {{count}} hvězdičkami",
         "rateStars_other": "Hodnotit {{count}} hvězdičkami",
         "resetZoom": "Obnovit přiblížení na okno",
-        "selectToRate": "Vyberte snímek, který chcete ohodnotit",
-        "rateStars_few": "Hodnotit {{count}} hvězdičkami",
-        "rateStars_many": "Hodnotit {{count}} hvězdičkami"
+        "selectToRate": "Vyberte snímek, který chcete ohodnotit"
       },
       "zoomLabel": "Přiblížení",
       "zoomLabelReset": "Obnovit přiblížení"

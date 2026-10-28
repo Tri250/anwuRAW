@@ -33,12 +33,12 @@
         "title": "Color Calibration"
       },
       "colorGrading": "Color Grading",
-      "colorMixer": "Color Mixer",
       "colorMatch": "AI Color Match",
       "colorMatchDesc": "Transfer the color style of a sample photo onto this photo (non-destructive)",
-      "colorMatchRunning": "Matching colors…",
       "colorMatchDone": "Color match applied · ΔE reduced {{reduction}}%",
       "colorMatchFailed": "Color match failed",
+      "colorMatchRunning": "Matching colors…",
+      "colorMixer": "Color Mixer",
       "grading": {
         "balance": "Balance",
         "blending": "Blending",
@@ -72,13 +72,13 @@
       "whiteBalance": "White Balance"
     },
     "curves": {
-      "channelTitle": "{{channel}} Channel",
       "channels": {
         "blue": "Blue",
         "green": "Green",
         "luma": "Luma",
         "red": "Red"
       },
+      "channelTitle": "{{channel}} Channel",
       "copyParametric": "Copy {{channel}} Parametric Curve",
       "copyPoint": "Copy {{channel}} Point Curve",
       "curveDataUnavailable": "Curve data not available.",
@@ -102,12 +102,12 @@
     },
     "details": {
       "aiDenoise": "AI Denoise",
-      "classicDenoise": "Classic Denoise",
       "aiDenoiseDetail": "Detail",
       "blueYellow": "Blue/Yellow",
       "centre": "Centré",
       "chromaticAberration": "Chromatic Aberration",
       "clarity": "Clarity",
+      "classicDenoise": "Classic Denoise",
       "color": "Color",
       "convertNegative": "Convert Negative",
       "dehaze": "Dehaze",
@@ -162,8 +162,8 @@
       "relightIntensity": "Intensity",
       "relightLight": "Light {{index}}",
       "relightRemoveLight": "Remove Light",
-      "relightShadowSoftness": "Shadow Softness",
       "relightShadows": "Shadows",
+      "relightShadowSoftness": "Shadow Softness",
       "relightShine": "Shine",
       "relightSoftness": "Softness",
       "relightType": "Light Type",
@@ -470,7 +470,9 @@
         "quickErase": "Quick Erase {{count}}",
         "quickErase_one": "Quick Erase {{count}}",
         "quickErase_other": "Quick Erase {{count}}",
-        "retouch": "Retouch {{count}}"
+        "retouch": "Retouch {{count}}",
+        "retouch_one": "Retouch {{count}}",
+        "retouch_other": "Retouch {{count}}"
       },
       "resetInpaintingTooltip": "Reset Inpainting",
       "settings": {
@@ -510,8 +512,8 @@
         "hPlaceholder": "H",
         "hTooltip": "Height",
         "removeTooltip": "Remove saved aspect ratio",
-        "saveTooltip": "Save aspect ratio as preset",
         "savedTooltip": "Saved aspect ratio {{ratio}}",
+        "saveTooltip": "Save aspect ratio as preset",
         "wPlaceholder": "W",
         "wTooltip": "Width"
       },
@@ -704,6 +706,22 @@
       },
       "rangeTitle": "Ranges & Global",
       "resetMaskingTooltip": "Reset Masking",
+      "retouch": {
+        "eyes": "Eye Enhancement",
+        "eyesContainer": "Eye Enhancement",
+        "faceLiquify": "Face Liquify",
+        "jawline": "Jawline",
+        "slimFace": "Slim Face",
+        "smoothing": "Skin Smoothing",
+        "smoothingContainer": "Skin Smoothing",
+        "teeth": "Teeth Whitening",
+        "teethContainer": "Teeth Whitening",
+        "title": "Portrait Retouch",
+        "unifySkin": "Unify Skin Tone",
+        "unifySkinDone": "Skin tone unified",
+        "unifySkinFailed": "Skin tone unification failed",
+        "unifySkinRunning": "Computing skin tone…"
+      },
       "settings": {
         "aiModelDownloading": "AI Model Downloading: ",
         "applyPreset": "Apply Preset",
@@ -711,8 +729,8 @@
         "copySectionSettings": "Copy {{section}} Settings",
         "faceParts": {
           "bodySkin": "Body Skin",
-          "eyeWhites": "Eye Whites",
           "eyebrows": "Eyebrows",
+          "eyeWhites": "Eye Whites",
           "faceSkin": "Face Skin",
           "hair": "Hair",
           "iris": "Iris & Pupil",
@@ -739,23 +757,20 @@
         "addToCurrent": "Add {{name}} to Current Mask or Create New (Right-click)",
         "createNew": "Create New {{name}} Mask",
         "selectNewSourcePoint": "{{modifier}} + Click to select a new source point"
-      },
-      "retouch": {
-        "title": "Portrait Retouch",
-        "smoothing": "Skin Smoothing",
-        "teeth": "Teeth Whitening",
-        "eyes": "Eye Enhancement",
-        "smoothingContainer": "Skin Smoothing",
-        "teethContainer": "Teeth Whitening",
-        "eyesContainer": "Eye Enhancement",
-        "unifySkin": "Unify Skin Tone",
-        "unifySkinRunning": "Computing skin tone…",
-        "unifySkinDone": "Skin tone unified",
-        "unifySkinFailed": "Skin tone unification failed",
-        "slimFace": "Slim Face",
-        "jawline": "Jawline",
-        "faceLiquify": "Face Liquify"
       }
+    },
+    "masterRecipes": {
+      "amount": "Amount",
+      "close": "Close",
+      "filmHint": "Pick a built-in film look and apply it directly to the current photo.",
+      "loadingLuts": "Loading LUTs...",
+      "missingLut": "No LUT found for {{name}}; colour parameters were applied on their own.",
+      "openTooltip": "Master & film recipes",
+      "tabs": {
+        "film": "Film Looks",
+        "master": "Master Recipes"
+      },
+      "title": "Recipes"
     },
     "metadata": {
       "author": {
@@ -800,8 +815,8 @@
       "organization": {
         "addTagPlaceholder": "Add tag...",
         "colorLabel": "Color Label",
-        "noTags": "No tags",
         "none": "None",
+        "noTags": "No tags",
         "rating": "Rating",
         "ratingLabels": "Rating & Labels",
         "tags": "Tags",
@@ -809,27 +824,8 @@
       },
       "title": "Metadata"
     },
-    "masterRecipes": {
-      "amount": "Amount",
-      "close": "Close",
-      "filmHint": "Pick a built-in film look and apply it directly to the current photo.",
-      "loadingLuts": "Loading LUTs...",
-      "missingLut": "No LUT found for {{name}}; colour parameters were applied on their own.",
-      "openTooltip": "Master & film recipes",
-      "tabs": {
-        "film": "Film Looks",
-        "master": "Master Recipes"
-      },
-      "title": "Recipes"
-    },
     "presets": {
       "amount": "Amount",
-      "toasts": {
-        "exportFailed": "Failed to export presets",
-        "exportSuccess": "Presets exported",
-        "importFailed": "Failed to import presets",
-        "importFailures": "{{num}} preset file(s) failed to import"
-      },
       "dialog": {
         "allPresetFiles": "All Preset Files",
         "exportAllTitle": "Export All Presets",
@@ -863,6 +859,12 @@
         "masks": "Masks"
       },
       "title": "Presets",
+      "toasts": {
+        "exportFailed": "Failed to export presets",
+        "exportSuccess": "Presets exported",
+        "importFailed": "Failed to import presets",
+        "importFailures": "{{num}} preset file(s) failed to import"
+      },
       "tooltips": {
         "explore": "Explore Community Presets",
         "export": "Export all presets to .rrpreset file",
@@ -946,19 +948,19 @@
       "selectFolderTitle_other": "Select Folder to Export {{count}} Images"
     },
     "file": {
+      "colorSpace": "Color space",
+      "colorSpaceDesc": "Pixels are converted and the selected ICC profile is embedded",
+      "colorSpaceDisplayP3": "Display-P3",
+      "colorSpaceProPhoto": "ProPhoto RGB",
+      "colorSpaceRec2020": "Rec. 2020",
+      "colorSpaceSrgb": "sRGB",
       "dpi": "DPI",
       "quality": "Quality",
       "qualityLossless": "Quality (Lossless)",
       "resolution": "Resolution",
       "tiffBitDepth": "TIFF bit depth",
       "tiffBitDepth16": "16-bit",
-      "tiffBitDepth8": "8-bit",
-      "colorSpace": "Color space",
-      "colorSpaceDesc": "Pixels are converted and the selected ICC profile is embedded",
-      "colorSpaceSrgb": "sRGB",
-      "colorSpaceDisplayP3": "Display-P3",
-      "colorSpaceProPhoto": "ProPhoto RGB",
-      "colorSpaceRec2020": "Rec. 2020"
+      "tiffBitDepth8": "8-bit"
     },
     "labels": {
       "image": "Image",
@@ -1006,12 +1008,12 @@
       "estimatedSize": "Estimated file size: ~{{size}}",
       "estimatedTotalSize": "Estimated total size: ~{{size}}",
       "estimatingSize": "Estimating size...",
+      "exporting": "Exporting…",
+      "exportingProgress": "Exporting… ({{current}}/{{total}})",
       "exportMultiple": "Export {{count}} {{label}}",
       "exportMultiple_one": "Export {{count}} {{label}}",
       "exportMultiple_other": "Export {{count}} {{label}}",
       "exportSingle": "Export {{label}}",
-      "exporting": "Exporting…",
-      "exportingProgress": "Exporting… ({{current}}/{{total}})",
       "failed": "Export failed",
       "noImageSelected": "No image selected for export.",
       "noImagesSelected": "No images selected.",
@@ -1154,8 +1156,8 @@
       "iso": "ISO",
       "metadata": "Metadata",
       "noMetadataAvailable": "No metadata available",
-      "noTagsAdded": "No tags added",
       "none": "None",
+      "noTagsAdded": "No tags added",
       "rateAndLabel": "Rate & Label",
       "rating": "Rating",
       "selectImagesToCompare": "Select images to compare",
@@ -1166,15 +1168,10 @@
       "vc": "VC"
     },
     "filterExit": {
-      "hiddenSingle": "{{name}} no longer matches the filter",
       "hiddenMultiple_one": "{{count}} images no longer match the filter",
       "hiddenMultiple_other": "{{count}} images no longer match the filter",
+      "hiddenSingle": "{{name}} no longer matches the filter",
       "undo": "Undo"
-    },
-    "viewMode": {
-      "culling": "Culling View",
-      "grid": "Grid View",
-      "list": "List View"
     },
     "filters": {
       "edited": {
@@ -1276,11 +1273,6 @@
         "filterByFileType": "Filter by File Type",
         "filterByFlag": "Filter by Flag",
         "filterByRating": "Filter by Rating",
-        "ratingOperator": {
-          "eq": "Exactly this rating",
-          "gte": "This rating or higher",
-          "lte": "This rating or lower"
-        },
         "groupEditedFiles": "Include edited files in groups",
         "groupIgnoreMetadata": "Ignore mismatched EXIF dates",
         "groupOff": "Off",
@@ -1291,6 +1283,11 @@
         "metadataHover": "On Hover",
         "metadataOff": "Off",
         "noLabel": "No Label",
+        "ratingOperator": {
+          "eq": "Exactly this rating",
+          "gte": "This rating or higher",
+          "lte": "This rating or lower"
+        },
         "recursive": "Recursive",
         "showMetadata": "Show Metadata",
         "sortAscending": "Sort Ascending",
@@ -1303,12 +1300,12 @@
     },
     "items": {
       "cloudPlaceholder": "Stored in iCloud — not downloaded",
-      "immichPlaceholder": "Stored in Immich — not downloaded",
       "collapseFolder": "Collapse Folder",
       "currentFolder": "Current Folder",
       "expandFolder": "Expand Folder",
       "imagesCount_one": "1 image",
       "imagesCount_other": "{{count}} images",
+      "immichPlaceholder": "Stored in Immich — not downloaded",
       "rejected": "Rejected",
       "tooltipAperture": "Aperture",
       "tooltipFocalLength": "Focal Length",
@@ -1390,6 +1387,36 @@
       "moment": "This may take a moment.",
       "processing": "Processing images..."
     },
+    "studio": {
+      "applyAndExport": "Apply style & batch export",
+      "applying": "Writing adjustments…",
+      "cancelExport": "Cancel export",
+      "chooseOutputFolder": "Choose output folder",
+      "clearAll": "Clear",
+      "done": "Done: {{n}} images exported",
+      "exportCancelled": "Export cancelled",
+      "exporting": "Batch exporting…",
+      "failed": "Failed",
+      "headerDesc": "From sample to full set: color matching, presets and batch export in one place.",
+      "headerTitle": "Studio",
+      "loadingMetadata": "Reading sample adjustments…",
+      "needSample": "No sample image selected yet.",
+      "noAdjustments": "no adjustments (export only)",
+      "noImages": "No images in this folder. Import images first.",
+      "noPreset": "No preset",
+      "presetLabel": "Style preset (optional)",
+      "progressTitle": "Progress",
+      "sampleSelected": "Sample selected",
+      "selectAll": "Select all",
+      "selectedCount": "{{n}} client photos selected",
+      "step1": "Sample image",
+      "step1Desc": "Pick a sample image as the style source for the whole group.",
+      "step2": "Style",
+      "step2Desc": "Optional: add a preset that merges with the sample adjustments.",
+      "step3": "Client photos",
+      "step3Desc": "Select the photos to style, then apply and batch export in one click.",
+      "willCopy": "Will copy"
+    },
     "thumbnailFit": {
       "fillSquare": "Fill Square",
       "justified": "Masonry",
@@ -1408,35 +1435,10 @@
       "select": "Select",
       "studio": "Studio"
     },
-    "studio": {
-      "headerTitle": "Studio",
-      "headerDesc": "From sample to full set: color matching, presets and batch export in one place.",
-      "step1": "Sample image",
-      "step1Desc": "Pick a sample image as the style source for the whole group.",
-      "step2": "Style",
-      "step2Desc": "Optional: add a preset that merges with the sample adjustments.",
-      "step3": "Client photos",
-      "step3Desc": "Select the photos to style, then apply and batch export in one click.",
-      "noImages": "No images in this folder. Import images first.",
-      "sampleSelected": "Sample selected",
-      "loadingMetadata": "Reading sample adjustments…",
-      "willCopy": "Will copy",
-      "noAdjustments": "no adjustments (export only)",
-      "needSample": "No sample image selected yet.",
-      "noPreset": "No preset",
-      "presetLabel": "Style preset (optional)",
-      "selectedCount": "{{n}} client photos selected",
-      "selectAll": "Select all",
-      "clearAll": "Clear",
-      "applyAndExport": "Apply style & batch export",
-      "applying": "Writing adjustments…",
-      "exporting": "Batch exporting…",
-      "chooseOutputFolder": "Choose output folder",
-      "progressTitle": "Progress",
-      "cancelExport": "Cancel export",
-      "done": "Done: {{n}} images exported",
-      "exportCancelled": "Export cancelled",
-      "failed": "Failed"
+    "viewMode": {
+      "culling": "Culling View",
+      "grid": "Grid View",
+      "list": "List View"
     }
   },
   "masks": {
@@ -1570,9 +1572,9 @@
       "applyButton_one": "Apply to 1 image",
       "applyButton_other": "Apply to {{count}} images",
       "bestImage": "Best Image",
+      "blurryImagesTab": "Blurry Images",
       "blurThreshold": "Blur Threshold",
       "blurThresholdDesc": "Images with a sharpness score below this value are flagged. Higher is stricter.",
-      "blurryImagesTab": "Blurry Images",
       "cancel": "Cancel",
       "close": "Close",
       "cullingFailed": "Culling Failed",
@@ -1961,16 +1963,23 @@
     },
     "processing": {
       "advanced": {
-        "heading": "Advanced",
-        "headingDesc": "Performance tuning for thumbnails, caching and exports. The defaults work well for most users.",
-        "title": "Advanced Settings",
         "auto": "Auto",
+        "exportMemoryLimit": "Export Memory Limit",
+        "exportMemoryLimitDesc": "Share of free RAM that batch exports may use. Lower it to keep other apps responsive during large exports.",
         "exportThreads": "Parallel Exports",
         "exportThreadsDesc": "Number of images exported at the same time. Auto picks a value based on your CPU. Lower it if large exports fail or your GPU has little memory.",
-        "exportMemoryLimit": "Export Memory Limit",
-        "exportMemoryLimitDesc": "Share of free RAM that batch exports may use. Lower it to keep other apps responsive during large exports."
+        "heading": "Advanced",
+        "headingDesc": "Performance tuning for thumbnails, caching and exports. The defaults work well for most users.",
+        "title": "Advanced Settings"
       },
       "ai": {
+        "aiFree": {
+          "description": "Turn off every AI feature. All AI-related controls are hidden from the interface so RapidRAW works as a purely traditional RAW editor.",
+          "feature1": "No AI masks, lens blur or generative edits in the UI",
+          "feature2": "Existing AI edits still render normally",
+          "feature3": "A cleaner, more focused interface",
+          "title": "AI-Free"
+        },
         "cloud": {
           "description": "For those who want a simpler solution, an optional subscription provides the same high-quality results as self-hosting without any hassle. This is the most convenient option and the best way to support the project.",
           "feature1": "Maximum convenience, no setup",
@@ -2019,13 +2028,6 @@
           "gpuAccelerationDesc": "Run built-in AI features like denoise, masks, depth and normal maps and tagging on your graphics card for much faster results. Disable this if you experience crashes or incorrect AI results.",
           "gpuAccelerationLabel": "Use GPU for AI models",
           "title": "Built-in AI"
-        },
-        "aiFree": {
-          "description": "Turn off every AI feature. All AI-related controls are hidden from the interface so RapidRAW works as a purely traditional RAW editor.",
-          "feature1": "No AI masks, lens blur or generative edits in the UI",
-          "feature2": "Existing AI edits still render normally",
-          "feature3": "A cleaner, more focused interface",
-          "title": "AI-Free"
         },
         "description": "RapidRAW's AI is built for flexibility. Choose your ideal workflow, from fast local tools to powerful self-hosting.",
         "providers": {
@@ -2107,8 +2109,8 @@
         "title": "Image Preprocessing",
         "tonemapperOptions": {
           "agx": "AgX",
-          "pbrNeutral": "PBR Neutral",
-          "basic": "Basic"
+          "basic": "Basic",
+          "pbrNeutral": "PBR Neutral"
         },
         "tonemapperOverride": "Global Tonemapper Override",
         "tonemapperOverrideDesc": "Force a specific tonemapper globally for all images, hiding the tonemapper switch from the adjustments panel."
@@ -2144,20 +2146,20 @@
     "tagging": {
       "addCustomPlaceholder": "Add custom AI tags (comma separated)...",
       "addCustomTooltip": "Add AI tag",
-      "addShortcutTooltip": "Add Shortcut",
       "addShortcutsPlaceholder": "Add shortcuts (comma separated)...",
+      "addShortcutTooltip": "Add Shortcut",
       "aiTagging": "AI Tagging",
       "aiTaggingDesc": "Enables automatic image tagging using an AI (CLIP) model. This will download an additional model and impact performance while browsing folders. Tags are used for searching a folder.",
       "amount": "Amount",
       "automaticAiTagging": "Automatic AI Tagging",
       "clearCustomTooltip": "Clear AI Tag List",
       "clearShortcutsTooltip": "Clear Shortcuts Tag List",
+      "concurrentTasks": "Parallel AI Tagging Tasks",
+      "concurrentTasksDesc": "Number of images tagged at the same time. Higher values speed up large batches but use more CPU & RAM.",
       "customList": "Custom AI Tag List",
       "customListDesc": "If provided, the AI will ONLY use tags from this list, overriding RapidRAW’s built-in list. Tagging works only in English.",
       "maxAiTags": "Maximum AI Tags",
       "maxAiTagsDesc": "The maximum number of tags to generate per image.",
-      "concurrentTasks": "Parallel AI Tagging Tasks",
-      "concurrentTasksDesc": "Number of images tagged at the same time. Higher values speed up large batches but use more CPU & RAM.",
       "noCustomTags": "No custom AI tags (Using built-in list)",
       "noShortcuts": "No shortcuts added",
       "removeCustomTooltip": "Remove tag \"{{tag}}\"",
