@@ -534,19 +534,6 @@ impl LensWarp {
         )
     }
 
-    pub fn max_displacement(&self, w: usize, h: usize) -> f64 {
-        let mut m: f64 = 0.0;
-        for gy in 0..5 {
-            for gx in 0..5 {
-                let x = gx as f64 * (w.max(2) - 1) as f64 / 4.0;
-                let y = gy as f64 * (h.max(2) - 1) as f64 / 4.0;
-                let (u, v) = self.apply(x, y);
-                m = m.max(((u - x).powi(2) + (v - y).powi(2)).sqrt());
-            }
-        }
-        m
-    }
-
     #[inline]
     fn jacobian(&self, x: f64, y: f64, model: WarpModel, ju: &mut [f64; 21], jv: &mut [f64; 21]) {
         *ju = [0.0; 21];
@@ -1596,8 +1583,6 @@ pub struct StackResult {
     pub depth: Vec<u16>,
     pub depth_w: usize,
     pub depth_h: usize,
-    pub poses: Vec<FramePose>,
-    pub reference: usize,
 }
 
 fn fit_dims(w: usize, h: usize, max_dim: usize) -> (usize, usize) {
@@ -1842,8 +1827,6 @@ pub fn run_focus_stack<S: FrameSource + ?Sized>(
         depth: decision.labels,
         depth_w: decision.w,
         depth_h: decision.h,
-        poses: full_poses,
-        reference,
     })
 }
 
