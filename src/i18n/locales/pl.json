@@ -366,7 +366,9 @@
       "resetAdjustments_one": "Resetuj ustawienia",
       "resetAdjustments_other": "Resetuj ustawienia w {{count}} obrazach",
       "showExplorer": "Pokaż w eksploratorze plików",
-      "virtualCopy": "Kopia wirtualna"
+      "virtualCopy": "Kopia wirtualna",
+      "autoLensCorrection_few": "Automatyczna korekcja obiektywu",
+      "autoLensCorrection_many": "Automatyczna korekcja obiektywu"
     },
     "toasts": {
       "couldNotShowExplorer": "Nie można pokazać pliku w eksploratorze: {{err}}",
@@ -510,7 +512,9 @@
         "quickErase_many": "Szybkich wymazań {{count}}",
         "quickErase_one": "Szybkie wymazanie {{count}}",
         "quickErase_other": "Szybkie wymazanie {{count}}",
-        "retouch": "Retusz {{count}}"
+        "retouch": "Retusz {{count}}",
+        "liquify_few": "Skraplanie {{count}}",
+        "liquify_many": "Skraplanie {{count}}"
       },
       "resetInpaintingTooltip": "Resetuj Inpainting",
       "settings": {

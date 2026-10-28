@@ -350,7 +350,8 @@
       "resetAdjustments_one": "Restablecer ajustes",
       "resetAdjustments_other": "Restablecer ajustes en {{count}} imágenes",
       "showExplorer": "Mostrar en el Explorador de archivos",
-      "virtualCopy": "Copia virtual"
+      "virtualCopy": "Copia virtual",
+      "autoLensCorrection_many": "Corrección de lente automática"
     },
     "toasts": {
       "couldNotShowExplorer": "No se pudo mostrar el archivo en el explorador: {{err}}",
@@ -490,7 +491,8 @@
         "quickErase_many": "Borrado rápido {{count}}",
         "quickErase_one": "Borrado rápido {{count}}",
         "quickErase_other": "Borrado rápido {{count}}",
-        "retouch": "Retoque {{count}}"
+        "retouch": "Retoque {{count}}",
+        "liquify_many": "Licuar {{count}}"
       },
       "resetInpaintingTooltip": "Restablecer Inpainting",
       "settings": {
@@ -1641,7 +1643,8 @@
       "savedSuccess": "¡Apilamiento de enfoque guardado con éxito!",
       "stacking": "Apilando enfoque",
       "start": "Iniciar",
-      "title": "Apilamiento de enfoque"
+      "title": "Apilamiento de enfoque",
+      "descriptionWithCount_many": "Combina {{count}} imágenes con diferentes distancias de enfoque en una sola imagen perfectamente nítida."
     },
     "hdr": {
       "cancel": "Cancelar",

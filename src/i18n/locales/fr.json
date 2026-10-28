@@ -350,7 +350,8 @@
       "resetAdjustments_one": "Réinitialiser les ajustements",
       "resetAdjustments_other": "Réinitialiser les ajustements sur {{count}} images",
       "showExplorer": "Afficher dans l'explorateur",
-      "virtualCopy": "Copie virtuelle"
+      "virtualCopy": "Copie virtuelle",
+      "autoLensCorrection_many": "Corrections d'objectif automatiques"
     },
     "toasts": {
       "couldNotShowExplorer": "Impossible d'afficher le fichier dans l'explorateur : {{err}}",
@@ -490,7 +491,8 @@
         "quickErase_many": "Gommage rapide {{count}}",
         "quickErase_one": "Gommage rapide {{count}}",
         "quickErase_other": "Gommages rapides {{count}}",
-        "retouch": "Retouche {{count}}"
+        "retouch": "Retouche {{count}}",
+        "liquify_many": "Fluidité {{count}}"
       },
       "resetInpaintingTooltip": "Réinitialiser l'Inpainting",
       "settings": {
@@ -1642,7 +1644,8 @@
       "savedSuccess": "Empilement de mise au point enregistré avec succès !",
       "stacking": "Empilement de la mise au point",
       "start": "Démarrer",
-      "title": "Empilement de mise au point"
+      "title": "Empilement de mise au point",
+      "descriptionWithCount_many": "Combinez {{count}} images avec des distances de mise au point variables en une seule image parfaitement nette."
     },
     "hdr": {
       "cancel": "Annuler",

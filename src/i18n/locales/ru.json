@@ -366,7 +366,9 @@
       "resetAdjustments_one": "Сбросить настройки для {{count}} изображения",
       "resetAdjustments_other": "Сбросить настройки для {{count}} изображений",
       "showExplorer": "Показать в проводнике",
-      "virtualCopy": "Виртуальная копия"
+      "virtualCopy": "Виртуальная копия",
+      "autoLensCorrection_few": "Автокоррекция объектива",
+      "autoLensCorrection_many": "Автокоррекция объектива"
     },
     "toasts": {
       "couldNotShowExplorer": "Не удалось показать файл в проводнике: {{err}}",
@@ -510,7 +512,9 @@
         "quickErase_many": "Быстрое стирание {{count}}",
         "quickErase_one": "Быстрое стирание {{count}}",
         "quickErase_other": "Быстрое стирание {{count}}",
-        "retouch": "Ретушь {{count}}"
+        "retouch": "Ретушь {{count}}",
+        "liquify_few": "Пластика {{count}}",
+        "liquify_many": "Пластика {{count}}"
       },
       "resetInpaintingTooltip": "Сбросить восстановление",
       "settings": {
