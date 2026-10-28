@@ -2838,10 +2838,24 @@ pub async fn apply_adjustments_to_paths(
                 );
             }
 
+            let existing_tools = crate::image_processing::active_tools(&metadata.adjustments);
             if let (Some(new_map), Some(pasted_map)) =
                 (metadata.adjustments.as_object_mut(), pasted.as_object())
             {
                 for (k, v) in pasted_map {
+                    if k == "activeTools" {
+                        // 补丁里的 activeTools 按“逐工具覆盖”处理：批量启用降噪/负片时
+                        // 只携带需要打开的工具键，若整体替换会清掉每张图片各自的其它
+                        // 工具状态（例如已关闭的 LUT/曲线），导致批量操作副作用。
+                        let mut merged = existing_tools.clone();
+                        if let Some(tools) = v.as_object() {
+                            for (tool_id, active) in tools {
+                                merged.insert(tool_id.clone(), active.clone());
+                            }
+                        }
+                        new_map.insert(k.clone(), Value::Object(merged));
+                        continue;
+                    }
                     new_map.insert(k.clone(), v.clone());
                 }
             }

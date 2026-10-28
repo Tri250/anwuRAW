@@ -330,7 +330,7 @@ export function useEditorActions() {
 
     pathsToUpdate.forEach((p) => globalImageCache.delete(p));
 
-    invoke('apply_auto_lens_correction_to_paths', { paths: pathsToUpdate })
+    invoke(Invokes.ApplyAutoLensCorrectionToPaths, { paths: pathsToUpdate })
       .then(() => reloadAdjustmentsForPaths(pathsToUpdate))
       .catch((err) => toast.error(`Failed to apply auto lens correction: ${err}`));
   }, []);
@@ -353,16 +353,29 @@ export function useEditorActions() {
   );
 
   const handleEnableAdjustments = useCallback(
-    (paths: string[], patch: Partial<Adjustments>) => {
+    (paths: string[], patch: Partial<Adjustments>, enabledTools: string[] = []) => {
       const { selectedImage } = useEditorStore.getState();
       const editingPath = useUIStore.getState().activeView === 'editor' ? selectedImage?.path : undefined;
       const batchPaths = paths.filter((path) => path !== editingPath);
       if (batchPaths.length < paths.length) {
-        setAdjustments((prev: Adjustments) => ({ ...prev, ...patch }));
+        setAdjustments((prev: Adjustments) => {
+          const nextPatch: Partial<Adjustments> = enabledTools.length
+            ? {
+                ...patch,
+                activeTools: enabledTools.reduce((tools, id) => setToolActive(tools, id, true), getActiveTools(prev)),
+              }
+            : patch;
+          return { ...prev, ...nextPatch };
+        });
       }
       if (batchPaths.length === 0) return;
       batchPaths.forEach((p) => globalImageCache.delete(p));
-      invoke(Invokes.ApplyAdjustmentsToPaths, { paths: batchPaths, adjustments: patch })
+      // 批量写入时只携带需要激活的工具键，由后端逐文件与已有 activeTools 合并，
+      // 避免把当前图片的完整工具状态强加给选区内其它图片。
+      const batchPatch: Partial<Adjustments> = enabledTools.length
+        ? { ...patch, activeTools: Object.fromEntries(enabledTools.map((id) => [id, true])) }
+        : patch;
+      invoke(Invokes.ApplyAdjustmentsToPaths, { paths: batchPaths, adjustments: batchPatch })
         .then(() => reloadAdjustmentsForPaths(batchPaths))
         .catch((err) => toast.error(`Failed to apply adjustments: ${err}`));
     },

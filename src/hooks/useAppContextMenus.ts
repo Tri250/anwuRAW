@@ -304,6 +304,7 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
                   adjustments.aiDenoiseEnabled
                     ? { aiDenoiseEnabled: false }
                     : getAiDenoiseEnablePatch(useSettingsStore.getState().appSettings?.aiProvider),
+                  adjustments.aiDenoiseEnabled ? [] : ['noiseReduction'],
                 ),
               disabled: !selectedImage?.isReady,
             },
@@ -313,9 +314,13 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
                 : t('contextMenus.editor.convertNegative'),
               icon: Film,
               onClick: () =>
-                handleEnableAdjustments([selectedImage.path], {
-                  negativeConversionEnabled: !adjustments.negativeConversionEnabled,
-                }),
+                handleEnableAdjustments(
+                  [selectedImage.path],
+                  {
+                    negativeConversionEnabled: !adjustments.negativeConversionEnabled,
+                  },
+                  adjustments.negativeConversionEnabled ? [] : ['negativeConversion'],
+                ),
               disabled: !selectedImage?.isReady,
             },
             {
@@ -676,6 +681,7 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
                     handleEnableAdjustments(
                       finalSelection,
                       getAiDenoiseEnablePatch(useSettingsStore.getState().appSettings?.aiProvider),
+                      ['noiseReduction'],
                     ),
                 },
                 {
@@ -693,7 +699,10 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
                 {
                   label: t('contextMenus.thumbnail.enable'),
                   icon: Check,
-                  onClick: () => handleEnableAdjustments(finalSelection, { negativeConversionEnabled: true }),
+                  onClick: () =>
+                    handleEnableAdjustments(finalSelection, { negativeConversionEnabled: true }, [
+                      'negativeConversion',
+                    ]),
                 },
                 {
                   label: t('contextMenus.thumbnail.remove'),
