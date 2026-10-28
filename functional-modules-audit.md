@@ -811,3 +811,37 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - `npx tsc --noEmit`：0 错误；`npm run build`：成功；`i18n:runtime-check`：exit 0（_few/_many 回退为既有基线）。
 - `cargo +1.98.0 clippy --all-targets`：发现 8 处新增代码 lint 告警（unused_mut / too_many_arguments×2 / needless_range_loop×2 / chunks_exact→as_chunks / collapsible_if / unnecessary_lazy_evaluations），已全部修复（color_profiles.rs、ai_commands.rs、color_transfer.rs、image_processing.rs），复跑 **0 lint 告警**；`cargo fmt --all` 通过；`cargo test` 12 passed / 0 failed。
 - `prettier --check functional-modules-audit.md`：修复全文格式（表格对齐重排，内容无损）。
+
+---
+
+## 二十一、v1.6.9 全量 100% 覆盖功能自检（第二十一轮 · 独立复核）
+
+> 方法：不依赖历史结论，用脚本对全仓库做机器化交叉核对 + 定向人工取证。**本轮 fix 清单为空：未发现空实现、简化实现或断链。**
+
+### 21.1 IPC 命令层（0 断链）
+
+- 后端 `generate_handler!` 注册 **148** 项命令；前端全部调用点（直接 `invoke('x')` 17 处 + `Invokes` 枚举 109 项 + 三元动态命令名 + `ImmichInvokes`）联合提取 **135** 个唯一命令。
+- 135/148 均有真实前端入口；13 个表面未匹配项（`delete_files_*`、`generate_liquify_patch`、`generate_retouch_patch`、`generate_manual_cleanup_patch`、`generate_ai_depth_mask`、`list_luts`、`list_master_luts`、`import_luts`、`remove_lut`、`generate_lut_previews`、`is_image_cached`、`resolve_android_content_uri_name`）逐一经三元表达式/独立调用点确认真实使用。**0 死命令、0 未注册调用。**
+
+### 21.2 事件层（0 断链）
+
+- 前端 43 个 `listen` 事件 ↔ 后端 `emit` 全量匹配（补齐多行调用语法后 0 失配）；后端 50 个事件名均有前端监听。49 个事件 handler 无一空实现。
+
+### 21.3 空实现/简化实现专项（100% 复扫）
+
+- TODO/FIXME/todo!/unimplemented!/mock/占位扫描：前端 0 命中（`is_cloud_placeholder` 为 Immich 云占位体系、input `placeholder` 为 UI 属性）；Rust 仅 2 处既有 FIXME（TIFF 元数据写入受 little_exif 上游限制、culling 720px 分析尺寸调参），与历史记录一致。
+- 空函数体仅 2 处，均为合法平台桩：`immich/config.rs restrict_permissions`（`#[cfg(not(unix))]`）与 `lib.rs register_exit_handler`（`#[cfg(not(target_os = "macos"))]`）。
+- `disabled={true}` 硬编码 0 命中；常量返回命令（恒 `Ok(bool/vec![])` 无逻辑）0 命中；`estimate_export_sizes` / `get_storage_usage` 等抽查均为真实实现。
+
+### 21.4 配置与模块完整性
+
+- 快捷键：`KEYBIND_DEFINITIONS` 58 项 ↔ `useKeyboardShortcuts` 58 个 handler **1:1 全匹配**。
+- 组件/hooks/store/utils 全部文件被引用挂载（0 孤儿文件）；`AppSettings` TS ↔ Rust 字段全量对齐（Rust 侧 7 个后端消费字段 `thumbnail_worker_threads`/`image_cache_size`/`raw_preprocessing_*`/`apply_preprocessing_to_non_raws`/`use_apple_raw9` 均有 unwrap_or 消费点，`group_associated_files` 为 `legacy + skip_serializing` 兼容字段）。
+- i18n：15 locale 与 en 基准键集比对 0 缺失（CJK 4 语言按 CLDR 规则无需 `_one`，extract `--ci` dry-run exit 0）；`i18n:runtime-check` exit 0（1554 复数解析 + 26484 占位符校验）。
+- F-01～F-08 抽查复核：F-02 colorSpace 导出链、F-03 追色入口、F-04 精修算子、F-05 液化防抖/代际、F-06 PBR Neutral（shader `tonemapper_mode == 2u` + CPU 兜底 + 设置三档）、F-08 Studio（视图接线 + ExportImages 8 参数与 ExportPanel 同形）全部在位。
+
+### 21.5 验证（本沙箱环境）
+
+- `npx tsc --noEmit`：0 错误；`npm run build`（tsc + vite）：成功；`npx eslint .`：0 error（891 条存量风格告警）。
+- Rust：`rust-toolchain.toml` 钉 1.98（镜像源无此版本），本沙箱以 **1.99.0** 复核 —— `cargo check` exit 0；`cargo clippy --all-targets` **0 告警**；`cargo test` **12 passed / 0 failed**。`build.rs` 的 onnxruntime 下载在受限网络下可经 `RAPIDRAW_RUNTIME_DIR` 指向本地副本（SHA256 校验通过）绕过。
+- 本轮未修改任何代码；工作区保持干净。
