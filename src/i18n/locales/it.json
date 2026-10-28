@@ -913,6 +913,19 @@
         "undo": "Annulla (Ctrl+Z) o Cronologia (Tasto destro)"
       },
       "vc": "CV"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "Look pellicola",
+        "master": "Ricette master"
+      },
+      "amount": "Intensità",
+      "close": "Chiudi",
+      "filmHint": "Scegli un look pellicola integrato e applicalo direttamente alla foto corrente.",
+      "loadingLuts": "Caricamento LUT...",
+      "missingLut": "Nessun LUT trovato per {{name}}; sono stati applicati solo i parametri colore.",
+      "openTooltip": "Ricette master e pellicola",
+      "title": "Ricette"
     }
   },
   "export": {

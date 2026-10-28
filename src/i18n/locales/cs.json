@@ -68,7 +68,8 @@
       "vibrance": "Živost",
       "wbPickerTooltip": "Výběr vyvážení bílé",
       "wbPickerWgpuDisabled": "Výběr vyvážení bílé: zakažte WGPU v nastavení.",
-      "whiteBalance": "Vyvážení bílé"
+      "whiteBalance": "Vyvážení bílé",
+      "kelvinModeTooltip": "Zobrazit teplotu v Kelvinech"
     },
     "curves": {
       "channelTitle": "{{channel}} kanál",
@@ -891,6 +892,19 @@
         "undo": "Zpět (Ctrl+Z) nebo Historie (kliknutí pravým tlačítkem)"
       },
       "vc": "VC"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "Filmové vzhledy",
+        "master": "Mistrovské recepty"
+      },
+      "amount": "Intenzita",
+      "close": "Zavřít",
+      "filmHint": "Vyberte vestavěný filmový vzhled a použijte jej přímo na aktuální fotografii.",
+      "loadingLuts": "Načítání LUT...",
+      "missingLut": "Pro {{name}} nebyl nalezen LUT; byly použity pouze barevné parametry.",
+      "openTooltip": "Mistrovské a filmové recepty",
+      "title": "Recepty"
     }
   },
   "export": {

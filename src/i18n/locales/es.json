@@ -911,6 +911,19 @@
         "undo": "Deshacer (Ctrl+Z) o Historial (Clic derecho)"
       },
       "vc": "CV"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "Looks de película",
+        "master": "Recetas maestras"
+      },
+      "amount": "Intensidad",
+      "close": "Cerrar",
+      "filmHint": "Elige un look de película integrado y aplícalo directamente a la foto actual.",
+      "loadingLuts": "Cargando LUT...",
+      "missingLut": "No se encontró LUT para {{name}}; solo se aplicaron los parámetros de color.",
+      "openTooltip": "Recetas maestras y de película",
+      "title": "Recetas"
     }
   },
   "export": {

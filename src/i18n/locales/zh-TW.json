@@ -890,6 +890,19 @@
         "undo": "復原（Ctrl+Z）或歷史記錄（右鍵單擊）"
       },
       "vc": "VC"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "底片配方",
+        "master": "大師配方"
+      },
+      "amount": "強度",
+      "close": "關閉",
+      "filmHint": "從內建底片預設中選擇一款，直接套用到目前照片。",
+      "loadingLuts": "正在載入 LUT...",
+      "missingLut": "找不到 {{name}} 的 LUT 檔案，已僅套用色彩參數。",
+      "openTooltip": "大師配方與底片配方",
+      "title": "配方"
     }
   },
   "export": {

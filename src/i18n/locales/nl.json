@@ -68,7 +68,8 @@
       "vibrance": "Levendigheid",
       "wbPickerTooltip": "Witbalans pipet",
       "wbPickerWgpuDisabled": "WB-pipet: Schakel WGPU uit in instellingen.",
-      "whiteBalance": "Witbalans"
+      "whiteBalance": "Witbalans",
+      "kelvinModeTooltip": "Temperatuur in Kelvin tonen"
     },
     "curves": {
       "channelTitle": "{{channel}} kanaal",
@@ -254,7 +255,11 @@
       "resetAdjustments": "Aanpassingen herstellen",
       "stitchPanorama": "Panorama samenvoegen",
       "tagging": "Tags toevoegen",
-      "undo": "Ongedaan maken"
+      "undo": "Ongedaan maken",
+      "flag": "Vlag",
+      "flagPick": "Gekozen",
+      "flagReject": "Afgewezen",
+      "unflagged": "Geen vlag"
     },
     "folders": {
       "changeIcon": "Pictogram wijzigen",
@@ -277,7 +282,8 @@
     "library": {
       "addCopiedToAlbum_one": "Gekopieerde afbeelding aan album toevoegen",
       "addCopiedToAlbum_other": "{{count}} gekopieerde afbeeldingen aan album toevoegen",
-      "refreshView": "Weergave vernieuwen"
+      "refreshView": "Weergave vernieuwen",
+      "deleteRejected": "Afgewezen afbeeldingen verwijderen"
     },
     "merge": {
       "focusStack": "Focusstapeling",
@@ -884,6 +890,19 @@
         "undo": "Ongedaan maken (Ctrl+Z) of geschiedenis (rechtermuisknop)"
       },
       "vc": "VK"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "Filmlooks",
+        "master": "Masterrecepten"
+      },
+      "amount": "Intensiteit",
+      "close": "Sluiten",
+      "filmHint": "Kies een ingebouwde filmlook en pas deze direct toe op de huidige foto.",
+      "loadingLuts": "LUT's laden...",
+      "missingLut": "Geen LUT gevonden voor {{name}}; alleen de kleurparameters zijn toegepast.",
+      "openTooltip": "Master- en filmrecepten",
+      "title": "Recepten"
     }
   },
   "export": {
@@ -1180,6 +1199,12 @@
         "all": "Alle typen",
         "nonRawOnly": "Alleen niet-RAW",
         "rawOnly": "Alleen RAW"
+      },
+      "flag": {
+        "all": "Alle afbeeldingen",
+        "excludeRejected": "Afgewezen verbergen",
+        "picked": "Gekozen",
+        "rejected": "Afgewezen"
       }
     },
     "folders": {
@@ -1272,7 +1297,8 @@
         "sortDescending": "Aflopend sorteren",
         "thumbnailFit": "Miniatuur aanpassen",
         "thumbnailSize": "Miniatuurgrootte",
-        "title": "Weergaveopties"
+        "title": "Weergaveopties",
+        "filterByFlag": "Filteren op vlag"
       }
     },
     "items": {
@@ -1287,7 +1313,8 @@
       "tooltipFocalLength": "Brandpuntsafstand",
       "tooltipIso": "ISO",
       "tooltipShutterSpeed": "Sluitertijd",
-      "tooltipVirtualCopy": "Virtuele kopie"
+      "tooltipVirtualCopy": "Virtuele kopie",
+      "rejected": "Afgewezen"
     },
     "jobs": {
       "active": "Bezig",
@@ -1401,6 +1428,15 @@
       "done": "Klaar: {{n}} afbeeldingen geëxporteerd",
       "exportCancelled": "Export geannuleerd",
       "failed": "Mislukt"
+    },
+    "reject": {
+      "deleteConfirm": "Afgewezen verwijderen",
+      "deleteMessage_one": "Weet je zeker dat je {{count}} afgewezen afbeelding wilt verwijderen? Deze wordt naar de prullenbak verplaatst.",
+      "deleteMessage_other": "Weet je zeker dat je {{count}} afgewezen afbeeldingen wilt verwijderen? Deze worden naar de prullenbak verplaatst.",
+      "deleteTitle": "Afgewezen afbeeldingen verwijderen",
+      "noneToDelete": "Er zijn geen afgewezen afbeeldingen om te verwijderen.",
+      "virtualCopiesWarning_one": "{{count}} virtuele kopie die niet is afgewezen, wordt ook verwijderd omdat het origineel is afgewezen.",
+      "virtualCopiesWarning_other": "{{count}} virtuele kopieën die niet zijn afgewezen, worden ook verwijderd omdat hun originelen zijn afgewezen."
     }
   },
   "masks": {
@@ -1896,7 +1932,11 @@
         "zoom_in": "Inzoomen",
         "zoom_in_step": "Inzoomen (stap voor stap)",
         "zoom_out": "Uitzoomen",
-        "zoom_out_step": "Uitzoomen (stap voor stap)"
+        "zoom_out_step": "Uitzoomen (stap voor stap)",
+        "delete_rejected": "Afgewezen bestand(en) verwijderen",
+        "toggle_pick": "Kiesvlag aan/uit",
+        "toggle_reject": "Afwijzingsvlag aan/uit",
+        "unflag": "Vlag verwijderen"
       },
       "sections": {
         "editing": "Bewerken",
@@ -2280,6 +2320,10 @@
         "showClipping": "Uitknipwaarschuwingen weergeven",
         "vectorscope": "Vectoroscoop"
       }
+    },
+    "flags": {
+      "togglePick": "Kiesvlag aan/uit",
+      "toggleReject": "Afwijzingsvlag aan/uit"
     }
   }
 }

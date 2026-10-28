@@ -890,6 +890,19 @@
         "undo": "Rückgängig (Strg+Z) oder Verlauf (Rechtsklick)"
       },
       "vc": "VK"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "Filmlooks",
+        "master": "Master-Rezepte"
+      },
+      "amount": "Stärke",
+      "close": "Schließen",
+      "filmHint": "Wähle einen integrierten Filmlook und wende ihn direkt auf das aktuelle Foto an.",
+      "loadingLuts": "LUTs werden geladen...",
+      "missingLut": "Keine LUT für {{name}} gefunden; es wurden nur die Farbparameter angewendet.",
+      "openTooltip": "Master- und Film-Rezepte",
+      "title": "Rezepte"
     }
   },
   "export": {

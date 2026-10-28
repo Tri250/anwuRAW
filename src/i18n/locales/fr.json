@@ -911,6 +911,19 @@
         "undo": "Annuler (Ctrl+Z) ou Historique (Clic-droit)"
       },
       "vc": "CV"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "Rendus film",
+        "master": "Recettes maître"
+      },
+      "amount": "Intensité",
+      "close": "Fermer",
+      "filmHint": "Choisissez un rendu film intégré et appliquez-le directement à la photo en cours.",
+      "loadingLuts": "Chargement des LUT...",
+      "missingLut": "Aucun LUT trouvé pour {{name}} ; seuls les paramètres de couleur ont été appliqués.",
+      "openTooltip": "Recettes maître et film",
+      "title": "Recettes"
     }
   },
   "export": {
@@ -1174,7 +1187,8 @@
       "syncZoomAndPan": "Synchroniser le zoom et le panoramique",
       "tags": "Tags",
       "toggleFit": "Basculer 1:1 / Ajuster",
-      "vc": "CV"
+      "vc": "CV",
+      "shutterSpeed": "Vitesse d'obturation"
     },
     "filterExit": {
       "hiddenSingle": "{{name}} ne correspond plus au filtre",

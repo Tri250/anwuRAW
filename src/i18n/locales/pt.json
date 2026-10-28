@@ -911,6 +911,19 @@
         "undo": "Desfazer (Ctrl+Z) ou Histórico (Botão Direito)"
       },
       "vc": "CV"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "Visuais de filme",
+        "master": "Receitas master"
+      },
+      "amount": "Intensidade",
+      "close": "Fechar",
+      "filmHint": "Escolha um visual de filme integrado e aplique-o diretamente à foto atual.",
+      "loadingLuts": "Carregando LUTs...",
+      "missingLut": "Nenhum LUT encontrado para {{name}}; apenas os parâmetros de cor foram aplicados.",
+      "openTooltip": "Receitas master e de filme",
+      "title": "Receitas"
     }
   },
   "export": {

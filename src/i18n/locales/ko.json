@@ -890,6 +890,19 @@
         "undo": "실행 취소 (Ctrl+Z) 또는 기록 (우클릭)"
       },
       "vc": "VC"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "필름 룩",
+        "master": "마스터 레시피"
+      },
+      "amount": "강도",
+      "close": "닫기",
+      "filmHint": "내장 필름 룩을 선택해 현재 사진에 바로 적용합니다.",
+      "loadingLuts": "LUT 불러오는 중...",
+      "missingLut": "{{name}}의 LUT를 찾을 수 없어 색상 파라미터만 적용했습니다.",
+      "openTooltip": "마스터 및 필름 레시피",
+      "title": "레시피"
     }
   },
   "export": {

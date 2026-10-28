@@ -932,6 +932,19 @@
         "undo": "Cofnij (Ctrl+Z) lub Historia (Prawy przycisk)"
       },
       "vc": "VC"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "Looki filmowe",
+        "master": "Przepisy mistrzowskie"
+      },
+      "amount": "Intensywność",
+      "close": "Zamknij",
+      "filmHint": "Wybierz wbudowany look filmowy i zastosuj go bezpośrednio do bieżącego zdjęcia.",
+      "loadingLuts": "Ładowanie LUT...",
+      "missingLut": "Nie znaleziono LUT dla {{name}}; zastosowano tylko parametry koloru.",
+      "openTooltip": "Przepisy mistrzowskie i filmowe",
+      "title": "Przepisy"
     }
   },
   "export": {

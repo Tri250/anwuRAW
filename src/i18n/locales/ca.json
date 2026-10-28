@@ -891,6 +891,19 @@
         "undo": "Desfer (Ctrl+Z) o Historial (Clic dret)"
       },
       "vc": "CV"
+    },
+    "masterRecipes": {
+      "tabs": {
+        "film": "Aspectes de pel·lícula",
+        "master": "Receptes mestres"
+      },
+      "amount": "Intensitat",
+      "close": "Tanca",
+      "filmHint": "Tria un aspecte de pel·lícula integrat i aplica'l directament a la foto actual.",
+      "loadingLuts": "S'estan carregant les LUT...",
+      "missingLut": "No s'ha trobat cap LUT per a {{name}}; només s'han aplicat els paràmetres de color.",
+      "openTooltip": "Receptes mestres i de pel·lícula",
+      "title": "Receptes"
     }
   },
   "export": {
