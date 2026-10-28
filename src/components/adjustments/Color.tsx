@@ -7,7 +7,14 @@ import { open } from '@tauri-apps/plugin-dialog';
 import Slider, { SliderChangeEvent } from '../ui/Slider';
 import ColorWheel from '../ui/ColorWheel';
 import { ColorAdjustment, ColorCalibration, HueSatLum, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
-import { Adjustments, ColorGrading, getAdjustmentToolOrder, getHiddenAdjustmentTools } from '../../utils/adjustments';
+import {
+  Adjustments,
+  ColorGrading,
+  getActiveTools,
+  getAdjustmentToolOrder,
+  getHiddenAdjustmentTools,
+  setToolActive,
+} from '../../utils/adjustments';
 import { AppSettings, Invokes } from '../ui/AppProperties';
 import { useEditorStore } from '../../store/useEditorStore';
 import Text from '../ui/Text';
@@ -201,18 +208,22 @@ const ColorGradingPanel = ({ adjustments, setAdjustments, onDragStateChange }: C
         targetPath: selectedImage.path,
       });
       const patch = (result as { adjustments?: Record<string, any> })?.adjustments || {};
-      setAdjustments((prev: Partial<Adjustments>) => ({
-        ...prev,
-        ...(patch.colorGrading
-          ? {
-              colorGrading: {
-                ...(prev.colorGrading || INITIAL_ADJUSTMENTS.colorGrading),
-                ...patch.colorGrading,
-              },
-            }
-          : {}),
-        ...(patch.curves ? { curves: { ...(prev.curves || INITIAL_ADJUSTMENTS.curves), ...patch.curves } } : {}),
-      }));
+      setAdjustments((prev: Partial<Adjustments>) => {
+        const next: Partial<Adjustments> = {};
+        if (patch.colorGrading) {
+          next.colorGrading = { ...(prev.colorGrading || INITIAL_ADJUSTMENTS.colorGrading), ...patch.colorGrading };
+        }
+        if (patch.curves) {
+          next.curves = { ...(prev.curves || INITIAL_ADJUSTMENTS.curves), ...patch.curves };
+        }
+        // Matching writes those two sections; enable them so the result is
+        // visible even when the user had previously collapsed/disabled them.
+        const writtenTools = Object.keys(next);
+        const activeTools = writtenTools.length
+          ? writtenTools.reduce((tools, id) => setToolActive(tools, id, true), getActiveTools(prev))
+          : undefined;
+        return { ...prev, ...next, ...(activeTools ? { activeTools } : {}) };
+      });
       const reduction = Math.round(
         (result as { metrics?: { deltaEReduction?: number } })?.metrics?.deltaEReduction ?? 0,
       );
