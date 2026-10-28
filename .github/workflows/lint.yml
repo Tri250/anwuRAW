@@ -23,15 +23,12 @@ jobs:
 
       - name: Check Formatting
         run: npm run format:check
-        continue-on-error: true
 
       - name: Run ESLint
         run: npm run lint
-        continue-on-error: true
 
       - name: Check Translation Sync
         run: npm run i18n:check
-        continue-on-error: true
 
   fmt:
     name: cargo fmt
