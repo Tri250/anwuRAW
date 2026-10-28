@@ -229,10 +229,7 @@ fn analyze_image(img: &DynamicImage) -> ImageStats {
     let enc_f32 = thumb.to_rgb32f();
     let pixel_count = (width * height) as f64;
 
-    let enc_pixels: Vec<[f32; 3]> = enc_f32
-        .chunks_exact(3)
-        .map(|c| [c[0], c[1], c[2]])
-        .collect();
+    let enc_pixels: Vec<[f32; 3]> = enc_f32.as_chunks::<3>().0.iter().copied().collect();
 
     let lin_pixels: Vec<[f64; 3]> = enc_pixels
         .iter()
@@ -343,10 +340,10 @@ fn fit_curves_quantile(
         // x 严格递增、y 单调不减整理
         let mut mono: Vec<[f64; 2]> = Vec::with_capacity(full.len());
         for &[x, y] in &full {
-            if let Some(&[lx, ly]) = mono.last() {
-                if x <= lx + 0.5 || y < ly - 0.5 {
-                    continue;
-                }
+            if let Some(&[lx, ly]) = mono.last()
+                && (x <= lx + 0.5 || y < ly - 0.5)
+            {
+                continue;
             }
             mono.push([x, y]);
         }

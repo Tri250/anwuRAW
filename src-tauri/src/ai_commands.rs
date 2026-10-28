@@ -757,6 +757,7 @@ pub async fn generate_ai_face_mask(
 /// F-04d 颈脸肤色统一：对比 faceSkin 与 bodySkin 区域的线性域均值，
 /// 返回可将 bodySkin 向 faceSkin 对齐的 colorGrading.global 滑杆补丁。
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn compute_skin_unify(
     js_adjustments: serde_json::Value,
     path: String,
