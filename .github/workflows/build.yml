@@ -252,6 +252,33 @@ jobs:
           fi
           echo "platform=${patched_platform}" >> $GITHUB_OUTPUT
 
+      # ort-sys downloads ONNX Runtime from cdn.pyke.io during the build; that
+      # CDN intermittently times out on the ubuntu-22.04 runners (both v1.6.9
+      # desktop jobs failed on it twice while ubuntu-24.04 succeeded). Pre-fetch
+      # it with retries here: the download is persisted in the Rust cache, so
+      # the tauri build itself never needs network I/O for onnxruntime.
+      - name: Pre-fetch ONNX Runtime (Linux desktop)
+        if: ${{ inputs.mobile == '' && runner.os == 'Linux' }}
+        shell: bash
+        timeout-minutes: 45
+        run: |
+          set -uo pipefail
+          cd src-tauri
+          ok=0
+          for attempt in 1 2 3 4; do
+            echo "::group::ort-sys pre-fetch (attempt $attempt)"
+            if cargo build -p ort-sys --release; then
+              ok=1
+            fi
+            echo "::endgroup::"
+            [ "$ok" = "1" ] && break
+            sleep 30
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::Failed to fetch onnxruntime after 4 attempts"
+            exit 1
+          fi
+
       - id: tauri-build
         name: Build with tauri-action
         if: ${{ inputs.mobile == '' }}
