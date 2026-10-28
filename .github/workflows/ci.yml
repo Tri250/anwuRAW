@@ -35,7 +35,7 @@ jobs:
       build-args: ${{ matrix.args }}
       asset-prefix: ${{ matrix.asset-prefix }}
     secrets: inherit
-    # CI only compiles and uploads build artifacts; the release job grants the
-    # write token needed to attach bundles to a release.
+    # Must match build.yml's `contents: write`; a reusable workflow cannot be
+    # granted fewer permissions than the called job requests (startup_failure).
     permissions:
-      contents: read
+      contents: write
