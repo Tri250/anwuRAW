@@ -36,7 +36,7 @@
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhCRjI5QzA0RjA3RjY3QTgKUldTb1ozL3dCSnp5aStlbWJLMWVEbERmYnc4a2ZOSkF0U3BEZ3FjN1ZOM1EySGJNTnppMFplMmUK",
       "endpoints": ["https://github.com/Tri250/anwuRAW/releases/latest/download/latest.json"],
       "windows": {
-        "installMode": "passover"
+        "installMode": "passive"
       }
     }
   },
