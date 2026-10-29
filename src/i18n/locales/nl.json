@@ -2213,9 +2213,9 @@
       "failed": "Updatecontrole mislukt: {{error}}",
       "installing": "Installeren en herstarten…",
       "lastChecked": "Laatst gecontroleerd: {{time}}",
-      "timeout": "De updatecontrole is na 20 seconden verlopen.",
       "networkHint": "Blijft dit falen, controleer dan netwerk- of proxy-instellingen — updates worden gehost op GitHub, dat in sommige regio’s onbereikbaar is.",
       "releaseReady": "De update wordt toegepast zodra de download is voltooid.",
+      "timeout": "De updatecontrole is na 20 seconden verlopen.",
       "title": "Software-updates",
       "upToDate": "Je hebt al de nieuwste versie ({{version}})."
     }

@@ -2255,9 +2255,9 @@
       "failed": "Échec de la vérification des mises à jour : {{error}}",
       "installing": "Installation et redémarrage…",
       "lastChecked": "Dernière vérification : {{time}}",
-      "timeout": "La vérification des mises à jour a expiré après 20 secondes.",
       "networkHint": "Si l’échec persiste, vérifiez le réseau ou le proxy — les mises à jour sont hébergées sur GitHub, inaccessible dans certaines régions.",
       "releaseReady": "La mise à jour sera appliquée une fois le téléchargement terminé.",
+      "timeout": "La vérification des mises à jour a expiré après 20 secondes.",
       "title": "Mises à jour logicielles",
       "upToDate": "Vous utilisez la dernière version ({{version}})."
     }

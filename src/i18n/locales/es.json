@@ -2254,9 +2254,9 @@
       "failed": "Error al buscar actualizaciones: {{error}}",
       "installing": "Instalando y reiniciando…",
       "lastChecked": "Última comprobación: {{time}}",
-      "timeout": "La comprobación de actualizaciones agotó el tiempo de espera tras 20 segundos.",
       "networkHint": "Si sigue fallando, revise la red o el proxy: las actualizaciones se alojan en GitHub, inaccesible en algunas regiones.",
       "releaseReady": "La actualización se aplicará cuando termine la descarga.",
+      "timeout": "La comprobación de actualizaciones agotó el tiempo de espera tras 20 segundos.",
       "title": "Actualizaciones de software",
       "upToDate": "Ya tienes la versión más reciente ({{version}})."
     }

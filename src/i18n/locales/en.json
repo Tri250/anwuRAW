@@ -2213,9 +2213,9 @@
       "failed": "Update check failed: {{error}}",
       "installing": "Installing and restarting…",
       "lastChecked": "Last checked: {{time}}",
-      "timeout": "The update check timed out after 20 seconds.",
       "networkHint": "If this keeps failing, check your network or proxy settings — update files are served from GitHub, which is unreachable in some regions.",
       "releaseReady": "The update will be applied after download.",
+      "timeout": "The update check timed out after 20 seconds.",
       "title": "Software Updates",
       "upToDate": "You are on the latest version ({{version}})."
     }

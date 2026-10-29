@@ -2254,9 +2254,9 @@
       "failed": "Verifica degli aggiornamenti non riuscita: {{error}}",
       "installing": "Installazione e riavvio…",
       "lastChecked": "Ultimo controllo: {{time}}",
-      "timeout": "Il controllo degli aggiornamenti è scaduto dopo 20 secondi.",
       "networkHint": "Se l’errore persiste, controllare rete o proxy — gli aggiornamenti sono ospitati su GitHub, irraggiungibile in alcune regioni.",
       "releaseReady": "L'aggiornamento verrà applicato al termine del download.",
+      "timeout": "Il controllo degli aggiornamenti è scaduto dopo 20 secondi.",
       "title": "Aggiornamenti software",
       "upToDate": "Hai già l'ultima versione ({{version}})."
     }

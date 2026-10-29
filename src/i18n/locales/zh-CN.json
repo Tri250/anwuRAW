@@ -2212,9 +2212,9 @@
       "failed": "检查更新失败：{{error}}",
       "installing": "正在安装并重启…",
       "lastChecked": "最近检查：{{time}}",
-      "timeout": "检查更新超时（超过 20 秒）。",
       "networkHint": "若持续失败，请检查网络或代理设置——更新文件托管于 GitHub，部分地区可能无法直接访问。",
       "releaseReady": "更新将在下载完成后自动应用。",
+      "timeout": "检查更新超时（超过 20 秒）。",
       "title": "软件更新",
       "upToDate": "已是最新版本（{{version}}）。"
     }
