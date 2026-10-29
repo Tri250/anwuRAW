@@ -221,7 +221,9 @@ const SettingItem = ({ children, description, label }: SettingItemProps) => (
     </Text>
     {children}
     {description && (
-      <Text variant={TextVariants.small} className="mt-2">
+      // leading-relaxed keeps multi-line CJK descriptions readable on the
+      // higher-DPI Android screen without changing the desktop rhythm.
+      <Text variant={TextVariants.small} className="mt-2 leading-relaxed">
         {description}
       </Text>
     )}
@@ -253,7 +255,7 @@ const AiProviderSwitch = ({ selectedProvider, onProviderChange }: AiProviderSwit
           key={provider.id}
           onClick={() => onProviderChange(provider.id)}
           className={clsx(
-            'relative flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+            'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors',
             {
               'text-text-primary hover:bg-surface': selectedProvider !== provider.id,
               'text-button-text': selectedProvider === provider.id,
@@ -269,9 +271,9 @@ const AiProviderSwitch = ({ selectedProvider, onProviderChange }: AiProviderSwit
               transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
             />
           )}
-          <span className="relative z-10 flex items-center">
-            <provider.icon size={16} className="mr-2" />
-            {provider.label}
+          <span className="relative z-10 flex items-center min-w-0">
+            <provider.icon size={16} className="mr-2 shrink-0" />
+            <span className="truncate">{provider.label}</span>
           </span>
         </button>
       ))}
@@ -428,7 +430,7 @@ const CanvasInputModeSwitch = ({ mode, onModeChange }: CanvasInputModeSwitchProp
           key={item.id}
           onClick={() => onModeChange(item.id as 'mouse' | 'trackpad')}
           className={clsx(
-            'relative flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+            'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors',
             {
               'text-text-primary hover:bg-surface': mode !== item.id,
               'text-button-text': mode === item.id,
@@ -444,9 +446,9 @@ const CanvasInputModeSwitch = ({ mode, onModeChange }: CanvasInputModeSwitchProp
               transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
             />
           )}
-          <span className="relative z-10 flex items-center">
-            <item.icon size={16} className="mr-2" />
-            {item.label}
+          <span className="relative z-10 flex items-center min-w-0">
+            <item.icon size={16} className="mr-2 shrink-0" />
+            <span className="truncate">{item.label}</span>
           </span>
         </button>
       ))}
@@ -477,7 +479,7 @@ const PreviewModeSwitch = ({ mode, onModeChange }: PreviewModeSwitchProps) => {
           key={item.id}
           onClick={() => onModeChange(item.id as 'static' | 'dynamic')}
           className={clsx(
-            'relative flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+            'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors',
             {
               'text-text-primary hover:bg-surface': mode !== item.id,
               'text-button-text': mode === item.id,
@@ -493,9 +495,9 @@ const PreviewModeSwitch = ({ mode, onModeChange }: PreviewModeSwitchProps) => {
               transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
             />
           )}
-          <span className="relative z-10 flex items-center">
-            <item.icon size={16} className="mr-2" />
-            {item.label}
+          <span className="relative z-10 flex items-center min-w-0">
+            <item.icon size={16} className="mr-2 shrink-0" />
+            <span className="truncate">{item.label}</span>
           </span>
         </button>
       ))}
@@ -1104,7 +1106,7 @@ export default function SettingsPanel({
                     categoryScrollRef.current?.scrollTo({ top: 0 });
                   }}
                   className={clsx(
-                    'relative flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                    'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors',
                     {
                       'text-text-primary hover:bg-surface': activeCategory !== category.id,
                       'text-button-text': activeCategory === category.id,
@@ -1120,7 +1122,7 @@ export default function SettingsPanel({
                       transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                     />
                   )}
-                  <span className="relative z-10 flex items-center">
+                  <span className="relative z-10 flex items-center min-w-0">
                     <category.icon size={16} className="mr-2 shrink-0" />
                     <span className="truncate">{category.label}</span>
                   </span>
@@ -1140,7 +1142,7 @@ export default function SettingsPanel({
                   transition={{ duration: 0.2 }}
                   className="space-y-10"
                 >
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.general.title')}
                     </Text>
@@ -1318,7 +1320,7 @@ export default function SettingsPanel({
                     </div>
                   </div>
 
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.updater.title')}
                     </Text>
@@ -1327,7 +1329,7 @@ export default function SettingsPanel({
                     </div>
                   </div>
 
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.processing.ai.title')}
                     </Text>
@@ -1532,7 +1534,7 @@ export default function SettingsPanel({
                     </div>
                   </div>
 
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.lenses.title')}
                     </Text>
@@ -1608,7 +1610,7 @@ export default function SettingsPanel({
 
                   <ImmichSettings />
 
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.tagging.title')}
                     </Text>
@@ -1828,7 +1830,7 @@ export default function SettingsPanel({
                     </div>
                   </div>
 
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-4">
                       {t('settings.thanks.title')}
                     </Text>
@@ -1845,7 +1847,7 @@ export default function SettingsPanel({
                   transition={{ duration: 0.2 }}
                   className="space-y-10"
                 >
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.processing.title')}
                     </Text>
@@ -2231,7 +2233,7 @@ export default function SettingsPanel({
                     </div>
                   </div>
 
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.processing.preprocessing.title')}
                     </Text>
@@ -2451,7 +2453,7 @@ export default function SettingsPanel({
                     </div>
                   </div>
 
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.data.title')}
                     </Text>
@@ -2477,7 +2479,7 @@ export default function SettingsPanel({
                   transition={{ duration: 0.2 }}
                   className="space-y-10"
                 >
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.controls.title')}
                     </Text>
@@ -2525,7 +2527,7 @@ export default function SettingsPanel({
                     </div>
                   </div>
 
-                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.controls.keyboardTitle')}
                     </Text>

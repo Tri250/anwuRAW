@@ -29,18 +29,44 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
+
+  /*
+   * Touch unification (Android WebView): the gray tap flash that Chromium
+   * paints over buttons/links fights the app's own hover/active styling, and
+   * the legacy double-tap-zoom delay makes quick taps on controls feel laggy.
+   * All custom feedback already comes from hover/active classes.
+   */
+  button,
+  a,
+  label,
+  [role='button'] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /*
+   * Keep browser-level gestures (pull-to-refresh, overscroll glow) out of the
+   * app: settings and panels scroll internally, and the Android WebView would
+   * otherwise trigger pull-to-refresh from those areas.
+   */
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
 }
 
 @utility slider-input {
   &::-webkit-slider-thumb {
-    @apply h-4 w-4 appearance-none rounded-full bg-accent;
+    /* h-5/w-5: a 20px thumb stays comfortable to drag on touch screens
+       (Android WebView) while remaining proportional on desktop. */
+    @apply h-5 w-5 appearance-none rounded-full bg-accent;
     transition:
       transform 150ms ease-in-out,
       background-color 400ms ease-in-out;
   }
 
   &::-moz-range-thumb {
-    @apply h-4 w-4 rounded-full bg-accent border-none;
+    @apply h-5 w-5 rounded-full bg-accent border-none;
     transition:
       transform 150ms ease-in-out,
       background-color 400ms ease-in-out;
@@ -175,27 +201,8 @@
 }
 
 @layer components {
-  .slider-input::-webkit-slider-thumb {
-    @apply h-4 w-4 appearance-none rounded-full bg-accent;
-    transition:
-      transform 150ms ease-in-out,
-      background-color 400ms ease-in-out;
-  }
-
-  .slider-input::-moz-range-thumb {
-    @apply h-4 w-4 rounded-full bg-accent border-none;
-    transition:
-      transform 150ms ease-in-out,
-      background-color 400ms ease-in-out;
-  }
-
-  .slider-input.slider-thumb-active::-webkit-slider-thumb {
-    @apply scale-110;
-  }
-
-  .slider-input.slider-thumb-active::-moz-range-thumb {
-    @apply scale-110;
-  }
+  /* Slider thumbs are styled once in the @utility slider-input rule above
+     (utilities layer wins the cascade); keep a single source of truth. */
 
   .temperature-gradient-track {
     background: linear-gradient(to right, #2d4a74, #4993b1, #8a8a8a, #c7c549, #c7863c) !important;
