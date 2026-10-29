@@ -141,7 +141,10 @@ jobs:
   verify:
     name: Verify release assets
     needs: [precheck, release]
-    if: ${{ !cancelled() && needs.release.result == 'success' }}
+    # Runs after a full matrix build, or when the precheck skipped the matrix
+    # because the release already had every artifact — the published release
+    # always gets a final gate either way.
+    if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
       # Same as precheck: draft-release assets are invisible to read-only tokens.
