@@ -31,7 +31,10 @@ jobs:
     outputs:
       complete: ${{ steps.check.outputs.complete }}
     permissions:
-      contents: read
+      # contents:write is required to *see* draft releases: the assets API
+      # answers "Resource not accessible by integration" for read-only tokens
+      # while the release is still a draft. The job only reads.
+      contents: write
     steps:
       - uses: actions/checkout@v5
 
@@ -141,7 +144,8 @@ jobs:
     if: ${{ !cancelled() && needs.release.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # Same as precheck: draft-release assets are invisible to read-only tokens.
+      contents: write
     steps:
       - uses: actions/checkout@v5
 
