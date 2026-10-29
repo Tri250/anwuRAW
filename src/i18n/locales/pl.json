@@ -1853,6 +1853,8 @@
       "optimizationDesc": "Wybierz główne urządzenie wejściowe do przesuwania i przybliżania obszaru roboczego.",
       "pressKey": "Naciśnij klawisz... (Esc by anulować)",
       "resetDefaults": "Przywróć wszystkie domyślne",
+      "resetDefaultsMessage": "Spowoduje to przywrócenie wszystkich skrótów klawiszowych do domyślnych powiązań. Niestandardowe przypisania zostaną utracone.",
+      "resetDefaultsTitle": "Resetuj skróty klawiszowe",
       "speed": "Prędkość",
       "title": "Sterowanie myszą",
       "zoom": "Mnożnik szybkości przybliżania",
@@ -2170,6 +2172,7 @@
       },
       "nativeDpi": "Renderuj w natywnym DPI",
       "preprocessing": {
+        "amount": "Intensywność",
         "appleRaw9": "Silnik Apple RAW 9",
         "appleRaw9Desc": "Wywołuj pliki RAW za pomocą dekodera RAW 9 w Core Image od Apple, który przeprowadza demozaikowanie i odszumianie w jednym kroku w silniku Neural Engine. Wymaga systemu macOS 27 lub nowszego oraz obsługiwanego aparatu; nieobsługiwane pliki automatycznie korzystają z wbudowanego dekodera. Wolniejszy niż domyślny dekoder. Nie wpływa na miniatury.",
         "applyPreprocessing": "Zastosuj wstępne przetwarzanie do formatów innych niż RAW",

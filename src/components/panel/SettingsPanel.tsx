@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Cloud,
@@ -697,6 +697,7 @@ export default function SettingsPanel({
   });
   const [restartRequired, setRestartRequired] = useState(false);
   const [activeCategory, setActiveCategory] = useState('general');
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
   const [dpr, setDpr] = useState(() => (typeof window !== 'undefined' ? window.devicePixelRatio : 1));
 
   const settingCategories = useMemo(
@@ -792,26 +793,38 @@ export default function SettingsPanel({
     if (appSettings?.aiProvider !== aiProvider) {
       setAiProvider(appSettings?.aiProvider || 'cpu');
     }
-    setProcessingSettings({
+    setProcessingSettings((prev) => ({
       editorPreviewResolution: appSettings?.editorPreviewResolution || 1920,
       smallThumbnailResolution: appSettings?.smallThumbnailResolution || 480,
       mediumThumbnailResolution: appSettings?.mediumThumbnailResolution || 1280,
       rawHighlightCompression: appSettings?.rawHighlightCompression ?? 2.5,
       baselineExposure: appSettings?.baselineExposure ?? DEFAULT_BASELINE_EXPOSURE,
-      processingBackend: appSettings?.processingBackend || 'auto',
-      linuxGpuOptimization: appSettings?.linuxGpuOptimization ?? false,
       highResZoomMultiplier: appSettings?.highResZoomMultiplier || 1.0,
       useFullDpiRendering: appSettings?.useFullDpiRendering ?? false,
-      useWgpuRenderer: appSettings?.useWgpuRenderer ?? true,
-      thumbnailWorkerThreads: appSettings?.thumbnailWorkerThreads ?? 4,
+      // Restart-required edits stay local until "Save & Relaunch" persists
+      // them. Saving any unrelated setting re-emits appSettings, and syncing
+      // from it here would silently revert those pending edits and hide the
+      // restart banner — so keep the local values while a restart is pending.
+      processingBackend: restartRequired ? prev.processingBackend : appSettings?.processingBackend || 'auto',
+      linuxGpuOptimization: restartRequired
+        ? prev.linuxGpuOptimization
+        : appSettings?.linuxGpuOptimization ?? false,
+      useWgpuRenderer: restartRequired
+        ? prev.useWgpuRenderer
+        : appSettings?.useWgpuRenderer ?? (osPlatform === 'linux' || osPlatform === 'android' ? false : true),
+      thumbnailWorkerThreads: restartRequired
+        ? prev.thumbnailWorkerThreads
+        : appSettings?.thumbnailWorkerThreads ?? 4,
       imageCacheSize: appSettings?.imageCacheSize ?? 5,
       rawPreprocessingColorNr: appSettings?.rawPreprocessingColorNr ?? 0.5,
       rawPreprocessingSharpening: appSettings?.rawPreprocessingSharpening ?? 0.35,
       applyPreprocessingToNonRaws: appSettings?.applyPreprocessingToNonRaws ?? false,
       useAppleRaw9: appSettings?.useAppleRaw9 ?? false,
-    });
-    setRestartRequired(false);
-  }, [appSettings]);
+    }));
+    if (!restartRequired) {
+      setRestartRequired(false);
+    }
+  }, [appSettings, restartRequired, osPlatform]);
 
   useEffect(() => {
     invoke<string[]>('get_lensfun_makers').then(setLensMakers).catch(console.error);
@@ -908,12 +921,13 @@ export default function SettingsPanel({
   };
 
   const handleTestConnection = async () => {
-    if (!aiConnectorAddress) {
+    const trimmedAddress = aiConnectorAddress.trim();
+    if (!trimmedAddress) {
       return;
     }
     setTestStatus({ testing: true, message: t('settings.processing.ai.connector.testing'), success: null });
     try {
-      await invoke(Invokes.TestAIConnectorConnection, { address: aiConnectorAddress });
+      await invoke(Invokes.TestAIConnectorConnection, { address: trimmedAddress });
       setTestStatus({ testing: false, message: t('settings.processing.ai.connector.success'), success: true });
     } catch (err) {
       setTestStatus({ testing: false, message: t('settings.processing.ai.connector.failed'), success: false });
@@ -925,6 +939,17 @@ export default function SettingsPanel({
 
   const closeConfirmModal = () => {
     setConfirmModalState({ ...confirmModalState, isOpen: false });
+  };
+
+  const handleRequestKeybindReset = () => {
+    setConfirmModalState({
+      title: t('settings.controls.resetDefaultsTitle'),
+      message: t('settings.controls.resetDefaultsMessage'),
+      confirmText: t('settings.controls.resetDefaults'),
+      confirmVariant: 'destructive',
+      isOpen: true,
+      onConfirm: () => onSettingsChange({ ...appSettings, keybinds: {} }),
+    });
   };
 
   const handleAddShortcut = () => {
@@ -1029,7 +1054,12 @@ export default function SettingsPanel({
               {settingCategories.map((category) => (
                 <button
                   key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
+                  onClick={() => {
+                    setActiveCategory(category.id);
+                    // Show the top of the newly selected category instead of
+                    // keeping the previous tab's scroll offset.
+                    categoryScrollRef.current?.scrollTo({ top: 0 });
+                  }}
                   className={clsx(
                     'relative flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
                     {
@@ -1056,7 +1086,10 @@ export default function SettingsPanel({
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 -mr-2 custom-scrollbar">
+          <div
+            ref={categoryScrollRef}
+            className="flex-1 overflow-y-auto overflow-x-hidden pr-2 -mr-2 custom-scrollbar"
+          >
             <AnimatePresence mode="wait">
               {activeCategory === 'general' && (
                 <motion.div
@@ -1346,9 +1379,19 @@ export default function SettingsPanel({
                                     className="grow"
                                     id="ai-connector-address"
                                     onBlur={() =>
-                                      onSettingsChange({ ...appSettings, aiConnectorAddress: aiConnectorAddress })
+                                      onSettingsChange({
+                                        ...appSettings,
+                                        aiConnectorAddress: aiConnectorAddress.trim(),
+                                      })
                                     }
-                                    onChange={(e: any) => setAiConnectorAddress(e.target.value)}
+                                    onChange={(e: any) => {
+                                      setAiConnectorAddress(e.target.value);
+                                      // A stale success/failure from the previous
+                                      // address would be misleading while typing.
+                                      if (testStatus.message && !testStatus.testing) {
+                                        setTestStatus({ testing: false, message: '', success: null });
+                                      }
+                                    }}
                                     onKeyDown={(e: any) => e.stopPropagation()}
                                     placeholder="127.0.0.1:8188"
                                     type="text"
@@ -2178,7 +2221,7 @@ export default function SettingsPanel({
                         description={t('settings.processing.preprocessing.colorNrDesc')}
                       >
                         <Slider
-                          label={t('settings.tagging.amount')}
+                          label={t('settings.processing.preprocessing.amount')}
                           min={0}
                           max={1.0}
                           step={0.05}
@@ -2196,7 +2239,7 @@ export default function SettingsPanel({
                         description={t('settings.processing.preprocessing.sharpeningDesc')}
                       >
                         <Slider
-                          label={t('settings.tagging.amount')}
+                          label={t('settings.processing.preprocessing.amount')}
                           min={0}
                           max={1.0}
                           step={0.05}
@@ -2276,7 +2319,7 @@ export default function SettingsPanel({
                                   description={t('settings.processing.preprocessing.baselineExposureAmountDesc')}
                                 >
                                   <Slider
-                                    label={t('settings.tagging.amount')}
+                                    label={t('settings.processing.preprocessing.amount')}
                                     min={0}
                                     max={2}
                                     step={0.05}
@@ -2447,7 +2490,6 @@ export default function SettingsPanel({
                       {t('settings.controls.keyboardTitle')}
                     </Text>
                     <div className="space-y-8">
-                      {' '}
                       {KEYBIND_SECTIONS.map((section) => {
                         const sectionDefs = KEYBIND_DEFINITIONS.filter((d) => d.section === section.id);
                         const userKb = appSettings?.keybinds || {};
@@ -2472,7 +2514,7 @@ export default function SettingsPanel({
                         );
                       })}
                       <div className="flex justify-end mt-6">
-                        <Button variant="ghost" onClick={() => onSettingsChange({ ...appSettings, keybinds: {} })}>
+                        <Button variant="ghost" onClick={handleRequestKeybindReset}>
                           {t('settings.controls.resetDefaults')}
                         </Button>
                       </div>

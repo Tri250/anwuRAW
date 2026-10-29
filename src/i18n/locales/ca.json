@@ -1815,6 +1815,8 @@
       "optimizationDesc": "Trieu el dispositiu d'entrada principal que utilitzeu per desplaçar-vos i fer zoom al llenç.",
       "pressKey": "Premeu una tecla... (Esc per esborrar)",
       "resetDefaults": "Restablir-ho tot als valors per defecte",
+      "resetDefaultsMessage": "Això restaurarà totes les dreceres de teclat a la seva assignació predeterminada. Les assignacions personalitzades es perdran.",
+      "resetDefaultsTitle": "Restableix les dreceres de teclat",
       "speed": "Velocitat",
       "title": "Controls del ratolí",
       "zoom": "Multiplicador de velocitat del zoom",
@@ -2129,6 +2131,7 @@
       },
       "nativeDpi": "Renderitzar a la DPI nativa",
       "preprocessing": {
+        "amount": "Intensitat",
         "appleRaw9": "Motor Apple RAW 9",
         "appleRaw9Desc": "Revela els fitxers RAW amb el descodificador RAW 9 de Core Image d'Apple, que realitza el procés de demosaic i reducció de soroll en un sol pas al Neural Engine. Requereix macOS 27 o posterior i una càmera compatible; els fitxers no compatibles utilitzen automàticament el descodificador integrat. Més lent que el descodificador per defecte. Les miniatures no es veuen afectades.",
         "applyPreprocessing": "Aplicar preprocessament als No-RAW",

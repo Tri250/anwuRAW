@@ -495,10 +495,14 @@ export const useAppInitialization = ({
     });
 
     const fontFamily = appSettings?.fontFamily || 'poppins';
+    // Poppins has no CJK glyphs — Chinese/Japanese/Korean text always falls
+    // through to the next family, so name the platform fonts explicitly for a
+    // consistent look instead of leaving it to the browser default.
+    const cjkFallback = `'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif`;
     const fontStack =
       fontFamily === 'system'
-        ? '-apple-system, BlinkMacSystemFont, system-ui, sans-serif'
-        : "'Poppins', system-ui, sans-serif";
+        ? `-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', ${cjkFallback}`
+        : `'Poppins', system-ui, 'Segoe UI', ${cjkFallback}`;
     root.style.setProperty('--font-family', fontStack);
   }, [theme, appSettings?.fontFamily]);
 };

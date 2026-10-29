@@ -1777,6 +1777,8 @@
       "optimizationDesc": "Kies het primaire invoerapparaat dat u gebruikt om het canvas te pannen en te zoomen.",
       "pressKey": "Druk op een toets... (Esc om te wissen)",
       "resetDefaults": "Alles herstellen naar standaard",
+      "resetDefaultsMessage": "Dit herstelt alle sneltoetsen naar de standaardtoewijzing. Aangepaste toewijzingen gaan verloren.",
+      "resetDefaultsTitle": "Sneltoetsen resetten",
       "speed": "Snelheid",
       "title": "Muisbesturing",
       "zoom": "Zoomsnelheidsmultiplicator",
@@ -2088,6 +2090,7 @@
       },
       "nativeDpi": "Renderen op native DPI",
       "preprocessing": {
+        "amount": "Sterkte",
         "appleRaw9": "Apple RAW 9-engine",
         "appleRaw9Desc": "RAW-bestanden ontwikkelen met Apple's Core Image RAW 9-decoder, die demosaïcering en ruisonderdrukking in één stap uitvoert op de Neural Engine. Vereist macOS 27 of hoger en een ondersteunde camera; niet-ondersteunde bestanden gebruiken automatisch de ingebouwde decoder. Langzamer dan de standaarddecoder. Miniaturen worden niet beïnvloed.",
         "applyPreprocessing": "Voorverwerking toepassen op niet-RAW-bestanden",

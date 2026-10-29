@@ -1853,6 +1853,8 @@
       "optimizationDesc": "Vyberte primární vstupní zařízení, které používáte k posouvání a přibližování plátna.",
       "pressKey": "Stiskněte klávesu... (Esc pro vymazání)",
       "resetDefaults": "Obnovit vše na výchozí",
+      "resetDefaultsMessage": "Tímto se všechny klávesové zkratky obnoví na výchozí vazby. Vlastní přiřazení budou ztracena.",
+      "resetDefaultsTitle": "Obnovit klávesové zkratky",
       "speed": "Rychlost",
       "title": "Ovládání myší",
       "zoom": "Rychlost zoomu",
@@ -2170,6 +2172,7 @@
       },
       "nativeDpi": "Vykreslování v nativním DPI",
       "preprocessing": {
+        "amount": "Intenzita",
         "appleRaw9": "Apple RAW 9 Engine",
         "appleRaw9Desc": "Vyvolat soubory RAW pomocí dekodéru Apple Core Image RAW 9, který demosaikuje a odšumí v jednom kroku na Neural Engine. Vyžaduje macOS 27 nebo novější a podporovaný fotoaparát; nepodporované soubory automaticky použijí vestavěný dekodér. Pomalejší než výchozí dekodér. Miniatur se netýká.",
         "applyPreprocessing": "Použít předběžné zpracování na jiné než RAW",

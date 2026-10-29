@@ -1776,6 +1776,8 @@
       "optimizationDesc": "选择您用于平移和缩放画布的主要输入设备。",
       "pressKey": "按下按键...（Esc 清除）",
       "resetDefaults": "全部重置为默认值",
+      "resetDefaultsMessage": "将把所有键盘快捷键恢复为默认绑定，自定义的绑定将会丢失。",
+      "resetDefaultsTitle": "重置键盘快捷键",
       "speed": "速度",
       "title": "鼠标控制",
       "zoom": "缩放速度倍率",
@@ -2087,6 +2089,7 @@
       },
       "nativeDpi": "以原生 DPI 渲染",
       "preprocessing": {
+        "amount": "强度",
         "appleRaw9": "Apple RAW 9 引擎",
         "appleRaw9Desc": "使用 Apple 的 Core Image RAW 9 解码器冲洗 RAW 文件。它在神经网络引擎 (Neural Engine) 上一步完成去马赛克和降噪。需要 macOS 27 或更高版本以及支持的相机；不支持的文件将自动使用内置解码器。比默认解码器慢。缩略图不受影响。",
         "applyPreprocessing": "对非 RAW 图像应用预处理",

@@ -1776,6 +1776,8 @@
       "optimizationDesc": "캔버스를 이동하고 확대/축소하는 데 사용하는 주 입력 장치를 선택하세요.",
       "pressKey": "키를 누르세요... (Esc로 지우기)",
       "resetDefaults": "모두 기본값으로 초기화",
+      "resetDefaultsMessage": "모든 키보드 단축키를 기본 바인딩으로 되돌립니다. 사용자 지정 바인딩은 손실됩니다.",
+      "resetDefaultsTitle": "키보드 단축키 초기화",
       "speed": "속도",
       "title": "마우스 컨트롤",
       "zoom": "확대/축소 속도 배율",
@@ -2087,6 +2089,7 @@
       },
       "nativeDpi": "네이티브 DPI로 렌더링",
       "preprocessing": {
+        "amount": "강도",
         "appleRaw9": "Apple RAW 9 엔진",
         "appleRaw9Desc": "Apple의 Core Image RAW 9 디코더로 RAW 파일을 현상합니다. Neural Engine에서 디모자이크와 노이즈 제거를 한 번에 처리합니다. macOS 27 이상 및 지원되는 카메라가 필요하며, 지원되지 않는 파일은 내장 디코더를 자동으로 사용합니다. 기본 디코더보다 느립니다. 썸네일에는 영향을 주지 않습니다.",
         "applyPreprocessing": "RAW가 아닌 이미지에 전처리 적용",

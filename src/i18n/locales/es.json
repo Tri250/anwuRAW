@@ -1815,6 +1815,8 @@
       "optimizationDesc": "Elige el dispositivo de entrada principal que usas para desplazar y hacer zoom en el lienzo.",
       "pressKey": "Presiona una tecla... (Esc para borrar)",
       "resetDefaults": "Restablecer todo a los valores predeterminados",
+      "resetDefaultsMessage": "Esto restaurará todos los atajos de teclado a su asignación predeterminada. Se perderán las asignaciones personalizadas.",
+      "resetDefaultsTitle": "Restablecer atajos de teclado",
       "speed": "Velocidad",
       "title": "Controles del ratón",
       "zoom": "Multiplicador de velocidad de zoom",
@@ -2129,6 +2131,7 @@
       },
       "nativeDpi": "Renderizar en DPI nativo",
       "preprocessing": {
+        "amount": "Intensidad",
         "appleRaw9": "Motor Apple RAW 9",
         "appleRaw9Desc": "Revela archivos RAW con el decodificador RAW 9 de Core Image de Apple, que realiza el interpolado cromático y reduce el ruido en un solo paso en el Neural Engine. Requiere macOS 27 o posterior y una cámara compatible; los archivos no compatibles usan automáticamente el decodificador integrado. Más lento que el decodificador predeterminado. Las miniaturas no se ven afectadas.",
         "applyPreprocessing": "Aplicar preprocesamiento a los no RAW",

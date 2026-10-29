@@ -1777,6 +1777,8 @@
       "optimizationDesc": "Wählen Sie das primäre Eingabegerät zum Schwenken und Zoomen.",
       "pressKey": "Taste drücken... (Esc zum Löschen)",
       "resetDefaults": "Alles auf Standard zurücksetzen",
+      "resetDefaultsMessage": "Alle Tastenkürzel werden auf die Standardbelegung zurückgesetzt. Benutzerdefinierte Zuweisungen gehen verloren.",
+      "resetDefaultsTitle": "Tastenkürzel zurücksetzen",
       "speed": "Geschwindigkeit",
       "title": "Maussteuerung",
       "zoom": "Zoom-Geschwindigkeitsfaktor",
@@ -2088,6 +2090,7 @@
       },
       "nativeDpi": "In nativer DPI rendern",
       "preprocessing": {
+        "amount": "Stärke",
         "appleRaw9": "Apple RAW 9 Engine",
         "appleRaw9Desc": "Entwickelt RAW-Dateien mit Apples Core-Image-Decoder RAW 9, der Demosaicing und Entrauschen in einem Schritt auf der Neural Engine ausführt. Erfordert macOS 27 oder neuer und eine unterstützte Kamera; nicht unterstützte Dateien verwenden automatisch den integrierten Decoder. Langsamer als der Standard-Decoder. Vorschaubilder sind nicht betroffen.",
         "applyPreprocessing": "Vorverarbeitung auf Nicht-RAWs anwenden",

@@ -1815,6 +1815,8 @@
       "optimizationDesc": "Escolha o dispositivo de entrada principal que você usa para mover e dar zoom na tela.",
       "pressKey": "Pressione uma tecla... (Esc para limpar)",
       "resetDefaults": "Redefinir Tudo para Padrões",
+      "resetDefaultsMessage": "Isto irá restaurar todos os atalhos de teclado para a atribuição predefinida. As atribuições personalizadas serão perdidas.",
+      "resetDefaultsTitle": "Redefinir atalhos do teclado",
       "speed": "Velocidade",
       "title": "Controles do Mouse",
       "zoom": "Multiplicador de Velocidade de Zoom",
@@ -2129,6 +2131,7 @@
       },
       "nativeDpi": "Renderizar em DPI nativo",
       "preprocessing": {
+        "amount": "Intensidade",
         "appleRaw9": "Motor Apple RAW 9",
         "appleRaw9Desc": "Revela ficheiros RAW com o descodificador RAW 9 do Core Image da Apple, que faz o demosaicing e reduz o ruído num só passo no Neural Engine. Requer o macOS 27 ou posterior e uma câmara suportada; ficheiros não suportados usam automaticamente o descodificador integrado. Mais lento que o descodificador padrão. As miniaturas não são afetadas.",
         "applyPreprocessing": "Aplicar Pré-processamento em Não-RAWs",

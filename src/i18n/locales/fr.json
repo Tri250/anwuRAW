@@ -1816,6 +1816,8 @@
       "optimizationDesc": "Choisissez le périphérique d'entrée principal que vous utilisez pour le panoramique et le zoom de la toile.",
       "pressKey": "Appuyez sur une touche... (Échap pour effacer)",
       "resetDefaults": "Réinitialiser aux valeurs par défaut",
+      "resetDefaultsMessage": "Tous les raccourcis clavier seront restaurés à leurs valeurs par défaut. Les affectations personnalisées seront perdues.",
+      "resetDefaultsTitle": "Réinitialiser les raccourcis clavier",
       "speed": "Vitesse",
       "title": "Contrôles de la souris",
       "zoom": "Multiplicateur de vitesse de zoom",
@@ -2130,6 +2132,7 @@
       },
       "nativeDpi": "Rendre à la DPI native",
       "preprocessing": {
+        "amount": "Intensité",
         "appleRaw9": "Moteur Apple RAW 9",
         "appleRaw9Desc": "Développe les fichiers RAW avec le décodeur RAW 9 de Core Image d'Apple, qui effectue le dématriçage et la réduction de bruit en une seule étape sur le Neural Engine. Nécessite macOS 27 ou ultérieur et un appareil photo pris en charge ; les fichiers non pris en charge utilisent automatiquement le décodeur intégré. Plus lent que le décodeur par défaut. Les miniatures ne sont pas affectées.",
         "applyPreprocessing": "Appliquer le prétraitement aux Non-RAW",

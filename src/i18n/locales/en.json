@@ -1777,6 +1777,8 @@
       "optimizationDesc": "Choose the primary input device you use to pan and zoom the canvas.",
       "pressKey": "Press a key... (Esc to clear)",
       "resetDefaults": "Reset All to Defaults",
+      "resetDefaultsMessage": "This restores every keyboard shortcut to its default binding. Custom assignments will be lost.",
+      "resetDefaultsTitle": "Reset Keyboard Shortcuts",
       "speed": "Speed",
       "title": "Mouse Controls",
       "zoom": "Zoom Speed Multiplier",
@@ -2088,6 +2090,7 @@
       },
       "nativeDpi": "Render at native DPI",
       "preprocessing": {
+        "amount": "Amount",
         "appleRaw9": "Apple RAW 9 Engine",
         "appleRaw9Desc": "Develop RAW files with Apple's Core Image RAW 9 decoder, which demosaics and denoises in one step on the Neural Engine. Requires macOS 27 or later and a supported camera; unsupported files automatically use the built-in decoder. Slower than the default decoder. Thumbnails are not affected.",
         "applyPreprocessing": "Apply Preprocessing to Non-RAWs",
