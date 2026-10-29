@@ -1053,43 +1053,97 @@ fn get_models_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
     Ok(models_dir)
 }
 
-fn persist_downloaded_asset(dest: &Path, bytes: &[u8]) -> Result<()> {
-    if bytes.is_empty() {
+/// HuggingFace is unreachable from some regions (notably mainland China) and
+/// rate-limits unsigned clients, so every model download walks a list of
+/// candidate endpoints (custom mirror -> official -> hf-mirror.com), retries
+/// each endpoint, resumes partial downloads via HTTP Range, and streams the
+/// body to disk instead of buffering whole models in memory.
+const HF_DEFAULT_HOST: &str = "https://huggingface.co";
+const HF_FALLBACK_HOST: &str = "https://hf-mirror.com";
+const HF_ENDPOINT_ENV: &str = "RAPIDRAW_HF_ENDPOINT";
+
+fn candidate_urls(url: &str) -> Vec<String> {
+    let Some(rest) = url.strip_prefix(HF_DEFAULT_HOST) else {
+        return vec![url.to_string()];
+    };
+    let mut urls = Vec::new();
+    if let Ok(custom) = std::env::var(HF_ENDPOINT_ENV) {
+        let custom = custom.trim().trim_end_matches('/');
+        if !custom.is_empty() {
+            urls.push(format!("{custom}{rest}"));
+        }
+    }
+    urls.push(url.to_string());
+    urls.push(format!("{HF_FALLBACK_HOST}{rest}"));
+    urls
+}
+
+static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
+    reqwest::Client::builder()
+        .user_agent(concat!("RapidRAW/", env!("CARGO_PKG_VERSION")))
+        // Short connect timeout so that an unreachable endpoint (e.g.
+        // huggingface.co from mainland China) fails over to the mirror fast.
+        .connect_timeout(Duration::from_secs(10))
+        .build()
+        .expect("failed to build HTTP client for model downloads")
+});
+
+async fn try_download_model(
+    app_handle: &tauri::AppHandle,
+    asset: &ModelAsset,
+    tmp_path: &Path,
+    url: &str,
+) -> Result<()> {
+    let start_offset = fs::metadata(tmp_path).map(|m| m.len()).unwrap_or(0);
+    let mut request = HTTP_CLIENT.get(url);
+    if start_offset > 0 {
+        request = request.header("Range", format!("bytes={start_offset}-"));
+    }
+    let response = request.send().await?;
+    if response.status().as_u16() == 416 {
+        // Range not satisfiable — the partial file may already be complete.
+        // The caller's sha256 check provides the final verdict.
+        if start_offset > 0 {
+            return Ok(());
+        }
+        anyhow::bail!("server rejected range request (HTTP 416)");
+    }
+    let mut response = response.error_for_status()?;
+    let resume = response.status().as_u16() == 206;
+    let total = response
+        .content_length()
+        .map(|len| len + if resume { start_offset } else { 0 })
+        .unwrap_or(0);
+
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(!resume)
+        .open(tmp_path)?;
+    if resume {
+        use std::io::Seek;
+        file.seek(std::io::SeekFrom::Start(start_offset))?;
+    }
+
+    let mut written = if resume { start_offset } else { 0 };
+    let mut last_progress = Instant::now();
+    while let Some(chunk) = response.chunk().await? {
+        file.write_all(&chunk)?;
+        written += chunk.len() as u64;
+        if total > 0 && last_progress.elapsed() >= Duration::from_millis(200) {
+            last_progress = Instant::now();
+            let _ = app_handle.emit(
+                "ai-model-download-progress",
+                serde_json::json!({ "name": asset.name, "current": written, "total": total }),
+            );
+        }
+    }
+    file.sync_all()?;
+    if total > 0 && written != total {
         return Err(anyhow::anyhow!(
-            "Downloaded asset for {} was empty",
-            dest.display()
+            "Incomplete download: received {written} of {total} bytes"
         ));
     }
-
-    let parent = dest.parent().ok_or_else(|| {
-        anyhow::anyhow!(
-            "Cannot determine parent directory for downloaded asset {}",
-            dest.display()
-        )
-    })?;
-    fs::create_dir_all(parent)?;
-
-    let file_name = dest
-        .file_name()
-        .and_then(|name| name.to_str())
-        .ok_or_else(|| anyhow::anyhow!("Invalid downloaded asset path {}", dest.display()))?;
-    let tmp_path = dest.with_file_name(format!(".{}.download", file_name));
-
-    {
-        let mut file = fs::File::create(&tmp_path)?;
-        file.write_all(bytes)?;
-        file.sync_all()?;
-    }
-
-    fs::rename(&tmp_path, dest).or_else(|rename_error| -> std::io::Result<()> {
-        if dest.exists() {
-            fs::remove_file(dest)?;
-            fs::rename(&tmp_path, dest)?;
-            Ok(())
-        } else {
-            Err(rename_error)
-        }
-    })?;
     Ok(())
 }
 
@@ -1098,21 +1152,43 @@ async fn download_model(
     asset: &ModelAsset,
     dest: &Path,
 ) -> Result<()> {
-    let mut response = reqwest::get(asset.url).await?.error_for_status()?;
-    let total = response.content_length().unwrap_or(0);
-    let mut bytes = Vec::with_capacity(total as usize);
-    let mut last_progress = Instant::now();
-    while let Some(chunk) = response.chunk().await? {
-        bytes.extend_from_slice(&chunk);
-        if total > 0 && last_progress.elapsed() >= Duration::from_millis(200) {
-            last_progress = Instant::now();
-            let _ = app_handle.emit(
-                "ai-model-download-progress",
-                serde_json::json!({ "name": asset.name, "current": bytes.len(), "total": total }),
-            );
+    let endpoints = candidate_urls(asset.url);
+    let file_name = dest.file_name().and_then(|name| name.to_str()).ok_or_else(
+        || anyhow::anyhow!("Invalid model asset path {}", dest.display()),
+    )?;
+    let tmp_path = dest.with_file_name(format!(".{file_name}.download"));
+    let parent = dest.parent().ok_or_else(|| {
+        anyhow::anyhow!(
+            "Cannot determine parent directory for downloaded model {}",
+            dest.display()
+        )
+    })?;
+    fs::create_dir_all(parent)?;
+
+    let mut failures: Vec<String> = Vec::new();
+    for url in &endpoints {
+        for attempt in 1..=2 {
+            match try_download_model(app_handle, asset, &tmp_path, url).await {
+                Ok(()) => {
+                    if dest.exists() {
+                        fs::remove_file(dest)?;
+                    }
+                    fs::rename(&tmp_path, dest)?;
+                    return Ok(());
+                }
+                Err(error) => {
+                    failures.push(format!("{url} (attempt {attempt}): {error}"));
+                    tokio::time::sleep(Duration::from_millis(1000 * attempt as u64)).await;
+                }
+            }
         }
     }
-    persist_downloaded_asset(dest, &bytes)
+    Err(anyhow::anyhow!(
+        "Failed to download model {} from {} endpoint(s):\n{}",
+        asset.name,
+        endpoints.len(),
+        failures.join("\n")
+    ))
 }
 
 fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool> {
