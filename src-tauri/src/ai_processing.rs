@@ -1084,7 +1084,7 @@ fn candidate_urls(url: &str) -> Vec<String> {
 }
 
 static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
-    reqwest::Client::builder()
+    crate::http_tls::base_builder()
         .user_agent(concat!("RapidRAW/", env!("CARGO_PKG_VERSION")))
         // Short connect timeout so that an unreachable endpoint (e.g.
         // huggingface.co from mainland China) fails over to the mirror fast.
@@ -1095,6 +1095,23 @@ static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::
         .build()
         .expect("failed to build HTTP client for model downloads")
 });
+
+/// reqwest's `Display` only names the request layer ("error sending request
+/// …"); the actionable cause (DNS failure, TLS handshake rejection,
+/// connection reset) sits further down the error chain. Flatten it into the
+/// user-facing failure report so support can tell a blocked network apart
+/// from a broken TLS setup.
+fn describe_error_chain(error: &anyhow::Error) -> String {
+    let mut text = error.to_string();
+    for cause in error.chain().skip(1) {
+        let cause = cause.to_string();
+        if !text.contains(&cause) {
+            text.push_str(" | ");
+            text.push_str(&cause);
+        }
+    }
+    text
+}
 
 async fn try_download_model(
     app_handle: &tauri::AppHandle,
@@ -1186,7 +1203,10 @@ async fn download_model(
                     return Ok(());
                 }
                 Err(error) => {
-                    failures.push(format!("{url} (attempt {attempt}): {error}"));
+                    failures.push(format!(
+                        "{url} (attempt {attempt}): {}",
+                        describe_error_chain(&error)
+                    ));
                     tokio::time::sleep(Duration::from_millis(1000 * attempt as u64)).await;
                 }
             }

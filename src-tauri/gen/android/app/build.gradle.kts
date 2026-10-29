@@ -88,6 +88,47 @@ rust {
     rootDirRel = "../../../"
 }
 
+// rustls-platform-verifier's Kotlin component must exactly match the Rust
+// crate resolved by cargo: the JNI protocol between them is not stable across
+// versions, and a mismatch makes every HTTPS request fail with "error sending
+// request". The official integration therefore serves the AAR bundled inside
+// the rustls-platform-verifier-android cargo package via a local maven repo
+// (see the crate README) instead of a remote registry.
+val rustlsPlatformVerifierRepo = providers.exec {
+    workingDir = rootDir.parentFile // src-tauri, where Cargo.toml lives
+    commandLine(
+        "cargo",
+        "metadata",
+        "--format-version",
+        "1",
+        "--filter-platform",
+        "aarch64-linux-android",
+    )
+}.standardOutput.asText.get().let { metadata ->
+    Regex("\"manifest_path\":\"([^\"]*rustls-platform-verifier-android[^\"]*Cargo\\.toml)\"")
+        .find(metadata)?.groupValues?.get(1)
+        ?.let { manifestPath -> File(manifestPath).parentFile.resolve("maven") }
+}
+
+repositories {
+    if (rustlsPlatformVerifierRepo != null) {
+        // Resolve the `rustls` group exclusively from the cargo-bundled
+        // component; fall back to the defaults below only when the repo
+        // cannot be located (e.g. cargo missing from PATH).
+        exclusiveContent {
+            forRepository {
+                maven {
+                    url = uri(rustlsPlatformVerifierRepo)
+                    metadataSources { artifact() }
+                }
+            }
+            filter { includeGroup("rustls") }
+        }
+    }
+    google()
+    mavenCentral()
+}
+
 dependencies {
     implementation("androidx.webkit:webkit:1.14.0")
     implementation("androidx.appcompat:appcompat:1.7.1")

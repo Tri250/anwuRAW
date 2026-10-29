@@ -121,6 +121,15 @@ ndk-context = "0.1"
 jni = "0.21"
 jni22 = { package = "jni", version = "0.22" }
 rustls-platform-verifier = "0.7"
+# Model/preset downloads bypass rustls-platform-verifier on Android (see
+# http_tls.rs) and verify certificates against the bundled Mozilla roots.
+rustls = { version = "0.23", default-features = false, features = [
+    "aws-lc-rs",
+    "logging",
+    "std",
+    "tls12",
+] }
+webpki-roots = "1"
 reqwest = { version = "0.13", default-features = false, features = ["json", "multipart", "rustls"] }
 include_dir = "0.7.4"
 

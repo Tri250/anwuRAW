@@ -52,6 +52,7 @@ mod gpu_processing;
 mod guided_perspective;
 mod hdr_deghosting;
 mod highlight_reconstruction;
+mod http_tls;
 mod image_loader;
 mod image_processing;
 mod immich;
@@ -1336,7 +1337,9 @@ async fn generate_preset_preview(
 
 #[tauri::command]
 async fn fetch_community_presets() -> Result<Vec<CommunityPreset>, String> {
-    let client = reqwest::Client::new();
+    let client = crate::http_tls::base_builder()
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
     let url = "https://raw.githubusercontent.com/CyberTimon/RapidRAW-Presets/main/manifest.json";
 
     let response = client

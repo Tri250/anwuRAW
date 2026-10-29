@@ -115,7 +115,7 @@ impl ImmichClient {
         if !base.starts_with("http://") && !base.starts_with("https://") {
             return Err("The server address must start with http:// or https://".to_string());
         }
-        let http = Client::builder()
+        let http = crate::http_tls::base_builder()
             .connect_timeout(Duration::from_secs(10))
             .read_timeout(Duration::from_secs(30))
             .build()
