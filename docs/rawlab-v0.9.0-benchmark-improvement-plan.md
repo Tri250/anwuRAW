@@ -18,14 +18,14 @@ RawLab 是一个跨品牌 RAW 显影 + 胶片质感编辑器，核心特征：
 
 ### 1.2 与我方技术栈差异（决定借鉴方式）
 
-| 维度 | RawLab | anwuRAW |
-| --- | --- | --- |
-| 架构 | C++17 核心 + 4 原生客户端 | Tauri v2：Rust 后端 + Web 前端 |
-| RAW 解码 | LibRaw（打补丁） | rawler（RapidRAW-DngLab fork，[Cargo.toml](/workspace/src-tauri/Cargo.toml#L32)） |
-| GPU | Metal/D3D11/GLES 手写 kernel | wgpu 29 调整管线 |
-| 更新 | Sparkle 2.10 / Velopack 自研集成 | **无（tauri.conf.json plugins 为空）** |
-| 自动化 | Agent CLI + JSON 能力发现 + MCP（5 工具） | headless 导出 CLI |
-| i18n | 6 语言 | **15 语言 + i18n:check（领先）** |
+| 维度     | RawLab                                    | anwuRAW                                                                           |
+| -------- | ----------------------------------------- | --------------------------------------------------------------------------------- |
+| 架构     | C++17 核心 + 4 原生客户端                 | Tauri v2：Rust 后端 + Web 前端                                                    |
+| RAW 解码 | LibRaw（打补丁）                          | rawler（RapidRAW-DngLab fork，[Cargo.toml](/workspace/src-tauri/Cargo.toml#L32)） |
+| GPU      | Metal/D3D11/GLES 手写 kernel              | wgpu 29 调整管线                                                                  |
+| 更新     | Sparkle 2.10 / Velopack 自研集成          | **无（tauri.conf.json plugins 为空）**                                            |
+| 自动化   | Agent CLI + JSON 能力发现 + MCP（5 工具） | headless 导出 CLI                                                                 |
+| i18n     | 6 语言                                    | **15 语言 + i18n:check（领先）**                                                  |
 
 结论：RawLab 的底层算法我方大多已具备或等价（见 §2 对比矩阵），**真正值得引入的是 6 个功能/工程差距点 + 1 套工程纪律**，均可在我方架构内低成本落地，无需照搬其 C++/原生实现。
 
@@ -35,39 +35,39 @@ RawLab 是一个跨品牌 RAW 显影 + 胶片质感编辑器，核心特征：
 
 ### 2.1 已覆盖（无需建设）
 
-| RawLab v0.9.0 特性 | anwuRAW 现状 |
-| --- | --- |
-| 黑点/白点、vibrance、clarity/dehaze 双向 | [adjustments.ts](/workspace/src/utils/adjustments.ts#L991-L1084) basic/color/details 组已含全部参数 |
-| 多点 tone curve | `curves/pointCurves` + 参数化曲线（[adjustments.ts](/workspace/src/utils/adjustments.ts#L253-L298)），支持 luma/RGB 四通道 |
-| 阴影/中间调/高光分离调色 | color 组 color grading 已有 |
-| 8 通道 HSL | HSL mixer 已有 |
-| 会话内 undo/redo | [useEditorStore.ts](/workspace/src/store/useEditorStore.ts#L160-L199)，50 步历史栈 |
-| 选择性复制粘贴 + 跨照片同步 | [CopyPasteSettingsModal.tsx](/workspace/src/components/modals/CopyPasteSettingsModal.tsx#L162-L179) 按 `ADJUSTMENT_GROUPS` 勾选 + `autoSync` |
-| 并排/分割对比 | `CompareView = 'off' | 'vertical' | 'horizontal' | 'sideBySide'` |
-| 按住查看原图 | `showOriginal`（[ImageCanvas.tsx](/workspace/src/components/panel/editor/ImageCanvas.tsx#L87)） |
-| 镜头校正（Lensfun 畸变/TCA/暗角） | [lens_correction.rs](/workspace/src-tauri/src/lens_correction.rs#L288-L513) 同为 Lensfun 数据库插值 |
-| 非 AI 快速降噪 | [bm3d.rs](/workspace/src-tauri/src/bm3d.rs#L40-L84)（YCbCr 联合 BM3D） |
-| AI 降噪 + 结果缓存 | [ai_denoise.rs](/workspace/src-tauri/src/ai_denoise.rs#L297-L362)（NIND via ort + 缓存） |
-| grain / vignette / LUT 导入 | effects 组已有 |
-| 用户预设 | [usePresets.ts](/workspace/src/hooks/usePresets.ts#L66-L124) tool/style 两类 + 社区预设 |
-| 导出取消 | export_processing.rs 有 checkpoint 取消语义 |
-| 多语言 + 翻译一致性 | 15 语言 + `npm run i18n:check` |
-| 视口尺寸交互预览 | preview_dim 缩放 + fast demosaic（`DemosaicAlgorithm::Speed`）+ 几何超采样 |
+| RawLab v0.9.0 特性                       | anwuRAW 现状                                                                                                                                 |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 黑点/白点、vibrance、clarity/dehaze 双向 | [adjustments.ts](/workspace/src/utils/adjustments.ts#L991-L1084) basic/color/details 组已含全部参数                                          |
+| 多点 tone curve                          | `curves/pointCurves` + 参数化曲线（[adjustments.ts](/workspace/src/utils/adjustments.ts#L253-L298)），支持 luma/RGB 四通道                   |
+| 阴影/中间调/高光分离调色                 | color 组 color grading 已有                                                                                                                  |
+| 8 通道 HSL                               | HSL mixer 已有                                                                                                                               |
+| 会话内 undo/redo                         | [useEditorStore.ts](/workspace/src/store/useEditorStore.ts#L160-L199)，50 步历史栈                                                           |
+| 选择性复制粘贴 + 跨照片同步              | [CopyPasteSettingsModal.tsx](/workspace/src/components/modals/CopyPasteSettingsModal.tsx#L162-L179) 按 `ADJUSTMENT_GROUPS` 勾选 + `autoSync` |
+| 并排/分割对比                            | `CompareView = 'off'                                                                                                                         | 'vertical' | 'horizontal' | 'sideBySide'` |
+| 按住查看原图                             | `showOriginal`（[ImageCanvas.tsx](/workspace/src/components/panel/editor/ImageCanvas.tsx#L87)）                                              |
+| 镜头校正（Lensfun 畸变/TCA/暗角）        | [lens_correction.rs](/workspace/src-tauri/src/lens_correction.rs#L288-L513) 同为 Lensfun 数据库插值                                          |
+| 非 AI 快速降噪                           | [bm3d.rs](/workspace/src-tauri/src/bm3d.rs#L40-L84)（YCbCr 联合 BM3D）                                                                       |
+| AI 降噪 + 结果缓存                       | [ai_denoise.rs](/workspace/src-tauri/src/ai_denoise.rs#L297-L362)（NIND via ort + 缓存）                                                     |
+| grain / vignette / LUT 导入              | effects 组已有                                                                                                                               |
+| 用户预设                                 | [usePresets.ts](/workspace/src/hooks/usePresets.ts#L66-L124) tool/style 两类 + 社区预设                                                      |
+| 导出取消                                 | export_processing.rs 有 checkpoint 取消语义                                                                                                  |
+| 多语言 + 翻译一致性                      | 15 语言 + `npm run i18n:check`                                                                                                               |
+| 视口尺寸交互预览                         | preview_dim 缩放 + fast demosaic（`DemosaicAlgorithm::Speed`）+ 几何超采样                                                                   |
 
 ### 2.2 差距点（本方案范围）
 
-| # | 差距 | 优先级 |
-| --- | --- | --- |
-| G1 | 桌面自动更新完全缺失 | P0 |
-| G2 | HSL 目标调整（照片上取色拖动） | P0 |
-| G3 | 处理版本机制（管线升级静默改变历史编辑结果 + 缓存失效缺口） | P1 |
-| G4 | 预设/配方 0–200% 强度应用 | P1 |
-| G5 | 批量导出断点续传与失败重试 | P1 |
-| G6 | Agent/CLI 能力发现 + JSON 全参数编辑 + MCP server | P2 |
-| G7 | RAW 兼容性跟进（Nikon HE/HE*、Sony ARW6、X3F、JPEG-XL DNG） | P1（低成本审计） |
-| G8 | DCP 相机色彩档案导入 | P2（高成本） |
-| G9 | 渲染型 DNG 导出 | P3（高成本，暂缓） |
-| E1 | 工程纪律：契约文档 / 发布验收 / 评审留痕 | P1（组织性） |
+| #   | 差距                                                        | 优先级             |
+| --- | ----------------------------------------------------------- | ------------------ |
+| G1  | 桌面自动更新完全缺失                                        | P0                 |
+| G2  | HSL 目标调整（照片上取色拖动）                              | P0                 |
+| G3  | 处理版本机制（管线升级静默改变历史编辑结果 + 缓存失效缺口） | P1                 |
+| G4  | 预设/配方 0–200% 强度应用                                   | P1                 |
+| G5  | 批量导出断点续传与失败重试                                  | P1                 |
+| G6  | Agent/CLI 能力发现 + JSON 全参数编辑 + MCP server           | P2                 |
+| G7  | RAW 兼容性跟进（Nikon HE/HE*、Sony ARW6、X3F、JPEG-XL DNG） | P1（低成本审计）   |
+| G8  | DCP 相机色彩档案导入                                        | P2（高成本）       |
+| G9  | 渲染型 DNG 导出                                             | P3（高成本，暂缓） |
+| E1  | 工程纪律：契约文档 / 发布验收 / 评审留痕                    | P1（组织性）       |
 
 ---
 
@@ -216,12 +216,12 @@ RawLab 最值得学的是工程流程，建议固化三条：
 
 ## 4. 实施路线图建议
 
-| 阶段 | 内容 | 依赖 |
-| --- | --- | --- |
-| 第一批 | G1 自动更新、G4 预设强度、E1 契约文档起步 | 无 |
-| 第二批 | G3 处理版本 + 缓存契约、G2 HSL 目标调整 | G3 独立，G2 独立可并行 |
+| 阶段   | 内容                                       | 依赖                        |
+| ------ | ------------------------------------------ | --------------------------- |
+| 第一批 | G1 自动更新、G4 预设强度、E1 契约文档起步  | 无                          |
+| 第二批 | G3 处理版本 + 缓存契约、G2 HSL 目标调整    | G3 独立，G2 独立可并行      |
 | 第三批 | G5 导出断点续传、G7 RAW 支持矩阵与样张冒烟 | G3（rawler 升级依赖版本锁） |
-| 第四批 | G6 CLI/MCP；G8/G9 视需求评估 | G6 依赖 E1 schema 文档 |
+| 第四批 | G6 CLI/MCP；G8/G9 视需求评估               | G6 依赖 E1 schema 文档      |
 
 每一项独立可发布，不阻塞常规版本节奏。
 
@@ -233,4 +233,4 @@ RawLab 最值得学的是工程流程，建议固化三条：
 
 ---
 
-*调研底稿：RawLab 源码浅克隆于 /tmp/rawlab（commit 83f470c）；关键引用：release notes v0.7.0–v0.9.0、`lutools/docs/color-contract.md`、`lutools/docs/processing-version.md`、`docs/integration/editing-iteration/desktop-updates-plan.md`、`docs/design/editing-iteration/requirements.md`、`tools/mcp/src/rawlab_mcp/server.py`。*
+_调研底稿：RawLab 源码浅克隆于 /tmp/rawlab（commit 83f470c）；关键引用：release notes v0.7.0–v0.9.0、`lutools/docs/color-contract.md`、`lutools/docs/processing-version.md`、`docs/integration/editing-iteration/desktop-updates-plan.md`、`docs/design/editing-iteration/requirements.md`、`tools/mcp/src/rawlab_mcp/server.py`。_

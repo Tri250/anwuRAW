@@ -1,5 +1,6 @@
 import recipeCatalog from './masterRecipes.json';
-import type { Adjustments, Hsl } from './adjustments';
+import type { Adjustments, Coord, Hsl } from './adjustments';
+import { INITIAL_ADJUSTMENTS } from './adjustments';
 
 /**
  * Master recipe catalog ported from RawLab (GPL-3.0-only, see
@@ -12,19 +13,61 @@ export interface MasterRecipeHsl {
   saturation: Array<number>;
 }
 
-export interface MasterRecipe {
+export interface MasterRecipeTone {
+  blackPoint: number;
+  whitePoint: number;
+  vibrance: number;
+}
+
+export interface MasterRecipeAtmosphere {
+  clarity: number;
+  dehaze: number;
+}
+
+export interface MasterRecipeGradingStop {
+  hue: number;
+  saturation: number;
+}
+
+export interface MasterRecipeGrading {
+  shadows: MasterRecipeGradingStop;
+  midtones: MasterRecipeGradingStop;
+  highlights: MasterRecipeGradingStop;
+}
+
+export interface MasterRecipeCurve {
+  mode: string;
+  points: Array<[number, number]>;
+}
+
+export interface MasterRecipeLegacyDefaults {
   contrastDelta: number;
   exposureDelta: number;
   highlightsDelta: number;
+  saturationDelta: number;
+  shadowsDelta: number;
+  tintDelta: number;
+}
+
+export interface MasterRecipe {
+  atmosphere?: MasterRecipeAtmosphere;
+  contrastDelta: number;
+  curve?: MasterRecipeCurve;
+  exposureDelta: number;
+  grading?: MasterRecipeGrading;
+  highlightsDelta: number;
   hsl: MasterRecipeHsl;
   id: string;
+  legacyDefaults?: MasterRecipeLegacyDefaults;
   lutFileName: string;
   name: string;
   saturationDelta: number;
+  settingsVersion?: number;
   shadowsDelta: number;
   subtitle: string;
   summary: string;
   tintDelta: number;
+  tone?: MasterRecipeTone;
 }
 
 export const MASTER_RECIPES: Array<MasterRecipe> = recipeCatalog as Array<MasterRecipe>;
@@ -45,6 +88,18 @@ type HslChannelKey = (typeof HSL_CHANNEL_KEYS)[number];
 export type RecipeAdjustmentPatch = Partial<Adjustments>;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const IDENTITY_CURVE_POINTS: Array<Coord> = [
+  { x: 0, y: 0 },
+  { x: 255, y: 255 },
+];
+
+const buildIdentityCurves = (luma: Array<Coord>) => ({
+  luma,
+  red: IDENTITY_CURVE_POINTS.map((p: Coord) => ({ ...p })),
+  green: IDENTITY_CURVE_POINTS.map((p: Coord) => ({ ...p })),
+  blue: IDENTITY_CURVE_POINTS.map((p: Coord) => ({ ...p })),
+});
 
 const buildRecipeHsl = (hsl: MasterRecipeHsl): Hsl => {
   const result = {} as Hsl;
@@ -78,7 +133,7 @@ export const recipeToAdjustments = (
     };
   });
 
-  return {
+  const patch: RecipeAdjustmentPatch = {
     exposure: (recipe.exposureDelta / EXPOSURE_SLIDER_SCALE) * scale,
     shadows: recipe.shadowsDelta * scale,
     highlights: recipe.highlightsDelta * scale,
@@ -87,6 +142,48 @@ export const recipeToAdjustments = (
     tint: (recipe.tintDelta / TINT_RELATIVE_SCALE) * scale,
     hsl: scaledHsl,
   };
+
+  // RawLab settings version 4 adds black/white point, vibrance, a custom luma
+  // curve, three grading wheels and clarity/dehaze on top of the legacy six
+  // controls (see docs/architecture/master-recipes.md in RawLab).
+  if ((recipe.settingsVersion ?? 0) >= 4) {
+    if (recipe.tone) {
+      patch.blacks = clamp(recipe.tone.blackPoint * scale, -100, 100);
+      patch.whites = clamp(recipe.tone.whitePoint * scale, -100, 100);
+      patch.vibrance = clamp(recipe.tone.vibrance * scale, -100, 100);
+    }
+    if (recipe.atmosphere) {
+      patch.clarity = clamp(recipe.atmosphere.clarity * scale, -100, 100);
+      patch.dehaze = clamp(recipe.atmosphere.dehaze * scale, -100, 100);
+    }
+    if (recipe.curve && recipe.curve.points.length >= 2) {
+      // RawLab curve coordinates are 0..1; ours are 0..255. Strength scales the
+      // displacement from the identity line: y' = x + scale * (y - x).
+      const luma: Array<Coord> = recipe.curve.points.slice(0, 16).map(([x, y]: [number, number]) => ({
+        x: Math.round(clamp(x, 0, 1) * 255),
+        y: Math.round(clamp(x + scale * (y - x), 0, 1) * 255),
+      }));
+      const recipeCurves = buildIdentityCurves(luma);
+      patch.curveMode = 'point';
+      patch.pointCurves = recipeCurves;
+      patch.curves = recipeCurves;
+    }
+    if (recipe.grading) {
+      const stop = (g?: MasterRecipeGradingStop) => ({
+        hue: clamp(g?.hue ?? 0, 0, 360),
+        saturation: clamp((g?.saturation ?? 0) * scale, 0, 100),
+        luminance: 0,
+      });
+      patch.colorGrading = {
+        ...INITIAL_ADJUSTMENTS.colorGrading,
+        shadows: stop(recipe.grading.shadows),
+        midtones: stop(recipe.grading.midtones),
+        highlights: stop(recipe.grading.highlights),
+      };
+    }
+  }
+
+  return patch;
 };
 
 /** Master LUTs are authored as `Gamma: sRGB to sRGB`, so they run after tone mapping. */

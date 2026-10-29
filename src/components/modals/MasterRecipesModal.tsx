@@ -38,7 +38,16 @@ interface LutEntry {
 
 type RecipeTab = 'master' | 'film';
 
-const RECIPE_TOOL_IDS = ['colorPresence', 'whiteBalance', 'colorMixer', 'lut'];
+const RECIPE_TOOL_IDS = [
+  'basic',
+  'curves',
+  'colorPresence',
+  'whiteBalance',
+  'colorMixer',
+  'colorGrading',
+  'presence',
+  'lut',
+];
 
 const enableRecipeTools = (activeTools: Record<string, boolean>) =>
   RECIPE_TOOL_IDS.reduce((tools, id) => setToolActive(tools, id, true), activeTools);
@@ -50,7 +59,16 @@ const snapshotAdjustments = (current: Adjustments): RecipeAdjustmentPatch => ({
   contrast: current.contrast,
   saturation: current.saturation,
   tint: current.tint,
+  blacks: current.blacks,
+  whites: current.whites,
+  vibrance: current.vibrance,
+  clarity: current.clarity,
+  dehaze: current.dehaze,
   hsl: current.hsl,
+  curves: current.curves,
+  pointCurves: current.pointCurves,
+  curveMode: current.curveMode,
+  colorGrading: current.colorGrading,
   lutPath: current.lutPath,
   lutName: current.lutName,
   lutIntensity: current.lutIntensity,
