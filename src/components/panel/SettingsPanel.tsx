@@ -633,10 +633,10 @@ function UpdaterSettings({
       )}
 
       {!update && !error && status === 'idle' && sharedUpdateCheckResult.checkedAt > 0 && (
-        <p className="text-sm text-text-secondary">{t('settings.updater.upToDate', { version: currentVersion })}</p>
+        <Text variant={TextVariants.body}>{t('settings.updater.upToDate', { version: currentVersion })}</Text>
       )}
 
-      {error && <p className="text-sm text-red-500">{t('settings.updater.failed', { error })}</p>}
+      {error && <Text color={TextColors.error}>{t('settings.updater.failed', { error })}</Text>}
     </>
   );
 }
@@ -1657,7 +1657,7 @@ export default function SettingsPanel({
                                               <Text variant={TextVariants.label} color={TextColors.primary}>
                                                 {tag}
                                               </Text>
-                                              <span className="rounded-full group-hover:bg-black/20 p-0.5 transition-colors">
+                                              <span className="rounded-full group-hover:bg-text-secondary/20 p-0.5 transition-colors">
                                                 <X size={14} />
                                               </span>
                                             </motion.div>
@@ -1736,7 +1736,7 @@ export default function SettingsPanel({
                                     <Text variant={TextVariants.label} color={TextColors.primary}>
                                       {shortcut}
                                     </Text>
-                                    <span className="rounded-full group-hover:bg-black/20 p-0.5 transition-colors">
+                                    <span className="rounded-full group-hover:bg-text-secondary/20 p-0.5 transition-colors">
                                       <X size={14} />
                                     </span>
                                   </motion.div>

@@ -631,7 +631,7 @@ const Slider = ({
         <div className="w-14 text-right shrink-0">
           {isEditing ? (
             <input
-              className="w-full text-sm text-right bg-card-active border border-gray-500 rounded-sm px-1 py-0 outline-none focus:ring-1 focus:ring-blue-500 text-text-primary"
+              className="w-full text-sm text-right bg-card-active border border-border-color rounded-sm px-1 py-0 outline-none focus:ring-1 focus:ring-accent text-text-primary"
               disabled={disabled}
               max={max}
               min={min}
