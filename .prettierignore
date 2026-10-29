@@ -7,4 +7,5 @@ data
 packaging/cargo-sources.json
 packaging/node-sources.json
 src-tauri/resources/master_recipes/master-recipes.json
+src-tauri/resources/adjustments-schema.json
 src/utils/masterRecipes.json

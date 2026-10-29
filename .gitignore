@@ -43,3 +43,7 @@ src-tauri/libs/
 
 # bench/replay.js result dumps
 bench/out/
+
+# Python bytecode (tools/mcp)
+__pycache__/
+*.pyc

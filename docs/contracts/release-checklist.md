@@ -13,15 +13,18 @@
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`                                | 私钥口令（当前密钥为空口令，配空字符串即可）             | 同上                                                                                  |
 | `ANDROID_KEY_BASE64` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` | Android APK 正式签名（`build.yml` L199-201）             | 回退到临时 debug keystore + warning → **不能上架正式渠道**                            |
 
-- 当前 updater 私钥存放在本地 `/tmp/anwuRAW-updater.key`（EdDSA，348 字节，空口令）。
-  **/tmp 会丢**：请立即将其导入 GitHub secrets 并在安全位置另存备份；公钥已内嵌于
-  `tauri.conf.json`（`plugins.updater.pubkey`），丢失私钥 = 全体已发布客户端无法自动更新。
+- 当前 updater 私钥（2026-10-29 轮换，EdDSA/minisign，空口令）本地路径 `/tmp/kp/updater.key`，
+  公钥已内嵌 `tauri.conf.json`（`plugins.updater.pubkey`，key ID 8BF29C04F07F67A8）。
+  **/tmp 会丢**：请立即将其导入 GitHub secrets 并在安全位置另存备份；丢失私钥 = 全体已发布客户端无法自动更新。
+  离线校验密钥对是否匹配：用 tauri CLI 对任一文件 `signer sign` 后，按 rust-minisign 语义验证
+  （文件签名先过 BLAKE2b-512 预哈希，即 `SIGALG_PREHASHED`）。
 - 换新私钥的操作顺序：生成 → 更新 secrets → 更新 `tauri.conf.json` pubkey → 发一个带 updater
   产物的过渡版本，等用户升级到位后再作废旧钥。
 
 ## 1. 版本号与变更内容（👤）
 
-- [ ] `src-tauri/tauri.conf.json` `version`、`src-tauri/Cargo.toml`、`package.json` 三处版本一致；
+- [ ] `src-tauri/tauri.conf.json` `version` 与 `src-tauri/Cargo.toml` `version` 一致（同步更新
+      `src-tauri/Cargo.lock` 中 RapidRAW 的 `version` 条目，供 CLI `capabilities` 与 updater 使用）；
 - [ ] 若本次改动触碰渲染语义：`PROCESSING_VERSION` 已按
       `docs/contracts/rendering-pipeline.md` §3.2 递增，并在 PR 附验证证据（§7 模板）；
 - [ ] schema 产物新鲜度：改动过参数后跑过 `npm run schema:generate`，
