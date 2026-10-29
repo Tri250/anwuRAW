@@ -3,6 +3,8 @@ use std::env;
 use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
+use std::thread::sleep;
+use std::time::Duration;
 
 fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool, io::Error> {
     let mut file = fs::File::open(path)?;
@@ -20,52 +22,110 @@ fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool, io::Error> {
     Ok(calculated_hash == expected_hash)
 }
 
+/// HuggingFace is unreachable from some regions (notably mainland China), so
+/// build-time downloads walk the same candidate endpoints as the runtime model
+/// downloads in `ai_processing.rs`: custom mirror -> official -> hf-mirror.com.
+const HF_DEFAULT_HOST: &str = "https://huggingface.co";
+const HF_FALLBACK_HOST: &str = "https://hf-mirror.com";
+const HF_ENDPOINT_ENV: &str = "RAPIDRAW_HF_ENDPOINT";
+
+fn candidate_urls(url: &str) -> Vec<String> {
+    let Some(rest) = url.strip_prefix(HF_DEFAULT_HOST) else {
+        return vec![url.to_string()];
+    };
+    let mut urls = Vec::new();
+    if let Ok(custom) = env::var(HF_ENDPOINT_ENV) {
+        let custom = custom.trim().trim_end_matches('/');
+        if !custom.is_empty() {
+            urls.push(format!("{custom}{rest}"));
+        }
+    }
+    urls.push(url.to_string());
+    urls.push(format!("{HF_FALLBACK_HOST}{rest}"));
+    urls
+}
+
+/// Build-time downloads face the same flaky networks as the runtime model
+/// downloads in `ai_processing.rs`: a single attempt per endpoint occasionally
+/// dies with a transport error (proxy reset, DNS hiccup). Retry each endpoint
+/// a few times with backoff so `cargo build` survives transient failures.
+const MAX_DOWNLOAD_ATTEMPTS: usize = 3;
+
+fn build_http_client() -> Result<reqwest::blocking::Client, Box<dyn std::error::Error>> {
+    Ok(reqwest::blocking::Client::builder()
+        .connect_timeout(Duration::from_secs(10))
+        .build()?)
+}
+
 fn download_and_verify(
-    url: &str,
+    urls: &[String],
     dest_path: &Path,
     expected_hash: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set"));
     let temp_filename = dest_path.file_name().unwrap();
     let temp_path = out_dir.join(temp_filename);
+    let client = build_http_client()?;
 
-    println!(
-        "cargo:warning=Downloading to temporary path: {:?}",
-        temp_path
-    );
-    let mut response = reqwest::blocking::get(url)?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let error_body = response
-            .text()
-            .unwrap_or_else(|_| "Could not read error body".to_string());
-        return Err(format!("Download failed with status {}: {}", status, error_body).into());
-    }
-
-    let mut temp_file = fs::File::create(&temp_path)?;
-    response.copy_to(&mut temp_file)?;
-    println!("cargo:warning=Download complete. Verifying file integrity...");
-
-    match verify_sha256(&temp_path, expected_hash) {
-        Ok(true) => {
-            fs::copy(&temp_path, dest_path)?;
-            fs::remove_file(&temp_path)?;
+    let mut failures: Vec<String> = Vec::new();
+    for url in urls {
+        for attempt in 1..=MAX_DOWNLOAD_ATTEMPTS {
             println!(
-                "cargo:warning=Successfully downloaded and verified {:?}.",
-                dest_path
+                "cargo:warning=Downloading to temporary path: {:?} (attempt {attempt})",
+                temp_path
             );
-            Ok(())
-        }
-        Ok(false) => {
-            fs::remove_file(&temp_path)?;
-            Err("Verification failed! The downloaded file is corrupt.".into())
-        }
-        Err(e) => {
-            fs::remove_file(&temp_path).ok();
-            Err(format!("Could not verify file after download: {}", e).into())
+            let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+                let _ = fs::remove_file(&temp_path);
+                let mut response = client.get(url).send()?;
+
+                if !response.status().is_success() {
+                    let status = response.status();
+                    let error_body = response
+                        .text()
+                        .unwrap_or_else(|_| "Could not read error body".to_string());
+                    return Err(format!("Download failed with status {}: {}", status, error_body).into());
+                }
+
+                let mut temp_file = fs::File::create(&temp_path)?;
+                response.copy_to(&mut temp_file)?;
+                println!("cargo:warning=Download complete. Verifying file integrity...");
+
+                match verify_sha256(&temp_path, expected_hash) {
+                    Ok(true) => {
+                        fs::copy(&temp_path, dest_path)?;
+                        fs::remove_file(&temp_path)?;
+                        println!(
+                            "cargo:warning=Successfully downloaded and verified {:?}.",
+                            dest_path
+                        );
+                        Ok(())
+                    }
+                    Ok(false) => {
+                        Err("Verification failed! The downloaded file is corrupt.".into())
+                    }
+                    Err(e) => {
+                        Err(format!("Could not verify file after download: {}", e).into())
+                    }
+                }
+            })();
+            match result {
+                Ok(()) => return Ok(()),
+                Err(e) => {
+                    let _ = fs::remove_file(&temp_path);
+                    failures.push(format!("{} (attempt {attempt}): {}", url, e));
+                    if attempt < MAX_DOWNLOAD_ATTEMPTS {
+                        sleep(Duration::from_secs(attempt as u64));
+                    }
+                }
+            }
         }
     }
+    Err(format!(
+        "Failed to download and verify {}: {}",
+        dest_path.display(),
+        failures.join("; ")
+    )
+    .into())
 }
 
 fn runtime_libraries(
@@ -186,8 +246,9 @@ fn ensure_runtime_library(
         let base_url =
             "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/onnxruntimes-v1.22.0/";
         let download_url = format!("{}{}?download=true", base_url, download_filename);
-        println!("cargo:warning=URL: {}", download_url);
-        download_and_verify(&download_url, &dest_path, expected_hash)
+        let candidate_urls = candidate_urls(&download_url);
+        println!("cargo:warning=URLs: {:?}", candidate_urls);
+        download_and_verify(&candidate_urls, &dest_path, expected_hash)
     };
 
     if let Err(e) = result {

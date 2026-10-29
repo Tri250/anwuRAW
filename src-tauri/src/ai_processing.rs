@@ -1062,6 +1062,11 @@ const HF_DEFAULT_HOST: &str = "https://huggingface.co";
 const HF_FALLBACK_HOST: &str = "https://hf-mirror.com";
 const HF_ENDPOINT_ENV: &str = "RAPIDRAW_HF_ENDPOINT";
 
+/// Transport failures on a single endpoint are often transient (proxy resets,
+/// DNS hiccups), so every endpoint gets a few attempts with linear backoff
+/// before the next endpoint in the chain is tried.
+const MAX_ENDPOINT_ATTEMPTS: u32 = 3;
+
 fn candidate_urls(url: &str) -> Vec<String> {
     let Some(rest) = url.strip_prefix(HF_DEFAULT_HOST) else {
         return vec![url.to_string()];
@@ -1084,6 +1089,9 @@ static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::
         // Short connect timeout so that an unreachable endpoint (e.g.
         // huggingface.co from mainland China) fails over to the mirror fast.
         .connect_timeout(Duration::from_secs(10))
+        // Detect dead connections (NAT timeouts, sleeping devices) instead of
+        // letting a stalled model download hang forever.
+        .tcp_keepalive(Duration::from_secs(30))
         .build()
         .expect("failed to build HTTP client for model downloads")
 });
@@ -1167,7 +1175,7 @@ async fn download_model(
 
     let mut failures: Vec<String> = Vec::new();
     for url in &endpoints {
-        for attempt in 1..=2 {
+        for attempt in 1..=MAX_ENDPOINT_ATTEMPTS {
             match try_download_model(app_handle, asset, &tmp_path, url).await {
                 Ok(()) => {
                     if dest.exists() {
@@ -1184,10 +1192,17 @@ async fn download_model(
         }
     }
     Err(anyhow::anyhow!(
-        "Failed to download model {} from {} endpoint(s):\n{}",
+        "Failed to download the {} model ({}).\n{}\n\
+         Every endpoint was unreachable. You can:\n\
+         - check your network connection or proxy settings,\n\
+         - set the {} environment variable to a reachable mirror (e.g. {HF_FALLBACK_HOST}), or\n\
+         - download the file manually and place it at {} (expected SHA256: {}).",
         asset.name,
-        endpoints.len(),
-        failures.join("\n")
+        asset.filename,
+        failures.join("\n"),
+        HF_ENDPOINT_ENV,
+        dest.display(),
+        asset.sha256.unwrap_or("not verified"),
     ))
 }
 
@@ -1210,6 +1225,14 @@ fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool> {
     Ok(hex_hash == expected_hash)
 }
 
+/// Downloads a model and verifies its SHA256.
+///
+/// The download is retried when the transferred bytes are corrupt: an unstable
+/// connection or a caching proxy can serve a truncated body that still looks
+/// like a successful transfer, and a single corrupt byte would otherwise
+/// permanently break the model until the user intervenes. Transport failures
+/// (every endpoint unreachable) are not retried here — `download_model` has
+/// already walked all endpoints and attempts.
 async fn download_and_verify_model(
     app_handle: &tauri::AppHandle,
     models_dir: &Path,
@@ -1221,35 +1244,55 @@ async fn download_and_verify_model(
         None => dest_path.exists(),
     };
 
-    if !is_valid {
-        if dest_path.exists() {
-            println!("Model {} has incorrect hash. Re-downloading.", asset.name);
-            fs::remove_file(&dest_path)?;
-        }
-        let _ = app_handle.emit("ai-model-download-start", asset.name);
-        let download_result = async {
+    if is_valid {
+        return Ok(());
+    }
+
+    if dest_path.exists() {
+        println!("Model {} has incorrect hash. Re-downloading.", asset.name);
+        fs::remove_file(&dest_path)?;
+    }
+    let _ = app_handle.emit("ai-model-download-start", asset.name);
+    let download_result = async {
+        const MAX_DOWNLOAD_ATTEMPTS: usize = 3;
+        let mut attempt = 0;
+        loop {
+            attempt += 1;
             download_model(app_handle, asset, &dest_path).await?;
-            if let Some(expected_hash) = asset.sha256
-                && !verify_sha256(&dest_path, expected_hash)?
-            {
+            let Some(expected_hash) = asset.sha256 else {
+                return Ok(());
+            };
+            if verify_sha256(&dest_path, expected_hash)? {
+                return Ok(());
+            }
+            // Corrupt transfer (e.g. a caching proxy served a truncated body):
+            // drop the file so the next attempt starts from scratch.
+            println!(
+                "Model {} download attempt {attempt} produced a corrupt file. Retrying.",
+                asset.name
+            );
+            let _ = fs::remove_file(&dest_path);
+            if attempt >= MAX_DOWNLOAD_ATTEMPTS {
                 return Err(anyhow::anyhow!(
-                    "Failed to verify model {} after download. Hash mismatch.",
-                    asset.name
+                    "Downloaded model {} failed SHA256 verification after {attempt} attempts \
+                     (corrupt or truncated transfer). Please try again; if the problem persists, \
+                     download the file manually and place it at {} (expected SHA256: {}).",
+                    asset.name,
+                    dest_path.display(),
+                    expected_hash
                 ));
             }
-            Ok(())
         }
-        .await;
-        let _ = app_handle.emit(
-            "ai-model-download-finish",
-            serde_json::json!({
-                "name": asset.name,
-                "error": download_result.as_ref().err().map(|e| e.to_string()),
-            }),
-        );
-        download_result?;
     }
-    Ok(())
+    .await;
+    let _ = app_handle.emit(
+        "ai-model-download-finish",
+        serde_json::json!({
+            "name": asset.name,
+            "error": download_result.as_ref().err().map(|e| e.to_string()),
+        }),
+    );
+    download_result
 }
 
 pub async fn get_or_init_ai_models(
@@ -3008,4 +3051,45 @@ pub struct AiDepthMaskParameters {
     pub orientation_steps: Option<u8>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ai_source: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TEST_URL: &str =
+        "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/nind_denoise_utnet_684.onnx?download=true";
+
+    #[test]
+    fn candidate_urls_fall_back_to_mirror() {
+        // Regression test for model downloads failing with
+        // "error sending request" in regions where huggingface.co is blocked:
+        // the official host must always be followed by the mirror.
+        // No other test reads this variable, so clearing it is race-free.
+        unsafe { std::env::remove_var(HF_ENDPOINT_ENV) };
+        let urls = candidate_urls(TEST_URL);
+        assert_eq!(
+            urls,
+            vec![
+                TEST_URL.to_string(),
+                format!(
+                    "{HF_FALLBACK_HOST}/CyberTimon/RapidRAW-Models/resolve/main/nind_denoise_utnet_684.onnx?download=true"
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn candidate_urls_pass_through_foreign_hosts() {
+        let urls = candidate_urls("https://example.com/model.onnx");
+        assert_eq!(urls, vec!["https://example.com/model.onnx".to_string()]);
+    }
+
+    #[test]
+    fn denoise_asset_hash_is_pinned() {
+        // Guards against a typo in the checksum that would make every
+        // download fail verification.
+        assert_eq!(DENOISE_ASSET.sha256, Some(DENOISE_SHA256));
+        assert_eq!(DENOISE_ASSET.filename, DENOISE_FILENAME);
+    }
 }
