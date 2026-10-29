@@ -812,6 +812,8 @@ impl Default for AppSettings {
             custom_aspect_ratios: Vec::new(),
             adjustment_layout: AdjustmentLayout::default(),
             workspace: WorkspaceState::default(),
+            auto_check_updates: Some(false),
+            preview_demosaic_quality: None,
             immich: crate::immich::ImmichSettings::default(),
         }
     }
