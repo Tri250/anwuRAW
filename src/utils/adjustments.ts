@@ -4,6 +4,11 @@ import { SubMask, SubMaskMode } from '../components/panel/right/Masks';
 import type { AdjustmentLayout, AppSettings } from '../components/ui/AppProperties';
 import type { WhiteBalance } from './whiteBalance';
 import defaultAdjustments from './defaultAdjustments.json';
+import { ADJUSTMENT_SECTIONS } from './adjustmentsSchema';
+import type { Sections } from './adjustmentsSchema';
+
+export { ADJUSTMENT_SECTIONS };
+export type { Sections };
 
 export enum ActiveChannel {
   Blue = 'blue',
@@ -503,15 +508,6 @@ export interface MaskContainer {
   visible: boolean;
 }
 
-export interface Sections {
-  [index: string]: Array<string>;
-  basic: Array<string>;
-  curves: Array<string>;
-  color: Array<string>;
-  details: Array<string>;
-  effects: Array<string>;
-}
-
 export type ActiveTools = Record<string, boolean>;
 
 export const COLOR_LABELS: Array<Color> = [
@@ -988,101 +984,6 @@ export const COPYABLE_ADJUSTMENT_KEYS: string[] = Object.values(ADJUSTMENT_GROUP
   .flat()
   .flatMap((group) => group.keys);
 
-export const ADJUSTMENT_SECTIONS: Sections = {
-  basic: [
-    BasicAdjustment.Brightness,
-    BasicAdjustment.Contrast,
-    BasicAdjustment.Highlights,
-    BasicAdjustment.Shadows,
-    BasicAdjustment.Whites,
-    BasicAdjustment.Blacks,
-    BasicAdjustment.Exposure,
-    'toneMapper',
-  ],
-  curves: ['curves', 'pointCurves', 'parametricCurve', 'curveMode'],
-  color: [
-    ColorAdjustment.Saturation,
-    ColorAdjustment.Temperature,
-    ColorAdjustment.Tint,
-    ColorAdjustment.WhiteBalance,
-    ColorAdjustment.Vibrance,
-    ColorAdjustment.Hsl,
-    ColorAdjustment.ColorGrading,
-    'colorCalibration',
-    ColorAdjustment.Hue,
-  ],
-  details: [
-    DetailsAdjustment.Clarity,
-    DetailsAdjustment.Dehaze,
-    DetailsAdjustment.Structure,
-    DetailsAdjustment.Centré,
-    DetailsAdjustment.CentréX,
-    DetailsAdjustment.CentréY,
-    DetailsAdjustment.Sharpness,
-    DetailsAdjustment.SharpnessThreshold,
-    DetailsAdjustment.LumaNoiseReduction,
-    DetailsAdjustment.ColorNoiseReduction,
-    DetailsAdjustment.AiDenoiseEnabled,
-    DetailsAdjustment.AiDenoiseMethod,
-    DetailsAdjustment.AiDenoiseAmount,
-    DetailsAdjustment.AiDenoiseDetail,
-    DetailsAdjustment.ChromaticAberrationRedCyan,
-    DetailsAdjustment.ChromaticAberrationBlueYellow,
-    DetailsAdjustment.NegativeConversionEnabled,
-    DetailsAdjustment.NegativeRedWeight,
-    DetailsAdjustment.NegativeGreenWeight,
-    DetailsAdjustment.NegativeBlueWeight,
-    DetailsAdjustment.NegativeExposure,
-    DetailsAdjustment.NegativeContrast,
-  ],
-  effects: [
-    CreativeAdjustment.GlowAmount,
-    CreativeAdjustment.HalationAmount,
-    CreativeAdjustment.FlareAmount,
-    Effect.GrainAmount,
-    Effect.GrainRoughness,
-    Effect.GrainSize,
-    Effect.LutIntensity,
-    Effect.LutName,
-    Effect.LutPath,
-    Effect.LutSize,
-    Effect.LutIsSceneReferred,
-    Effect.VignetteAmount,
-    Effect.VignetteFeather,
-    Effect.VignetteMidpoint,
-    Effect.VignetteRoundness,
-    Effect.VignetteCenterX,
-    Effect.VignetteCenterY,
-    Effect.LensBlurEnabled,
-    Effect.LensBlurAmount,
-    Effect.lensBlurDiffusion,
-    Effect.LensBlurShape,
-    Effect.LensBlurDepthMap,
-    Effect.LensBlurMinDepth,
-    Effect.LensBlurMaxDepth,
-    Effect.LensBlurMinFade,
-    Effect.LensBlurMaxFade,
-    Effect.RelightEnabled,
-    Effect.RelightNormalMap,
-    Effect.RelightLights,
-    Effect.RelightAmbient,
-    Effect.RelightSoftness,
-    Effect.RelightShine,
-    Effect.RelightShadows,
-    Effect.RelightShadowSoftness,
-    Effect.FogEnabled,
-    Effect.FogDepthMap,
-    Effect.FogAmount,
-    Effect.FogStart,
-    Effect.FogDensity,
-    Effect.FogHeight,
-    Effect.FogVariation,
-    Effect.FogGlow,
-    Effect.FogTemperature,
-    Effect.FogTint,
-  ],
-};
-
 const SECTION_KEY_OWNERS: Record<string, string> = Object.fromEntries(
   Object.entries(ADJUSTMENT_SECTIONS).flatMap(([section, keys]) => keys.map((key) => [key, section])),
 );
@@ -1233,3 +1134,148 @@ export const mergeActiveTools = (base: ToolStateSource, overrides: ToolStateSour
 
 export const getAdjustmentToolOrder = (section: string, toolOrder?: Record<string, string[]>): string[] =>
   reconcileOrder(getAdjustmentSectionToolIds(section), toolOrder?.[section]);
+
+// ---------------------------------------------------------------------------
+// Preset strength (0–200%)
+// ---------------------------------------------------------------------------
+
+/** Controls whose value IS the effect amount (100 = full strength), scaled multiplicatively. */
+const STRENGTH_UNIT_KEYS = new Set(['lutIntensity', 'aiDenoiseAmount']);
+
+interface StrengthCurvePoint {
+  x: number;
+  y: number;
+}
+
+const evaluateStrengthCurveY = (curve: Array<StrengthCurvePoint>, targetX: number): number => {
+  const len = curve.length;
+  if (len === 1) return curve[0].y;
+  if (targetX <= curve[0].x) return curve[0].y;
+  if (targetX >= curve[len - 1].x) return curve[len - 1].y;
+
+  for (let i = 0; i < len - 1; i++) {
+    const p2 = curve[i + 1];
+    if (targetX <= p2.x) {
+      const p1 = curve[i];
+      const range = p2.x - p1.x;
+      return range === 0 ? p1.y : p1.y + ((targetX - p1.x) / range) * (p2.y - p1.y);
+    }
+  }
+  return targetX;
+};
+
+const scaleStrengthCurve = (presetCurve: Array<StrengthCurvePoint>, base: unknown, k: number) => {
+  const baseCurve = Array.isArray(base) ? (base as Array<StrengthCurvePoint>) : [];
+  const xVals: number[] = [];
+  let p1 = 0;
+  let p2 = 0;
+  const len1 = baseCurve.length;
+  const len2 = presetCurve.length;
+
+  while (p1 < len1 && p2 < len2) {
+    const x1 = baseCurve[p1].x;
+    const x2 = presetCurve[p2].x;
+    if (x1 < x2) {
+      xVals.push(x1);
+      p1++;
+    } else if (x1 > x2) {
+      xVals.push(x2);
+      p2++;
+    } else {
+      xVals.push(x1);
+      p1++;
+      p2++;
+    }
+  }
+  while (p1 < len1) xVals.push(baseCurve[p1++].x);
+  while (p2 < len2) xVals.push(presetCurve[p2++].x);
+
+  return xVals.map((x) => {
+    const yBase = evaluateStrengthCurveY(baseCurve, x);
+    const yPreset = evaluateStrengthCurveY(presetCurve, x);
+    const y = yBase + (yPreset - yBase) * k;
+    return { x, y: y < 0 ? 0 : y > 255 ? 255 : y };
+  });
+};
+
+const scaleStrengthRelightLights = (lights: Array<RelightLight>, k: number) =>
+  lights.map((light) => ({
+    ...light,
+    intensity: light.intensity * k,
+    temperature: light.temperature * k,
+    tint: light.tint * k,
+  }));
+
+/**
+ * Scales the visual weight of an adjustments object to `strength` percent (0–200).
+ *
+ * Numeric controls move by the scaled displacement from their default value
+ * (`default + (value - default) * k`), so 100% reproduces the original preset
+ * and 0% neutralizes it. Curve points are interpolated along the identity line,
+ * LUT / AI-denoise intensity scale multiplicatively, masks scale their inner
+ * adjustments recursively, and geometry (crop / transform / lens correction)
+ * is never scaled. Booleans, enums and strings pass through unchanged except
+ * at 0%, where the initial (neutral) value is restored.
+ */
+export const applyStrength = (
+  adjustments: Record<string, any>,
+  strength: number,
+  initial: Record<string, any> = INITIAL_ADJUSTMENTS as unknown as Record<string, any>,
+): Record<string, any> => {
+  const k = Math.min(200, Math.max(0, strength)) / 100;
+  if (k === 1) return { ...adjustments };
+
+  const geometryKeys = new Set(ADJUSTMENT_GROUPS.geometry.flatMap((group) => group.keys));
+  const result: Record<string, any> = {};
+
+  for (const key of Object.keys(adjustments)) {
+    const presetVal = adjustments[key];
+    const initialVal = initial[key] !== undefined ? initial[key] : (INITIAL_ADJUSTMENTS as any)[key];
+
+    if (geometryKeys.has(key)) {
+      result[key] = presetVal;
+      continue;
+    }
+
+    if (k === 0) {
+      result[key] = initialVal;
+      continue;
+    }
+
+    if (typeof presetVal === 'number') {
+      if (STRENGTH_UNIT_KEYS.has(key)) {
+        result[key] = presetVal * k;
+      } else if (typeof initialVal === 'number') {
+        result[key] = initialVal + (presetVal - initialVal) * k;
+      } else {
+        result[key] = presetVal;
+      }
+      continue;
+    }
+
+    if (Array.isArray(presetVal)) {
+      if (key === 'masks') {
+        result[key] = presetVal.map((container: MaskContainer) => ({
+          ...container,
+          adjustments: applyStrength((container?.adjustments ?? {}) as Record<string, any>, strength),
+        }));
+      } else if (key === 'relightLights') {
+        result[key] = scaleStrengthRelightLights(presetVal as Array<RelightLight>, k);
+      } else if (presetVal.length > 0 && presetVal[0]?.x !== undefined && presetVal[0]?.y !== undefined) {
+        result[key] = scaleStrengthCurve(presetVal, initialVal, k);
+      } else {
+        result[key] = presetVal;
+      }
+      continue;
+    }
+
+    if (presetVal !== null && typeof presetVal === 'object') {
+      result[key] = applyStrength(presetVal, strength, (initialVal ?? {}) as Record<string, any>);
+      continue;
+    }
+
+    result[key] = presetVal;
+  }
+
+  return result;
+};

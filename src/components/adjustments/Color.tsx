@@ -1,5 +1,5 @@
-import { useState, useMemo, memo, CSSProperties } from 'react';
-import { Pipette, Sliders, Wand2 } from 'lucide-react';
+import { useState, useMemo, useCallback, memo, CSSProperties } from 'react';
+import { Pipette, Sliders, Target, Wand2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
@@ -532,6 +532,20 @@ function ColorPanel({
   const hiddenTools = getHiddenAdjustmentTools(appSettings?.adjustmentLayout);
   const toolOrder = getAdjustmentToolOrder('color', appSettings?.adjustmentLayout?.toolOrder);
 
+  // G2 目标调整入口：取色匹配 HSL 通道后在画布拖动调整 hue/sat。
+  const isTargetedAdjustmentActive = useEditorStore((state) => state.isTargetedAdjustmentActive);
+  const setEditor = useEditorStore((state) => state.setEditor);
+  const toggleTargetedAdjustment = useCallback(
+    () =>
+      setEditor((state) => ({
+        isTargetedAdjustmentActive: !state.isTargetedAdjustmentActive,
+        isWbPickerActive: false,
+        isRelightPickerActive: false,
+        activeCenterMarker: null,
+      })),
+    [setEditor],
+  );
+
   const HSL_COLORS = useMemo<Array<ColorProps>>(
     () => [
       { name: 'reds', color: '#f87171', label: t('adjustments.color.mixerColors.reds') },
@@ -750,6 +764,21 @@ function ColorPanel({
           id="colorMixer"
           order={toolOrder.indexOf('colorMixer')}
           title={t('adjustments.color.colorMixer')}
+          actions={
+            !isForMask && (
+              <button
+                onClick={toggleTargetedAdjustment}
+                className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${
+                  isTargetedAdjustmentActive
+                    ? 'bg-accent text-button-text'
+                    : 'hover:bg-bg-secondary text-text-secondary'
+                }`}
+                data-tooltip={t('adjustments.color.targetedTooltip')}
+              >
+                <Target size={16} />
+              </button>
+            )
+          }
         >
           <div className="flex justify-between mb-4 px-1">
             {HSL_COLORS.map(({ name, color, label }) => (

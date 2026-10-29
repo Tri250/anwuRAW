@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { Channel, convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { toast } from 'react-toastify';
-import { Status } from '../components/ui/ExportImportProperties';
+import { Status, UnfinishedExportJob } from '../components/ui/ExportImportProperties';
 import { Invokes, Progress, WaveformData } from '../components/ui/AppProperties';
 import { MaskContainer } from '../utils/adjustments';
 import { AiJobsStatus, JobKind, JobStatus, useProcessStore } from '../store/useProcessStore';
@@ -173,6 +173,17 @@ export function useTauriListeners({
       flushHandle.current = requestAnimationFrame(flushThumbnailBatch);
     };
 
+    // G5 断点续传：启动时与每次导出收尾后检测未完成的导出任务（journal）。
+    const refreshUnfinishedExportJob = async () => {
+      try {
+        const job = await invoke<UnfinishedExportJob | null>(Invokes.GetUnfinishedExportJob);
+        if (isEffectActive) useProcessStore.getState().setProcess({ unfinishedExportJob: job });
+      } catch {
+        // 后端不可用或目录无法读取时静默忽略
+      }
+    };
+    refreshUnfinishedExportJob();
+
     const listeners = [
       // 注：uncropped 预览数据流走 invoke(generate_uncropped_preview) 返回值（useImageProcessing），
       // 后端无对应 emit 事件，不要在此订阅。
@@ -285,14 +296,17 @@ export function useTauriListeners({
         if (isEffectActive) useProcessStore.getState().setExportState({ progress: event.payload });
       }),
       listen('export-complete', () => {
-        if (isEffectActive) useProcessStore.getState().setExportState({ status: Status.Success });
+        if (!isEffectActive) return;
+        useProcessStore.getState().setExportState({ status: Status.Success });
+        refreshUnfinishedExportJob();
       }),
       listen('export-error', (event: any) => {
-        if (isEffectActive)
-          useProcessStore.getState().setExportState({
-            status: Status.Error,
-            errorMessage: typeof event.payload === 'string' ? event.payload : 'Unknown error',
-          });
+        if (!isEffectActive) return;
+        useProcessStore.getState().setExportState({
+          status: Status.Error,
+          errorMessage: typeof event.payload === 'string' ? event.payload : 'Unknown error',
+        });
+        refreshUnfinishedExportJob();
       }),
       listen('export-cancelling', () => {
         if (isEffectActive) useProcessStore.getState().setExportState({ status: Status.Cancelling });

@@ -182,6 +182,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   const isStraightenActive = useEditorStore((s) => s.isStraightenActive);
   const isWbPickerActive = useEditorStore((s) => s.isWbPickerActive);
   const isRelightPickerActive = useEditorStore((s) => s.isRelightPickerActive);
+  const isTargetedAdjustmentActive = useEditorStore((s) => s.isTargetedAdjustmentActive);
   const liveRotation = useEditorStore((s) => s.liveRotation);
   const brushSettings = useEditorStore((s) => s.brushSettings);
   const activeMaskContainerId = useEditorStore((s) => s.activeMaskContainerId);
@@ -346,6 +347,23 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
       window.removeEventListener('blur', handleBlur);
     };
   }, []);
+
+  // G2 目标调整快捷键 Ctrl/Cmd+Alt+H：与 WB/重光取样互斥。
+  useEffect(() => {
+    const handleTargetedShortcut = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.altKey && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        setEditor((state) => ({
+          isTargetedAdjustmentActive: !state.isTargetedAdjustmentActive,
+          isWbPickerActive: false,
+          isRelightPickerActive: false,
+          activeCenterMarker: null,
+        }));
+      }
+    };
+    window.addEventListener('keydown', handleTargetedShortcut);
+    return () => window.removeEventListener('keydown', handleTargetedShortcut);
+  }, [setEditor]);
 
   useEffect(() => {
     const clearCropResizeStart = () => {
@@ -832,7 +850,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         activeSubMask?.type === Mask.Luminance ||
         activeSubMask?.parameters?.isInitialDraw)) ||
     isWbPickerActive ||
-    isRelightPickerActive;
+    isRelightPickerActive ||
+    isTargetedAdjustmentActive;
 
   useEffect(() => {
     const container = imageContainerRef.current;

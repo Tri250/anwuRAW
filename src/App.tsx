@@ -61,6 +61,7 @@ import { useLibraryActions } from './hooks/useLibraryActions';
 import { useProductivityActions } from './hooks/useProductivityActions';
 
 import { useAppInitialization } from './hooks/useAppInitialization';
+import { useAutoUpdateCheck } from './hooks/useAutoUpdateCheck';
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler';
 import './i18n';
 
@@ -273,6 +274,9 @@ function App() {
   });
 
   const isAndroid = osPlatform === 'android';
+
+  // 可选的启动自动更新检查（默认关闭；桌面端仅此一处触发）。
+  useAutoUpdateCheck(appSettings?.autoCheckUpdates ?? false, isAndroid);
 
   // 触屏无 hover：Android 上经全局样式强制显示依赖 group-hover 展开的操作按钮。
   useEffect(() => {

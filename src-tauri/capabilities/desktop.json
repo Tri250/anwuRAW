@@ -4,5 +4,5 @@
   "description": "Clerk auth (desktop only)",
   "windows": ["main"],
   "platforms": ["linux", "macOS", "windows"],
-  "permissions": ["clerk:default"]
+  "permissions": ["clerk:default", "updater:default"]
 }

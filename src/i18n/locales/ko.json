@@ -63,6 +63,7 @@
       },
       "presence": "외관",
       "saturation": "채도",
+      "targetedTooltip": "부분 조정: 캔버스에서 색상을 샘플링한 후 드래그하여 색조/채도를 조정합니다 (Ctrl+Alt+H)",
       "temperature": "색온도",
       "tint": "틴트",
       "toggleSliders": "슬라이더 전환",
@@ -889,6 +890,11 @@
         "tethering": "테더링"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · 색조 {{hue}}, 채도 {{sat}}",
+      "hint": "캔버스를 클릭해 색상을 샘플링하고 드래그하여 색조/채도를 조정하세요. Esc로 종료",
+      "sampleFailed": "이 위치에서 사용 가능한 색상을 샘플링하지 못했습니다"
+    },
     "toolbar": {
       "history": "기록",
       "switchToVariant": "Switch to {{label}}",
@@ -989,6 +995,11 @@
       },
       "pixels": "픽셀",
       "resizeToFit": "맞춤 크기 조정"
+    },
+    "resume": {
+      "bannerDetail": "이전 내보내기가 완료되지 않았습니다: {{done}}/{{total}} 완료, {{remaining}}개 남음",
+      "discard": "폐기",
+      "resume": "내보내기 계속"
     },
     "sections": {
       "advanced": "고급",
@@ -1969,6 +1980,10 @@
         "exportThreadsDesc": "동시에 내보내는 이미지 수입니다. 자동은 CPU에 맞는 값을 선택합니다. 큰 내보내기가 실패하거나 GPU 메모리가 적다면 낮추세요.",
         "heading": "고급",
         "headingDesc": "썸네일, 캐시, 내보내기 성능을 조정합니다. 대부분의 사용자는 기본값으로 충분합니다.",
+        "previewDemosaicHigh": "높은 품질",
+        "previewDemosaicQuality": "RAW 미리보기 디모자이크",
+        "previewDemosaicQualityDesc": "편집기 미리보기에 사용되는 RAW 디모자이크 품질입니다. 높은 품질은 더 선명하지만 탐색이 느려집니다. 내보내기는 항상 전체 품질을 사용합니다.",
+        "previewDemosaicSpeed": "빠름(기본값)",
         "title": "고급 설정"
       },
       "ai": {
@@ -2179,6 +2194,22 @@
     "title": "설정",
     "tooltips": {
       "goHome": "홈으로 이동"
+    },
+    "updater": {
+      "autoCheck": "자동으로 업데이트 확인",
+      "autoCheckDesc": "앱 시작 시 GitHub에서 새 버전을 확인합니다.",
+      "available": "버전 {{version}}을(를) 사용할 수 있습니다.",
+      "checking": "업데이트 확인 중…",
+      "checkNow": "업데이트 확인",
+      "currentVersion": "현재 버전: {{version}}",
+      "desc": "최신 기능과 수정 사항을 적용하기 위해 앱을 최신 상태로 유지하세요.",
+      "downloading": "업데이트 다운로드 중…",
+      "downloadInstall": "다운로드 후 설치",
+      "failed": "업데이트 확인 실패: {{error}}",
+      "installing": "설치 후 재시작 중…",
+      "releaseReady": "다운로드가 완료되면 업데이트가 적용됩니다.",
+      "title": "소프트웨어 업데이트",
+      "upToDate": "최신 버전을 사용 중입니다({{version}})."
     }
   },
   "tethering": {

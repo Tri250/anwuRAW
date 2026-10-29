@@ -1,7 +1,19 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
-import { FileInput, CheckCircle, XCircle, Loader, Ban, ChevronDown, ChevronRight, Settings, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  FileInput,
+  CheckCircle,
+  XCircle,
+  Loader,
+  Ban,
+  ChevronDown,
+  ChevronRight,
+  RotateCcw,
+  Settings,
+  X,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import debounce from 'lodash.debounce';
@@ -32,6 +44,7 @@ import { useOsPlatform } from '../../../hooks/useOsPlatform';
 import Text from '../../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { useEditorStore } from '../../../store/useEditorStore';
+import { useProcessStore } from '../../../store/useProcessStore';
 import { useUIStore } from '../../../store/useUIStore';
 import ImmichExportOptions, { useImmichExportAvailable, useImmichExportChoice } from '../../immich/ImmichExportOptions';
 import { prepareImmichExport } from '../../immich/immichApi';
@@ -421,6 +434,7 @@ export default function ExportPanel({
   const isPanelReallyActive = Object.values(activePanels).includes(Panel.Export);
 
   const { status, progress, errorMessage } = exportState;
+  const unfinishedExportJob = useProcessStore((state) => state.unfinishedExportJob);
   const isExporting = [Status.Exporting, Status.Cancelling].includes(status);
   const isCancelling = status === Status.Cancelling;
   const isLibraryContext = !!onClose;
@@ -742,6 +756,37 @@ export default function ExportPanel({
         current.status === Status.Cancelling ? { status: Status.Exporting } : {},
       );
     }
+  };
+
+  // G5 断点续传：继续上一次未完成的批量导出（仅重跑 pending/failed 项）。
+  const handleResumeExport = async () => {
+    if (!unfinishedExportJob) return;
+    const remaining = unfinishedExportJob.pendingCount + unfinishedExportJob.failedCount;
+    setExportState({
+      destination: null,
+      errorMessage: '',
+      progress: { current: 0, total: remaining },
+      status: Status.Exporting,
+    });
+    try {
+      await invoke(Invokes.ResumeExportJob, { jobId: unfinishedExportJob.jobId });
+    } catch (error) {
+      setExportState({
+        errorMessage: typeof error === 'string' ? error : t('export.status.failed'),
+        progress,
+        status: Status.Error,
+      });
+    }
+  };
+
+  const handleDiscardExportJob = async () => {
+    if (!unfinishedExportJob) return;
+    try {
+      await invoke(Invokes.DiscardExportJob, { jobId: unfinishedExportJob.jobId });
+    } catch (error) {
+      console.error('Failed to discard export job:', error);
+    }
+    useProcessStore.getState().setProcess({ unfinishedExportJob: null });
   };
 
   const canExport = numImages > 0 && isPadValid && isBorderValid;
@@ -1221,6 +1266,41 @@ export default function ExportPanel({
       </div>
 
       <div className="p-3 border-t border-surface shrink-0 space-y-2">
+        {unfinishedExportJob && !isExporting && (
+          <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-2.5 space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={14} className="text-yellow-500 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0 space-y-0.5">
+                <Text as="div" variant={TextVariants.small} color={TextColors.primary}>
+                  {t('export.resume.bannerDetail', {
+                    done: unfinishedExportJob.doneCount,
+                    total: unfinishedExportJob.totalCount,
+                    remaining: unfinishedExportJob.pendingCount + unfinishedExportJob.failedCount,
+                  })}
+                </Text>
+                {unfinishedExportJob.firstError && (
+                  <Text as="div" variant={TextVariants.small} color={TextColors.secondary} className="break-words">
+                    {unfinishedExportJob.firstError}
+                  </Text>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                className="flex-1 rounded-md h-8 text-sm justify-center bg-yellow-500/20 text-yellow-400 shadow-none"
+                onClick={handleResumeExport}
+              >
+                <RotateCcw size={14} className="mr-1" /> {t('export.resume.resume')}
+              </Button>
+              <Button
+                className="flex-1 rounded-md h-8 text-sm justify-center bg-surface text-text-secondary shadow-none"
+                onClick={handleDiscardExportJob}
+              >
+                {t('export.resume.discard')}
+              </Button>
+            </div>
+          </div>
+        )}
         <Text as="div" variant={TextVariants.small} color={TextColors.primary} className="text-center">
           {isEstimating ? (
             <span className="italic">{t('export.status.estimatingSize')}</span>

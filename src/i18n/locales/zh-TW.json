@@ -63,6 +63,7 @@
       },
       "presence": "質感",
       "saturation": "飽和度",
+      "targetedTooltip": "目標調整：在畫布上取樣顏色並拖動，調整該顏色的色相/飽和度（Ctrl+Alt+H）",
       "temperature": "色溫",
       "tint": "色調",
       "toggleSliders": "切換滑桿",
@@ -889,6 +890,11 @@
         "tethering": "連線拍攝"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · 色相 {{hue}}，飽和度 {{sat}}",
+      "hint": "點擊畫布取樣顏色，拖動調整色相/飽和度；Esc 退出",
+      "sampleFailed": "無法在此位置取到可用顏色"
+    },
     "toolbar": {
       "history": "歷史記錄",
       "switchToVariant": "Switch to {{label}}",
@@ -989,6 +995,11 @@
       },
       "pixels": "畫素",
       "resizeToFit": "調整大小以適應"
+    },
+    "resume": {
+      "bannerDetail": "上次匯出未完成：已完成 {{done}}/{{total}}，剩餘 {{remaining}} 項",
+      "discard": "捨棄任務",
+      "resume": "繼續匯出"
     },
     "sections": {
       "advanced": "高階",
@@ -1969,6 +1980,10 @@
         "exportThreadsDesc": "同時匯出的影像數量。「自動」會依據你的 CPU 選擇合適的值。如果大型匯出失敗或顯示卡記憶體較少，請調低。",
         "heading": "進階",
         "headingDesc": "縮圖、快取與匯出的效能調整。預設值適合大多數使用者。",
+        "previewDemosaicHigh": "高品質",
+        "previewDemosaicQuality": "RAW 預覽去馬賽克",
+        "previewDemosaicQualityDesc": "編輯器預覽使用的 RAW 去馬賽克品質。高品質更銳利但瀏覽較慢；匯出一律使用完整品質。",
+        "previewDemosaicSpeed": "快速（預設）",
         "title": "進階設定"
       },
       "ai": {
@@ -2179,6 +2194,22 @@
     "title": "設定",
     "tooltips": {
       "goHome": "返回首頁"
+    },
+    "updater": {
+      "autoCheck": "自動檢查更新",
+      "autoCheckDesc": "應用程式啟動時檢查 GitHub 上是否有新版本。",
+      "available": "發現新版本 {{version}}。",
+      "checking": "正在檢查更新…",
+      "checkNow": "檢查更新",
+      "currentVersion": "目前版本：{{version}}",
+      "desc": "保持應用程式為最新版本，取得最新功能與修復。",
+      "downloading": "正在下載更新…",
+      "downloadInstall": "下載並安裝",
+      "failed": "檢查更新失敗：{{error}}",
+      "installing": "正在安裝並重新啟動…",
+      "releaseReady": "更新將在下載完成後自動套用。",
+      "title": "軟體更新",
+      "upToDate": "已是最新版本（{{version}}）。"
     }
   },
   "tethering": {

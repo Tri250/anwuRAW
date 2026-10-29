@@ -31,9 +31,19 @@
     },
     "macOSPrivateApi": true
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFGRkU3MTZDRTk3QjdENjIKUldSaWZYdnBiSEgrSDlUSmZ1VGNtZ2dZL1JpT0VWenZmOXhDU3hsUmJRUUIzeEVzQ2tGWEUzNisK",
+      "endpoints": ["https://github.com/Tri250/anwuRAW/releases/latest/download/latest.json"],
+      "windows": {
+        "installMode": "passover"
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
     "resources": ["resources", "lensfun_db"],
     "category": "Photography",

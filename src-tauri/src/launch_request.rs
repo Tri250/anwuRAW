@@ -23,6 +23,7 @@ pub struct HeadlessExportSession {
     pub tiff_bit_depth: TiffBitDepth,
     pub keep_metadata: bool,
     pub adjustments_override: Option<String>,
+    pub long_edge: Option<u32>,
 }
 
 #[derive(Clone, Debug)]
@@ -69,6 +70,7 @@ pub fn parse_launch_args(args: &[String]) -> LaunchRequest {
         let mut tiff_bit_depth = TiffBitDepth::default();
         let mut keep_metadata = false;
         let mut adjustments_override = None;
+        let mut long_edge = None;
 
         if let Some(src) = iter.next()
             && !src.starts_with('-')
@@ -114,6 +116,25 @@ pub fn parse_launch_args(args: &[String]) -> LaunchRequest {
                     tiff_bit_depth = value;
                 }
                 "--keep-metadata" => keep_metadata = true,
+                "--long-edge" => {
+                    let Some(value) = iter.next() else {
+                        return LaunchRequest::InvalidHeadless(
+                            "Missing value for --long-edge; expected a pixel count.".to_string(),
+                        );
+                    };
+                    let Ok(value) = value.parse::<u32>() else {
+                        return LaunchRequest::InvalidHeadless(format!(
+                            "Invalid long edge '{}'; expected a pixel count.",
+                            value
+                        ));
+                    };
+                    if value == 0 {
+                        return LaunchRequest::InvalidHeadless(
+                            "Invalid long edge '0'; expected a positive pixel count.".to_string(),
+                        );
+                    }
+                    long_edge = Some(value);
+                }
                 "--adjustments" => {
                     if let Some(adj) = iter.next() {
                         adjustments_override = Some(adj.clone());
@@ -131,6 +152,7 @@ pub fn parse_launch_args(args: &[String]) -> LaunchRequest {
             tiff_bit_depth,
             keep_metadata,
             adjustments_override,
+            long_edge,
         });
     }
 

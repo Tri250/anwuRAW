@@ -1,0 +1,1586 @@
+{
+  "schemaVersion": 1,
+  "generator": "tools/generate-adjustments-schema.mjs",
+  "sections": {
+    "basic": [
+      "brightness",
+      "contrast",
+      "highlights",
+      "shadows",
+      "whites",
+      "blacks",
+      "exposure",
+      "toneMapper"
+    ],
+    "curves": [
+      "curves",
+      "pointCurves",
+      "parametricCurve",
+      "curveMode"
+    ],
+    "color": [
+      "saturation",
+      "temperature",
+      "tint",
+      "whiteBalance",
+      "vibrance",
+      "hsl",
+      "colorGrading",
+      "colorCalibration",
+      "hue"
+    ],
+    "details": [
+      "clarity",
+      "dehaze",
+      "structure",
+      "centré",
+      "centréX",
+      "centréY",
+      "sharpness",
+      "sharpnessThreshold",
+      "lumaNoiseReduction",
+      "colorNoiseReduction",
+      "aiDenoiseEnabled",
+      "aiDenoiseMethod",
+      "aiDenoiseAmount",
+      "aiDenoiseDetail",
+      "chromaticAberrationRedCyan",
+      "chromaticAberrationBlueYellow",
+      "negativeConversionEnabled",
+      "negativeRedWeight",
+      "negativeGreenWeight",
+      "negativeBlueWeight",
+      "negativeExposure",
+      "negativeContrast"
+    ],
+    "effects": [
+      "glowAmount",
+      "halationAmount",
+      "flareAmount",
+      "grainAmount",
+      "grainRoughness",
+      "grainSize",
+      "lutIntensity",
+      "lutName",
+      "lutPath",
+      "lutSize",
+      "lutIsSceneReferred",
+      "vignetteAmount",
+      "vignetteFeather",
+      "vignetteMidpoint",
+      "vignetteRoundness",
+      "vignetteCenterX",
+      "vignetteCenterY",
+      "lensBlurEnabled",
+      "lensBlurAmount",
+      "lensBlurDiffusion",
+      "lensBlurShape",
+      "lensBlurDepthMap",
+      "lensBlurMinDepth",
+      "lensBlurMaxDepth",
+      "lensBlurMinFade",
+      "lensBlurMaxFade",
+      "relightEnabled",
+      "relightNormalMap",
+      "relightLights",
+      "relightAmbient",
+      "relightSoftness",
+      "relightShine",
+      "relightShadows",
+      "relightShadowSoftness",
+      "fogEnabled",
+      "fogDepthMap",
+      "fogAmount",
+      "fogStart",
+      "fogDensity",
+      "fogHeight",
+      "fogVariation",
+      "fogGlow",
+      "fogTemperature",
+      "fogTint"
+    ]
+  },
+  "params": {
+    "activeTools": {
+      "type": "any",
+      "default": {}
+    },
+    "aiDenoiseAmount": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 100
+    },
+    "aiDenoiseDetail": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "aiDenoiseEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "aiDenoiseMethod": {
+      "type": "enum",
+      "values": [
+        "ai",
+        "bm3d"
+      ],
+      "default": "ai"
+    },
+    "aiPatches": {
+      "type": "any",
+      "default": []
+    },
+    "aspectRatio": {
+      "type": "any",
+      "default": 0
+    },
+    "baselineExposure": {
+      "type": "boolean",
+      "default": true
+    },
+    "blacks": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "brightness": {
+      "type": "number",
+      "min": -5,
+      "max": 5,
+      "step": 0.01,
+      "default": 0
+    },
+    "centré": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "centréX": {
+      "type": "any",
+      "default": 0.5
+    },
+    "centréY": {
+      "type": "any",
+      "default": 0.5
+    },
+    "clarity": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "chromaticAberrationBlueYellow": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "chromaticAberrationRedCyan": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "colorCalibration": {
+      "type": "object",
+      "properties": {
+        "shadowsTint": {
+          "type": "number",
+          "min": -100,
+          "max": 100
+        },
+        "redHue": {
+          "type": "number",
+          "min": -100,
+          "max": 100
+        },
+        "redSaturation": {
+          "type": "number",
+          "min": -100,
+          "max": 100
+        },
+        "greenHue": {
+          "type": "number",
+          "min": -100,
+          "max": 100
+        },
+        "greenSaturation": {
+          "type": "number",
+          "min": -100,
+          "max": 100
+        },
+        "blueHue": {
+          "type": "number",
+          "min": -100,
+          "max": 100
+        },
+        "blueSaturation": {
+          "type": "number",
+          "min": -100,
+          "max": 100
+        }
+      },
+      "default": {
+        "shadowsTint": 0,
+        "redHue": 0,
+        "redSaturation": 0,
+        "greenHue": 0,
+        "greenSaturation": 0,
+        "blueHue": 0,
+        "blueSaturation": 0
+      }
+    },
+    "colorGrading": {
+      "type": "object",
+      "properties": {
+        "balance": {
+          "type": "number",
+          "min": -100,
+          "max": 100
+        },
+        "blending": {
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        "global": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number"
+            },
+            "saturation": {
+              "type": "number"
+            },
+            "luminance": {
+              "type": "number"
+            }
+          }
+        },
+        "highlights": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number"
+            },
+            "saturation": {
+              "type": "number"
+            },
+            "luminance": {
+              "type": "number"
+            }
+          }
+        },
+        "midtones": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number"
+            },
+            "saturation": {
+              "type": "number"
+            },
+            "luminance": {
+              "type": "number"
+            }
+          }
+        },
+        "shadows": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number"
+            },
+            "saturation": {
+              "type": "number"
+            },
+            "luminance": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "default": {
+        "balance": 0,
+        "blending": 50,
+        "global": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "highlights": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "midtones": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "shadows": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        }
+      }
+    },
+    "colorNoiseReduction": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "contrast": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "crop": {
+      "type": "any",
+      "default": null
+    },
+    "curves": {
+      "type": "any",
+      "default": {
+        "blue": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 255,
+            "y": 255
+          }
+        ],
+        "green": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 255,
+            "y": 255
+          }
+        ],
+        "luma": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 255,
+            "y": 255
+          }
+        ],
+        "red": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 255,
+            "y": 255
+          }
+        ]
+      }
+    },
+    "pointCurves": {
+      "type": "any",
+      "default": {
+        "blue": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 255,
+            "y": 255
+          }
+        ],
+        "green": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 255,
+            "y": 255
+          }
+        ],
+        "luma": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 255,
+            "y": 255
+          }
+        ],
+        "red": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 255,
+            "y": 255
+          }
+        ]
+      }
+    },
+    "parametricCurve": {
+      "type": "object",
+      "properties": {
+        "luma": {
+          "type": "object",
+          "properties": {
+            "darks": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "shadows": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "highlights": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "lights": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "whiteLevel": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "blackLevel": {
+              "type": "number",
+              "min": -100,
+              "max": 0
+            },
+            "split1": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "split2": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "split3": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            }
+          }
+        },
+        "red": {
+          "type": "object",
+          "properties": {
+            "darks": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "shadows": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "highlights": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "lights": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "whiteLevel": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "blackLevel": {
+              "type": "number",
+              "min": -100,
+              "max": 0
+            },
+            "split1": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "split2": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "split3": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            }
+          }
+        },
+        "green": {
+          "type": "object",
+          "properties": {
+            "darks": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "shadows": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "highlights": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "lights": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "whiteLevel": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "blackLevel": {
+              "type": "number",
+              "min": -100,
+              "max": 0
+            },
+            "split1": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "split2": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "split3": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            }
+          }
+        },
+        "blue": {
+          "type": "object",
+          "properties": {
+            "darks": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "shadows": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "highlights": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "lights": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "whiteLevel": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "blackLevel": {
+              "type": "number",
+              "min": -100,
+              "max": 0
+            },
+            "split1": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "split2": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            },
+            "split3": {
+              "type": "number",
+              "min": 0,
+              "max": 100
+            }
+          }
+        }
+      },
+      "default": {
+        "luma": {
+          "darks": 0,
+          "shadows": 0,
+          "highlights": 0,
+          "lights": 0,
+          "whiteLevel": 0,
+          "blackLevel": 0,
+          "split1": 25,
+          "split2": 50,
+          "split3": 75
+        },
+        "red": {
+          "darks": 0,
+          "shadows": 0,
+          "highlights": 0,
+          "lights": 0,
+          "whiteLevel": 0,
+          "blackLevel": 0,
+          "split1": 25,
+          "split2": 50,
+          "split3": 75
+        },
+        "green": {
+          "darks": 0,
+          "shadows": 0,
+          "highlights": 0,
+          "lights": 0,
+          "whiteLevel": 0,
+          "blackLevel": 0,
+          "split1": 25,
+          "split2": 50,
+          "split3": 75
+        },
+        "blue": {
+          "darks": 0,
+          "shadows": 0,
+          "highlights": 0,
+          "lights": 0,
+          "whiteLevel": 0,
+          "blackLevel": 0,
+          "split1": 25,
+          "split2": 50,
+          "split3": 75
+        }
+      }
+    },
+    "curveMode": {
+      "type": "enum",
+      "values": [
+        "point",
+        "parametric"
+      ],
+      "default": "point"
+    },
+    "dehaze": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "exposure": {
+      "type": "number",
+      "min": -5,
+      "max": 5,
+      "step": 0.01,
+      "default": 0
+    },
+    "flipHorizontal": {
+      "type": "boolean",
+      "default": false
+    },
+    "flipVertical": {
+      "type": "boolean",
+      "default": false
+    },
+    "flareAmount": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "glowAmount": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "grainAmount": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "grainRoughness": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 50
+    },
+    "grainSize": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 25
+    },
+    "guidedPerspective": {
+      "type": "any",
+      "default": {
+        "enabled": false,
+        "lines": [],
+        "autoCrop": true
+      }
+    },
+    "halationAmount": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "highlights": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "hsl": {
+      "type": "object",
+      "properties": {
+        "reds": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "saturation": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "luminance": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            }
+          }
+        },
+        "oranges": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "saturation": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "luminance": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            }
+          }
+        },
+        "yellows": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "saturation": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "luminance": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            }
+          }
+        },
+        "greens": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "saturation": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "luminance": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            }
+          }
+        },
+        "aquas": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "saturation": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "luminance": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            }
+          }
+        },
+        "blues": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "saturation": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "luminance": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            }
+          }
+        },
+        "purples": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "saturation": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "luminance": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            }
+          }
+        },
+        "magentas": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "saturation": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            },
+            "luminance": {
+              "type": "number",
+              "min": -100,
+              "max": 100
+            }
+          }
+        }
+      },
+      "default": {
+        "aquas": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "blues": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "greens": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "magentas": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "oranges": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "purples": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "reds": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "yellows": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        }
+      }
+    },
+    "hue": {
+      "type": "number",
+      "min": -180,
+      "max": 180,
+      "step": 1,
+      "default": 0
+    },
+    "lensBlurAmount": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 40
+    },
+    "lensBlurDiffusion": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "lensBlurShape": {
+      "type": "enum",
+      "values": [
+        "circle",
+        "hexagon",
+        "octagon",
+        "ring"
+      ],
+      "default": "circle"
+    },
+    "lensBlurDepthMap": {
+      "type": "any",
+      "default": null
+    },
+    "lensBlurEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "lensBlurMaxDepth": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 100
+    },
+    "lensBlurMaxFade": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 20
+    },
+    "lensBlurMinDepth": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 20
+    },
+    "lensBlurMinFade": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 20
+    },
+    "relightEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "relightNormalMap": {
+      "type": "any",
+      "default": null
+    },
+    "relightLights": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "enum",
+            "values": [
+              "point",
+              "spot",
+              "directional"
+            ]
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "depth": {
+            "type": "number",
+            "min": 0,
+            "max": 100
+          },
+          "intensity": {
+            "type": "number",
+            "min": 0,
+            "max": 100
+          },
+          "radius": {
+            "type": "number",
+            "min": 0,
+            "max": 100
+          },
+          "angle": {
+            "type": "number",
+            "min": 0,
+            "max": 360
+          },
+          "elevation": {
+            "type": "number",
+            "min": -180,
+            "max": 180
+          },
+          "cone": {
+            "type": "number",
+            "min": 0,
+            "max": 100
+          },
+          "feather": {
+            "type": "number",
+            "min": 0,
+            "max": 100
+          },
+          "temperature": {
+            "type": "number",
+            "min": -100,
+            "max": 100
+          },
+          "tint": {
+            "type": "number",
+            "min": -100,
+            "max": 100
+          },
+          "color": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "relightAmbient": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "relightSoftness": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 25
+    },
+    "relightShine": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "relightShadows": {
+      "type": "boolean",
+      "default": false
+    },
+    "relightShadowSoftness": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 15
+    },
+    "fogEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "fogDepthMap": {
+      "type": "any",
+      "default": null
+    },
+    "fogAmount": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 50
+    },
+    "fogStart": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "fogDensity": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 50
+    },
+    "fogHeight": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "fogVariation": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 25
+    },
+    "fogGlow": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 25
+    },
+    "fogTemperature": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "fogTint": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "lensCorrectionMode": {
+      "type": "enum",
+      "values": [
+        "auto",
+        "manual"
+      ],
+      "default": "manual"
+    },
+    "lensDistortionAmount": {
+      "type": "number",
+      "min": 0,
+      "max": 200,
+      "step": 1,
+      "default": 100
+    },
+    "lensVignetteAmount": {
+      "type": "number",
+      "min": 0,
+      "max": 200,
+      "step": 1,
+      "default": 100
+    },
+    "lensTcaAmount": {
+      "type": "number",
+      "min": 0,
+      "max": 200,
+      "step": 1,
+      "default": 100
+    },
+    "lensDistortionEnabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "lensTcaEnabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "lensVignetteEnabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "lensDistortionParams": {
+      "type": "any",
+      "default": null
+    },
+    "lensMaker": {
+      "type": "any",
+      "default": null
+    },
+    "lensModel": {
+      "type": "any",
+      "default": null
+    },
+    "lumaNoiseReduction": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "lutData": {
+      "type": "any",
+      "default": null
+    },
+    "lutIntensity": {
+      "type": "number",
+      "min": 0,
+      "max": 200,
+      "step": 1,
+      "default": 100
+    },
+    "lutName": {
+      "type": "any",
+      "default": null
+    },
+    "lutPath": {
+      "type": "any",
+      "default": null
+    },
+    "lutSize": {
+      "type": "any",
+      "default": 0
+    },
+    "lutIsSceneReferred": {
+      "type": "boolean",
+      "default": false
+    },
+    "masks": {
+      "type": "any",
+      "default": []
+    },
+    "negativeBlueWeight": {
+      "type": "number",
+      "min": 0.5,
+      "max": 2,
+      "step": 0.01,
+      "default": 1
+    },
+    "negativeContrast": {
+      "type": "number",
+      "min": 0.5,
+      "max": 2.5,
+      "step": 0.05,
+      "default": 1
+    },
+    "negativeConversionEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "negativeExposure": {
+      "type": "number",
+      "min": -2,
+      "max": 2,
+      "step": 0.05,
+      "default": 0
+    },
+    "negativeGreenWeight": {
+      "type": "number",
+      "min": 0.5,
+      "max": 2,
+      "step": 0.01,
+      "default": 1
+    },
+    "negativeRedWeight": {
+      "type": "number",
+      "min": 0.5,
+      "max": 2,
+      "step": 0.01,
+      "default": 1
+    },
+    "orientationSteps": {
+      "type": "any",
+      "default": 0
+    },
+    "rotation": {
+      "type": "any",
+      "default": 0
+    },
+    "saturation": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "shadows": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "sharpness": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "sharpnessThreshold": {
+      "type": "number",
+      "min": 0,
+      "max": 80,
+      "step": 1,
+      "default": 15
+    },
+    "showClipping": {
+      "type": "boolean",
+      "default": false
+    },
+    "structure": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "temperature": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "tint": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "toneMapper": {
+      "type": "enum",
+      "values": [
+        "agx",
+        "basic"
+      ],
+      "default": "basic"
+    },
+    "transformDistortion": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "transformVertical": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "transformHorizontal": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "transformRotate": {
+      "type": "number",
+      "min": -45,
+      "max": 45,
+      "step": 0.1,
+      "default": 0
+    },
+    "transformAspect": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "transformScale": {
+      "type": "number",
+      "min": 50,
+      "max": 150,
+      "step": 1,
+      "default": 100
+    },
+    "transformXOffset": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "transformYOffset": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "vibrance": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "vignetteAmount": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "vignetteCenterX": {
+      "type": "any",
+      "default": 0.5
+    },
+    "vignetteCenterY": {
+      "type": "any",
+      "default": 0.5
+    },
+    "vignetteFeather": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 50
+    },
+    "vignetteMidpoint": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 50
+    },
+    "vignetteRoundness": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "whiteBalance": {
+      "type": "any",
+      "default": null
+    },
+    "whites": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "colorMatch": {
+      "type": "any"
+    }
+  },
+  "maskTypes": [
+    "ai-depth",
+    "ai-foreground",
+    "ai-sky",
+    "ai-subject",
+    "ai-text",
+    "ai-face",
+    "all",
+    "brush",
+    "flow",
+    "color",
+    "linear",
+    "luminance",
+    "quick-eraser",
+    "radial",
+    "clone",
+    "heal",
+    "liquify",
+    "retouch"
+  ],
+  "subMaskModes": [
+    "additive",
+    "subtractive",
+    "intersect"
+  ],
+  "exportFormats": [
+    "jpeg",
+    "png",
+    "webp",
+    "tiff"
+  ],
+  "tiffBitDepths": [
+    8,
+    16
+  ]
+}

@@ -4,7 +4,7 @@ import 'react-image-crop/dist/ReactCrop.css';
 import { Stage, Layer, Ellipse, Line, Transformer, Group, Circle, Rect, Arrow } from 'react-konva';
 import type Konva from 'konva';
 import { PercentCrop, Crop } from 'react-image-crop';
-import { Stamp, Bandage, Spline, BrushCleaning } from 'lucide-react';
+import { Pipette, Stamp, Bandage, Spline, BrushCleaning } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   Adjustments,
@@ -20,6 +20,7 @@ import { Mask, SubMask, SubMaskMode, ToolType } from '../right/Masks';
 import { AppSettings, BrushSettings, Invokes, Panel, SelectedImage } from '../../ui/AppProperties';
 import { RenderSize } from '../../../hooks/useImageRenderSize';
 import { useOsPlatform } from '../../../hooks/useOsPlatform';
+import { useTargetedAdjustment } from '../../../hooks/useTargetedAdjustment';
 import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { isPanelVisible, useUIStore } from '../../../store/useUIStore';
@@ -1481,6 +1482,7 @@ const ImageCanvas = memo(
     const interactivePatch = useEditorStore((state) => state.interactivePatch);
     const isGuidedPerspectiveActive = useEditorStore((state) => state.isGuidedPerspectiveActive);
     const isRelightPickerActive = useEditorStore((state) => state.isRelightPickerActive);
+    const isTargetedAdjustmentActive = useEditorStore((state) => state.isTargetedAdjustmentActive);
     const activeRelightLightId = useEditorStore((state) => state.activeRelightLightId);
     const activeCenterMarker = useEditorStore((state) => state.activeCenterMarker);
     const isCenterMarkerSectionOpen = useUIStore(
@@ -2378,6 +2380,22 @@ const ImageCanvas = memo(
       setWbHover((p: CursorPreview) => (p.visible ? { ...p, visible: false } : p));
     }, []);
 
+    // G2 目标调整：取色匹配 HSL 通道，拖动驱动 hue/sat。
+    const {
+      dragState: targetedDragState,
+      handleTargetedStart,
+      handleTargetedMove,
+      handleTargetedEnd,
+    } = useTargetedAdjustment({
+      isActive: isTargetedAdjustmentActive,
+      adjustments,
+      setAdjustments,
+      getCanvasPointer,
+      isInsideImage,
+      getSampleCorners: getWbSquareCorners,
+      getSampleAdjustments: getWbSampleAdjustments,
+    });
+
     const isKelvinWhiteBalance = getWhiteBalanceMode(appSettings) === WhiteBalanceMode.Kelvin;
     const asShotWhiteBalance = selectedImage?.asShotWhiteBalance;
 
@@ -2465,6 +2483,11 @@ const ImageCanvas = memo(
           wbDragRef.current = { start: pos, end: pos, isBox: false };
           drawingStageRef.current = stage;
           isDrawing.current = true;
+          return;
+        }
+
+        if (isTargetedAdjustmentActive) {
+          handleTargetedStart(e);
           return;
         }
 
@@ -2700,6 +2723,8 @@ const ImageCanvas = memo(
 
     const handleMove = useCallback(
       (e: any) => {
+        if (handleTargetedMove(e)) return;
+
         if (isGuidedPerspectiveActive && isCropping && draftGuideLine && isDrawing.current) {
           const stage = e.target.getStage();
           const pos = stage?.getPointerPosition();
@@ -2979,6 +3004,8 @@ const ImageCanvas = memo(
     );
 
     const handleUp = useCallback(() => {
+      if (handleTargetedEnd()) return;
+
       if (!isDrawing.current) {
         return;
       }
@@ -3369,6 +3396,7 @@ const ImageCanvas = memo(
     const effectiveCursor = useMemo(() => {
       if (isGuidedPerspectiveActive && isCropping) return 'crosshair';
       if (isRelightPickerActive) return 'crosshair';
+      if (isTargetedAdjustmentActive) return targetedDragState?.isDragging ? 'grabbing' : 'crosshair';
       if (isWbPickerActive) {
         if (wbBox || wbHover.visible) return 'none';
         return 'crosshair';
@@ -3400,6 +3428,8 @@ const ImageCanvas = memo(
       isGuidedPerspectiveActive,
       isCropping,
       isRelightPickerActive,
+      isTargetedAdjustmentActive,
+      targetedDragState?.isDragging,
       isWbPickerActive,
       wbBox,
       wbHover.visible,
@@ -3628,7 +3658,12 @@ const ImageCanvas = memo(
             </div>
           </div>
 
-          {(isMasking || isAiEditing || isWbPickerActive || showRelightLights || showCenterMarker) &&
+          {(isMasking ||
+            isAiEditing ||
+            isWbPickerActive ||
+            isTargetedAdjustmentActive ||
+            showRelightLights ||
+            showCenterMarker) &&
             stageWidth > 0 &&
             stageHeight > 0 && (
               <div
@@ -4064,6 +4099,25 @@ const ImageCanvas = memo(
                   </Layer>
                 </Stage>
               )}
+            </div>
+          )}
+
+          {isTargetedAdjustmentActive && !isShowingOriginal && (
+            <div className="absolute bottom-3 left-3 z-50 max-w-[80%]">
+              <div className="flex items-center gap-2 rounded-md border border-surface bg-bg-secondary/85 px-2.5 py-1.5 backdrop-blur-sm shadow-lg">
+                <Pipette size={13} className="text-accent shrink-0" />
+                {targetedDragState ? (
+                  <span className="text-xs text-text-primary truncate">
+                    {t('editor.targeted.chip', {
+                      channel: t(`adjustments.color.mixerColors.${targetedDragState.channelKey}`),
+                      hue: targetedDragState.hueDelta,
+                      sat: targetedDragState.satDelta,
+                    })}
+                  </span>
+                ) : (
+                  <span className="text-xs text-text-secondary">{t('editor.targeted.hint')}</span>
+                )}
+              </div>
             </div>
           )}
         </div>

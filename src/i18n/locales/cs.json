@@ -63,6 +63,7 @@
       },
       "presence": "Prezence",
       "saturation": "Sytost",
+      "targetedTooltip": "Cílená úprava: vyberte barvu na plátně a tažením upravte její odstín/saturaci (Ctrl+Alt+H)",
       "temperature": "Teplota",
       "tint": "Nádech",
       "toggleSliders": "Přepnout posuvníky",
@@ -938,6 +939,11 @@
         "tethering": "Tetherované snímání"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · odstín {{hue}}, saturace {{sat}}",
+      "hint": "Klikněte na plátno pro výběr barvy a tažením upravte odstín/saturaci; Esc pro ukončení",
+      "sampleFailed": "Na této pozici se nepodařilo získat použitelnou barvu"
+    },
     "toolbar": {
       "history": "Historie",
       "switchToVariant": "Přepnout na {{label}}",
@@ -1040,6 +1046,11 @@
       },
       "pixels": "pixelů",
       "resizeToFit": "Přizpůsobit velikost"
+    },
+    "resume": {
+      "bannerDetail": "Předchozí export nebyl dokončen: hotovo {{done}}/{{total}}, zbývá {{remaining}}",
+      "discard": "Zahodit",
+      "resume": "Pokračovat v exportu"
     },
     "sections": {
       "advanced": "Pokročilé",
@@ -2052,6 +2063,10 @@
         "exportThreadsDesc": "Počet obrázků exportovaných současně. Automaticky zvolí hodnotu podle procesoru. Snižte ji, pokud velké exporty selhávají nebo má grafická karta málo paměti.",
         "heading": "Pokročilé",
         "headingDesc": "Ladění výkonu náhledů, mezipaměti a exportů. Výchozí hodnoty vyhovují většině uživatelů.",
+        "previewDemosaicHigh": "Vysoká kvalita",
+        "previewDemosaicQuality": "Demosaikování náhledu RAW",
+        "previewDemosaicQualityDesc": "Kvalita demosaikování RAW používaná pro náhledy v editoru. Vysoká kvalita je ostřejší, ale procházení je pomalejší; export vždy používá plnou kvalitu.",
+        "previewDemosaicSpeed": "Rychlé (výchozí)",
         "title": "Pokročilá nastavení"
       },
       "ai": {
@@ -2262,6 +2277,22 @@
     "title": "Nastavení",
     "tooltips": {
       "goHome": "Přejít na domovskou stránku"
+    },
+    "updater": {
+      "autoCheck": "Automaticky kontrolovat aktualizace",
+      "autoCheckDesc": "Při spuštění aplikace zkontrolovat na GitHubu novou verzi.",
+      "available": "Verze {{version}} je k dispozici.",
+      "checking": "Kontrola aktualizací…",
+      "checkNow": "Zkontrolovat aktualizace",
+      "currentVersion": "Aktuální verze: {{version}}",
+      "desc": "Udržujte aplikaci aktuální s nejnovějšími funkcemi a opravami.",
+      "downloading": "Stahování aktualizace…",
+      "downloadInstall": "Stáhnout a nainstalovat",
+      "failed": "Kontrola aktualizací selhala: {{error}}",
+      "installing": "Instalace a restartování…",
+      "releaseReady": "Aktualizace bude použita po dokončení stahování.",
+      "title": "Aktualizace softwaru",
+      "upToDate": "Máte nejnovější verzi ({{version}})."
     }
   },
   "tethering": {

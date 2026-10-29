@@ -57,10 +57,12 @@ export enum Invokes {
   CullImages = 'cull_images',
   DeleteFolder = 'delete_folder',
   DiscardAiJobs = 'discard_ai_jobs',
+  DiscardExportJob = 'discard_export_job',
   DuplicateFile = 'duplicate_file',
   EstimateExportSizes = 'estimate_export_sizes',
   ExportImages = 'export_images',
   FrontendLog = 'frontend_log',
+  GetUnfinishedExportJob = 'get_unfinished_export_job',
   GenerateAiForegroundMask = 'generate_ai_foreground_mask',
   GenerateAiSkyMask = 'generate_ai_sky_mask',
   GenerateAiTextMask = 'generate_ai_text_mask',
@@ -71,6 +73,7 @@ export enum Invokes {
   GenerateMaskOverlay = 'generate_mask_overlay',
   GeneratePresetPreview = 'generate_preset_preview',
   GenerateUncroppedPreview = 'generate_uncropped_preview',
+  ResumeExportJob = 'resume_export_job',
   GetStorageUsage = 'get_storage_usage',
   ClearAiMapsCache = 'clear_ai_maps_cache',
   ClearAiModels = 'clear_ai_models',
@@ -287,6 +290,8 @@ export interface AppSettings {
   folderIcons?: Record<string, string>;
   exifOverlay?: ExifOverlay;
   language?: string;
+  autoCheckUpdates?: boolean;
+  previewDemosaicQuality?: string;
   legacyLanguageMigrated?: boolean;
   fontFamily?: string;
   folderTreeSort?: FolderTreeSort;

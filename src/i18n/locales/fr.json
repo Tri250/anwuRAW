@@ -63,6 +63,7 @@
       },
       "presence": "Présence",
       "saturation": "Saturation",
+      "targetedTooltip": "Ajustement ciblé : échantillonnez une couleur sur le canevas et faites glisser pour ajuster sa teinte/saturation (Ctrl+Alt+H)",
       "temperature": "Température",
       "tint": "Teinte",
       "toggleSliders": "Basculer les curseurs",
@@ -914,6 +915,11 @@
         "tethering": "Prise de vue connectée"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · teinte {{hue}}, saturation {{sat}}",
+      "hint": "Cliquez sur le canevas pour échantillonner une couleur, puis faites glisser pour ajuster teinte/saturation ; Échap pour quitter",
+      "sampleFailed": "Impossible d'obtenir une couleur exploitable à cette position"
+    },
     "toolbar": {
       "history": "Historique",
       "switchToVariant": "Switch to {{label}}",
@@ -1015,6 +1021,11 @@
       },
       "pixels": "pixels",
       "resizeToFit": "Redimensionner pour ajuster"
+    },
+    "resume": {
+      "bannerDetail": "Export précédent inachevé : {{done}}/{{total}} terminés, {{remaining}} restants",
+      "discard": "Abandonner",
+      "resume": "Reprendre l'export"
     },
     "sections": {
       "advanced": "Avancé",
@@ -2012,6 +2023,10 @@
         "exportThreadsDesc": "Nombre d'images exportées en même temps. Auto choisit une valeur selon votre processeur. Réduisez-la si les gros exports échouent ou si votre GPU a peu de mémoire.",
         "heading": "Avancé",
         "headingDesc": "Réglages de performance pour les vignettes, le cache et les exports. Les valeurs par défaut conviennent à la plupart des utilisateurs.",
+        "previewDemosaicHigh": "Haute qualité",
+        "previewDemosaicQuality": "Dématriçage de l'aperçu RAW",
+        "previewDemosaicQualityDesc": "Qualité du dématriçage RAW utilisé pour les aperçus de l'éditeur. La haute qualité est plus nette mais la navigation est plus lente ; l'exportation utilise toujours la qualité maximale.",
+        "previewDemosaicSpeed": "Rapide (par défaut)",
         "title": "Paramètres avancés"
       },
       "ai": {
@@ -2222,6 +2237,22 @@
     "title": "Paramètres",
     "tooltips": {
       "goHome": "Aller à l'accueil"
+    },
+    "updater": {
+      "autoCheck": "Rechercher automatiquement les mises à jour",
+      "autoCheckDesc": "Rechercher une nouvelle version sur GitHub au démarrage de l'application.",
+      "available": "La version {{version}} est disponible.",
+      "checking": "Recherche de mises à jour…",
+      "checkNow": "Rechercher des mises à jour",
+      "currentVersion": "Version actuelle : {{version}}",
+      "desc": "Gardez l'application à jour avec les dernières fonctionnalités et correctifs.",
+      "downloading": "Téléchargement de la mise à jour…",
+      "downloadInstall": "Télécharger et installer",
+      "failed": "Échec de la vérification des mises à jour : {{error}}",
+      "installing": "Installation et redémarrage…",
+      "releaseReady": "La mise à jour sera appliquée une fois le téléchargement terminé.",
+      "title": "Mises à jour logicielles",
+      "upToDate": "Vous utilisez la dernière version ({{version}})."
     }
   },
   "tethering": {

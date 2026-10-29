@@ -279,6 +279,31 @@ jobs:
             exit 1
           fi
 
+      # The updater requires every desktop bundle to be signed with the EdDSA
+      # key stored in the TAURI_SIGNING_PRIVATE_KEY secret. When the secret is
+      # absent (forks, or before the key is provisioned), the updater config is
+      # stripped from tauri.conf.json so the build behaves exactly as before
+      # instead of failing on the missing key; latest.json is then not generated.
+      - name: Prepare updater signing key
+        if: ${{ inputs.mobile == '' }}
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [[ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
+            echo "::warning::TAURI_SIGNING_PRIVATE_KEY is not configured; updater artifacts and latest.json are disabled for this build."
+            node -e "
+              const fs = require('fs');
+              const p = 'src-tauri/tauri.conf.json';
+              const conf = JSON.parse(fs.readFileSync(p, 'utf8'));
+              if (conf.plugins) delete conf.plugins.updater;
+              if (conf.plugins && Object.keys(conf.plugins).length === 0) delete conf.plugins;
+              conf.bundle.createUpdaterArtifacts = false;
+              fs.writeFileSync(p, JSON.stringify(conf, null, 2) + '\n');
+            "
+          fi
+
       - id: tauri-build
         name: Build with tauri-action
         if: ${{ inputs.mobile == '' }}
@@ -288,6 +313,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_STRIP: ${{ startsWith(inputs.platform, 'ubuntu') }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           args: --verbose ${{ inputs.build-args }} ${{ inputs.target != '' && '--target' || ''  }} ${{ inputs.target }}
           assetNamePattern: ${{ steps.patch-release-name.outputs.platform }}

@@ -106,6 +106,16 @@ export interface ExportState {
   status: Status;
 }
 
+export interface UnfinishedExportJob {
+  jobId: string;
+  updatedAtMs: number;
+  totalCount: number;
+  doneCount: number;
+  failedCount: number;
+  pendingCount: number;
+  firstError?: string | null;
+}
+
 export interface FileFormat {
   extensions: Array<string>;
   id: string;

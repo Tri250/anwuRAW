@@ -63,6 +63,7 @@
       },
       "presence": "Presença",
       "saturation": "Saturação",
+      "targetedTooltip": "Ajuste direcionado: amostragem de uma cor na tela e arraste para ajustar matiz/saturação (Ctrl+Alt+H)",
       "temperature": "Temperatura",
       "tint": "Tonalidade",
       "toggleSliders": "Alternar Controles",
@@ -914,6 +915,11 @@
         "tethering": "Captura Conectada (Tethering)"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · matiz {{hue}}, saturação {{sat}}",
+      "hint": "Clique na tela para amostrar uma cor e arraste para ajustar matiz/saturação; Esc para sair",
+      "sampleFailed": "Não foi possível amostrar uma cor utilizável nesta posição"
+    },
     "toolbar": {
       "history": "Histórico",
       "switchToVariant": "Switch to {{label}}",
@@ -1015,6 +1021,11 @@
       },
       "pixels": "pixels",
       "resizeToFit": "Redimensionar para Caber"
+    },
+    "resume": {
+      "bannerDetail": "Exportação anterior não concluída: {{done}}/{{total}} concluídos, {{remaining}} restantes",
+      "discard": "Descartar",
+      "resume": "Retomar exportação"
     },
     "sections": {
       "advanced": "Avançado",
@@ -2011,6 +2022,10 @@
         "exportThreadsDesc": "Número de imagens exportadas ao mesmo tempo. Automático escolhe um valor com base no seu processador. Reduza se exportações grandes falharem ou se sua GPU tiver pouca memória.",
         "heading": "Avançado",
         "headingDesc": "Ajustes de desempenho para miniaturas, cache e exportações. Os valores padrão funcionam bem para a maioria dos usuários.",
+        "previewDemosaicHigh": "Alta qualidade",
+        "previewDemosaicQuality": "Desmosaico da pré-visualização RAW",
+        "previewDemosaicQualityDesc": "Qualidade do desmosaico RAW usado nas pré-visualizações do editor. A qualidade alta é mais nítida mas a navegação é mais lenta; a exportação usa sempre a qualidade completa.",
+        "previewDemosaicSpeed": "Rápido (predefinido)",
         "title": "Configurações avançadas"
       },
       "ai": {
@@ -2221,6 +2236,22 @@
     "title": "Configurações",
     "tooltips": {
       "goHome": "Ir para Início"
+    },
+    "updater": {
+      "autoCheck": "Procurar atualizações automaticamente",
+      "autoCheckDesc": "Procurar uma nova versão no GitHub ao iniciar a aplicação.",
+      "available": "A versão {{version}} está disponível.",
+      "checking": "A procurar atualizações…",
+      "checkNow": "Procurar atualizações",
+      "currentVersion": "Versão atual: {{version}}",
+      "desc": "Mantenha a aplicação atualizada com as mais recentes funcionalidades e correções.",
+      "downloading": "A transferir a atualização…",
+      "downloadInstall": "Transferir e instalar",
+      "failed": "Falha ao procurar atualizações: {{error}}",
+      "installing": "A instalar e a reiniciar…",
+      "releaseReady": "A atualização será aplicada após a conclusão da transferência.",
+      "title": "Atualizações de software",
+      "upToDate": "Já tem a versão mais recente ({{version}})."
     }
   },
   "tethering": {

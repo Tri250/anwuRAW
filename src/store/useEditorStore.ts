@@ -65,6 +65,7 @@ interface EditorState {
   isAutoStraightening: boolean;
   isWbPickerActive: boolean;
   isRelightPickerActive: boolean;
+  isTargetedAdjustmentActive: boolean;
   activeRelightLightId: string | null;
   activeCenterMarker: CenterMarker | null;
   isGuidedPerspectiveActive: boolean;
@@ -137,6 +138,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   isAutoStraightening: false,
   isWbPickerActive: false,
   isRelightPickerActive: false,
+  isTargetedAdjustmentActive: false,
   activeRelightLightId: null,
   activeCenterMarker: null,
   isGuidedPerspectiveActive: false,

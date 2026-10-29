@@ -155,7 +155,10 @@ pub struct ExportSettings {
     pub dpi: Option<u16>,
 }
 
-#[derive(Clone)]
+// Serialize/Deserialize support lets the adjustments mode be frozen inside
+// the resumable-export journal and restored verbatim on resume.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub(crate) enum ExportAdjustmentsMode {
     UseSidecars {
         active_path: Option<String>,
@@ -1745,6 +1748,27 @@ pub(crate) async fn export_images_impl(
         let _task_guard = task_guard;
         let output_folder_path = std::path::Path::new(&output_folder_or_file);
         let total_paths = paths.len();
+
+        // G5 resumable-export journal: one atomic JSON file per job, updated
+        // as items finish; kept on disk when the job is cancelled or ends
+        // with failures so the UI can offer resume later.
+        let journal_writer = match crate::export_journal::begin_export_job(
+            &app_handle,
+            &paths,
+            &output_folder_or_file,
+            is_explicit_file_path,
+            &base_origin_folders,
+            &export_settings,
+            &output_format,
+            &adjustments_mode,
+        ) {
+            Ok(writer) => Some(writer),
+            Err(error) => {
+                log::warn!("Disabling export resume journal: {}", error);
+                None
+            }
+        };
+
         let settings = load_settings(app_handle.clone()).unwrap_or_default();
 
         let mut base_path_counts: HashMap<String, usize> = HashMap::new();
@@ -1804,6 +1828,7 @@ pub(crate) async fn export_images_impl(
             let adjustments_mode = adjustments_mode.clone();
             let used_paths_clone = Arc::clone(&used_paths);
             let memory_budget = Arc::clone(&memory_budget);
+            let journal_writer_task = journal_writer.clone();
 
             let handle = tokio::task::spawn_blocking(move || {
                 ensure_export_not_cancelled(&cancellation_token_clone)?;
@@ -2123,6 +2148,12 @@ pub(crate) async fn export_images_impl(
                 })();
 
                 if !cancellation_token_clone.load(Ordering::SeqCst) {
+                    if let Some(writer) = &journal_writer_task {
+                        match &result {
+                            Ok(()) => writer.mark_done(global_index, &output_path.to_string_lossy()),
+                            Err(error) => writer.mark_failed(global_index, error),
+                        }
+                    }
                     let current_progress =
                         progress_counter_clone.fetch_add(1, Ordering::SeqCst) + 1;
                     let _ = app_handle_clone.emit(
@@ -2155,6 +2186,12 @@ pub(crate) async fn export_images_impl(
         }
 
         let errors: Vec<String> = results.into_iter().filter_map(Result::err).collect();
+
+        // All workers have joined; delete the journal when everything
+        // succeeded, otherwise keep it around for a later resume.
+        if let Some(writer) = &journal_writer {
+            writer.finish();
+        }
         let error_count = errors.len();
         let export_state = app_handle.state::<AppState>();
         let finalized = finish_export_task(
@@ -2237,6 +2274,51 @@ pub async fn export_images(
     .await
 }
 
+#[tauri::command]
+pub async fn resume_export_job(
+    job_id: String,
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<usize, String> {
+    let journal = crate::export_journal::load_export_job(&app_handle, &job_id)?;
+    let remaining: Vec<String> = journal
+        .items
+        .iter()
+        .filter(|item| item.status != crate::export_journal::STATUS_DONE)
+        .map(|item| item.path.clone())
+        .collect();
+
+    if remaining.is_empty() {
+        // Nothing left to redo; drop the stale journal.
+        let _ = crate::export_journal::discard_export_job(app_handle.clone(), job_id);
+        return Ok(0);
+    }
+
+    let remaining_count = remaining.len();
+    log::info!(
+        "Resuming export job {}: {} of {} items remaining",
+        job_id,
+        remaining_count,
+        journal.items.len()
+    );
+
+    export_images_impl(
+        remaining,
+        journal.output_folder_or_file,
+        journal.is_explicit_file_path,
+        journal.base_origin_folders,
+        journal.export_settings,
+        journal.output_format,
+        journal.adjustments_mode,
+        state,
+        app_handle,
+        None,
+    )
+    .await?;
+
+    Ok(remaining_count)
+}
+
 pub async fn run_headless_export(
     session: crate::launch_request::HeadlessExportSession,
     app_handle: tauri::AppHandle,
@@ -2284,7 +2366,11 @@ pub async fn run_headless_export(
     let export_settings = ExportSettings {
         jpeg_quality: session.quality,
         tiff_bit_depth: session.tiff_bit_depth,
-        resize: None,
+        resize: session.long_edge.map(|value| ResizeOptions {
+            mode: ResizeMode::LongEdge,
+            value,
+            dont_enlarge: false,
+        }),
         border: None,
         pad: None,
         keep_metadata: session.keep_metadata,

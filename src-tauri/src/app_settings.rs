@@ -658,10 +658,16 @@ pub struct AppSettings {
     pub apply_preprocessing_to_non_raws: Option<bool>,
     #[serde(default)]
     pub use_apple_raw9: Option<bool>,
+    /// RAW 预览去马赛克质量：None/"speed" 用快速超像素档（默认，浏览流畅），
+    /// "quality" 用完整质量档（预览更锐利，浏览更慢）。导出始终使用完整质量档。
+    #[serde(default)]
+    pub preview_demosaic_quality: Option<String>,
     #[serde(default)]
     pub exif_overlay: Option<String>,
     #[serde(default)]
     pub language: Option<String>,
+    #[serde(default)]
+    pub auto_check_updates: Option<bool>,
     /// 旧版本（≤1.6.8）曾把默认语言硬编码为 "en" 并随首次保存写入 settings.json，
     /// 导致升级安装后界面仍是英文。该标记为 false 时前端执行一次 zh-CN 迁移。
     #[serde(default)]

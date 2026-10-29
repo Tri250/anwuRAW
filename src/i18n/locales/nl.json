@@ -63,6 +63,7 @@
       },
       "presence": "Presentie",
       "saturation": "Verzadiging",
+      "targetedTooltip": "Gerichte aanpassing: neem een kleur op het canvas op en sleep om de tint/verzadiging aan te passen (Ctrl+Alt+H)",
       "temperature": "Kleurtemperatuur",
       "tint": "Tint",
       "toggleSliders": "Schuifregelaars aan/uit",
@@ -890,6 +891,11 @@
         "tethering": "Kabelopname"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · tint {{hue}}, verzadiging {{sat}}",
+      "hint": "Klik op het canvas om een kleur op te nemen en sleep om tint/verzadiging aan te passen; Esc om af te sluiten",
+      "sampleFailed": "Kon op deze positie geen bruikbare kleur opnemen"
+    },
     "toolbar": {
       "history": "Geschiedenis",
       "switchToVariant": "Overschakelen naar {{label}}",
@@ -990,6 +996,11 @@
       },
       "pixels": "pixels",
       "resizeToFit": "Aanpassen aan kader"
+    },
+    "resume": {
+      "bannerDetail": "Vorige export onvoltooid: {{done}}/{{total}} gereed, {{remaining}} resterend",
+      "discard": "Weggooien",
+      "resume": "Export hervatten"
     },
     "sections": {
       "advanced": "Geavanceerd",
@@ -1970,6 +1981,10 @@
         "exportThreadsDesc": "Aantal afbeeldingen dat tegelijk wordt geëxporteerd. Automatisch kiest een waarde op basis van je CPU. Verlaag dit als grote exports mislukken of je GPU weinig geheugen heeft.",
         "heading": "Geavanceerd",
         "headingDesc": "Prestatie-instellingen voor miniaturen, cache en exports. De standaardwaarden werken voor de meeste gebruikers.",
+        "previewDemosaicHigh": "Hoge kwaliteit",
+        "previewDemosaicQuality": "RAW-forbeeld demosaicing",
+        "previewDemosaicQualityDesc": "Kwaliteit van de RAW-demosaicing voor editorvoorbeelden. Hoge kwaliteit is scherper maar browsen is trager; exporteren gebruikt altijd volledige kwaliteit.",
+        "previewDemosaicSpeed": "Snel (standaard)",
         "title": "Geavanceerde instellingen"
       },
       "ai": {
@@ -2180,6 +2195,22 @@
     "title": "Instellingen",
     "tooltips": {
       "goHome": "Naar startpagina"
+    },
+    "updater": {
+      "autoCheck": "Automatisch controleren op updates",
+      "autoCheckDesc": "Controleer bij het starten van de app op GitHub of er een nieuwe versie is.",
+      "available": "Versie {{version}} is beschikbaar.",
+      "checking": "Controleren op updates…",
+      "checkNow": "Controleren op updates",
+      "currentVersion": "Huidige versie: {{version}}",
+      "desc": "Houd de app actueel met de nieuwste functies en verbeteringen.",
+      "downloading": "Update wordt gedownload…",
+      "downloadInstall": "Downloaden en installeren",
+      "failed": "Updatecontrole mislukt: {{error}}",
+      "installing": "Installeren en herstarten…",
+      "releaseReady": "De update wordt toegepast zodra de download is voltooid.",
+      "title": "Software-updates",
+      "upToDate": "Je hebt al de nieuwste versie ({{version}})."
     }
   },
   "tethering": {

@@ -63,6 +63,7 @@
       },
       "presence": "Prezencja",
       "saturation": "Nasycenie",
+      "targetedTooltip": "Korekta celowana: próbkuj kolor na płótnie i przeciągaj, aby dostosować jego odcień/nasycenie (Ctrl+Alt+H)",
       "temperature": "Temperatura",
       "tint": "Zabarwienie",
       "toggleSliders": "Przełącz suwaki",
@@ -938,6 +939,11 @@
         "tethering": "Tethering (Połączenie przewodowe)"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · odcień {{hue}}, nasycenie {{sat}}",
+      "hint": "Kliknij płótno, aby próbkować kolor, i przeciągaj, aby dostosować odcień/nasycenie; Esc aby wyjść",
+      "sampleFailed": "Nie udało się pobrać użytecznego koloru w tej pozycji"
+    },
     "toolbar": {
       "history": "Historia",
       "switchToVariant": "Switch to {{label}}",
@@ -1040,6 +1046,11 @@
       },
       "pixels": "pikseli",
       "resizeToFit": "Zmień rozmiar, aby dopasować"
+    },
+    "resume": {
+      "bannerDetail": "Poprzedni eksport nie został ukończony: ukończono {{done}}/{{total}}, pozostało {{remaining}}",
+      "discard": "Odrzuć",
+      "resume": "Wznów eksport"
     },
     "sections": {
       "advanced": "Zaawansowane",
@@ -2052,6 +2063,10 @@
         "exportThreadsDesc": "Liczba obrazów eksportowanych jednocześnie. Automatycznie dobiera wartość do procesora. Zmniejsz ją, jeśli duże eksporty się nie udają lub karta graficzna ma mało pamięci.",
         "heading": "Zaawansowane",
         "headingDesc": "Dostrajanie wydajności miniatur, pamięci podręcznej i eksportu. Wartości domyślne sprawdzą się u większości użytkowników.",
+        "previewDemosaicHigh": "Wysoka jakość",
+        "previewDemosaicQuality": "Demosaic podglądu RAW",
+        "previewDemosaicQualityDesc": "Jakość demosaikowania RAW używanego w podglądach edytora. Wysoka jakość jest ostrzejsza, ale przeglądanie jest wolniejsze; eksport zawsze używa pełnej jakości.",
+        "previewDemosaicSpeed": "Szybkie (domyślne)",
         "title": "Ustawienia zaawansowane"
       },
       "ai": {
@@ -2262,6 +2277,22 @@
     "title": "Ustawienia",
     "tooltips": {
       "goHome": "Przejdź do strony głównej"
+    },
+    "updater": {
+      "autoCheck": "Automatycznie sprawdzaj aktualizacje",
+      "autoCheckDesc": "Sprawdzaj na GitHubie nową wersję przy uruchamianiu aplikacji.",
+      "available": "Wersja {{version}} jest dostępna.",
+      "checking": "Sprawdzanie aktualizacji…",
+      "checkNow": "Sprawdź aktualizacje",
+      "currentVersion": "Aktualna wersja: {{version}}",
+      "desc": "Utrzymuj aplikację w aktualności z najnowszymi funkcjami i poprawkami.",
+      "downloading": "Pobieranie aktualizacji…",
+      "downloadInstall": "Pobierz i zainstaluj",
+      "failed": "Sprawdzanie aktualizacji nie powiodło się: {{error}}",
+      "installing": "Instalowanie i ponowne uruchamianie…",
+      "releaseReady": "Aktualizacja zostanie zastosowana po zakończeniu pobierania.",
+      "title": "Aktualizacje oprogramowania",
+      "upToDate": "Masz najnowszą wersję ({{version}})."
     }
   },
   "tethering": {

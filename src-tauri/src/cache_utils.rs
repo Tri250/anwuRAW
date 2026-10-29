@@ -7,7 +7,7 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, LazyLock, Mutex};
 use std::time::SystemTime;
 
@@ -179,6 +179,7 @@ pub fn calculate_patch_hash(adjustments: &serde_json::Value) -> u64 {
 pub fn calculate_geometry_hash(adjustments: &serde_json::Value) -> u64 {
     let mut hasher = DefaultHasher::new();
 
+    crate::raw_processing::PROCESSING_VERSION.hash(&mut hasher);
     calculate_patch_hash(adjustments).hash(&mut hasher);
 
     for key in GEOMETRY_KEYS {
@@ -285,6 +286,7 @@ pub fn calculate_thumbnail_base_hash(adjustments: &serde_json::Value) -> u64 {
 pub fn calculate_transform_hash(adjustments: &serde_json::Value) -> u64 {
     let mut hasher = DefaultHasher::new();
 
+    crate::raw_processing::PROCESSING_VERSION.hash(&mut hasher);
     let orientation_steps = adjustments["orientationSteps"].as_u64().unwrap_or(0);
     orientation_steps.hash(&mut hasher);
 
@@ -392,9 +394,40 @@ pub fn calculate_transform_hash(adjustments: &serde_json::Value) -> u64 {
 
 pub fn calculate_full_job_hash(path: &str, adjustments: &serde_json::Value) -> u64 {
     let mut hasher = DefaultHasher::new();
+    crate::raw_processing::PROCESSING_VERSION.hash(&mut hasher);
     path.hash(&mut hasher);
     adjustments.to_string().hash(&mut hasher);
     hasher.finish()
+}
+
+/// Returns a processing-version-scoped cache directory (e.g. `<parent>/ai_denoise_v1`)
+/// and lazily removes sibling directories left behind by older processing versions.
+pub fn versioned_cache_dir(parent: &Path, prefix: &str) -> PathBuf {
+    let current_name = format!("{prefix}{}", crate::raw_processing::PROCESSING_VERSION);
+    let dir = parent.join(&current_name);
+    let _ = std::fs::create_dir_all(&dir);
+
+    let parent = parent.to_path_buf();
+    let stale_prefix = prefix.to_string();
+    std::thread::spawn(move || {
+        let Ok(entries) = std::fs::read_dir(&parent) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            if name.starts_with(&stale_prefix) && name != current_name {
+                log::info!(
+                    "Removing stale processing cache dir '{}' (current version {})",
+                    entry.path().display(),
+                    crate::raw_processing::PROCESSING_VERSION
+                );
+                let _ = std::fs::remove_dir_all(entry.path());
+            }
+        }
+    });
+
+    dir
 }
 
 const HALF_CONVERSION_CHUNK: usize = 64 * 1024;

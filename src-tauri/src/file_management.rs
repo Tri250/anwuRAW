@@ -1622,11 +1622,13 @@ fn generate_thumbnail_data_with_metadata(
                     }
                 };
 
+                let use_fast_raw_dev =
+                    settings.preview_demosaic_quality.as_deref() != Some("quality");
                 let img = image_loader::load_and_composite(
                     file_slice,
                     &source_path_str,
                     adjustments,
-                    true,
+                    use_fast_raw_dev,
                     settings,
                     None,
                 )?;
@@ -2718,6 +2720,7 @@ pub fn save_metadata_and_update_thumbnail(
                 &metadata.exif,
                 lens_db.as_deref(),
             );
+            crate::raw_processing::stamp_processing_version(&mut final_adjustments);
             metadata.adjustments = final_adjustments;
         })
         .map_err(|e| e.to_string())?;
@@ -2870,6 +2873,7 @@ pub async fn apply_adjustments_to_paths(
                 &metadata.exif,
                 lens_db.as_deref(),
             );
+            crate::raw_processing::stamp_processing_version(&mut metadata.adjustments);
 
             if let Some(source_id) = &source_id
                 && crate::ai_jobs::has_pending_jobs(&metadata.adjustments, path, source_id)
@@ -3130,6 +3134,7 @@ async fn update_sidecars_from_images(
                             &settings,
                             &mut metadata.adjustments,
                         );
+                        crate::raw_processing::stamp_processing_version(&mut metadata.adjustments);
                     },
                 )
                 .map_err(|e| e.to_string())?;

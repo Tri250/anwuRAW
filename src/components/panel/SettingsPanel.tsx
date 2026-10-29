@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import {
   ArrowLeft,
   Cloud,
@@ -26,6 +26,8 @@ import {
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { check, Update, DownloadEvent } from '@tauri-apps/plugin-updater';
+import { getVersion } from '@tauri-apps/api/app';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import clsx from 'clsx';
 import { ClerkProvider, SignIn, useClerk } from '@clerk/react';
@@ -500,6 +502,144 @@ const PreviewModeSwitch = ({ mode, onModeChange }: PreviewModeSwitchProps) => {
     </div>
   );
 };
+
+// 模块级共享：应用启动自动检查的结果供设置面板展示，避免为此引入全局 store。
+export const sharedUpdateCheckResult: { update: Update | null; error: string; checkedAt: number } = {
+  update: null,
+  error: '',
+  checkedAt: 0,
+};
+
+function UpdaterSettings({
+  appSettings,
+  onSettingsChange,
+}: {
+  appSettings: any;
+  onSettingsChange(settings: any): Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const osPlatform = useOsPlatform();
+  const [currentVersion, setCurrentVersion] = useState('');
+  const [status, setStatus] = useState<'idle' | 'checking' | 'downloading' | 'installing'>('idle');
+  const [update, setUpdate] = useState<Update | null>(sharedUpdateCheckResult.update);
+  const [error, setError] = useState(sharedUpdateCheckResult.error);
+  const [downloaded, setDownloaded] = useState(0);
+  const [contentLength, setContentLength] = useState<number | null>(null);
+
+  useEffect(() => {
+    getVersion()
+      .then(setCurrentVersion)
+      .catch(() => setCurrentVersion(''));
+  }, []);
+
+  const runCheck = useCallback(async () => {
+    setStatus('checking');
+    setError('');
+    setUpdate(null);
+    setDownloaded(0);
+    setContentLength(null);
+    try {
+      const result = await check();
+      sharedUpdateCheckResult.update = result ?? null;
+      sharedUpdateCheckResult.error = '';
+      sharedUpdateCheckResult.checkedAt = Date.now();
+      setUpdate(result ?? null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      sharedUpdateCheckResult.update = null;
+      sharedUpdateCheckResult.error = message;
+      sharedUpdateCheckResult.checkedAt = Date.now();
+      setError(message);
+    } finally {
+      setStatus('idle');
+    }
+  }, []);
+
+  const installUpdate = useCallback(async () => {
+    if (!update) return;
+    setStatus('downloading');
+    setError('');
+    try {
+      await update.downloadAndInstall((event: DownloadEvent) => {
+        switch (event.event) {
+          case 'Started':
+            setContentLength(event.data.contentLength ?? null);
+            break;
+          case 'Progress':
+            setDownloaded((prev) => prev + event.data.chunkLength);
+            break;
+          case 'Finished':
+            setStatus('installing');
+            break;
+        }
+      });
+      setStatus('installing');
+      await relaunch();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setStatus('idle');
+    }
+  }, [update]);
+
+  if (osPlatform === 'android') {
+    return null;
+  }
+
+  const isBusy = status === 'checking' || status === 'downloading' || status === 'installing';
+  const progressLabel =
+    contentLength && contentLength > 0
+      ? `${t('settings.updater.downloading')} ${Math.min(100, Math.round((downloaded / contentLength) * 100))}%`
+      : t('settings.updater.downloading');
+
+  return (
+    <>
+      <SettingItem label={t('settings.updater.autoCheck')} description={t('settings.updater.autoCheckDesc')}>
+        <Switch
+          checked={appSettings?.autoCheckUpdates ?? false}
+          id="auto-check-updates-toggle"
+          label={t('settings.updater.autoCheck')}
+          onChange={(checked) => onSettingsChange({ ...appSettings, autoCheckUpdates: checked })}
+        />
+      </SettingItem>
+
+      <SettingItem
+        label={
+          currentVersion
+            ? t('settings.updater.currentVersion', { version: currentVersion })
+            : t('settings.updater.title')
+        }
+        description={t('settings.updater.desc')}
+      >
+        <Button onClick={runCheck} disabled={isBusy}>
+          {status === 'checking' ? t('settings.updater.checking') : t('settings.updater.checkNow')}
+        </Button>
+      </SettingItem>
+
+      {update && (
+        <SettingItem
+          label={t('settings.updater.available', { version: update.version })}
+          description={
+            status === 'downloading'
+              ? progressLabel
+              : status === 'installing'
+                ? t('settings.updater.installing')
+                : t('settings.updater.releaseReady')
+          }
+        >
+          <Button onClick={installUpdate} disabled={status === 'downloading' || status === 'installing'}>
+            {t('settings.updater.downloadInstall')}
+          </Button>
+        </SettingItem>
+      )}
+
+      {!update && !error && status === 'idle' && sharedUpdateCheckResult.checkedAt > 0 && (
+        <p className="text-sm text-text-secondary">{t('settings.updater.upToDate', { version: currentVersion })}</p>
+      )}
+
+      {error && <p className="text-sm text-red-500">{t('settings.updater.failed', { error })}</p>}
+    </>
+  );
+}
 
 export default function SettingsPanel({
   appSettings,
@@ -1102,6 +1242,15 @@ export default function SettingsPanel({
                           />
                         </SettingItem>
                       )}
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                    <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
+                      {t('settings.updater.title')}
+                    </Text>
+                    <div className="space-y-8">
+                      <UpdaterSettings appSettings={appSettings} onSettingsChange={onSettingsChange} />
                     </div>
                   </div>
 
@@ -1948,6 +2097,29 @@ export default function SettingsPanel({
                                       }
                                       options={exportMemoryLimits}
                                       value={appSettings?.exportMemoryLimit ?? 80}
+                                      triggerClassName="bg-surface"
+                                    />
+                                  </SettingItem>
+
+                                  <SettingItem
+                                    label={t('settings.processing.advanced.previewDemosaicQuality')}
+                                    description={t('settings.processing.advanced.previewDemosaicQualityDesc')}
+                                  >
+                                    <Dropdown
+                                      onChange={(value: any) =>
+                                        onSettingsChange({ ...appSettings, previewDemosaicQuality: value })
+                                      }
+                                      options={[
+                                        {
+                                          value: 'speed',
+                                          label: t('settings.processing.advanced.previewDemosaicSpeed'),
+                                        },
+                                        {
+                                          value: 'quality',
+                                          label: t('settings.processing.advanced.previewDemosaicHigh'),
+                                        },
+                                      ]}
+                                      value={appSettings?.previewDemosaicQuality === 'quality' ? 'quality' : 'speed'}
                                       triggerClassName="bg-surface"
                                     />
                                   </SettingItem>

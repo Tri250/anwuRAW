@@ -236,14 +236,17 @@ fn dir_size(path: &Path) -> u64 {
 #[tauri::command]
 pub async fn get_storage_usage(app_handle: AppHandle) -> Result<StorageUsage, String> {
     let dirs = storage_dirs(&app_handle)?;
-    tauri::async_runtime::spawn_blocking(move || StorageUsage {
-        thumbnails: dir_size(&dirs.cache.join("thumbnails")),
-        ai_denoise: dir_size(&dirs.cache.join("ai_denoise")),
-        ai_maps: dir_size(&dirs.cache.join("ai_maps")),
-        metadata: dir_size(&dirs.cache.join("exif")),
-        immich: dir_size(&dirs.cache.join("immich")),
-        models: dir_size(&dirs.data.join("models")),
-        logs: dir_size(&dirs.logs),
+    tauri::async_runtime::spawn_blocking(move || {
+        let version = crate::raw_processing::PROCESSING_VERSION;
+        StorageUsage {
+            thumbnails: dir_size(&dirs.cache.join("thumbnails")),
+            ai_denoise: dir_size(&dirs.cache.join(format!("ai_denoise_v{version}"))),
+            ai_maps: dir_size(&dirs.cache.join(format!("ai_maps_v{version}"))),
+            metadata: dir_size(&dirs.cache.join("exif")),
+            immich: dir_size(&dirs.cache.join("immich")),
+            models: dir_size(&dirs.data.join("models")),
+            logs: dir_size(&dirs.logs),
+        }
     })
     .await
     .map_err(|e| e.to_string())

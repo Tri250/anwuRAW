@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Progress } from '../components/ui/AppProperties';
-import { ExportState, ImportState, Status } from '../components/ui/ExportImportProperties';
+import { ExportState, ImportState, Status, UnfinishedExportJob } from '../components/ui/ExportImportProperties';
 
 export interface ExternalEditSession {
   source: string;
@@ -79,6 +79,7 @@ export const selectAiModelDownloadStatus = (state: ProcessState) => {
 
 interface ProcessState {
   exportState: ExportState;
+  unfinishedExportJob: UnfinishedExportJob | null;
   importState: ImportState;
   thumbnails: Record<string, string>;
   mediumThumbnails: Record<string, string>;
@@ -168,6 +169,7 @@ const syncStatusJob = (
 
 export const useProcessStore = create<ProcessState>((set, get) => ({
   exportState: { errorMessage: '', progress: { current: 0, total: 0 }, status: Status.Idle },
+  unfinishedExportJob: null,
   importState: { errorMessage: '', path: '', progress: { current: 0, total: 0 }, status: Status.Idle },
   thumbnails: {},
   mediumThumbnails: {},

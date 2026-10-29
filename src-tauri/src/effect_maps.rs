@@ -51,8 +51,7 @@ impl EffectMapKind {
 }
 
 pub fn initialize_cache_dir(cache_dir: PathBuf) {
-    let dir = cache_dir.join("ai_maps");
-    let _ = fs::create_dir_all(&dir);
+    let dir = crate::cache_utils::versioned_cache_dir(&cache_dir, "ai_maps_v");
     *MAP_CACHE_DIR.lock().unwrap_or_else(|e| e.into_inner()) = Some(dir);
 }
 

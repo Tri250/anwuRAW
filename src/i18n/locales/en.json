@@ -63,6 +63,7 @@
       },
       "presence": "Presence",
       "saturation": "Saturation",
+      "targetedTooltip": "Targeted adjustment: sample a color on the canvas, drag to adjust its hue/saturation (Ctrl+Alt+H)",
       "temperature": "Temperature",
       "tint": "Tint",
       "toggleSliders": "Toggle Sliders",
@@ -890,6 +891,11 @@
         "tethering": "Tethering"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · hue {{hue}}, saturation {{sat}}",
+      "hint": "Click the canvas to sample a color, drag to adjust hue/saturation; Esc to exit",
+      "sampleFailed": "Could not sample a usable color at this position"
+    },
     "toolbar": {
       "history": "History",
       "switchToVariant": "Switch to {{label}}",
@@ -990,6 +996,11 @@
       },
       "pixels": "pixels",
       "resizeToFit": "Resize to Fit"
+    },
+    "resume": {
+      "bannerDetail": "Previous export unfinished: {{done}}/{{total}} done, {{remaining}} remaining",
+      "discard": "Discard",
+      "resume": "Resume Export"
     },
     "sections": {
       "advanced": "Advanced",
@@ -1970,6 +1981,10 @@
         "exportThreadsDesc": "Number of images exported at the same time. Auto picks a value based on your CPU. Lower it if large exports fail or your GPU has little memory.",
         "heading": "Advanced",
         "headingDesc": "Performance tuning for thumbnails, caching and exports. The defaults work well for most users.",
+        "previewDemosaicHigh": "High quality",
+        "previewDemosaicQuality": "RAW Preview Demosaic",
+        "previewDemosaicQualityDesc": "Quality of the RAW demosaic used for editor previews. High quality is sharper but slower to browse; exports always use full quality.",
+        "previewDemosaicSpeed": "Fast (default)",
         "title": "Advanced Settings"
       },
       "ai": {
@@ -2180,6 +2195,22 @@
     "title": "Settings",
     "tooltips": {
       "goHome": "Go to Home"
+    },
+    "updater": {
+      "autoCheck": "Automatically check for updates",
+      "autoCheckDesc": "Check GitHub for a new version when the app starts.",
+      "available": "Version {{version}} is available.",
+      "checking": "Checking for updates…",
+      "checkNow": "Check for Updates",
+      "currentVersion": "Current version: {{version}}",
+      "desc": "Keep the app up to date with the latest features and fixes.",
+      "downloading": "Downloading update…",
+      "downloadInstall": "Download and Install",
+      "failed": "Update check failed: {{error}}",
+      "installing": "Installing and restarting…",
+      "releaseReady": "The update will be applied after download.",
+      "title": "Software Updates",
+      "upToDate": "You are on the latest version ({{version}})."
     }
   },
   "tethering": {

@@ -63,6 +63,7 @@
       },
       "presence": "Präsenz",
       "saturation": "Sättigung",
+      "targetedTooltip": "Gezielte Anpassung: Farbe auf der Leinwand aufnehmen und zum Anpassen von Farbton/Sättigung ziehen (Ctrl+Alt+H)",
       "temperature": "Temperatur",
       "tint": "Tonung",
       "toggleSliders": "Regler umschalten",
@@ -890,6 +891,11 @@
         "tethering": "Tethering"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · Farbton {{hue}}, Sättigung {{sat}}",
+      "hint": "Klicken Sie auf die Leinwand, um eine Farbe aufzunehmen, und ziehen Sie, um Farbton/Sättigung anzupassen; Esc zum Beenden",
+      "sampleFailed": "An dieser Position konnte keine verwendbare Farbe aufgenommen werden"
+    },
     "toolbar": {
       "history": "Verlauf",
       "switchToVariant": "Switch to {{label}}",
@@ -990,6 +996,11 @@
       },
       "pixels": "Pixel",
       "resizeToFit": "In Rahmen einpassen"
+    },
+    "resume": {
+      "bannerDetail": "Vorheriger Export unvollständig: {{done}}/{{total}} erledigt, {{remaining}} verbleibend",
+      "discard": "Verwerfen",
+      "resume": "Export fortsetzen"
     },
     "sections": {
       "advanced": "Erweitert",
@@ -1970,6 +1981,10 @@
         "exportThreadsDesc": "Anzahl der gleichzeitig exportierten Bilder. Automatisch wählt einen Wert passend zu deiner CPU. Verringere ihn, wenn große Exporte fehlschlagen oder deine GPU wenig Speicher hat.",
         "heading": "Erweitert",
         "headingDesc": "Leistungsoptimierung für Vorschaubilder, Cache und Exporte. Die Standardwerte passen für die meisten Nutzer.",
+        "previewDemosaicHigh": "Hohe Qualität",
+        "previewDemosaicQuality": "RAW-Vorschau-Demosaicing",
+        "previewDemosaicQualityDesc": "Qualität des RAW-Demosaicing für Editor-Vorschauen. Hohe Qualität ist schärfer, aber das Durchsuchen ist langsamer; Exporte verwenden immer die volle Qualität.",
+        "previewDemosaicSpeed": "Schnell (Standard)",
         "title": "Erweiterte Einstellungen"
       },
       "ai": {
@@ -2180,6 +2195,22 @@
     "title": "Einstellungen",
     "tooltips": {
       "goHome": "Zur Startseite"
+    },
+    "updater": {
+      "autoCheck": "Automatisch nach Updates suchen",
+      "autoCheckDesc": "Beim Start der App auf GitHub nach einer neuen Version suchen.",
+      "available": "Version {{version}} ist verfügbar.",
+      "checking": "Suche nach Updates…",
+      "checkNow": "Nach Updates suchen",
+      "currentVersion": "Aktuelle Version: {{version}}",
+      "desc": "Halten Sie die App auf dem neuesten Stand mit den neuesten Funktionen und Korrekturen.",
+      "downloading": "Update wird heruntergeladen…",
+      "downloadInstall": "Herunterladen und Installieren",
+      "failed": "Update-Prüfung fehlgeschlagen: {{error}}",
+      "installing": "Wird installiert und neu gestartet…",
+      "releaseReady": "Das Update wird nach dem Herunterladen automatisch angewendet.",
+      "title": "Software-Updates",
+      "upToDate": "Sie verwenden die neueste Version ({{version}})."
     }
   },
   "tethering": {

@@ -35,11 +35,13 @@ mod baseline_exposure;
 mod bm3d;
 mod cache_utils;
 mod camera_tethering;
+mod cli;
 mod color_profiles;
 mod color_transfer;
 mod culling;
 mod effect_maps;
 mod exif_processing;
+mod export_journal;
 mod export_processing;
 mod face_masking;
 mod file_management;
@@ -2047,6 +2049,12 @@ pub fn run() {
         .build_global();
 
     let args: Vec<String> = std::env::args().skip(1).collect();
+
+    // 纯 CLI 子命令（capabilities/validate/image-info/help/version）不启动 GUI。
+    if let Some(exit_code) = cli::try_run_cli(&args) {
+        std::process::exit(exit_code);
+    }
+
     let launch_req = parse_launch_args(&args);
     if let LaunchRequest::InvalidHeadless(error) = &launch_req {
         eprintln!("Headless export failed: {}", error);
@@ -2066,6 +2074,7 @@ pub fn run() {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
         if !is_headless {
+            builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
             builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
                 log::info!(
                     "New instance launched with args: {:?}. Focusing main window.",
@@ -2597,7 +2606,10 @@ pub fn run() {
             image_loader::is_image_cached,
             panorama_stitching::stitch_panorama,
             panorama_stitching::save_panorama,
+            export_journal::get_unfinished_export_job,
+            export_journal::discard_export_job,
             export_processing::export_images,
+            export_processing::resume_export_job,
             export_processing::cancel_export,
             export_processing::estimate_export_sizes,
             image_processing::calculate_auto_adjustments,

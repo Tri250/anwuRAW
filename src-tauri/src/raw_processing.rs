@@ -21,6 +21,38 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 
+/// Pixel-processing pipeline identity (decode + demosaic + color pipeline).
+///
+/// Increment on any change that silently alters the rendered output of existing
+/// edits — e.g. a rawler upgrade, a demosaic default change, or a tone/color
+/// pipeline change. The value is mixed into every render cache key and into the
+/// persistent cache directory names, and new edit records pin the version they
+/// were created with (`processingVersion` in the sidecar JSON). Records missing
+/// the field are interpreted as version 1 and are never implicitly upgraded.
+pub const PROCESSING_VERSION: u32 = 1;
+
+/// Processing version pinned by an edit record. A missing field means version 1:
+/// records written before the field existed keep rendering with the pipeline they
+/// were created on instead of silently adopting newer semantics.
+pub fn processing_version_from_json(adjustments: &serde_json::Value) -> u32 {
+    adjustments
+        .get("processingVersion")
+        .and_then(|v| v.as_u64())
+        .map(|v| v as u32)
+        .unwrap_or(1)
+}
+
+/// Stamps the current processing version into an adjustments object on save so
+/// the record stays reproducible across pipeline upgrades.
+pub fn stamp_processing_version(adjustments: &mut serde_json::Value) {
+    if let Some(obj) = adjustments.as_object_mut() {
+        obj.insert(
+            "processingVersion".to_string(),
+            serde_json::json!(PROCESSING_VERSION),
+        );
+    }
+}
+
 pub fn develop_raw_image(
     file_bytes: &[u8],
     fast_demosaic: bool,

@@ -63,6 +63,7 @@
       },
       "presence": "质感",
       "saturation": "饱和度",
+      "targetedTooltip": "目标调整：在画布上取样颜色并拖动，调整该颜色的色相/饱和度（Ctrl+Alt+H）",
       "temperature": "色温",
       "tint": "色调",
       "toggleSliders": "切换滑块",
@@ -889,6 +890,11 @@
         "tethering": "联机拍摄"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · 色相 {{hue}}，饱和度 {{sat}}",
+      "hint": "点击画布取样颜色，拖动调整色相/饱和度；Esc 退出",
+      "sampleFailed": "未能在此位置取到可用颜色"
+    },
     "toolbar": {
       "history": "历史记录",
       "switchToVariant": "切换到 {{label}}",
@@ -989,6 +995,11 @@
       },
       "pixels": "像素",
       "resizeToFit": "调整大小以适应"
+    },
+    "resume": {
+      "bannerDetail": "上次导出未完成：已完成 {{done}}/{{total}}，剩余 {{remaining}} 项",
+      "discard": "放弃任务",
+      "resume": "继续导出"
     },
     "sections": {
       "advanced": "高级",
@@ -1969,6 +1980,10 @@
         "exportThreadsDesc": "同时导出的图像数量。“自动”会根据你的 CPU 选择合适的值。如果大型导出失败或显卡显存较小，请调低。",
         "heading": "高级",
         "headingDesc": "缩略图、缓存和导出的性能调整。默认值适合大多数用户。",
+        "previewDemosaicHigh": "高质量",
+        "previewDemosaicQuality": "RAW 预览去马赛克",
+        "previewDemosaicQualityDesc": "编辑器预览使用的 RAW 去马赛克质量。高质量更锐利但浏览更慢；导出始终使用完整质量。",
+        "previewDemosaicSpeed": "快速（默认）",
         "title": "高级设置"
       },
       "ai": {
@@ -2179,6 +2194,22 @@
     "title": "设置",
     "tooltips": {
       "goHome": "返回首页"
+    },
+    "updater": {
+      "autoCheck": "自动检查更新",
+      "autoCheckDesc": "应用启动时检查 GitHub 上是否有新版本。",
+      "available": "发现新版本 {{version}}。",
+      "checking": "正在检查更新…",
+      "checkNow": "检查更新",
+      "currentVersion": "当前版本：{{version}}",
+      "desc": "保持应用为最新版本，获取最新功能与修复。",
+      "downloading": "正在下载更新…",
+      "downloadInstall": "下载并安装",
+      "failed": "检查更新失败：{{error}}",
+      "installing": "正在安装并重启…",
+      "releaseReady": "更新将在下载完成后自动应用。",
+      "title": "软件更新",
+      "upToDate": "已是最新版本（{{version}}）。"
     }
   },
   "tethering": {

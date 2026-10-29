@@ -19,7 +19,8 @@
     "i18n:extract": "i18next-cli extract",
     "i18n:check": "i18next-cli extract --ci --dry-run && npm run i18n:runtime-check",
     "i18n:runtime-check": "node src/i18n/check-runtime.mjs",
-    "i18n:lint": "i18next-cli lint"
+    "i18n:lint": "i18next-cli lint",
+    "schema:generate": "node tools/generate-adjustments-schema.mjs"
   },
   "dependencies": {
     "@clerk/react": "^6.14.5",
@@ -30,6 +31,7 @@
     "@tauri-apps/plugin-os": "^2.3.2",
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-shell": "^2.3.5",
+    "@tauri-apps/plugin-updater": "^2.14.1",
     "@uiw/color-convert": "^2.10.3",
     "@uiw/react-color-wheel": "^2.10.3",
     "clsx": "^2.1.1",

@@ -63,6 +63,7 @@
       },
       "presence": "外観",
       "saturation": "彩度",
+      "targetedTooltip": "ターゲット調整：キャンバスで色をサンプリングし、ドラッグしてその色相・彩度を調整します（Ctrl+Alt+H）",
       "temperature": "色温度",
       "tint": "色かぶり補正",
       "toggleSliders": "スライダー切り替え",
@@ -889,6 +890,11 @@
         "tethering": "テザー撮影"
       }
     },
+    "targeted": {
+      "chip": "{{channel}} · 色相 {{hue}}、彩度 {{sat}}",
+      "hint": "キャンバスをクリックして色をサンプリングし、ドラッグで色相・彩度を調整。Esc で終了",
+      "sampleFailed": "この位置から使用可能な色をサンプリングできませんでした"
+    },
     "toolbar": {
       "history": "履歴",
       "switchToVariant": "Switch to {{label}}",
@@ -989,6 +995,11 @@
       },
       "pixels": "ピクセル",
       "resizeToFit": "サイズに合わせる"
+    },
+    "resume": {
+      "bannerDetail": "前回の書き出しが未完了です：{{done}}/{{total}} 完了、残り {{remaining}} 項目",
+      "discard": "破棄",
+      "resume": "書き出しを再開"
     },
     "sections": {
       "advanced": "詳細設定",
@@ -1969,6 +1980,10 @@
         "exportThreadsDesc": "同時に書き出す画像の数です。自動では CPU に合わせて値を選びます。大きな書き出しが失敗する場合や GPU のメモリが少ない場合は下げてください。",
         "heading": "詳細",
         "headingDesc": "サムネイル、キャッシュ、書き出しのパフォーマンス調整です。ほとんどの場合は既定値のままで問題ありません。",
+        "previewDemosaicHigh": "高品質",
+        "previewDemosaicQuality": "RAW プレビュー デモザイク",
+        "previewDemosaicQualityDesc": "エディターのプレビューに使用される RAW デモザイクの品質。高品質はシャープですが、閲覧が遅くなります。書き出しは常に完全な品質を使用します。",
+        "previewDemosaicSpeed": "高速（デフォルト）",
         "title": "詳細設定"
       },
       "ai": {
@@ -2179,6 +2194,22 @@
     "title": "設定",
     "tooltips": {
       "goHome": "ホームへ移動"
+    },
+    "updater": {
+      "autoCheck": "自動的にアップデートを確認",
+      "autoCheckDesc": "アプリ起動時に GitHub で新バージョンを確認します。",
+      "available": "バージョン {{version}} が利用可能です。",
+      "checking": "アップデートを確認中…",
+      "checkNow": "アップデートを確認",
+      "currentVersion": "現在のバージョン: {{version}}",
+      "desc": "最新の機能と修正を取り込むため、アプリを最新の状態に保ちましょう。",
+      "downloading": "アップデートをダウンロード中…",
+      "downloadInstall": "ダウンロードしてインストール",
+      "failed": "アップデートの確認に失敗しました: {{error}}",
+      "installing": "インストールして再起動中…",
+      "releaseReady": "ダウンロード完了後、アップデートが適用されます。",
+      "title": "ソフトウェアアップデート",
+      "upToDate": "最新バージョンです（{{version}}）。"
     }
   },
   "tethering": {
