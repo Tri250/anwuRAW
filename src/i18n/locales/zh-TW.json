@@ -2212,6 +2212,7 @@
       "failed": "檢查更新失敗：{{error}}",
       "installing": "正在安裝並重新啟動…",
       "lastChecked": "最近檢查：{{time}}",
+      "timeout": "檢查更新逾時（超過 20 秒）。",
       "networkHint": "若持續失敗，請檢查網路或代理設定——更新檔案託管於 GitHub，部分地區可能無法直接存取。",
       "releaseReady": "更新將在下載完成後自動套用。",
       "title": "軟體更新",

@@ -2213,6 +2213,7 @@
       "failed": "Update-Prüfung fehlgeschlagen: {{error}}",
       "installing": "Wird installiert und neu gestartet…",
       "lastChecked": "Zuletzt geprüft: {{time}}",
+      "timeout": "Die Update-Prüfung hat nach 20 Sekunden das Zeitlimit überschritten.",
       "networkHint": "Wenn der Fehler weiterhin besteht, prüfen Sie Netzwerk- oder Proxy-Einstellungen — Updates werden auf GitHub gehostet, das in manchen Regionen nicht erreichbar ist.",
       "releaseReady": "Das Update wird nach dem Herunterladen automatisch angewendet.",
       "title": "Software-Updates",

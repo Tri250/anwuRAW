@@ -2254,6 +2254,7 @@
       "failed": "La comprovació d'actualitzacions ha fallat: {{error}}",
       "installing": "S'està instal·lant i reiniciant…",
       "lastChecked": "Última comprovació: {{time}}",
+      "timeout": "La comprovació d’actualitzacions ha esgotat el temps després de 20 segons.",
       "networkHint": "Si continua fallant, comproveu la xarxa o el servidor intermediari: les actualitzacions s’allotgen a GitHub, que és inabastable en algunes regions.",
       "releaseReady": "L'actualització s'aplicarà quan acabi la baixada.",
       "title": "Actualitzacions de programari",

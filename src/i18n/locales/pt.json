@@ -2254,6 +2254,7 @@
       "failed": "Falha ao procurar atualizações: {{error}}",
       "installing": "A instalar e a reiniciar…",
       "lastChecked": "Última verificação: {{time}}",
+      "timeout": "A verificação de atualizações excedeu o limite de 20 segundos.",
       "networkHint": "Se a falha persistir, verifique a rede ou o proxy — as atualizações estão alojadas no GitHub, inacessível em algumas regiões.",
       "releaseReady": "A atualização será aplicada após a conclusão da transferência.",
       "title": "Atualizações de software",

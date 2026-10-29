@@ -2295,6 +2295,7 @@
       "failed": "Kontrola aktualizací selhala: {{error}}",
       "installing": "Instalace a restartování…",
       "lastChecked": "Naposledy zkontrolováno: {{time}}",
+      "timeout": "Kontrola aktualizací vypršela po 20 sekundách.",
       "networkHint": "Pokud to dál selhává, zkontrolujte síť nebo proxy — aktualizace jsou hostovány na GitHubu, který je v některých regionech nedostupný.",
       "releaseReady": "Aktualizace bude použita po dokončení stahování.",
       "title": "Aktualizace softwaru",

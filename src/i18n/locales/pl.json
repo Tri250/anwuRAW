@@ -2295,6 +2295,7 @@
       "failed": "Sprawdzanie aktualizacji nie powiodło się: {{error}}",
       "installing": "Instalowanie i ponowne uruchamianie…",
       "lastChecked": "Ostatnio sprawdzono: {{time}}",
+      "timeout": "Sprawdzanie aktualizacji przekroczyło limit 20 sekund.",
       "networkHint": "Jeśli błąd się powtarza, sprawdź sieć lub serwer proxy — aktualizacje są hostowane na GitHubie, który w niektórych regionach jest niedostępny.",
       "releaseReady": "Aktualizacja zostanie zastosowana po zakończeniu pobierania.",
       "title": "Aktualizacje oprogramowania",

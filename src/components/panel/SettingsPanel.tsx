@@ -510,6 +510,8 @@ export const sharedUpdateCheckResult: { update: Update | null; error: string; ch
   checkedAt: 0,
 };
 
+const UPDATE_CHECK_TIMEOUT_MS = 20_000;
+
 function UpdaterSettings({
   appSettings,
   onSettingsChange,
@@ -540,7 +542,20 @@ function UpdaterSettings({
     setDownloaded(0);
     setContentLength(null);
     try {
-      const result = await check();
+      // The updater plugin has no timeout of its own: on a blocked or half-open
+      // network the request can hang indefinitely, which leaves the button
+      // stuck in "checking" and makes a later click look like it did nothing.
+      // Race the check against a hard deadline so every click ends in a state.
+      let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
+      const result = await Promise.race([
+        check(),
+        new Promise<never>((_, reject) => {
+          timeoutTimer = setTimeout(
+            () => reject(new Error(t('settings.updater.timeout'))),
+            UPDATE_CHECK_TIMEOUT_MS,
+          );
+        }),
+      ]).finally(() => clearTimeout(timeoutTimer));
       const now = Date.now();
       sharedUpdateCheckResult.update = result ?? null;
       sharedUpdateCheckResult.error = '';
@@ -549,6 +564,7 @@ function UpdaterSettings({
       setUpdate(result ?? null);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+      console.warn('[updater] check failed:', err);
       const now = Date.now();
       sharedUpdateCheckResult.update = null;
       sharedUpdateCheckResult.error = message;
@@ -558,7 +574,7 @@ function UpdaterSettings({
     } finally {
       setStatus('idle');
     }
-  }, []);
+  }, [t]);
 
   const installUpdate = useCallback(async () => {
     if (!update) return;
@@ -638,23 +654,36 @@ function UpdaterSettings({
       )}
 
       {status === 'checking' && !update && (
-        <Text color={TextColors.secondary}>{t('settings.updater.connecting')}</Text>
+        <div className="flex items-start gap-2 rounded-lg border border-border-color bg-bg-primary px-3 py-2">
+          <span className="mt-1.5 h-2 w-2 shrink-0 animate-pulse rounded-full bg-accent" />
+          <Text variant={TextVariants.small} color={TextColors.secondary}>
+            {t('settings.updater.connecting')}
+          </Text>
+        </div>
       )}
 
       {!update && !error && status === 'idle' && lastCheckedAt > 0 && (
-        <Text variant={TextVariants.small} color={TextColors.secondary}>
-          {t('settings.updater.upToDate', { version: currentVersion })}{' '}
-          {t('settings.updater.lastChecked', { time: new Date(lastCheckedAt).toLocaleTimeString() })}
-        </Text>
+        <div className="flex items-start gap-2 rounded-lg border border-border-color bg-bg-primary px-3 py-2">
+          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-500" />
+          <Text variant={TextVariants.small} color={TextColors.secondary}>
+            {t('settings.updater.upToDate', { version: currentVersion })}{' '}
+            {t('settings.updater.lastChecked', { time: new Date(lastCheckedAt).toLocaleTimeString() })}
+          </Text>
+        </div>
       )}
 
       {error && (
-        <>
-          <Text color={TextColors.error}>{t('settings.updater.failed', { error })}</Text>
-          <Text variant={TextVariants.small} color={TextColors.secondary}>
-            {t('settings.updater.networkHint')}
-          </Text>
-        </>
+        <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
+          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500" />
+          <div className="space-y-1">
+            <Text variant={TextVariants.small} color={TextColors.error}>
+              {t('settings.updater.failed', { error })}
+            </Text>
+            <Text variant={TextVariants.small} color={TextColors.secondary}>
+              {t('settings.updater.networkHint')}
+            </Text>
+          </div>
+        </div>
       )}
     </>
   );
