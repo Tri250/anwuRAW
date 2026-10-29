@@ -2150,7 +2150,9 @@ pub(crate) async fn export_images_impl(
                 if !cancellation_token_clone.load(Ordering::SeqCst) {
                     if let Some(writer) = &journal_writer_task {
                         match &result {
-                            Ok(()) => writer.mark_done(global_index, &output_path.to_string_lossy()),
+                            Ok(()) => {
+                                writer.mark_done(global_index, &output_path.to_string_lossy())
+                            }
                             Err(error) => writer.mark_failed(global_index, error),
                         }
                     }

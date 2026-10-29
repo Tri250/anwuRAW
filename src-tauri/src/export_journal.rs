@@ -209,7 +209,9 @@ fn load_journal_file(path: &Path) -> Result<ExportJobJournal, String> {
 
 fn is_valid_job_id(job_id: &str) -> bool {
     !job_id.is_empty()
-        && job_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+        && job_id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-')
 }
 
 /// Reads a frozen journal by id (used by the resume command).

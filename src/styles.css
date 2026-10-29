@@ -67,8 +67,7 @@
 
 @utility custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color:
-    color-mix(in srgb, var(--app-text-secondary, #888) 40%, transparent) transparent;
+  scrollbar-color: color-mix(in srgb, var(--app-text-secondary, #888) 40%, transparent) transparent;
 
   &::-webkit-scrollbar {
     width: 8px;

@@ -550,10 +550,7 @@ function UpdaterSettings({
       const result = await Promise.race([
         check(),
         new Promise<never>((_, reject) => {
-          timeoutTimer = setTimeout(
-            () => reject(new Error(t('settings.updater.timeout'))),
-            UPDATE_CHECK_TIMEOUT_MS,
-          );
+          timeoutTimer = setTimeout(() => reject(new Error(t('settings.updater.timeout'))), UPDATE_CHECK_TIMEOUT_MS);
         }),
       ]).finally(() => clearTimeout(timeoutTimer));
       const now = Date.now();
@@ -854,15 +851,13 @@ export default function SettingsPanel({
       // from it here would silently revert those pending edits and hide the
       // restart banner — so keep the local values while a restart is pending.
       processingBackend: restartRequired ? prev.processingBackend : appSettings?.processingBackend || 'auto',
-      linuxGpuOptimization: restartRequired
-        ? prev.linuxGpuOptimization
-        : appSettings?.linuxGpuOptimization ?? false,
+      linuxGpuOptimization: restartRequired ? prev.linuxGpuOptimization : (appSettings?.linuxGpuOptimization ?? false),
       useWgpuRenderer: restartRequired
         ? prev.useWgpuRenderer
-        : appSettings?.useWgpuRenderer ?? (osPlatform === 'linux' || osPlatform === 'android' ? false : true),
+        : (appSettings?.useWgpuRenderer ?? (osPlatform === 'linux' || osPlatform === 'android' ? false : true)),
       thumbnailWorkerThreads: restartRequired
         ? prev.thumbnailWorkerThreads
-        : appSettings?.thumbnailWorkerThreads ?? 4,
+        : (appSettings?.thumbnailWorkerThreads ?? 4),
       imageCacheSize: appSettings?.imageCacheSize ?? 5,
       rawPreprocessingColorNr: appSettings?.rawPreprocessingColorNr ?? 0.5,
       rawPreprocessingSharpening: appSettings?.rawPreprocessingSharpening ?? 0.35,
@@ -1134,10 +1129,7 @@ export default function SettingsPanel({
             </div>
           </header>
 
-          <div
-            ref={categoryScrollRef}
-            className="flex-1 overflow-y-auto overflow-x-hidden pr-2 -mr-2 custom-scrollbar"
-          >
+          <div ref={categoryScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden pr-2 -mr-2 custom-scrollbar">
             <AnimatePresence mode="wait">
               {activeCategory === 'general' && (
                 <motion.div

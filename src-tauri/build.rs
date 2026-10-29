@@ -83,7 +83,9 @@ fn download_and_verify(
                     let error_body = response
                         .text()
                         .unwrap_or_else(|_| "Could not read error body".to_string());
-                    return Err(format!("Download failed with status {}: {}", status, error_body).into());
+                    return Err(
+                        format!("Download failed with status {}: {}", status, error_body).into(),
+                    );
                 }
 
                 let mut temp_file = fs::File::create(&temp_path)?;
@@ -100,12 +102,8 @@ fn download_and_verify(
                         );
                         Ok(())
                     }
-                    Ok(false) => {
-                        Err("Verification failed! The downloaded file is corrupt.".into())
-                    }
-                    Err(e) => {
-                        Err(format!("Could not verify file after download: {}", e).into())
-                    }
+                    Ok(false) => Err("Verification failed! The downloaded file is corrupt.".into()),
+                    Err(e) => Err(format!("Could not verify file after download: {}", e).into()),
                 }
             })();
             match result {

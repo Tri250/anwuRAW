@@ -160,13 +160,13 @@ fn format_json(value: &Value) -> String {
     }
 }
 
-fn validate_adjustments_value(
-    adjustments: &Value,
-    schema: &Value,
-    errors: &mut Vec<Value>,
-) {
+fn validate_adjustments_value(adjustments: &Value, schema: &Value, errors: &mut Vec<Value>) {
     let Some(adjustments) = adjustments.as_object() else {
-        push_error(errors, "", "expected a JSON object at the top level".to_string());
+        push_error(
+            errors,
+            "",
+            "expected a JSON object at the top level".to_string(),
+        );
         return;
     };
     let Some(params) = schema.get("params").and_then(Value::as_object) else {
@@ -279,11 +279,7 @@ fn cmd_validate(rest: &[String]) -> i32 {
             return 2;
         }
     }
-    if report.valid {
-        0
-    } else {
-        1
-    }
+    if report.valid { 0 } else { 1 }
 }
 
 fn rational_to_f64(rational: Option<rawler::formats::tiff::Rational>) -> Option<f64> {
@@ -319,12 +315,15 @@ fn cmd_image_info(path: &str) -> i32 {
                     Ok(meta) => {
                         info["make"] = serde_json::json!(meta.make);
                         info["model"] = serde_json::json!(meta.model);
-                        info["camera"] = serde_json::json!(format!(
-                            "{} {}",
-                            meta.make, meta.model
-                        ).trim().to_string());
+                        info["camera"] = serde_json::json!(
+                            format!("{} {}", meta.make, meta.model).trim().to_string()
+                        );
                         let exif = &meta.exif;
-                        if let Some(iso) = exif.iso_speed.map(|v| v as u64).or(exif.iso_speed_ratings.map(|v| v as u64)) {
+                        if let Some(iso) = exif
+                            .iso_speed
+                            .map(|v| v as u64)
+                            .or(exif.iso_speed_ratings.map(|v| v as u64))
+                        {
                             info["iso"] = serde_json::json!(iso);
                         }
                         if let Some(seconds) = rational_to_f64(exif.exposure_time) {
@@ -350,10 +349,8 @@ fn cmd_image_info(path: &str) -> i32 {
                         }
                     }
                     Err(error) => {
-                        info["warning"] = serde_json::json!(format!(
-                            "metadata extraction failed: {}",
-                            error
-                        ));
+                        info["warning"] =
+                            serde_json::json!(format!("metadata extraction failed: {}", error));
                     }
                 },
                 Err(error) => {

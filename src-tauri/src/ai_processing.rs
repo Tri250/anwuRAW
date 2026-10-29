@@ -1161,9 +1161,10 @@ async fn download_model(
     dest: &Path,
 ) -> Result<()> {
     let endpoints = candidate_urls(asset.url);
-    let file_name = dest.file_name().and_then(|name| name.to_str()).ok_or_else(
-        || anyhow::anyhow!("Invalid model asset path {}", dest.display()),
-    )?;
+    let file_name = dest
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| anyhow::anyhow!("Invalid model asset path {}", dest.display()))?;
     let tmp_path = dest.with_file_name(format!(".{file_name}.download"));
     let parent = dest.parent().ok_or_else(|| {
         anyhow::anyhow!(
@@ -3057,8 +3058,7 @@ pub struct AiDepthMaskParameters {
 mod tests {
     use super::*;
 
-    const TEST_URL: &str =
-        "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/nind_denoise_utnet_684.onnx?download=true";
+    const TEST_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/nind_denoise_utnet_684.onnx?download=true";
 
     #[test]
     fn candidate_urls_fall_back_to_mirror() {
