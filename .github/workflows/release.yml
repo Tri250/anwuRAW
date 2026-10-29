@@ -29,43 +29,23 @@ jobs:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     outputs:
-      complete: ${{ steps.count.outputs.complete }}
+      complete: ${{ steps.check.outputs.complete }}
     permissions:
       contents: read
     steps:
-      - name: Count existing release assets
-        id: count
+      - uses: actions/checkout@v5
+
+      - name: Check existing release assets
+        id: check
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_ID: ${{ github.event.release.id }}
           REPOSITORY: ${{ github.repository }}
-        run: |
-          # A release is only skipped when every bundle of the 13-job matrix is
-          # present (30 assets). Tracking a bare "has assets" flag used to skip
-          # the rebuild for partially uploaded releases, which shipped incomplete
-          # downloads; tauri-action replaces same-named assets, so re-running the
-          # matrix on an incomplete release is safe.
-          expected=30
-          # Retry a few times: a single failed query must not silently report
-          # "0 assets" (which would needlessly trigger a full matrix rebuild).
-          count=0
-          for attempt in 1 2 3; do
-            if ids=$(gh api --paginate "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets?per_page=100" \
-              --jq '.[].id' 2>/tmp/assets_err); then
-              count=$(printf '%s\n' "$ids" | grep -c . || true)
-              count=${count:-0}
-            else
-              echo "Attempt ${attempt}: assets API query failed:" >&2
-              cat /tmp/assets_err >&2 || true
-              count=0
-            fi
-            echo "Attempt ${attempt}: ${count}/${expected} asset(s)."
-            [ "${count}" -ge "${expected}" ] && break
-            sleep 15
-          done
-          if [ "${count}" -ge "${expected}" ]; then complete=true; else complete=false; fi
-          echo "complete=${complete}" >> "$GITHUB_OUTPUT"
-          echo "Release ${RELEASE_ID} has ${count}/${expected} asset(s) (complete=${complete})."
+          RELEASE_ID: ${{ github.event.release.id }}
+          TAG: ${{ github.event.release.tag_name }}
+        # The helper verifies the *names* every platform must produce instead of
+        # a hard-coded asset count, which had drifted out of date (it still
+        # expected the pre-tethering 30-asset matrix).
+        run: bash .github/scripts/check-release-assets.sh precheck
 
   release:
     needs: precheck
@@ -95,30 +75,39 @@ jobs:
             target: aarch64-apple-darwin
             args: '--features tethering'
             asset-prefix: '02_tethering'
+            updater-json: 'false'
           - platform: 'macos-15-intel'
             target: x86_64-apple-darwin
             args: '--features tethering'
             asset-prefix: '02_tethering'
+            updater-json: 'false'
           - platform: 'ubuntu-22.04'
             target: ''
             asset-prefix: '03'
           - platform: 'ubuntu-22.04-arm'
             target: ''
             asset-prefix: '03'
+          # The 24.04 builds target glibc 2.39 and would break older distributions
+          # if promoted as the update. Only the 22.04 builds may write latest.json
+          # for the linux-x86_64 key.
           - platform: 'ubuntu-24.04'
             target: ''
             asset-prefix: '03'
+            updater-json: 'false'
           - platform: 'ubuntu-24.04-arm'
             target: ''
             asset-prefix: '03'
+            updater-json: 'false'
           - platform: 'ubuntu-22.04'
             target: ''
             args: '--features tethering'
             asset-prefix: '03_tethering'
+            updater-json: 'false'
           - platform: 'ubuntu-24.04'
             target: ''
             args: '--features tethering'
             asset-prefix: '03_tethering'
+            updater-json: 'false'
           # Android (arm64-v8a). build.rs downloads and bundles the ONNX Runtime
           # library for this ABI, and the APK is signed with the ANDROID_KEY_*
           # secrets when configured, otherwise with a generated debug keystore.
@@ -138,6 +127,7 @@ jobs:
       mobile: ${{ matrix.mobile }}
       asset-name-pattern: '[name]_v[version]_[platform]_[arch][ext]'
       asset-prefix: ${{ matrix.asset-prefix }}
+      include-updater-json: ${{ matrix['updater-json'] || 'true' }}
     secrets: inherit
     permissions:
       contents: write
@@ -148,36 +138,19 @@ jobs:
   verify:
     name: Verify release assets
     needs: [precheck, release]
-    if: ${{ !cancelled() && needs.release.result == 'success' && (github.event.release.id || inputs.release-id) != '' }}
+    if: ${{ !cancelled() && needs.release.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
+      - uses: actions/checkout@v5
+
       - name: Assert all bundles were uploaded
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_ID: ${{ github.event.release.id || inputs.release-id }}
           REPOSITORY: ${{ github.repository }}
-        run: |
-          expected=30
-          # Retry a few times: a transient API failure right after the matrix
-          # finished must not report "0 assets" and fail the release.
-          count=0
-          for attempt in 1 2 3 4 5; do
-            if ids=$(gh api --paginate "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets?per_page=100" \
-              --jq '.[].id' 2>/tmp/assets_err); then
-              count=$(printf '%s\n' "$ids" | grep -c . || true)
-              count=${count:-0}
-            else
-              echo "Attempt ${attempt}: assets API query failed:" >&2
-              cat /tmp/assets_err >&2 || true
-              count=0
-            fi
-            echo "Attempt ${attempt}: ${count}/${expected} asset(s)."
-            [ "${count}" -ge "${expected}" ] && break
-            sleep 20
-          done
-          if [ "${count}" -lt "${expected}" ]; then
-            echo "::error::Expected ${expected} release assets, found ${count}."
-            exit 1
-          fi
+          RELEASE_ID: ${{ github.event.release.id || inputs.release-id }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        # Same helper as the precheck job: fails loudly when a platform bundle,
+        # an updater signature or latest.json never reached the release page.
+        run: bash .github/scripts/check-release-assets.sh verify

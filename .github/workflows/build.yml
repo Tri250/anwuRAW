@@ -24,6 +24,11 @@ on:
         required: false
         type: string
         default: ''
+      include-updater-json:
+        description: 'Upload latest.json for this build (set to "false" for variants that must not rewrite the updater manifest)'
+        required: false
+        type: string
+        default: 'true'
       release-id:
         description: 'Release ID to upload the bundles to'
         required: false
@@ -87,6 +92,10 @@ on:
         required: false
         type: string
         default: ''
+      include-updater-json:
+        required: false
+        type: string
+        default: 'true'
 
 jobs:
   build:
@@ -319,6 +328,11 @@ jobs:
           args: --verbose ${{ inputs.build-args }} ${{ inputs.target != '' && '--target' || ''  }} ${{ inputs.target }}
           assetNamePattern: ${{ steps.patch-release-name.outputs.platform }}
           releaseId: ${{ inputs.release-id }}
+          # Every matrix job used to upload latest.json, so whichever job finished
+          # last rewrote the manifest for the whole platform. Tethering variants
+          # and the newer-glibc builds therefore ended up advertised to every
+          # user. Only the canonical builds of each platform may write it.
+          includeUpdaterJson: ${{ inputs.include-updater-json }}
           retryAttempts: 3
 
       # ort-sys has no prebuilt ONNX Runtime for Android and panics while trying
