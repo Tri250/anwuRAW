@@ -523,6 +523,7 @@ function UpdaterSettings({
   const [status, setStatus] = useState<'idle' | 'checking' | 'downloading' | 'installing'>('idle');
   const [update, setUpdate] = useState<Update | null>(sharedUpdateCheckResult.update);
   const [error, setError] = useState(sharedUpdateCheckResult.error);
+  const [lastCheckedAt, setLastCheckedAt] = useState<number>(sharedUpdateCheckResult.checkedAt);
   const [downloaded, setDownloaded] = useState(0);
   const [contentLength, setContentLength] = useState<number | null>(null);
 
@@ -540,15 +541,19 @@ function UpdaterSettings({
     setContentLength(null);
     try {
       const result = await check();
+      const now = Date.now();
       sharedUpdateCheckResult.update = result ?? null;
       sharedUpdateCheckResult.error = '';
-      sharedUpdateCheckResult.checkedAt = Date.now();
+      sharedUpdateCheckResult.checkedAt = now;
+      setLastCheckedAt(now);
       setUpdate(result ?? null);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+      const now = Date.now();
       sharedUpdateCheckResult.update = null;
       sharedUpdateCheckResult.error = message;
-      sharedUpdateCheckResult.checkedAt = Date.now();
+      sharedUpdateCheckResult.checkedAt = now;
+      setLastCheckedAt(now);
       setError(message);
     } finally {
       setStatus('idle');
@@ -632,11 +637,25 @@ function UpdaterSettings({
         </SettingItem>
       )}
 
-      {!update && !error && status === 'idle' && sharedUpdateCheckResult.checkedAt > 0 && (
-        <Text variant={TextVariants.body}>{t('settings.updater.upToDate', { version: currentVersion })}</Text>
+      {status === 'checking' && !update && (
+        <Text color={TextColors.secondary}>{t('settings.updater.connecting')}</Text>
       )}
 
-      {error && <Text color={TextColors.error}>{t('settings.updater.failed', { error })}</Text>}
+      {!update && !error && status === 'idle' && lastCheckedAt > 0 && (
+        <Text variant={TextVariants.small} color={TextColors.secondary}>
+          {t('settings.updater.upToDate', { version: currentVersion })}{' '}
+          {t('settings.updater.lastChecked', { time: new Date(lastCheckedAt).toLocaleTimeString() })}
+        </Text>
+      )}
+
+      {error && (
+        <>
+          <Text color={TextColors.error}>{t('settings.updater.failed', { error })}</Text>
+          <Text variant={TextVariants.small} color={TextColors.secondary}>
+            {t('settings.updater.networkHint')}
+          </Text>
+        </>
+      )}
     </>
   );
 }
