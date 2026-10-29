@@ -94,17 +94,23 @@ rust {
 // request". The official integration therefore serves the AAR bundled inside
 // the rustls-platform-verifier-android cargo package via a local maven repo
 // (see the crate README) instead of a remote registry.
-val rustlsPlatformVerifierRepo = providers.exec {
-    workingDir = rootDir.parentFile // src-tauri, where Cargo.toml lives
-    commandLine(
-        "cargo",
-        "metadata",
-        "--format-version",
-        "1",
-        "--filter-platform",
-        "aarch64-linux-android",
-    )
-}.standardOutput.asText.get().let { metadata ->
+// rootDir is <repo>/src-tauri/gen/android, so its grandparent holds Cargo.toml.
+val cargoManifest = rootDir.parentFile.parentFile.resolve("Cargo.toml")
+val rustlsPlatformVerifierRepo = runCatching {
+    providers.exec {
+        workingDir = cargoManifest.parentFile
+        commandLine(
+            "cargo",
+            "metadata",
+            "--format-version",
+            "1",
+            "--filter-platform",
+            "aarch64-linux-android",
+            "--manifest-path",
+            cargoManifest.absolutePath,
+        )
+    }.standardOutput.asText.get()
+}.getOrNull()?.let { metadata ->
     Regex("\"manifest_path\":\"([^\"]*rustls-platform-verifier-android[^\"]*Cargo\\.toml)\"")
         .find(metadata)?.groupValues?.get(1)
         ?.let { manifestPath -> File(manifestPath).parentFile.resolve("maven") }

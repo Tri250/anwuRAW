@@ -27,7 +27,7 @@ pub(crate) fn base_builder() -> reqwest::ClientBuilder {
             .expect("the rustls default protocol versions are always supported")
             .with_root_certificates(roots)
             .with_no_client_auth();
-        builder.use_preconfigured_tls(config)
+        builder.tls_backend_preconfigured(config)
     };
 
     builder
