@@ -46,9 +46,23 @@ jobs:
           # downloads; tauri-action replaces same-named assets, so re-running the
           # matrix on an incomplete release is safe.
           expected=30
-          count=$(gh api --paginate "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets" \
-            --jq '.[].id' 2>/dev/null | wc -l | tr -d ' ')
-          count=${count:-0}
+          # Retry a few times: a single failed query must not silently report
+          # "0 assets" (which would needlessly trigger a full matrix rebuild).
+          count=0
+          for attempt in 1 2 3; do
+            if ids=$(gh api --paginate "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets?per_page=100" \
+              --jq '.[].id' 2>/tmp/assets_err); then
+              count=$(printf '%s\n' "$ids" | grep -c . || true)
+              count=${count:-0}
+            else
+              echo "Attempt ${attempt}: assets API query failed:" >&2
+              cat /tmp/assets_err >&2 || true
+              count=0
+            fi
+            echo "Attempt ${attempt}: ${count}/${expected} asset(s)."
+            [ "${count}" -ge "${expected}" ] && break
+            sleep 15
+          done
           if [ "${count}" -ge "${expected}" ]; then complete=true; else complete=false; fi
           echo "complete=${complete}" >> "$GITHUB_OUTPUT"
           echo "Release ${RELEASE_ID} has ${count}/${expected} asset(s) (complete=${complete})."
@@ -146,10 +160,23 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         run: |
           expected=30
-          count=$(gh api --paginate "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets" \
-            --jq '.[].id' 2>/dev/null | wc -l | tr -d ' ')
-          count=${count:-0}
-          echo "Release ${RELEASE_ID} has ${count}/${expected} asset(s)."
+          # Retry a few times: a transient API failure right after the matrix
+          # finished must not report "0 assets" and fail the release.
+          count=0
+          for attempt in 1 2 3 4 5; do
+            if ids=$(gh api --paginate "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets?per_page=100" \
+              --jq '.[].id' 2>/tmp/assets_err); then
+              count=$(printf '%s\n' "$ids" | grep -c . || true)
+              count=${count:-0}
+            else
+              echo "Attempt ${attempt}: assets API query failed:" >&2
+              cat /tmp/assets_err >&2 || true
+              count=0
+            fi
+            echo "Attempt ${attempt}: ${count}/${expected} asset(s)."
+            [ "${count}" -ge "${expected}" ] && break
+            sleep 20
+          done
           if [ "${count}" -lt "${expected}" ]; then
             echo "::error::Expected ${expected} release assets, found ${count}."
             exit 1
