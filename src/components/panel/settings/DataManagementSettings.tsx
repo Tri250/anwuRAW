@@ -114,6 +114,9 @@ function ActionButton({
       className={clsx(
         'flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium shrink-0 transition-colors',
         'text-text-secondary bg-bg-primary border border-border-color',
+        // matches the LimitBar input's focus ring (global CSS removes the
+        // default outline, so keyboard focus would otherwise be invisible).
+        'focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-accent',
         'disabled:opacity-40 disabled:cursor-not-allowed',
         danger
           ? 'enabled:hover:text-red-400 enabled:hover:border-red-400/40 enabled:hover:bg-red-500/10'
@@ -468,7 +471,7 @@ export default function DataManagementSettings({
             onClick={refreshUsage}
             disabled={isRefreshing}
             data-tooltip={t('settings.data.refresh')}
-            className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-colors"
+            className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-accent"
           >
             <RefreshCw size={14} className={clsx(isRefreshing && 'animate-spin')} />
           </button>
