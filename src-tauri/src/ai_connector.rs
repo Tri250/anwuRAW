@@ -127,7 +127,7 @@ fn composite_full_res(
 }
 
 pub async fn check_status(address: &str) -> Result<bool> {
-    let client = Client::new();
+    let client = crate::http_tls::base_builder().build()?;
     let res = client
         .get(format!("http://{}/health", address))
         .send()
@@ -143,7 +143,7 @@ pub async fn process_inpainting(
     prompt: String,
     token: Option<&str>,
 ) -> Result<RgbaImage> {
-    let client = Client::new();
+    let client = crate::http_tls::base_builder().build()?;
     let source_id = generate_source_id(source_path)?;
     let mask_b64 = image_to_base64(mask_image)?;
     let (w, h) = full_source_image.dimensions();
@@ -197,7 +197,7 @@ pub async fn process_cloud_inpainting(
     prompt: String,
     token: &str,
 ) -> Result<DynamicImage> {
-    let client = Client::new();
+    let client = crate::http_tls::base_builder().build()?;
 
     let req_payload = CloudInpaintRequest {
         image_base64: image_to_base64_jpeg(source_crop, 95)?,
