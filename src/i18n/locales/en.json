@@ -1813,7 +1813,7 @@
         "confirmResetLayout": "Reset Layout",
         "confirmResetLayoutTitle": "Reset Workspace Layout",
         "confirmTitle": "Confirm Deletion",
-        "immichMessage": "Are you sure you want to clear the downloaded Immich originals?\n\nYour edits are kept. Originals are downloaded again when you open them.",
+        "immichMessage": "Are you sure you want to clear the downloaded Immich originals?\n\nYour edits are kept. Originals not used in the last hour are removed and downloaded again when you open them.",
         "metadataMessage": "Are you sure you want to clear the metadata cache?\n\nMetadata will be read from your files again as you browse.",
         "modelsMessage": "Are you sure you want to remove the downloaded AI models?\n\nThey will be downloaded again the next time an AI feature is used.",
         "resetLayoutMessage": "Are you sure you want to reset the workspace layout? All docked panels, widths, and switcher positions will be restored to their defaults.",
@@ -1836,6 +1836,9 @@
         "cacheSuccess": "Thumbnail cache cleared successfully.",
         "cleared": "Cleared successfully.",
         "layoutResetSuccess": "Workspace layout reset to default.",
+        "partial": "{{count}} folders could not be fully processed.",
+        "partial_one": "1 folder could not be fully processed.",
+        "partial_other": "{{count}} folders could not be fully processed.",
         "sidecarSuccess": "{{count}} sidecar files deleted successfully.",
         "sidecarSuccess_one": "{{count}} sidecar file deleted successfully.",
         "sidecarSuccess_other": "{{count}} sidecar files deleted successfully."

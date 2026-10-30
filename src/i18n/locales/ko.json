@@ -1812,7 +1812,7 @@
         "confirmResetLayout": "레이아웃 초기화",
         "confirmResetLayoutTitle": "작업 공간 레이아웃 초기화",
         "confirmTitle": "삭제 확인",
-        "immichMessage": "다운로드된 Immich 원본을 지우시겠습니까?\n\n편집 내용은 유지됩니다. 원본은 열 때 다시 다운로드됩니다.",
+        "immichMessage": "다운로드한 Immich 원본을 지우시겠습니까?\n\n편집 내용은 유지됩니다. 지난 1시간 동안 사용되지 않은 원본은 삭제되며, 다시 열 때 재다운로드됩니다.",
         "metadataMessage": "메타데이터 캐시를 지우시겠습니까?\n\n탐색하는 동안 파일에서 메타데이터를 다시 읽어옵니다.",
         "modelsMessage": "다운로드된 AI 모델을 삭제하시겠습니까?\n\n다음에 AI 기능을 사용할 때 다시 다운로드됩니다.",
         "resetLayoutMessage": "작업 공간 레이아웃을 초기화하시겠습니까? 도킹된 모든 패널, 너비 및 전환기 위치가 기본값으로 복원됩니다.",
@@ -1835,6 +1835,9 @@
         "cacheSuccess": "썸네일 캐시가 성공적으로 지워졌습니다.",
         "cleared": "성공적으로 지웠습니다.",
         "layoutResetSuccess": "작업 공간 레이아웃이 기본값으로 초기화되었습니다.",
+        "partial": "{{count}}개의 폴더를 완전히 처리하지 못했습니다.",
+        "partial_one": "폴더 1개를 완전히 처리하지 못했습니다.",
+        "partial_other": "{{count}}개의 폴더를 완전히 처리하지 못했습니다.",
         "sidecarSuccess": "사이드카 파일 {{count}}개가 성공적으로 삭제되었습니다.",
         "sidecarSuccess_one": "사이드카 파일 {{count}}개가 성공적으로 삭제되었습니다.",
         "sidecarSuccess_other": "사이드카 파일 {{count}}개가 성공적으로 삭제되었습니다."

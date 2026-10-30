@@ -255,15 +255,20 @@ export default function DataManagementSettings({
   const [statuses, setStatuses] = useState<Record<string, Status>>({});
   const [logPath, setLogPath] = useState<string | null>(null);
   const statusTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const refreshSeq = useRef(0);
 
+  // A slow directory walk can outlive a newer refresh (e.g. clearing a cache
+  // while a previous walk is still running); ignore stale responses.
   const refreshUsage = useCallback(async () => {
+    const seq = ++refreshSeq.current;
     setIsRefreshing(true);
     try {
-      setUsage(await invoke<StorageUsage>(Invokes.GetStorageUsage));
+      const usage = await invoke<StorageUsage>(Invokes.GetStorageUsage);
+      if (seq === refreshSeq.current) setUsage(usage);
     } catch (err) {
       console.error('Failed to get storage usage:', err);
     } finally {
-      setIsRefreshing(false);
+      if (seq === refreshSeq.current) setIsRefreshing(false);
     }
   }, []);
 
@@ -344,6 +349,11 @@ export default function DataManagementSettings({
         }),
     });
 
+  // Per-root failures (e.g. a locked sidecar on Windows) must not hide the
+  // work that succeeded — report the count and flag the remainder.
+  const withFailures = (message: string, failed: number) =>
+    failed > 0 ? `${message} ${t('settings.data.statuses.partial', { count: failed })}` : message;
+
   const clearSidecars = () =>
     onRequestConfirm({
       confirmText: t('settings.data.modals.confirmDeleteAllEdits'),
@@ -352,11 +362,20 @@ export default function DataManagementSettings({
       onConfirm: () =>
         run('sidecars', async () => {
           let total = 0;
+          let failed = 0;
           for (const root of rootPaths) {
-            total += await invoke<number>(Invokes.ClearAllSidecars, { rootPath: root });
+            try {
+              total += await invoke<number>(Invokes.ClearAllSidecars, { rootPath: root });
+            } catch (err) {
+              failed += 1;
+              console.error(`Failed to delete sidecars under ${root}:`, err);
+            }
+          }
+          if (failed === rootPaths.length) {
+            throw new Error(t('settings.data.statuses.partial', { count: failed }));
           }
           onLibraryRefresh();
-          return t('settings.data.statuses.sidecarSuccess', { count: total });
+          return withFailures(t('settings.data.statuses.sidecarSuccess', { count: total }), failed);
         }),
     });
 
@@ -368,15 +387,28 @@ export default function DataManagementSettings({
       onConfirm: () =>
         run(key, async () => {
           let total = 0;
+          let failed = 0;
           for (const root of rootPaths) {
-            total += await invoke<number>(key === 'aiTags' ? Invokes.ClearAiTags : Invokes.ClearAllTags, {
-              rootPath: root,
-            });
+            try {
+              total += await invoke<number>(key === 'aiTags' ? Invokes.ClearAiTags : Invokes.ClearAllTags, {
+                rootPath: root,
+              });
+            } catch (err) {
+              failed += 1;
+              console.error(`Failed to clear tags under ${root}:`, err);
+            }
+          }
+          if (failed === rootPaths.length) {
+            throw new Error(t('settings.data.statuses.partial', { count: failed }));
           }
           onLibraryRefresh();
-          return t(key === 'aiTags' ? 'settings.data.statuses.aiSuccess' : 'settings.data.statuses.allSuccess', {
-            count: total,
-          });
+          const success = t(
+            key === 'aiTags' ? 'settings.data.statuses.aiSuccess' : 'settings.data.statuses.allSuccess',
+            {
+              count: total,
+            },
+          );
+          return withFailures(success, failed);
         }),
     });
 
@@ -402,7 +434,10 @@ export default function DataManagementSettings({
       console.error(`Failed to set the ${key} cache limit:`, err);
       showStatus(key, { text: `Error: ${err}`, error: true });
     }
+    // Lowering a limit prunes in the background; re-read shortly after, then
+    // again once larger prunes (tens of thousands of files) have settled.
     setTimeout(refreshUsage, 1000);
+    setTimeout(refreshUsage, 4000);
   };
 
   const total = usage ? storageItems.reduce((sum, { key }) => sum + usage[key], 0) : 0;

@@ -1813,7 +1813,7 @@
         "confirmResetLayout": "Indeling herstellen",
         "confirmResetLayoutTitle": "Werkruimte-indeling herstellen",
         "confirmTitle": "Verwijdering bevestigen",
-        "immichMessage": "Weet je zeker dat je de gedownloade Immich-originelen wilt wissen?\n\nJe bewerkingen blijven behouden. Originelen worden opnieuw gedownload wanneer je ze opent.",
+        "immichMessage": "Weet je zeker dat je de gedownloade Immich-originelen wilt wissen?\n\nJe bewerkingen blijven behouden. Originelen die in het afgelopen uur niet zijn gebruikt, worden verwijderd en opnieuw gedownload bij het openen.",
         "metadataMessage": "Weet je zeker dat je de metadatacache wilt wissen?\n\nMetadata wordt opnieuw uit je bestanden gelezen terwijl je bladert.",
         "modelsMessage": "Weet je zeker dat je de gedownloade AI-modellen wilt verwijderen?\n\nZe worden opnieuw gedownload wanneer je weer een AI-functie gebruikt.",
         "resetLayoutMessage": "Weet u zeker dat u de werkruimte-indeling wilt herstellen? Alle gedockte panelen, breedtes en schakelposities worden teruggezet naar hun standaardwaarden.",
@@ -1836,6 +1836,9 @@
         "cacheSuccess": "Miniatuurcache succesvol gewist.",
         "cleared": "Succesvol gewist.",
         "layoutResetSuccess": "Werkruimte-indeling hersteld naar standaard.",
+        "partial": "{{count}} mappen konden niet volledig worden verwerkt.",
+        "partial_one": "1 map kon niet volledig worden verwerkt.",
+        "partial_other": "{{count}} mappen konden niet volledig worden verwerkt.",
         "sidecarSuccess": "{{count}} sidecar-bestanden succesvol verwijderd.",
         "sidecarSuccess_one": "{{count}} sidecar-bestand succesvol verwijderd.",
         "sidecarSuccess_other": "{{count}} sidecar-bestanden succesvol verwijderd."

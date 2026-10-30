@@ -1812,7 +1812,7 @@
         "confirmResetLayout": "重設版面配置",
         "confirmResetLayoutTitle": "重設工作區版面配置",
         "confirmTitle": "確認刪除",
-        "immichMessage": "確定要清除已下載的 Immich 原始檔嗎？\n\n你的編輯會保留。開啟原始檔時會重新下載。",
+        "immichMessage": "確定要清除已下載的 Immich 原片嗎？\n\n你的編輯會保留。最近一小時內未使用的原片會被移除，開啟時會重新下載。",
         "metadataMessage": "確定要清除中繼資料快取嗎？\n\n瀏覽時會重新從檔案讀取中繼資料。",
         "modelsMessage": "確定要移除已下載的 AI 模型嗎？\n\n下次使用 AI 功能時會重新下載。",
         "resetLayoutMessage": "確定要重設工作區版面配置嗎？所有停靠的面板、寬度和切換器位置都將還原為預設值。",
@@ -1835,6 +1835,9 @@
         "cacheSuccess": "縮圖快取已成功清除。",
         "cleared": "已成功清除。",
         "layoutResetSuccess": "工作區版面配置已重設為預設值。",
+        "partial": "有 {{count}} 個資料夾無法完全處理。",
+        "partial_one": "有 1 個資料夾無法完全處理。",
+        "partial_other": "有 {{count}} 個資料夾無法完全處理。",
         "sidecarSuccess": "{{count}} 個附屬檔案已成功刪除。",
         "sidecarSuccess_one": "{{count}} 個附屬檔案已成功刪除。",
         "sidecarSuccess_other": "{{count}} 個附屬檔案已成功刪除。"

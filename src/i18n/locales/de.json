@@ -1813,7 +1813,7 @@
         "confirmResetLayout": "Layout zurücksetzen",
         "confirmResetLayoutTitle": "Arbeitsbereich-Layout zurücksetzen",
         "confirmTitle": "Löschen bestätigen",
-        "immichMessage": "Möchtest du die heruntergeladenen Immich-Originale wirklich leeren?\n\nDeine Bearbeitungen bleiben erhalten. Originale werden beim Öffnen erneut heruntergeladen.",
+        "immichMessage": "Möchtest du die heruntergeladenen Immich-Originale wirklich löschen?\n\nDeine Bearbeitungen bleiben erhalten. Originale, die in der letzten Stunde nicht verwendet wurden, werden entfernt und beim Öffnen erneut heruntergeladen.",
         "metadataMessage": "Möchtest du den Metadaten-Cache wirklich leeren?\n\nMetadaten werden beim Durchsuchen erneut aus deinen Dateien gelesen.",
         "modelsMessage": "Möchtest du die heruntergeladenen KI-Modelle wirklich entfernen?\n\nSie werden bei der nächsten Nutzung einer KI-Funktion erneut heruntergeladen.",
         "resetLayoutMessage": "Möchten Sie das Layout des Arbeitsbereichs wirklich zurücksetzen? Alle angedockten Panels, Breiten und Umschalter-Positionen werden auf ihre Standardwerte zurückgesetzt.",
@@ -1836,6 +1836,9 @@
         "cacheSuccess": "Miniaturbild-Cache erfolgreich gelöscht.",
         "cleared": "Erfolgreich geleert.",
         "layoutResetSuccess": "Layout des Arbeitsbereichs auf Standard zurückgesetzt.",
+        "partial": "{{count}} Ordner konnten nicht vollständig verarbeitet werden.",
+        "partial_one": "1 Ordner konnte nicht vollständig verarbeitet werden.",
+        "partial_other": "{{count}} Ordner konnten nicht vollständig verarbeitet werden.",
         "sidecarSuccess": "{{count}} Filialdateien erfolgreich gelöscht.",
         "sidecarSuccess_one": "{{count}} Filialdatei erfolgreich gelöscht.",
         "sidecarSuccess_other": "{{count}} Filialdateien erfolgreich gelöscht."

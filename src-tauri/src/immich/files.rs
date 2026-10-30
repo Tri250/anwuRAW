@@ -121,9 +121,12 @@ pub fn clear_originals(cache_root: &Path) -> Result<(), String> {
             for file in files.filter_map(Result::ok) {
                 let used = last_used.max(modified_ms(&file.path())).unwrap_or(0);
                 if is_original(&file.file_name().to_string_lossy()) && used <= an_hour_ago {
-                    std::fs::remove_file(file.path()).map_err(|e| {
-                        format!("Failed to remove {}: {}", file.path().display(), e)
-                    })?;
+                    // Best-effort: a locked original (open viewer, AV scan) must
+                    // not abort the whole sweep; its size stays honestly
+                    // reported by get_storage_usage.
+                    if let Err(e) = std::fs::remove_file(file.path()) {
+                        log::debug!("Could not remove Immich original: {}", e);
+                    }
                 }
             }
         }

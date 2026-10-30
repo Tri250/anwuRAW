@@ -242,7 +242,8 @@ fn dir_size(path: &Path) -> u64 {
 /// "Clear" fail wholesale exactly while the user is actively using the app,
 /// silently leaving multi-gigabyte leftovers behind. A best-effort sweep with
 /// the remaining size honestly reported by `get_storage_usage` is the right
-/// failure mode instead.
+/// failure mode instead. Sub-directories are recursed into so one locked file
+/// does not pin its siblings.
 pub fn clear_dir_best_effort(dir: &Path) -> u64 {
     let Ok(read_dir) = fs::read_dir(dir) else {
         return 0;
@@ -250,19 +251,19 @@ pub fn clear_dir_best_effort(dir: &Path) -> u64 {
     let mut reclaimed = 0u64;
     for entry in read_dir.filter_map(|e| e.ok()) {
         let path = entry.path();
-        let size = entry
-            .metadata()
-            .map(|meta| if meta.is_file() { meta.len() } else { 0 })
-            .unwrap_or(0);
-        let removed = if path.is_dir() {
-            fs::remove_dir_all(&path)
+        if path.is_dir() {
+            reclaimed += clear_dir_best_effort(&path);
+            if fs::remove_dir(&path).is_ok() {
+                continue;
+            }
+            log::debug!("Could not remove in-use cache directory {}", path.display());
         } else {
-            fs::remove_file(&path)
-        };
-        if removed.is_ok() {
-            reclaimed += size;
-        } else {
-            log::debug!("Could not remove in-use cache file {}", path.display());
+            let size = entry.metadata().map(|meta| meta.len()).unwrap_or(0);
+            if fs::remove_file(&path).is_ok() {
+                reclaimed += size;
+            } else {
+                log::debug!("Could not remove in-use cache file {}", path.display());
+            }
         }
     }
     reclaimed
