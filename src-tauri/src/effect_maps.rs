@@ -150,15 +150,13 @@ pub fn clear_disk_cache() -> Result<(), String> {
         .lock()
         .unwrap_or_else(|e| e.into_inner())
         .clone();
-    let Some(read_dir) = dir.and_then(|dir| fs::read_dir(dir).ok()) else {
+    let Some(dir) = dir else {
         return Ok(());
     };
-    for path in read_dir.filter_map(|e| e.ok()).map(|e| e.path()) {
-        if path.is_file() {
-            fs::remove_file(&path)
-                .map_err(|e| format!("Failed to remove {}: {}", path.display(), e))?;
-        }
-    }
+    // Best-effort: a preview job may still hold a map file open; locked files
+    // are skipped and the refreshed storage usage reports what remains.
+    let reclaimed = crate::storage::clear_dir_best_effort(&dir);
+    log::info!("Reclaimed {} bytes of AI map cache", reclaimed);
     Ok(())
 }
 

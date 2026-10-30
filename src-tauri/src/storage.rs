@@ -233,6 +233,41 @@ fn dir_size(path: &Path) -> u64 {
         .sum()
 }
 
+/// Deletes as much of a cache directory's contents as possible and returns the
+/// number of bytes actually reclaimed.
+///
+/// Cache files are regenerable, but they are also routinely held open by
+/// running work (thumbnail generation, AI inference, map writes). On Windows an
+/// open file cannot be removed, so an all-or-nothing `remove_dir_all` makes
+/// "Clear" fail wholesale exactly while the user is actively using the app,
+/// silently leaving multi-gigabyte leftovers behind. A best-effort sweep with
+/// the remaining size honestly reported by `get_storage_usage` is the right
+/// failure mode instead.
+pub fn clear_dir_best_effort(dir: &Path) -> u64 {
+    let Ok(read_dir) = fs::read_dir(dir) else {
+        return 0;
+    };
+    let mut reclaimed = 0u64;
+    for entry in read_dir.filter_map(|e| e.ok()) {
+        let path = entry.path();
+        let size = entry
+            .metadata()
+            .map(|meta| if meta.is_file() { meta.len() } else { 0 })
+            .unwrap_or(0);
+        let removed = if path.is_dir() {
+            fs::remove_dir_all(&path)
+        } else {
+            fs::remove_file(&path)
+        };
+        if removed.is_ok() {
+            reclaimed += size;
+        } else {
+            log::debug!("Could not remove in-use cache file {}", path.display());
+        }
+    }
+    reclaimed
+}
+
 #[tauri::command]
 pub async fn get_storage_usage(app_handle: AppHandle) -> Result<StorageUsage, String> {
     let dirs = storage_dirs(&app_handle)?;
@@ -282,8 +317,8 @@ pub async fn clear_ai_models(
     let _guard = state.ai_init_lock.lock().await;
     crate::ai_processing::reset_ai_sessions(&state.ai_state);
     if models_dir.exists() {
-        fs::remove_dir_all(&models_dir)
-            .map_err(|e| format!("Failed to remove AI models: {}", e))?;
+        let reclaimed = clear_dir_best_effort(&models_dir);
+        log::info!("Reclaimed {} bytes of AI model files", reclaimed);
     }
     Ok(())
 }

@@ -3693,13 +3693,14 @@ pub fn clear_thumbnail_cache(app_handle: AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     let thumb_cache_dir = cache_dir.join("thumbnails");
 
+    // Best-effort: the library routinely holds open thumbnail files, and on
+    // Windows a single open file would fail a wholesale remove_dir_all.
+    // Locked files are skipped and the refreshed storage usage reports them.
     if thumb_cache_dir.exists() {
-        fs::remove_dir_all(&thumb_cache_dir)
-            .map_err(|e| format!("Failed to remove thumbnail cache: {}", e))?;
+        let reclaimed = crate::storage::clear_dir_best_effort(&thumb_cache_dir);
+        log::info!("Reclaimed {} bytes of thumbnail cache", reclaimed);
     }
-
-    fs::create_dir_all(&thumb_cache_dir)
-        .map_err(|e| format!("Failed to recreate thumbnail cache directory: {}", e))?;
+    let _ = fs::create_dir_all(&thumb_cache_dir);
     crate::storage::reset_thumbnail_estimate();
 
     Ok(())

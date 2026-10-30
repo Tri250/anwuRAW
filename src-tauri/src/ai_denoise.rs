@@ -664,26 +664,15 @@ pub fn generate_for_base(
     result.map(|()| true)
 }
 
-fn cache_files() -> Vec<(PathBuf, u64)> {
-    let Some(read_dir) = cache().dir.clone().and_then(|dir| fs::read_dir(dir).ok()) else {
-        return Vec::new();
-    };
-    read_dir
-        .filter_map(|e| e.ok())
-        .filter(|e| {
-            e.path()
-                .extension()
-                .is_some_and(|ext| ext == "rrdn" || ext == "tmp")
-        })
-        .filter_map(|e| Some((e.path(), e.metadata().ok()?.len())))
-        .collect()
-}
-
 #[tauri::command]
 pub fn clear_ai_denoise_cache() -> Result<(), String> {
-    for (path, _) in cache_files() {
-        fs::remove_file(&path)
-            .map_err(|e| format!("Failed to remove {}: {}", path.display(), e))?;
+    // Best-effort: a running denoise job may still hold a cache file open;
+    // locked files are skipped and the refreshed storage usage reports them.
+    // The epoch bump invalidates every in-memory entry either way.
+    let dir = cache().dir.clone();
+    if let Some(dir) = dir {
+        let reclaimed = crate::storage::clear_dir_best_effort(&dir);
+        log::info!("Reclaimed {} bytes of AI denoise cache", reclaimed);
     }
     let mut cache = cache();
     cache.entries.clear();
