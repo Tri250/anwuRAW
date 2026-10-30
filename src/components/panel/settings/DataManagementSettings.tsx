@@ -211,7 +211,9 @@ function Row({
           <Text variant={TextVariants.label} color={TextColors.primary} weight={TextWeights.medium}>
             {title}
           </Text>
-          <Text variant={TextVariants.small} className="mt-0.5">
+          {/* leading-relaxed matches SettingItem descriptions (SettingsPanel):
+              multi-line CJK descriptions keep the same rhythm everywhere. */}
+          <Text variant={TextVariants.small} className="mt-0.5 leading-relaxed">
             {description}
           </Text>
         </div>
@@ -232,7 +234,9 @@ function Row({
         <Text
           variant={TextVariants.small}
           color={status.error ? TextColors.error : TextColors.success}
-          className={clsx('mt-1.5', color && 'pl-5.5')}
+          // break-words: Tauri error strings can embed long unbroken paths;
+          // the settings panel is overflow-x-hidden, so they'd be clipped.
+          className={clsx('mt-1.5 leading-relaxed break-words', color && 'pl-5.5')}
         >
           {status.text}
         </Text>
