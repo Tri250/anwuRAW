@@ -7,15 +7,7 @@ interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'chi
   variant?: string;
 }
 
-const Button = ({
-  children,
-  onClick,
-  disabled,
-  className = '',
-  size: _size,
-  variant: _variant,
-  ...props
-}: ButtonProps) => {
+const Button = ({ children, onClick, disabled, className = '', size: _size, variant, ...props }: ButtonProps) => {
   const baseClasses = `
     flex h-10 items-center justify-center gap-2
     font-semibold py-2 px-4 rounded-md
@@ -25,12 +17,14 @@ const Button = ({
   `;
 
   const hasSurfaceBg = className.includes('bg-surface');
+  const isDestructive = variant === 'destructive';
 
   const combinedClasses = clsx(
     baseClasses,
     {
-      'bg-accent': !hasSurfaceBg,
+      'bg-accent': !hasSurfaceBg && !isDestructive,
       'bg-surface': hasSurfaceBg,
+      'bg-red-600 hover:bg-red-700': isDestructive,
     },
     className,
   );
