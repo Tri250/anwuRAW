@@ -125,7 +125,14 @@ repositories {
             forRepository {
                 maven {
                     url = uri(rustlsPlatformVerifierRepo)
-                    metadataSources { artifact() }
+                    // The bundled repo ships a POM with <packaging>aar</packaging>.
+                    // Reading it is mandatory: artifact()-only metadata makes Gradle
+                    // assume the default .jar extension and miss the actual .aar,
+                    // which fails dependency resolution for the `rustls` group.
+                    metadataSources {
+                        mavenPom()
+                        artifact()
+                    }
                 }
             }
             filter { includeGroup("rustls") }
