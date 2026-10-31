@@ -423,9 +423,13 @@ fn ghosts_main(@builtin(global_invocation_id) id: vec3<u32>) {
 // highlight map. Stage 1 reduces each 16x16 block into one vec4 partial
 // (sum w*x, sum w*y, sum w); stage 2 reduces the 32x32 partials into the
 // final centroid, stored for the ghosts pass.
-@group(2) @binding(0) var centroid_src: texture_2d<f32>;
-@group(2) @binding(1) var<storage, read_write> centroid_partials: array<vec4<f32>>;
-@group(2) @binding(2) var<storage, read_write> centroid_result: vec4<f32>;
+// NOTE: these must stay at @group(0) — the Rust pipeline layout for the two
+// centroid pipelines exposes exactly one bind group (flare_centroid_bgl) and
+// the dispatches bind it at index 0. Group 2 here made both pipeline creations
+// fail validation, so the highlight centroid never updated.
+@group(0) @binding(0) var centroid_src: texture_2d<f32>;
+@group(0) @binding(1) var<storage, read_write> centroid_partials: array<vec4<f32>>;
+@group(0) @binding(2) var<storage, read_write> centroid_result: vec4<f32>;
 
 var<workgroup> centroid_wg: array<vec4<f32>, 256>;
 

@@ -186,6 +186,12 @@ struct AllAdjustments {
     mask_atlas_cols: u32,
     // v2.0 R3-1: EXIF ISO for the noise model (runtime-only field).
     noise_iso: f32,
+    // Mirror of the Rust-side trailing pads (image_processing.rs): WGSL already
+    // rounds this struct up to a multiple of 16, the explicit fields keep the
+    // two layouts byte-identical so the storage binding sizes always match.
+    _pad_tail1: f32,
+    _pad_tail2: f32,
+    _pad_tail3: f32,
 }
 
 struct HslRange {

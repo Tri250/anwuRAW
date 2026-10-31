@@ -1774,16 +1774,11 @@ impl GpuProcessor {
             },
             count: None,
         });
-        bind_group_layout_entries.push(wgpu::BindGroupLayoutEntry {
-            binding: 8 + MAX_MASK_BINDINGS,
-            visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Texture {
-                sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                view_dimension: wgpu::TextureViewDimension::D2,
-                multisampled: false,
-            },
-            count: None,
-        });
+        // NOTE: shader.wgsl has no binding 9 — it jumps from clarity_blur (8)
+        // to flare_texture (10). Declaring a binding here that neither the
+        // shader uses nor the tile bind group provides makes every
+        // create_bind_group("Tile Bind Group") fail validation, which silently
+        // skips the main compute pass and renders a fully black preview.
 
         bind_group_layout_entries.push(wgpu::BindGroupLayoutEntry {
             binding: 9 + MAX_MASK_BINDINGS,
@@ -3986,5 +3981,376 @@ fn process_and_get_dynamic_image_inner(
                 .ok_or("Failed to create 16-bit image buffer from GPU data")?;
             Ok(DynamicImage::ImageRgba16(img_buf))
         }
+    }
+}
+
+#[cfg(test)]
+mod black_preview_repro {
+    //! Reproduction for the "preview turns fully black after adjustments"
+    //! regression reported on release v2.0.0. Runs the exact production GPU
+    //! pipeline (main pass -> tile -> working/output textures) on a software
+    //! Vulkan device (lavapipe) with `display_f16 = true` to mirror the
+    //! Windows/macOS swapchain configuration, and verifies that pixels survive.
+
+    use super::*;
+    use bytemuck::Zeroable;
+
+    /// Returns `None` when no Vulkan adapter/device is available (e.g. a CI
+    /// runner without an ICD) so the test skips instead of panicking. Run
+    /// locally with `VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json`
+    /// (lavapipe) to exercise the real GPU pipeline headlessly.
+    fn software_context() -> Option<GpuContext> {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::VULKAN,
+            ..wgpu::InstanceDescriptor::new_without_display_handle_from_env()
+        });
+        let adapter =
+            match pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                compatible_surface: None,
+                force_fallback_adapter: false,
+            })) {
+                Ok(adapter) => adapter,
+                Err(err) => {
+                    println!(
+                        "[skip] No Vulkan adapter available ({err}) — skipping GPU repro test"
+                    );
+                    return None;
+                }
+            };
+
+        let mut required_features = wgpu::Features::empty();
+        if adapter
+            .features()
+            .contains(wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES)
+        {
+            required_features |= wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES;
+        }
+        let limits = adapter.limits();
+        let (device, queue) =
+            match pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+                label: Some("Black Preview Repro Device"),
+                required_features,
+                required_limits: limits.clone(),
+                experimental_features: wgpu::ExperimentalFeatures::default(),
+                memory_hints: wgpu::MemoryHints::Performance,
+                trace: wgpu::Trace::Off,
+            })) {
+                Ok(device_queue) => device_queue,
+                Err(err) => {
+                    println!(
+                        "[skip] Vulkan adapter present but device unusable ({err}) — skipping"
+                    );
+                    return None;
+                }
+            };
+
+        // Any wgpu validation error is a bug: report it loudly (mirrors the
+        // production log handler) but keep running so the pixel stats still
+        // reveal what the user would actually see.
+        device.on_uncaptured_error(Arc::new(|err: wgpu::Error| {
+            println!("[wgpu-error] {}", err);
+        }));
+
+        Some(GpuContext {
+            device: Arc::new(device),
+            queue: Arc::new(queue),
+            limits,
+            adapter_info: adapter.get_info(),
+            display: Arc::new(std::sync::Mutex::new(None)),
+            // Mirror the Windows/macOS Rgba16Float swapchain: this is what
+            // forces the high-precision (f16 storage) pipeline for previews.
+            display_f16: true,
+        })
+    }
+
+    fn gradient_image(width: u32, height: u32) -> DynamicImage {
+        let mut img = image::RgbImage::new(width, height);
+        for y in 0..height {
+            for x in 0..width {
+                let r = (x as f32 / width as f32 * 255.0) as u8;
+                let g = (y as f32 / height as f32 * 255.0) as u8;
+                let b = ((x + y) % 256) as u8;
+                img.put_pixel(x, y, image::Rgb([r, g, b]));
+            }
+        }
+        DynamicImage::ImageRgb8(img)
+    }
+
+    fn make_entry(processor: &GpuProcessor, ctx: &GpuContext, img: &DynamicImage) -> GpuImageEntry {
+        let (width, height) = img.dimensions();
+        let f16_pixels = to_rgba_f16(img);
+        let texture = ctx.device.create_texture_with_data(
+            &ctx.queue,
+            &wgpu::TextureDescriptor {
+                label: Some("Repro Input Texture"),
+                size: wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba16Float,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
+            },
+            TextureDataOrder::MipMajor,
+            bytemuck::cast_slice(&f16_pixels),
+        );
+        let texture_view = texture.create_view(&Default::default());
+        let guided = processor.build_guided_coeffs(&texture_view, width, height, 0);
+        GpuImageEntry {
+            id: 42,
+            texture,
+            texture_view,
+            gf_coeffs_view: guided.coeffs,
+            gf_structure_view: guided.structure,
+            haze_view: guided.haze,
+            airlight_view: guided.airlight,
+            is_raw: 0,
+            width,
+            height,
+            transform_hash: 7,
+            source: (0xABCD, (width * height * 4) as usize),
+        }
+    }
+
+    fn typical_user_adjustments() -> AllAdjustments {
+        // The kind of edits a user (or a preset) applies after import: tone,
+        // colour, detail, grain. Everything zeroed stays disabled.
+        let mut adjustments = AllAdjustments::zeroed();
+        let g = &mut adjustments.global;
+        g.is_raw_image = 0; // JPEG/PNG import path
+        g.tonemapper_mode = 0; // "basic" (no tonemapper)
+        g.exposure = 0.35;
+        g.brightness = 0.05;
+        g.contrast = 0.15;
+        g.highlights = -0.2;
+        g.shadows = 0.25;
+        g.whites = 0.1;
+        g.blacks = -0.05;
+        g.saturation = 0.2;
+        g.vibrance = 0.15;
+        g.clarity = 0.2;
+        g.structure = 0.1;
+        g.sharpness = 0.4;
+        g.sharpness_threshold = 0.2;
+        g.texture_amount = 0.15;
+        g.sharpen_radius = 0.5;
+        g.luma_noise_reduction = 0.1;
+        g.color_noise_reduction = 0.1;
+        g.grain_amount = 0.25;
+        g.grain_size = 2.0;
+        g.grain_roughness = 0.5;
+        g.vignette_amount = -0.2;
+        g.vignette_midpoint = 0.5;
+        g.vignette_feather = 0.5;
+        g.vignette_roundness = 0.0;
+        adjustments.mask_count = 0;
+        adjustments.noise_iso = 100.0; // R3-1 runtime field lives on AllAdjustments
+        adjustments
+    }
+
+    struct PixelStats {
+        mean_luma: f32,
+        black_ratio: f32,
+        nan_ratio: f32,
+    }
+
+    fn stats_from_f32(rgb: &[f32]) -> PixelStats {
+        let pixels = rgb.len() / 3;
+        assert!(pixels > 0);
+        let mut sum = 0.0f32;
+        let mut black = 0usize;
+        let mut nan = 0usize;
+        for &[r, g, b] in rgb.as_chunks::<3>().0 {
+            if r.is_nan() || g.is_nan() || b.is_nan() {
+                nan += 1;
+                continue;
+            }
+            let luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            sum += luma;
+            if r.max(g).max(b) < 2.0 / 255.0 {
+                black += 1;
+            }
+        }
+        PixelStats {
+            mean_luma: sum / pixels as f32,
+            black_ratio: black as f32 / pixels as f32,
+            nan_ratio: nan as f32 / pixels as f32,
+        }
+    }
+
+    fn report(label: &str, stats: &PixelStats) {
+        println!(
+            "[{label}] mean_luma={:.4} black_ratio={:.4} nan_ratio={:.4}",
+            stats.mean_luma, stats.black_ratio, stats.nan_ratio
+        );
+    }
+
+    fn assert_visible(label: &str, stats: &PixelStats) {
+        report(label, stats);
+        assert!(
+            stats.nan_ratio < 0.01,
+            "{label}: {}% of pixels are NaN — the shader produced undefined values",
+            stats.nan_ratio * 100.0
+        );
+        assert!(
+            stats.mean_luma > 0.02,
+            "{label}: mean luminance {:.4} is near zero — the preview is black",
+            stats.mean_luma
+        );
+        assert!(
+            stats.black_ratio < 0.9,
+            "{label}: {:.1}% of pixels are fully black",
+            stats.black_ratio * 100.0
+        );
+    }
+
+    #[test]
+    fn adjusted_preview_must_not_be_black_on_f16_display_chain() {
+        let Some(ctx) = software_context() else {
+            return; // no Vulkan adapter/device — skipped (see software_context)
+        };
+        let (width, height) = (384u32, 256u32);
+        let processor = GpuProcessor::new(ctx.clone(), width, height).expect("GpuProcessor::new");
+        let entry = make_entry(&processor, &ctx, &gradient_image(width, height));
+
+        // --- Path 1: 8-bit CPU readback (the classic JPEG preview path). ---
+        let request8 = RenderRequest {
+            adjustments: typical_user_adjustments(),
+            mask_bitmaps: &[],
+            mask_cache_key: None,
+            lut: None,
+            roi: None,
+        };
+        let (pixels8, out_w, out_h, _, _) = processor
+            .run(&entry, request8, false, RenderOutputPrecision::EightBit)
+            .expect("8-bit render failed");
+        assert_eq!((out_w, out_h), (width, height));
+        let RenderedPixels::U8(ref u8_pixels) = pixels8 else {
+            panic!("8-bit render must return U8 pixels");
+        };
+        let rgb8: Vec<f32> = u8_pixels
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|px| {
+                [
+                    px[0] as f32 / 255.0,
+                    px[1] as f32 / 255.0,
+                    px[2] as f32 / 255.0,
+                ]
+            })
+            .collect();
+        assert_visible("8bit-readback", &stats_from_f32(&rgb8));
+
+        // --- Path 2: high-precision (f16) readback — the same main pipeline
+        // the f16 display chain uses, verified via CPU readback. ---
+        let request16 = RenderRequest {
+            adjustments: typical_user_adjustments(),
+            mask_bitmaps: &[],
+            mask_cache_key: None,
+            lut: None,
+            roi: None,
+        };
+        let (pixels16, _, _, _, _) = processor
+            .run(&entry, request16, false, RenderOutputPrecision::SixteenBit)
+            .expect("16-bit render failed");
+        let RenderedPixels::U16(ref u16_pixels) = pixels16 else {
+            panic!("16-bit render must return U16 pixels");
+        };
+        let rgb16: Vec<f32> = u16_pixels
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|px| {
+                [
+                    px[0] as f32 / u16::MAX as f32,
+                    px[1] as f32 / u16::MAX as f32,
+                    px[2] as f32 / u16::MAX as f32,
+                ]
+            })
+            .collect();
+        assert_visible("16bit-readback", &stats_from_f32(&rgb16));
+
+        // --- Path 3: the full display chain (output_to_display = true):
+        // f16 tiles -> working texture -> output texture, which the display
+        // pass then samples. Read the output texture back and check. ---
+        let request_display = RenderRequest {
+            adjustments: typical_user_adjustments(),
+            mask_bitmaps: &[],
+            mask_cache_key: None,
+            lut: None,
+            roi: None,
+        };
+        let (_, disp_w, disp_h, disp_x, disp_y) = processor
+            .run(
+                &entry,
+                request_display,
+                true,
+                RenderOutputPrecision::SixteenBit,
+            )
+            .expect("display render failed");
+        assert_eq!((disp_w, disp_h), (width, height));
+        assert_eq!((disp_x, disp_y), (0, 0));
+
+        let display_textures = processor.display_textures();
+        // Production copies working -> output before binding it to the display
+        // pass; replicate that step.
+        let mut encoder = ctx
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Repro Working->Output Copy"),
+            });
+        encoder.copy_texture_to_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &display_textures.working_texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyTextureInfo {
+                texture: &display_textures.output_texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        ctx.queue.submit(Some(encoder.finish()));
+
+        let raw = read_texture_data_roi(
+            &ctx.device,
+            &ctx.queue,
+            &display_textures.output_texture,
+            wgpu::Origin3d::ZERO,
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            8,
+        )
+        .expect("display texture readback failed");
+        let rgb_disp: Vec<f32> = raw
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .flat_map(|px| {
+                [
+                    f16::from_le_bytes([px[0], px[1]]).to_f32(),
+                    f16::from_le_bytes([px[2], px[3]]).to_f32(),
+                    f16::from_le_bytes([px[4], px[5]]).to_f32(),
+                ]
+            })
+            .collect();
+        assert_visible("f16-display-chain", &stats_from_f32(&rgb_disp));
     }
 }

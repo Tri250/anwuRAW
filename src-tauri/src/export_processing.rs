@@ -1447,6 +1447,9 @@ fn build_single_mask_adjustments(all: &AllAdjustments, mask_index: usize) -> All
         tile_offset_y: all.tile_offset_y,
         mask_atlas_cols: all.mask_atlas_cols,
         noise_iso: all.noise_iso,
+        _pad_tail1: 0.0,
+        _pad_tail2: 0.0,
+        _pad_tail3: 0.0,
     };
     single.mask_adjustments[0] = all.mask_adjustments[mask_index];
     for i in 1..single.mask_adjustments.len() {

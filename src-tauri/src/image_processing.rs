@@ -1879,6 +1879,14 @@ pub struct AllAdjustments {
     // v2.0 R3-1: EXIF ISO for noise-model-driven sigma. Runtime-only — never
     // persisted to sidecars or presets (plan §2.2 S3 compatibility rule).
     pub noise_iso: f32,
+    // WGSL pads this struct to a multiple of 16 (mat3x3 alignment) while
+    // repr(C) keeps it tightly packed. Without these trailing pads the
+    // adjustments storage buffer is 12 bytes smaller than the size the shader
+    // requires, every main-pass dispatch fails validation and the preview
+    // renders fully black. Keep in sync with shaders/shader.wgsl AllAdjustments.
+    pub _pad_tail1: f32,
+    pub _pad_tail2: f32,
+    pub _pad_tail3: f32,
 }
 
 struct AdjustmentScales {
@@ -3016,6 +3024,9 @@ pub fn get_all_adjustments_from_json(
             .map(|v| v as f32)
             .unwrap_or(100.0)
             .max(50.0),
+        _pad_tail1: 0.0,
+        _pad_tail2: 0.0,
+        _pad_tail3: 0.0,
     }
 }
 
