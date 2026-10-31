@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "adapter": "llvmpipe (LLVM 20.1.2, 256 bits)",
+  "backend": "Vulkan",
+  "stage_timing": true,
+  "preview": {
+    "width": 1920,
+    "height": 1080,
+    "iterations": 24,
+    "params": "portrait",
+    "wall_ms": {
+      "mean_ms": 2410.831336333333,
+      "p50_ms": 2227.5318359999997,
+      "p95_ms": 3883.926424,
+      "max_ms": 4858.2156860000005
+    },
+    "wall_ms_steady": {
+      "mean_ms": 2304.4233211304345,
+      "p50_ms": 2227.5318359999997,
+      "p95_ms": 2322.466466,
+      "max_ms": 3883.926424
+    },
+    "stages_cold": {
+      "guided_coeffs_ns": 1599997786,
+      "flare_ns": 0,
+      "blur_ns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "main_ns": 2392093085,
+      "main_tiles": 1
+    },
+    "stages_warm": {
+      "guided_coeffs_ns": 0,
+      "flare_ns": 0,
+      "blur_ns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "main_ns": 2190140568,
+      "main_tiles": 1
+    }
+  },
+  "export": {
+    "width": 9000,
+    "height": 5000,
+    "wall_ms": 75426.936124,
+    "stages": {
+      "guided_coeffs_ns": 2515137304,
+      "flare_ns": 0,
+      "blur_ns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "main_ns": 69131342221,
+      "main_tiles": 15
+    }
+  },
+  "memory": {
+    "peak_rss_bytes": 3192209408,
+    "baseline_rss_bytes": 916598784,
+    "growth_bytes": 2275610624,
+    "base_bytes": 270000000,
+    "growth_ratio": 8.428187496296296
+  }
+}

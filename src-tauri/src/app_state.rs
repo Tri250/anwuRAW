@@ -153,6 +153,9 @@ pub struct PreviewJob {
     pub layer: DisplayLayer,
     pub is_interactive: bool,
     pub target_resolution: Option<u32>,
+    /// Frontend-measured adaptive tier override (v2.0 plan R6-1); None falls
+    /// back to the `live_preview_quality` default.
+    pub interactive_divisor: Option<f32>,
     pub roi: Option<(f32, f32, f32, f32)>,
     pub request_analytics: bool,
     pub compute_waveform: bool,

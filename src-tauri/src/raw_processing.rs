@@ -369,8 +369,14 @@ fn develop_internal(
 
     let safe_highlight_compression = 1000.0;
 
+    // Fast (preview) path keeps a compressed highlight headroom instead of
+    // clipping at 1.0: raw values are rescaled into an Rgb32F container and
+    // uploaded to an f16 GPU texture, so the shader's exposure/tonemap stages
+    // can still recover highlights the way the export path does. 8.0 (~3 EV
+    // above diffuse white) is enough for the preview to tell "recoverable"
+    // from "clipped" while staying cheap to demosaic. (v2.0 plan B1)
     let clamp_limit = if fast_demosaic {
-        1.0
+        8.0
     } else {
         safe_highlight_compression
     };

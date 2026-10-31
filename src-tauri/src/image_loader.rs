@@ -177,18 +177,24 @@ pub fn load_base_image_from_bytes(
             )
         }) {
             Ok(Ok(mut image)) => {
-                if !use_fast_raw_dev && (color_nr_amount > 0.0 || sharpening_amount > 0.0) {
+                // Keep chroma noise reduction on the fast (preview) path so
+                // preview and export agree on the band where "texture" is
+                // perceived; detail enhance stays export-only because it is
+                // the expensive half (v2.0 plan B3).
+                let detail_amount = if use_fast_raw_dev {
+                    0.0
+                } else {
+                    sharpening_amount
+                };
+                if color_nr_amount > 0.0 || detail_amount > 0.0 {
                     let start = Instant::now();
-                    remove_raw_artifacts_and_enhance(
-                        &mut image,
-                        color_nr_amount,
-                        sharpening_amount,
-                    );
+                    remove_raw_artifacts_and_enhance(&mut image, color_nr_amount, detail_amount);
                     let duration = start.elapsed();
                     log::info!(
-                        "Raw enhancing for '{}' took {:?}",
+                        "Raw enhancing for '{}' took {:?}{}",
                         path_for_ext_check,
-                        duration
+                        duration,
+                        if use_fast_raw_dev { " (fast path, chroma only)" } else { "" }
                     );
                 }
                 Ok(image)

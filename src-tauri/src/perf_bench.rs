@@ -26,10 +26,9 @@ use serde::Serialize;
 use crate::app_state::AppState;
 use crate::as_shot::AsShot;
 use crate::gpu_processing::{
-    GpuContext, RenderOutputPrecision, RenderRequest, StageTimings,
-    process_and_get_dynamic_image_with_precision,
+    RenderOutputPrecision, RenderRequest, StageTimings, process_and_get_dynamic_image_with_precision,
 };
-use crate::image_processing::{get_all_adjustments_from_json, resolve_render_options};
+use crate::image_processing::{GpuContext, get_all_adjustments_from_json, resolve_render_options};
 
 /// Adjustment snapshot shared with the golden set (portrait look: exposure,
 /// shadows, clarity, luma/color NR, grain, vignette, temperature) — exercises
@@ -153,7 +152,7 @@ fn build_context() -> Option<GpuContext> {
         .features()
         .contains(wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES)
     {
-        required_features |= wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FEATURES;
+        required_features |= wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES;
     }
     if adapter.features().contains(
         wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::TIMESTAMP_QUERY_INSIDE_ENCODERS,
@@ -183,14 +182,13 @@ fn build_context() -> Option<GpuContext> {
 /// Deterministic synthetic "landscape": warm sky gradient, sun disk with
 /// falloff, sinusoidal ridge silhouette, textured ground with fine detail.
 /// 16-bit RGB, sRGB display-encoded like a normal import.
-fn synthetic_scene(width: u32, height: u32) -> image::Rgb16Image {
-    use image::Rgb16Image;
-    let mut img = Rgb16Image::new(width, height);
+fn synthetic_scene(width: u32, height: u32) -> crate::golden_fixtures::Rgb16Image {
+    let mut img = crate::golden_fixtures::Rgb16Image::new(width, height);
     let (w, h) = (width as f32, height as f32);
     let horizon = h * 0.62;
     for (x, y, px) in img.enumerate_pixels_mut() {
         let (fx, fy) = (x as f32 / w, y as f32 / h);
-        let mut rgb = if fy < horizon / h {
+        let rgb = if fy < horizon / h {
             // Sky: vertical gradient from warm highlight to cool horizon.
             let t = fy / (horizon / h);
             let warm = (1.0 - t).powf(1.4);
@@ -217,9 +215,9 @@ fn synthetic_scene(width: u32, height: u32) -> image::Rgb16Image {
             let v = (shade + detail).clamp(0.0, 1.0);
             [v * 0.92, v * 0.95, v]
         };
-        for c in 0..3 {
-            px.0[c] = (rgb[c].clamp(0.0, 1.0) * 65535.0) as u16;
-        }
+        px.0[0] = (rgb[0].clamp(0.0, 1.0) * 65535.0) as u16;
+        px.0[1] = (rgb[1].clamp(0.0, 1.0) * 65535.0) as u16;
+        px.0[2] = (rgb[2].clamp(0.0, 1.0) * 65535.0) as u16;
     }
     img
 }

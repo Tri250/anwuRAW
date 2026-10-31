@@ -150,3 +150,123 @@ backend produced it.) Intermediates (per-case export logs, outputs) land in a te
 The headless export still initializes a tao/GTK event loop, so on a Linux machine without a
 display the runner wraps the export in `xvfb-run` automatically (install `xvfb`; set
 `GOLDEN_NO_XVFB=1` to opt out when a display is already available through other means).
+
+## CI gate
+
+`.github/workflows/render-regression.yml` runs on every push/PR that touches `src-tauri/`
+or `bench/`:
+
+1. `cargo test --lib` — the objective image-quality metrics (gradient-energy retention,
+   MTF50, flat-region residual sigma, ΔE2000, gradient PSNR) and the preview-vs-export
+   consistency tests, pinned to `WGPU_BACKEND=Vulkan`;
+2. the golden gate against the committed `v1.6.14-baseline`, with `--backend Vulkan` so the
+   runner's lavapipe (llvmpipe) adapter matches the backend the baselines are recorded on
+   (install `mesa-vulkan-drivers`; `xvfb` for the headless export).
+
+The tolerance bounds are the plan's "容差区间": mean ΔE ≤ 0.5 (± 0.1 of observed
+cross-environment spread), max ΔE ≤ 2.0, PSNR ≥ 40 dB, SSIM ≥ 0.995 — roughly an order of
+magnitude below a visible change, sized to absorb float-rounding differences between
+lavapipe/llvmpipe Mesa versions and real GPUs. If a runner-image Mesa upgrade trips the
+gate on an otherwise unchanged build, re-record the baseline on that image and say so in
+the PR — same procedure as an intentional algorithm change. A FAIL *without* a re-record
+is treated as unintentional drift and blocks.
+
+## Real-device spot checks
+
+CI cannot do this part: GitHub-hosted runners expose no GPU (Linux jobs get the lavapipe
+software rasterizer, macOS VMs get no Metal device). The v2.0 plan therefore requires one
+manual golden-set run per stage on real hardware — Apple Silicon (Metal) and Android arm64
+(Mali/Adreno) — attached to the stage PR as a before/after table like any baseline
+re-record.
+
+**Apple Silicon (and any desktop machine with a real GPU):** the CLI harness runs directly,
+no flags needed so wgpu picks the native backend:
+
+```bash
+cd src-tauri && cargo build --bins --examples
+node bench/golden/run-golden.mjs target/debug/RapidRAW --name v1.6.14-baseline
+```
+
+Real GPUs round differently than llvmpipe but typically land well inside the tolerance
+gates. A case that fails only on real hardware points at a driver-precision-sensitive
+stage — investigate before merging. Optionally `--record --name <device>-<backend>` keeps
+a per-device baseline for future same-device comparisons.
+
+**Android arm64:** the headless `export` subcommand is desktop-only, so the harness cannot
+drive the device directly. Run the same golden set through the app instead: push
+`bench/golden/images/` to the device, apply each `bench/golden/params/*.json` as the
+image's sidecar edits, export all seven cases as 16-bit TIFF through the export dialog,
+then `adb pull` them and compare against the baseline on a desktop machine:
+
+```bash
+cargo run --example golden_metrics -- compare bench/golden/baselines/v1.6.14-baseline/sky-backlit.png /tmp/device/sky-backlit.tiff
+```
+
+(and the same for the other six cases). Report the per-case table in the stage PR.
+
+# Stage Timing Benchmark (GPU pipeline)
+
+`compare-renders.sh` and the golden harness answer "did the output change". The stage-timing
+benchmark answers "did the pipeline get slower or hungrier". It drives the real GPU pipeline
+headless over a deterministic synthetic scene and measures, per the v2.0 plan (M0-4):
+
+- **preview 1080p** — 24 frames of the full render path; wall clock mean/P50/P95 (first frame
+  is the cold cache state and is reported separately from the steady state), plus per-stage
+  GPU time from wgpu timestamp queries;
+- **export 45MP** — one full-resolution 16-bit render, wall clock + per-stage GPU time;
+- **memory** — peak RSS (VmHWM) growth during the export vs the base image bytes,
+  budgeted at ≤ 2.5x.
+
+Per-stage timings come from the `RAPIDRAW_STAGE_TIMING=1` wgpu timestamp probe
+(`gpu_processing::StageProbe`): guided-filter coefficients, flare, the four guided blurs
+(sharpness/tonal/clarity/structure), and the main compute pass per tile. Stages whose
+adjustments are disabled (e.g. no flare in the params) legitimately read 0. Without the env
+var the probe is compiled in but inert (one `Option` check per stage), and stage fields
+read 0 while wall clock and memory are still measured. The probe needs
+`Features::TIMESTAMP_QUERY | TIMESTAMP_QUERY_INSIDE_ENCODERS`; devices without them
+(some drivers) fall back to wall clock only.
+
+Record a baseline (before starting a stage that touches the pipeline):
+
+```bash
+cd src-tauri
+RAPIDRAW_STAGE_TIMING=1 WGPU_BACKEND=Vulkan \
+  cargo run --example bench_stages -- --out ../bench/perf/v1.6.14-baseline.json
+```
+
+Compare a candidate against it (exit 1 = budget breach, for CI):
+
+```bash
+node bench/perf/compare-perf.mjs bench/perf/v1.6.14-baseline.json bench/perf/candidate.json
+```
+
+Smaller/faster runs for quick sanity checks: `--iterations N --preview WxH --export WxH`
+(e.g. `--iterations 4 --preview 960x540 --export 2048x1152`).
+
+Interpreting the numbers:
+
+- **Wall clock is the honest end-user number** (includes CPU submit + readback); per-stage
+  GPU time is for diagnosis — it points at *which* stage moved. Stage timings are not gated:
+  timestamp queries on software rasterizers are noisy, and the wall-clock gates already
+  cover regressions.
+- **Budgets** (enforced by `compare-perf.mjs`, exit 1 = breach): preview steady P95 and
+  export wall clock may grow by at most +10%; the memory growth ratio may worsen by at most
+  +10% versus the baseline. The v2.0 plan's absolute target of ≤ 2.5x base image bytes is
+  reported as a non-blocking warning while recorded baselines sit above it (v1.6.14
+  measures 8.4x on llvmpipe — the export working set is a known optimization target, see
+  the plan's memory work); once a compliant baseline is recorded, exceeding 2.5x becomes a
+  breach automatically. Intentional trade-offs (e.g. a quality feature that costs time)
+  re-record the baseline in the stage PR with the before/after table attached, like the
+  golden harness.
+- **Machine-relative.** Like every benchmark here, absolute numbers are only meaningful on
+  the same machine and backend (`llvmpipe`/`lavapipe` software rasterizers are far slower
+  than any real GPU and are for regression detection, not UX claims). The commit message or
+  PR should state which machine recorded a baseline; `compare-perf.mjs` warns on
+  adapter/backend mismatch. The JSON report records adapter, backend and config so runs
+  stay self-describing.
+
+In CI, the `perf-gate` job of `render-regression.yml` (workflow_dispatch only) makes the
+comparison valid despite this: it benchmarks **both** the dispatched ref and `base_ref` on
+the same runner and gates the A/B with `compare-perf.mjs`. It is heavier than the golden
+gate (two release builds) and therefore opt-in per run; the blocking habit for day-to-day
+work remains a same-machine before/after run as shown above.

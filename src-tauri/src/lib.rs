@@ -69,6 +69,7 @@ mod multi_exposure;
 mod negative_conversion;
 mod panorama_stitching;
 mod panorama_utils;
+pub mod perf_bench;
 mod preset_converter;
 mod raw_processing;
 mod relight;
@@ -640,6 +641,7 @@ fn process_preview_job(
     layer: DisplayLayer,
     is_interactive: bool,
     target_resolution: Option<u32>,
+    interactive_divisor_override: Option<f32>,
     roi: Option<(f32, f32, f32, f32)>,
     request_analytics: bool,
     compute_waveform: bool,
@@ -666,15 +668,31 @@ fn process_preview_job(
 
     let default_preview_dim = settings.editor_preview_resolution.unwrap_or(1920);
     let preview_dim = target_resolution.unwrap_or(default_preview_dim);
+    // Renderer opt-in (v2.0 plan B2): wgpu presentation is opt-in on
+    // Linux/Android (WebKitGTK transparent-surface compositing is unreliable)
+    // and default-on elsewhere. Surface creation failures fall back to
+    // compute-only at context init; the guard below additionally falls back to
+    // the CPU preview path when no presenter is available.
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    let use_wgpu_renderer = settings.use_wgpu_renderer.unwrap_or(false);
     #[cfg(not(any(target_os = "linux", target_os = "android")))]
     let use_wgpu_renderer = settings.use_wgpu_renderer.unwrap_or(true);
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    let use_wgpu_renderer = false;
 
     let has_roi = roi.is_some();
-    let (interactive_divisor, interactive_quality) = match live_quality {
-        "performance" => (if has_roi { 1.4_f32 } else { 1.2_f32 }, 75_u8),
-        _ => (1.0_f32, 85_u8),
+    // Interactive tier (v2.0 plan R6-1): the frontend measures frame latency
+    // and may override the divisor to keep drag frames inside budget; without
+    // an override the setting decides (1.0/1.4 for high/performance). Clamped
+    // to [1.0, 4.0] — 1.0 means "full preview res while dragging".
+    let interactive_divisor = interactive_divisor_override
+        .filter(|d| (1.0..=4.0).contains(d))
+        .unwrap_or(match live_quality {
+            "performance" if has_roi => 1.4_f32,
+            "performance" => 1.2_f32,
+            _ => 1.0_f32,
+        });
+    let interactive_quality = match live_quality {
+        "performance" => 75_u8,
+        _ => 85_u8,
     };
 
     let mut cached_preview_lock = state
@@ -851,7 +869,17 @@ fn process_preview_job(
         );
 
     if let Ok(final_processed_image) = final_processed_image_result {
-        if use_wgpu_renderer {
+        // Only take the presentation path when a presenter actually exists;
+        // otherwise (surface creation failed or the device was lost) fall
+        // through to the CPU/JPEG preview instead of emitting `WGPU_RENDER`
+        // into the void.
+        let display_present = use_wgpu_renderer
+            && context
+                .display
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .is_some();
+        if display_present {
             if layer == DisplayLayer::Original {
                 return Ok(b"WGPU_RENDER".to_vec());
             }
@@ -1025,6 +1053,7 @@ fn start_preview_worker(app_handle: tauri::AppHandle) {
                         job.layer,
                         job.is_interactive,
                         job.target_resolution,
+                        job.interactive_divisor,
                         job.roi,
                         job.request_analytics,
                         job.compute_waveform,
@@ -1052,6 +1081,7 @@ async fn apply_adjustments(
     original: bool,
     is_interactive: bool,
     target_resolution: Option<u32>,
+    interactive_divisor: Option<f32>,
     roi: Option<(f32, f32, f32, f32)>,
     request_analytics: bool,
     compute_waveform: bool,
@@ -1072,6 +1102,7 @@ async fn apply_adjustments(
                 },
                 is_interactive,
                 target_resolution,
+                interactive_divisor,
                 roi,
                 request_analytics,
                 compute_waveform,

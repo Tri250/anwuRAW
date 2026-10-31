@@ -1,0 +1,178 @@
+# Render Regression (v2.0 plan M0-5)
+#
+# Two gates, both against the committed `bench/golden/baselines/v1.6.14-baseline`:
+#
+# 1. golden-gate (blocking on every push/PR touching the pipeline):
+#    - `cargo test --lib`   objective image-quality metrics (gradient-energy
+#      retention, MTF50, flat-region residual sigma, ΔE2000, gradient PSNR)
+#      and the preview-vs-export consistency tests;
+#    - the golden render gate: 7 synthetic cases exported headless and compared
+#      against the recorded baseline images at mean ΔE2000 <= 0.5, max ΔE <= 2.0,
+#      PSNR >= 40 dB, SSIM >= 0.995.
+#
+#    Tolerance rationale: the bounds sit roughly an order of magnitude below a
+#    visible change, so they absorb the float-rounding spread between
+#    lavapipe/llvmpipe builds (different Mesa versions round differently) and
+#    even real GPUs. The baseline and CI must run the same backend, hence
+#    `--backend Vulkan` / `WGPU_BACKEND=Vulkan` pinning the software rasterizer.
+#    If a runner-image Mesa upgrade trips the gate on an otherwise unchanged
+#    build, re-record the baseline on that image and say so in the PR — same
+#    procedure as an intentional algorithm change (bench/README.md).
+#
+# 2. perf-gate (manual, workflow_dispatch): stage-timing benchmark A/B on one
+#    runner. Wall-clock numbers are only comparable on the same machine, so the
+#    job builds BOTH refs here — the dispatched ref and `base_ref` — and compares
+#    the two reports with bench/perf/compare-perf.mjs (+10% preview steady P95 /
+#    export wall / memory growth = breach). Requires bench_stages to exist on
+#    both refs (present since the M0 work landed on main).
+#
+# Real-GPU spot checks (Android arm64, Apple Silicon) cannot run on GitHub-hosted
+# runners — no GPU is exposed to the VM. Run the golden set manually per
+# bench/README.md ("Real-device spot checks").
+
+name: Render Regression
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src-tauri/**'
+      - 'bench/**'
+      - '.github/workflows/render-regression.yml'
+  pull_request:
+    paths:
+      - 'src-tauri/**'
+      - 'bench/**'
+      - '.github/workflows/render-regression.yml'
+  workflow_dispatch:
+    inputs:
+      run_perf_gate:
+        description: 'Also run the stage-timing A/B benchmark (perf-gate job)'
+        type: boolean
+        default: false
+      base_ref:
+        description: 'Ref the perf A/B compares against (must contain the bench harness)'
+        type: string
+        default: 'origin/main'
+
+concurrency:
+  group: render-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  golden-gate:
+    name: Golden render gate (lavapipe Vulkan)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      WGPU_BACKEND: Vulkan
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ''
+          rust-src-dir: src-tauri
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: render-regression
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            pkg-config \
+            libgphoto2-dev \
+            mesa-vulkan-drivers \
+            vulkan-tools \
+            xvfb
+
+      - name: Show Vulkan adapter
+        run: |
+          vulkaninfo --summary | grep -i deviceName || \
+            echo "::warning::No Vulkan adapter found; wgpu may fail to initialize"
+
+      - name: Build harness binaries
+        working-directory: src-tauri
+        run: cargo build --bins --examples
+
+      - name: Objective metric tests
+        working-directory: src-tauri
+        run: cargo test --lib
+
+      - name: Golden render gate
+        run: |
+          node bench/golden/run-golden.mjs \
+            src-tauri/target/debug/RapidRAW \
+            --backend Vulkan \
+            --name v1.6.14-baseline
+
+  perf-gate:
+    name: Perf budget A/B (same runner)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 150
+    if: github.event_name == 'workflow_dispatch' && inputs.run_perf_gate
+    env:
+      WGPU_BACKEND: Vulkan
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ''
+          rust-src-dir: src-tauri
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: render-regression-perf
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            pkg-config \
+            libgphoto2-dev \
+            mesa-vulkan-drivers \
+            vulkan-tools \
+            xvfb
+
+      # Candidate (dispatched ref) first: its dependency build warms the shared
+      # target dir for the base build afterwards.
+      - name: Benchmark candidate ref
+        working-directory: src-tauri
+        run: |
+          cargo build --release --example bench_stages
+          cargo run --release --example bench_stages -- \
+            --iterations 24 --out ../bench/perf/ci-candidate.json
+
+      - name: Benchmark base ref
+        run: |
+          git checkout ${{ inputs.base_ref }}
+          cd src-tauri
+          cargo build --release --example bench_stages
+          cargo run --release --example bench_stages -- \
+            --iterations 24 --out ../bench/perf/ci-baseline.json
+
+      - name: Perf budget gate
+        run: |
+          node bench/perf/compare-perf.mjs \
+            bench/perf/ci-baseline.json \
+            bench/perf/ci-candidate.json

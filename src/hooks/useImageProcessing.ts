@@ -62,6 +62,14 @@ export function useImageProcessing(
   const activeWaveformChannelRef = useRef(activeWaveformChannel);
   activeWaveformChannelRef.current = activeWaveformChannel;
 
+  // R6-1 adaptive interactive frames: keep the last interactive-frame
+  // latencies and switch between a static tier (the live_preview_quality
+  // default divisor) and a dynamic tier (divisor 2.0) when drag frames blow
+  // the ~20ms budget. Two slow frames trip it; four consecutive fast frames
+  // restore the static tier, so a single hiccup cannot flap the tier.
+  const interactiveLatenciesRef = useRef<number[]>([]);
+  const interactiveTierRef = useRef<'static' | 'dynamic'>('static');
+
   const selectedImagePathRef = useRef<string | null>(null);
   useEffect(() => {
     selectedImagePathRef.current = selectedImage?.path ?? null;
@@ -173,12 +181,22 @@ export function useImageProcessing(
       const jobId = ++previewJobIdRef.current;
       const roi = calculateROI();
 
+      const interactiveDivisor = dragging
+        ? interactiveTierRef.current === 'dynamic'
+          ? 2.0
+          : appSettings?.livePreviewQuality === 'performance'
+            ? 1.4
+            : 1.0
+        : null;
+      const dragStartedAt = dragging ? performance.now() : 0;
+
       try {
         const request = invoke<ArrayBuffer>(Invokes.ApplyAdjustments, {
           jsAdjustments: payload,
           original: false,
           isInteractive: dragging,
           targetResolution: targetRes || null,
+          interactiveDivisor: interactiveDivisor ?? null,
           roi: roi || null,
           requestAnalytics: true,
           computeWaveform: !!isWaveformVisible,
@@ -188,6 +206,22 @@ export function useImageProcessing(
         const buffer = await request;
 
         markSent();
+
+        if (dragging) {
+          const latencies = interactiveLatenciesRef.current;
+          latencies.push(performance.now() - dragStartedAt);
+          if (latencies.length > 6) latencies.shift();
+          if (interactiveTierRef.current === 'static') {
+            if (interactiveLatenciesRef.current.slice(-3).filter((l) => l > 20).length >= 2) {
+              interactiveTierRef.current = 'dynamic';
+            }
+          } else if (
+            interactiveLatenciesRef.current.length >= 4 &&
+            interactiveLatenciesRef.current.slice(-4).every((l) => l < 10)
+          ) {
+            interactiveTierRef.current = 'static';
+          }
+        }
 
         if (currentPath !== selectedImagePathRef.current) return;
 
@@ -272,6 +306,7 @@ export function useImageProcessing(
       previewJobIdRef,
       latestRenderedJobIdRef,
       renderOriginal,
+      appSettings?.livePreviewQuality,
     ],
   );
 

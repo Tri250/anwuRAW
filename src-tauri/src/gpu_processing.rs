@@ -7,7 +7,6 @@ use half::f16;
 use image::{DynamicImage, GenericImageView, ImageBuffer, Luma, Rgba};
 use std::num::NonZero;
 
-#[cfg(not(any(target_os = "android", target_os = "linux")))]
 use tauri::Manager;
 use wgpu::util::{DeviceExt, TextureDataOrder};
 
@@ -226,11 +225,8 @@ static GPU_DEVICE_LOST: AtomicBool = AtomicBool::new(false);
 
 pub fn get_or_init_gpu_context(
     state: &tauri::State<AppState>,
-    _app_handle: &tauri::AppHandle,
+    app_handle: &tauri::AppHandle,
 ) -> Result<GpuContext, String> {
-    #[cfg(not(any(target_os = "android", target_os = "linux")))]
-    let app_handle = _app_handle;
-
     let mut context_lock = match state.gpu_context.lock() {
         Ok(guard) => guard,
         Err(poisoned) => {
@@ -273,9 +269,16 @@ pub fn get_or_init_gpu_context(
 
     let instance = wgpu::Instance::new(instance_desc);
 
-    #[cfg(not(any(target_os = "android", target_os = "linux")))]
     let surface_opt = {
         let settings = crate::app_settings::load_settings(app_handle.clone()).unwrap_or_default();
+        // Renderer opt-in (v2.0 plan B2): on by default where the
+        // webview-transparent + native-surface stack is proven (Windows/macOS);
+        // on Linux/Android it is opt-in via `useWgpuRenderer` because WebKitGTK
+        // surface compositing is unreliable, and a failed surface creation
+        // still falls back to compute-only instead of disabling the GPU.
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        let use_wgpu_renderer = settings.use_wgpu_renderer.unwrap_or(false);
+        #[cfg(not(any(target_os = "android", target_os = "linux")))]
         let use_wgpu_renderer = settings.use_wgpu_renderer.unwrap_or(true);
 
         if use_wgpu_renderer {
@@ -300,9 +303,6 @@ pub fn get_or_init_gpu_context(
             None
         }
     };
-
-    #[cfg(any(target_os = "android", target_os = "linux"))]
-    let surface_opt: Option<wgpu::Surface> = None;
 
     let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
@@ -375,7 +375,6 @@ pub fn get_or_init_gpu_context(
         let _ = std::fs::remove_file(p);
     }
 
-    #[cfg(not(any(target_os = "android", target_os = "linux")))]
     let display_opt = if let Some(surface) = surface_opt {
         let window = app_handle
             .get_webview_window("main")
@@ -551,9 +550,6 @@ pub fn get_or_init_gpu_context(
     } else {
         None
     };
-
-    #[cfg(any(target_os = "android", target_os = "linux"))]
-    let display_opt = None;
 
     let new_context = GpuContext {
         device: Arc::new(device),
@@ -859,10 +855,11 @@ impl StageProbe {
         }
         let stamps: Vec<u64> = slice
             .get_mapped_range()
-            .chunks_exact(8)
-            .map(|c| u64::from_le_bytes(c.try_into().unwrap()))
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|c| u64::from_le_bytes(*c))
             .collect();
-        drop(slice);
         self.read_buffer.unmap();
 
         for (stage, begin) in &self.records {
