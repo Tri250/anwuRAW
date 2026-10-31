@@ -6,6 +6,13 @@ import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import Slider, { SliderChangeEvent } from '../ui/Slider';
 import ColorWheel from '../ui/ColorWheel';
+import Dropdown from '../ui/Dropdown';
+import {
+  CAMERA_PROFILES,
+  DEFAULT_CAMERA_PROFILE_ID,
+  getCameraProfileTools,
+  getCameraProfileValues,
+} from '../../utils/cameraProfiles';
 import { ColorAdjustment, ColorCalibration, HueSatLum, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
 import {
   Adjustments,
@@ -587,6 +594,33 @@ function ColorPanel({
     setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, [key]: parseFloat(value) }));
   };
 
+  const handleCameraProfileChange = (profileId: string) => {
+    setAdjustments((prev: Partial<Adjustments>) => {
+      const isDefault = profileId === DEFAULT_CAMERA_PROFILE_ID;
+      const values = getCameraProfileValues(isDefault ? null : profileId);
+      const tools = getCameraProfileTools(isDefault ? null : profileId);
+      // Profiles write color-rendering keys; enable their owning tools so the
+      // values reach the GPU even if the user had the tools toggled off.
+      const activeTools = tools.length
+        ? tools.reduce((acc, id) => setToolActive(acc, id, true), getActiveTools(prev))
+        : undefined;
+      return {
+        ...prev,
+        ...values,
+        cameraProfile: isDefault ? null : profileId,
+        ...(activeTools ? { activeTools } : {}),
+      };
+    });
+  };
+
+  const cameraProfileOptions = useMemo(
+    () => [
+      { value: DEFAULT_CAMERA_PROFILE_ID, label: t('adjustments.color.profileDefault') },
+      ...CAMERA_PROFILES.map((profile) => ({ value: profile.id, label: profile.name })),
+    ],
+    [t],
+  );
+
   const kelvinAsShot =
     !isForMask && getWhiteBalanceMode(appSettings) === WhiteBalanceMode.Kelvin ? asShotWhiteBalance : undefined;
   const isKelvinMode = !!kelvinAsShot;
@@ -694,6 +728,21 @@ function ColorPanel({
             value={displayedWhiteBalance.tint}
             trackClassName="tint-gradient-track"
             onDragStateChange={onDragStateChange}
+          />
+        </AdjustmentSubSection>
+      )}
+
+      {!isForMask && !hiddenTools.includes('cameraProfile') && (
+        <AdjustmentSubSection
+          id="cameraProfile"
+          order={toolOrder.indexOf('cameraProfile')}
+          title={t('adjustments.color.cameraProfile')}
+        >
+          <Dropdown
+            options={cameraProfileOptions}
+            value={adjustments.cameraProfile || DEFAULT_CAMERA_PROFILE_ID}
+            onChange={handleCameraProfileChange}
+            className="w-full"
           />
         </AdjustmentSubSection>
       )}

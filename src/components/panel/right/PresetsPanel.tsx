@@ -1097,6 +1097,44 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
     }
   };
 
+  const handleExportXmp = async () => {
+    if (!selectedImage?.path) {
+      return;
+    }
+    try {
+      await invoke(Invokes.ExportXmpSidecar, {
+        imagePath: selectedImage.path,
+        jsAdjustments: adjustments,
+        overwrite: true,
+      });
+      toast.success(t('editor.presets.toasts.xmpExportSuccess'));
+    } catch (error) {
+      console.error('Failed to export XMP sidecar:', error);
+      toast.error(t('editor.presets.toasts.xmpExportFailed'));
+    }
+  };
+
+  const handleImportXmp = async () => {
+    try {
+      const selectedPath = await openDialog({
+        filters: [{ name: t('editor.presets.dialog.xmpFile'), extensions: ['xmp'] }],
+        multiple: false,
+        title: t('editor.presets.dialog.importXmpTitle'),
+      });
+
+      if (!selectedPath || typeof selectedPath !== 'string') {
+        return;
+      }
+
+      const imported = await invoke<Partial<Adjustments>>(Invokes.ImportXmpSidecar, { path: selectedPath });
+      setAdjustments((prev: Adjustments) => ({ ...prev, ...imported }));
+      toast.success(t('editor.presets.toasts.xmpImportSuccess'));
+    } catch (error) {
+      console.error('Failed to import XMP:', error);
+      toast.error(t('editor.presets.toasts.xmpImportFailed'));
+    }
+  };
+
   const handleContextMenu = (event: any, item: UserPreset) => {
     event.preventDefault();
     event.stopPropagation();
@@ -1193,6 +1231,18 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
         icon: SortAsc,
         label: t('editor.presets.menu.sortAll'),
         onClick: sortAllPresetsAlphabetically,
+      },
+      { type: OPTION_SEPARATOR },
+      {
+        icon: FileUp,
+        label: t('editor.presets.menu.importXmp'),
+        onClick: handleImportXmp,
+      },
+      {
+        disabled: !selectedImage?.path,
+        icon: FileDown,
+        label: t('editor.presets.menu.exportXmp'),
+        onClick: handleExportXmp,
       },
     ];
     showContextMenu(event.clientX, event.clientY, options);

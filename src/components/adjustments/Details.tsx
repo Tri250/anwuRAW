@@ -76,16 +76,27 @@ function DetailsPanel({
             value={adjustments.sharpness}
             onDragStateChange={onDragStateChange}
           />
+          <Slider
+            label={t('adjustments.details.threshold')}
+            max={80}
+            min={0}
+            onChange={(e: any) => handleAdjustmentChange(DetailsAdjustment.SharpnessThreshold, e.target.value)}
+            step={1}
+            value={adjustments.sharpnessThreshold ?? 15}
+            onDragStateChange={onDragStateChange}
+            defaultValue={15}
+            fillOrigin="min"
+          />
           {!isForMask && (
             <Slider
-              label={t('adjustments.details.threshold')}
-              max={80}
-              min={0}
-              onChange={(e: any) => handleAdjustmentChange(DetailsAdjustment.SharpnessThreshold, e.target.value)}
-              step={1}
-              value={adjustments.sharpnessThreshold ?? 15}
+              label={t('adjustments.details.radius')}
+              max={300}
+              min={50}
+              onChange={(e: any) => handleAdjustmentChange(DetailsAdjustment.SharpenRadius, e.target.value)}
+              step={5}
+              value={adjustments.sharpenRadius ?? 100}
               onDragStateChange={onDragStateChange}
-              defaultValue={15}
+              defaultValue={100}
               fillOrigin="min"
             />
           )}
@@ -125,6 +136,17 @@ function DetailsPanel({
             value={adjustments.structure}
             onDragStateChange={onDragStateChange}
           />
+          {!isForMask && (
+            <Slider
+              label={t('adjustments.details.texture')}
+              max={100}
+              min={-100}
+              onChange={(e: any) => handleAdjustmentChange(DetailsAdjustment.Texture, e.target.value)}
+              step={1}
+              value={adjustments.textureAmount ?? 0}
+              onDragStateChange={onDragStateChange}
+            />
+          )}
           {!isForMask && (
             <div
               data-center-marker-controls="centre"
@@ -170,6 +192,30 @@ function DetailsPanel({
             value={adjustments.colorNoiseReduction}
             onDragStateChange={onDragStateChange}
           />
+          {!isForMask && (
+            <>
+              <Slider
+                label={t('adjustments.details.colorNrDetail')}
+                max={100}
+                min={0}
+                onChange={(e: any) => handleAdjustmentChange(DetailsAdjustment.ColorNrDetail, e.target.value)}
+                step={1}
+                value={adjustments.colorNrDetail ?? 0}
+                onDragStateChange={onDragStateChange}
+              />
+              <Slider
+                label={t('adjustments.details.colorNrSmoothness')}
+                max={100}
+                min={0}
+                onChange={(e: any) => handleAdjustmentChange(DetailsAdjustment.ColorNrSmoothness, e.target.value)}
+                step={1}
+                value={adjustments.colorNrSmoothness ?? 0}
+                onDragStateChange={onDragStateChange}
+                defaultValue={0}
+                fillOrigin="min"
+              />
+            </>
+          )}
           {!isForMask && (
             <div className="mt-2">
               <SpatialEffect

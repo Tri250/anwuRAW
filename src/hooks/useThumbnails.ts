@@ -10,13 +10,10 @@ export function useThumbnails() {
     () =>
       debounce(
         () => {
+          // Keep FIFO (insertion) order: callers enqueue visible paths first,
+          // so the backend queue preserves "visible window → rest" priority.
           const pathsToSend = Array.from(pendingQueueRef.current);
           if (pathsToSend.length === 0) return;
-
-          for (let i = pathsToSend.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [pathsToSend[i], pathsToSend[j]] = [pathsToSend[j], pathsToSend[i]];
-          }
 
           invoke('update_thumbnail_queue', { paths: pathsToSend }).catch((err) => {
             console.error('Failed to update thumbnail queue:', err);

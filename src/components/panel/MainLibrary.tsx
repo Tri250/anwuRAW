@@ -3,6 +3,7 @@ import { getVersion } from '@tauri-apps/api/app';
 import { open } from '@tauri-apps/plugin-shell';
 import {
   CheckCheck,
+  Expand,
   Folder,
   FolderInput,
   Home,
@@ -14,6 +15,7 @@ import {
   Users,
   LayoutGrid,
   Columns,
+  Columns2,
   SlidersHorizontal,
   Rows3,
   X,
@@ -595,7 +597,41 @@ export default function MainLibrary(props: MainLibraryProps) {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-4 shrink-0">
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                className="flex items-center justify-center w-11 h-11 self-center bg-surface rounded-lg border border-border-color/20 text-text-secondary hover:text-text-primary transition-colors"
+                data-tooltip={t('survey.title')}
+                disabled={props.imageList.length === 0}
+                onClick={() =>
+                  useUIStore.getState().setUI({
+                    surveyMode: {
+                      isOpen: true,
+                      paths: props.imageList.map((img) => img.path),
+                      title: props.currentFolderPath,
+                      startInCompare: false,
+                    },
+                  })
+                }
+              >
+                <Expand className="w-5 h-5" />
+              </button>
+              <button
+                className="flex items-center justify-center w-11 h-11 self-center bg-surface rounded-lg border border-border-color/20 text-text-secondary hover:text-text-primary transition-colors"
+                data-tooltip={t('survey.compareEntry')}
+                disabled={props.imageList.length < 2}
+                onClick={() =>
+                  useUIStore.getState().setUI({
+                    surveyMode: {
+                      isOpen: true,
+                      paths: props.imageList.map((img) => img.path),
+                      title: props.currentFolderPath,
+                      startInCompare: true,
+                    },
+                  })
+                }
+              >
+                <Columns2 className="w-5 h-5" />
+              </button>
               <DisplayModeSwitch displayMode={libraryDisplayMode} setDisplayMode={setLibraryDisplayMode} t={t} />
 
               <div className="flex items-center bg-surface p-1 rounded-lg gap-1 border border-border-color/20">

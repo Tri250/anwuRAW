@@ -15,6 +15,8 @@ import ConfirmModal from './ConfirmModal';
 import ImportSettingsModal from './ImportSettingsModal';
 import CullingModal from './CullingModal';
 import CollageModal from './CollageModal';
+import SmartAlbumModal from './SmartAlbumModal';
+import OnboardingModal from './OnboardingModal';
 import { AppSettings, Invokes, ImageFlag, AlbumItem, Album, AlbumGroup } from '../ui/AppProperties';
 import { CopyPasteSettings } from '../../utils/adjustments';
 
@@ -66,6 +68,8 @@ export default function AppModals(props: AppModalsProps) {
     focusStackModalState,
     cullingModalState,
     collageModalState,
+    smartAlbumModalState,
+    isOnboardingModalOpen,
     setUI,
   } = useUIStore(
     useShallow((state) => ({
@@ -87,6 +91,8 @@ export default function AppModals(props: AppModalsProps) {
       focusStackModalState: state.focusStackModalState,
       cullingModalState: state.cullingModalState,
       collageModalState: state.collageModalState,
+      smartAlbumModalState: state.smartAlbumModalState,
+      isOnboardingModalOpen: state.isOnboardingModalOpen,
       setUI: state.setUI,
     })),
   );
@@ -292,6 +298,12 @@ export default function AppModals(props: AppModalsProps) {
         onSave={props.handleSaveCollage}
         sourceImages={collageModalState.sourceImages}
       />
+      <SmartAlbumModal
+        albumId={smartAlbumModalState.albumId}
+        isOpen={smartAlbumModalState.isOpen}
+        onClose={() => setUI({ smartAlbumModalState: { isOpen: false, albumId: null } })}
+      />
+      <OnboardingModal isOpen={isOnboardingModalOpen} onClose={() => setUI({ isOnboardingModalOpen: false })} />
     </>
   );
 }

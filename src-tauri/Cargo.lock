@@ -6,6 +6,7 @@ version = 4
 name = "RapidRAW"
 version = "1.6.14"
 dependencies = [
+ "ab_glyph",
  "android-native-keyring-store",
  "anyhow",
  "apple-native-keyring-store",
@@ -42,6 +43,7 @@ dependencies = [
  "memmap2",
  "mimalloc",
  "mozjpeg-rs",
+ "naga",
  "nalgebra",
  "ndarray",
  "ndk-context",

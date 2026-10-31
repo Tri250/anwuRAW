@@ -13,12 +13,16 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [features]
 default = []
 tethering = ["dep:gphoto2"]
+# Test-only feature: enables the golden snapshot generation test in
+# src-tauri/tests/golden_render.rs (run with
+# `cargo test --features golden-gen -- --ignored --nocapture golden`).
+golden-gen = []
 
 [dependencies]
 tauri = { version = "2.12", features = [ "macos-private-api", "rustls-tls", "protocol-asset" ] }
 tauri-plugin-dialog = "2.7.2"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
 image = "0.25.10"
 tiff = "0.11.3"
 base64 = "0.23"
@@ -35,6 +39,7 @@ tokio = { version = "1", features = ["full"] }
 uuid = { version = "1.25", features = ["v4", "serde"] }
 walkdir = "2.5.0"
 imageproc = "0.27.0"
+ab_glyph = "0.2"
 lsdetect = "0.3.0"
 ort = { version = "=2.0.0-rc.10", features = ["ndarray", "load-dynamic"] }
 ndarray = "0.16"
@@ -144,6 +149,10 @@ tauri-build = { version = "2.6", features = [] }
 sha2 = "0.11"
 reqwest = { version = "0.13", default-features = false, features = ["blocking", "rustls"] }
 hex = "0.4"
+
+[dev-dependencies]
+# WGSL offline validation in tests/wgsl_validation.rs (same front-end wgpu uses).
+naga = { version = "29.0.4", features = ["wgsl-in"] }
 
 [profile.dev]
 opt-level = 2

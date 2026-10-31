@@ -7,10 +7,14 @@
       "exposure": "Belichting",
       "highlights": "Hooglichten",
       "mappers": {
+        "aces": "ACES Filmic",
+        "acesDesc": "ACES Filmic-tonemapping",
         "agx": "AgX",
         "agxDesc": "Filmachtige toonmapping",
         "basic": "Basis",
-        "basicDesc": "Standaard toonmapping"
+        "basicDesc": "Standaard toonmapping",
+        "pbrNeutral": "PBR Neutral",
+        "pbrNeutralDesc": "Neutrale tonemapping"
       },
       "reset": "Opnieuw instellen",
       "shadows": "Schaduwen",
@@ -32,6 +36,7 @@
         "tint": "Tint",
         "title": "Kleurkalibratie"
       },
+      "cameraProfile": "Cameraprofiel",
       "colorGrading": "Kleurgradering",
       "colorMatch": "AI-kleurmatch",
       "colorMatchDesc": "Overzetten van de kleurstijl van een voorbeeldfoto naar deze foto (niet-destructief)",
@@ -62,6 +67,7 @@
         "yellows": "Geel"
       },
       "presence": "Presentie",
+      "profileDefault": "Standaard",
       "saturation": "Verzadiging",
       "targetedTooltip": "Gerichte aanpassing: neem een kleur op het canvas op en sleep om de tint/verzadiging aan te passen (Ctrl+Alt+H)",
       "temperature": "Kleurtemperatuur",
@@ -110,6 +116,8 @@
       "clarity": "Lokaal contrast",
       "classicDenoise": "Klassieke ruisonderdrukking",
       "color": "Kleur",
+      "colorNrDetail": "Kleurdetail",
+      "colorNrSmoothness": "Vloeiendheid",
       "convertNegative": "Negatief omzetten",
       "dehaze": "Nevel verwijderen",
       "luminance": "Luminantie",
@@ -121,10 +129,12 @@
       "negativeRed": "Rood",
       "noiseReduction": "Ruisonderdrukking",
       "presence": "Presentie",
+      "radius": "Straal",
       "redCyan": "Rood/Cyaan",
       "sharpening": "Verscherping",
       "sharpness": "Scherpte",
       "structure": "Structuur",
+      "texture": "Textuur",
       "threshold": "Drempelwaarde"
     },
     "effects": {
@@ -289,6 +299,25 @@
     "merge": {
       "focusStack": "Focusstapeling",
       "title": "Samenvoegen"
+    },
+    "smartAlbums": {
+      "confirmDelete": "Are you sure you want to delete this smart album? The images themselves are not affected.",
+      "delete": "Delete Smart Album",
+      "edit": "Edit Smart Album",
+      "new": "New Smart Album"
+    },
+    "stacking": {
+      "autoStack": "Auto-Stack by Burst",
+      "autoStackedToast_one": "Created {{count}} stacks.",
+      "autoStackedToast_other": "Created {{count}} stacks.",
+      "autoStackNone": "No burst groups found to stack.",
+      "create_one": "Stack into Group ({{count}})",
+      "create_other": "Stack into Group ({{count}})",
+      "createdToast_one": "Created a stack with {{count}} images.",
+      "createdToast_other": "Created a stack with {{count}} images.",
+      "createFailed": "Not enough images to create a stack.",
+      "title": "Stacking",
+      "unstack": "Unstack"
     },
     "tagging": {
       "addTagTooltip": "Tag toevoegen",
@@ -497,6 +526,19 @@
         "useBasicInpaint": "Basis inpainting gebruiken"
       },
       "touchUpTitle": "Retoucheren"
+    },
+    "aiEnhance": {
+      "failed": "AI enhance failed",
+      "title": "AI Enhance"
+    },
+    "canvas": {
+      "pickerCancel": "to cancel",
+      "pickerHints": {
+        "marker": "Click on the image to place the overlay",
+        "relight": "Click on the image to place the light",
+        "targeted": "Click or drag on the image to adjust",
+        "wb": "Click or drag on the image to sample white balance"
+      }
     },
     "compare": {
       "horizontal": "Boven / onder splitsen",
@@ -809,9 +851,18 @@
       "gps": {
         "altitude": "Hoogte",
         "clickToOpenTooltip": "Klik om kaart in nieuw tabblad te openen",
+        "googleMaps": "Open in Google Maps",
+        "invalidCoordinates": "Invalid coordinates",
         "latitude": "Breedtegraad",
+        "location": "Location",
         "longitude": "Lengtegraad",
+        "noData": "No GPS data. Enter coordinates below to add a location.",
+        "remove": "Remove GPS",
         "title": "GPS-locatie"
+      },
+      "iptc": {
+        "subtitle": "Descriptive and rights metadata embedded on export",
+        "title": "IPTC"
       },
       "organization": {
         "addTagPlaceholder": "Tag toevoegen...",
@@ -832,9 +883,11 @@
         "exportAllTitle": "Alle voorinstellingen exporteren",
         "exportTitle": "{{type}} exporteren",
         "importPresetsTitle": "Voorinstellingen importeren",
+        "importXmpTitle": "Import XMP Adjustments",
         "legacyPreset": "Verouderde voorinstelling",
         "presetFile": "Voorinstellingsbestand",
-        "rapidRawPreset": "RapidRAW-voorinstelling"
+        "rapidRawPreset": "RapidRAW-voorinstelling",
+        "xmpFile": "XMP File"
       },
       "menu": {
         "configurePreset": "Voorinstelling configureren",
@@ -843,6 +896,8 @@
         "duplicatePreset": "Voorinstelling dupliceren",
         "exportFolder": "Map exporteren",
         "exportPreset": "Voorinstelling exporteren",
+        "exportXmp": "Export Current Adjustments as XMP…",
+        "importXmp": "Import Adjustments from XMP…",
         "newFolder": "Nieuwe map",
         "newPreset": "Nieuwe voorinstelling",
         "overwrite": "Overschrijven",
@@ -864,7 +919,11 @@
         "exportFailed": "Voorinstellingen konden niet worden geëxporteerd",
         "exportSuccess": "Voorinstellingen geëxporteerd",
         "importFailed": "Voorinstellingen konden niet worden geïmporteerd",
-        "importFailures": "{{num}} voorinstellingsbestand(en) konden niet worden geïmporteerd"
+        "importFailures": "{{num}} voorinstellingsbestand(en) konden niet worden geïmporteerd",
+        "xmpExportFailed": "Failed to export XMP sidecar",
+        "xmpExportSuccess": "XMP sidecar exported",
+        "xmpImportFailed": "Failed to import XMP",
+        "xmpImportSuccess": "Adjustments imported from XMP"
       },
       "tooltips": {
         "explore": "Community-voorinstellingen verkennen",
@@ -878,6 +937,13 @@
         "style": "Stijl",
         "tool": "Gereedschap"
       }
+    },
+    "softProofing": {
+      "description": "Simulate how the exported image will look on a target output profile.",
+      "gamutWarning": "Gamut Warning",
+      "simulatePaper": "Simulate Paper",
+      "title": "Soft Proofing",
+      "turnOff": "Turn Off Soft Proofing"
     },
     "switcher": {
       "tooltips": {
@@ -900,6 +966,7 @@
       "history": "Geschiedenis",
       "switchToVariant": "Overschakelen naar {{label}}",
       "tooltips": {
+        "aiEnhance": "AI Enhance (Right-click for intensity)",
         "aperture": "Diafragma",
         "backToLibrary": "Terug naar bibliotheek",
         "compare": "Voor / na (B) of modi (rechtsklik)",
@@ -908,6 +975,7 @@
         "iso": "ISO",
         "redo": "Opnieuw (Ctrl+Y) of geschiedenis (rechtermuisknop)",
         "shutterSpeed": "Sluitertijd",
+        "softProofing": "Soft Proofing",
         "undo": "Ongedaan maken (Ctrl+Z) of geschiedenis (rechtermuisknop)"
       },
       "vc": "VK"
@@ -919,6 +987,13 @@
       "preserveFolders": "Mapstructuur behouden",
       "preserveTimestamps": "Bestandstijdstempels instellen vanuit EXIF-opnamedatum",
       "title": "Exportinstellingen"
+    },
+    "aiUpscale": {
+      "hint": "Renders the currently loaded image at {{factor}}× resolution.",
+      "label": "AI Upscale",
+      "off": "Off",
+      "scale2": "2×",
+      "scale4": "4×"
     },
     "border": {
       "addBorder": "Rand toevoegen",
@@ -1032,6 +1107,7 @@
     },
     "title": "Exporteren",
     "watermark": {
+      "addTextWatermark": "Tekstwatermerk toevoegen",
       "addWatermark": "Watermerk toevoegen",
       "anchors": {
         "bottomCenter": "Onder midden",
@@ -1044,11 +1120,15 @@
         "topLeft": "Boven links",
         "topRight": "Boven rechts"
       },
+      "color": "Kleur",
+      "fontSize": "Lettergrootte",
       "logoText": "Logo",
       "opacity": "Dekking",
       "previewText": "Voorbeeld",
       "scale": "Schaal",
       "spacing": "Tussenruimte",
+      "text": "Tekst",
+      "textPlaceholder": "Watermerktekst…",
       "watermarkImage": "Watermarkafbeelding"
     }
   },
@@ -1178,6 +1258,17 @@
       "toggleFit": "1:1 / Passend aan/uit",
       "vc": "VK"
     },
+    "delete": {
+      "confirmTitle": "Delete Image",
+      "delete": "Delete",
+      "deleteAll": "Delete All",
+      "deleteAllMessage": "The original files will be moved to the trash.",
+      "deleteAllTitle": "Delete Original Files",
+      "deleteMultipleMessage_one": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteMultipleMessage_other": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteSelected": "Delete Selected",
+      "deleteSingleMessage": "The original file will be moved to the trash."
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} afbeeldingen komen niet meer overeen met het filter",
       "hiddenMultiple_other": "{{count}} afbeeldingen komen niet meer overeen met het filter",
@@ -1227,8 +1318,10 @@
       "sections": {
         "albums": "Albums",
         "folders": "Mappen",
-        "pinned": "Vastgezet"
+        "pinned": "Vastgezet",
+        "smartAlbums": "Smart Albums"
       },
+      "smartAlbumsEmpty": "Right-click or use + to create a smart album.",
       "sort": {
         "created": "Aanmaakdatum",
         "imageCount": "Aantal afbeeldingen",
@@ -1312,8 +1405,12 @@
     "items": {
       "cloudPlaceholder": "Opgeslagen in iCloud — niet gedownload",
       "collapseFolder": "Map inklappen",
+      "collapseStack_one": "Collapse Stack ({{count}})",
+      "collapseStack_other": "Collapse Stack ({{count}})",
       "currentFolder": "Huidige map",
       "expandFolder": "Map uitklappen",
+      "expandStack_one": "Expand Stack ({{count}})",
+      "expandStack_other": "Expand Stack ({{count}})",
       "imagesCount_one": "1 afbeelding",
       "imagesCount_other": "{{count}} afbeeldingen",
       "immichPlaceholder": "Opgeslagen in Immich — niet gedownload",
@@ -1326,6 +1423,10 @@
     },
     "jobs": {
       "active": "Bezig",
+      "activeCount_one": "{{count}} running",
+      "activeCount_other": "{{count}} running",
+      "allDone_one": "{{count}} finished",
+      "allDone_other": "{{count}} finished",
       "cancel": "Export annuleren",
       "cancelling": "Annuleren…",
       "clear": "Wissen",
@@ -1343,8 +1444,16 @@
         "modelDownload": "AI-model downloaden",
         "move": "Bestanden verplaatsen"
       },
+      "noActive": "No active jobs",
       "openInLibrary": "Openen in bibliotheek",
       "recent": "Recent",
+      "statuses": {
+        "cancelled": "Cancelled",
+        "cancelling": "Cancelling…",
+        "error": "Failed",
+        "running": "Running",
+        "success": "Done"
+      },
       "title": "Taken"
     },
     "reject": {
@@ -1731,6 +1840,46 @@
     "renameGroup": {
       "placeholder": "Nieuwe groepsnaam invoeren..."
     },
+    "smartAlbum": {
+      "addRule": "Add Rule",
+      "cancel": "Cancel",
+      "colors": {
+        "none": "No Color Label"
+      },
+      "create": "Create",
+      "createTitle": "New Smart Album",
+      "description": "A smart album automatically collects images matching the rules below.",
+      "edited": {
+        "edited": "Edited",
+        "unedited": "Unedited"
+      },
+      "editTitle": "Edit Smart Album",
+      "fields": {
+        "camera": "Camera",
+        "color": "Color Label",
+        "dateTaken": "Date Taken",
+        "edited": "Edit Status",
+        "filename": "File Name",
+        "flag": "Flag",
+        "iso": "ISO",
+        "lens": "Lens",
+        "rating": "Rating",
+        "raw": "File Type"
+      },
+      "flags": {
+        "none": "No Flag",
+        "pick": "Picked",
+        "reject": "Rejected"
+      },
+      "matchLabel": "Rules",
+      "namePlaceholder": "Enter album name...",
+      "raw": {
+        "nonRaw": "Non-RAW",
+        "raw": "RAW"
+      },
+      "removeRule": "Remove rule",
+      "save": "Save"
+    },
     "transform": {
       "amount": "Hoeveelheid",
       "apply": "Toepassen",
@@ -1760,6 +1909,29 @@
       "zoomOutTooltip": "Uitzoomen"
     }
   },
+  "onboarding": {
+    "back": "Back",
+    "finish": "Get Started",
+    "goToStep": "Go to step {{step}}",
+    "next": "Next",
+    "skip": "Skip",
+    "stepOf": "Step {{current}} of {{total}}",
+    "steps": {
+      "folder": {
+        "description": "Open a folder from the splash screen or the folder tree and all supported images inside are added to your library automatically.",
+        "title": "Add your photos"
+      },
+      "preset": {
+        "description": "Open an image, then click the Presets panel to try one-click looks, or save your own style for later.",
+        "title": "Try a one-click look"
+      },
+      "shortcuts": {
+        "description": "Find every shortcut and rebind them anytime in Settings → Controls.",
+        "title": "Five shortcuts worth knowing"
+      }
+    },
+    "title": "Welcome to RapidRAW"
+  },
   "settings": {
     "categories": {
       "general": "Algemeen",
@@ -1772,6 +1944,7 @@
         "mouse": "Muis",
         "trackpad": "Trackpad"
       },
+      "noMatchingShortcuts": "No shortcuts match your search.",
       "notAssigned": "Niet toegewezen",
       "optimization": "Optimalisatie invoerapparaat",
       "optimizationDesc": "Kies het primaire invoerapparaat dat u gebruikt om het canvas te pannen en te zoomen.",
@@ -1779,6 +1952,7 @@
       "resetDefaults": "Alles herstellen naar standaard",
       "resetDefaultsMessage": "Dit herstelt alle sneltoetsen naar de standaardtoewijzing. Aangepaste toewijzingen gaan verloren.",
       "resetDefaultsTitle": "Sneltoetsen resetten",
+      "searchShortcuts": "Search shortcuts...",
       "speed": "Snelheid",
       "title": "Muisbesturing",
       "zoom": "Zoomsnelheidsmultiplicator",
@@ -2221,7 +2395,32 @@
       "timeout": "De updatecontrole is na 20 seconden verlopen.",
       "title": "Software-updates",
       "upToDate": "Je hebt al de nieuwste versie ({{version}})."
+    },
+    "watchedFolders": {
+      "add": "Add Folder",
+      "desc": "Automatically import new images that appear in these folders.",
+      "empty": "No folders are being watched yet.",
+      "enabled": "Enabled",
+      "refresh": "Refresh Status",
+      "remove": "Remove folder",
+      "statusSummary": "{{known}} images, {{pending}} pending",
+      "statusUnknown": "Status unavailable",
+      "title": "Watched Folders"
     }
+  },
+  "survey": {
+    "actions": {
+      "pick": "Pick (P)",
+      "rate": "Rate {{rating}}",
+      "reject": "Reject (X)",
+      "unflag": "Clear flag (U)"
+    },
+    "close": "Close survey (Esc)",
+    "compareEntry": "Survey mode in compare view",
+    "compareToggle": "Compare view (C)",
+    "next": "Next image",
+    "prev": "Previous image",
+    "title": "Survey Mode"
   },
   "tethering": {
     "aperture": "Diafragma",
@@ -2229,6 +2428,8 @@
     "autoApplyPreset": "Voorinstelling automatisch toepassen",
     "autoOpenCaptured": "Vastgelegde afbeelding automatisch openen",
     "cameraConnected": "Camera verbonden",
+    "captureInterval": "Interval Capture Interval (ms)",
+    "captureIntervalDesc": "Default delay between interval captures (200–3600000 ms).",
     "capturing": "Vastleggen...",
     "changePreset": "Wijzigen",
     "clearPreset": "Voorinstelling wissen",

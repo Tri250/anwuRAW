@@ -37,6 +37,12 @@ export function useExportSettings() {
   const [watermarkScale, setWatermarkScale] = useState(10);
   const [watermarkSpacing, setWatermarkSpacing] = useState(5);
   const [watermarkOpacity, setWatermarkOpacity] = useState(75);
+  const [enableTextWatermark, setEnableTextWatermark] = useState(false);
+  const [watermarkText, setWatermarkText] = useState('');
+  const [watermarkTextAnchor, setWatermarkTextAnchor] = useState<WatermarkAnchor>(WatermarkAnchor.BottomRight);
+  const [watermarkFontSize, setWatermarkFontSize] = useState(4);
+  const [watermarkTextOpacity, setWatermarkTextOpacity] = useState(75);
+  const [watermarkTextColor, setWatermarkTextColor] = useState('#ffffff');
   const [destinationType, setDestinationType] = useState<string>('customFolder');
   const [subfolder, setSubfolder] = useState<string>('');
   const [colorSpace, setColorSpace] = useState<string>('srgb');
@@ -71,6 +77,12 @@ export function useExportSettings() {
     setWatermarkScale(preset.watermarkScale);
     setWatermarkSpacing(preset.watermarkSpacing);
     setWatermarkOpacity(preset.watermarkOpacity);
+    setEnableTextWatermark(preset.enableTextWatermark ?? false);
+    setWatermarkText(preset.watermarkText ?? '');
+    setWatermarkTextAnchor((preset.watermarkTextAnchor as WatermarkAnchor) ?? WatermarkAnchor.BottomRight);
+    setWatermarkFontSize(preset.watermarkFontSize ?? 4);
+    setWatermarkTextOpacity(preset.watermarkTextOpacity ?? 75);
+    setWatermarkTextColor(preset.watermarkTextColor ?? '#ffffff');
     setDestinationType(preset.destinationType || 'customFolder');
     setSubfolder(preset.subfolder || '');
     setColorSpace(preset.colorSpace || 'srgb');
@@ -107,6 +119,12 @@ export function useExportSettings() {
       watermarkScale,
       watermarkSpacing,
       watermarkOpacity,
+      enableTextWatermark,
+      watermarkText,
+      watermarkTextAnchor,
+      watermarkFontSize,
+      watermarkTextOpacity,
+      watermarkTextColor,
       destinationType,
       subfolder,
       colorSpace,
@@ -141,6 +159,12 @@ export function useExportSettings() {
       watermarkScale,
       watermarkSpacing,
       watermarkOpacity,
+      enableTextWatermark,
+      watermarkText,
+      watermarkTextAnchor,
+      watermarkFontSize,
+      watermarkTextOpacity,
+      watermarkTextColor,
       destinationType,
       subfolder,
       colorSpace,
@@ -206,6 +230,18 @@ export function useExportSettings() {
     setWatermarkSpacing,
     watermarkOpacity,
     setWatermarkOpacity,
+    enableTextWatermark,
+    setEnableTextWatermark,
+    watermarkText,
+    setWatermarkText,
+    watermarkTextAnchor,
+    setWatermarkTextAnchor,
+    watermarkFontSize,
+    setWatermarkFontSize,
+    watermarkTextOpacity,
+    setWatermarkTextOpacity,
+    watermarkTextColor,
+    setWatermarkTextColor,
     destinationType,
     setDestinationType,
     subfolder,

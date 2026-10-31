@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Condvar, Mutex};
 
@@ -160,6 +160,17 @@ pub struct PreviewJob {
     pub responder: tokio::sync::oneshot::Sender<Vec<u8>>,
 }
 
+/// R6-3: work items processed by the single preview worker thread. Interactive
+/// jobs (slider drags, ROI patches) are drained before any background work so
+/// user interactions preempt final-quality renders.
+pub enum WorkerTask {
+    Preview(PreviewJob),
+    Uncropped {
+        adjustments: serde_json::Value,
+        responder: tokio::sync::oneshot::Sender<Vec<u8>>,
+    },
+}
+
 pub struct AnalyticsJob {
     pub path: String,
     pub frame: crate::image_processing::AnalyticsFrame,
@@ -246,7 +257,7 @@ pub struct AppState {
     pub pending_edit_session: Mutex<Option<ExternalEditSession>>,
     pub thumbnail_cancellation_token: Arc<AtomicBool>,
     pub thumbnail_progress: Mutex<ThumbnailProgressTracker>,
-    pub preview_worker_tx: Mutex<Option<Sender<PreviewJob>>>,
+    pub preview_worker_tx: Mutex<Option<Sender<WorkerTask>>>,
     pub analytics_worker_tx: Mutex<Option<Sender<AnalyticsJob>>>,
     pub analytics_channel: Mutex<Option<tauri::ipc::Channel>>,
     pub mask_cache: Mutex<HashMap<u64, GrayImage>>,
@@ -271,4 +282,13 @@ pub struct AppState {
     pub disks_cache: Mutex<Option<Disks>>,
     pub disks_cache_refreshing: AtomicBool,
     pub camera_session: Mutex<CameraSession>,
+    /// R1-3/R1-4: cached GPU adapter probe (None until first probed).
+    pub gpu_adapter_probe: Mutex<Option<crate::platform_features::GpuAdapterProbe>>,
+    /// E8: timestamp (unix ms) of the last interactive preview render, used to
+    /// detect editor interaction and let background work yield to the UI.
+    pub last_interactive_render_ms: AtomicU64,
+    /// E4: stop token for the tethered-capture interval loop (None = idle).
+    pub tether_interval_token: Mutex<Option<Arc<AtomicBool>>>,
+    /// E3: insertion order for geometry_cache entries, enabling bounded LRU-4.
+    pub geometry_cache_order: Mutex<VecDeque<u64>>,
 }

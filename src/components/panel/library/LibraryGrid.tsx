@@ -18,6 +18,8 @@ import Text from '../../ui/Text';
 import { TextColors, TextVariants, TextWeights, TEXT_COLOR_KEYS } from '../../../types/typography';
 import { useProcessStore } from '../../../store/useProcessStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
+import { useStacksStore } from '../../../store/useStacksStore';
+import { StackBadgeInfo } from '../../../utils/stacking';
 
 function ListHeader({ widths, setWidths, containerRef, sortCriteria, onSortChange }: any) {
   const { t } = useTranslation();
@@ -260,6 +262,35 @@ export default function LibraryGrid(props: any) {
 
   const isClickSelectionRef = useRef(false);
   const clickTimerRef = useRef<any>(null);
+
+  const { stacks, expandedStackIds } = useStacksStore(
+    useShallow((state) => ({ stacks: state.stacks, expandedStackIds: state.expandedStackIds })),
+  );
+  const onToggleStack = useStacksStore((state) => state.toggleExpanded);
+
+  /**
+   * Badge per visible path. Collapsed stacks keep only their cover in
+   * `imageList`, so the badge count comes from the full member list while
+   * attachment is driven by what is actually rendered.
+   */
+  const stackBadgesByPath = useMemo(() => {
+    const map: Record<string, StackBadgeInfo> = {};
+    if (stacks.length === 0) return map;
+    const visible = new Set(imageList.map((img: ImageFile) => img.path));
+    for (const stack of stacks) {
+      const visibleMembers = stack.paths.filter((p) => visible.has(p));
+      if (visibleMembers.length === 0) continue;
+      const badge: StackBadgeInfo = {
+        count: Math.max(stack.paths.length, visibleMembers.length),
+        label: '',
+        stackId: stack.id,
+        isExpanded: expandedStackIds.has(stack.id),
+        topPath: visibleMembers[0],
+      };
+      for (const p of visibleMembers) map[p] = badge;
+    }
+    return map;
+  }, [imageList, stacks, expandedStackIds]);
 
   const handleImageDoubleClick = useCallback(
     (path: string) => {
@@ -519,7 +550,9 @@ export default function LibraryGrid(props: any) {
     ratioMapVersion,
   ]);
 
-  const visibleImagePaths = useMemo(
+  // Ordered paths are only consumed at click time — compute lazily instead of
+  // rebuilding the full flatMap on every grid change.
+  const getOrderedVisiblePaths = useCallback(
     () =>
       gridData
         ? gridData.rows.flatMap((row) =>
@@ -557,9 +590,9 @@ export default function LibraryGrid(props: any) {
       clickTimerRef.current = setTimeout(() => {
         isClickSelectionRef.current = false;
       }, 300);
-      onImageClick?.(path, e, visibleImagePaths);
+      onImageClick?.(path, e, getOrderedVisiblePaths());
     },
-    [onImageClick, visibleImagePaths],
+    [onImageClick, getOrderedVisiblePaths],
   );
 
   useEffect(() => {
@@ -683,6 +716,8 @@ export default function LibraryGrid(props: any) {
       queueThumbnailRequest,
       onToggleRecursiveFolder: handleToggleRecursiveFolder,
       groupBadgeInfo,
+      stackBadgesByPath,
+      onToggleStack,
       onAspectRatioLoaded: handleAspectRatioLoaded,
       selectionModeActive: props.selectionModeActive,
     };
@@ -702,6 +737,8 @@ export default function LibraryGrid(props: any) {
     queueThumbnailRequest,
     handleToggleRecursiveFolder,
     groupBadgeInfo,
+    stackBadgesByPath,
+    onToggleStack,
     handleAspectRatioLoaded,
   ]);
 

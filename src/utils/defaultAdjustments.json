@@ -9,6 +9,7 @@
   "baselineExposure": true,
   "blacks": 0,
   "brightness": 0,
+  "cameraProfile": null,
   "centré": 0,
   "centréX": 0.5,
   "centréY": 0.5,
@@ -49,6 +50,8 @@
     }
   },
   "colorNoiseReduction": 0,
+  "colorNrDetail": 0,
+  "colorNrSmoothness": 0,
   "contrast": 0,
   "crop": null,
   "curves": {
@@ -298,9 +301,11 @@
   "shadows": 0,
   "sharpness": 0,
   "sharpnessThreshold": 15,
+  "sharpenRadius": 100,
   "showClipping": false,
   "structure": 0,
   "temperature": 0,
+  "textureAmount": 0,
   "tint": 0,
   "toneMapper": "basic",
   "transformDistortion": 0,

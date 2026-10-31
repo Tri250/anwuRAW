@@ -227,7 +227,11 @@ fn hz_airlight(@builtin(local_invocation_index) li: u32) {
 
     if (li == 0u) {
         let air_luma = max(dot(hz_sum[0].rgb / max(hz_sum[0].w, 1.0), LUMA_COEFF), 1.0e-6);
-        let air_out = vec4<f32>(vec3<f32>(air_luma), air_luma);
+        // R4-4: keep the estimated airlight chroma — neutralising it to luma
+        // greyed out warm/backlit haze scenes after dehaze. Luma stays as the
+        // alpha channel so the haze guide math is unchanged.
+        let air_rgb = max(hz_sum[0].rgb / max(hz_sum[0].w, 1.0), vec3<f32>(1.0e-6));
+        let air_out = vec4<f32>(air_rgb, air_luma);
         let scene = hz_mean[0] / f32(max(count, 1u));
         textureStore(dst, vec2<u32>(0u, 0u), air_out);
         textureStore(dst, vec2<u32>(1u, 0u), vec4<f32>(max(scene.rgb, vec3<f32>(0.0)), max(scene.w, 1.0e-6)));

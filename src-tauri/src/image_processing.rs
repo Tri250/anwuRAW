@@ -1803,6 +1803,12 @@ pub struct GlobalAdjustments {
     pub halation_amount: f32,
     pub flare_amount: f32,
     pub sharpness_threshold: f32,
+
+    // v2.0 R2/R3 additions — appended last to keep the GPU layout prefix-compatible.
+    pub texture_amount: f32,
+    pub sharpen_radius: f32,
+    pub color_nr_detail: f32,
+    pub color_nr_smoothness: f32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Pod, Zeroable, Default)]
@@ -1870,6 +1876,9 @@ pub struct AllAdjustments {
     pub tile_offset_x: u32,
     pub tile_offset_y: u32,
     pub mask_atlas_cols: u32,
+    // v2.0 R3-1: EXIF ISO for noise-model-driven sigma. Runtime-only — never
+    // persisted to sidecars or presets (plan §2.2 S3 compatibility rule).
+    pub noise_iso: f32,
 }
 
 struct AdjustmentScales {
@@ -2137,6 +2146,7 @@ pub fn resolve_tonemapper_override(settings: &crate::AppSettings, is_raw: bool) 
     Some(match tm {
         "agx" => 1,
         "pbr_neutral" | "pbrNeutral" => 2,
+        "aces" | "aces_filmic" => 3,
         _ => 0,
     })
 }
@@ -2695,6 +2705,7 @@ fn get_global_adjustments_from_json(
         tonemapper_mode: tonemapper_override.unwrap_or(match tone_mapper {
             "agx" => 1,
             "pbr_neutral" | "pbrNeutral" => 2,
+            "aces" | "aces_filmic" => 3,
             _ => 0,
         }),
         lut_is_scene_referred,
@@ -2776,6 +2787,16 @@ fn get_global_adjustments_from_json(
             SCALES.sharpness_threshold,
             Some(15.0),
         ),
+
+        // v2.0 R2-2 / §4-5: mid-frequency texture layer + fine sharpen/NR params.
+        texture_amount: get_val("presence", "textureAmount", 100.0, None),
+        sharpen_radius: if is_visible("sharpening") {
+            js_adjustments["sharpenRadius"].as_f64().unwrap_or(100.0) as f32 / 100.0
+        } else {
+            1.0
+        },
+        color_nr_detail: get_val("noiseReduction", "colorNrDetail", 100.0, None),
+        color_nr_smoothness: get_val("noiseReduction", "colorNrSmoothness", 100.0, None),
     }
 }
 
@@ -2990,6 +3011,11 @@ pub fn get_all_adjustments_from_json(
         tile_offset_x: 0,
         tile_offset_y: 0,
         mask_atlas_cols: 1,
+        noise_iso: js_adjustments["noiseIso"]
+            .as_f64()
+            .map(|v| v as f32)
+            .unwrap_or(100.0)
+            .max(50.0),
     }
 }
 
@@ -3000,6 +3026,10 @@ pub struct GpuContext {
     pub limits: wgpu::Limits,
     pub adapter_info: wgpu::AdapterInfo,
     pub display: Arc<std::sync::Mutex<Option<WgpuDisplay>>>,
+    /// R5-5: the presentation surface supports Rgba16Float, so display renders
+    /// can run the high-precision tile pipeline end-to-end (no 8-bit
+    /// quantisation between the composite and the compositor).
+    pub display_f16: bool,
 }
 
 fn into_rgb32f_parallel(image: DynamicImage) -> image::Rgb32FImage {

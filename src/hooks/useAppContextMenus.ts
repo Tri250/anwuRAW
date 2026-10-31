@@ -33,6 +33,9 @@ import {
   Users,
   Gauge,
   Layers,
+  SquareStack,
+  Ungroup,
+  Sparkles,
   Grip,
   Film,
   Home,
@@ -58,6 +61,9 @@ import { useLibraryStore } from '../store/useLibraryStore';
 import { JobKind, useProcessStore } from '../store/useProcessStore';
 import { useUIStore } from '../store/useUIStore';
 import { useSettingsStore } from '../store/useSettingsStore';
+import { useStacksStore } from '../store/useStacksStore';
+import { useSmartAlbumsStore } from '../store/useSmartAlbumsStore';
+import { SmartAlbum } from '../utils/smartAlbums';
 import {
   Invokes,
   ImageFlag,
@@ -789,6 +795,56 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
         },
         { type: OPTION_SEPARATOR },
         {
+          label: t('contextMenus.stacking.title'),
+          icon: SquareStack,
+          submenu: [
+            {
+              label: t('contextMenus.stacking.create', { count: selectionCount }),
+              icon: Layers,
+              disabled: selectionCount < 2,
+              onClick: () => {
+                const stack = useStacksStore.getState().createStack(finalSelection);
+                if (stack) {
+                  toast.success(t('contextMenus.stacking.createdToast', { count: stack.paths.length }));
+                } else {
+                  toast.info(t('contextMenus.stacking.createFailed'));
+                }
+              },
+            },
+            {
+              label: t('contextMenus.stacking.autoStack'),
+              icon: Images,
+              disabled: imageList.length < 2,
+              onClick: () => {
+                const count = useStacksStore.getState().autoStackBursts(imageList);
+                if (count > 0) toast.success(t('contextMenus.stacking.autoStackedToast', { count }));
+                else toast.info(t('contextMenus.stacking.autoStackNone'));
+              },
+            },
+            {
+              label: t('contextMenus.stacking.unstack'),
+              icon: Ungroup,
+              disabled: (() => {
+                const { stacks } = useStacksStore.getState();
+                return !finalSelection.some((p) => stacks.some((stack) => stack.paths.includes(p)));
+              })(),
+              onClick: () => {
+                const { stacks, unstack, removeFromStack } = useStacksStore.getState();
+                finalSelection.forEach((p) => {
+                  const stack = stacks.find((s) => s.paths.includes(p));
+                  if (!stack) return;
+                  // Only the selected member is removed unless the whole stack is selected.
+                  const allMembersSelected =
+                    stack.paths.length > 0 && stack.paths.every((member) => finalSelection.includes(member));
+                  if (allMembersSelected) unstack(stack.id);
+                  else removeFromStack(p);
+                });
+              },
+            },
+          ],
+        },
+        { type: OPTION_SEPARATOR },
+        {
           label: copyLabel,
           icon: Copy,
           onClick: () => {
@@ -1490,11 +1546,68 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
     [props, showContextMenu, t],
   );
 
+  const handleSmartAlbumContextMenu = useCallback(
+    (event: any, album: SmartAlbum | null) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const { setUI } = useUIStore.getState();
+
+      const options: Array<Option> = [
+        {
+          label: t('contextMenus.smartAlbums.new'),
+          icon: Sparkles,
+          onClick: () => setUI({ smartAlbumModalState: { isOpen: true, albumId: null } }),
+        },
+        ...(album
+          ? [
+              { type: OPTION_SEPARATOR },
+              {
+                label: t('contextMenus.smartAlbums.edit'),
+                icon: FileEdit,
+                onClick: () => setUI({ smartAlbumModalState: { isOpen: true, albumId: album.id } }),
+              },
+              {
+                label: t('contextMenus.smartAlbums.delete'),
+                icon: Trash2,
+                isDestructive: true,
+                submenu: [
+                  { label: t('contextMenus.editor.cancel'), icon: X, onClick: () => {} },
+                  {
+                    label: t('contextMenus.smartAlbums.confirmDelete'),
+                    icon: Check,
+                    isDestructive: true,
+                    onClick: () => {
+                      useSmartAlbumsStore.getState().removeAlbum(album.id);
+                      const { activeAlbumId, setLibrary } = useLibraryStore.getState();
+                      if (activeAlbumId === `smart:${album.id}`) {
+                        setLibrary({
+                          activeAlbumId: null,
+                          currentFolderPath: null,
+                          imageList: [],
+                          libraryActivePath: null,
+                          multiSelectedPaths: [],
+                        });
+                      }
+                    },
+                  },
+                ],
+              },
+            ]
+          : []),
+      ];
+
+      showContextMenu(event.clientX, event.clientY, options);
+    },
+    [showContextMenu, t],
+  );
+
   return {
     handleEditorContextMenu,
     handleThumbnailContextMenu,
     handleFolderTreeContextMenu,
     handleAlbumTreeContextMenu,
+    handleSmartAlbumContextMenu,
     handleMainLibraryContextMenu,
   };
 }

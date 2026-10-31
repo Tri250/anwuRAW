@@ -7,10 +7,14 @@
       "exposure": "Exposure",
       "highlights": "Highlights",
       "mappers": {
+        "aces": "ACES Filmic",
+        "acesDesc": "ACES Filmic Tonemapping",
         "agx": "AgX",
         "agxDesc": "Film-like Tonemapping",
         "basic": "Basic",
-        "basicDesc": "Standard Tonemapping"
+        "basicDesc": "Standard Tonemapping",
+        "pbrNeutral": "PBR Neutral",
+        "pbrNeutralDesc": "Neutral Tonemapping"
       },
       "reset": "Reset",
       "shadows": "Shadows",
@@ -32,6 +36,7 @@
         "tint": "Tint",
         "title": "Color Calibration"
       },
+      "cameraProfile": "Camera Profile",
       "colorGrading": "Color Grading",
       "colorMatch": "AI Color Match",
       "colorMatchDesc": "Transfer the color style of a sample photo onto this photo (non-destructive)",
@@ -62,6 +67,7 @@
         "yellows": "Yellows"
       },
       "presence": "Presence",
+      "profileDefault": "Default",
       "saturation": "Saturation",
       "targetedTooltip": "Targeted adjustment: sample a color on the canvas, drag to adjust its hue/saturation (Ctrl+Alt+H)",
       "temperature": "Temperature",
@@ -110,6 +116,8 @@
       "clarity": "Clarity",
       "classicDenoise": "Classic Denoise",
       "color": "Color",
+      "colorNrDetail": "Color Detail",
+      "colorNrSmoothness": "Smoothness",
       "convertNegative": "Convert Negative",
       "dehaze": "Dehaze",
       "luminance": "Luminance",
@@ -121,10 +129,12 @@
       "negativeRed": "Red",
       "noiseReduction": "Noise Reduction",
       "presence": "Presence",
+      "radius": "Radius",
       "redCyan": "Red/Cyan",
       "sharpening": "Sharpening",
       "sharpness": "Sharpness",
       "structure": "Structure",
+      "texture": "Texture",
       "threshold": "Threshold"
     },
     "effects": {
@@ -289,6 +299,28 @@
     "merge": {
       "focusStack": "Focus Stacking",
       "title": "Merge"
+    },
+    "smartAlbums": {
+      "confirmDelete": "Are you sure you want to delete this smart album? The images themselves are not affected.",
+      "delete": "Delete Smart Album",
+      "edit": "Edit Smart Album",
+      "new": "New Smart Album"
+    },
+    "stacking": {
+      "autoStack": "Auto-Stack by Burst",
+      "autoStackedToast": "Created {{count}} stacks.",
+      "autoStackedToast_one": "Created {{count}} stacks.",
+      "autoStackedToast_other": "Created {{count}} stacks.",
+      "autoStackNone": "No burst groups found to stack.",
+      "create": "Stack into Group ({{count}})",
+      "create_one": "Stack into Group ({{count}})",
+      "create_other": "Stack into Group ({{count}})",
+      "createdToast": "Created a stack with {{count}} images.",
+      "createdToast_one": "Created a stack with {{count}} images.",
+      "createdToast_other": "Created a stack with {{count}} images.",
+      "createFailed": "Not enough images to create a stack.",
+      "title": "Stacking",
+      "unstack": "Unstack"
     },
     "tagging": {
       "addTagTooltip": "Add tag",
@@ -497,6 +529,24 @@
         "useBasicInpaint": "Use basic inpainting"
       },
       "touchUpTitle": "Touch Up"
+    },
+    "aiEnhance": {
+      "failed": "AI enhance failed",
+      "intensities": {
+        "standard": "Standard",
+        "strong": "Strong",
+        "subtle": "Subtle"
+      },
+      "title": "AI Enhance"
+    },
+    "canvas": {
+      "pickerCancel": "to cancel",
+      "pickerHints": {
+        "marker": "Click on the image to place the overlay",
+        "relight": "Click on the image to place the light",
+        "targeted": "Click or drag on the image to adjust",
+        "wb": "Click or drag on the image to sample white balance"
+      }
     },
     "compare": {
       "horizontal": "Split Top / Bottom",
@@ -795,9 +845,21 @@
       },
       "fields": {
         "author": "Author",
+        "caption": "Caption / Description",
+        "city": "City",
         "comments": "Comments",
         "copyright": "Copyright",
-        "title": "Title"
+        "copyrightNotice": "Copyright Notice",
+        "country": "Country",
+        "credit": "Credit",
+        "headline": "Headline",
+        "instructions": "Instructions",
+        "jobTitle": "Creator's Job Title",
+        "provinceState": "Province / State",
+        "source": "Source",
+        "title": "Title",
+        "transmissionReference": "Transmission Reference",
+        "usageTerms": "Usage Terms"
       },
       "fileInfo": {
         "dimensions": "{{width}} × {{height}} px • {{megapixels}} MP",
@@ -809,9 +871,18 @@
       "gps": {
         "altitude": "Altitude",
         "clickToOpenTooltip": "Click to open map in a new tab",
+        "googleMaps": "Open in Google Maps",
+        "invalidCoordinates": "Invalid coordinates",
         "latitude": "Latitude",
+        "location": "Location",
         "longitude": "Longitude",
+        "noData": "No GPS data. Enter coordinates below to add a location.",
+        "remove": "Remove GPS",
         "title": "GPS Location"
+      },
+      "iptc": {
+        "subtitle": "Descriptive and rights metadata embedded on export",
+        "title": "IPTC"
       },
       "organization": {
         "addTagPlaceholder": "Add tag...",
@@ -832,9 +903,11 @@
         "exportAllTitle": "Export All Presets",
         "exportTitle": "Export {{type}}",
         "importPresetsTitle": "Import Presets",
+        "importXmpTitle": "Import XMP Adjustments",
         "legacyPreset": "Legacy Preset",
         "presetFile": "Preset File",
-        "rapidRawPreset": "RapidRAW Preset"
+        "rapidRawPreset": "RapidRAW Preset",
+        "xmpFile": "XMP File"
       },
       "menu": {
         "configurePreset": "Configure Preset",
@@ -843,6 +916,8 @@
         "duplicatePreset": "Duplicate Preset",
         "exportFolder": "Export Folder",
         "exportPreset": "Export Preset",
+        "exportXmp": "Export Current Adjustments as XMP…",
+        "importXmp": "Import Adjustments from XMP…",
         "newFolder": "New Folder",
         "newPreset": "New Preset",
         "overwrite": "Overwrite",
@@ -864,7 +939,11 @@
         "exportFailed": "Failed to export presets",
         "exportSuccess": "Presets exported",
         "importFailed": "Failed to import presets",
-        "importFailures": "{{num}} preset file(s) failed to import"
+        "importFailures": "{{num}} preset file(s) failed to import",
+        "xmpExportFailed": "Failed to export XMP sidecar",
+        "xmpExportSuccess": "XMP sidecar exported",
+        "xmpImportFailed": "Failed to import XMP",
+        "xmpImportSuccess": "Adjustments imported from XMP"
       },
       "tooltips": {
         "explore": "Explore Community Presets",
@@ -878,6 +957,25 @@
         "style": "Style",
         "tool": "Tool"
       }
+    },
+    "softProofing": {
+      "description": "Simulate how the exported image will look on a target output profile.",
+      "gamutWarning": "Gamut Warning",
+      "intents": {
+        "absolute": "Absolute Colorimetric",
+        "perceptual": "Perceptual",
+        "relative": "Relative Colorimetric",
+        "saturation": "Saturation"
+      },
+      "profiles": {
+        "adobeRgb": "Adobe RGB",
+        "displayP3": "Display P3",
+        "rec2020": "Rec. 2020",
+        "srgb": "sRGB"
+      },
+      "simulatePaper": "Simulate Paper",
+      "title": "Soft Proofing",
+      "turnOff": "Turn Off Soft Proofing"
     },
     "switcher": {
       "tooltips": {
@@ -900,6 +998,7 @@
       "history": "History",
       "switchToVariant": "Switch to {{label}}",
       "tooltips": {
+        "aiEnhance": "AI Enhance (Right-click for intensity)",
         "aperture": "Aperture",
         "backToLibrary": "Back to Library",
         "compare": "Before / After (B) or Modes (Right-click)",
@@ -908,6 +1007,7 @@
         "iso": "ISO",
         "redo": "Redo (Ctrl+Y) or History (Right-click)",
         "shutterSpeed": "Shutter Speed",
+        "softProofing": "Soft Proofing",
         "undo": "Undo (Ctrl+Z) or History (Right-click)"
       },
       "vc": "VC"
@@ -919,6 +1019,13 @@
       "preserveFolders": "Preserve Folder Structure",
       "preserveTimestamps": "Set File Timestamps from EXIF Capture Date",
       "title": "Export Settings"
+    },
+    "aiUpscale": {
+      "hint": "Renders the currently loaded image at {{factor}}× resolution.",
+      "label": "AI Upscale",
+      "off": "Off",
+      "scale2": "2×",
+      "scale4": "4×"
     },
     "border": {
       "addBorder": "Add Border",
@@ -1032,6 +1139,7 @@
     },
     "title": "Export",
     "watermark": {
+      "addTextWatermark": "Add Text Watermark",
       "addWatermark": "Add Watermark",
       "anchors": {
         "bottomCenter": "Bottom Center",
@@ -1044,11 +1152,15 @@
         "topLeft": "Top Left",
         "topRight": "Top Right"
       },
+      "color": "Color",
+      "fontSize": "Font Size",
       "logoText": "Logo",
       "opacity": "Opacity",
       "previewText": "Preview",
       "scale": "Scale",
       "spacing": "Spacing",
+      "text": "Text",
+      "textPlaceholder": "Watermark text…",
       "watermarkImage": "Watermark Image"
     }
   },
@@ -1178,6 +1290,18 @@
       "toggleFit": "Toggle 1:1 / Fit",
       "vc": "VC"
     },
+    "delete": {
+      "confirmTitle": "Delete Image",
+      "delete": "Delete",
+      "deleteAll": "Delete All",
+      "deleteAllMessage": "The original files will be moved to the trash.",
+      "deleteAllTitle": "Delete Original Files",
+      "deleteMultipleMessage": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteMultipleMessage_one": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteMultipleMessage_other": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteSelected": "Delete Selected",
+      "deleteSingleMessage": "The original file will be moved to the trash."
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} images no longer match the filter",
       "hiddenMultiple_other": "{{count}} images no longer match the filter",
@@ -1227,8 +1351,10 @@
       "sections": {
         "albums": "Albums",
         "folders": "Folders",
-        "pinned": "Pinned"
+        "pinned": "Pinned",
+        "smartAlbums": "Smart Albums"
       },
+      "smartAlbumsEmpty": "Right-click or use + to create a smart album.",
       "sort": {
         "created": "Date Created",
         "imageCount": "Image Count",
@@ -1312,8 +1438,14 @@
     "items": {
       "cloudPlaceholder": "Stored in iCloud — not downloaded",
       "collapseFolder": "Collapse Folder",
+      "collapseStack": "Collapse Stack ({{count}})",
+      "collapseStack_one": "Collapse Stack ({{count}})",
+      "collapseStack_other": "Collapse Stack ({{count}})",
       "currentFolder": "Current Folder",
       "expandFolder": "Expand Folder",
+      "expandStack": "Expand Stack ({{count}})",
+      "expandStack_one": "Expand Stack ({{count}})",
+      "expandStack_other": "Expand Stack ({{count}})",
       "imagesCount_one": "1 image",
       "imagesCount_other": "{{count}} images",
       "immichPlaceholder": "Stored in Immich — not downloaded",
@@ -1326,6 +1458,12 @@
     },
     "jobs": {
       "active": "Running",
+      "activeCount": "{{count}} running",
+      "activeCount_one": "{{count}} running",
+      "activeCount_other": "{{count}} running",
+      "allDone": "{{count}} finished",
+      "allDone_one": "{{count}} finished",
+      "allDone_other": "{{count}} finished",
       "cancel": "Cancel export",
       "cancelling": "Cancelling…",
       "clear": "Clear",
@@ -1343,8 +1481,16 @@
         "modelDownload": "AI model download",
         "move": "Move files"
       },
+      "noActive": "No active jobs",
       "openInLibrary": "Open in library",
       "recent": "Recent",
+      "statuses": {
+        "cancelled": "Cancelled",
+        "cancelling": "Cancelling…",
+        "error": "Failed",
+        "running": "Running",
+        "success": "Done"
+      },
       "title": "Jobs"
     },
     "reject": {
@@ -1731,6 +1877,65 @@
     "renameGroup": {
       "placeholder": "Enter new group name..."
     },
+    "smartAlbum": {
+      "addRule": "Add Rule",
+      "cancel": "Cancel",
+      "colors": {
+        "none": "No Color Label"
+      },
+      "create": "Create",
+      "createTitle": "New Smart Album",
+      "description": "A smart album automatically collects images matching the rules below.",
+      "edited": {
+        "edited": "Edited",
+        "unedited": "Unedited"
+      },
+      "editTitle": "Edit Smart Album",
+      "fields": {
+        "camera": "Camera",
+        "color": "Color Label",
+        "dateTaken": "Date Taken",
+        "edited": "Edit Status",
+        "filename": "File Name",
+        "flag": "Flag",
+        "iso": "ISO",
+        "lens": "Lens",
+        "rating": "Rating",
+        "raw": "File Type"
+      },
+      "flags": {
+        "none": "No Flag",
+        "pick": "Picked",
+        "reject": "Rejected"
+      },
+      "match": {
+        "all": "Match ALL",
+        "any": "Match ANY"
+      },
+      "matchLabel": "Rules",
+      "namePlaceholder": "Enter album name...",
+      "ops": {
+        "after": "after",
+        "before": "before",
+        "contains": "contains",
+        "eq": "equals",
+        "gte": "at least",
+        "is": "is",
+        "lte": "at most",
+        "on": "on"
+      },
+      "placeholders": {
+        "camera": "e.g. Sony",
+        "filename": "Search file name...",
+        "lens": "e.g. 24-70mm"
+      },
+      "raw": {
+        "nonRaw": "Non-RAW",
+        "raw": "RAW"
+      },
+      "removeRule": "Remove rule",
+      "save": "Save"
+    },
     "transform": {
       "amount": "Amount",
       "apply": "Apply",
@@ -1760,6 +1965,36 @@
       "zoomOutTooltip": "Zoom Out"
     }
   },
+  "onboarding": {
+    "back": "Back",
+    "finish": "Get Started",
+    "goToStep": "Go to step {{step}}",
+    "next": "Next",
+    "shortcuts": {
+      "backToLibrary": "Back to library",
+      "openImage": "Open image in editor",
+      "toggleAdjustments": "Show / hide adjustments",
+      "toggleCrop": "Crop & transform",
+      "toggleExport": "Export panel"
+    },
+    "skip": "Skip",
+    "stepOf": "Step {{current}} of {{total}}",
+    "steps": {
+      "folder": {
+        "description": "Open a folder from the splash screen or the folder tree and all supported images inside are added to your library automatically.",
+        "title": "Add your photos"
+      },
+      "preset": {
+        "description": "Open an image, then click the Presets panel to try one-click looks, or save your own style for later.",
+        "title": "Try a one-click look"
+      },
+      "shortcuts": {
+        "description": "Find every shortcut and rebind them anytime in Settings → Controls.",
+        "title": "Five shortcuts worth knowing"
+      }
+    },
+    "title": "Welcome to RapidRAW"
+  },
   "settings": {
     "categories": {
       "general": "General",
@@ -1772,6 +2007,7 @@
         "mouse": "Mouse",
         "trackpad": "Touchpad"
       },
+      "noMatchingShortcuts": "No shortcuts match your search.",
       "notAssigned": "Not assigned",
       "optimization": "Input Device Optimization",
       "optimizationDesc": "Choose the primary input device you use to pan and zoom the canvas.",
@@ -1779,6 +2015,7 @@
       "resetDefaults": "Reset All to Defaults",
       "resetDefaultsMessage": "This restores every keyboard shortcut to its default binding. Custom assignments will be lost.",
       "resetDefaultsTitle": "Reset Keyboard Shortcuts",
+      "searchShortcuts": "Search shortcuts...",
       "speed": "Speed",
       "title": "Mouse Controls",
       "zoom": "Zoom Speed Multiplier",
@@ -2221,7 +2458,42 @@
       "timeout": "The update check timed out after 20 seconds.",
       "title": "Software Updates",
       "upToDate": "You are on the latest version ({{version}})."
+    },
+    "watchedFolders": {
+      "add": "Add Folder",
+      "desc": "Automatically import new images that appear in these folders.",
+      "empty": "No folders are being watched yet.",
+      "enabled": "Enabled",
+      "refresh": "Refresh Status",
+      "remove": "Remove folder",
+      "statusSummary": "{{known}} images, {{pending}} pending",
+      "statusUnknown": "Status unavailable",
+      "title": "Watched Folders"
     }
+  },
+  "survey": {
+    "actions": {
+      "pick": "Pick (P)",
+      "rate": "Rate {{rating}}",
+      "reject": "Reject (X)",
+      "unflag": "Clear flag (U)"
+    },
+    "close": "Close survey (Esc)",
+    "compareEntry": "Survey mode in compare view",
+    "compareToggle": "Compare view (C)",
+    "hints": {
+      "compare": "compare pair",
+      "exit": "exit",
+      "navigate": "next / previous",
+      "open": "open in editor",
+      "pick": "pick",
+      "rate": "rate 0–5",
+      "reject": "reject",
+      "unflag": "clear flag"
+    },
+    "next": "Next image",
+    "prev": "Previous image",
+    "title": "Survey Mode"
   },
   "tethering": {
     "aperture": "Aperture",
@@ -2229,6 +2501,8 @@
     "autoApplyPreset": "Auto Apply Preset",
     "autoOpenCaptured": "Auto-open captured image",
     "cameraConnected": "Camera Connected",
+    "captureInterval": "Interval Capture Interval (ms)",
+    "captureIntervalDesc": "Default delay between interval captures (200–3600000 ms).",
     "capturing": "Capturing...",
     "changePreset": "Change",
     "clearPreset": "Clear Preset",

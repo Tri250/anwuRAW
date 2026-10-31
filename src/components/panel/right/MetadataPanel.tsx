@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Check, ChevronDown, ChevronRight, Plus, Star, Tag, X, User } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, ChevronRight, MapPin, Plus, Star, Tag, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
 import clsx from 'clsx';
+import { toast } from 'react-toastify';
 import { Invokes } from '../../ui/AppProperties';
 import FlagToggles from '../../ui/FlagToggles';
 import { getImageFlag } from '../../../utils/imageFlags';
@@ -60,6 +61,36 @@ function parseDms(dmsString: string) {
   const minutes = parseFloat(parts[2]);
   const seconds = parseFloat(parts[3]);
   return degrees + minutes / 60 + seconds / 3600;
+}
+
+/** Formats a decimal coordinate as "D deg M min S sec", matching the sidecar GPS format. */
+function formatGpsCoordinate(decimal: number): string | null {
+  if (!Number.isFinite(decimal)) return null;
+  const abs = Math.abs(decimal);
+  let degrees = Math.floor(abs);
+  let minutes = Math.floor((abs - degrees) * 60);
+  let seconds = Math.round(((abs - degrees) * 60 - minutes) * 60 * 100) / 100;
+  if (seconds >= 60) {
+    seconds -= 60;
+    minutes += 1;
+  }
+  if (minutes >= 60) {
+    minutes -= 60;
+    degrees += 1;
+  }
+  return `${degrees} deg ${minutes} min ${seconds} sec`;
+}
+
+function buildGpsUpdates(lat: number, lon: number): Record<string, string> {
+  const latText = formatGpsCoordinate(lat);
+  const lonText = formatGpsCoordinate(lon);
+  if (!latText || !lonText) return {};
+  return {
+    GPSLatitude: latText,
+    GPSLatitudeRef: lat < 0 ? 'S' : 'N',
+    GPSLongitude: lonText,
+    GPSLongitudeRef: lon < 0 ? 'W' : 'E',
+  };
 }
 
 const CAMERA_ICONS: Record<string, React.FC> = {
@@ -208,6 +239,23 @@ const EDITABLE_FIELDS = [
   { key: 'UserComment', label: 'comments' },
 ];
 
+const IPTC_FIELDS = [
+  { key: 'Headline', label: 'headline' },
+  { key: 'CaptionAbstract', label: 'caption' },
+  { key: 'ByLineTitle', label: 'jobTitle' },
+  { key: 'Credit', label: 'credit' },
+  { key: 'Source', label: 'source' },
+  { key: 'CopyrightNotice', label: 'copyrightNotice' },
+  { key: 'UsageTerms', label: 'usageTerms' },
+  { key: 'Instructions', label: 'instructions' },
+  { key: 'TransmissionReference', label: 'transmissionReference' },
+  { key: 'City', label: 'city' },
+  { key: 'ProvinceState', label: 'provinceState' },
+  { key: 'CountryPrimaryLocationName', label: 'country' },
+] as const;
+
+const GPS_EDIT_KEYS = ['GPSLatitude', 'GPSLatitudeRef', 'GPSLongitude', 'GPSLongitudeRef'];
+
 const KEY_CAMERA_SETTINGS_MAP: CameraSettings = {
   FNumber: {
     format: (value: number) => {
@@ -238,6 +286,8 @@ export default function MetadataPanel() {
   const { t } = useTranslation();
   const [isOrganizationExpanded, setIsOrganizationExpanded] = useState(false);
   const [isAuthorExpanded, setIsAuthorExpanded] = useState(false);
+  const [isIptcExpanded, setIsIptcExpanded] = useState(false);
+  const [gpsLocationName, setGpsLocationName] = useState<string | null>(null);
   const [tagInputValue, setTagInputValue] = useState('');
   const [isTagInputFocused, setIsTagInputFocused] = useState(false);
   const selectedImage = useEditorStore((s) => s.selectedImage);
@@ -322,7 +372,13 @@ export default function MetadataPanel() {
       }
     }
 
-    const handledKeys = [...cameraGridKeys, 'LensModel', ...EDITABLE_FIELDS.map((f) => f.key)];
+    const handledKeys = [
+      ...cameraGridKeys,
+      'LensModel',
+      ...EDITABLE_FIELDS.map((f) => f.key),
+      ...GPS_EDIT_KEYS,
+      ...IPTC_FIELDS.map((f) => f.key),
+    ];
     const otherExifEntries = Object.entries(exif)
       .filter(([key]) => !handledKeys.includes(key))
       .sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
@@ -345,6 +401,29 @@ export default function MetadataPanel() {
   }, [tags]);
 
   const hasGps = gpsData.lat !== null && gpsData.lon !== null;
+
+  // Best-effort reverse geocoding (no API key); silently hidden when offline.
+  useEffect(() => {
+    if (!hasGps || gpsData.lat === null || gpsData.lon === null) {
+      setGpsLocationName(null);
+      return;
+    }
+    let cancelled = false;
+    setGpsLocationName(null);
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&lat=${gpsData.lat}&lon=${gpsData.lon}`,
+    )
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { display_name?: string } | null) => {
+        if (!cancelled && data?.display_name) setGpsLocationName(data.display_name);
+      })
+      .catch(() => {
+        /* Offline or blocked — the place name simply stays hidden. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hasGps, gpsData.lat, gpsData.lon]);
   const fullPath = selectedImage?.path || '';
   const isVirtualCopy = fullPath.includes('?vc=');
   const basePath = fullPath.split('?vc=')[0];
@@ -391,6 +470,39 @@ export default function MetadataPanel() {
       handleAddTag(tagInputValue);
     }
     e.stopPropagation();
+  };
+
+  const parseGpsInput = (input: string, limit: number): number | null => {
+    const value = parseFloat(input.trim());
+    if (!Number.isFinite(value) || Math.abs(value) > limit) return null;
+    return value;
+  };
+
+  const handleSaveGpsCoordinate = (axis: 'lat' | 'lon', input: string) => {
+    const value = parseGpsInput(input, axis === 'lat' ? 90 : 180);
+    if (value === null) {
+      toast.error(t('editor.metadata.gps.invalidCoordinates'));
+      return;
+    }
+    const other = axis === 'lat' ? gpsData.lon : gpsData.lat;
+    if (other === null) {
+      const keyPrefix = axis === 'lat' ? 'GPSLatitude' : 'GPSLongitude';
+      const refValue = axis === 'lat' ? (value < 0 ? 'S' : 'N') : value < 0 ? 'W' : 'E';
+      const coordText = formatGpsCoordinate(value);
+      if (!coordText) return;
+      handleUpdateExif(targetPaths, { [keyPrefix]: coordText, [`${keyPrefix}Ref`]: refValue });
+      return;
+    }
+    const updates = buildGpsUpdates(axis === 'lat' ? value : other, axis === 'lon' ? value : other);
+    if (Object.keys(updates).length > 0) handleUpdateExif(targetPaths, updates);
+  };
+
+  const handleRemoveGps = () => {
+    const cleared: Record<string, string> = {};
+    GPS_EDIT_KEYS.forEach((key) => {
+      cleared[key] = '';
+    });
+    handleUpdateExif(targetPaths, cleared);
   };
 
   const LensIcon = CAMERA_ICONS['LensModel'];
@@ -761,46 +873,135 @@ export default function MetadataPanel() {
               </div>
             </div>
 
-            {hasGps && gpsData?.lat && gpsData?.lon && (
-              <div>
-                <Text variant={TextVariants.heading} className="mb-3">
-                  {t('editor.metadata.gps.title')}
-                </Text>
-                <div className="bg-surface border border-surface rounded-xl p-3 flex flex-col gap-3">
-                  <div className="relative rounded-md overflow-hidden shadow-sm">
-                    <iframe
-                      className="pointer-events-none"
-                      frameBorder="0"
-                      height="180"
-                      loading="lazy"
-                      marginHeight={0}
-                      marginWidth={0}
-                      scrolling="no"
-                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${gpsData.lon - 0.01}%2C${
-                        gpsData.lat - 0.01
-                      }%2C${gpsData.lon + 0.01}%2C${gpsData.lat + 0.01}&layer=mapnik&marker=${gpsData.lat}%2C${
-                        gpsData.lon
-                      }`}
-                      width="100%"
-                    ></iframe>
-                    <a
-                      className="absolute inset-0 cursor-pointer hover:bg-black/10 transition-colors"
-                      href={`https://www.openstreetmap.org/?mlat=${gpsData.lat}&mlon=${gpsData.lon}#map=15/${gpsData.lat}/${gpsData.lon}`}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                      data-tooltip={t('editor.metadata.gps.clickToOpenTooltip')}
-                    ></a>
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <MetadataItem label={t('editor.metadata.gps.latitude')} value={gpsData.lat?.toFixed(6)} />
-                    <MetadataItem label={t('editor.metadata.gps.longitude')} value={gpsData.lon?.toFixed(6)} />
-                    {gpsData.altitude && (
-                      <MetadataItem label={t('editor.metadata.gps.altitude')} value={`${gpsData.altitude} m`} />
-                    )}
-                  </div>
+            <div>
+              <Text variant={TextVariants.heading} className="mb-3">
+                {t('editor.metadata.gps.title')}
+              </Text>
+              <div className="bg-surface border border-surface rounded-xl p-3 flex flex-col gap-3">
+                {hasGps && gpsData?.lat && gpsData?.lon && (
+                  <>
+                    <div className="relative rounded-md overflow-hidden shadow-sm">
+                      <iframe
+                        className="pointer-events-none"
+                        frameBorder="0"
+                        height="180"
+                        loading="lazy"
+                        marginHeight={0}
+                        marginWidth={0}
+                        scrolling="no"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${gpsData.lon - 0.01}%2C${
+                          gpsData.lat - 0.01
+                        }%2C${gpsData.lon + 0.01}%2C${gpsData.lat + 0.01}&layer=mapnik&marker=${gpsData.lat}%2C${
+                          gpsData.lon
+                        }`}
+                        width="100%"
+                      ></iframe>
+                      <a
+                        className="absolute inset-0 cursor-pointer hover:bg-black/10 transition-colors"
+                        href={`https://www.openstreetmap.org/?mlat=${gpsData.lat}&mlon=${gpsData.lon}#map=15/${gpsData.lat}/${gpsData.lon}`}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                        data-tooltip={t('editor.metadata.gps.clickToOpenTooltip')}
+                      ></a>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <a
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-bg-secondary hover:bg-card-active text-text-secondary hover:text-text-primary text-xs font-medium py-1.5 px-2 rounded-md border border-transparent hover:border-border-color transition-colors"
+                        href={`https://www.google.com/maps/search/?api=1&query=${gpsData.lat},${gpsData.lon}`}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        <MapPin size={12} /> {t('editor.metadata.gps.googleMaps')}
+                      </a>
+                      <button
+                        onClick={handleRemoveGps}
+                        className="text-xs font-medium text-text-secondary hover:text-red-400 py-1.5 px-2 rounded-md hover:bg-card-active transition-colors"
+                        data-tooltip={t('editor.metadata.gps.remove')}
+                      >
+                        {t('editor.metadata.gps.remove')}
+                      </button>
+                    </div>
+                  </>
+                )}
+                {!hasGps && (
+                  <Text variant={TextVariants.small} color={TextColors.secondary}>
+                    {t('editor.metadata.gps.noData')}
+                  </Text>
+                )}
+                {gpsLocationName && (
+                  <MetadataItem label={t('editor.metadata.gps.location')} value={gpsLocationName} />
+                )}
+                <div className="flex flex-col gap-0.5">
+                  <EditableMetadataItem
+                    label={t('editor.metadata.gps.latitude')}
+                    value={hasGps && gpsData.lat !== null ? gpsData.lat.toFixed(6) : ''}
+                    onSave={(newVal) => handleSaveGpsCoordinate('lat', newVal)}
+                  />
+                  <EditableMetadataItem
+                    label={t('editor.metadata.gps.longitude')}
+                    value={hasGps && gpsData.lon !== null ? gpsData.lon.toFixed(6) : ''}
+                    onSave={(newVal) => handleSaveGpsCoordinate('lon', newVal)}
+                  />
+                  {gpsData.altitude && (
+                    <MetadataItem label={t('editor.metadata.gps.altitude')} value={`${gpsData.altitude} m`} />
+                  )}
                 </div>
               </div>
-            )}
+            </div>
+
+            <div>
+              <Text variant={TextVariants.heading} className="mb-3">
+                {t('editor.metadata.iptc.title')}
+              </Text>
+              <div className="bg-surface rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setIsIptcExpanded(!isIptcExpanded)}
+                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors"
+                >
+                  <Text
+                    as="span"
+                    variant={TextVariants.label}
+                    color={TextColors.primary}
+                    className="flex items-center gap-2"
+                  >
+                    <BookOpen size={16} /> {t('editor.metadata.iptc.subtitle')}
+                  </Text>
+                  <Text color={TextColors.secondary}>
+                    {isIptcExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </Text>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {isIptcExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-2 pb-3 pt-2 border-t border-surface/50 flex flex-col gap-0.5">
+                        {IPTC_FIELDS.map((field) => {
+                          const rawValue = (selectedImage?.exif?.[field.key] as string) || '';
+                          const cleanValue = rawValue.replace(/^"|"$/g, '').trim();
+                          const displayValue = cleanValue.toLowerCase() === 'default' ? '' : cleanValue;
+                          return (
+                            <EditableMetadataItem
+                              key={field.key}
+                              label={t(`editor.metadata.fields.${field.label}` as ParseKeys)}
+                              value={displayValue}
+                              onSave={(newVal) => {
+                                handleUpdateExif(targetPaths, { [field.key]: newVal });
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
 
             {otherExifEntries.length > 0 && (
               <div>

@@ -15,6 +15,7 @@ import { debouncedSave, debouncedSetHistory } from './useEditorActions';
 import { clearLibrarySelection } from './useLibraryActions';
 import { computeSortedLibrary } from './useSortedLibrary';
 import { getImmichAlbumImages, isImmichAlbumId } from '../components/immich/immichApi';
+import { SmartAlbum, filterImagesForAlbum } from '../utils/smartAlbums';
 
 export interface AppNavigationProps {
   clearThumbnailQueue: () => void;
@@ -23,7 +24,6 @@ export interface AppNavigationProps {
     preloadedDataRef: React.RefObject<any>;
     cachedEditStateRef: React.RefObject<any>;
     selectedImagePathRef: React.RefObject<string | null>;
-    isBackendReadyRef: React.RefObject<boolean>;
     latestRenderedJobIdRef: React.RefObject<number>;
     previewJobIdRef: React.RefObject<number>;
     currentResRef: React.RefObject<number>;
@@ -33,6 +33,7 @@ export interface AppNavigationProps {
 
 let exifLoadGeneration = 0;
 let imageSelectGeneration = 0;
+let smartAlbumLoadGeneration = 0;
 
 const EXIF_CHUNK_SIZE = 250;
 
@@ -108,7 +109,6 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
     preloadedDataRef,
     cachedEditStateRef,
     selectedImagePathRef,
-    isBackendReadyRef,
     latestRenderedJobIdRef,
     previewJobIdRef,
     currentResRef,
@@ -191,9 +191,9 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
 
       const cached = globalImageCache.get(path);
       const isFrontendCached = Boolean(cached && cached.selectedImage?.isReady);
-      const isCachedInBackend = isFrontendCached
-        ? await invoke<boolean>('is_image_cached', { path }).catch(() => false)
-        : false;
+      // Probe the backend render cache on every selection: on a frontend LRU
+      // miss with a backend hit we can skip the full loading overlay.
+      const isCachedInBackend = await invoke<boolean>('is_image_cached', { path }).catch(() => false);
 
       if (generation !== imageSelectGeneration) return;
 
@@ -256,20 +256,17 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         setLibrary({ isViewLoading: false });
 
         latestRenderedJobIdRef.current = previewJobIdRef.current;
-        isBackendReadyRef.current = false;
         currentResRef.current = Infinity;
 
         invoke(Invokes.LoadImage, { path })
           .then((_result: any) => {
             if (selectedImagePathRef.current !== path) return;
-            isBackendReadyRef.current = true;
             currentResRef.current = 0;
             setEditor({ originalSize: { width: _result.width, height: _result.height } });
           })
           .catch((err: any) => {
             if (String(err).includes('cancelled')) return;
             console.error('Background load_image failed on cache hit:', err);
-            isBackendReadyRef.current = true;
             currentResRef.current = 0;
           });
 
@@ -294,8 +291,6 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         return;
       }
 
-      isBackendReadyRef.current = true;
-
       const imageFile = useLibraryStore.getState().imageList.find((img) => img.path === path);
       setEditor({
         selectedImage: {
@@ -316,7 +311,10 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         uncroppedAdjustedPreviewUrl: null,
       });
 
-      setLibrary({ isViewLoading: true });
+      // Backend already holds this render — skip the loading overlay flash.
+      if (!isCachedInBackend) {
+        setLibrary({ isViewLoading: true });
+      }
 
       setEditor((state) => {
         const prev = state.finalPreviewUrl;
@@ -517,6 +515,119 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
     [clearThumbnailQueue],
   );
 
+  const handleSelectSmartAlbum = useCallback(
+    async (album: SmartAlbum, preserveEditor = false, skipHistory = false) => {
+      const { setLibrary, rootPaths } = useLibraryStore.getState();
+      const { appSettings } = useSettingsStore.getState();
+      const { setUI } = useUIStore.getState();
+
+      if (!skipHistory) {
+        useLibraryStore
+          .getState()
+          .pushNavHistory({ type: 'album', path: `smart:${album.id}`, albumName: album.name, smartAlbum: album });
+      }
+
+      if (!preserveEditor) {
+        await invoke('cancel_thumbnail_generation');
+        clearThumbnailQueue();
+        setLibrary({ libraryScrollTop: 0 });
+        globalImageCache.clear();
+        setUI({ activeView: 'library' });
+      }
+
+      const smartAlbumId = `smart:${album.id}`;
+      const albumFolderPath = `Album: ${album.name}`;
+      const isCurrentAlbum = () => {
+        const { currentFolderPath, activeAlbumId } = useLibraryStore.getState();
+        return currentFolderPath === albumFolderPath && activeAlbumId === smartAlbumId;
+      };
+
+      setLibrary({
+        isViewLoading: true,
+        currentFolderPath: albumFolderPath,
+        activeAlbumId: smartAlbumId,
+      });
+
+      const generation = ++smartAlbumLoadGeneration;
+
+      try {
+        // Smart albums evaluate rules across every configured library root.
+        const scanRoots = Array.from(
+          new Set([...(rootPaths || []), ...((appSettings?.pinnedFolders as string[]) || [])].filter(Boolean)),
+        );
+        const candidates: ImageFile[] = [];
+        const seenPaths = new Set<string>();
+        for (const root of scanRoots) {
+          try {
+            const found: ImageFile[] = await invoke(Invokes.ListImagesRecursive, { path: root });
+            for (const file of found) {
+              if (!seenPaths.has(file.path)) {
+                seenPaths.add(file.path);
+                candidates.push(file);
+              }
+            }
+          } catch (err) {
+            console.error('Failed to scan library root for smart album:', root, err);
+          }
+        }
+        if (!isCurrentAlbum() || generation !== smartAlbumLoadGeneration) return;
+
+        const initialRatings: Record<string, number> = {};
+        candidates.forEach((f) => {
+          if (f.rating !== undefined) initialRatings[f.path] = f.rating;
+        });
+        setLibrary({
+          imageRatings: initialRatings,
+          ...(preserveEditor ? {} : { multiSelectedPaths: [], libraryActivePath: null }),
+        });
+
+        // Apply rules with whatever EXIF is known, then refine progressively as
+        // EXIF chunks arrive (camera/lens/ISO/date rules need sidecar metadata).
+        const applyFilter = () => {
+          const { exifByPath, imageRatings } = useLibraryStore.getState();
+          return filterImagesForAlbum(album, candidates, exifByPath, imageRatings);
+        };
+
+        const knownExif: Record<string, Record<string, string>> = {};
+        const previousExif = useLibraryStore.getState().exifByPath;
+        for (const file of candidates) {
+          const exif = previousExif[file.path] || file.exif;
+          if (exif) knownExif[file.path] = exif;
+        }
+        setLibrary({ imageList: applyFilter(), exifByPath: { ...previousExif, ...knownExif } });
+
+        const paths = candidates.map((f) => f.path);
+        for (let i = 0; i < paths.length; i += EXIF_CHUNK_SIZE) {
+          if (generation !== smartAlbumLoadGeneration || !isCurrentAlbum()) break;
+          const chunk = paths.slice(i, i + EXIF_CHUNK_SIZE);
+          try {
+            const chunkExif: Record<string, Record<string, string>> = await invoke(Invokes.ReadExifForPaths, {
+              paths: chunk,
+            });
+            if (generation !== smartAlbumLoadGeneration || !isCurrentAlbum()) break;
+            setLibrary((state: any) => ({
+              exifByPath: { ...state.exifByPath, ...chunkExif },
+              imageList: applyFilter(),
+            }));
+          } catch (err) {
+            console.error('Failed to read EXIF chunk for smart album:', err);
+          }
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        return true;
+      } catch (err) {
+        console.error('Failed to load smart album images:', err);
+        toast.error(`Failed to load smart album: ${err}`);
+        return false;
+      } finally {
+        if (isCurrentAlbum() && generation === smartAlbumLoadGeneration) {
+          setLibrary({ isViewLoading: false });
+        }
+      }
+    },
+    [clearThumbnailQueue],
+  );
+
   const handleNavBack = useCallback(async () => {
     const { navHistory, navIndex, setLibrary } = useLibraryStore.getState();
 
@@ -527,6 +638,8 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
 
       if (target.type === 'folder') {
         handleSelectSubfolder(target.path, false, undefined, true, false, true);
+      } else if (target.smartAlbum) {
+        handleSelectSmartAlbum(target.smartAlbum, false, true);
       } else if (target.type === 'album') {
         handleSelectAlbum(target.path, target.albumName!, target.images!, false, true);
       }
@@ -543,6 +656,8 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
 
       if (target.type === 'folder') {
         handleSelectSubfolder(target.path, false, undefined, true, false, true);
+      } else if (target.smartAlbum) {
+        handleSelectSmartAlbum(target.smartAlbum, false, true);
       } else if (target.type === 'album') {
         handleSelectAlbum(target.path, target.albumName!, target.images!, false, true);
       }
@@ -708,6 +823,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
     handleImageSelect,
     handleSelectSubfolder,
     handleSelectAlbum,
+    handleSelectSmartAlbum,
     handleOpenFolder,
     handleNavBack,
     handleNavForward,

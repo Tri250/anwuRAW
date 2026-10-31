@@ -95,6 +95,8 @@ export enum DetailsAdjustment {
   Centré = 'centré',
   CentréX = 'centréX',
   CentréY = 'centréY',
+  ColorNrDetail = 'colorNrDetail',
+  ColorNrSmoothness = 'colorNrSmoothness',
   ColorNoiseReduction = 'colorNoiseReduction',
   LumaNoiseReduction = 'lumaNoiseReduction',
   NegativeBlueWeight = 'negativeBlueWeight',
@@ -105,6 +107,8 @@ export enum DetailsAdjustment {
   NegativeRedWeight = 'negativeRedWeight',
   Sharpness = 'sharpness',
   SharpnessThreshold = 'sharpnessThreshold',
+  SharpenRadius = 'sharpenRadius',
+  Texture = 'textureAmount',
   ChromaticAberrationRedCyan = 'chromaticAberrationRedCyan',
   ChromaticAberrationBlueYellow = 'chromaticAberrationBlueYellow',
 }
@@ -287,6 +291,7 @@ export interface Adjustments {
   baselineExposure: boolean;
   blacks: number;
   brightness: number;
+  cameraProfile: string | null;
   centré: number;
   centréX: number;
   centréY: number;
@@ -295,6 +300,8 @@ export interface Adjustments {
   chromaticAberrationRedCyan: number;
   colorCalibration: ColorCalibration;
   colorGrading: ColorGradingProps;
+  colorNrDetail: number;
+  colorNrSmoothness: number;
   colorNoiseReduction: number;
   contrast: number;
   curves: Curves;
@@ -383,11 +390,13 @@ export interface Adjustments {
   shadows: number;
   sharpness: number;
   sharpnessThreshold: number;
+  sharpenRadius: number;
   showClipping: boolean;
   structure: number;
   temperature: number;
+  textureAmount: number;
   tint: number;
-  toneMapper: 'agx' | 'basic';
+  toneMapper: 'basic' | 'agx' | 'pbrNeutral' | 'aces';
   transformDistortion: number;
   transformVertical: number;
   transformHorizontal: number;
@@ -789,6 +798,11 @@ export const normalizeLoadedAdjustments = (loadedAdjustments: Adjustments): any 
     activeTools: getActiveTools(loadedAdjustments),
     sectionVisibility: undefined,
     sharpnessThreshold: loadedAdjustments.sharpnessThreshold ?? INITIAL_ADJUSTMENTS.sharpnessThreshold,
+    sharpenRadius: loadedAdjustments.sharpenRadius ?? INITIAL_ADJUSTMENTS.sharpenRadius,
+    textureAmount: loadedAdjustments.textureAmount ?? INITIAL_ADJUSTMENTS.textureAmount,
+    colorNrDetail: loadedAdjustments.colorNrDetail ?? INITIAL_ADJUSTMENTS.colorNrDetail,
+    colorNrSmoothness: loadedAdjustments.colorNrSmoothness ?? INITIAL_ADJUSTMENTS.colorNrSmoothness,
+    cameraProfile: loadedAdjustments.cameraProfile ?? null,
   };
 };
 
@@ -824,7 +838,7 @@ export const ADJUSTMENT_GROUPS: Record<string, AdjustmentGroup[]> = {
     },
     { label: 'modals.copyPaste.groups.colorGrading', keys: [ColorAdjustment.ColorGrading] },
     { label: 'modals.copyPaste.groups.colorMixer', keys: [ColorAdjustment.Hsl] },
-    { label: 'modals.copyPaste.groups.colorCalibration', keys: ['colorCalibration'] },
+    { label: 'modals.copyPaste.groups.colorCalibration', keys: ['colorCalibration', 'cameraProfile'] },
   ],
   details: [
     {
@@ -832,6 +846,7 @@ export const ADJUSTMENT_GROUPS: Record<string, AdjustmentGroup[]> = {
       keys: [
         DetailsAdjustment.Clarity,
         DetailsAdjustment.Structure,
+        DetailsAdjustment.Texture,
         DetailsAdjustment.Dehaze,
         DetailsAdjustment.Centré,
         DetailsAdjustment.CentréX,
@@ -840,11 +855,16 @@ export const ADJUSTMENT_GROUPS: Record<string, AdjustmentGroup[]> = {
     },
     {
       label: 'modals.copyPaste.groups.sharpness',
-      keys: [DetailsAdjustment.Sharpness, DetailsAdjustment.SharpnessThreshold],
+      keys: [DetailsAdjustment.Sharpness, DetailsAdjustment.SharpnessThreshold, DetailsAdjustment.SharpenRadius],
     },
     {
       label: 'modals.copyPaste.groups.noiseReduction',
-      keys: [DetailsAdjustment.LumaNoiseReduction, DetailsAdjustment.ColorNoiseReduction],
+      keys: [
+        DetailsAdjustment.LumaNoiseReduction,
+        DetailsAdjustment.ColorNoiseReduction,
+        DetailsAdjustment.ColorNrDetail,
+        DetailsAdjustment.ColorNrSmoothness,
+      ],
     },
     {
       label: 'modals.copyPaste.groups.aiDenoise',
@@ -1064,6 +1084,7 @@ export interface AdjustmentSectionTool {
 export const ADJUSTMENT_SECTION_TOOLS: Record<string, Array<AdjustmentSectionTool>> = {
   color: [
     { id: 'whiteBalance', label: 'adjustments.color.whiteBalance' },
+    { id: 'cameraProfile', label: 'adjustments.color.cameraProfile' },
     { id: 'colorPresence', label: 'adjustments.color.presence' },
     { id: 'hue', label: 'adjustments.color.hue' },
     { id: 'colorGrading', label: 'adjustments.color.colorGrading' },

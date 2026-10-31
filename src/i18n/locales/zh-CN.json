@@ -7,10 +7,14 @@
       "exposure": "曝光",
       "highlights": "高光",
       "mappers": {
+        "aces": "ACES Filmic",
+        "acesDesc": "ACES Filmic 色调映射",
         "agx": "AgX",
         "agxDesc": "电影感色调映射",
         "basic": "基础",
-        "basicDesc": "标准色调映射"
+        "basicDesc": "标准色调映射",
+        "pbrNeutral": "PBR Neutral",
+        "pbrNeutralDesc": "中性色调映射"
       },
       "reset": "重置",
       "shadows": "阴影",
@@ -32,6 +36,7 @@
         "tint": "色调",
         "title": "颜色校准"
       },
+      "cameraProfile": "相机配置文件",
       "colorGrading": "颜色分级",
       "colorMatch": "AI 追色",
       "colorMatchDesc": "将样片的色彩风格传递到当前照片（非破坏性）",
@@ -62,6 +67,7 @@
         "yellows": "黄色"
       },
       "presence": "质感",
+      "profileDefault": "默认",
       "saturation": "饱和度",
       "targetedTooltip": "目标调整：在画布上取样颜色并拖动，调整该颜色的色相/饱和度（Ctrl+Alt+H）",
       "temperature": "色温",
@@ -110,6 +116,8 @@
       "clarity": "清晰度",
       "classicDenoise": "经典降噪",
       "color": "颜色",
+      "colorNrDetail": "色彩细节",
+      "colorNrSmoothness": "平滑度",
       "convertNegative": "转换负片",
       "dehaze": "去雾",
       "luminance": "亮度",
@@ -121,10 +129,12 @@
       "negativeRed": "红色",
       "noiseReduction": "降噪",
       "presence": "质感",
+      "radius": "半径",
       "redCyan": "红/青",
       "sharpening": "锐化",
       "sharpness": "锐度",
       "structure": "结构",
+      "texture": "纹理",
       "threshold": "阈值"
     },
     "effects": {
@@ -289,6 +299,25 @@
     "merge": {
       "focusStack": "焦距合成",
       "title": "合并"
+    },
+    "smartAlbums": {
+      "confirmDelete": "确定要删除这个智能相册吗？其中的图像不会受到影响。",
+      "delete": "删除智能相册",
+      "edit": "编辑智能相册",
+      "new": "新建智能相册"
+    },
+    "stacking": {
+      "autoStack": "按连拍自动堆叠",
+      "autoStackedToast": "已创建 {{count}} 个堆叠。",
+      "autoStackedToast_other": "已创建 {{count}} 个堆叠。",
+      "autoStackNone": "没有找到可堆叠的连拍组。",
+      "create": "堆叠为一组（{{count}}）",
+      "create_other": "堆叠为一组（{{count}}）",
+      "createdToast": "已创建包含 {{count}} 张图像的堆叠。",
+      "createdToast_other": "已创建包含 {{count}} 张图像的堆叠。",
+      "createFailed": "图像数量不足，无法创建堆叠。",
+      "title": "堆叠",
+      "unstack": "取消堆叠"
     },
     "tagging": {
       "addTagTooltip": "添加标签",
@@ -496,6 +525,24 @@
         "useBasicInpaint": "使用基础图像修复"
       },
       "touchUpTitle": "润色"
+    },
+    "aiEnhance": {
+      "failed": "AI 增强失败",
+      "intensities": {
+        "standard": "标准",
+        "strong": "强力",
+        "subtle": "轻微"
+      },
+      "title": "AI 增强"
+    },
+    "canvas": {
+      "pickerCancel": "取消",
+      "pickerHints": {
+        "marker": "点击图像放置覆盖物",
+        "relight": "点击图像放置光源",
+        "targeted": "在图像上点击或拖动以进行调整",
+        "wb": "在图像上点击或拖动以采样白平衡"
+      }
     },
     "compare": {
       "horizontal": "上下分割",
@@ -794,9 +841,21 @@
       },
       "fields": {
         "author": "作者",
+        "caption": "说明",
+        "city": "城市",
         "comments": "备注",
         "copyright": "版权",
-        "title": "标题"
+        "copyrightNotice": "版权声明",
+        "country": "国家",
+        "credit": "署名信息",
+        "headline": "标题",
+        "instructions": "处理指示",
+        "jobTitle": "创作者职务",
+        "provinceState": "省/州",
+        "source": "来源",
+        "title": "标题",
+        "transmissionReference": "传输参考",
+        "usageTerms": "使用条款"
       },
       "fileInfo": {
         "dimensions": "{{width}} × {{height}} 像素 · {{megapixels}} MP",
@@ -808,9 +867,18 @@
       "gps": {
         "altitude": "海拔",
         "clickToOpenTooltip": "点击在新标签页中打开地图",
+        "googleMaps": "在 Google 地图中打开",
+        "invalidCoordinates": "坐标无效",
         "latitude": "纬度",
+        "location": "位置",
         "longitude": "经度",
+        "noData": "暂无 GPS 数据。在下方输入坐标即可添加位置。",
+        "remove": "移除 GPS",
         "title": "GPS 位置"
+      },
+      "iptc": {
+        "subtitle": "导出时嵌入的描述与版权元数据",
+        "title": "IPTC"
       },
       "organization": {
         "addTagPlaceholder": "添加标签...",
@@ -831,9 +899,11 @@
         "exportAllTitle": "导出所有预设",
         "exportTitle": "导出 {{type}}",
         "importPresetsTitle": "导入预设",
+        "importXmpTitle": "导入 XMP 调整",
         "legacyPreset": "旧版预设",
         "presetFile": "预设文件",
-        "rapidRawPreset": "RapidRAW 预设"
+        "rapidRawPreset": "RapidRAW 预设",
+        "xmpFile": "XMP 文件"
       },
       "menu": {
         "configurePreset": "配置预设",
@@ -842,6 +912,8 @@
         "duplicatePreset": "复制预设",
         "exportFolder": "导出文件夹",
         "exportPreset": "导出预设",
+        "exportXmp": "导出当前调整到 XMP…",
+        "importXmp": "从 XMP 导入调整…",
         "newFolder": "新建文件夹",
         "newPreset": "新建预设",
         "overwrite": "覆盖",
@@ -863,7 +935,11 @@
         "exportFailed": "导出预设失败",
         "exportSuccess": "预设已导出",
         "importFailed": "导入预设失败",
-        "importFailures": "{{num}} 个预设文件导入失败"
+        "importFailures": "{{num}} 个预设文件导入失败",
+        "xmpExportFailed": "导出 XMP sidecar 失败",
+        "xmpExportSuccess": "已导出 XMP sidecar",
+        "xmpImportFailed": "导入 XMP 失败",
+        "xmpImportSuccess": "已从 XMP 导入调整"
       },
       "tooltips": {
         "explore": "探索社区预设",
@@ -877,6 +953,25 @@
         "style": "风格",
         "tool": "工具"
       }
+    },
+    "softProofing": {
+      "description": "模拟导出图像在目标输出色彩配置下的显示效果。",
+      "gamutWarning": "色域警告",
+      "intents": {
+        "absolute": "绝对比色",
+        "perceptual": "感知",
+        "relative": "相对比色",
+        "saturation": "饱和度"
+      },
+      "profiles": {
+        "adobeRgb": "Adobe RGB",
+        "displayP3": "Display P3",
+        "rec2020": "Rec. 2020",
+        "srgb": "sRGB"
+      },
+      "simulatePaper": "模拟纸张",
+      "title": "软打样",
+      "turnOff": "关闭软打样"
     },
     "switcher": {
       "tooltips": {
@@ -899,6 +994,7 @@
       "history": "历史记录",
       "switchToVariant": "切换到 {{label}}",
       "tooltips": {
+        "aiEnhance": "AI 增强（右键选择强度）",
         "aperture": "光圈",
         "backToLibrary": "返回图库",
         "compare": "前后对比（B）或模式（右键）",
@@ -907,6 +1003,7 @@
         "iso": "ISO",
         "redo": "重做（Ctrl+Y）或历史记录（右键单击）",
         "shutterSpeed": "快门速度",
+        "softProofing": "软打样",
         "undo": "撤销（Ctrl+Z）或历史记录（右键单击）"
       },
       "vc": "VC"
@@ -918,6 +1015,13 @@
       "preserveFolders": "保留文件夹结构",
       "preserveTimestamps": "将文件时间戳设为 EXIF 拍摄日期",
       "title": "导出设置"
+    },
+    "aiUpscale": {
+      "hint": "将以 {{factor}}× 分辨率渲染当前图像。",
+      "label": "AI 超分",
+      "off": "关闭",
+      "scale2": "2×",
+      "scale4": "4×"
     },
     "border": {
       "addBorder": "添加边框",
@@ -1031,6 +1135,7 @@
     },
     "title": "导出",
     "watermark": {
+      "addTextWatermark": "添加文字水印",
       "addWatermark": "添加水印",
       "anchors": {
         "bottomCenter": "底部居中",
@@ -1043,11 +1148,15 @@
         "topLeft": "左上角",
         "topRight": "右上角"
       },
+      "color": "颜色",
+      "fontSize": "字体大小",
       "logoText": "标志",
       "opacity": "不透明度",
       "previewText": "预览",
       "scale": "缩放",
       "spacing": "间距",
+      "text": "文字",
+      "textPlaceholder": "水印文字…",
       "watermarkImage": "水印图像"
     }
   },
@@ -1177,6 +1286,17 @@
       "toggleFit": "切换 1:1 / 适应",
       "vc": "VC"
     },
+    "delete": {
+      "confirmTitle": "删除图像",
+      "delete": "删除",
+      "deleteAll": "全部删除",
+      "deleteAllMessage": "原始文件将被移入回收站。",
+      "deleteAllTitle": "删除原始文件",
+      "deleteMultipleMessage": "确定要删除 {{count}} 张图像吗？它们将被移入回收站。",
+      "deleteMultipleMessage_other": "确定要删除 {{count}} 张图像吗？它们将被移入回收站。",
+      "deleteSelected": "删除所选",
+      "deleteSingleMessage": "原始文件将被移入回收站。"
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} 张图像已不再符合筛选条件",
       "hiddenMultiple_other": "{{count}} 张图像已不再符合筛选条件",
@@ -1226,8 +1346,10 @@
       "sections": {
         "albums": "相册",
         "folders": "文件夹",
-        "pinned": "已固定"
+        "pinned": "已固定",
+        "smartAlbums": "智能相册"
       },
+      "smartAlbumsEmpty": "右键点击或使用 + 新建智能相册。",
       "sort": {
         "created": "创建日期",
         "imageCount": "图像数量",
@@ -1311,8 +1433,12 @@
     "items": {
       "cloudPlaceholder": "存储在 iCloud 中 — 未下载",
       "collapseFolder": "折叠文件夹",
+      "collapseStack": "折叠堆叠（{{count}}）",
+      "collapseStack_other": "折叠堆叠（{{count}}）",
       "currentFolder": "当前文件夹",
       "expandFolder": "展开文件夹",
+      "expandStack": "展开堆叠（{{count}}）",
+      "expandStack_other": "展开堆叠（{{count}}）",
       "imagesCount_one": "1 张图像",
       "imagesCount_other": "{{count}} 张图像",
       "immichPlaceholder": "存储在 Immich 中 — 未下载",
@@ -1325,6 +1451,10 @@
     },
     "jobs": {
       "active": "进行中",
+      "activeCount": "{{count}} 个进行中",
+      "activeCount_other": "{{count}} 个进行中",
+      "allDone": "{{count}} 个已完成",
+      "allDone_other": "{{count}} 个已完成",
       "cancel": "取消导出",
       "cancelling": "正在取消…",
       "clear": "清除",
@@ -1342,8 +1472,16 @@
         "modelDownload": "AI 模型下载",
         "move": "移动文件"
       },
+      "noActive": "暂无进行中的任务",
       "openInLibrary": "在图库中打开",
       "recent": "最近",
+      "statuses": {
+        "cancelled": "已取消",
+        "cancelling": "正在取消…",
+        "error": "失败",
+        "running": "进行中",
+        "success": "完成"
+      },
       "title": "任务"
     },
     "reject": {
@@ -1730,6 +1868,65 @@
     "renameGroup": {
       "placeholder": "输入新的组名称..."
     },
+    "smartAlbum": {
+      "addRule": "添加规则",
+      "cancel": "取消",
+      "colors": {
+        "none": "无色彩标签"
+      },
+      "create": "创建",
+      "createTitle": "新建智能相册",
+      "description": "智能相册会自动收集符合以下规则的图像。",
+      "edited": {
+        "edited": "已编辑",
+        "unedited": "未编辑"
+      },
+      "editTitle": "编辑智能相册",
+      "fields": {
+        "camera": "相机",
+        "color": "色彩标签",
+        "dateTaken": "拍摄日期",
+        "edited": "编辑状态",
+        "filename": "文件名",
+        "flag": "标旗",
+        "iso": "ISO",
+        "lens": "镜头",
+        "rating": "评分",
+        "raw": "文件类型"
+      },
+      "flags": {
+        "none": "无标旗",
+        "pick": "精选",
+        "reject": "淘汰"
+      },
+      "match": {
+        "all": "匹配全部",
+        "any": "匹配任一"
+      },
+      "matchLabel": "规则",
+      "namePlaceholder": "输入相册名称...",
+      "ops": {
+        "after": "晚于",
+        "before": "早于",
+        "contains": "包含",
+        "eq": "等于",
+        "gte": "至少",
+        "is": "为",
+        "lte": "至多",
+        "on": "在"
+      },
+      "placeholders": {
+        "camera": "例如 Sony",
+        "filename": "搜索文件名...",
+        "lens": "例如 24-70mm"
+      },
+      "raw": {
+        "nonRaw": "非 RAW",
+        "raw": "RAW"
+      },
+      "removeRule": "移除规则",
+      "save": "保存"
+    },
     "transform": {
       "amount": "数量",
       "apply": "应用",
@@ -1759,6 +1956,36 @@
       "zoomOutTooltip": "缩小"
     }
   },
+  "onboarding": {
+    "back": "上一步",
+    "finish": "开始使用",
+    "goToStep": "前往第 {{step}} 步",
+    "next": "下一步",
+    "shortcuts": {
+      "backToLibrary": "返回图库",
+      "openImage": "在编辑器中打开图像",
+      "toggleAdjustments": "显示/隐藏调整",
+      "toggleCrop": "裁剪与变换",
+      "toggleExport": "导出面板"
+    },
+    "skip": "跳过",
+    "stepOf": "第 {{current}} 步，共 {{total}} 步",
+    "steps": {
+      "folder": {
+        "description": "从启动页或文件夹树打开一个文件夹，其中所有受支持的图像都会自动添加到图库。",
+        "title": "添加你的照片"
+      },
+      "preset": {
+        "description": "打开一张图像，然后点击“预设”面板尝试一键风格，也可以保存自己的风格供日后使用。",
+        "title": "尝试一键风格"
+      },
+      "shortcuts": {
+        "description": "所有快捷键都可以在“设置 → 控件”中查看并重新绑定。",
+        "title": "值得记住的五个快捷键"
+      }
+    },
+    "title": "欢迎使用 RapidRAW"
+  },
   "settings": {
     "categories": {
       "general": "通用",
@@ -1771,6 +1998,7 @@
         "mouse": "鼠标",
         "trackpad": "触控板"
       },
+      "noMatchingShortcuts": "没有匹配的快捷键。",
       "notAssigned": "未分配",
       "optimization": "输入设备优化",
       "optimizationDesc": "选择您用于平移和缩放画布的主要输入设备。",
@@ -1778,6 +2006,7 @@
       "resetDefaults": "全部重置为默认值",
       "resetDefaultsMessage": "将把所有键盘快捷键恢复为默认绑定，自定义的绑定将会丢失。",
       "resetDefaultsTitle": "重置键盘快捷键",
+      "searchShortcuts": "搜索快捷键...",
       "speed": "速度",
       "title": "鼠标控制",
       "zoom": "缩放速度倍率",
@@ -2220,7 +2449,42 @@
       "timeout": "检查更新超时（超过 20 秒）。",
       "title": "软件更新",
       "upToDate": "已是最新版本（{{version}}）。"
+    },
+    "watchedFolders": {
+      "add": "添加文件夹",
+      "desc": "自动导入这些文件夹中出现的新图像。",
+      "empty": "尚无监视的文件夹。",
+      "enabled": "启用",
+      "refresh": "刷新状态",
+      "remove": "移除文件夹",
+      "statusSummary": "{{known}} 张图像，{{pending}} 张待处理",
+      "statusUnknown": "状态不可用",
+      "title": "监视文件夹"
     }
+  },
+  "survey": {
+    "actions": {
+      "pick": "精选（P）",
+      "rate": "评为 {{rating}} 星",
+      "reject": "淘汰（X）",
+      "unflag": "清除标旗（U）"
+    },
+    "close": "关闭浏览模式（Esc）",
+    "compareEntry": "以对比视图进入浏览模式",
+    "compareToggle": "对比视图（C）",
+    "hints": {
+      "compare": "对比两张",
+      "exit": "退出",
+      "navigate": "下一张 / 上一张",
+      "open": "在编辑器中打开",
+      "pick": "精选",
+      "rate": "评分 0–5",
+      "reject": "淘汰",
+      "unflag": "清除标旗"
+    },
+    "next": "下一张",
+    "prev": "上一张",
+    "title": "浏览模式"
   },
   "tethering": {
     "aperture": "光圈",
@@ -2228,6 +2492,8 @@
     "autoApplyPreset": "自动应用预设",
     "autoOpenCaptured": "自动打开拍摄的照片",
     "cameraConnected": "相机已连接",
+    "captureInterval": "间隔拍摄间隔（毫秒）",
+    "captureIntervalDesc": "间隔拍摄的默认间隔（200–3600000 毫秒）。",
     "capturing": "正在拍摄...",
     "changePreset": "更改",
     "clearPreset": "清除预设",

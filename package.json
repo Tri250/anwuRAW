@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "lint:e9": "node scripts/e9-check.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "i18n:extract": "i18next-cli extract",

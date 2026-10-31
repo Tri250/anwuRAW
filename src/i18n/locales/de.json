@@ -7,10 +7,14 @@
       "exposure": "Belichtung",
       "highlights": "Lichter",
       "mappers": {
+        "aces": "ACES Filmic",
+        "acesDesc": "ACES-Filmic-Tonemapping",
         "agx": "AgX",
         "agxDesc": "Filmähnliches Tonemapping",
         "basic": "Standard",
-        "basicDesc": "Standard-Tonemapping"
+        "basicDesc": "Standard-Tonemapping",
+        "pbrNeutral": "PBR Neutral",
+        "pbrNeutralDesc": "Neutrales Tonemapping"
       },
       "reset": "Zurücksetzen",
       "shadows": "Tiefen",
@@ -32,6 +36,7 @@
         "tint": "Tonung",
         "title": "Farbkalibrierung"
       },
+      "cameraProfile": "Kameraprofil",
       "colorGrading": "Color Grading",
       "colorMatch": "KI-Farbübertragung",
       "colorMatchDesc": "Überträgt den Farbstil eines Beispielfotos auf dieses Foto (nicht destruktiv)",
@@ -62,6 +67,7 @@
         "yellows": "Gelb"
       },
       "presence": "Präsenz",
+      "profileDefault": "Standard",
       "saturation": "Sättigung",
       "targetedTooltip": "Gezielte Anpassung: Farbe auf der Leinwand aufnehmen und zum Anpassen von Farbton/Sättigung ziehen (Ctrl+Alt+H)",
       "temperature": "Temperatur",
@@ -110,6 +116,8 @@
       "clarity": "Klarheit",
       "classicDenoise": "Klassisches Entrauschen",
       "color": "Farbe",
+      "colorNrDetail": "Farbdetails",
+      "colorNrSmoothness": "Glättung",
       "convertNegative": "Negativ umwandeln",
       "dehaze": "Dunst entfernen",
       "luminance": "Luminanz",
@@ -121,10 +129,12 @@
       "negativeRed": "Rot",
       "noiseReduction": "Rauschreduzierung",
       "presence": "Präsenz",
+      "radius": "Radius",
       "redCyan": "Rot/Cyan",
       "sharpening": "Schärfen",
       "sharpness": "Schärfe",
       "structure": "Struktur",
+      "texture": "Textur",
       "threshold": "Schwellenwert"
     },
     "effects": {
@@ -289,6 +299,25 @@
     "merge": {
       "focusStack": "Fokus-Stacking",
       "title": "Zusammenfügen"
+    },
+    "smartAlbums": {
+      "confirmDelete": "Are you sure you want to delete this smart album? The images themselves are not affected.",
+      "delete": "Delete Smart Album",
+      "edit": "Edit Smart Album",
+      "new": "New Smart Album"
+    },
+    "stacking": {
+      "autoStack": "Auto-Stack by Burst",
+      "autoStackedToast_one": "Created {{count}} stacks.",
+      "autoStackedToast_other": "Created {{count}} stacks.",
+      "autoStackNone": "No burst groups found to stack.",
+      "create_one": "Stack into Group ({{count}})",
+      "create_other": "Stack into Group ({{count}})",
+      "createdToast_one": "Created a stack with {{count}} images.",
+      "createdToast_other": "Created a stack with {{count}} images.",
+      "createFailed": "Not enough images to create a stack.",
+      "title": "Stacking",
+      "unstack": "Unstack"
     },
     "tagging": {
       "addTagTooltip": "Tag hinzufügen",
@@ -497,6 +526,19 @@
         "useBasicInpaint": "Einfaches Reparieren verwenden"
       },
       "touchUpTitle": "Ausbessern"
+    },
+    "aiEnhance": {
+      "failed": "AI enhance failed",
+      "title": "AI Enhance"
+    },
+    "canvas": {
+      "pickerCancel": "to cancel",
+      "pickerHints": {
+        "marker": "Click on the image to place the overlay",
+        "relight": "Click on the image to place the light",
+        "targeted": "Click or drag on the image to adjust",
+        "wb": "Click or drag on the image to sample white balance"
+      }
     },
     "compare": {
       "horizontal": "Oben / unten teilen",
@@ -809,9 +851,18 @@
       "gps": {
         "altitude": "Höhe",
         "clickToOpenTooltip": "Klicken, um die Karte in neuem Tab zu öffnen",
+        "googleMaps": "Open in Google Maps",
+        "invalidCoordinates": "Invalid coordinates",
         "latitude": "Breitengrad",
+        "location": "Location",
         "longitude": "Längengrad",
+        "noData": "No GPS data. Enter coordinates below to add a location.",
+        "remove": "Remove GPS",
         "title": "GPS-Standort"
+      },
+      "iptc": {
+        "subtitle": "Descriptive and rights metadata embedded on export",
+        "title": "IPTC"
       },
       "organization": {
         "addTagPlaceholder": "Tag hinzufügen...",
@@ -832,9 +883,11 @@
         "exportAllTitle": "Alle Vorgaben exportieren",
         "exportTitle": "{{type}} exportieren",
         "importPresetsTitle": "Vorgaben importieren",
+        "importXmpTitle": "Import XMP Adjustments",
         "legacyPreset": "Alte Vorgabe",
         "presetFile": "Vorgabendatei",
-        "rapidRawPreset": "RapidRAW Vorgabe"
+        "rapidRawPreset": "RapidRAW Vorgabe",
+        "xmpFile": "XMP File"
       },
       "menu": {
         "configurePreset": "Vorgabe konfigurieren",
@@ -843,6 +896,8 @@
         "duplicatePreset": "Vorgabe duplizieren",
         "exportFolder": "Ordner exportieren",
         "exportPreset": "Vorgabe exportieren",
+        "exportXmp": "Export Current Adjustments as XMP…",
+        "importXmp": "Import Adjustments from XMP…",
         "newFolder": "Neuer Ordner",
         "newPreset": "Neue Vorgabe",
         "overwrite": "Überschreiben",
@@ -864,7 +919,11 @@
         "exportFailed": "Vorgaben konnten nicht exportiert werden",
         "exportSuccess": "Vorgaben exportiert",
         "importFailed": "Vorgaben konnten nicht importiert werden",
-        "importFailures": "{{num}} Vorgabedatei(en) konnten nicht importiert werden"
+        "importFailures": "{{num}} Vorgabedatei(en) konnten nicht importiert werden",
+        "xmpExportFailed": "Failed to export XMP sidecar",
+        "xmpExportSuccess": "XMP sidecar exported",
+        "xmpImportFailed": "Failed to import XMP",
+        "xmpImportSuccess": "Adjustments imported from XMP"
       },
       "tooltips": {
         "explore": "Community-Vorgaben entdecken",
@@ -878,6 +937,13 @@
         "style": "Stil",
         "tool": "Werkzeug"
       }
+    },
+    "softProofing": {
+      "description": "Simulate how the exported image will look on a target output profile.",
+      "gamutWarning": "Gamut Warning",
+      "simulatePaper": "Simulate Paper",
+      "title": "Soft Proofing",
+      "turnOff": "Turn Off Soft Proofing"
     },
     "switcher": {
       "tooltips": {
@@ -900,6 +966,7 @@
       "history": "Verlauf",
       "switchToVariant": "Switch to {{label}}",
       "tooltips": {
+        "aiEnhance": "AI Enhance (Right-click for intensity)",
         "aperture": "Blende",
         "backToLibrary": "Zurück zur Bibliothek",
         "compare": "Vorher / Nachher (B) oder Modi (Rechtsklick)",
@@ -908,6 +975,7 @@
         "iso": "ISO",
         "redo": "Wiederholen (Strg+Y) oder Verlauf (Rechtsklick)",
         "shutterSpeed": "Verschlusszeit",
+        "softProofing": "Soft Proofing",
         "undo": "Rückgängig (Strg+Z) oder Verlauf (Rechtsklick)"
       },
       "vc": "VK"
@@ -919,6 +987,13 @@
       "preserveFolders": "Ordnerstruktur beibehalten",
       "preserveTimestamps": "Dateizeitstempel aus EXIF-Aufnahmedatum setzen",
       "title": "Exporteinstellungen"
+    },
+    "aiUpscale": {
+      "hint": "Renders the currently loaded image at {{factor}}× resolution.",
+      "label": "AI Upscale",
+      "off": "Off",
+      "scale2": "2×",
+      "scale4": "4×"
     },
     "border": {
       "addBorder": "Rahmen hinzufügen",
@@ -1032,6 +1107,7 @@
     },
     "title": "Export",
     "watermark": {
+      "addTextWatermark": "Textwasserzeichen hinzufügen",
       "addWatermark": "Wasserzeichen hinzufügen",
       "anchors": {
         "bottomCenter": "Unten Mitte",
@@ -1044,11 +1120,15 @@
         "topLeft": "Oben Links",
         "topRight": "Oben Rechts"
       },
+      "color": "Farbe",
+      "fontSize": "Schriftgröße",
       "logoText": "Logo",
       "opacity": "Deckkraft",
       "previewText": "Vorschau",
       "scale": "Skalierung",
       "spacing": "Abstand",
+      "text": "Text",
+      "textPlaceholder": "Wasserzeichentext…",
       "watermarkImage": "Wasserzeichen-Bild"
     }
   },
@@ -1178,6 +1258,17 @@
       "toggleFit": "1:1 / Einpassen umschalten",
       "vc": "VK"
     },
+    "delete": {
+      "confirmTitle": "Delete Image",
+      "delete": "Delete",
+      "deleteAll": "Delete All",
+      "deleteAllMessage": "The original files will be moved to the trash.",
+      "deleteAllTitle": "Delete Original Files",
+      "deleteMultipleMessage_one": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteMultipleMessage_other": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteSelected": "Delete Selected",
+      "deleteSingleMessage": "The original file will be moved to the trash."
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} Bilder entsprechen nicht mehr dem Filter",
       "hiddenMultiple_other": "{{count}} Bilder entsprechen nicht mehr dem Filter",
@@ -1227,8 +1318,10 @@
       "sections": {
         "albums": "Alben",
         "folders": "Ordner",
-        "pinned": "Angeheftet"
+        "pinned": "Angeheftet",
+        "smartAlbums": "Smart Albums"
       },
+      "smartAlbumsEmpty": "Right-click or use + to create a smart album.",
       "sort": {
         "created": "Erstellungsdatum",
         "imageCount": "Bildanzahl",
@@ -1312,8 +1405,12 @@
     "items": {
       "cloudPlaceholder": "In iCloud gespeichert — nicht heruntergeladen",
       "collapseFolder": "Ordner zuklappen",
+      "collapseStack_one": "Collapse Stack ({{count}})",
+      "collapseStack_other": "Collapse Stack ({{count}})",
       "currentFolder": "Aktueller Ordner",
       "expandFolder": "Ordner aufklappen",
+      "expandStack_one": "Expand Stack ({{count}})",
+      "expandStack_other": "Expand Stack ({{count}})",
       "imagesCount_one": "1 Bild",
       "imagesCount_other": "{{count}} Bilder",
       "immichPlaceholder": "In Immich gespeichert — nicht heruntergeladen",
@@ -1326,6 +1423,10 @@
     },
     "jobs": {
       "active": "Läuft",
+      "activeCount_one": "{{count}} running",
+      "activeCount_other": "{{count}} running",
+      "allDone_one": "{{count}} finished",
+      "allDone_other": "{{count}} finished",
       "cancel": "Export abbrechen",
       "cancelling": "Wird abgebrochen…",
       "clear": "Leeren",
@@ -1343,8 +1444,16 @@
         "modelDownload": "KI-Modell-Download",
         "move": "Dateien verschieben"
       },
+      "noActive": "No active jobs",
       "openInLibrary": "In der Bibliothek öffnen",
       "recent": "Zuletzt",
+      "statuses": {
+        "cancelled": "Cancelled",
+        "cancelling": "Cancelling…",
+        "error": "Failed",
+        "running": "Running",
+        "success": "Done"
+      },
       "title": "Aufgaben"
     },
     "reject": {
@@ -1731,6 +1840,46 @@
     "renameGroup": {
       "placeholder": "Neuen Gruppennamen eingeben..."
     },
+    "smartAlbum": {
+      "addRule": "Add Rule",
+      "cancel": "Cancel",
+      "colors": {
+        "none": "No Color Label"
+      },
+      "create": "Create",
+      "createTitle": "New Smart Album",
+      "description": "A smart album automatically collects images matching the rules below.",
+      "edited": {
+        "edited": "Edited",
+        "unedited": "Unedited"
+      },
+      "editTitle": "Edit Smart Album",
+      "fields": {
+        "camera": "Camera",
+        "color": "Color Label",
+        "dateTaken": "Date Taken",
+        "edited": "Edit Status",
+        "filename": "File Name",
+        "flag": "Flag",
+        "iso": "ISO",
+        "lens": "Lens",
+        "rating": "Rating",
+        "raw": "File Type"
+      },
+      "flags": {
+        "none": "No Flag",
+        "pick": "Picked",
+        "reject": "Rejected"
+      },
+      "matchLabel": "Rules",
+      "namePlaceholder": "Enter album name...",
+      "raw": {
+        "nonRaw": "Non-RAW",
+        "raw": "RAW"
+      },
+      "removeRule": "Remove rule",
+      "save": "Save"
+    },
     "transform": {
       "amount": "Betrag",
       "apply": "Anwenden",
@@ -1760,6 +1909,29 @@
       "zoomOutTooltip": "Verkleinern"
     }
   },
+  "onboarding": {
+    "back": "Back",
+    "finish": "Get Started",
+    "goToStep": "Go to step {{step}}",
+    "next": "Next",
+    "skip": "Skip",
+    "stepOf": "Step {{current}} of {{total}}",
+    "steps": {
+      "folder": {
+        "description": "Open a folder from the splash screen or the folder tree and all supported images inside are added to your library automatically.",
+        "title": "Add your photos"
+      },
+      "preset": {
+        "description": "Open an image, then click the Presets panel to try one-click looks, or save your own style for later.",
+        "title": "Try a one-click look"
+      },
+      "shortcuts": {
+        "description": "Find every shortcut and rebind them anytime in Settings → Controls.",
+        "title": "Five shortcuts worth knowing"
+      }
+    },
+    "title": "Welcome to RapidRAW"
+  },
   "settings": {
     "categories": {
       "general": "Allgemein",
@@ -1772,6 +1944,7 @@
         "mouse": "Maus",
         "trackpad": "Touchpad"
       },
+      "noMatchingShortcuts": "No shortcuts match your search.",
       "notAssigned": "Nicht zugewiesen",
       "optimization": "Eingabegeräte-Optimierung",
       "optimizationDesc": "Wählen Sie das primäre Eingabegerät zum Schwenken und Zoomen.",
@@ -1779,6 +1952,7 @@
       "resetDefaults": "Alles auf Standard zurücksetzen",
       "resetDefaultsMessage": "Alle Tastenkürzel werden auf die Standardbelegung zurückgesetzt. Benutzerdefinierte Zuweisungen gehen verloren.",
       "resetDefaultsTitle": "Tastenkürzel zurücksetzen",
+      "searchShortcuts": "Search shortcuts...",
       "speed": "Geschwindigkeit",
       "title": "Maussteuerung",
       "zoom": "Zoom-Geschwindigkeitsfaktor",
@@ -2221,7 +2395,32 @@
       "timeout": "Die Update-Prüfung hat nach 20 Sekunden das Zeitlimit überschritten.",
       "title": "Software-Updates",
       "upToDate": "Sie verwenden die neueste Version ({{version}})."
+    },
+    "watchedFolders": {
+      "add": "Add Folder",
+      "desc": "Automatically import new images that appear in these folders.",
+      "empty": "No folders are being watched yet.",
+      "enabled": "Enabled",
+      "refresh": "Refresh Status",
+      "remove": "Remove folder",
+      "statusSummary": "{{known}} images, {{pending}} pending",
+      "statusUnknown": "Status unavailable",
+      "title": "Watched Folders"
     }
+  },
+  "survey": {
+    "actions": {
+      "pick": "Pick (P)",
+      "rate": "Rate {{rating}}",
+      "reject": "Reject (X)",
+      "unflag": "Clear flag (U)"
+    },
+    "close": "Close survey (Esc)",
+    "compareEntry": "Survey mode in compare view",
+    "compareToggle": "Compare view (C)",
+    "next": "Next image",
+    "prev": "Previous image",
+    "title": "Survey Mode"
   },
   "tethering": {
     "aperture": "Blende",
@@ -2229,6 +2428,8 @@
     "autoApplyPreset": "Preset autom. anwenden",
     "autoOpenCaptured": "Aufgenommenes Bild autom. öffnen",
     "cameraConnected": "Kamera verbunden",
+    "captureInterval": "Interval Capture Interval (ms)",
+    "captureIntervalDesc": "Default delay between interval captures (200–3600000 ms).",
     "capturing": "Aufnahme läuft...",
     "changePreset": "Ändern",
     "clearPreset": "Preset entfernen",

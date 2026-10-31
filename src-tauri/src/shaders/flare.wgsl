@@ -6,7 +6,7 @@ struct FlareParams {
     contrast: f32,
     whites: f32,
     aspect_ratio: f32,
-    _pad: f32,
+    blades: f32,
 }
 
 @group(0) @binding(0) var input_texture: texture_2d<f32>;
@@ -117,6 +117,9 @@ fn threshold_main(@builtin(global_invocation_id) id: vec3<u32>) {
 
 @group(1) @binding(0) var threshold_input: texture_2d<f32>;
 @group(1) @binding(1) var flare_output: texture_storage_2d<rgba16float, write>;
+// R4-3: luminance-weighted highlight centroid (x_mean, y_mean, weight, 0) —
+// ghosts and halos pivot around the actual light source, not the frame centre.
+@group(1) @binding(2) var<storage, read> flare_centroid: vec4<f32>;
 
 fn sample_bilinear(uv: vec2<f32>, dims: vec2<f32>) -> vec3<f32> {
     let clamped_uv = clamp(uv, vec2<f32>(0.0), vec2<f32>(1.0));
@@ -137,14 +140,15 @@ fn sample_bilinear(uv: vec2<f32>, dims: vec2<f32>) -> vec3<f32> {
 fn starburst_rays(uv: vec2<f32>, dims: vec2<f32>, aspect: f32) -> vec3<f32> {
     var result = vec3<f32>(0.0);
 
-    let NUM_SPIKES = 6;
+    // R4-3: aperture blade count parameterizes ray/spike structure.
+    let num_spikes = max(2.0, params.blades);
     let SAMPLES_PER_DIRECTION = 24;
     let RAY_LENGTH = 0.65;
     let ROTATION = 0.5236;
     let CHROMATIC_SPREAD = 0.01;
 
-    for (var spike = 0; spike < NUM_SPIKES; spike++) {
-        let angle = f32(spike) * 3.14159265 / f32(NUM_SPIKES) + ROTATION;
+    for (var spike = 0; spike < i32(num_spikes); spike++) {
+        let angle = f32(spike) * 3.14159265 / num_spikes + ROTATION;
         var dir = vec2<f32>(cos(angle), sin(angle));
         dir.x /= aspect;
         dir = normalize(dir);
@@ -188,19 +192,19 @@ fn starburst_rays(uv: vec2<f32>, dims: vec2<f32>, aspect: f32) -> vec3<f32> {
         }
     }
 
-    return result / f32(NUM_SPIKES) * 3.0;
+    return result / num_spikes * 3.0;
 }
 
 fn starburst_inner(uv: vec2<f32>, dims: vec2<f32>, aspect: f32) -> vec3<f32> {
     var result = vec3<f32>(0.0);
 
-    let NUM_SPIKES = 6;
+    let num_spikes = max(2.0, params.blades);
     let SAMPLES = 16;
     let RAY_LENGTH = 0.2;
     let ROTATION = 0.5236;
 
-    for (var spike = 0; spike < NUM_SPIKES; spike++) {
-        let angle = f32(spike) * 3.14159265 / f32(NUM_SPIKES) + ROTATION;
+    for (var spike = 0; spike < i32(num_spikes); spike++) {
+        let angle = f32(spike) * 3.14159265 / num_spikes + ROTATION;
         var dir = vec2<f32>(cos(angle), sin(angle));
         dir.x /= aspect;
         dir = normalize(dir);
@@ -231,7 +235,7 @@ fn starburst_inner(uv: vec2<f32>, dims: vec2<f32>, aspect: f32) -> vec3<f32> {
         }
     }
 
-    return result / f32(NUM_SPIKES) * 2.0;
+    return result / num_spikes * 2.0;
 }
 
 fn radial_glow(uv: vec2<f32>, dims: vec2<f32>, aspect: f32) -> vec3<f32> {
@@ -280,7 +284,9 @@ fn iris_pattern(uv: vec2<f32>, dims: vec2<f32>, aspect: f32) -> vec3<f32> {
         let ring_factor = exp(-pow((center_dist - ring_radii[r]) / ring_widths[r], 2.0));
         let angle_vec = (uv - 0.5) * vec2<f32>(aspect, 1.0);
         let angle = atan2(angle_vec.y, angle_vec.x);
-        let hex_mod = 0.9 + 0.1 * pow(abs(cos(angle * 3.0)), 4.0);
+        // R4-3: aperture blade count shapes the iris lobe modulation.
+        let blade_pair = max(1.0, round(params.blades * 0.5));
+        let hex_mod = 0.9 + 0.1 * pow(abs(cos(angle * blade_pair)), 4.0);
 
         result += source_brightness * ring_factor * ring_intensities[r] * hex_mod;
     }
@@ -298,6 +304,10 @@ fn ghosts_main(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let aspect = params.aspect_ratio;
     let aspect_vec = vec2<f32>(aspect, 1.0);
+
+    // R4-3: ghosts/halos pivot on the luminance-weighted highlight centroid;
+    // falls back to the frame centre for centroid-free (dim) frames.
+    let light_pos = select(vec2<f32>(0.5), flare_centroid.xy, flare_centroid.z > 1.0e-4);
 
     let flipped_uv = vec2<f32>(1.0) - uv;
 
@@ -317,55 +327,55 @@ fn ghosts_main(@builtin(global_invocation_id) id: vec3<u32>) {
     var dist: f32;
     var vignette: f32;
 
-    ghost_uv = vec2<f32>(0.5) + (flipped_uv - 0.5) * 0.75;
+    ghost_uv = light_pos + (flipped_uv - light_pos) * 0.75;
     ghost = sample_bilinear(ghost_uv, dims);
-    dist = length((ghost_uv - 0.5) * aspect_vec);
+    dist = length((ghost_uv - light_pos) * aspect_vec);
     vignette = 1.0 - smoothstep(0.15, 0.6, dist);
     flare += ghost * vec3<f32>(1.0, 0.92, 0.85) * 0.05 * vignette;
 
-    ghost_uv = vec2<f32>(0.5) + (flipped_uv - 0.5) * 0.4;
+    ghost_uv = light_pos + (flipped_uv - light_pos) * 0.4;
     ghost = sample_bilinear(ghost_uv, dims);
-    dist = length((ghost_uv - 0.5) * aspect_vec);
+    dist = length((ghost_uv - light_pos) * aspect_vec);
     vignette = 1.0 - smoothstep(0.1, 0.45, dist);
     flare += ghost * vec3<f32>(0.92, 1.0, 0.95) * 0.07 * vignette;
 
-    ghost_uv = vec2<f32>(0.5) + (flipped_uv - 0.5) * 0.2;
+    ghost_uv = light_pos + (flipped_uv - light_pos) * 0.2;
     ghost = sample_bilinear(ghost_uv, dims);
-    dist = length((ghost_uv - 0.5) * aspect_vec);
+    dist = length((ghost_uv - light_pos) * aspect_vec);
     vignette = 1.0 - smoothstep(0.08, 0.35, dist);
     flare += ghost * vec3<f32>(0.95, 0.97, 1.0) * 0.08 * vignette;
 
-    ghost_uv = vec2<f32>(0.5) + (flipped_uv - 0.5) * 0.12;
+    ghost_uv = light_pos + (flipped_uv - light_pos) * 0.12;
     ghost = sample_bilinear(ghost_uv, dims);
-    dist = length((ghost_uv - 0.5) * aspect_vec);
+    dist = length((ghost_uv - light_pos) * aspect_vec);
     vignette = 1.0 - smoothstep(0.05, 0.25, dist);
     flare += ghost * vec3<f32>(1.0, 1.0, 0.97) * 0.07 * vignette;
 
-    ghost_uv = vec2<f32>(0.5) + (uv - 0.5) * 1.8;
+    ghost_uv = light_pos + (uv - light_pos) * 1.8;
     if (ghost_uv.x > 0.0 && ghost_uv.x < 1.0 && ghost_uv.y > 0.0 && ghost_uv.y < 1.0) {
         ghost = sample_bilinear(ghost_uv, dims);
-        dist = length((ghost_uv - 0.5) * aspect_vec);
+        dist = length((ghost_uv - light_pos) * aspect_vec);
         vignette = 1.0 - smoothstep(0.25, 0.75, dist);
         flare += ghost * vec3<f32>(0.85, 0.9, 1.0) * 0.03 * vignette;
     }
 
-    ghost_uv = vec2<f32>(0.5) + (flipped_uv - 0.5) * 1.3;
+    ghost_uv = light_pos + (flipped_uv - light_pos) * 1.3;
     if (ghost_uv.x > 0.0 && ghost_uv.x < 1.0 && ghost_uv.y > 0.0 && ghost_uv.y < 1.0) {
         ghost = sample_bilinear(ghost_uv, dims);
-        dist = length((ghost_uv - 0.5) * aspect_vec);
+        dist = length((ghost_uv - light_pos) * aspect_vec);
         vignette = 1.0 - smoothstep(0.2, 0.55, dist);
         flare += ghost * vec3<f32>(1.0, 0.9, 0.95) * 0.03 * vignette;
     }
 
-    ghost_uv = vec2<f32>(0.5) + (flipped_uv - 0.5) * 0.55;
+    ghost_uv = light_pos + (flipped_uv - light_pos) * 0.55;
     ghost = sample_bilinear(ghost_uv, dims);
-    dist = length((ghost_uv - 0.5) * aspect_vec);
+    dist = length((ghost_uv - light_pos) * aspect_vec);
     vignette = 1.0 - smoothstep(0.2, 0.5, dist);
     flare += ghost * vec3<f32>(0.97, 0.95, 1.0) * 0.04 * vignette;
 
     let halo_sample = sample_bilinear(flipped_uv, dims);
 
-    let center_dist = length((uv - 0.5) * aspect_vec);
+    let center_dist = length((uv - light_pos) * aspect_vec);
     let halo_radius = 0.4;
     let halo_width = 0.05;
     var halo_factor = exp(-pow((center_dist - halo_radius) / halo_width, 2.0));
@@ -407,4 +417,74 @@ fn ghosts_main(@builtin(global_invocation_id) id: vec3<u32>) {
     flare += streak * vec3<f32>(0.85, 0.92, 1.0) * 1.0;
 
     textureStore(flare_output, id.xy, vec4<f32>(flare * params.amount * 1.5, 1.0));
+}
+
+// R4-3: two-stage luminance-weighted centroid reduction over the thresholded
+// highlight map. Stage 1 reduces each 16x16 block into one vec4 partial
+// (sum w*x, sum w*y, sum w); stage 2 reduces the 32x32 partials into the
+// final centroid, stored for the ghosts pass.
+@group(2) @binding(0) var centroid_src: texture_2d<f32>;
+@group(2) @binding(1) var<storage, read_write> centroid_partials: array<vec4<f32>>;
+@group(2) @binding(2) var<storage, read_write> centroid_result: vec4<f32>;
+
+var<workgroup> centroid_wg: array<vec4<f32>, 256>;
+
+@compute @workgroup_size(16, 16, 1)
+fn centroid_blocks_main(
+    @builtin(global_invocation_id) gid: vec3<u32>,
+    @builtin(local_invocation_id) lid: vec3<u32>,
+    @builtin(workgroup_id) wgid: vec3<u32>
+) {
+    let dims = vec2<u32>(textureDimensions(centroid_src));
+    let index = lid.x + lid.y * 16u;
+    var sample_v = vec4<f32>(0.0);
+    if (gid.x < dims.x && gid.y < dims.y) {
+        let c = max(textureLoad(centroid_src, gid.xy, 0).rgb, vec3<f32>(0.0));
+        let w = get_luma(c);
+        let uv = (vec2<f32>(gid.xy) + vec2<f32>(0.5)) / vec2<f32>(dims);
+        sample_v = vec4<f32>(w * uv.x, w * uv.y, w, 0.0);
+    }
+    centroid_wg[index] = sample_v;
+    workgroupBarrier();
+
+    for (var stride = 128u; stride >= 1u; stride = stride / 2u) {
+        if (index < stride) {
+            centroid_wg[index] = centroid_wg[index] + centroid_wg[index + stride];
+        }
+        workgroupBarrier();
+    }
+
+    if (index == 0u) {
+        let blocks_x = (dims.x + 15u) / 16u;
+        centroid_partials[wgid.y * blocks_x + wgid.x] = centroid_wg[0];
+    }
+}
+
+var<workgroup> centroid_reduce_wg: array<vec4<f32>, 256>;
+
+@compute @workgroup_size(256, 1, 1)
+fn centroid_reduce_main(@builtin(local_invocation_id) lid: vec3<u32>) {
+    let count = arrayLength(&centroid_partials);
+    var acc = vec4<f32>(0.0);
+    for (var i = lid.x; i < count; i = i + 256u) {
+        acc = acc + centroid_partials[i];
+    }
+    centroid_reduce_wg[lid.x] = acc;
+    workgroupBarrier();
+
+    for (var stride = 128u; stride >= 1u; stride = stride / 2u) {
+        if (lid.x < stride) {
+            centroid_reduce_wg[lid.x] = centroid_reduce_wg[lid.x] + centroid_reduce_wg[lid.x + stride];
+        }
+        workgroupBarrier();
+    }
+
+    if (lid.x == 0u) {
+        let total = centroid_reduce_wg[0].z;
+        var out = vec4<f32>(0.5, 0.5, 0.0, 0.0);
+        if (total > 1.0e-4) {
+            out = vec4<f32>(centroid_reduce_wg[0].x / total, centroid_reduce_wg[0].y / total, total, 0.0);
+        }
+        centroid_result = out;
+    }
 }

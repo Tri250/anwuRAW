@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useUIStore } from '../store/useUIStore';
 import { useSettingsStore } from '../store/useSettingsStore';
+import { popExitLayer } from '../utils/androidBackRegistry';
 
 export function useAndroidBackHandler() {
   useEffect(() => {
@@ -8,6 +9,10 @@ export function useAndroidBackHandler() {
     if (osPlatform !== 'android') return;
 
     (window as any).__handleAndroidBack = () => {
+      // Feature-owned overlays (survey mode, smart album modal, ...) register
+      // themselves; only fall back to the hardcoded list when none remain.
+      if (popExitLayer()) return;
+
       const ui = useUIStore.getState();
 
       if (ui.confirmModalState.isOpen) {

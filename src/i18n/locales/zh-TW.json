@@ -7,10 +7,14 @@
       "exposure": "曝光",
       "highlights": "亮部",
       "mappers": {
+        "aces": "ACES Filmic",
+        "acesDesc": "ACES Filmic 色調映射",
         "agx": "AgX",
         "agxDesc": "電影感色調映射",
         "basic": "基礎",
-        "basicDesc": "標準色調映射"
+        "basicDesc": "標準色調映射",
+        "pbrNeutral": "PBR Neutral",
+        "pbrNeutralDesc": "中性色調映射"
       },
       "reset": "重置",
       "shadows": "陰影",
@@ -32,6 +36,7 @@
         "tint": "色調",
         "title": "顏色校準"
       },
+      "cameraProfile": "相機設定檔",
       "colorGrading": "顏色分級",
       "colorMatch": "AI 追色",
       "colorMatchDesc": "將樣片的色彩風格傳遞到當前照片（非破壞性）",
@@ -62,6 +67,7 @@
         "yellows": "黃色"
       },
       "presence": "質感",
+      "profileDefault": "預設",
       "saturation": "飽和度",
       "targetedTooltip": "目標調整：在畫布上取樣顏色並拖動，調整該顏色的色相/飽和度（Ctrl+Alt+H）",
       "temperature": "色溫",
@@ -110,6 +116,8 @@
       "clarity": "清晰度",
       "classicDenoise": "經典降噪",
       "color": "顏色",
+      "colorNrDetail": "色彩細節",
+      "colorNrSmoothness": "平滑度",
       "convertNegative": "轉換負片",
       "dehaze": "去朦朧",
       "luminance": "亮度",
@@ -121,10 +129,12 @@
       "negativeRed": "紅色",
       "noiseReduction": "降噪",
       "presence": "質感",
+      "radius": "半徑",
       "redCyan": "紅/青",
       "sharpening": "銳化",
       "sharpness": "銳度",
       "structure": "結構",
+      "texture": "紋理",
       "threshold": "臨界值"
     },
     "effects": {
@@ -289,6 +299,22 @@
     "merge": {
       "focusStack": "焦距合成",
       "title": "合併"
+    },
+    "smartAlbums": {
+      "confirmDelete": "Are you sure you want to delete this smart album? The images themselves are not affected.",
+      "delete": "Delete Smart Album",
+      "edit": "Edit Smart Album",
+      "new": "New Smart Album"
+    },
+    "stacking": {
+      "autoStack": "Auto-Stack by Burst",
+      "autoStackedToast_other": "Created {{count}} stacks.",
+      "autoStackNone": "No burst groups found to stack.",
+      "create_other": "Stack into Group ({{count}})",
+      "createdToast_other": "Created a stack with {{count}} images.",
+      "createFailed": "Not enough images to create a stack.",
+      "title": "Stacking",
+      "unstack": "Unstack"
     },
     "tagging": {
       "addTagTooltip": "新增標籤",
@@ -496,6 +522,19 @@
         "useBasicInpaint": "使用基礎影像修復"
       },
       "touchUpTitle": "潤色"
+    },
+    "aiEnhance": {
+      "failed": "AI enhance failed",
+      "title": "AI Enhance"
+    },
+    "canvas": {
+      "pickerCancel": "to cancel",
+      "pickerHints": {
+        "marker": "Click on the image to place the overlay",
+        "relight": "Click on the image to place the light",
+        "targeted": "Click or drag on the image to adjust",
+        "wb": "Click or drag on the image to sample white balance"
+      }
     },
     "compare": {
       "horizontal": "上下分割",
@@ -808,9 +847,18 @@
       "gps": {
         "altitude": "海拔",
         "clickToOpenTooltip": "點選在新標籤頁中開啟地圖",
+        "googleMaps": "Open in Google Maps",
+        "invalidCoordinates": "Invalid coordinates",
         "latitude": "緯度",
+        "location": "Location",
         "longitude": "經度",
+        "noData": "No GPS data. Enter coordinates below to add a location.",
+        "remove": "Remove GPS",
         "title": "GPS 位置"
+      },
+      "iptc": {
+        "subtitle": "Descriptive and rights metadata embedded on export",
+        "title": "IPTC"
       },
       "organization": {
         "addTagPlaceholder": "新增標籤...",
@@ -831,9 +879,11 @@
         "exportAllTitle": "匯出所有預設",
         "exportTitle": "匯出 {{type}}",
         "importPresetsTitle": "匯入預設",
+        "importXmpTitle": "Import XMP Adjustments",
         "legacyPreset": "舊版預設",
         "presetFile": "預設檔案",
-        "rapidRawPreset": "RapidRAW 預設"
+        "rapidRawPreset": "RapidRAW 預設",
+        "xmpFile": "XMP File"
       },
       "menu": {
         "configurePreset": "配置預設",
@@ -842,6 +892,8 @@
         "duplicatePreset": "複製預設",
         "exportFolder": "匯出資料夾",
         "exportPreset": "匯出預設",
+        "exportXmp": "Export Current Adjustments as XMP…",
+        "importXmp": "Import Adjustments from XMP…",
         "newFolder": "新建資料夾",
         "newPreset": "新建預設",
         "overwrite": "覆蓋",
@@ -863,7 +915,11 @@
         "exportFailed": "匯出預設失敗",
         "exportSuccess": "預設已匯出",
         "importFailed": "匯入預設失敗",
-        "importFailures": "{{num}} 個預設檔案匯入失敗"
+        "importFailures": "{{num}} 個預設檔案匯入失敗",
+        "xmpExportFailed": "Failed to export XMP sidecar",
+        "xmpExportSuccess": "XMP sidecar exported",
+        "xmpImportFailed": "Failed to import XMP",
+        "xmpImportSuccess": "Adjustments imported from XMP"
       },
       "tooltips": {
         "explore": "探索社群預設",
@@ -877,6 +933,13 @@
         "style": "風格",
         "tool": "工具"
       }
+    },
+    "softProofing": {
+      "description": "Simulate how the exported image will look on a target output profile.",
+      "gamutWarning": "Gamut Warning",
+      "simulatePaper": "Simulate Paper",
+      "title": "Soft Proofing",
+      "turnOff": "Turn Off Soft Proofing"
     },
     "switcher": {
       "tooltips": {
@@ -899,6 +962,7 @@
       "history": "歷史記錄",
       "switchToVariant": "Switch to {{label}}",
       "tooltips": {
+        "aiEnhance": "AI Enhance (Right-click for intensity)",
         "aperture": "光圈",
         "backToLibrary": "返回相簿",
         "compare": "前後對比（B）或模式（右鍵）",
@@ -907,6 +971,7 @@
         "iso": "ISO",
         "redo": "重做（Ctrl+Y）或歷史記錄（右鍵單擊）",
         "shutterSpeed": "快門速度",
+        "softProofing": "Soft Proofing",
         "undo": "復原（Ctrl+Z）或歷史記錄（右鍵單擊）"
       },
       "vc": "VC"
@@ -918,6 +983,13 @@
       "preserveFolders": "保留資料夾結構",
       "preserveTimestamps": "將檔案時間戳設為 EXIF 拍攝日期",
       "title": "匯出設定"
+    },
+    "aiUpscale": {
+      "hint": "Renders the currently loaded image at {{factor}}× resolution.",
+      "label": "AI Upscale",
+      "off": "Off",
+      "scale2": "2×",
+      "scale4": "4×"
     },
     "border": {
       "addBorder": "新增邊框",
@@ -1031,6 +1103,7 @@
     },
     "title": "匯出",
     "watermark": {
+      "addTextWatermark": "新增文字浮水印",
       "addWatermark": "新增水印",
       "anchors": {
         "bottomCenter": "底部置中",
@@ -1043,11 +1116,15 @@
         "topLeft": "左上角",
         "topRight": "右上角"
       },
+      "color": "顏色",
+      "fontSize": "字型大小",
       "logoText": "標誌",
       "opacity": "不透明度",
       "previewText": "預覽",
       "scale": "縮放",
       "spacing": "間距",
+      "text": "文字",
+      "textPlaceholder": "浮水印文字…",
       "watermarkImage": "水印影像"
     }
   },
@@ -1177,6 +1254,16 @@
       "toggleFit": "切換 1:1 / 適應",
       "vc": "VC"
     },
+    "delete": {
+      "confirmTitle": "Delete Image",
+      "delete": "Delete",
+      "deleteAll": "Delete All",
+      "deleteAllMessage": "The original files will be moved to the trash.",
+      "deleteAllTitle": "Delete Original Files",
+      "deleteMultipleMessage_other": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteSelected": "Delete Selected",
+      "deleteSingleMessage": "The original file will be moved to the trash."
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} 張影像已不再符合篩選條件",
       "hiddenMultiple_other": "{{count}} 張影像已不再符合篩選條件",
@@ -1226,8 +1313,10 @@
       "sections": {
         "albums": "相簿",
         "folders": "資料夾",
-        "pinned": "已固定"
+        "pinned": "已固定",
+        "smartAlbums": "Smart Albums"
       },
+      "smartAlbumsEmpty": "Right-click or use + to create a smart album.",
       "sort": {
         "created": "建立日期",
         "imageCount": "影像數量",
@@ -1311,8 +1400,10 @@
     "items": {
       "cloudPlaceholder": "儲存在 iCloud 中 — 未下載",
       "collapseFolder": "摺疊資料夾",
+      "collapseStack_other": "Collapse Stack ({{count}})",
       "currentFolder": "當前資料夾",
       "expandFolder": "展開資料夾",
+      "expandStack_other": "Expand Stack ({{count}})",
       "imagesCount_one": "1 張影像",
       "imagesCount_other": "{{count}} 張影像",
       "immichPlaceholder": "儲存在 Immich 中 — 未下載",
@@ -1325,6 +1416,8 @@
     },
     "jobs": {
       "active": "進行中",
+      "activeCount_other": "{{count}} running",
+      "allDone_other": "{{count}} finished",
       "cancel": "取消匯出",
       "cancelling": "正在取消…",
       "clear": "清除",
@@ -1342,8 +1435,16 @@
         "modelDownload": "AI 模型下載",
         "move": "移動檔案"
       },
+      "noActive": "No active jobs",
       "openInLibrary": "在圖庫中開啟",
       "recent": "最近",
+      "statuses": {
+        "cancelled": "Cancelled",
+        "cancelling": "Cancelling…",
+        "error": "Failed",
+        "running": "Running",
+        "success": "Done"
+      },
       "title": "工作"
     },
     "reject": {
@@ -1730,6 +1831,46 @@
     "renameGroup": {
       "placeholder": "輸入新的組名稱..."
     },
+    "smartAlbum": {
+      "addRule": "Add Rule",
+      "cancel": "Cancel",
+      "colors": {
+        "none": "No Color Label"
+      },
+      "create": "Create",
+      "createTitle": "New Smart Album",
+      "description": "A smart album automatically collects images matching the rules below.",
+      "edited": {
+        "edited": "Edited",
+        "unedited": "Unedited"
+      },
+      "editTitle": "Edit Smart Album",
+      "fields": {
+        "camera": "Camera",
+        "color": "Color Label",
+        "dateTaken": "Date Taken",
+        "edited": "Edit Status",
+        "filename": "File Name",
+        "flag": "Flag",
+        "iso": "ISO",
+        "lens": "Lens",
+        "rating": "Rating",
+        "raw": "File Type"
+      },
+      "flags": {
+        "none": "No Flag",
+        "pick": "Picked",
+        "reject": "Rejected"
+      },
+      "matchLabel": "Rules",
+      "namePlaceholder": "Enter album name...",
+      "raw": {
+        "nonRaw": "Non-RAW",
+        "raw": "RAW"
+      },
+      "removeRule": "Remove rule",
+      "save": "Save"
+    },
     "transform": {
       "amount": "數量",
       "apply": "應用",
@@ -1759,6 +1900,29 @@
       "zoomOutTooltip": "縮小"
     }
   },
+  "onboarding": {
+    "back": "Back",
+    "finish": "Get Started",
+    "goToStep": "Go to step {{step}}",
+    "next": "Next",
+    "skip": "Skip",
+    "stepOf": "Step {{current}} of {{total}}",
+    "steps": {
+      "folder": {
+        "description": "Open a folder from the splash screen or the folder tree and all supported images inside are added to your library automatically.",
+        "title": "Add your photos"
+      },
+      "preset": {
+        "description": "Open an image, then click the Presets panel to try one-click looks, or save your own style for later.",
+        "title": "Try a one-click look"
+      },
+      "shortcuts": {
+        "description": "Find every shortcut and rebind them anytime in Settings → Controls.",
+        "title": "Five shortcuts worth knowing"
+      }
+    },
+    "title": "Welcome to RapidRAW"
+  },
   "settings": {
     "categories": {
       "general": "通用",
@@ -1771,6 +1935,7 @@
         "mouse": "滑鼠",
         "trackpad": "觸控板"
       },
+      "noMatchingShortcuts": "No shortcuts match your search.",
       "notAssigned": "未分配",
       "optimization": "輸入裝置最佳化",
       "optimizationDesc": "選擇您用於平移和縮放畫布的主要輸入裝置。",
@@ -1778,6 +1943,7 @@
       "resetDefaults": "全部重置為預設值",
       "resetDefaultsMessage": "將把所有鍵盤快捷鍵恢復為預設綁定，自訂的綁定將會遺失。",
       "resetDefaultsTitle": "重置鍵盤快捷鍵",
+      "searchShortcuts": "Search shortcuts...",
       "speed": "速度",
       "title": "滑鼠控制",
       "zoom": "縮放速度倍率",
@@ -2220,7 +2386,32 @@
       "timeout": "檢查更新逾時（超過 20 秒）。",
       "title": "軟體更新",
       "upToDate": "已是最新版本（{{version}}）。"
+    },
+    "watchedFolders": {
+      "add": "Add Folder",
+      "desc": "Automatically import new images that appear in these folders.",
+      "empty": "No folders are being watched yet.",
+      "enabled": "Enabled",
+      "refresh": "Refresh Status",
+      "remove": "Remove folder",
+      "statusSummary": "{{known}} images, {{pending}} pending",
+      "statusUnknown": "Status unavailable",
+      "title": "Watched Folders"
     }
+  },
+  "survey": {
+    "actions": {
+      "pick": "Pick (P)",
+      "rate": "Rate {{rating}}",
+      "reject": "Reject (X)",
+      "unflag": "Clear flag (U)"
+    },
+    "close": "Close survey (Esc)",
+    "compareEntry": "Survey mode in compare view",
+    "compareToggle": "Compare view (C)",
+    "next": "Next image",
+    "prev": "Previous image",
+    "title": "Survey Mode"
   },
   "tethering": {
     "aperture": "光圈",
@@ -2228,6 +2419,8 @@
     "autoApplyPreset": "自動套用預設集",
     "autoOpenCaptured": "自動開啟拍攝的影像",
     "cameraConnected": "相機已連線",
+    "captureInterval": "Interval Capture Interval (ms)",
+    "captureIntervalDesc": "Default delay between interval captures (200–3600000 ms).",
     "capturing": "正在拍攝...",
     "changePreset": "變更",
     "clearPreset": "清除預設集",

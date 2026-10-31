@@ -71,6 +71,8 @@ pub struct WgpuDisplay {
     pub bind_group_layout: wgpu::BindGroupLayout,
     pub sampler: wgpu::Sampler,
     pub transform_buffer: wgpu::Buffer,
+    /// R5-5: presentation runs in Rgba16Float; display textures follow suit.
+    pub display_f16: bool,
     pub latest_transform: DisplayTransform,
     pub current_bind_group: Option<wgpu::BindGroup>,
     pub edited_view: Option<wgpu::TextureView>,
@@ -99,7 +101,11 @@ impl WgpuDisplay {
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8Unorm,
+                format: if self.display_f16 {
+                    wgpu::TextureFormat::Rgba16Float
+                } else {
+                    wgpu::TextureFormat::Rgba8Unorm
+                },
                 usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
                 view_formats: &[],
             });
@@ -372,12 +378,22 @@ pub fn get_or_init_gpu_context(
             .ok_or("Failed to get main window")?;
 
         let swapchain_caps = surface.get_capabilities(&adapter);
-        let swapchain_format = swapchain_caps
+        // R5-5: prefer a 16-bit float swapchain so preview rendering avoids the
+        // 8-bit quantisation step; the display shader passes values through
+        // unchanged (they are already display-encoded by the main pipeline).
+        let display_f16 = swapchain_caps
             .formats
-            .iter()
-            .copied()
-            .find(|f| !f.is_srgb())
-            .unwrap_or(swapchain_caps.formats[0]);
+            .contains(&wgpu::TextureFormat::Rgba16Float);
+        let swapchain_format = if display_f16 {
+            wgpu::TextureFormat::Rgba16Float
+        } else {
+            swapchain_caps
+                .formats
+                .iter()
+                .copied()
+                .find(|f| !f.is_srgb())
+                .unwrap_or(swapchain_caps.formats[0])
+        };
 
         let alpha_mode = if cfg!(target_os = "windows")
             && swapchain_caps
@@ -518,6 +534,7 @@ pub fn get_or_init_gpu_context(
             pipeline,
             bind_group_layout,
             transform_buffer,
+            display_f16,
             latest_transform: DisplayTransform {
                 rect: [0.0, 0.0, 100.0, 100.0],
                 clip: [0.0, 0.0, 10000.0, 10000.0],
@@ -545,12 +562,20 @@ pub fn get_or_init_gpu_context(
     #[cfg(any(target_os = "android", target_os = "linux"))]
     let display_opt = None;
 
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    let display_f16 = display_opt
+        .as_ref()
+        .is_some_and(|d: &WgpuDisplay| d.display_f16);
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    let display_f16 = false;
+
     let new_context = GpuContext {
         device: Arc::new(device),
         queue: Arc::new(queue),
         limits,
         adapter_info,
         display: Arc::new(std::sync::Mutex::new(display_opt)),
+        display_f16,
     };
     *context_lock = Some(new_context.clone());
     Ok(new_context)
@@ -677,6 +702,9 @@ const BLUR_V_GROUP_SIZE: (u32, u32) = (8, 64);
 const DIRECT_BLUR_MAX_RADIUS: u32 = 8;
 
 const GF_SHORT_EDGE: u32 = 1080;
+// R1-5: canonical reference short edge for radius scaling — every radius in
+// the pipeline normalizes against this constant instead of a literal.
+const RADIUS_REFERENCE_DIM: f32 = 1080.0;
 const GF_CLARITY_RADIUS: f32 = 8.0;
 const GF_STRUCTURE_RADIUS: f32 = 40.0;
 const GF_CLARITY_EPS: f32 = 0.25;
@@ -715,7 +743,8 @@ struct FlareParams {
     contrast: f32,
     whites: f32,
     aspect_ratio: f32,
-    _pad: f32,
+    // R4-3: aperture blade count for star spikes / iris lobes.
+    blades: f32,
 }
 
 pub struct GpuProcessor {
@@ -729,13 +758,32 @@ pub struct GpuProcessor {
 
     flare_bgl_0: wgpu::BindGroupLayout,
     flare_bgl_1: wgpu::BindGroupLayout,
+    flare_centroid_bgl: wgpu::BindGroupLayout,
     flare_threshold_pipeline: wgpu::ComputePipeline,
     flare_ghosts_pipeline: wgpu::ComputePipeline,
+    flare_centroid_blocks_pipeline: wgpu::ComputePipeline,
+    flare_centroid_reduce_pipeline: wgpu::ComputePipeline,
     flare_params_buffer: wgpu::Buffer,
+    flare_centroid_partials_buffer: wgpu::Buffer,
+    flare_centroid_buffer: wgpu::Buffer,
     flare_threshold_view: wgpu::TextureView,
     flare_ghosts_view: wgpu::TextureView,
     flare_final_view: wgpu::TextureView,
     flare_sampler: wgpu::Sampler,
+
+    // R4-1: mip bloom pyramid (5 levels + composite) with its own pipelines.
+    bloom_bgl_down: wgpu::BindGroupLayout,
+    bloom_bgl_comp: wgpu::BindGroupLayout,
+    bloom_down_pipeline: wgpu::ComputePipeline,
+    bloom_comp_pipeline: wgpu::ComputePipeline,
+    bloom_params_buffer: wgpu::Buffer,
+    // R4-1: one params buffer per pyramid level — a single buffer rewritten
+    // per level would collapse to the last write before the submit.
+    bloom_level_params_buffers: Vec<wgpu::Buffer>,
+    bloom_sampler: wgpu::Sampler,
+    bloom_dummy_view: wgpu::TextureView,
+    bloom_pyramid: std::sync::Mutex<Option<BloomPyramid>>,
+    bloom_cache: std::sync::Mutex<Option<BloomCacheKey>>,
 
     gf_bgl: wgpu::BindGroupLayout,
     gf_downsample_pipeline: wgpu::ComputePipeline,
@@ -772,7 +820,6 @@ pub struct GpuProcessor {
     sharpness_blur_view: wgpu::TextureView,
     tonal_blur_view: wgpu::TextureView,
     clarity_blur_view: wgpu::TextureView,
-    structure_blur_view: wgpu::TextureView,
     blur_sources: std::sync::Mutex<[Option<(u64, BlurParams)>; 4]>,
 
     pub tile_output_texture: wgpu::Texture,
@@ -825,6 +872,9 @@ struct AnalyticsReadback {
     width: u32,
     height: u32,
     row_stride: usize,
+    /// R5-5: display readbacks come from an Rgba16Float working texture and
+    /// must be converted to RGBA8 before analytics consume them.
+    is_f16: bool,
 }
 
 fn analytics_readback_sender() -> &'static std::sync::mpsc::Sender<AnalyticsReadback> {
@@ -866,9 +916,36 @@ fn complete_analytics_readback(readback: AnalyticsReadback) {
 
     if let Ok(Ok(())) = rx.recv() {
         let analytics = readback.analytics;
-        let _ = analytics.sender.send(crate::AnalyticsJob {
-            path: analytics.path,
-            frame: AnalyticsFrame {
+        let frame = if readback.is_f16 {
+            // R5-5: convert the padded f16 readback into packed RGBA8 so the
+            // analytics pipeline keeps operating on 8-bit display-encoded data.
+            let view = readback.buffer.slice(..).get_mapped_range();
+            let mut converted =
+                Vec::with_capacity(readback.width as usize * readback.height as usize * 4);
+            for row in 0..readback.height as usize {
+                let row_start = row * readback.row_stride;
+                let samples = bytemuck::cast_slice::<u8, u16>(
+                    &view[row_start..row_start + readback.width as usize * 8],
+                );
+                for sample in samples {
+                    let v = f16::from_bits(*sample).to_f32();
+                    converted.push(if v.is_finite() {
+                        (v.clamp(0.0, 1.0) * 255.0).round() as u8
+                    } else {
+                        0
+                    });
+                }
+            }
+            drop(view);
+            recycle_readback_buffer(&readback.pool, readback.buffer);
+            AnalyticsFrame {
+                data: AnalyticsPixels::Owned(converted),
+                width: readback.width,
+                height: readback.height,
+                row_stride: readback.width as usize * 4,
+            }
+        } else {
+            AnalyticsFrame {
                 data: AnalyticsPixels::Mapped(PooledReadback {
                     view: Some(readback.buffer.slice(..).get_mapped_range()),
                     buffer: readback.buffer,
@@ -877,7 +954,11 @@ fn complete_analytics_readback(readback: AnalyticsReadback) {
                 width: readback.width,
                 height: readback.height,
                 row_stride: readback.row_stride,
-            },
+            }
+        };
+        let _ = analytics.sender.send(crate::AnalyticsJob {
+            path: analytics.path,
+            frame,
             compute_waveform: analytics.compute_waveform,
             active_waveform_channel: analytics.active_waveform_channel,
         });
@@ -941,7 +1022,10 @@ fn shader_features(adjustments: &AllAdjustments) -> u32 {
         hsl_nonzero(&g.hsl) || masks.iter().any(|m| hsl_nonzero(&m.hsl)),
     );
     set(F_MASKS, adjustments.mask_count > 0);
-    set(F_SHARPEN, any(g.sharpness, |m| m.sharpness));
+    set(
+        F_SHARPEN,
+        any(g.sharpness, |m| m.sharpness) || g.texture_amount != 0.0,
+    );
     set(F_DEHAZE, any(g.dehaze, |m| m.dehaze));
     set(
         F_GLOW_HALATION_FLARE,
@@ -957,13 +1041,57 @@ fn shader_features(adjustments: &AllAdjustments) -> u32 {
         g.chromatic_aberration_red_cyan.abs() > 0.000001
             || g.chromatic_aberration_blue_yellow.abs() > 0.000001,
     );
-    set(F_AGX, g.tonemapper_mode == 1 || g.tonemapper_mode == 2);
+    set(F_AGX, g.tonemapper_mode != 0);
     features
 }
 
 struct HighPrecisionTile {
     texture: wgpu::Texture,
     view: wgpu::TextureView,
+}
+
+// R4-1: rebuild trigger for the bloom pyramid — source identity, dims and the
+// exposure toning baked into the pyramid base threshold.
+#[derive(PartialEq, Clone, Copy)]
+struct BloomCacheKey {
+    source: u64,
+    width: u32,
+    height: u32,
+    is_raw: u32,
+    exposure: f32,
+    brightness: f32,
+    contrast: f32,
+    whites: f32,
+}
+
+const BLOOM_LEVELS: u32 = 5;
+
+// Exact-sized bloom pyramid for the current image: levels[0] is level 1
+// (half resolution) through levels[4] (1/32), plus a composite target at
+// level-1 resolution.
+struct BloomPyramid {
+    dims: (u32, u32),
+    levels: Vec<(wgpu::Texture, wgpu::TextureView)>,
+    composite: (wgpu::Texture, wgpu::TextureView),
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+struct BloomParams {
+    src_size: [u32; 2],
+    dst_size: [u32; 2],
+    is_raw: u32,
+    _pad0: u32,
+    exposure: f32,
+    brightness: f32,
+    contrast: f32,
+    whites: f32,
+    threshold: f32,
+    _pad1: f32,
+    _pad2: f32,
+    _pad3: f32,
+    _pad4: f32,
+    _pad5: f32,
 }
 
 struct MaskCache {
@@ -991,6 +1119,9 @@ fn high_precision_shader_source() -> String {
 }
 
 const FLARE_MAP_SIZE: u32 = 512;
+// R4-3: aperture blade count feeding star spikes / iris lobes (preserves the
+// previous 6-ray look by default; exposed for future lens-profile wiring).
+const FLARE_BLADE_COUNT: f32 = 6.0;
 const GPU_IMAGE_CACHE_ENTRIES: usize = 3;
 const GPU_IMAGE_CACHE_PIXELS: u64 = 50_000_000;
 
@@ -1173,8 +1304,57 @@ impl GpuProcessor {
                     },
                     count: None,
                 },
+                // R4-3: highlight centroid read by the ghosts pass.
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
             ],
         });
+
+        // R4-3: centroid reduction (threshold map -> block partials -> vec4).
+        let flare_centroid_bgl =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("Flare Centroid BGL"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: false },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: false },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                ],
+            });
 
         let flare_threshold_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -1246,6 +1426,182 @@ impl GpuProcessor {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
+
+        // R4-3: centroid reduction pipelines and buffers.
+        let flare_centroid_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Flare Centroid Layout"),
+                bind_group_layouts: &[Some(&flare_centroid_bgl)],
+                immediate_size: 0,
+            });
+        let flare_centroid_blocks_pipeline =
+            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some("Flare Centroid Blocks Pipeline"),
+                layout: Some(&flare_centroid_layout),
+                module: &flare_shader,
+                entry_point: Some("centroid_blocks_main"),
+                compilation_options: Default::default(),
+                cache: None,
+            });
+        let flare_centroid_reduce_pipeline =
+            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some("Flare Centroid Reduce Pipeline"),
+                layout: Some(&flare_centroid_layout),
+                module: &flare_shader,
+                entry_point: Some("centroid_reduce_main"),
+                compilation_options: Default::default(),
+                cache: None,
+            });
+        let flare_centroid_partials_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Flare Centroid Partials"),
+            size: 1024 * std::mem::size_of::<[f32; 4]>() as u64,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+        let flare_centroid_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Flare Centroid"),
+            size: std::mem::size_of::<[f32; 4]>() as u64,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+
+        // R4-1: bloom pyramid pipelines, textures and params.
+        let bloom_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Bloom Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/bloom.wgsl").into()),
+        });
+        let bloom_texture_entry = |binding: u32| wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        };
+        let bloom_storage_entry = |binding: u32| wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::StorageTexture {
+                access: wgpu::StorageTextureAccess::WriteOnly,
+                format: wgpu::TextureFormat::Rgba16Float,
+                view_dimension: wgpu::TextureViewDimension::D2,
+            },
+            count: None,
+        };
+        let bloom_uniform_entry = |binding: u32| wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
+            count: None,
+        };
+        let bloom_bgl_down = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Bloom Down BGL"),
+            entries: &[
+                bloom_texture_entry(0),
+                bloom_storage_entry(1),
+                bloom_uniform_entry(2),
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+        let bloom_bgl_comp = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Bloom Composite BGL"),
+            entries: &[
+                bloom_texture_entry(0),
+                bloom_texture_entry(1),
+                bloom_texture_entry(2),
+                bloom_texture_entry(3),
+                bloom_texture_entry(4),
+                bloom_storage_entry(5),
+                bloom_uniform_entry(6),
+                wgpu::BindGroupLayoutEntry {
+                    binding: 7,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+        let bloom_down_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Bloom Down Layout"),
+            bind_group_layouts: &[Some(&bloom_bgl_down)],
+            immediate_size: 0,
+        });
+        let bloom_comp_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Bloom Composite Layout"),
+            bind_group_layouts: &[Some(&bloom_bgl_comp)],
+            immediate_size: 0,
+        });
+        let bloom_down_pipeline =
+            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some("Bloom Down Pipeline"),
+                layout: Some(&bloom_down_layout),
+                module: &bloom_shader,
+                entry_point: Some("down_main"),
+                compilation_options: Default::default(),
+                cache: None,
+            });
+        let bloom_comp_pipeline =
+            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some("Bloom Composite Pipeline"),
+                layout: Some(&bloom_comp_layout),
+                module: &bloom_shader,
+                entry_point: Some("composite_main"),
+                compilation_options: Default::default(),
+                cache: None,
+            });
+        let bloom_params_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Bloom Params Buffer"),
+            size: std::mem::size_of::<BloomParams>() as u64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let bloom_level_params_buffers = (0..BLOOM_LEVELS)
+            .map(|level| {
+                device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some(&format!("Bloom Level {level} Params")),
+                    size: std::mem::size_of::<BloomParams>() as u64,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                })
+            })
+            .collect();
+        let bloom_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("Bloom Sampler"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
+        // Pyramid textures are created lazily per image size in run() — exact
+        // dimensions avoid sampling stale regions of over-allocated textures.
+        let bloom_dummy_view = device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("Bloom Dummy"),
+                size: wgpu::Extent3d {
+                    width: 1,
+                    height: 1,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba16Float,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            })
+            .create_view(&Default::default());
 
         let gf_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Guided Filter Shader"),
@@ -1470,6 +1826,18 @@ impl GpuProcessor {
             });
         }
 
+        // R4-1: bloom pyramid composite texture (sampled with flare_sampler).
+        bind_group_layout_entries.push(wgpu::BindGroupLayoutEntry {
+            binding: 15 + MAX_MASK_BINDINGS,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        });
+
         let main_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("Main BGL"),
             entries: &bind_group_layout_entries,
@@ -1624,12 +1992,6 @@ impl GpuProcessor {
         });
         let clarity_blur_view = clarity_blur_texture.create_view(&Default::default());
 
-        let structure_blur_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Structure Blur Texture"),
-            ..reusable_texture_desc
-        });
-        let structure_blur_view = structure_blur_texture.create_view(&Default::default());
-
         let tile_output_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Tile Output Texture"),
             size: clamped_tile_size,
@@ -1654,13 +2016,28 @@ impl GpuProcessor {
             blur_params_buffer,
             flare_bgl_0,
             flare_bgl_1,
+            flare_centroid_bgl,
             flare_threshold_pipeline,
             flare_ghosts_pipeline,
+            flare_centroid_blocks_pipeline,
+            flare_centroid_reduce_pipeline,
             flare_params_buffer,
+            flare_centroid_partials_buffer,
+            flare_centroid_buffer,
             flare_threshold_view,
             flare_ghosts_view,
             flare_final_view,
             flare_sampler,
+            bloom_bgl_down,
+            bloom_bgl_comp,
+            bloom_down_pipeline,
+            bloom_comp_pipeline,
+            bloom_params_buffer,
+            bloom_level_params_buffers,
+            bloom_sampler,
+            bloom_dummy_view,
+            bloom_pyramid: std::sync::Mutex::new(None),
+            bloom_cache: std::sync::Mutex::new(None),
             gf_bgl,
             gf_downsample_pipeline,
             gf_box_down_pipeline,
@@ -1695,7 +2072,6 @@ impl GpuProcessor {
             sharpness_blur_view,
             tonal_blur_view,
             clarity_blur_view,
-            structure_blur_view,
             blur_sources: std::sync::Mutex::new([None; 4]),
             tile_output_texture,
             tile_output_texture_view,
@@ -1748,7 +2124,9 @@ impl GpuProcessor {
         };
 
         let make_params = |base_radius: f32, eps: f32, div: f32| {
-            let radius = (base_radius * low_short / 1080.0 / div).ceil().max(1.0) as u32;
+            let radius = (base_radius * low_short / RADIUS_REFERENCE_DIM / div)
+                .ceil()
+                .max(1.0) as u32;
             device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Guided Filter Params"),
                 contents: bytemuck::bytes_of(&GfParams {
@@ -2117,12 +2495,14 @@ impl GpuProcessor {
         let device = &self.context.device;
         let queue = &self.context.queue;
         let size = lut.size;
-        let mut rgba_lut_data_f16 = Vec::with_capacity(lut.data.len() / 3 * 4);
+        // R5-4: 3D LUTs upload as Rgba32Float — f16 storage loses precision in
+        // the shadows, which banding amplifies when stacking multiple LUTs.
+        let mut rgba_lut_data_f32 = Vec::with_capacity(lut.data.len() / 3 * 4);
         for chunk in lut.data.as_chunks::<3>().0 {
-            rgba_lut_data_f16.push(f16::from_f32(chunk[0]));
-            rgba_lut_data_f16.push(f16::from_f32(chunk[1]));
-            rgba_lut_data_f16.push(f16::from_f32(chunk[2]));
-            rgba_lut_data_f16.push(f16::ONE);
+            rgba_lut_data_f32.push(chunk[0]);
+            rgba_lut_data_f32.push(chunk[1]);
+            rgba_lut_data_f32.push(chunk[2]);
+            rgba_lut_data_f32.push(1.0f32);
         }
         let lut_texture = device.create_texture_with_data(
             queue,
@@ -2136,12 +2516,12 @@ impl GpuProcessor {
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D3,
-                format: wgpu::TextureFormat::Rgba16Float,
+                format: wgpu::TextureFormat::Rgba32Float,
                 usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
                 view_formats: &[],
             },
             TextureDataOrder::MipMajor,
-            bytemuck::cast_slice(&rgba_lut_data_f16),
+            bytemuck::cast_slice(&rgba_lut_data_f32),
         );
         let view = lut_texture.create_view(&Default::default());
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -2235,13 +2615,21 @@ impl GpuProcessor {
 
     pub fn display_textures(&self) -> &DisplayTextures {
         self.display_textures.get_or_init(|| {
+            // R5-5: when the swapchain is f16, the display chain carries
+            // Rgba16Float so no 8-bit quantisation is introduced on the way
+            // to the screen. Values stay in the same display-encoded domain.
+            let format = if self.context.display_f16 {
+                wgpu::TextureFormat::Rgba16Float
+            } else {
+                wgpu::TextureFormat::Rgba8Unorm
+            };
             let descriptor = |label| wgpu::TextureDescriptor {
                 label: Some(label),
                 size: self.full_image_size,
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8Unorm,
+                format,
                 usage: wgpu::TextureUsages::TEXTURE_BINDING
                     | wgpu::TextureUsages::COPY_DST
                     | wgpu::TextureUsages::COPY_SRC,
@@ -2317,6 +2705,197 @@ impl GpuProcessor {
         })
     }
 
+    // R4-1: threshold highlights at the pyramid base, run five downsampling
+    // stages and composite with 1/2^n energy weighting. Rebuilt only when the
+    // source identity, dimensions or baked-in toning change.
+    fn build_bloom_pyramid(
+        &self,
+        pyramid_slot: &mut Option<BloomPyramid>,
+        input: &GpuImageEntry,
+        adjustments: &AllAdjustments,
+        width: u32,
+        height: u32,
+    ) {
+        let g = &adjustments.global;
+        let key = BloomCacheKey {
+            source: input.id,
+            width,
+            height,
+            is_raw: g.is_raw_image,
+            exposure: g.exposure,
+            brightness: g.brightness,
+            contrast: g.contrast,
+            whites: g.whites,
+        };
+        let dims_match = pyramid_slot
+            .as_ref()
+            .is_some_and(|p| p.dims == (width, height));
+        if dims_match && *self.bloom_cache.lock().unwrap_or_else(|e| e.into_inner()) == Some(key) {
+            return;
+        }
+
+        if !dims_match {
+            *pyramid_slot = Some(self.create_bloom_pyramid(width, height));
+        }
+        let pyramid = pyramid_slot.as_ref().unwrap();
+
+        let device = &self.context.device;
+        let queue = &self.context.queue;
+        let level_dims = |level: u32| ((width >> level).max(1), (height >> level).max(1));
+
+        let base_params = BloomParams {
+            src_size: [width, height],
+            dst_size: [level_dims(1).0, level_dims(1).1],
+            is_raw: g.is_raw_image,
+            _pad0: 0,
+            exposure: g.exposure,
+            brightness: g.brightness,
+            contrast: g.contrast,
+            whites: g.whites,
+            threshold: 0.85,
+            _pad1: 0.0,
+            _pad2: 0.0,
+            _pad3: 0.0,
+            _pad4: 0.0,
+            _pad5: 0.0,
+        };
+        // Level 1 thresholds highlights; deeper levels just downsample. Each
+        // level gets its own buffer so every dispatch reads its correct
+        // src_size (the 4-tap offsets are derived from it).
+        for (idx, buffer) in self.bloom_level_params_buffers.iter().enumerate() {
+            let level = idx as u32 + 1;
+            let (sw, sh) = if level == 1 {
+                (width, height)
+            } else {
+                level_dims(level - 1)
+            };
+            let (dw, dh) = level_dims(level);
+            let params = BloomParams {
+                src_size: [sw, sh],
+                dst_size: [dw, dh],
+                threshold: if level == 1 { 0.85 } else { 0.0 },
+                ..base_params
+            };
+            queue.write_buffer(buffer, 0, bytemuck::bytes_of(&params));
+        }
+
+        let mut encoder = device.create_command_encoder(&Default::default());
+
+        let mut src_view: &wgpu::TextureView = &input.texture_view;
+        for level in 1..=BLOOM_LEVELS {
+            let (lw, lh) = level_dims(level);
+            let dst = &pyramid.levels[(level - 1) as usize];
+            let params_buffer = &self.bloom_level_params_buffers[(level - 1) as usize];
+            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("Bloom Down BG"),
+                layout: &self.bloom_bgl_down,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(src_view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(&dst.1),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: params_buffer.as_entire_binding(),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 3,
+                        resource: wgpu::BindingResource::Sampler(&self.bloom_sampler),
+                    },
+                ],
+            });
+            {
+                let mut cpass = encoder.begin_compute_pass(&Default::default());
+                cpass.set_pipeline(&self.bloom_down_pipeline);
+                cpass.set_bind_group(0, &bind_group, &[]);
+                cpass.dispatch_workgroups(lw.div_ceil(8), lh.div_ceil(8), 1);
+            }
+            src_view = &dst.1;
+        }
+
+        let (l1w, l1h) = level_dims(1);
+        let comp_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Bloom Composite BG"),
+            layout: &self.bloom_bgl_comp,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&pyramid.levels[0].1),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&pyramid.levels[1].1),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(&pyramid.levels[2].1),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(&pyramid.levels[3].1),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(&pyramid.levels[4].1),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: wgpu::BindingResource::TextureView(&pyramid.composite.1),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: self.bloom_params_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 7,
+                    resource: wgpu::BindingResource::Sampler(&self.bloom_sampler),
+                },
+            ],
+        });
+        {
+            let mut cpass = encoder.begin_compute_pass(&Default::default());
+            cpass.set_pipeline(&self.bloom_comp_pipeline);
+            cpass.set_bind_group(0, &comp_bind_group, &[]);
+            cpass.dispatch_workgroups(l1w.div_ceil(8), l1h.div_ceil(8), 1);
+        }
+
+        queue.submit(Some(encoder.finish()));
+        *self.bloom_cache.lock().unwrap_or_else(|e| e.into_inner()) = Some(key);
+    }
+
+    fn create_bloom_pyramid(&self, width: u32, height: u32) -> BloomPyramid {
+        let device = &self.context.device;
+        let level_texture = |level: u32| {
+            let div = 1u32 << level;
+            let texture = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some(&format!("Bloom Level {level}")),
+                size: wgpu::Extent3d {
+                    width: (width / div).max(1),
+                    height: (height / div).max(1),
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba16Float,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::STORAGE_BINDING,
+                view_formats: &[],
+            });
+            let view = texture.create_view(&Default::default());
+            (texture, view)
+        };
+        let levels = (1..=BLOOM_LEVELS).map(level_texture).collect();
+        BloomPyramid {
+            dims: (width, height),
+            levels,
+            composite: level_texture(1),
+        }
+    }
+
     fn run(
         &self,
         input: &GpuImageEntry,
@@ -2352,10 +2931,13 @@ impl GpuProcessor {
         let (width, height) = (input.width, input.height);
         let device = &self.context.device;
         let queue = &self.context.queue;
-        let scale = (width.min(height) as f32) / 1080.0;
+        let scale = (width.min(height) as f32) / RADIUS_REFERENCE_DIM;
         const MAX_MASK_BINDINGS: u32 = 1;
 
-        if output_precision == RenderOutputPrecision::SixteenBit && output_to_display {
+        if output_precision == RenderOutputPrecision::SixteenBit
+            && output_to_display
+            && !self.context.display_f16
+        {
             return Err(
                 "High-precision GPU output is only supported for CPU-readback renders.".to_string(),
             );
@@ -2420,7 +3002,7 @@ impl GpuProcessor {
                 contrast: adjustments.global.contrast,
                 whites: adjustments.global.whites,
                 aspect_ratio,
-                _pad: 0.0,
+                blades: FLARE_BLADE_COUNT,
             };
             queue.write_buffer(&self.flare_params_buffer, 0, bytemuck::bytes_of(&f_params));
 
@@ -2452,6 +3034,60 @@ impl GpuProcessor {
                 cpass.set_pipeline(&self.flare_threshold_pipeline);
                 cpass.set_bind_group(0, &bg0, &[]);
                 cpass.dispatch_workgroups(FLARE_MAP_SIZE / 16, FLARE_MAP_SIZE / 16, 1);
+            }
+
+            // R4-3: luminance-weighted highlight centroid (two-stage reduce).
+            {
+                let bg_blocks = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("Flare Centroid Blocks BG"),
+                    layout: &self.flare_centroid_bgl,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(
+                                &self.flare_threshold_view,
+                            ),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: self.flare_centroid_partials_buffer.as_entire_binding(),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 2,
+                            resource: self.flare_centroid_buffer.as_entire_binding(),
+                        },
+                    ],
+                });
+                let mut cpass = encoder.begin_compute_pass(&Default::default());
+                cpass.set_pipeline(&self.flare_centroid_blocks_pipeline);
+                cpass.set_bind_group(0, &bg_blocks, &[]);
+                cpass.dispatch_workgroups(FLARE_MAP_SIZE / 16, FLARE_MAP_SIZE / 16, 1);
+            }
+            {
+                let bg_reduce = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("Flare Centroid Reduce BG"),
+                    layout: &self.flare_centroid_bgl,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(
+                                &self.flare_threshold_view,
+                            ),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: self.flare_centroid_partials_buffer.as_entire_binding(),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 2,
+                            resource: self.flare_centroid_buffer.as_entire_binding(),
+                        },
+                    ],
+                });
+                let mut cpass = encoder.begin_compute_pass(&Default::default());
+                cpass.set_pipeline(&self.flare_centroid_reduce_pipeline);
+                cpass.set_bind_group(0, &bg_reduce, &[]);
+                cpass.dispatch_workgroups(1, 1, 1);
             }
 
             let bg0_ghosts = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -2489,6 +3125,10 @@ impl GpuProcessor {
                         binding: 1,
                         resource: wgpu::BindingResource::TextureView(&self.flare_ghosts_view),
                     },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: self.flare_centroid_buffer.as_entire_binding(),
+                    },
                 ],
             });
 
@@ -2502,6 +3142,21 @@ impl GpuProcessor {
 
             queue.submit(Some(encoder.finish()));
         }
+
+        // R4-1: build the mip bloom pyramid once per render (full frame, so
+        // every tile samples one seam-free composite). The old radius-40
+        // structure blur is retired by this path.
+        let need_glow = adjustments.global.glow_amount > 0.0
+            || adjustments.mask_adjustments[..(adjustments.mask_count as usize).min(MAX_MASKS)]
+                .iter()
+                .any(|m| m.glow_amount > 0.0);
+        let mut bloom_guard = self.bloom_pyramid.lock().unwrap_or_else(|e| e.into_inner());
+        let bloom_composite_view: Option<&wgpu::TextureView> = if need_glow {
+            self.build_bloom_pyramid(&mut bloom_guard, input, &adjustments, width, height);
+            bloom_guard.as_ref().map(|p| &p.composite.1)
+        } else {
+            None
+        };
 
         const TILE_SIZE: u32 = 2048;
         const TILE_OVERLAP: u32 = 128;
@@ -2659,22 +3314,24 @@ impl GpuProcessor {
                         let hit = |v: f32| if positive { v > 0.0 } else { v != 0.0 };
                         hit(global) || active_masks.clone().any(|m| hit(pick(m)))
                     };
-                let need_sharpen = any_term(adjustments.global.sharpness, &|m| m.sharpness, false);
+                // Matches the F_SHARPEN shader-feature gate exactly so no blur
+                // pass is scheduled when the sharpening terms are all zero.
+                let need_sharpen = any_term(adjustments.global.sharpness, &|m| m.sharpness, false)
+                    || adjustments.global.texture_amount != 0.0;
                 let need_halation = any_term(
                     adjustments.global.halation_amount,
                     &|m| m.halation_amount,
                     true,
                 );
-                let need_structure =
-                    any_term(adjustments.global.glow_amount, &|m| m.glow_amount, true);
 
+                // R2-1: USM radius is resolution-relative (sharpen_radius == 1.0
+                // matches the legacy 1px radius at 1080p reference).
+                let sharpen_blur_radius = (1.0 * adjustments.global.sharpen_radius).max(0.5);
                 let did_create_sharpness_blur =
-                    need_sharpen && run_blur(0, 1.0, &self.sharpness_blur_view);
+                    need_sharpen && run_blur(0, sharpen_blur_radius, &self.sharpness_blur_view);
                 let did_create_tonal_blur = need_sharpen && run_blur(1, 3.5, &self.tonal_blur_view);
                 let did_create_clarity_blur =
                     need_halation && run_blur(2, 8.0, &self.clarity_blur_view);
-                let did_create_structure_blur =
-                    need_structure && run_blur(3, 40.0, &self.structure_blur_view);
 
                 let mut main_encoder = device.create_command_encoder(&Default::default());
 
@@ -2738,14 +3395,6 @@ impl GpuProcessor {
                         &self.dummy_blur_view
                     }),
                 });
-                bind_group_entries.push(wgpu::BindGroupEntry {
-                    binding: 8 + MAX_MASK_BINDINGS,
-                    resource: wgpu::BindingResource::TextureView(if did_create_structure_blur {
-                        &self.structure_blur_view
-                    } else {
-                        &self.dummy_blur_view
-                    }),
-                });
 
                 let use_flare = effective_flare_amount > 0.0;
                 bind_group_entries.push(wgpu::BindGroupEntry {
@@ -2776,6 +3425,12 @@ impl GpuProcessor {
                     binding: 14 + MAX_MASK_BINDINGS,
                     resource: wgpu::BindingResource::TextureView(airlight_view),
                 });
+                bind_group_entries.push(wgpu::BindGroupEntry {
+                    binding: 15 + MAX_MASK_BINDINGS,
+                    resource: wgpu::BindingResource::TextureView(
+                        bloom_composite_view.unwrap_or(&self.bloom_dummy_view),
+                    ),
+                });
 
                 let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some("Tile Bind Group"),
@@ -2798,9 +3453,15 @@ impl GpuProcessor {
                 let crop_y_start = y_start - input_y_start;
 
                 if output_to_display {
+                    // R5-5: when the f16 display chain is active the tiles come
+                    // from the high-precision tile texture (also Rgba16Float);
+                    // otherwise from the 8-bit tile output.
+                    let display_source_texture = high_precision_tile
+                        .map(|t| &t.texture)
+                        .unwrap_or(&self.tile_output_texture);
                     main_encoder.copy_texture_to_texture(
                         wgpu::TexelCopyTextureInfo {
-                            texture: &self.tile_output_texture,
+                            texture: display_source_texture,
                             mip_level: 0,
                             origin: wgpu::Origin3d {
                                 x: crop_x_start,
@@ -2969,6 +3630,17 @@ fn process_and_get_dynamic_image_inner(
 ) -> Result<DynamicImage, String> {
     let start_time = Instant::now();
     let output_to_display = display_layer.is_some();
+    // R5-5: display renders go through the high-precision tile pipeline when
+    // the presentation surface is f16, keeping the preview chain quantisation-
+    // free up to the compositor (preview/export parity).
+    let output_precision = if output_to_display
+        && context.display_f16
+        && output_precision == RenderOutputPrecision::EightBit
+    {
+        RenderOutputPrecision::SixteenBit
+    } else {
+        output_precision
+    };
     let (width, height) = base_image.dimensions();
     let device = &context.device;
     let queue = &context.queue;
@@ -3219,6 +3891,8 @@ fn process_and_get_dynamic_image_inner(
                 width: out_w,
                 height: out_h,
                 row_stride: async_padded_bpr as usize,
+                is_f16: processor.display_textures().working_texture.format()
+                    == wgpu::TextureFormat::Rgba16Float,
             });
         } else {
             if let RenderedPixels::U8(pixels) = &processed_pixels {

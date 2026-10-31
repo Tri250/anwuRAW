@@ -9,12 +9,14 @@ import {
 } from '../components/ui/AppProperties';
 import { Adjustments, INITIAL_ADJUSTMENTS } from '../utils/adjustments';
 import { ColumnWidths } from '../components/panel/MainLibrary';
+import { SmartAlbum } from '../utils/smartAlbums';
 
 export interface NavHistoryItem {
   type: 'folder' | 'album';
   path: string;
   albumName?: string;
   images?: string[];
+  smartAlbum?: SmartAlbum;
 }
 
 interface SearchCriteria {

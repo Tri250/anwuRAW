@@ -59,6 +59,9 @@ export function useImageProcessing(
   const inFlightCountRef = useRef(0);
   const pendingApplyRef = useRef<{ adjustments: Adjustments; targetRes?: number } | null>(null);
   const dragIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // R6-1: fraction of the full preview resolution used for interactive renders,
+  // adapted from measured render latency (bounded 0.3..0.5).
+  const interactiveScaleRef = useRef(0.5);
   const activeWaveformChannelRef = useRef(activeWaveformChannel);
   activeWaveformChannelRef.current = activeWaveformChannel;
 
@@ -172,6 +175,7 @@ export function useImageProcessing(
 
       const jobId = ++previewJobIdRef.current;
       const roi = calculateROI();
+      const renderStartTime = dragging ? performance.now() : 0;
 
       try {
         const request = invoke<ArrayBuffer>(Invokes.ApplyAdjustments, {
@@ -190,6 +194,15 @@ export function useImageProcessing(
         markSent();
 
         if (currentPath !== selectedImagePathRef.current) return;
+
+        if (dragging) {
+          const elapsed = performance.now() - renderStartTime;
+          if (elapsed > 40) {
+            interactiveScaleRef.current = Math.max(0.3, interactiveScaleRef.current * 0.9);
+          } else if (elapsed < 20) {
+            interactiveScaleRef.current = Math.min(0.5, interactiveScaleRef.current * 1.1);
+          }
+        }
 
         if (buffer && buffer.byteLength > 0 && jobId >= latestRenderedJobIdRef.current) {
           latestRenderedJobIdRef.current = jobId;
@@ -257,6 +270,10 @@ export function useImageProcessing(
           console.error('Failed to apply adjustments:', err);
         }
         if (!dragging) {
+          if (targetRes && currentResRef.current === targetRes) {
+            // Roll the resolution gate back so a failed HiFi render can be retried.
+            currentResRef.current = Math.max(targetRes - 1, 0);
+          }
           setEditor((state) => {
             if (state.interactivePatch && state.interactivePatch.url) URL.revokeObjectURL(state.interactivePatch.url);
             return { interactivePatch: null };
@@ -391,6 +408,11 @@ export function useImageProcessing(
     originalSize,
   ]);
 
+  const calculateInteractiveTargetRes = useCallback((fullTargetRes: number) => {
+    const scaled = Math.round(fullTargetRes * interactiveScaleRef.current);
+    return Math.max(512, Math.min(fullTargetRes, scaled));
+  }, []);
+
   const requestHiFiZoom = useMemo(
     () =>
       debounce((targetRes: number) => {
@@ -471,7 +493,7 @@ export function useImageProcessing(
 
     if (isSliderDragging) {
       if (appSettings?.enableLivePreviews !== false) {
-        applyAdjustments(renderAdjustments, true, targetRes);
+        applyAdjustments(renderAdjustments, true, calculateInteractiveTargetRes(targetRes));
       }
     } else {
       dragIdleTimer.current = setTimeout(() => {
@@ -535,6 +557,7 @@ export function useImageProcessing(
     appSettings?.copyPasteSettings?.includedAdjustments,
     appSettings?.copyPasteSettings?.autoSync,
     isWaveformVisible,
+    calculateInteractiveTargetRes,
   ]);
 
   return {

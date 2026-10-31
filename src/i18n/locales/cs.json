@@ -7,10 +7,14 @@
       "exposure": "Expozice",
       "highlights": "Světla",
       "mappers": {
+        "aces": "ACES Filmic",
+        "acesDesc": "Tónování ACES Filmic",
         "agx": "AgX",
         "agxDesc": "Tonemapping jako z filmu",
         "basic": "Základní",
-        "basicDesc": "Standardní Tonemapping"
+        "basicDesc": "Standardní Tonemapping",
+        "pbrNeutral": "PBR Neutral",
+        "pbrNeutralDesc": "Neutrální tónování"
       },
       "reset": "Resetovat",
       "shadows": "Stíny",
@@ -32,6 +36,7 @@
         "tint": "Nádech",
         "title": "Kalibrace barev"
       },
+      "cameraProfile": "Profil kamery",
       "colorGrading": "Tónování barev",
       "colorMatch": "AI párování barev",
       "colorMatchDesc": "Přenese barevný styl vzorové fotografie na tuto fotografii (nedestruktivní)",
@@ -62,6 +67,7 @@
         "yellows": "Žlutá"
       },
       "presence": "Prezence",
+      "profileDefault": "Výchozí",
       "saturation": "Sytost",
       "targetedTooltip": "Cílená úprava: vyberte barvu na plátně a tažením upravte její odstín/saturaci (Ctrl+Alt+H)",
       "temperature": "Teplota",
@@ -110,6 +116,8 @@
       "clarity": "Zřetelnost",
       "classicDenoise": "Klasické odšumění",
       "color": "Barva",
+      "colorNrDetail": "Detail barev",
+      "colorNrSmoothness": "Vyhlazení",
       "convertNegative": "Převést negativ",
       "dehaze": "Odmlžení",
       "luminance": "Jas",
@@ -121,10 +129,12 @@
       "negativeRed": "Červená",
       "noiseReduction": "Redukce šumu",
       "presence": "Prezence",
+      "radius": "Poloměr",
       "redCyan": "Červená/Azurová",
       "sharpening": "Doostření",
       "sharpness": "Ostrost",
       "structure": "Struktura",
+      "texture": "Textura",
       "threshold": "Práh"
     },
     "effects": {
@@ -297,6 +307,31 @@
     "merge": {
       "focusStack": "Skládání ostrosti",
       "title": "Sloučit"
+    },
+    "smartAlbums": {
+      "confirmDelete": "Are you sure you want to delete this smart album? The images themselves are not affected.",
+      "delete": "Delete Smart Album",
+      "edit": "Edit Smart Album",
+      "new": "New Smart Album"
+    },
+    "stacking": {
+      "autoStack": "Auto-Stack by Burst",
+      "autoStackedToast_one": "Created {{count}} stacks.",
+      "autoStackedToast_few": "Created {{count}} stacks.",
+      "autoStackedToast_many": "Created {{count}} stacks.",
+      "autoStackedToast_other": "Created {{count}} stacks.",
+      "autoStackNone": "No burst groups found to stack.",
+      "create_one": "Stack into Group ({{count}})",
+      "create_few": "Stack into Group ({{count}})",
+      "create_many": "Stack into Group ({{count}})",
+      "create_other": "Stack into Group ({{count}})",
+      "createdToast_one": "Created a stack with {{count}} images.",
+      "createdToast_few": "Created a stack with {{count}} images.",
+      "createdToast_many": "Created a stack with {{count}} images.",
+      "createdToast_other": "Created a stack with {{count}} images.",
+      "createFailed": "Not enough images to create a stack.",
+      "title": "Stacking",
+      "unstack": "Unstack"
     },
     "tagging": {
       "addTagTooltip": "Přidat značku",
@@ -543,6 +578,19 @@
         "useBasicInpaint": "Použijte základní retuš"
       },
       "touchUpTitle": "Retuše"
+    },
+    "aiEnhance": {
+      "failed": "AI enhance failed",
+      "title": "AI Enhance"
+    },
+    "canvas": {
+      "pickerCancel": "to cancel",
+      "pickerHints": {
+        "marker": "Click on the image to place the overlay",
+        "relight": "Click on the image to place the light",
+        "targeted": "Click or drag on the image to adjust",
+        "wb": "Click or drag on the image to sample white balance"
+      }
     },
     "compare": {
       "horizontal": "Rozdělit nahoře / dole",
@@ -857,9 +905,18 @@
       "gps": {
         "altitude": "Nadmořská výška",
         "clickToOpenTooltip": "Kliknutím otevřete mapu na nové kartě",
+        "googleMaps": "Open in Google Maps",
+        "invalidCoordinates": "Invalid coordinates",
         "latitude": "Zeměpisná šířka",
+        "location": "Location",
         "longitude": "Zeměpisná délka",
+        "noData": "No GPS data. Enter coordinates below to add a location.",
+        "remove": "Remove GPS",
         "title": "Poloha GPS"
+      },
+      "iptc": {
+        "subtitle": "Descriptive and rights metadata embedded on export",
+        "title": "IPTC"
       },
       "organization": {
         "addTagPlaceholder": "Přidat značku...",
@@ -880,9 +937,11 @@
         "exportAllTitle": "Exportovat všechny presety",
         "exportTitle": "Export {{type}}",
         "importPresetsTitle": "Importovat presety",
+        "importXmpTitle": "Import XMP Adjustments",
         "legacyPreset": "Starší preset",
         "presetFile": "Soubor s presetem",
-        "rapidRawPreset": "Preset RapidRAW"
+        "rapidRawPreset": "Preset RapidRAW",
+        "xmpFile": "XMP File"
       },
       "menu": {
         "configurePreset": "Nakonfigurovat preset",
@@ -891,6 +950,8 @@
         "duplicatePreset": "Duplikovat preset",
         "exportFolder": "Exportovat složku",
         "exportPreset": "Exportovat preset",
+        "exportXmp": "Export Current Adjustments as XMP…",
+        "importXmp": "Import Adjustments from XMP…",
         "newFolder": "Nová složka",
         "newPreset": "Nový preset",
         "overwrite": "Přepsat",
@@ -912,7 +973,11 @@
         "exportFailed": "Export presetů se nezdařil",
         "exportSuccess": "Presety byly exportovány",
         "importFailed": "Import presetů se nezdařil",
-        "importFailures": "Import {{num}} souborů presetů se nezdařil"
+        "importFailures": "Import {{num}} souborů presetů se nezdařil",
+        "xmpExportFailed": "Failed to export XMP sidecar",
+        "xmpExportSuccess": "XMP sidecar exported",
+        "xmpImportFailed": "Failed to import XMP",
+        "xmpImportSuccess": "Adjustments imported from XMP"
       },
       "tooltips": {
         "explore": "Prozkoumejte předvolby komunity",
@@ -926,6 +991,13 @@
         "style": "Styl",
         "tool": "Nástroj"
       }
+    },
+    "softProofing": {
+      "description": "Simulate how the exported image will look on a target output profile.",
+      "gamutWarning": "Gamut Warning",
+      "simulatePaper": "Simulate Paper",
+      "title": "Soft Proofing",
+      "turnOff": "Turn Off Soft Proofing"
     },
     "switcher": {
       "tooltips": {
@@ -948,6 +1020,7 @@
       "history": "Historie",
       "switchToVariant": "Přepnout na {{label}}",
       "tooltips": {
+        "aiEnhance": "AI Enhance (Right-click for intensity)",
         "aperture": "Clona",
         "backToLibrary": "Zpět do Knihovny",
         "compare": "Před / po (B) nebo režimy (pravé tlačítko)",
@@ -956,6 +1029,7 @@
         "iso": "ISO",
         "redo": "Znovu (Ctrl+Y) nebo Historie (kliknutí pravým tlačítkem)",
         "shutterSpeed": "Rychlost závěrky",
+        "softProofing": "Soft Proofing",
         "undo": "Zpět (Ctrl+Z) nebo Historie (kliknutí pravým tlačítkem)"
       },
       "vc": "VC"
@@ -967,6 +1041,13 @@
       "preserveFolders": "Zachovat strukturu složek",
       "preserveTimestamps": "Nastavit časová razítka souborů z data pořízení EXIF",
       "title": "Nastavení exportu"
+    },
+    "aiUpscale": {
+      "hint": "Renders the currently loaded image at {{factor}}× resolution.",
+      "label": "AI Upscale",
+      "off": "Off",
+      "scale2": "2×",
+      "scale4": "4×"
     },
     "border": {
       "addBorder": "Přidat rámeček",
@@ -1084,6 +1165,7 @@
     },
     "title": "Export",
     "watermark": {
+      "addTextWatermark": "Přidat textový vodoznak",
       "addWatermark": "Přidat vodoznak",
       "anchors": {
         "bottomCenter": "Dole uprostřed",
@@ -1096,11 +1178,15 @@
         "topLeft": "Nahoře vlevo",
         "topRight": "Nahoře vpravo"
       },
+      "color": "Barva",
+      "fontSize": "Velikost písma",
       "logoText": "Logo",
       "opacity": "Neprůhlednost",
       "previewText": "Náhled",
       "scale": "Měřítko",
       "spacing": "Vzdálenost",
+      "text": "Text",
+      "textPlaceholder": "Text vodoznaku…",
       "watermarkImage": "Obrázek vodoznaku"
     }
   },
@@ -1232,6 +1318,19 @@
       "toggleFit": "Přepnout 1:1 / Přizpůsobit",
       "vc": "VC"
     },
+    "delete": {
+      "confirmTitle": "Delete Image",
+      "delete": "Delete",
+      "deleteAll": "Delete All",
+      "deleteAllMessage": "The original files will be moved to the trash.",
+      "deleteAllTitle": "Delete Original Files",
+      "deleteMultipleMessage_one": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteMultipleMessage_few": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteMultipleMessage_many": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteMultipleMessage_other": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteSelected": "Delete Selected",
+      "deleteSingleMessage": "The original file will be moved to the trash."
+    },
     "filterExit": {
       "hiddenMultiple_one": "Snímky ({{count}}) již neodpovídají filtru",
       "hiddenMultiple_few": "Snímky ({{count}}) již neodpovídají filtru",
@@ -1283,8 +1382,10 @@
       "sections": {
         "albums": "Alba",
         "folders": "Složky",
-        "pinned": "Připnuto"
+        "pinned": "Připnuto",
+        "smartAlbums": "Smart Albums"
       },
+      "smartAlbumsEmpty": "Right-click or use + to create a smart album.",
       "sort": {
         "created": "Datum vytvoření",
         "imageCount": "Počet snímků",
@@ -1368,8 +1469,16 @@
     "items": {
       "cloudPlaceholder": "Uloženo na iCloudu — nestaženo",
       "collapseFolder": "Sbalit složku",
+      "collapseStack_one": "Collapse Stack ({{count}})",
+      "collapseStack_few": "Collapse Stack ({{count}})",
+      "collapseStack_many": "Collapse Stack ({{count}})",
+      "collapseStack_other": "Collapse Stack ({{count}})",
       "currentFolder": "Aktuální složka",
       "expandFolder": "Rozbalit složku",
+      "expandStack_one": "Expand Stack ({{count}})",
+      "expandStack_few": "Expand Stack ({{count}})",
+      "expandStack_many": "Expand Stack ({{count}})",
+      "expandStack_other": "Expand Stack ({{count}})",
       "imagesCount_one": "1 snímek",
       "imagesCount_few": "{{count}} snímky",
       "imagesCount_many": "{{count}} snímku",
@@ -1384,6 +1493,14 @@
     },
     "jobs": {
       "active": "Probíhá",
+      "activeCount_one": "{{count}} running",
+      "activeCount_few": "{{count}} running",
+      "activeCount_many": "{{count}} running",
+      "activeCount_other": "{{count}} running",
+      "allDone_one": "{{count}} finished",
+      "allDone_few": "{{count}} finished",
+      "allDone_many": "{{count}} finished",
+      "allDone_other": "{{count}} finished",
       "cancel": "Zrušit export",
       "cancelling": "Ruší se…",
       "clear": "Vymazat",
@@ -1403,8 +1520,16 @@
         "modelDownload": "Stahování AI modelu",
         "move": "Přesun souborů"
       },
+      "noActive": "No active jobs",
       "openInLibrary": "Otevřít v knihovně",
       "recent": "Nedávné",
+      "statuses": {
+        "cancelled": "Cancelled",
+        "cancelling": "Cancelling…",
+        "error": "Failed",
+        "running": "Running",
+        "success": "Done"
+      },
       "title": "Úlohy"
     },
     "reject": {
@@ -1807,6 +1932,46 @@
     "renameGroup": {
       "placeholder": "Zadejte nový název skupiny..."
     },
+    "smartAlbum": {
+      "addRule": "Add Rule",
+      "cancel": "Cancel",
+      "colors": {
+        "none": "No Color Label"
+      },
+      "create": "Create",
+      "createTitle": "New Smart Album",
+      "description": "A smart album automatically collects images matching the rules below.",
+      "edited": {
+        "edited": "Edited",
+        "unedited": "Unedited"
+      },
+      "editTitle": "Edit Smart Album",
+      "fields": {
+        "camera": "Camera",
+        "color": "Color Label",
+        "dateTaken": "Date Taken",
+        "edited": "Edit Status",
+        "filename": "File Name",
+        "flag": "Flag",
+        "iso": "ISO",
+        "lens": "Lens",
+        "rating": "Rating",
+        "raw": "File Type"
+      },
+      "flags": {
+        "none": "No Flag",
+        "pick": "Picked",
+        "reject": "Rejected"
+      },
+      "matchLabel": "Rules",
+      "namePlaceholder": "Enter album name...",
+      "raw": {
+        "nonRaw": "Non-RAW",
+        "raw": "RAW"
+      },
+      "removeRule": "Remove rule",
+      "save": "Save"
+    },
     "transform": {
       "amount": "Míra",
       "apply": "Použít",
@@ -1836,6 +2001,29 @@
       "zoomOutTooltip": "Oddálit"
     }
   },
+  "onboarding": {
+    "back": "Back",
+    "finish": "Get Started",
+    "goToStep": "Go to step {{step}}",
+    "next": "Next",
+    "skip": "Skip",
+    "stepOf": "Step {{current}} of {{total}}",
+    "steps": {
+      "folder": {
+        "description": "Open a folder from the splash screen or the folder tree and all supported images inside are added to your library automatically.",
+        "title": "Add your photos"
+      },
+      "preset": {
+        "description": "Open an image, then click the Presets panel to try one-click looks, or save your own style for later.",
+        "title": "Try a one-click look"
+      },
+      "shortcuts": {
+        "description": "Find every shortcut and rebind them anytime in Settings → Controls.",
+        "title": "Five shortcuts worth knowing"
+      }
+    },
+    "title": "Welcome to RapidRAW"
+  },
   "settings": {
     "categories": {
       "general": "Hlavní",
@@ -1848,6 +2036,7 @@
         "mouse": "Myš",
         "trackpad": "Touchpad"
       },
+      "noMatchingShortcuts": "No shortcuts match your search.",
       "notAssigned": "Nezařazeno",
       "optimization": "Optimalizace vstupního zařízení",
       "optimizationDesc": "Vyberte primární vstupní zařízení, které používáte k posouvání a přibližování plátna.",
@@ -1855,6 +2044,7 @@
       "resetDefaults": "Obnovit vše na výchozí",
       "resetDefaultsMessage": "Tímto se všechny klávesové zkratky obnoví na výchozí vazby. Vlastní přiřazení budou ztracena.",
       "resetDefaultsTitle": "Obnovit klávesové zkratky",
+      "searchShortcuts": "Search shortcuts...",
       "speed": "Rychlost",
       "title": "Ovládání myší",
       "zoom": "Rychlost zoomu",
@@ -2305,7 +2495,32 @@
       "timeout": "Kontrola aktualizací vypršela po 20 sekundách.",
       "title": "Aktualizace softwaru",
       "upToDate": "Máte nejnovější verzi ({{version}})."
+    },
+    "watchedFolders": {
+      "add": "Add Folder",
+      "desc": "Automatically import new images that appear in these folders.",
+      "empty": "No folders are being watched yet.",
+      "enabled": "Enabled",
+      "refresh": "Refresh Status",
+      "remove": "Remove folder",
+      "statusSummary": "{{known}} images, {{pending}} pending",
+      "statusUnknown": "Status unavailable",
+      "title": "Watched Folders"
     }
+  },
+  "survey": {
+    "actions": {
+      "pick": "Pick (P)",
+      "rate": "Rate {{rating}}",
+      "reject": "Reject (X)",
+      "unflag": "Clear flag (U)"
+    },
+    "close": "Close survey (Esc)",
+    "compareEntry": "Survey mode in compare view",
+    "compareToggle": "Compare view (C)",
+    "next": "Next image",
+    "prev": "Previous image",
+    "title": "Survey Mode"
   },
   "tethering": {
     "aperture": "Clona",
@@ -2313,6 +2528,8 @@
     "autoApplyPreset": "Automaticky použít preset",
     "autoOpenCaptured": "Automaticky otevírat nasnímané snímky",
     "cameraConnected": "Fotoaparát připojen",
+    "captureInterval": "Interval Capture Interval (ms)",
+    "captureIntervalDesc": "Default delay between interval captures (200–3600000 ms).",
     "capturing": "Snímání…",
     "changePreset": "Změnit",
     "clearPreset": "Odstranit preset",

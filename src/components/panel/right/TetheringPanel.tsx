@@ -35,6 +35,7 @@ import { TextVariants, TextColors, TextWeights } from '../../../types/typography
 import { Invokes, Preset } from '../../ui/AppProperties';
 import { useLibraryStore } from '../../../store/useLibraryStore';
 import { useEditorStore } from '../../../store/useEditorStore';
+import { useSettingsStore } from '../../../store/useSettingsStore';
 import { usePresets } from '../../../hooks/usePresets';
 import { useContextMenu } from '../../../context/ContextMenuContext';
 
@@ -210,6 +211,26 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
   const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
   const [isFocusing, setIsFocusing] = useState(false);
   const [autoApplyPreset, setAutoApplyPreset] = useState<Preset | null>(null);
+
+  const appSettings = useSettingsStore((s) => s.appSettings);
+  const handleSettingsChange = useSettingsStore((s) => s.handleSettingsChange);
+  const [intervalText, setIntervalText] = useState(() =>
+    String(useSettingsStore.getState().appSettings?.tetherCaptureIntervalMs ?? 5000),
+  );
+
+  useEffect(() => {
+    setIntervalText(String(appSettings?.tetherCaptureIntervalMs ?? 5000));
+  }, [appSettings?.tetherCaptureIntervalMs]);
+
+  // E4: persist the default interval-capture delay (ms) into AppSettings.
+  const commitCaptureInterval = () => {
+    const parsed = parseInt(intervalText, 10);
+    const clamped = Number.isFinite(parsed) ? Math.min(3600000, Math.max(200, parsed)) : 5000;
+    setIntervalText(String(clamped));
+    if (appSettings && clamped !== (appSettings.tetherCaptureIntervalMs ?? 5000)) {
+      handleSettingsChange({ ...appSettings, tetherCaptureIntervalMs: clamped });
+    }
+  };
 
   const presetSelectBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -885,6 +906,33 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
                   trackClassName="bg-bg-primary"
                   className="w-full"
                 />
+              </div>
+
+              <div className="flex flex-col gap-1 bg-surface p-2.5 rounded-lg border border-surface">
+                <Text variant={TextVariants.label} className="select-none">
+                  {t('tethering.captureInterval')}
+                </Text>
+                <Text variant={TextVariants.small} color={TextColors.secondary}>
+                  {t('tethering.captureIntervalDesc')}
+                </Text>
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="number"
+                    min={200}
+                    max={3600000}
+                    step={100}
+                    value={intervalText}
+                    onChange={(e) => setIntervalText(e.target.value)}
+                    onBlur={commitCaptureInterval}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        (e.target as HTMLInputElement).blur();
+                      }
+                    }}
+                    className="w-full bg-bg-primary border border-surface rounded-md px-2 py-1.5 text-xs text-text-primary focus:outline-hidden focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                  />
+                </div>
               </div>
             </div>
           </>

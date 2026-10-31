@@ -27,19 +27,24 @@
       "hsl",
       "colorGrading",
       "colorCalibration",
+      "cameraProfile",
       "hue"
     ],
     "details": [
       "clarity",
       "dehaze",
       "structure",
+      "textureAmount",
       "centré",
       "centréX",
       "centréY",
       "sharpness",
       "sharpnessThreshold",
+      "sharpenRadius",
       "lumaNoiseReduction",
       "colorNoiseReduction",
+      "colorNrDetail",
+      "colorNrSmoothness",
       "aiDenoiseEnabled",
       "aiDenoiseMethod",
       "aiDenoiseAmount",
@@ -156,6 +161,10 @@
       "max": 5,
       "step": 0.01,
       "default": 0
+    },
+    "cameraProfile": {
+      "type": "any",
+      "default": null
     },
     "centré": {
       "type": "number",
@@ -338,6 +347,20 @@
       }
     },
     "colorNoiseReduction": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "colorNrDetail": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    "colorNrSmoothness": {
       "type": "number",
       "min": 0,
       "max": 100,
@@ -1401,6 +1424,13 @@
       "step": 1,
       "default": 15
     },
+    "sharpenRadius": {
+      "type": "number",
+      "min": 50,
+      "max": 300,
+      "step": 5,
+      "default": 100
+    },
     "showClipping": {
       "type": "boolean",
       "default": false
@@ -1419,6 +1449,13 @@
       "step": 1,
       "default": 0
     },
+    "textureAmount": {
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
     "tint": {
       "type": "number",
       "min": -100,
@@ -1429,8 +1466,10 @@
     "toneMapper": {
       "type": "enum",
       "values": [
+        "basic",
         "agx",
-        "basic"
+        "pbrNeutral",
+        "aces"
       ],
       "default": "basic"
     },

@@ -67,6 +67,7 @@ mod multi_exposure;
 mod negative_conversion;
 mod panorama_stitching;
 mod panorama_utils;
+mod platform_features;
 mod preset_converter;
 mod raw_processing;
 mod relight;
@@ -91,7 +92,11 @@ use std::time::Duration;
 
 use base64::{Engine as _, engine::general_purpose};
 use image::codecs::jpeg::JpegEncoder;
-use image::{DynamicImage, GenericImageView, ImageBuffer, ImageFormat, Luma, RgbImage};
+use image::codecs::png::PngEncoder;
+use image::{
+    DynamicImage, ExtendedColorType, GenericImageView, ImageBuffer, ImageEncoder, ImageFormat,
+    Luma, RgbImage, RgbaImage,
+};
 use image_hdr::hdr_merge_images;
 use image_hdr::input::HDRInput;
 use imgref::ImgRef;
@@ -660,10 +665,20 @@ fn process_preview_job(
 
     let default_preview_dim = settings.editor_preview_resolution.unwrap_or(1920);
     let preview_dim = target_resolution.unwrap_or(default_preview_dim);
-    #[cfg(not(any(target_os = "linux", target_os = "android")))]
-    let use_wgpu_renderer = settings.use_wgpu_renderer.unwrap_or(true);
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    let use_wgpu_renderer = false;
+
+    // E8: record interactive activity so background workers can yield to the
+    // editor while slider drags / zoom patches are being rendered.
+    if is_interactive {
+        state
+            .last_interactive_render_ms
+            .store(crate::platform_features::now_unix_ms(), Ordering::SeqCst);
+    }
+
+    // R1-3/R1-4: capability-based decision. Probes the wgpu adapter once,
+    // falls back to the CPU path for software renderers (llvmpipe etc.), and
+    // keeps the preview path off on Linux/Android until the display-surface
+    // integration is wired up there.
+    let use_wgpu_renderer = crate::platform_features::resolve_wgpu_rendering(&state, &settings);
 
     let has_roi = roi.is_some();
     let (interactive_divisor, interactive_quality) = match live_quality {
@@ -767,6 +782,14 @@ fn process_preview_job(
     } else {
         None
     };
+
+    // R6-2: lossless encoding for hi-fidelity zoom output. Interactive ROI
+    // patches are the magnified view while zooming; final renders above the
+    // default preview resolution are the hi-fi zoom result (the frontend only
+    // requests a higher resolution for hi-fi zoom). Everything else keeps the
+    // bandwidth-friendly JPEG path.
+    let use_lossless = (is_interactive && pixel_roi.is_some())
+        || (!is_interactive && preview_dim > default_preview_dim);
 
     let mask_definitions: Vec<MaskDefinition> = adjustments_clone
         .get("masks")
@@ -883,13 +906,18 @@ fn process_preview_job(
 
         let step_start = std::time::Instant::now();
 
-        let encode_result = Encoder::new(Preset::BaselineFastest)
-            .quality(jpeg_quality)
-            .fast_color(true)
-            .encode_imgref(img_ref);
+        let encode_result: Result<Vec<u8>, String> = if use_lossless {
+            encode_png_lossless(final_rgba_image)
+        } else {
+            Encoder::new(Preset::BaselineFastest)
+                .quality(jpeg_quality)
+                .fast_color(true)
+                .encode_imgref(img_ref)
+                .map_err(|e| e.to_string())
+        };
 
         match encode_result {
-            Ok(jpeg_bytes) => {
+            Ok(encoded_bytes) => {
                 if is_interactive {
                     let (roi_w, roi_h) = final_rgba_image.dimensions();
                     let (rx, ry) = if let Some(r) = pixel_roi {
@@ -898,14 +926,14 @@ fn process_preview_job(
                         (0, 0)
                     };
 
-                    let mut response = Vec::with_capacity(24 + jpeg_bytes.len());
+                    let mut response = Vec::with_capacity(24 + encoded_bytes.len());
                     response.extend_from_slice(&rx.to_le_bytes());
                     response.extend_from_slice(&ry.to_le_bytes());
                     response.extend_from_slice(&roi_w.to_le_bytes());
                     response.extend_from_slice(&roi_h.to_le_bytes());
                     response.extend_from_slice(&preview_width.to_le_bytes());
                     response.extend_from_slice(&preview_height.to_le_bytes());
-                    response.extend_from_slice(&jpeg_bytes);
+                    response.extend_from_slice(&encoded_bytes);
 
                     log::info!(
                         "[process_preview_job] interactive ROI {}x{} encode in {:.2?}, total {:.2?}",
@@ -925,7 +953,7 @@ fn process_preview_job(
                         step_start.elapsed(),
                         fn_start.elapsed()
                     );
-                    Ok(jpeg_bytes)
+                    Ok(encoded_bytes)
                 }
             }
             Err(e) => Err(format!("Failed to encode preview: {}", e)),
@@ -992,51 +1020,157 @@ fn subscribe_analytics(channel: Channel, state: tauri::State<AppState>) {
     *state.analytics_channel.lock().unwrap() = Some(channel);
 }
 
+/// E3: inserts into geometry_cache with LRU-4 bookkeeping, replacing the old
+/// clear-everything-above-two heuristic so a sliding window of recent edits
+/// stays cached.
+fn insert_geometry_cache(state: &AppState, key: u64, image: DynamicImage) {
+    let mut cache = state.geometry_cache.lock().unwrap();
+    let mut order = state.geometry_cache_order.lock().unwrap();
+    order.retain(|k| *k != key);
+    while cache.len() >= 4 {
+        match order.pop_front() {
+            Some(oldest) => {
+                cache.remove(&oldest);
+            }
+            None => {
+                cache.clear();
+                break;
+            }
+        }
+    }
+    order.push_back(key);
+    cache.insert(key, image);
+}
+
+/// E3: refreshes the LRU position of a geometry cache entry on a cache hit.
+fn touch_geometry_cache(state: &AppState, key: u64) {
+    let hit = state.geometry_cache.lock().unwrap().contains_key(&key);
+    if hit {
+        let mut order = state.geometry_cache_order.lock().unwrap();
+        if let Some(pos) = order.iter().position(|k| *k == key) {
+            order.remove(pos);
+        }
+        order.push_back(key);
+    }
+}
+
+/// R6-2: lossless PNG encoding for hi-fidelity zoom output so magnified views
+/// show no JPEG compression artifacts. Fast compression keeps the latency
+/// acceptable for interactive zooming.
+fn encode_png_lossless(rgba: &RgbaImage) -> Result<Vec<u8>, String> {
+    let mut buf = Vec::new();
+    let encoder = PngEncoder::new_with_quality(
+        &mut buf,
+        image::codecs::png::CompressionType::Fast,
+        image::codecs::png::FilterType::Adaptive,
+    );
+    encoder
+        .write_image(
+            rgba.as_raw(),
+            rgba.width(),
+            rgba.height(),
+            ExtendedColorType::Rgba8,
+        )
+        .map_err(|e| format!("Failed to encode PNG: {}", e))?;
+    Ok(buf)
+}
+
 fn start_preview_worker(app_handle: tauri::AppHandle) {
     let state = app_handle.state::<AppState>();
-    let (tx, rx): (Sender<PreviewJob>, Receiver<PreviewJob>) = mpsc::channel();
+    let (tx, rx): (Sender<WorkerTask>, Receiver<WorkerTask>) = mpsc::channel();
 
     *state.preview_worker_tx.lock().unwrap() = Some(tx);
 
     std::thread::spawn(move || {
-        while let Ok(job) = rx.recv() {
-            let mut latest: [Option<PreviewJob>; 2] = [None, None];
-            let mut next = Some(job);
-            while let Some(job) = next {
-                let slot = job.layer as usize;
-                latest[slot] = Some(job);
+        while let Ok(first) = rx.recv() {
+            // R6-3: drain the channel into priority lanes so user interactions
+            // preempt background work. Per-lane coalescing keeps only the
+            // latest job per display layer to skip stale intermediates.
+            let mut interactive: [Option<PreviewJob>; 2] = [None, None];
+            let mut finals: [Option<PreviewJob>; 2] = [None, None];
+            let mut uncropped: Option<WorkerTask> = None;
+
+            let mut next = Some(first);
+            while let Some(task) = next {
+                match task {
+                    WorkerTask::Preview(job) => {
+                        let slot = job.layer as usize;
+                        if job.is_interactive {
+                            interactive[slot] = Some(job);
+                        } else {
+                            finals[slot] = Some(job);
+                        }
+                    }
+                    task @ WorkerTask::Uncropped { .. } => {
+                        // Only the most recent uncropped request matters.
+                        uncropped = Some(task);
+                    }
+                }
                 next = rx.try_recv().ok();
             }
 
-            for job in latest.into_iter().flatten() {
+            // 1) Interactive renders: the user is waiting on these.
+            for job in interactive.into_iter().flatten() {
+                execute_preview_job(&app_handle, job);
+            }
+
+            // 2) Uncropped previews: editor support work, quick to compute.
+            if let Some(WorkerTask::Uncropped {
+                adjustments,
+                responder,
+            }) = uncropped
+            {
                 let state = app_handle.state::<AppState>();
-                let responder = job.responder;
                 let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-                    process_preview_job(
-                        &app_handle,
-                        state,
-                        job.adjustments,
-                        job.layer,
-                        job.is_interactive,
-                        job.target_resolution,
-                        job.roi,
-                        job.request_analytics,
-                        job.compute_waveform,
-                        job.active_waveform_channel.as_deref(),
-                    )
+                    process_uncropped_job(&app_handle, state, adjustments)
                 }))
-                .unwrap_or_else(|_| Err("Preview rendering panicked".to_string()));
+                .unwrap_or_else(|_| Err("Uncropped preview rendering panicked".to_string()));
                 match result {
                     Ok(bytes) => {
                         let _ = responder.send(bytes);
                     }
                     Err(e) => {
-                        log::error!("Preview worker error: {}", e);
+                        // Dropping the responder resolves awaiting callers
+                        // with "Superseded or worker failed".
+                        log::error!("Uncropped preview worker error: {}", e);
                     }
                 }
             }
+
+            // 3) Final-quality renders last: lowest priority, safe to lag.
+            for job in finals.into_iter().flatten() {
+                execute_preview_job(&app_handle, job);
+            }
         }
     });
+}
+
+fn execute_preview_job(app_handle: &tauri::AppHandle, job: PreviewJob) {
+    let state = app_handle.state::<AppState>();
+    let responder = job.responder;
+    let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+        process_preview_job(
+            app_handle,
+            state,
+            job.adjustments,
+            job.layer,
+            job.is_interactive,
+            job.target_resolution,
+            job.roi,
+            job.request_analytics,
+            job.compute_waveform,
+            job.active_waveform_channel.as_deref(),
+        )
+    }))
+    .unwrap_or_else(|_| Err("Preview rendering panicked".to_string()));
+    match result {
+        Ok(bytes) => {
+            let _ = responder.send(bytes);
+        }
+        Err(e) => {
+            log::error!("Preview worker error: {}", e);
+        }
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1057,7 +1191,7 @@ async fn apply_adjustments(
     {
         let tx_guard = state.preview_worker_tx.lock().unwrap();
         if let Some(worker_tx) = tx_guard.as_ref() {
-            let job = PreviewJob {
+            let task = WorkerTask::Preview(PreviewJob {
                 adjustments: js_adjustments,
                 layer: if original {
                     DisplayLayer::Original
@@ -1071,9 +1205,9 @@ async fn apply_adjustments(
                 compute_waveform,
                 active_waveform_channel,
                 responder: tx,
-            };
+            });
             worker_tx
-                .send(job)
+                .send(task)
                 .map_err(|e| format!("Failed to send to preview worker: {}", e))?;
         } else {
             return Err("Preview worker not running".to_string());
@@ -1090,9 +1224,38 @@ async fn apply_adjustments(
 async fn generate_uncropped_preview(
     js_adjustments: serde_json::Value,
     state: tauri::State<'_, AppState>,
-    app_handle: tauri::AppHandle,
 ) -> Result<Response, String> {
-    let context = get_or_init_gpu_context(&state, &app_handle)?;
+    // R6-3: routed through the preview worker's middle-priority lane so
+    // uncropped previews are computed between interactive and final renders
+    // instead of competing with them on a separate thread.
+    let (tx, rx) = tokio::sync::oneshot::channel();
+
+    {
+        let tx_guard = state.preview_worker_tx.lock().unwrap();
+        if let Some(worker_tx) = tx_guard.as_ref() {
+            worker_tx
+                .send(WorkerTask::Uncropped {
+                    adjustments: js_adjustments,
+                    responder: tx,
+                })
+                .map_err(|e| format!("Failed to send to preview worker: {}", e))?;
+        } else {
+            return Err("Preview worker not running".to_string());
+        }
+    }
+
+    match rx.await {
+        Ok(bytes) => Ok(Response::new(bytes)),
+        Err(_) => Err("Superseded or worker failed".to_string()),
+    }
+}
+
+fn process_uncropped_job(
+    app_handle: &tauri::AppHandle,
+    state: tauri::State<AppState>,
+    js_adjustments: serde_json::Value,
+) -> Result<Vec<u8>, String> {
+    let context = get_or_init_gpu_context(&state, app_handle)?;
     let mut adjustments_clone = js_adjustments.clone();
     hydrate_adjustments(&state, &mut adjustments_clone);
 
@@ -1103,127 +1266,121 @@ async fn generate_uncropped_preview(
         .clone()
         .ok_or("No original image loaded")?;
 
-    tokio::task::spawn_blocking(move || {
-        let state = app_handle.state::<AppState>();
-        let path = loaded_image.path.clone();
-        let is_raw = loaded_image.is_raw;
-        let settings = load_settings(app_handle.clone()).unwrap_or_default();
-        let target_dim = settings.editor_preview_resolution.unwrap_or(1920);
+    let path = loaded_image.path.clone();
+    let is_raw = loaded_image.is_raw;
+    let settings = load_settings(app_handle.clone()).unwrap_or_default();
+    let target_dim = settings.editor_preview_resolution.unwrap_or(1920);
 
-        let mut hasher = DefaultHasher::new();
-        path.hash(&mut hasher);
-        crate::cache_utils::calculate_patch_hash(&adjustments_clone).hash(&mut hasher);
-        let patched_key = hasher.finish();
+    let mut hasher = DefaultHasher::new();
+    path.hash(&mut hasher);
+    crate::cache_utils::calculate_patch_hash(&adjustments_clone).hash(&mut hasher);
+    let patched_key = hasher.finish();
 
-        let mut hasher = DefaultHasher::new();
-        patched_key.hash(&mut hasher);
-        crate::cache_utils::calculate_effects_hash(&adjustments_clone).hash(&mut hasher);
-        target_dim.hash(&mut hasher);
-        let base_key = hasher.finish();
+    let mut hasher = DefaultHasher::new();
+    patched_key.hash(&mut hasher);
+    crate::cache_utils::calculate_effects_hash(&adjustments_clone).hash(&mut hasher);
+    target_dim.hash(&mut hasher);
+    let base_key = hasher.finish();
 
-        let cached_base = state.geometry_cache.lock().unwrap().get(&base_key).cloned();
-        let pre_geometry_base = match cached_base {
-            Some(cached) => cached,
-            None => {
-                let patched = get_or_compute_stage(&state.patched_cache, patched_key, || {
-                    compute_patched(&loaded_image, &adjustments_clone)
-                })?;
-                let downscaled = downscale_f32_image(&patched, target_dim, target_dim);
-                drop(patched);
+    let cached_base = {
+        touch_geometry_cache(&state, base_key);
+        state.geometry_cache.lock().unwrap().get(&base_key).cloned()
+    };
+    let pre_geometry_base = match cached_base {
+        Some(cached) => cached,
+        None => {
+            let patched = get_or_compute_stage(&state.patched_cache, patched_key, || {
+                compute_patched(&loaded_image, &adjustments_clone)
+            })?;
+            let downscaled = downscale_f32_image(&patched, target_dim, target_dim);
+            drop(patched);
 
-                let relit_image =
-                    crate::relight::apply_relight(Cow::Owned(downscaled), &adjustments_clone);
-                let fogged_image = crate::fog::apply_fog(relit_image, &adjustments_clone);
-                let base = crate::lens_blur::apply_lens_blur(fogged_image, &adjustments_clone)
-                    .into_owned();
+            let relit_image =
+                crate::relight::apply_relight(Cow::Owned(downscaled), &adjustments_clone);
+            let fogged_image = crate::fog::apply_fog(relit_image, &adjustments_clone);
+            let base =
+                crate::lens_blur::apply_lens_blur(fogged_image, &adjustments_clone).into_owned();
 
-                let mut cache = state.geometry_cache.lock().unwrap();
-                if cache.len() > 2 {
-                    cache.clear();
-                }
-                cache.insert(base_key, base.clone());
-                base
-            }
-        };
-
-        let scale_for_gpu = if loaded_image.image.width() > 0 {
-            pre_geometry_base.width() as f32 / loaded_image.image.width() as f32
-        } else {
-            1.0
-        };
-
-        let params = crate::image_processing::get_geometry_params_from_json(&adjustments_clone);
-        let mut adjusted_params = params;
-        adjusted_params.lens_vignette_amount *= if is_raw { 0.4 } else { 0.8 };
-
-        let warped_image = warp_image_geometry(&pre_geometry_base, adjusted_params);
-        let orientation_steps = adjustments_clone["orientationSteps"].as_u64().unwrap_or(0) as u8;
-        let flipped_image = apply_flip(
-            apply_coarse_rotation(Cow::Owned(warped_image), orientation_steps),
-            adjustments_clone["flipHorizontal"]
-                .as_bool()
-                .unwrap_or(false),
-            adjustments_clone["flipVertical"].as_bool().unwrap_or(false),
-        )
-        .into_owned();
-
-        let (preview_width, preview_height) = flipped_image.dimensions();
-
-        let mask_definitions: Vec<MaskDefinition> = adjustments_clone
-            .get("masks")
-            .and_then(|m| serde_json::from_value(m.clone()).ok())
-            .unwrap_or_default();
-
-        let mask_bitmaps = get_cached_or_generate_masks(
-            &state,
-            &path,
-            &mask_definitions,
-            preview_width,
-            preview_height,
-            scale_for_gpu,
-            (0.0, 0.0),
-            &adjustments_clone,
-        )
-        .bitmaps;
-
-        let render = resolve_render_options_from_handle(&app_handle, is_raw);
-        let mut uncropped_adjustments =
-            get_all_adjustments_from_json(&adjustments_clone, is_raw, loaded_image.as_shot, render);
-        uncropped_adjustments.global.show_clipping = 0;
-        let lut_path = adjustments_clone["lutPath"].as_str();
-        let lut = lut_path.and_then(|p| lut_processing::get_or_load_lut(&state, p).ok());
-
-        let full_hash = calculate_full_job_hash(&path, &adjustments_clone);
-
-        if let Ok(processed_image) = process_and_get_dynamic_image(
-            &context,
-            &state,
-            &flipped_image,
-            full_hash,
-            RenderRequest {
-                adjustments: uncropped_adjustments,
-                mask_bitmaps: &mask_bitmaps,
-                mask_cache_key: None,
-                lut,
-                roi: None,
-            },
-            "generate_uncropped_preview",
-        ) {
-            let (width, height) = processed_image.dimensions();
-            let rgb_pixels = processed_image.to_rgb8().into_vec();
-
-            if let Ok(bytes) = Encoder::new(Preset::BaselineFastest)
-                .quality(80)
-                .encode_rgb(&rgb_pixels, width, height)
-            {
-                return Ok(Response::new(bytes));
-            }
+            insert_geometry_cache(&state, base_key, base.clone());
+            base
         }
+    };
 
-        Err("Failed to process uncropped preview".to_string())
-    })
-    .await
-    .map_err(|e| format!("Task execution failed: {}", e))?
+    let scale_for_gpu = if loaded_image.image.width() > 0 {
+        pre_geometry_base.width() as f32 / loaded_image.image.width() as f32
+    } else {
+        1.0
+    };
+
+    let params = crate::image_processing::get_geometry_params_from_json(&adjustments_clone);
+    let mut adjusted_params = params;
+    adjusted_params.lens_vignette_amount *= if is_raw { 0.4 } else { 0.8 };
+
+    let warped_image = warp_image_geometry(&pre_geometry_base, adjusted_params);
+    let orientation_steps = adjustments_clone["orientationSteps"].as_u64().unwrap_or(0) as u8;
+    let flipped_image = apply_flip(
+        apply_coarse_rotation(Cow::Owned(warped_image), orientation_steps),
+        adjustments_clone["flipHorizontal"]
+            .as_bool()
+            .unwrap_or(false),
+        adjustments_clone["flipVertical"].as_bool().unwrap_or(false),
+    )
+    .into_owned();
+
+    let (preview_width, preview_height) = flipped_image.dimensions();
+
+    let mask_definitions: Vec<MaskDefinition> = adjustments_clone
+        .get("masks")
+        .and_then(|m| serde_json::from_value(m.clone()).ok())
+        .unwrap_or_default();
+
+    let mask_bitmaps = get_cached_or_generate_masks(
+        &state,
+        &path,
+        &mask_definitions,
+        preview_width,
+        preview_height,
+        scale_for_gpu,
+        (0.0, 0.0),
+        &adjustments_clone,
+    )
+    .bitmaps;
+
+    let render = resolve_render_options_from_handle(app_handle, is_raw);
+    let mut uncropped_adjustments =
+        get_all_adjustments_from_json(&adjustments_clone, is_raw, loaded_image.as_shot, render);
+    uncropped_adjustments.global.show_clipping = 0;
+    let lut_path = adjustments_clone["lutPath"].as_str();
+    let lut = lut_path.and_then(|p| lut_processing::get_or_load_lut(&state, p).ok());
+
+    let full_hash = calculate_full_job_hash(&path, &adjustments_clone);
+
+    if let Ok(processed_image) = process_and_get_dynamic_image(
+        &context,
+        &state,
+        &flipped_image,
+        full_hash,
+        RenderRequest {
+            adjustments: uncropped_adjustments,
+            mask_bitmaps: &mask_bitmaps,
+            mask_cache_key: None,
+            lut,
+            roi: None,
+        },
+        "generate_uncropped_preview",
+    ) {
+        let (width, height) = processed_image.dimensions();
+        let rgb_pixels = processed_image.to_rgb8().into_vec();
+
+        if let Ok(bytes) = Encoder::new(Preset::BaselineFastest)
+            .quality(80)
+            .encode_rgb(&rgb_pixels, width, height)
+        {
+            return Ok(bytes);
+        }
+    }
+
+    Err("Failed to process uncropped preview".to_string())
 }
 
 pub fn get_original_image(
@@ -2300,6 +2457,18 @@ pub fn run() {
             file_management::start_thumbnail_workers(app_handle.clone());
             file_management::start_metadata_workers(app_handle.clone());
             ai_jobs::start_worker(app_handle.clone());
+
+            // R1-3/R1-4: probe the GPU adapter off-thread and report the
+            // preview-renderer decision to the frontend once at startup.
+            crate::platform_features::start_adapter_reporting(app_handle.clone());
+            // E9/E10: resume persisted watched-folder auto-ingest.
+            if !settings.watched_folders.is_empty() {
+                crate::platform_features::restart_watcher(
+                    app_handle.clone(),
+                    settings.watched_folders.clone(),
+                );
+            }
+
             jxl_oxide::integration::register_image_decoding_hook();
 
             let window_cfg = app.config().app.windows.first().unwrap().clone();
@@ -2546,6 +2715,10 @@ pub fn run() {
             disks_cache: Mutex::new(None),
             disks_cache_refreshing: AtomicBool::new(false),
             camera_session: Mutex::new(camera_tethering::CameraSession::new()),
+            gpu_adapter_probe: Mutex::new(None),
+            last_interactive_render_ms: AtomicU64::new(0),
+            tether_interval_token: Mutex::new(None),
+            geometry_cache_order: Mutex::new(std::collections::VecDeque::new()),
         })
         .invoke_handler(tauri::generate_handler![
             apply_adjustments,
@@ -2688,6 +2861,15 @@ pub fn run() {
             camera_tethering::tether_capture,
             camera_tethering::tether_get_preview,
             camera_tethering::tether_autofocus,
+            camera_tethering::tether_start_interval_capture,
+            camera_tethering::tether_stop_interval_capture,
+            platform_features::get_gpu_adapter_info,
+            platform_features::export_xmp_sidecar,
+            platform_features::import_xmp_sidecar,
+            platform_features::set_watched_folders,
+            platform_features::get_watched_folder_status,
+            platform_features::ai_auto_enhance,
+            platform_features::ai_upscale_export,
             guided_perspective::calculate_guided_perspective,
             immich::commands::immich_get_api_key,
             immich::commands::immich_set_api_key,

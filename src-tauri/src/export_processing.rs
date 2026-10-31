@@ -4,14 +4,16 @@ use std::fs;
 use std::io::{Cursor, Seek, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
+use ab_glyph::{FontArc, PxScale};
 use image::codecs::jpeg::{JpegEncoder, PixelDensity};
 use image::codecs::png::PngEncoder;
 use image::{
     DynamicImage, GenericImageView, GrayImage, ImageBuffer, ImageEncoder, ImageFormat, Luma,
     imageops,
 };
+use imageproc::drawing;
 use jxl_encoder::{
     LosslessConfig, LossyConfig, PixelLayout,
     api::{calibrated_jxl_quality, quality_to_distance},
@@ -143,6 +145,7 @@ pub struct ExportSettings {
     pub strip_gps: bool,
     pub filename_template: Option<String>,
     pub watermark: Option<WatermarkSettings>,
+    pub text_watermark: Option<TextWatermarkSettings>,
     #[serde(default)]
     pub export_masks: bool,
     #[serde(default)]
@@ -167,7 +170,7 @@ pub(crate) enum ExportAdjustmentsMode {
     GlobalOverride(Value),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum WatermarkAnchor {
     TopLeft,
@@ -189,6 +192,20 @@ pub struct WatermarkSettings {
     pub scale: f32,
     pub spacing: f32,
     pub opacity: f32,
+}
+
+/// §4/M6: text watermark, mirroring the frontend preview semantics —
+/// `font_size` is a percentage of the exported image height, `spacing`
+/// uses the same fixed 2.5% of the min dimension as the preview, and
+/// `color` is an sRGB hex string (`#RRGGBB` or `#RRGGBBAA`).
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TextWatermarkSettings {
+    pub content: String,
+    pub anchor: WatermarkAnchor,
+    pub font_size: f32,
+    pub opacity: f32,
+    pub color: String,
 }
 
 struct WatermarkCacheEntry {
@@ -306,8 +323,78 @@ fn apply_watermark(
 
     let spacing_pixels = (base_min_dim * (watermark_settings.spacing / 100.0)) as i64;
     let (wm_w, wm_h) = scaled_watermark.dimensions();
+    let (x, y) = watermark_anchor_position(
+        watermark_settings.anchor,
+        base_w,
+        base_h,
+        wm_w,
+        wm_h,
+        spacing_pixels,
+    );
 
-    let x = match watermark_settings.anchor {
+    overlay_with_opacity(base_image, &scaled_watermark, x, y, opacity_factor);
+
+    Ok(())
+}
+
+/// Overlays `overlay` (any DynamicImage variant) onto `base`, modulating the
+/// overlay's alpha by `opacity_factor` first. Matches the base image's bit
+/// depth so 16-bit/32F exports are not silently degraded to 8-bit.
+fn overlay_with_opacity(
+    base_image: &mut DynamicImage,
+    overlay: &DynamicImage,
+    x: i64,
+    y: i64,
+    opacity_factor: f32,
+) {
+    if matches!(
+        base_image,
+        DynamicImage::ImageRgb16(_) | DynamicImage::ImageRgba16(_)
+    ) {
+        let mut base_rgba = base_image.to_rgba16();
+        let mut overlay_rgba = overlay.to_rgba16();
+        for pixel in overlay_rgba.pixels_mut() {
+            pixel[3] = (pixel[3] as f32 * opacity_factor).round() as u16;
+        }
+        imageops::overlay(&mut base_rgba, &overlay_rgba, x, y);
+        *base_image = DynamicImage::ImageRgba16(base_rgba);
+    } else if matches!(
+        base_image,
+        DynamicImage::ImageRgb32F(_) | DynamicImage::ImageRgba32F(_)
+    ) {
+        let mut base_rgba = base_image.to_rgba32f();
+        let mut overlay_rgba = overlay.to_rgba32f();
+        for pixel in overlay_rgba.pixels_mut() {
+            pixel[3] *= opacity_factor;
+        }
+        imageops::overlay(&mut base_rgba, &overlay_rgba, x, y);
+        *base_image = DynamicImage::ImageRgba32F(base_rgba);
+    } else {
+        let mut overlay_rgba = overlay.to_rgba8();
+        for pixel in overlay_rgba.pixels_mut() {
+            pixel[3] = (pixel[3] as f32 * opacity_factor).round() as u8;
+        }
+        if let DynamicImage::ImageRgba8(base_rgba) = base_image {
+            imageops::overlay(base_rgba, &overlay_rgba, x, y);
+        } else {
+            let mut base_rgba = base_image.to_rgba8();
+            imageops::overlay(&mut base_rgba, &overlay_rgba, x, y);
+            *base_image = DynamicImage::ImageRgba8(base_rgba);
+        }
+    }
+}
+
+/// Anchor position shared by both watermark kinds. `spacing_pixels` is the
+/// inset from the anchored edge(s); `wm_w`/`wm_h` the overlay size.
+fn watermark_anchor_position(
+    anchor: WatermarkAnchor,
+    base_w: u32,
+    base_h: u32,
+    wm_w: u32,
+    wm_h: u32,
+    spacing_pixels: i64,
+) -> (i64, i64) {
+    let x = match anchor {
         WatermarkAnchor::TopLeft | WatermarkAnchor::CenterLeft | WatermarkAnchor::BottomLeft => {
             spacing_pixels
         }
@@ -319,7 +406,7 @@ fn apply_watermark(
         }
     };
 
-    let y = match watermark_settings.anchor {
+    let y = match anchor {
         WatermarkAnchor::TopLeft | WatermarkAnchor::TopCenter | WatermarkAnchor::TopRight => {
             spacing_pixels
         }
@@ -331,41 +418,129 @@ fn apply_watermark(
         | WatermarkAnchor::BottomRight => base_h as i64 - wm_h as i64 - spacing_pixels,
     };
 
-    if matches!(
-        base_image,
-        DynamicImage::ImageRgb16(_) | DynamicImage::ImageRgba16(_)
-    ) {
-        let mut base_rgba = base_image.to_rgba16();
-        let mut watermark_rgba = scaled_watermark.to_rgba16();
-        for pixel in watermark_rgba.pixels_mut() {
-            pixel[3] = (pixel[3] as f32 * opacity_factor).round() as u16;
-        }
-        image::imageops::overlay(&mut base_rgba, &watermark_rgba, x, y);
-        *base_image = DynamicImage::ImageRgba16(base_rgba);
-    } else if matches!(
-        base_image,
-        DynamicImage::ImageRgb32F(_) | DynamicImage::ImageRgba32F(_)
-    ) {
-        let mut base_rgba = base_image.to_rgba32f();
-        let mut watermark_rgba = scaled_watermark.to_rgba32f();
-        for pixel in watermark_rgba.pixels_mut() {
-            pixel[3] *= opacity_factor;
-        }
-        image::imageops::overlay(&mut base_rgba, &watermark_rgba, x, y);
-        *base_image = DynamicImage::ImageRgba32F(base_rgba);
-    } else {
-        let mut watermark_rgba = scaled_watermark.to_rgba8();
-        for pixel in watermark_rgba.pixels_mut() {
-            pixel[3] = (pixel[3] as f32 * opacity_factor).round() as u8;
-        }
-        if let DynamicImage::ImageRgba8(base_rgba) = base_image {
-            image::imageops::overlay(base_rgba, &watermark_rgba, x, y);
-        } else {
-            let mut base_rgba = base_image.to_rgba8();
-            image::imageops::overlay(&mut base_rgba, &watermark_rgba, x, y);
-            *base_image = DynamicImage::ImageRgba8(base_rgba);
-        }
+    (x, y)
+}
+
+/// Bundled DejaVu Sans Bold (free license) so text watermarks render
+/// identically on every platform, including Android where no system
+/// fonts can be relied upon.
+static TEXT_WATERMARK_FONT: OnceLock<Result<FontArc, String>> = OnceLock::new();
+
+fn text_watermark_font() -> Result<&'static FontArc, String> {
+    TEXT_WATERMARK_FONT
+        .get_or_init(|| {
+            FontArc::try_from_vec(include_bytes!("../resources/fonts/DejaVuSans-Bold.ttf").to_vec())
+                .map_err(|e| format!("Failed to load bundled watermark font: {}", e))
+        })
+        .as_ref()
+        .map_err(|e| e.clone())
+}
+
+fn parse_hex_color_checked(color: &str) -> Result<[u8; 4], String> {
+    let hex = color.trim().trim_start_matches('#');
+    if !hex.is_ascii() {
+        return Err(format!("Invalid watermark color '{}': bad hex", color));
     }
+    let parse_channel = |range: &str| {
+        u8::from_str_radix(range, 16)
+            .map_err(|_| format!("Invalid watermark color '{}': bad hex", color))
+    };
+    match hex.len() {
+        6 => {
+            let r = parse_channel(&hex[0..2])?;
+            let g = parse_channel(&hex[2..4])?;
+            let b = parse_channel(&hex[4..6])?;
+            Ok([r, g, b, 255])
+        }
+        8 => {
+            let r = parse_channel(&hex[0..2])?;
+            let g = parse_channel(&hex[2..4])?;
+            let b = parse_channel(&hex[4..6])?;
+            let a = parse_channel(&hex[6..8])?;
+            Ok([r, g, b, a])
+        }
+        _ => Err(format!(
+            "Invalid watermark color '{}': expected #RRGGBB or #RRGGBBAA",
+            color
+        )),
+    }
+}
+
+/// §4/M6: composites the text watermark onto the export output. Multi-line
+/// content (newline-separated) is stacked with the same 1.2 line height the
+/// frontend preview uses.
+fn apply_text_watermark(
+    base_image: &mut DynamicImage,
+    settings: &TextWatermarkSettings,
+) -> Result<(), String> {
+    let content = settings.content.trim();
+    if content.is_empty() {
+        return Ok(());
+    }
+
+    let font = text_watermark_font()?;
+    let [r, g, b, _] = parse_hex_color_checked(&settings.color)?;
+
+    let (base_w, base_h) = base_image.dimensions();
+    let px = (settings.font_size / 100.0 * base_h as f32).clamp(1.0, 4096.0);
+    let scale = PxScale::from(px);
+    let line_advance = (px * 1.2).ceil() as i64;
+
+    let lines: Vec<&str> = content.split('\n').collect();
+    let line_sizes: Vec<(u32, u32)> = lines
+        .iter()
+        .map(|line| drawing::text_size(scale, font, line))
+        .collect();
+    let layer_w = line_sizes.iter().map(|(w, _)| *w).max().unwrap_or(1).max(1);
+    let layer_h = (line_sizes.iter().map(|(_, h)| *h as u64).sum::<u64>()
+        + (lines.len().saturating_sub(1) as u64) * line_advance.max(0) as u64)
+        .min(u32::MAX as u64) as u32;
+
+    let mut layer = ImageBuffer::from_pixel(layer_w, layer_h, image::Rgba([0, 0, 0, 0]));
+    for (line_index, (line, (line_w, _))) in lines.iter().zip(line_sizes.iter()).enumerate() {
+        // Center each line horizontally within the widest line so the
+        // whole block anchors as one unit.
+        let x = ((layer_w as i64 - *line_w as i64) / 2).max(0) as i32;
+        let y = (line_index as i64 * line_advance) as i32;
+        drawing::draw_text_mut(
+            &mut layer,
+            image::Rgba([r, g, b, 255]),
+            x,
+            y,
+            scale,
+            font,
+            line,
+        );
+    }
+
+    // The preview clamps multi-line blocks to 95% of the image width; a
+    // horizontal clamp here avoids ink running past the canvas.
+    if layer_w > base_w {
+        let scaled_w = base_w;
+        let scaled_h = ((layer_h as f32 * base_w as f32 / layer_w as f32).round() as u32).max(1);
+        layer = imageops::resize(&layer, scaled_w, scaled_h, imageops::FilterType::Lanczos3);
+    }
+
+    let (layer_w, layer_h) = layer.dimensions();
+    let base_min_dim = base_w.min(base_h) as f32;
+    let spacing_pixels = (base_min_dim * 0.025) as i64;
+    let (x, y) = watermark_anchor_position(
+        settings.anchor,
+        base_w,
+        base_h,
+        layer_w,
+        layer_h,
+        spacing_pixels,
+    );
+
+    let opacity_factor = (settings.opacity / 100.0).clamp(0.0, 1.0);
+    overlay_with_opacity(
+        base_image,
+        &DynamicImage::ImageRgba8(layer),
+        x,
+        y,
+        opacity_factor,
+    );
 
     Ok(())
 }
@@ -934,6 +1109,9 @@ fn apply_export_geometry_and_watermark(
     if let Some(watermark_settings) = &export_settings.watermark {
         apply_watermark(&mut image, watermark_settings)?;
     }
+    if let Some(text_watermark_settings) = &export_settings.text_watermark {
+        apply_text_watermark(&mut image, text_watermark_settings)?;
+    }
     Ok((image, geometry))
 }
 
@@ -1268,6 +1446,7 @@ fn build_single_mask_adjustments(all: &AllAdjustments, mask_index: usize) -> All
         tile_offset_x: all.tile_offset_x,
         tile_offset_y: all.tile_offset_y,
         mask_atlas_cols: all.mask_atlas_cols,
+        noise_iso: all.noise_iso,
     };
     single.mask_adjustments[0] = all.mask_adjustments[mask_index];
     for i in 1..single.mask_adjustments.len() {
@@ -2380,6 +2559,7 @@ pub async fn run_headless_export(
         strip_gps: false,
         filename_template: None,
         watermark: None,
+        text_watermark: None,
         export_masks: false,
         preserve_folders: true,
         destination_type: None,

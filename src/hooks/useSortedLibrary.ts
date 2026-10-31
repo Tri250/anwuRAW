@@ -11,6 +11,8 @@ import {
   GroupingMode,
 } from '../components/ui/AppProperties';
 import { buildImageGroups, GroupBadgeInfo, GroupId } from '../utils/imageGrouping';
+import { applyStacking, buildStackBadges, StackingContext } from '../utils/stacking';
+import { getStackContext, useStacksStore } from '../store/useStacksStore';
 
 export const ADVANCED_QUERY_REGEX =
   /^(iso|aperture|f|shutter|s|focal|mm|rating|color|camera|make|model|lens)(?=\s*[:<>=])\s*(?::)?\s*(>=|<=|>|<|=)?\s*(.+)$/i;
@@ -78,6 +80,7 @@ function computeGroupedLibrary(
   libraryState: any,
   settingsState: any,
   options: { includeBadges: boolean } = { includeBadges: true },
+  stackContext: StackingContext = getStackContext(),
 ): GroupedLibrary {
   const { imageList, imageRatings, filterCriteria, searchCriteria, sortCriteria } = libraryState;
   const exifByPath: Record<string, Record<string, string>> = libraryState.exifByPath ?? NO_EXIF;
@@ -312,12 +315,20 @@ function computeGroupedLibrary(
     return order === SortDirection.Ascending ? comparison : -comparison;
   });
 
-  const badges =
-    isGroupingActive && options.includeBadges
-      ? buildImageGroups(imageList, groupingMode, appSettings?.groupEditedFiles ?? true).badges
-      : null;
+  const stackedList = applyStacking(list, stackContext);
 
-  return { displayList: list, badges };
+  let badges: Map<GroupId, GroupBadgeInfo> | null = null;
+  if (options.includeBadges) {
+    badges = isGroupingActive
+      ? buildImageGroups(imageList, groupingMode, appSettings?.groupEditedFiles ?? true).badges
+      : new Map<GroupId, GroupBadgeInfo>();
+    for (const [key, info] of buildStackBadges(imageList, stackContext)) {
+      badges.set(key, info);
+    }
+    if (badges.size === 0) badges = null;
+  }
+
+  return { displayList: stackedList, badges };
 }
 
 export function computeSortedLibrary(libraryState: any, settingsState: any): ImageFile[] {
@@ -332,23 +343,34 @@ export function useSortedLibrary() {
   const sortCriteria = useLibraryStore((state) => state.sortCriteria);
   const needsExif = useLibraryStore((state) => usesExif(state.sortCriteria, state.searchCriteria));
   const exifByPath = useLibraryStore((state) => (needsExif ? state.exifByPath : NO_EXIF));
+  const stacks = useStacksStore((state) => state.stacks);
+  const expandedStackIds = useStacksStore((state) => state.expandedStackIds);
 
   const appSettings = useSettingsStore((state) => state.appSettings);
 
-  const groupingMode: GroupingMode = appSettings?.grouping ?? 'off';
-  const groupEditedFiles = appSettings?.groupEditedFiles ?? true;
+  const stackContext = useMemo<StackingContext>(
+    () => ({ stacks, expandedStackIds }),
+    [stacks, expandedStackIds],
+  );
 
   const displayList = useMemo(() => {
     return computeGroupedLibrary(
       { imageList, imageRatings, filterCriteria, searchCriteria, sortCriteria, exifByPath },
       { appSettings },
       { includeBadges: false },
+      stackContext,
     ).displayList;
-  }, [imageList, sortCriteria, imageRatings, filterCriteria, searchCriteria, appSettings, exifByPath]);
+  }, [imageList, sortCriteria, imageRatings, filterCriteria, searchCriteria, appSettings, exifByPath, stackContext]);
 
   const badges = useMemo(
-    () => (groupingMode !== 'off' ? buildImageGroups(imageList, groupingMode, groupEditedFiles).badges : null),
-    [imageList, groupingMode, groupEditedFiles],
+    () =>
+      computeGroupedLibrary(
+        { imageList, imageRatings, filterCriteria, searchCriteria, sortCriteria, exifByPath },
+        { appSettings },
+        { includeBadges: true },
+        stackContext,
+      ).badges,
+    [imageList, imageRatings, filterCriteria, searchCriteria, sortCriteria, appSettings, exifByPath, stackContext],
   );
 
   return useMemo(() => ({ displayList, badges }), [displayList, badges]);

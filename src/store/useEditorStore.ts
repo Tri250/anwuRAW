@@ -5,6 +5,7 @@ import { ChannelConfig } from '../components/adjustments/Curves';
 import { ImageDimensions } from '../hooks/useImageRenderSize';
 import { ToolType } from '../components/panel/right/Masks';
 import { OverlayMode } from '../components/panel/right/CropPanel';
+import { DEFAULT_SOFT_PROOFING, SoftProofingSettings } from '../utils/softProofing';
 
 export type CenterMarker = 'vignette' | 'centre';
 
@@ -41,6 +42,7 @@ interface EditorState {
   compareView: CompareView;
   splitPosition: number;
   originalPreview: { path: string; url: string | null } | null;
+  softProofing: SoftProofingSettings;
 
   // Analytics
   histogram: ChannelConfig | null;
@@ -112,6 +114,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   compareView: 'off',
   splitPosition: 0.5,
   originalPreview: null,
+  softProofing: DEFAULT_SOFT_PROOFING,
   histogram: null,
   waveform: null,
   isWaveformVisible: false,

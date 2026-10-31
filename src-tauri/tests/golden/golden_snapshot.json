@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "cases": [
+    { "name": "color_card/neutral", "hash": "a1f12f428d79b3da49d4657dc0f20d853647d95519095087fbeba1305de5c26c" },
+    { "name": "color_card/punch", "hash": "81d87b2baa6051be8a0bd20bb7af96d53631951fee18fe3788c1c7aa99011b74" },
+    { "name": "color_card/soft", "hash": "b40b0d8fdb8a4f7971c9b431cf3fe6e3fd69633d0ef31026328c517127332dae" },
+    { "name": "gray_ramp/neutral", "hash": "aa4637e7b0872879193b44cd36df8899c41d11add452917e545dcca9895e607f" },
+    { "name": "gray_ramp/punch", "hash": "60835e81f2b77bb92cdf9d9a22897f568b39fe504d624e9261dfc48023159461" },
+    { "name": "gray_ramp/soft", "hash": "ccb6667b6f3a6789d379dad08eba4e914c193cecdb8aac9d381055110f714623" },
+    { "name": "high_contrast_edge/neutral", "hash": "1f61ad132d1eff220ddec6b88f3fe7aa1388508339fb11c9cac1dba58a816b6a" },
+    { "name": "high_contrast_edge/punch", "hash": "b1bc81c179255afc621999d7b1cb4accd747a9f3692c2107c8664e74d6334a43" },
+    { "name": "high_contrast_edge/soft", "hash": "5073123cb8d1875a308c7a721ee4dac3de0ba66dc69442795a08c2ffecb45bd0" },
+    { "name": "backlit_sky/neutral", "hash": "912dbca4e1b1e2ac2f92644ce602200db87341b6d25b61ae89f2cc4961481d2c" },
+    { "name": "backlit_sky/punch", "hash": "f063dcf04df39f1132de2d92179298681bfabed803950f0a28100976e7c26998" },
+    { "name": "backlit_sky/soft", "hash": "ed9834115090cdf679cff6e4247a20f5449f7a7437ed9075787bc931c9db4b32" },
+    { "name": "portrait/neutral", "hash": "d2e062cfe4726dbab1dda267a0cd9456dd4cd27a554603a7713f404362bccd54" },
+    { "name": "portrait/punch", "hash": "cfb1b7609280bc960bc4a4c73fa9e26fae307b83336a9b225a21605a34412ac2" },
+    { "name": "portrait/soft", "hash": "b419fbb20d3abb305c3ab2256686f2f8a87bf7d66f38ce65be5d57a57d69aa09" },
+    { "name": "iso_noise/neutral", "hash": "392b77c217d8b70675abc5e732679a70b31f76f49f26fe2fc1b4b90fa9f8ffb9" },
+    { "name": "iso_noise/punch", "hash": "6e02f9cc9684bc126fa48d6c9b3e6aaa97b52bc9a3cffeb6972ee99147e4d7a8" },
+    { "name": "iso_noise/soft", "hash": "c50fc946b6def2e93d8f09aca603a4ac3fae7ae485cf49492d9db331af1e83f7" }
+  ]
+}

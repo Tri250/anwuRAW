@@ -2036,6 +2036,12 @@ pub fn start_thumbnail_workers(app_handle: tauri::AppHandle) {
                 };
 
                 let state = app_clone.state::<crate::AppState>();
+                // E8: let the editor finish its interactive renders before the
+                // thumbnail worker competes for GPU/decode resources.
+                crate::platform_features::yield_to_editor_interactions(
+                    &state,
+                    std::time::Duration::from_millis(2000),
+                );
                 let gpu_context =
                     crate::gpu_processing::get_or_init_gpu_context(&state, &app_clone).ok();
 

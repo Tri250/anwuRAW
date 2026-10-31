@@ -11,6 +11,8 @@ import {
   Layers,
   Loader2,
   Pause,
+  ChevronsDownUp,
+  ChevronsUpDown,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -53,6 +55,8 @@ const ThumbnailComponent = ({
   isEdited,
   isCloudPlaceholder,
   groupBadgeLabel,
+  stackBadge,
+  onToggleStack,
   onAspectRatioLoaded,
 }: any) => {
   const { t } = useTranslation();
@@ -293,6 +297,25 @@ const ThumbnailComponent = ({
           >
             <CloudOff size={12} className="text-white" />
           </div>
+        )}
+
+        {stackBadge && !isCloudPlaceholder && (
+          <button
+            type="button"
+            className="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded-full h-5 px-1.5 bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
+            data-tooltip={t(
+              stackBadge.isExpanded ? 'library.items.collapseStack' : 'library.items.expandStack',
+              { count: stackBadge.count },
+            )}
+            onClick={(e: any) => {
+              e.stopPropagation();
+              onToggleStack?.(stackBadge.stackId);
+            }}
+          >
+            <Layers size={11} />
+            <span className="text-[10px] font-semibold leading-none">{stackBadge.count}</span>
+            {stackBadge.isExpanded ? <ChevronsDownUp size={11} /> : <ChevronsUpDown size={11} />}
+          </button>
         )}
       </div>
 
@@ -916,6 +939,8 @@ const RowComponent = ({
   queueThumbnailRequest,
   onToggleRecursiveFolder,
   groupBadgeInfo,
+  stackBadgesByPath,
+  onToggleStack,
   onAspectRatioLoaded,
 }: any) => {
   const { t } = useTranslation();
@@ -1079,6 +1104,8 @@ const RowComponent = ({
                 aspectRatio={thumbnailAspectRatio}
                 isCloudPlaceholder={imageFile.is_cloud_placeholder}
                 groupBadgeLabel={imageFile.group_id && groupBadgeInfo?.get(imageFile.group_id)?.label}
+                stackBadge={stackBadgesByPath?.[imageFile.path]}
+                onToggleStack={onToggleStack}
                 onAspectRatioLoaded={onAspectRatioLoaded}
               />
             )}

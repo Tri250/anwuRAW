@@ -7,10 +7,14 @@
       "exposure": "Exposició",
       "highlights": "Altes llums",
       "mappers": {
+        "aces": "ACES Filmic",
+        "acesDesc": "Mapeig tonal ACES Filmic",
         "agx": "AgX",
         "agxDesc": "Mapeig de tons tipus pel·lícula",
         "basic": "Bàsic",
-        "basicDesc": "Mapeig de tons estàndard"
+        "basicDesc": "Mapeig de tons estàndard",
+        "pbrNeutral": "PBR Neutral",
+        "pbrNeutralDesc": "Mapeig tonal neutre"
       },
       "reset": "Restablir",
       "shadows": "Ombres",
@@ -32,6 +36,7 @@
         "tint": "Matís",
         "title": "Calibratge de color"
       },
+      "cameraProfile": "Perfil de càmera",
       "colorGrading": "Gradació de color",
       "colorMatch": "Igualació de color IA",
       "colorMatchDesc": "Transfereix l'estil de color d'una foto de mostra a aquesta foto (no destructiu)",
@@ -62,6 +67,7 @@
         "yellows": "Grocs"
       },
       "presence": "Presència",
+      "profileDefault": "Per defecte",
       "saturation": "Saturació",
       "targetedTooltip": "Ajust segmentat: mostreja un color al llenç i arrossegueu per ajustar-ne el to/saturació (Ctrl+Alt+H)",
       "temperature": "Temperatura",
@@ -110,6 +116,8 @@
       "clarity": "Claredat",
       "classicDenoise": "Reducció de soroll clàssica",
       "color": "Color",
+      "colorNrDetail": "Detall de color",
+      "colorNrSmoothness": "Suavitzat",
       "convertNegative": "Convertir negatiu",
       "dehaze": "Eliminar boira",
       "luminance": "Luminància",
@@ -121,10 +129,12 @@
       "negativeRed": "Vermell",
       "noiseReduction": "Reducció de soroll",
       "presence": "Presència",
+      "radius": "Radi",
       "redCyan": "Vermell/Cian",
       "sharpening": "Enfocament",
       "sharpness": "Nitidesa",
       "structure": "Estructura",
+      "texture": "Textura",
       "threshold": "Llindar"
     },
     "effects": {
@@ -293,6 +303,28 @@
     "merge": {
       "focusStack": "Apilament d'enfocament",
       "title": "Fusionar"
+    },
+    "smartAlbums": {
+      "confirmDelete": "Are you sure you want to delete this smart album? The images themselves are not affected.",
+      "delete": "Delete Smart Album",
+      "edit": "Edit Smart Album",
+      "new": "New Smart Album"
+    },
+    "stacking": {
+      "autoStack": "Auto-Stack by Burst",
+      "autoStackedToast_one": "Created {{count}} stacks.",
+      "autoStackedToast_many": "Created {{count}} stacks.",
+      "autoStackedToast_other": "Created {{count}} stacks.",
+      "autoStackNone": "No burst groups found to stack.",
+      "create_one": "Stack into Group ({{count}})",
+      "create_many": "Stack into Group ({{count}})",
+      "create_other": "Stack into Group ({{count}})",
+      "createdToast_one": "Created a stack with {{count}} images.",
+      "createdToast_many": "Created a stack with {{count}} images.",
+      "createdToast_other": "Created a stack with {{count}} images.",
+      "createFailed": "Not enough images to create a stack.",
+      "title": "Stacking",
+      "unstack": "Unstack"
     },
     "tagging": {
       "addTagTooltip": "Afegir etiqueta",
@@ -520,6 +552,19 @@
         "useBasicInpaint": "Utilitzar inpainting bàsic"
       },
       "touchUpTitle": "Retocs"
+    },
+    "aiEnhance": {
+      "failed": "AI enhance failed",
+      "title": "AI Enhance"
+    },
+    "canvas": {
+      "pickerCancel": "to cancel",
+      "pickerHints": {
+        "marker": "Click on the image to place the overlay",
+        "relight": "Click on the image to place the light",
+        "targeted": "Click or drag on the image to adjust",
+        "wb": "Click or drag on the image to sample white balance"
+      }
     },
     "compare": {
       "horizontal": "Dividir dalt / baix",
@@ -833,9 +878,18 @@
       "gps": {
         "altitude": "Altitud",
         "clickToOpenTooltip": "Feu clic per obrir el mapa en una pestanya nova",
+        "googleMaps": "Open in Google Maps",
+        "invalidCoordinates": "Invalid coordinates",
         "latitude": "Latitud",
+        "location": "Location",
         "longitude": "Longitud",
+        "noData": "No GPS data. Enter coordinates below to add a location.",
+        "remove": "Remove GPS",
         "title": "Ubicació GPS"
+      },
+      "iptc": {
+        "subtitle": "Descriptive and rights metadata embedded on export",
+        "title": "IPTC"
       },
       "organization": {
         "addTagPlaceholder": "Afegir etiqueta...",
@@ -856,9 +910,11 @@
         "exportAllTitle": "Exportar tots els ajustos preestablerts",
         "exportTitle": "Exportar {{type}}",
         "importPresetsTitle": "Importar ajustos preestablerts",
+        "importXmpTitle": "Import XMP Adjustments",
         "legacyPreset": "Ajust preestablert antic",
         "presetFile": "Fitxer d'ajust preestablert",
-        "rapidRawPreset": "Ajust preestablert de RapidRAW"
+        "rapidRawPreset": "Ajust preestablert de RapidRAW",
+        "xmpFile": "XMP File"
       },
       "menu": {
         "configurePreset": "Configurar ajust preestablert",
@@ -867,6 +923,8 @@
         "duplicatePreset": "Duplicar ajust preestablert",
         "exportFolder": "Exportar carpeta",
         "exportPreset": "Exportar ajust preestablert",
+        "exportXmp": "Export Current Adjustments as XMP…",
+        "importXmp": "Import Adjustments from XMP…",
         "newFolder": "Nova carpeta",
         "newPreset": "Nou ajust preestablert",
         "overwrite": "Sobreescriure",
@@ -888,7 +946,11 @@
         "exportFailed": "Error en exportar ajusts preestablerts",
         "exportSuccess": "Ajusts preestablerts exportats",
         "importFailed": "Error en importar ajusts preestablerts",
-        "importFailures": "Error en importar {{num}} fitxer(s) d'ajusts preestablerts"
+        "importFailures": "Error en importar {{num}} fitxer(s) d'ajusts preestablerts",
+        "xmpExportFailed": "Failed to export XMP sidecar",
+        "xmpExportSuccess": "XMP sidecar exported",
+        "xmpImportFailed": "Failed to import XMP",
+        "xmpImportSuccess": "Adjustments imported from XMP"
       },
       "tooltips": {
         "explore": "Explorar ajustos de la comunitat",
@@ -902,6 +964,13 @@
         "style": "Estil",
         "tool": "Eina"
       }
+    },
+    "softProofing": {
+      "description": "Simulate how the exported image will look on a target output profile.",
+      "gamutWarning": "Gamut Warning",
+      "simulatePaper": "Simulate Paper",
+      "title": "Soft Proofing",
+      "turnOff": "Turn Off Soft Proofing"
     },
     "switcher": {
       "tooltips": {
@@ -924,6 +993,7 @@
       "history": "Historial",
       "switchToVariant": "Canviar a {{label}}",
       "tooltips": {
+        "aiEnhance": "AI Enhance (Right-click for intensity)",
         "aperture": "Obertura",
         "backToLibrary": "Tornar a la Biblioteca",
         "compare": "Abans / després (B) o modes (clic dret)",
@@ -932,6 +1002,7 @@
         "iso": "ISO",
         "redo": "Refer (Ctrl+Y) o Historial (Clic dret)",
         "shutterSpeed": "Velocitat d'obturació",
+        "softProofing": "Soft Proofing",
         "undo": "Desfer (Ctrl+Z) o Historial (Clic dret)"
       },
       "vc": "CV"
@@ -943,6 +1014,13 @@
       "preserveFolders": "Mantenir l'estructura de carpetes",
       "preserveTimestamps": "Establir les marques de temps dels fitxers des de la data de captura EXIF",
       "title": "Configuració d'exportació"
+    },
+    "aiUpscale": {
+      "hint": "Renders the currently loaded image at {{factor}}× resolution.",
+      "label": "AI Upscale",
+      "off": "Off",
+      "scale2": "2×",
+      "scale4": "4×"
     },
     "border": {
       "addBorder": "Afegeix una vora",
@@ -1058,6 +1136,7 @@
     },
     "title": "Exportar",
     "watermark": {
+      "addTextWatermark": "Afegeix marca d'aigua de text",
       "addWatermark": "Afegir marca d'aigua",
       "anchors": {
         "bottomCenter": "A baix al centre",
@@ -1070,11 +1149,15 @@
         "topLeft": "A dalt a l'esquerra",
         "topRight": "A dalt a la dreta"
       },
+      "color": "Color",
+      "fontSize": "Mida de la lletra",
       "logoText": "Logotip",
       "opacity": "Opacitat",
       "previewText": "Vista prèvia",
       "scale": "Escala",
       "spacing": "Espaiat",
+      "text": "Text",
+      "textPlaceholder": "Text de la marca d'aigua…",
       "watermarkImage": "Imatge de la marca d'aigua"
     }
   },
@@ -1205,6 +1288,18 @@
       "toggleFit": "Alternar 1:1 / Ajustar",
       "vc": "CV"
     },
+    "delete": {
+      "confirmTitle": "Delete Image",
+      "delete": "Delete",
+      "deleteAll": "Delete All",
+      "deleteAllMessage": "The original files will be moved to the trash.",
+      "deleteAllTitle": "Delete Original Files",
+      "deleteMultipleMessage_one": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteMultipleMessage_many": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteMultipleMessage_other": "Are you sure you want to delete {{count}} images? They will be moved to the trash.",
+      "deleteSelected": "Delete Selected",
+      "deleteSingleMessage": "The original file will be moved to the trash."
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} imatges ja no coincideixen amb el filtre",
       "hiddenMultiple_many": "{{count}} imatges ja no coincideixen amb el filtre",
@@ -1255,8 +1350,10 @@
       "sections": {
         "albums": "Àlbums",
         "folders": "Carpetes",
-        "pinned": "Fixades"
+        "pinned": "Fixades",
+        "smartAlbums": "Smart Albums"
       },
+      "smartAlbumsEmpty": "Right-click or use + to create a smart album.",
       "sort": {
         "created": "Data de creació",
         "imageCount": "Recompte d'imatges",
@@ -1340,8 +1437,14 @@
     "items": {
       "cloudPlaceholder": "Emmagatzemat a iCloud — no baixat",
       "collapseFolder": "Contraure carpeta",
+      "collapseStack_one": "Collapse Stack ({{count}})",
+      "collapseStack_many": "Collapse Stack ({{count}})",
+      "collapseStack_other": "Collapse Stack ({{count}})",
       "currentFolder": "Carpeta actual",
       "expandFolder": "Expandir carpeta",
+      "expandStack_one": "Expand Stack ({{count}})",
+      "expandStack_many": "Expand Stack ({{count}})",
+      "expandStack_other": "Expand Stack ({{count}})",
       "imagesCount_one": "1 imatge",
       "imagesCount_many": "{{count}} imatges",
       "imagesCount_other": "{{count}} imatges",
@@ -1355,6 +1458,12 @@
     },
     "jobs": {
       "active": "En curs",
+      "activeCount_one": "{{count}} running",
+      "activeCount_many": "{{count}} running",
+      "activeCount_other": "{{count}} running",
+      "allDone_one": "{{count}} finished",
+      "allDone_many": "{{count}} finished",
+      "allDone_other": "{{count}} finished",
       "cancel": "Cancel·la l'exportació",
       "cancelling": "Cancel·lant…",
       "clear": "Esborra",
@@ -1373,8 +1482,16 @@
         "modelDownload": "Baixada del model d'IA",
         "move": "Moure fitxers"
       },
+      "noActive": "No active jobs",
       "openInLibrary": "Obre a la biblioteca",
       "recent": "Recents",
+      "statuses": {
+        "cancelled": "Cancelled",
+        "cancelling": "Cancelling…",
+        "error": "Failed",
+        "running": "Running",
+        "success": "Done"
+      },
       "title": "Tasques"
     },
     "reject": {
@@ -1769,6 +1886,46 @@
     "renameGroup": {
       "placeholder": "Introduïu el nou nom del grup..."
     },
+    "smartAlbum": {
+      "addRule": "Add Rule",
+      "cancel": "Cancel",
+      "colors": {
+        "none": "No Color Label"
+      },
+      "create": "Create",
+      "createTitle": "New Smart Album",
+      "description": "A smart album automatically collects images matching the rules below.",
+      "edited": {
+        "edited": "Edited",
+        "unedited": "Unedited"
+      },
+      "editTitle": "Edit Smart Album",
+      "fields": {
+        "camera": "Camera",
+        "color": "Color Label",
+        "dateTaken": "Date Taken",
+        "edited": "Edit Status",
+        "filename": "File Name",
+        "flag": "Flag",
+        "iso": "ISO",
+        "lens": "Lens",
+        "rating": "Rating",
+        "raw": "File Type"
+      },
+      "flags": {
+        "none": "No Flag",
+        "pick": "Picked",
+        "reject": "Rejected"
+      },
+      "matchLabel": "Rules",
+      "namePlaceholder": "Enter album name...",
+      "raw": {
+        "nonRaw": "Non-RAW",
+        "raw": "RAW"
+      },
+      "removeRule": "Remove rule",
+      "save": "Save"
+    },
     "transform": {
       "amount": "Quantitat",
       "apply": "Aplicar",
@@ -1798,6 +1955,29 @@
       "zoomOutTooltip": "Allunyar"
     }
   },
+  "onboarding": {
+    "back": "Back",
+    "finish": "Get Started",
+    "goToStep": "Go to step {{step}}",
+    "next": "Next",
+    "skip": "Skip",
+    "stepOf": "Step {{current}} of {{total}}",
+    "steps": {
+      "folder": {
+        "description": "Open a folder from the splash screen or the folder tree and all supported images inside are added to your library automatically.",
+        "title": "Add your photos"
+      },
+      "preset": {
+        "description": "Open an image, then click the Presets panel to try one-click looks, or save your own style for later.",
+        "title": "Try a one-click look"
+      },
+      "shortcuts": {
+        "description": "Find every shortcut and rebind them anytime in Settings → Controls.",
+        "title": "Five shortcuts worth knowing"
+      }
+    },
+    "title": "Welcome to RapidRAW"
+  },
   "settings": {
     "categories": {
       "general": "General",
@@ -1810,6 +1990,7 @@
         "mouse": "Ratolí",
         "trackpad": "Tàctil"
       },
+      "noMatchingShortcuts": "No shortcuts match your search.",
       "notAssigned": "No assignat",
       "optimization": "Optimització del dispositiu d'entrada",
       "optimizationDesc": "Trieu el dispositiu d'entrada principal que utilitzeu per desplaçar-vos i fer zoom al llenç.",
@@ -1817,6 +1998,7 @@
       "resetDefaults": "Restablir-ho tot als valors per defecte",
       "resetDefaultsMessage": "Això restaurarà totes les dreceres de teclat a la seva assignació predeterminada. Les assignacions personalitzades es perdran.",
       "resetDefaultsTitle": "Restableix les dreceres de teclat",
+      "searchShortcuts": "Search shortcuts...",
       "speed": "Velocitat",
       "title": "Controls del ratolí",
       "zoom": "Multiplicador de velocitat del zoom",
@@ -2263,7 +2445,32 @@
       "timeout": "La comprovació d’actualitzacions ha esgotat el temps després de 20 segons.",
       "title": "Actualitzacions de programari",
       "upToDate": "Ja tens la versió més recent ({{version}})."
+    },
+    "watchedFolders": {
+      "add": "Add Folder",
+      "desc": "Automatically import new images that appear in these folders.",
+      "empty": "No folders are being watched yet.",
+      "enabled": "Enabled",
+      "refresh": "Refresh Status",
+      "remove": "Remove folder",
+      "statusSummary": "{{known}} images, {{pending}} pending",
+      "statusUnknown": "Status unavailable",
+      "title": "Watched Folders"
     }
+  },
+  "survey": {
+    "actions": {
+      "pick": "Pick (P)",
+      "rate": "Rate {{rating}}",
+      "reject": "Reject (X)",
+      "unflag": "Clear flag (U)"
+    },
+    "close": "Close survey (Esc)",
+    "compareEntry": "Survey mode in compare view",
+    "compareToggle": "Compare view (C)",
+    "next": "Next image",
+    "prev": "Previous image",
+    "title": "Survey Mode"
   },
   "tethering": {
     "aperture": "Obertura",
@@ -2271,6 +2478,8 @@
     "autoApplyPreset": "Aplica preajust automàticament",
     "autoOpenCaptured": "Obre automàticament la imatge capturada",
     "cameraConnected": "Càmera connectada",
+    "captureInterval": "Interval Capture Interval (ms)",
+    "captureIntervalDesc": "Default delay between interval captures (200–3600000 ms).",
     "capturing": "Capturant...",
     "changePreset": "Canvia",
     "clearPreset": "Neteja el preajust",

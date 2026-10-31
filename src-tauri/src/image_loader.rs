@@ -158,13 +158,17 @@ pub fn load_base_image_from_bytes(
             )
         }) {
             Ok(Ok(mut image)) => {
-                if !use_fast_raw_dev && (color_nr_amount > 0.0 || sharpening_amount > 0.0) {
+                // R1-2: WYSIWYG — the fast preview path still runs chroma noise
+                // reduction (cheap and perceptually critical); luminance detail
+                // enhancement stays export-only to preserve interactive latency.
+                if color_nr_amount > 0.0 || (!use_fast_raw_dev && sharpening_amount > 0.0) {
                     let start = Instant::now();
-                    remove_raw_artifacts_and_enhance(
-                        &mut image,
-                        color_nr_amount,
-                        sharpening_amount,
-                    );
+                    let (nr, sharpen) = if use_fast_raw_dev {
+                        (color_nr_amount, 0.0)
+                    } else {
+                        (color_nr_amount, sharpening_amount)
+                    };
+                    remove_raw_artifacts_and_enhance(&mut image, nr, sharpen);
                     let duration = start.elapsed();
                     log::info!(
                         "Raw enhancing for '{}' took {:?}",
@@ -219,12 +223,17 @@ pub fn load_base_image_from_bytes(
     } else {
         let mut image = load_image_with_orientation(bytes, cancel_token)?;
 
+        // R1-2: same WYSIWYG rule for non-RAW files — fast path keeps chroma NR only.
         if apply_to_non_raws
-            && !use_fast_raw_dev
-            && (color_nr_amount > 0.0 || sharpening_amount > 0.0)
+            && (color_nr_amount > 0.0 || (!use_fast_raw_dev && sharpening_amount > 0.0))
         {
             let start = Instant::now();
-            remove_raw_artifacts_and_enhance(&mut image, color_nr_amount, sharpening_amount);
+            let (nr, sharpen) = if use_fast_raw_dev {
+                (color_nr_amount, 0.0)
+            } else {
+                (color_nr_amount, sharpening_amount)
+            };
+            remove_raw_artifacts_and_enhance(&mut image, nr, sharpen);
             let duration = start.elapsed();
             log::info!(
                 "Enhancing non-RAW '{}' took {:?}",
@@ -992,6 +1001,11 @@ pub async fn load_image(
             .clear();
         state
             .geometry_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
+        state
+            .geometry_cache_order
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .clear();

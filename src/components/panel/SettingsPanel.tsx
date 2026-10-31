@@ -3,6 +3,9 @@ import {
   ArrowLeft,
   Cloud,
   Cpu,
+  Folder,
+  Loader2,
+  RefreshCw,
   Unplug,
   ExternalLink as ExternalLinkIcon,
   Server,
@@ -19,6 +22,7 @@ import {
   Image as ImageIcon,
   Mouse,
   Touchpad,
+  Search,
   ChevronDown,
   ChevronRight,
   Settings as SettingsIcon,
@@ -41,7 +45,8 @@ import Input from '../ui/Input';
 import Slider from '../ui/Slider';
 import { ThemeProps, THEMES, DEFAULT_THEME_ID } from '../../utils/themes';
 import { useTranslation } from 'react-i18next';
-import { Invokes } from '../ui/AppProperties';
+import { Invokes, WatchedFolderConfig } from '../ui/AppProperties';
+import { open as openDirectoryDialog } from '@tauri-apps/plugin-dialog';
 import {
   formatKeyCode,
   getDefaultCombo,
@@ -688,6 +693,137 @@ function UpdaterSettings({
   );
 }
 
+interface WatchedFolderStatus {
+  path: string;
+  enabled: boolean;
+  knownImages: number;
+  pendingImages: number;
+  lastScanUnixMs: number;
+  lastNewImages: string[];
+}
+
+// Watched-folder auto-ingest: folder list is persisted in settings while the
+// backend watcher restarts on every change via set_watched_folders.
+function WatchedFoldersSettings({
+  appSettings,
+  onSettingsChange,
+}: {
+  appSettings: any;
+  onSettingsChange(settings: any): Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const folders: WatchedFolderConfig[] = appSettings?.watchedFolders || [];
+  const [statusList, setStatusList] = useState<WatchedFolderStatus[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const refreshStatus = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const status: WatchedFolderStatus[] = await invoke(Invokes.GetWatchedFolderStatus);
+      setStatusList(status);
+    } catch (error) {
+      console.error('Failed to load watched folder status:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshStatus();
+  }, [refreshStatus, folders.length]);
+
+  const persistFolders = async (updated: WatchedFolderConfig[]) => {
+    await onSettingsChange({ ...appSettings, watchedFolders: updated });
+    try {
+      await invoke(Invokes.SetWatchedFolders, { folders: updated });
+    } catch (error) {
+      console.error('Failed to update watched folders:', error);
+    }
+    refreshStatus();
+  };
+
+  const handleAddFolder = async () => {
+    try {
+      const selected = await openDirectoryDialog({
+        directory: true,
+        multiple: false,
+        title: t('settings.watchedFolders.add'),
+      });
+      if (!selected || typeof selected !== 'string') return;
+      if (folders.some((folder) => folder.path === selected)) return;
+      await persistFolders([...folders, { path: selected, enabled: true }]);
+    } catch (error) {
+      console.error('Failed to add watched folder:', error);
+    }
+  };
+
+  return (
+    <div>
+      <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
+        {t('settings.watchedFolders.title')}
+      </Text>
+      <Text className="mb-4">{t('settings.watchedFolders.desc')}</Text>
+
+      <div className="space-y-2">
+        {folders.length === 0 && (
+          <Text variant={TextVariants.small} color={TextColors.secondary}>
+            {t('settings.watchedFolders.empty')}
+          </Text>
+        )}
+        {folders.map((folder) => {
+          const status = statusList.find((s) => s.path === folder.path);
+          return (
+            <div key={folder.path} className="flex items-center gap-3 bg-bg-primary rounded-lg p-3">
+              <Folder size={16} className="text-text-secondary shrink-0" />
+              <div className="grow min-w-0">
+                <Text variant={TextVariants.label} color={TextColors.primary} className="truncate block">
+                  {folder.path}
+                </Text>
+                <Text variant={TextVariants.small} color={TextColors.secondary}>
+                  {status
+                    ? t('settings.watchedFolders.statusSummary', {
+                        known: status.knownImages,
+                        pending: status.pendingImages,
+                      })
+                    : t('settings.watchedFolders.statusUnknown')}
+                </Text>
+              </div>
+              <Switch
+                checked={folder.enabled}
+                label={t('settings.watchedFolders.enabled')}
+                onChange={(checked) =>
+                  persistFolders(folders.map((f) => (f.path === folder.path ? { ...f, enabled: checked } : f)))
+                }
+              />
+              <button
+                className="p-1.5 rounded-md text-text-secondary hover:text-red-400 hover:bg-surface transition-colors"
+                onClick={() => persistFolders(folders.filter((f) => f.path !== folder.path))}
+                data-tooltip={t('settings.watchedFolders.remove')}
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-2 mt-4">
+        <Button variant="secondary" className="h-8 text-sm" onClick={handleAddFolder}>
+          <Plus size={14} className="mr-1" /> {t('settings.watchedFolders.add')}
+        </Button>
+        <Button variant="secondary" className="h-8 text-sm" onClick={refreshStatus} disabled={isRefreshing}>
+          {isRefreshing ? (
+            <Loader2 size={14} className="mr-1 animate-spin" />
+          ) : (
+            <RefreshCw size={14} className="mr-1" />
+          )}
+          {t('settings.watchedFolders.refresh')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPanel({
   appSettings,
   onBack,
@@ -711,6 +847,7 @@ export default function SettingsPanel({
   const [hasInteractedWithLivePreview, setHasInteractedWithLivePreview] = useState(false);
   const [isAdvancedProcessingExpanded, setIsAdvancedProcessingExpanded] = useState(false);
   const [recordingAction, setRecordingAction] = useState<string | null>(null);
+  const [keybindSearch, setKeybindSearch] = useState('');
 
   const [aiProvider, setAiProvider] = useState(appSettings?.aiProvider || 'cpu');
   const [aiConnectorAddress, setAiConnectorAddress] = useState<string>(appSettings?.aiConnectorAddress || '');
@@ -1074,6 +1211,25 @@ export default function SettingsPanel({
     return keys;
   }, [appSettings?.keybinds, osPlatform]);
 
+  // E10: filter the keybind table by action name or key combo.
+  const keybindQuery = keybindSearch.trim().toLowerCase();
+  const matchesKeybindQuery = useCallback(
+    (def: KeybindDefinition) => {
+      if (!keybindQuery) return true;
+      const userKb = appSettings?.keybinds || {};
+      const userCombo = userKb[def.action];
+      const combo = userCombo?.length ? userCombo : getDefaultCombo(def, osPlatform);
+      const comboText = (combo || []).map((k: string) => formatKeyCode(k, osPlatform).toLowerCase()).join(' ');
+      return (
+        t(def.description as any).toLowerCase().includes(keybindQuery) ||
+        comboText.includes(keybindQuery) ||
+        def.action.toLowerCase().includes(keybindQuery)
+      );
+    },
+    [keybindQuery, appSettings?.keybinds, osPlatform, t],
+  );
+  const isKeybindSearchActive = keybindQuery.length > 0;
+
   return (
     <>
       <ConfirmModal {...confirmModalState} onClose={closeConfirmModal} />
@@ -1318,6 +1474,10 @@ export default function SettingsPanel({
                         </SettingItem>
                       )}
                     </div>
+                  </div>
+
+                  <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
+                    <WatchedFoldersSettings appSettings={appSettings} onSettingsChange={onSettingsChange} />
                   </div>
 
                   <div className="p-4 sm:p-6 bg-surface rounded-xl shadow-md">
@@ -2532,8 +2692,30 @@ export default function SettingsPanel({
                       {t('settings.controls.keyboardTitle')}
                     </Text>
                     <div className="space-y-8">
+                      <div className="relative">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                        <input
+                          type="text"
+                          value={keybindSearch}
+                          onChange={(e) => setKeybindSearch(e.target.value)}
+                          placeholder={t('settings.controls.searchShortcuts')}
+                          className="w-full bg-bg-primary text-text-primary border border-border-color rounded-md pl-9 pr-8 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-accent"
+                        />
+                        {isKeybindSearchActive && (
+                          <button
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary hover:text-text-primary transition-colors"
+                            data-tooltip={t('settings.data.clear')}
+                            onClick={() => setKeybindSearch('')}
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
                       {KEYBIND_SECTIONS.map((section) => {
-                        const sectionDefs = KEYBIND_DEFINITIONS.filter((d) => d.section === section.id);
+                        const sectionDefs = KEYBIND_DEFINITIONS.filter(
+                          (d) => d.section === section.id && matchesKeybindQuery(d),
+                        );
+                        if (sectionDefs.length === 0) return null;
                         const userKb = appSettings?.keybinds || {};
                         return (
                           <div key={section.id}>
@@ -2555,6 +2737,12 @@ export default function SettingsPanel({
                           </div>
                         );
                       })}
+                      {isKeybindSearchActive &&
+                        KEYBIND_DEFINITIONS.every((def) => !matchesKeybindQuery(def)) && (
+                          <Text variant={TextVariants.small} color={TextColors.secondary} className="text-center py-4">
+                            {t('settings.controls.noMatchingShortcuts')}
+                          </Text>
+                        )}
                       <div className="flex justify-end mt-6">
                         <Button variant="ghost" onClick={handleRequestKeybindReset}>
                           {t('settings.controls.resetDefaults')}

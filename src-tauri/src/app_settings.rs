@@ -698,6 +698,12 @@ pub struct AppSettings {
     pub workspace: WorkspaceState,
     #[serde(default)]
     pub immich: crate::immich::ImmichSettings,
+    /// E9/E10: watched folders for automatic ingestion of new images.
+    #[serde(default)]
+    pub watched_folders: Vec<crate::platform_features::WatchedFolderConfig>,
+    /// E4: default interval (ms) between tethered interval captures.
+    #[serde(default)]
+    pub tether_capture_interval_ms: Option<u64>,
 }
 
 impl Default for AppSettings {
@@ -815,6 +821,8 @@ impl Default for AppSettings {
             auto_check_updates: Some(false),
             preview_demosaic_quality: None,
             immich: crate::immich::ImmichSettings::default(),
+            watched_folders: Vec::new(),
+            tether_capture_interval_ms: None,
         }
     }
 }

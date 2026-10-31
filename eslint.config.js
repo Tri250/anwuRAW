@@ -50,6 +50,9 @@ module.exports = [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
+      // JSX markup only. Full-mode enforcement of user-facing strings in
+      // logic code (E9 gate) lives in `npm run lint:e9`
+      // (scripts/e9-check.mjs, ratcheted via scripts/e9-baseline.json).
       'i18next/no-literal-string': [
         'warn',
         {

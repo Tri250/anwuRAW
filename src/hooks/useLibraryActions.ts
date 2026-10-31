@@ -17,6 +17,8 @@ import { globalImageCache } from '../utils/ImageLRUCache';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { computeSortedLibrary } from './useSortedLibrary';
 import { expandGroupedPaths } from '../utils/imageGrouping';
+import { expandStackedPaths } from '../utils/stacking';
+import { getStackContext } from '../store/useStacksStore';
 import { getImageFlag } from '../utils/imageFlags';
 import FilterExitToast from '../components/ui/FilterExitToast';
 
@@ -28,7 +30,9 @@ const resolveTargetPaths = (paths?: string[]) => {
     paths || (multiSelectedPaths.length > 0 ? multiSelectedPaths : selectedImage ? [selectedImage.path] : []);
 
   const groupingMode = useSettingsStore.getState().appSettings?.grouping ?? 'off';
-  return { selectedPaths, expandedPaths: expandGroupedPaths(imageList, selectedPaths, groupingMode) };
+  const grouped = expandGroupedPaths(imageList, selectedPaths, groupingMode);
+  const expandedPaths = expandStackedPaths(imageList, grouped, getStackContext());
+  return { selectedPaths, expandedPaths };
 };
 
 const withFlag = (imageList: ImageFile[], paths: string[], flag: ImageFlag | null, onlyFrom?: ImageFlag) => {

@@ -65,6 +65,7 @@ export interface ExportSettings {
   } | null;
   stripGps: boolean;
   watermark: WatermarkSettings | null;
+  textWatermark?: TextWatermarkSettings | null;
   exportMasks?: boolean;
   preserveFolders?: boolean;
   destinationType?: string;
@@ -97,6 +98,15 @@ interface WatermarkSettings {
   scale: number;
   spacing: number;
   opacity: number;
+}
+
+export interface TextWatermarkSettings {
+  content: string;
+  anchor: WatermarkAnchor;
+  /** Font size as a percent of the exported image height. */
+  fontSize: number;
+  opacity: number;
+  color: string;
 }
 
 export interface ExportState {
@@ -172,6 +182,12 @@ export interface ExportPreset {
   watermarkScale: number;
   watermarkSpacing: number;
   watermarkOpacity: number;
+  enableTextWatermark?: boolean;
+  watermarkText?: string | null;
+  watermarkTextAnchor?: string;
+  watermarkFontSize?: number;
+  watermarkTextOpacity?: number;
+  watermarkTextColor?: string;
   lastExportPath?: string;
   destinationType?: string;
   subfolder?: string;

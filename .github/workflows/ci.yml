@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  pull_request:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -39,3 +40,76 @@ jobs:
     # granted fewer permissions than the called job requests (startup_failure).
     permissions:
       contents: write
+
+  rust-quality-gate:
+    name: Rust quality gate (fmt, clippy, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
+          rustflags: ''
+          rust-src-dir: src-tauri
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            pkg-config \
+            libgphoto2-dev
+
+      - name: Check formatting
+        working-directory: src-tauri
+        run: cargo fmt -p RapidRAW -- --check
+
+      - name: Clippy
+        working-directory: src-tauri
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run tests (CPU paths; bootstraps the golden snapshot if missing)
+        working-directory: src-tauri
+        run: cargo test
+
+      - name: Golden snapshot ratchet (committed snapshot must not drift)
+        run: |
+          if [ -f src-tauri/tests/golden/golden_snapshot.json ]; then
+            if [ -n "$(git status --porcelain -- src-tauri/tests/golden/)" ]; then
+              echo "::error::The golden snapshot changed during the test run. Review the diff and commit it, or regenerate deliberately with: cargo test -p RapidRAW --features golden-gen -- --ignored --nocapture golden"
+              git status --short -- src-tauri/tests/golden/
+              exit 1
+            fi
+          else
+            echo "::warning::Golden snapshot missing — run the test suite locally once (it bootstraps tests/golden/golden_snapshot.json) and commit the file to activate the drift ratchet."
+          fi
+
+  frontend-quality-gate:
+    name: Frontend quality gate (tsc, eslint, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npx eslint src
+
+      - name: E9 hardcoded-string gate
+        run: npm run lint:e9
+
+      - name: Production build
+        run: npx vite build

@@ -242,6 +242,10 @@ export interface UIState {
   isRenameAlbumModalOpen: boolean;
   albumActionTarget: string | null;
 
+  smartAlbumModalState: { isOpen: boolean; albumId: string | null };
+  surveyMode: { isOpen: boolean; paths: Array<string>; title: string | null; startInCompare?: boolean };
+  isOnboardingModalOpen: boolean;
+
   confirmModalState: ConfirmModalState;
   panoramaModalState: PanoramaModalState;
   focusStackModalState: FocusStackModalState;
@@ -351,6 +355,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   },
   cullingModalState: { isOpen: false, suggestions: null, progress: null, error: null, pathsToCull: [] },
   collageModalState: { isOpen: false, sourceImages: [] },
+  smartAlbumModalState: { isOpen: false, albumId: null },
+  surveyMode: { isOpen: false, paths: [], title: null, startInCompare: false },
+  isOnboardingModalOpen: false,
 
   setUI: (updater) => set((state) => (typeof updater === 'function' ? updater(state) : updater)),
 

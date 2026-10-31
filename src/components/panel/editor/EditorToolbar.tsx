@@ -8,19 +8,28 @@ import {
   LucideIcon,
   Maximize,
   Redo,
+  Sparkles,
   SquareSplitHorizontal,
   SquareSplitVertical,
   Undo,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
-import { CompareMode, SelectedImage, GroupingMode } from '../../ui/AppProperties';
+import { toast } from 'react-toastify';
+import { invoke } from '@tauri-apps/api/core';
+import type { ParseKeys } from 'i18next';
+import { CompareMode, Invokes, SelectedImage, GroupingMode } from '../../ui/AppProperties';
 import { ToolbarMenu, ToolbarMenuItem, useMenuDismiss } from './ToolbarMenu';
 import { IconAperture, IconCalendar, IconClock, IconFocalLength, IconIso, IconShutter } from './ExifIcons';
 import Text from '../../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { useLibraryStore } from '../../../store/useLibraryStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
+import { useEditorStore } from '../../../store/useEditorStore';
+import { useEditorActions } from '../../../hooks/useEditorActions';
+import { Adjustments } from '../../../utils/adjustments';
+import { SoftProofIntent, SoftProofProfileId, SoftProofingSettings } from '../../../utils/softProofing';
+import { Palette } from 'lucide-react';
 import { findGroupVariants, getVariantLabel } from '../../../utils/imageGrouping';
 
 const COMPARE_MODES = [
@@ -86,6 +95,107 @@ function CompareButton({ compareMode, isComparing, onKeyDown, onSelectMode, onTo
   );
 }
 
+interface SoftProofingButtonProps {
+  onKeyDown(e: React.KeyboardEvent<HTMLButtonElement>): void;
+}
+
+const SOFT_PROOF_PROFILE_OPTIONS: Array<{ id: SoftProofProfileId; labelKey: ParseKeys }> = [
+  { id: 'srgb', labelKey: 'editor.softProofing.profiles.srgb' },
+  { id: 'display-p3', labelKey: 'editor.softProofing.profiles.displayP3' },
+  { id: 'adobe-rgb', labelKey: 'editor.softProofing.profiles.adobeRgb' },
+  { id: 'rec2020', labelKey: 'editor.softProofing.profiles.rec2020' },
+];
+
+const SOFT_PROOF_INTENT_OPTIONS: Array<{ id: SoftProofIntent; labelKey: ParseKeys }> = [
+  { id: 'perceptual', labelKey: 'editor.softProofing.intents.perceptual' },
+  { id: 'relative', labelKey: 'editor.softProofing.intents.relative' },
+  { id: 'saturation', labelKey: 'editor.softProofing.intents.saturation' },
+  { id: 'absolute', labelKey: 'editor.softProofing.intents.absolute' },
+];
+
+function SoftProofingButton({ onKeyDown }: SoftProofingButtonProps) {
+  const { t } = useTranslation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useMenuDismiss(containerRef, isMenuOpen, setIsMenuOpen);
+
+  const softProofing = useEditorStore((s) => s.softProofing);
+  const setEditor = useEditorStore((s) => s.setEditor);
+
+  const update = (updates: Partial<SoftProofingSettings>) =>
+    setEditor((state) => ({ softProofing: { ...state.softProofing, ...updates } }));
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        className={clsx(
+          'p-2 rounded-full transition-colors',
+          softProofing.enabled
+            ? 'bg-accent text-button-text hover:bg-accent/90 hover:text-button-text'
+            : 'bg-surface hover:bg-card-active text-text-primary',
+        )}
+        onClick={() => update({ enabled: !softProofing.enabled })}
+        onKeyDown={onKeyDown}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setIsMenuOpen((prev) => !prev);
+        }}
+        data-tooltip={t('editor.toolbar.tooltips.softProofing')}
+      >
+        <Palette size={20} />
+      </button>
+
+      <ToolbarMenu isOpen={isMenuOpen} title={t('editor.softProofing.title')}>
+        <div className="px-4 pb-1">
+          <Text variant={TextVariants.small} color={TextColors.secondary}>
+            {t('editor.softProofing.description')}
+          </Text>
+        </div>
+        {SOFT_PROOF_PROFILE_OPTIONS.map(({ id, labelKey }) => (
+          <ToolbarMenuItem
+            key={id}
+            isSelected={softProofing.enabled && softProofing.profile === id}
+            label={t(labelKey)}
+            onClick={() => update({ enabled: true, profile: id })}
+            onKeyDown={onKeyDown}
+          />
+        ))}
+        <div className="h-px bg-border-color/50 mx-3 my-1" />
+        {SOFT_PROOF_INTENT_OPTIONS.map(({ id, labelKey }) => (
+          <ToolbarMenuItem
+            key={id}
+            isSelected={softProofing.enabled && softProofing.intent === id}
+            label={t(labelKey)}
+            onClick={() => update({ enabled: true, intent: id })}
+            onKeyDown={onKeyDown}
+          />
+        ))}
+        <div className="h-px bg-border-color/50 mx-3 my-1" />
+        <ToolbarMenuItem
+          isSelected={softProofing.enabled && softProofing.simulatePaper}
+          label={t('editor.softProofing.simulatePaper')}
+          onClick={() => update({ enabled: true, simulatePaper: !softProofing.simulatePaper })}
+          onKeyDown={onKeyDown}
+        />
+        <ToolbarMenuItem
+          isSelected={softProofing.enabled && softProofing.gamutWarning}
+          label={t('editor.softProofing.gamutWarning')}
+          onClick={() => update({ enabled: true, gamutWarning: !softProofing.gamutWarning })}
+          onKeyDown={onKeyDown}
+        />
+        <div className="h-px bg-border-color/50 mx-3 my-1" />
+        <ToolbarMenuItem
+          isDimmed={!softProofing.enabled}
+          isSelected={false}
+          label={t('editor.softProofing.turnOff')}
+          onClick={() => update({ enabled: false })}
+          onKeyDown={onKeyDown}
+        />
+      </ToolbarMenu>
+    </div>
+  );
+}
+
 interface EditorToolbarProps {
   canRedo: boolean;
   canUndo: boolean;
@@ -106,6 +216,79 @@ interface EditorToolbarProps {
   adjustmentsHistory: any[];
   adjustmentsHistoryIndex: number;
   goToAdjustmentsHistoryIndex(index: number): void;
+}
+
+const ENHANCE_INTENSITIES = [
+  { id: 'subtle', labelKey: 'editor.aiEnhance.intensities.subtle' },
+  { id: 'standard', labelKey: 'editor.aiEnhance.intensities.standard' },
+  { id: 'strong', labelKey: 'editor.aiEnhance.intensities.strong' },
+] as const satisfies ReadonlyArray<{ id: string; labelKey: ParseKeys }>;
+
+type EnhanceIntensityId = (typeof ENHANCE_INTENSITIES)[number]['id'];
+
+// §4 P0: one-click AI enhance. Left-click runs with the selected intensity
+// (default: standard); right-click opens the intensity picker menu.
+function AiEnhanceButton({ onKeyDown }: { onKeyDown(e: React.KeyboardEvent<HTMLButtonElement>): void }) {
+  const { t } = useTranslation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [intensity, setIntensity] = useState<EnhanceIntensityId>('standard');
+  const containerRef = useRef<HTMLDivElement>(null);
+  useMenuDismiss(containerRef, isMenuOpen, setIsMenuOpen);
+  const { setAdjustments } = useEditorActions();
+
+  const runEnhance = async (level: EnhanceIntensityId) => {
+    if (isEnhancing) return;
+    setIsEnhancing(true);
+    setIsMenuOpen(false);
+    try {
+      const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity: level });
+      setAdjustments((prev: Adjustments) => ({ ...prev, ...result }));
+    } catch (e) {
+      console.error('AI enhance failed:', e);
+      toast.error(t('editor.aiEnhance.failed'));
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        className={clsx(
+          'p-2 rounded-full transition-colors disabled:cursor-not-allowed',
+          isEnhancing
+            ? 'bg-accent text-button-text'
+            : 'bg-surface hover:bg-card-active text-text-primary',
+        )}
+        disabled={isEnhancing}
+        onClick={() => runEnhance(intensity)}
+        onKeyDown={onKeyDown}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setIsMenuOpen((prev) => !prev);
+        }}
+        data-tooltip={t('editor.toolbar.tooltips.aiEnhance')}
+      >
+        {isEnhancing ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+      </button>
+
+      <ToolbarMenu isOpen={isMenuOpen} title={t('editor.aiEnhance.title')}>
+        {ENHANCE_INTENSITIES.map(({ id, labelKey }) => (
+          <ToolbarMenuItem
+            key={id}
+            isSelected={intensity === id}
+            label={t(labelKey)}
+            onClick={() => {
+              setIntensity(id);
+              runEnhance(id);
+            }}
+            onKeyDown={onKeyDown}
+          />
+        ))}
+      </ToolbarMenu>
+    </div>
+  );
 }
 
 const EditorToolbar = memo(
@@ -691,6 +874,7 @@ const EditorToolbar = memo(
             </ToolbarMenu>
           </div>
 
+          <AiEnhanceButton onKeyDown={handleButtonKeyDown} />
           <CompareButton
             compareMode={compareMode}
             isComparing={isComparing}
@@ -698,6 +882,7 @@ const EditorToolbar = memo(
             onSelectMode={onSelectCompareMode}
             onToggle={onToggleCompare}
           />
+          <SoftProofingButton onKeyDown={handleButtonKeyDown} />
           <button
             className="bg-surface text-text-primary p-2 rounded-full hover:bg-card-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
             onClick={onToggleFullScreen}

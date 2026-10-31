@@ -26,6 +26,7 @@ import {
   FolderPlus,
   RefreshCw,
   Menu,
+  Sparkles,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
@@ -42,6 +43,8 @@ import { useUIStore } from '../../../store/useUIStore';
 import { AlbumItem, AlbumGroup, Album, Invokes, FolderTreeSort, SortDirection } from '../../ui/AppProperties';
 import { useLibraryActions } from '../../../hooks/useLibraryActions';
 import ImmichSection from '../../immich/ImmichSection';
+import { useSmartAlbumsStore } from '../../../store/useSmartAlbumsStore';
+import { SmartAlbum } from '../../../utils/smartAlbums';
 
 export interface FolderTree {
   children: FolderTree[];
@@ -58,8 +61,10 @@ interface FolderTreeProps {
   isResizing: boolean;
   onContextMenu(event: any, path: string | null, isPinned?: boolean): void;
   onAlbumContextMenu(event: any, item: AlbumItem | null): void;
+  onSmartAlbumContextMenu(event: any, album: SmartAlbum | null): void;
   onFolderSelect(folder: string, skipHistory?: boolean): void;
   onSelectAlbum(albumId: string, albumName: string, images: string[], skipHistory?: boolean): void;
+  onSelectSmartAlbum(album: SmartAlbum, skipHistory?: boolean): void;
   onToggleFolder(folder: string): void;
   onOpenFolder(): void;
   onNavBack(): void;
@@ -498,6 +503,46 @@ function AlbumTreeNode({
   );
 }
 
+function SmartAlbumNode({
+  album,
+  isSelected,
+  onSelect,
+  onContextMenu,
+}: {
+  album: SmartAlbum;
+  isSelected: boolean;
+  onSelect: (album: SmartAlbum) => void;
+  onContextMenu: (e: any, album: SmartAlbum) => void;
+}) {
+  return (
+    <Text as="div" color={TextColors.primary} weight={TextWeights.medium}>
+      <div
+        className={clsx('flex items-center gap-2 p-1.5 rounded-md transition-colors cursor-pointer', {
+          'bg-surface': isSelected,
+          'hover:bg-card-active': !isSelected,
+        })}
+        onClick={() => onSelect(album)}
+        onContextMenu={(e) => onContextMenu(e, album)}
+      >
+        <div className="relative w-5 h-5 flex items-center justify-center p-0.5 rounded-sm text-text-secondary shrink-0">
+          <Sparkles size={16} />
+        </div>
+        <span className="min-w-0 flex-1 select-none">
+          <span className="block truncate">{album.name}</span>
+        </span>
+        <Text
+          as="span"
+          variant={TextVariants.small}
+          color={TextColors.secondary}
+          className="ml-auto shrink-0 tabular-nums"
+        >
+          {album.rules.length}
+        </Text>
+      </div>
+    </Text>
+  );
+}
+
 function TreeNode({
   sectionId,
   expandedFolders,
@@ -693,8 +738,10 @@ export default function FolderTree({
   isResizing,
   onContextMenu,
   onAlbumContextMenu,
+  onSmartAlbumContextMenu,
   onFolderSelect,
   onSelectAlbum,
+  onSelectSmartAlbum,
   onToggleFolder,
   onOpenFolder,
   onNavBack,
@@ -740,6 +787,7 @@ export default function FolderTree({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isHovering, setIsHovering] = useState(false);
+  const smartAlbums = useSmartAlbumsStore((state) => state.albums);
   const pinnedFolders = appSettings?.pinnedFolders || [];
   const openSections = useMemo(() => appSettings?.openTreeSections ?? ['current'], [appSettings?.openTreeSections]);
   const showImageCounts = appSettings?.enableFolderImageCounts ?? false;
@@ -820,6 +868,12 @@ export default function FolderTree({
     return base;
   }, [albumTree, trimmedQuery, isSearching]);
 
+  const filteredSmartAlbums = useMemo(() => {
+    if (!isSearching) return smartAlbums;
+    const query = trimmedQuery.toLowerCase();
+    return smartAlbums.filter((album) => album.name.toLowerCase().includes(query));
+  }, [smartAlbums, isSearching, trimmedQuery]);
+
   const searchAutoExpandedAlbumGroups = useMemo(() => {
     if (!isSearching) return new Set<string>();
     const newExpanded = new Set<string>();
@@ -836,6 +890,7 @@ export default function FolderTree({
       const hasPinnedResults = filteredPinnedTrees && filteredPinnedTrees.length > 0;
       const hasBaseResults = filteredTrees && filteredTrees.length > 0;
       const hasAlbumResults = filteredAlbumTree && filteredAlbumTree.length > 0;
+      const hasSmartAlbumResults = filteredSmartAlbums && filteredSmartAlbums.length > 0;
 
       const newSections = [...openSections];
       let changed = false;
@@ -852,6 +907,10 @@ export default function FolderTree({
         newSections.push('albums');
         changed = true;
       }
+      if (hasSmartAlbumResults && !newSections.includes('smartAlbums')) {
+        newSections.push('smartAlbums');
+        changed = true;
+      }
 
       if (changed) {
         handleSettingsChange({ ...appSettings, openTreeSections: newSections });
@@ -862,6 +921,7 @@ export default function FolderTree({
     filteredTrees,
     filteredPinnedTrees,
     filteredAlbumTree,
+    filteredSmartAlbums,
     openSections,
     handleSettingsChange,
     appSettings,
@@ -870,10 +930,13 @@ export default function FolderTree({
   const isPinnedOpen = openSections.includes('pinned');
   const isCurrentOpen = openSections.includes('current');
   const isAlbumsOpen = openSections.includes('albums');
+  const isSmartAlbumsOpen = openSections.includes('smartAlbums');
 
   const hasVisiblePinnedTrees = filteredPinnedTrees && filteredPinnedTrees.length > 0;
   const hasVisibleAlbums = filteredAlbumTree && filteredAlbumTree.length > 0;
+  const hasVisibleSmartAlbums = filteredSmartAlbums.length > 0;
   const showAlbumsSection = hasVisibleAlbums || (!isSearching && albumTree.length === 0);
+  const showSmartAlbumsSection = hasVisibleSmartAlbums || !isSearching;
 
   return (
     <div
@@ -1054,6 +1117,75 @@ export default function FolderTree({
                           <motion.div layout="position">
                             <Text variant={TextVariants.small} className="p-2 text-center">
                               {t('library.folders.albumsEmpty')}
+                            </Text>
+                          </motion.div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
+
+            {showSmartAlbumsSection && (
+              <>
+                <div className="flex items-center justify-between pr-1">
+                  <SectionHeader
+                    title={t('library.folders.sections.smartAlbums')}
+                    isOpen={isSmartAlbumsOpen}
+                    onToggle={() => toggleSection('smartAlbums')}
+                  />
+                  {!isSearching && (
+                    <button
+                      className="p-1.5 rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors shrink-0"
+                      data-tooltip={t('contextMenus.smartAlbums.new')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSmartAlbumContextMenu(e, null);
+                      }}
+                    >
+                      <Plus size={15} />
+                    </button>
+                  )}
+                </div>
+                <AnimatePresence>
+                  {isSmartAlbumsOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSmartAlbumContextMenu(e, null);
+                      }}
+                    >
+                      <div className="pt-1 pb-2">
+                        <AnimatePresence>
+                          {filteredSmartAlbums.map((album) => (
+                            <motion.div
+                              key={`smart-${album.id}`}
+                              initial={{ opacity: 0, height: 0, x: -15 }}
+                              animate={{ opacity: 1, height: 'auto', x: 0 }}
+                              exit={{ opacity: 0, height: 0, x: -15, overflow: 'hidden' }}
+                              transition={{ duration: 0.2 }}
+                              layout="position"
+                            >
+                              <SmartAlbumNode
+                                album={album}
+                                isSelected={activeAlbumId === `smart:${album.id}`}
+                                onSelect={(a) => onSelectSmartAlbum(a)}
+                                onContextMenu={onSmartAlbumContextMenu}
+                              />
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                        {filteredSmartAlbums.length === 0 && (
+                          <motion.div layout="position">
+                            <Text variant={TextVariants.small} className="p-2 text-center">
+                              {t('library.folders.smartAlbumsEmpty')}
                             </Text>
                           </motion.div>
                         )}

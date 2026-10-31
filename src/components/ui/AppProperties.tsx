@@ -144,6 +144,12 @@ export enum Invokes {
   TetherSetSetting = 'tether_set_setting',
   TetherCapture = 'tether_capture',
   TetherGetPreview = 'tether_get_preview',
+  AiAutoEnhance = 'ai_auto_enhance',
+  AiUpscaleExport = 'ai_upscale_export',
+  ExportXmpSidecar = 'export_xmp_sidecar',
+  ImportXmpSidecar = 'import_xmp_sidecar',
+  SetWatchedFolders = 'set_watched_folders',
+  GetWatchedFolderStatus = 'get_watched_folder_status',
 }
 
 export enum ExifOverlay {
@@ -304,6 +310,13 @@ export interface AppSettings {
   alwaysDecodeRawThumbnails?: boolean;
   workspace?: WorkspaceState;
   immich?: ImmichSettings;
+  tetherCaptureIntervalMs?: number;
+  watchedFolders?: WatchedFolderConfig[];
+}
+
+export interface WatchedFolderConfig {
+  path: string;
+  enabled: boolean;
 }
 
 export interface BrushSettings {

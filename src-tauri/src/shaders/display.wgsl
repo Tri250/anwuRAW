@@ -14,6 +14,11 @@ struct Transform {
     split_offset: vec2<f32>,
 };
 
+// R5-5: when the preview surface is linear Rgba16Float (HDR path), the main
+// pass leaves pixels linear and this pass performs the final sRGB encode.
+// With 8-bit surfaces the main pass has already display-encoded.
+override ENCODE_SRGB: u32 = 0u;
+
 @group(0) @binding(0) var<uniform> transform: Transform;
 @group(0) @binding(1) var tex: texture_2d<f32>;
 @group(0) @binding(2) var samp: sampler;
@@ -76,6 +81,15 @@ fn sample_layer(layer: texture_2d<f32>, uv: vec2<f32>, image_size: vec2<f32>, te
     }
 }
 
+fn linear_to_srgb(c: vec3<f32>) -> vec3<f32> {
+    let c_clamped = clamp(c, vec3<f32>(0.0), vec3<f32>(1.0));
+    let cutoff = vec3<f32>(0.0031308);
+    let a = vec3<f32>(0.055);
+    let higher = (1.0 + a) * pow(c_clamped, vec3<f32>(1.0 / 2.4)) - a;
+    let lower = c_clamped * 12.92;
+    return select(higher, lower, c_clamped <= cutoff);
+}
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let is_original = dot(in.pos.xy - transform.split_origin, transform.split_normal) < 0.0;
@@ -85,8 +99,17 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         return transform.bg_secondary;
     }
 
+    var sampled: vec4<f32>;
     if (is_original) {
-        return sample_layer(original_tex, uv, transform.original_size, transform.original_size);
+        sampled = sample_layer(original_tex, uv, transform.original_size, transform.original_size);
+    } else {
+        sampled = sample_layer(tex, uv, transform.image_size, transform.texture_size);
     }
-    return sample_layer(tex, uv, transform.image_size, transform.texture_size);
+
+    // The Original layer is CPU-uploaded and already display-encoded; only
+    // the edited (linear f16) layer needs the final encode.
+    if (ENCODE_SRGB == 1u && !is_original) {
+        return vec4<f32>(linear_to_srgb(sampled.rgb), sampled.a);
+    }
+    return sampled;
 }

@@ -37,6 +37,11 @@ import {
   withKelvinWhiteBalance,
   withRelativeWhiteBalance,
 } from '../../../utils/whiteBalance';
+import {
+  computeGamutWarningOverlay,
+  GAMUT_WARNING_SATURATION_THRESHOLD,
+  getSoftProofFilter,
+} from '../../../utils/softProofing';
 
 interface CursorPreview {
   visible: boolean;
@@ -1545,6 +1550,34 @@ const ImageCanvas = memo(
     const retainedPatchRef = useRef<typeof interactivePatch>(null);
 
     const isWgpuActive = appSettings?.useWgpuRenderer !== false && selectedImage?.isReady && hasRenderedFirstFrame;
+
+    const softProofing = useEditorStore((s) => s.softProofing);
+    const softProofFilter = useMemo(() => getSoftProofFilter(softProofing), [softProofing]);
+    const isSoftProofVisible = softProofing.enabled && !isWgpuActive;
+
+    const [gamutOverlayUrl, setGamutOverlayUrl] = useState<string | null>(null);
+    useEffect(() => {
+      if (!isSoftProofVisible || !softProofing.gamutWarning || !displayState.base) {
+        setGamutOverlayUrl(null);
+        return;
+      }
+      let cancelled = false;
+      setGamutOverlayUrl(null);
+      const timer = window.setTimeout(() => {
+        computeGamutWarningOverlay(displayState.base, GAMUT_WARNING_SATURATION_THRESHOLD)
+          .then((url) => {
+            if (!cancelled) setGamutOverlayUrl(url);
+          })
+          .catch(() => {
+            if (!cancelled) setGamutOverlayUrl(null);
+          });
+      }, 250);
+      return () => {
+        cancelled = true;
+        window.clearTimeout(timer);
+      };
+    }, [isSoftProofVisible, softProofing.gamutWarning, displayState.base]);
+
     const { t } = useTranslation();
     const osPlatform = useOsPlatform();
     const modifierKey = osPlatform === 'macos' ? 'Cmd' : 'Ctrl';
@@ -3485,8 +3518,32 @@ const ImageCanvas = memo(
             ? 0
             : 1;
 
+    // E15: contextual hint for active "pick on canvas" modes. Esc always
+    // cancels (each picker tool registers its own Escape handling).
+    const activePickerHint = isCropping
+      ? null
+      : isRelightPickerActive
+        ? t('editor.canvas.pickerHints.relight')
+        : isWbPickerActive
+          ? t('editor.canvas.pickerHints.wb')
+          : isTargetedAdjustmentActive
+            ? t('editor.canvas.pickerHints.targeted')
+            : centerMarkerConfig
+              ? t('editor.canvas.pickerHints.marker')
+              : null;
+
     return (
       <div className="relative" style={{ width: '100%', height: '100%', cursor: effectiveCursor }}>
+        {activePickerHint && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none">
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-xs text-xs text-white/90 shadow-lg whitespace-nowrap max-w-[92%]">
+              <span className="truncate">{activePickerHint}</span>
+              <span className="opacity-50 shrink-0">·</span>
+              <span className="font-semibold shrink-0">Esc</span>
+              <span className="opacity-80 shrink-0">{t('editor.canvas.pickerCancel')}</span>
+            </div>
+          </div>
+        )}
         <div
           className="absolute inset-0 w-full h-full transition-opacity duration-200 flex items-center justify-center"
           style={{
@@ -3531,7 +3588,7 @@ const ImageCanvas = memo(
                     y="0"
                     width="100%"
                     height="100%"
-                    style={{ imageRendering: isMaxZoom ? 'pixelated' : 'auto' }}
+                    style={{ imageRendering: isMaxZoom ? 'pixelated' : 'auto', filter: softProofFilter ?? undefined }}
                   />
                 )}
 
@@ -3544,6 +3601,7 @@ const ImageCanvas = memo(
                     height="100%"
                     style={{
                       imageRendering: isMaxZoom ? 'pixelated' : 'auto',
+                      filter: softProofFilter ?? undefined,
                       opacity: isFadingIn ? 1 : 0,
                       transition: 'opacity 150ms ease-in-out',
                     }}
@@ -3558,10 +3616,26 @@ const ImageCanvas = memo(
                     width={`${visiblePatch.normW * 100}%`}
                     height={`${visiblePatch.normH * 100}%`}
                     preserveAspectRatio="none"
-                    style={{ imageRendering: isMaxZoom ? 'pixelated' : 'auto' }}
+                    style={{ imageRendering: isMaxZoom ? 'pixelated' : 'auto', filter: softProofFilter ?? undefined }}
                   />
                 )}
               </svg>
+
+              {gamutOverlayUrl && (
+                <img
+                  alt="Gamut Warning"
+                  className="absolute object-contain pointer-events-none"
+                  src={gamutOverlayUrl}
+                  style={{
+                    height: `${imageRenderSize.height}px`,
+                    left: `${imageRenderSize.offsetX}px`,
+                    top: `${imageRenderSize.offsetY}px`,
+                    width: `${imageRenderSize.width}px`,
+                    imageRendering: isMaxZoom ? 'pixelated' : 'auto',
+                    zIndex: 4,
+                  }}
+                />
+              )}
 
               {displayedMaskUrl && (
                 <img

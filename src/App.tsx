@@ -22,6 +22,10 @@ import SettingsPanel from './components/panel/SettingsPanel';
 import ExportPanel from './components/panel/right/ExportPanel';
 import GlobalTooltip from './components/ui/GlobalTooltip';
 import AppModals from './components/modals/AppModals';
+import SurveyView from './components/panel/library/SurveyView';
+import TaskCapsule from './components/panel/editor/TaskCapsule';
+import { ONBOARDING_SEEN_KEY } from './components/modals/OnboardingModal';
+import { loadUserData, saveUserData } from './utils/libraryUserData';
 
 import SidePanelArea from './components/panel/SidePanelArea';
 import { PANEL_ICONS } from './components/panel/PanelSwitcher';
@@ -242,7 +246,6 @@ function App() {
     };
   });
 
-  const isBackendReadyRef = useRef(true);
   const previewJobIdRef = useRef<number>(0);
   const latestRenderedJobIdRef = useRef<number>(0);
   const currentResRef = useRef<number>(1280);
@@ -346,7 +349,6 @@ function App() {
       preloadedDataRef,
       cachedEditStateRef,
       selectedImagePathRef,
-      isBackendReadyRef,
       latestRenderedJobIdRef,
       previewJobIdRef,
       currentResRef,
@@ -361,6 +363,7 @@ function App() {
     handleImageSelect,
     handleSelectSubfolder,
     handleSelectAlbum,
+    handleSelectSmartAlbum,
     handleOpenFolder,
     handleNavBack,
     handleNavForward,
@@ -456,6 +459,7 @@ function App() {
     handleThumbnailContextMenu,
     handleFolderTreeContextMenu,
     handleAlbumTreeContextMenu,
+    handleSmartAlbumContextMenu,
     handleMainLibraryContextMenu,
   } = useAppContextMenus({
     handleImageSelect,
@@ -480,6 +484,14 @@ function App() {
   });
 
   useAndroidBackHandler();
+
+  // E10: first-run onboarding, shown exactly once per installation.
+  useEffect(() => {
+    if (!loadUserData(ONBOARDING_SEEN_KEY, false)) {
+      saveUserData(ONBOARDING_SEEN_KEY, true);
+      useUIStore.getState().setUI({ isOnboardingModalOpen: true });
+    }
+  }, []);
 
   useKeyboardShortcuts({
     sortedImageList,
@@ -737,7 +749,9 @@ function App() {
               isResizing={isResizing}
               onContextMenu={handleFolderTreeContextMenu}
               onAlbumContextMenu={handleAlbumTreeContextMenu}
+              onSmartAlbumContextMenu={handleSmartAlbumContextMenu}
               onSelectAlbum={(id, name, images, skipHistory) => handleSelectAlbum(id, name, images, false, skipHistory)}
+              onSelectSmartAlbum={(album, skipHistory) => handleSelectSmartAlbum(album, false, skipHistory)}
               onFolderSelect={(path, skipHistory) =>
                 handleSelectSubfolder(path, false, undefined, true, false, skipHistory)
               }
@@ -785,7 +799,9 @@ function App() {
       isResizing,
       handleFolderTreeContextMenu,
       handleAlbumTreeContextMenu,
+      handleSmartAlbumContextMenu,
       handleSelectAlbum,
+      handleSelectSmartAlbum,
       handleSelectSubfolder,
       handleToggleFolder,
       handleOpenFolder,
@@ -1062,6 +1078,13 @@ function App() {
           handleCreateAlbumItem={handleCreateAlbumItem}
           handleRenameAlbumItem={handleRenameAlbumItem}
         />
+        <SurveyView
+          requestThumbnails={requestThumbnails}
+          onImageSelect={handleImageSelect}
+          onSetFlag={handleSetFlag}
+          onRate={handleRate}
+        />
+        {activeView === 'editor' && <TaskCapsule />}
         <ToastContainer
           position="bottom-right"
           autoClose={5000}

@@ -130,6 +130,9 @@ function WatermarkPreview({
   watermarkPath,
   imageAspectRatio,
   watermarkImageAspectRatio,
+  text = null,
+  textColor = '#ffffff',
+  textFontSize = 4,
 }: {
   anchor: WatermarkAnchor;
   scale: number;
@@ -138,19 +141,34 @@ function WatermarkPreview({
   watermarkPath: string | null;
   imageAspectRatio: number;
   watermarkImageAspectRatio: number;
+  text?: string | null;
+  textColor?: string;
+  textFontSize?: number;
 }) {
   const { t } = useTranslation();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(0);
 
-  const getPositionStyles = () => {
-    const minDimPercent = imageAspectRatio > 1 ? 100 / imageAspectRatio : 100;
-    const watermarkSizePercent = minDimPercent * (scale / 100);
-    const spacingPercent = minDimPercent * (spacing / 100);
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setContainerHeight(entry.contentRect.height);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
+  const getAnchorStyles = (spacingPercent: number, widthPercent: number | null): React.CSSProperties => {
     const styles: React.CSSProperties = {
-      width: `${watermarkSizePercent}%`,
       opacity: opacity / 100,
       position: 'absolute',
     };
+
+    if (widthPercent !== null) {
+      styles.width = `${widthPercent}%`;
+    }
 
     const spacingString = `${spacingPercent}%`;
 
@@ -200,8 +218,30 @@ function WatermarkPreview({
     return styles;
   };
 
+  const getPositionStyles = () => {
+    const minDimPercent = imageAspectRatio > 1 ? 100 / imageAspectRatio : 100;
+    return getAnchorStyles(minDimPercent * (spacing / 100), minDimPercent * (scale / 100));
+  };
+
+  const getTextStyles = (): React.CSSProperties => {
+    const minDimPercent = imageAspectRatio > 1 ? 100 / imageAspectRatio : 100;
+    return {
+      ...getAnchorStyles(minDimPercent * 2.5, null),
+      fontSize: containerHeight > 0 ? Math.max(6, (textFontSize / 100) * containerHeight) : 10,
+      color: textColor,
+      fontWeight: 600,
+      whiteSpace: 'pre',
+      lineHeight: 1.2,
+      maxWidth: '95%',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      textShadow: '0 1px 2px rgba(0, 0, 0, 0.45)',
+    };
+  };
+
   return (
     <div
+      ref={containerRef}
       className="w-full bg-surface rounded-md relative overflow-hidden border border-surface"
       style={{ aspectRatio: imageAspectRatio }}
     >
@@ -218,6 +258,7 @@ function WatermarkPreview({
           </div>
         </div>
       )}
+      {text && <span style={getTextStyles()}>{text}</span>}
     </div>
   );
 }
@@ -268,6 +309,15 @@ export default function ExportPanel({
       { label: t('export.file.colorSpaceDisplayP3'), value: 'display-p3' },
       { label: t('export.file.colorSpaceProPhoto'), value: 'prophoto-rgb' },
       { label: t('export.file.colorSpaceRec2020'), value: 'rec2020' },
+    ],
+    [t],
+  );
+
+  const upscaleOptions = useMemo(
+    () => [
+      { label: t('export.aiUpscale.off'), value: '0' },
+      { label: t('export.aiUpscale.scale2'), value: '2' },
+      { label: t('export.aiUpscale.scale4'), value: '4' },
     ],
     [t],
   );
@@ -329,6 +379,18 @@ export default function ExportPanel({
     setWatermarkSpacing,
     watermarkOpacity,
     setWatermarkOpacity,
+    enableTextWatermark,
+    setEnableTextWatermark,
+    watermarkText,
+    setWatermarkText,
+    watermarkTextAnchor,
+    setWatermarkTextAnchor,
+    watermarkFontSize,
+    setWatermarkFontSize,
+    watermarkTextOpacity,
+    setWatermarkTextOpacity,
+    watermarkTextColor,
+    setWatermarkTextColor,
     preserveFolders,
     setPreserveFolders,
     handleApplyPreset,
@@ -354,6 +416,8 @@ export default function ExportPanel({
   const adjustmentsRef = useRef(useEditorStore.getState().adjustments);
 
   const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
+  // AI upscale factor for the single-image export path; 0 means disabled.
+  const [upscaleFactor, setUpscaleFactor] = useState<number>(0);
   const initDone = useRef(false);
 
   useEffect(() => {
@@ -414,6 +478,22 @@ export default function ExportPanel({
         }
       : null;
 
+  const watermarkTextColorField = useParsedTextField(watermarkTextColor, setWatermarkTextColor, normalizeHexColor);
+
+  const textWatermarkSettings = useMemo(
+    () =>
+      enableTextWatermark && watermarkText.trim()
+        ? {
+            content: watermarkText,
+            anchor: watermarkTextAnchor as WatermarkAnchor,
+            fontSize: watermarkFontSize,
+            opacity: watermarkTextOpacity,
+            color: watermarkTextColor,
+          }
+        : null,
+    [enableTextWatermark, watermarkText, watermarkTextAnchor, watermarkFontSize, watermarkTextOpacity, watermarkTextColor],
+  );
+
   const [estimatedSize, setEstimatedSize] = useState<number | null>(null);
   const [isEstimating, setIsEstimating] = useState<boolean>(false);
   const [watermarkImageAspectRatio, setWatermarkImageAspectRatio] = useState(1);
@@ -450,6 +530,11 @@ export default function ExportPanel({
   }, [isLibraryContext, multiSelectedPaths, selectedImage?.path]);
 
   const numImages = pathsToExport.length;
+
+  // AI upscale renders the currently loaded editor image through the dedicated
+  // backend pipeline, so it only applies to single-image exports from the editor.
+  const canUpscale =
+    !isLibraryContext && !isAndroid && destination !== 'immich' && numImages === 1 && fileFormat !== FileFormats.Cube;
 
   useEffect(() => {
     const fetchDims = async () => {
@@ -555,6 +640,7 @@ export default function ExportPanel({
               opacity: watermarkOpacity,
             }
           : null,
+      textWatermark: textWatermarkSettings,
     };
     const format = FILE_FORMATS.find((f: FileFormat) => f.id === fileFormat)?.extensions[0] || 'jpeg';
     const runEstimate = () =>
@@ -605,6 +691,13 @@ export default function ExportPanel({
     watermarkScale,
     watermarkSpacing,
     watermarkOpacity,
+    enableTextWatermark,
+    watermarkText,
+    watermarkTextAnchor,
+    watermarkFontSize,
+    watermarkTextOpacity,
+    watermarkTextColor,
+    textWatermarkSettings,
     debouncedEstimateSize,
     exportMasks,
     preserveFolders,
@@ -628,8 +721,95 @@ export default function ExportPanel({
     }, 0);
   };
 
+  // AI upscale export: renders the loaded image at an enlarged resolution via
+  // the dedicated backend command, reusing the panel's format/quality inputs.
+  const handleUpscaleExport = async () => {
+    if (!selectedImage || numImages !== 1 || isExporting) return;
+
+    const selectedFormat: any = FILE_FORMATS.find((f) => f.id === fileFormat);
+    const format: string = selectedFormat?.extensions[0] || 'jpeg';
+
+    const imagePath = selectedImage.path;
+    const originalFilename = imagePath.split('?vc=')[0].split(/[\\/]/).pop() || 'image';
+    const stem = originalFilename.substring(0, originalFilename.lastIndexOf('.')) || originalFilename;
+    const suggestedName = (filenameTemplate || '').replace('{original_filename}', stem);
+    const outputFileName = `${suggestedName}_${upscaleFactor}x.${format}`;
+
+    const lastExportPath = appSettings?.exportPresets?.find((p) => p.id === '__last_used__')?.lastExportPath;
+    const isOriginalFolder = destination === 'originalFolder';
+
+    try {
+      let outputPath = '';
+      if (!isOriginalFolder && !preserveFolders) {
+        outputPath = (await save({
+          title: t('export.dialog.saveEditedImageTitle'),
+          defaultPath: lastExportPath ? `${lastExportPath}/${outputFileName}` : outputFileName,
+          filters: [
+            { name: selectedFormat.name, extensions: selectedFormat.extensions },
+            ...FILE_FORMATS.filter((f: FileFormat) => f.id !== fileFormat).map((f: FileFormat) => ({
+              name: f.name,
+              extensions: f.extensions,
+            })),
+          ],
+        })) as string;
+      } else {
+        let folder = '';
+        if (isOriginalFolder) {
+          const basePath = imagePath.split('?vc=')[0];
+          folder = basePath.substring(0, Math.max(basePath.lastIndexOf('/'), basePath.lastIndexOf('\\')));
+        } else {
+          folder = (await open({
+            title: t('export.dialog.selectFolderTitle', { count: 1 }),
+            directory: true,
+            defaultPath: lastExportPath ?? undefined,
+          })) as string;
+        }
+        if (folder) outputPath = `${folder}/${outputFileName}`;
+      }
+
+      if (!outputPath) return;
+
+      if (!isAndroid) {
+        const dir = outputPath.substring(0, Math.max(outputPath.lastIndexOf('/'), outputPath.lastIndexOf('\\')));
+        if (dir) saveLastUsedPreset(dir);
+      }
+
+      setExportState({
+        destination: outputPath,
+        errorMessage: '',
+        progress: { current: 0, total: 1 },
+        status: Status.Exporting,
+      });
+      await invoke(Invokes.AiUpscaleExport, {
+        imagePath,
+        jsAdjustments: adjustmentsRef.current || {},
+        scaleFactor: upscaleFactor,
+        outputPath,
+        fileFormat: format,
+        jpegQuality,
+      });
+      setExportState({
+        destination: outputPath,
+        errorMessage: '',
+        progress: { current: 1, total: 1 },
+        status: Status.Success,
+      });
+    } catch (error) {
+      setExportState({
+        errorMessage: typeof error === 'string' ? error : t('export.status.failed'),
+        progress,
+        status: Status.Error,
+      });
+    }
+  };
+
   const handleExport = async () => {
     if (numImages === 0 || isExporting) return;
+
+    if (upscaleFactor > 0) {
+      await handleUpscaleExport();
+      return;
+    }
 
     const exportSettings: ExportSettings = {
       filenameTemplate,
@@ -656,6 +836,7 @@ export default function ExportPanel({
               opacity: watermarkOpacity,
             }
           : null,
+      textWatermark: textWatermarkSettings,
       dpi,
     };
 
@@ -941,6 +1122,25 @@ export default function ExportPanel({
             {fileFormat !== FileFormats.Cube && (
               <>
                 <Section title={t('export.sections.imageSizing')}>
+                  {canUpscale && (
+                    <div className={isExporting ? 'opacity-50 pointer-events-none' : ''}>
+                      <Text variant={TextVariants.label} className="mb-1">
+                        {t('export.aiUpscale.label')}
+                      </Text>
+                      <Dropdown
+                        options={upscaleOptions}
+                        value={String(upscaleFactor)}
+                        onChange={(value) => setUpscaleFactor(Number(value))}
+                        disabled={isExporting}
+                        className="w-full"
+                      />
+                      {upscaleFactor > 0 && (
+                        <Text variant={TextVariants.label} className="mt-1 opacity-70">
+                          {t('export.aiUpscale.hint', { factor: upscaleFactor })}
+                        </Text>
+                      )}
+                    </div>
+                  )}
                   <Switch
                     label={t('export.border.addBorder')}
                     checked={enableBorder}
@@ -1170,6 +1370,79 @@ export default function ExportPanel({
                           />
                         </>
                       )}
+                    </div>
+                  )}
+                  <Switch
+                    label={t('export.watermark.addTextWatermark')}
+                    checked={enableTextWatermark}
+                    onChange={setEnableTextWatermark}
+                    disabled={isExporting}
+                    trackClassName="bg-surface"
+                  />
+                  {enableTextWatermark && (
+                    <div className="space-y-4 pl-2 border-l-2 border-surface">
+                      <div className={isExporting ? 'opacity-50 pointer-events-none' : ''}>
+                        <input
+                          type="text"
+                          aria-label={t('export.watermark.text')}
+                          className="w-full bg-surface rounded-md p-2 border border-surface focus:border-accent focus:ring-accent text-text-secondary focus:text-text-primary"
+                          placeholder={t('export.watermark.textPlaceholder')}
+                          value={watermarkText}
+                          maxLength={100}
+                          disabled={isExporting}
+                          onChange={(e) => setWatermarkText(e.target.value)}
+                        />
+                        <Dropdown
+                          options={anchorOptions}
+                          value={watermarkTextAnchor}
+                          onChange={(val) => setWatermarkTextAnchor(val as WatermarkAnchor)}
+                          disabled={isExporting}
+                          className="w-full"
+                        />
+                        <div>
+                          <Slider
+                            label={t('export.watermark.fontSize')}
+                            min={1}
+                            max={20}
+                            step={1}
+                            value={watermarkFontSize}
+                            onChange={(e) => setWatermarkFontSize(Number(e.target.value))}
+                            disabled={isExporting}
+                            defaultValue={4}
+                          />
+                          <Slider
+                            label={t('export.watermark.opacity')}
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={watermarkTextOpacity}
+                            onChange={(e) => setWatermarkTextOpacity(Number(e.target.value))}
+                            disabled={isExporting}
+                            defaultValue={75}
+                          />
+                          <ColorField
+                            label={t('export.watermark.color')}
+                            color={watermarkTextColor}
+                            field={watermarkTextColorField}
+                            onColorChange={setWatermarkTextColor}
+                            disabled={isExporting}
+                          />
+                        </div>
+                        {watermarkText.trim() && (
+                          <WatermarkPreview
+                            imageAspectRatio={imageAspectRatio}
+                            watermarkImageAspectRatio={1}
+                            watermarkPath={null}
+                            anchor={watermarkTextAnchor}
+                            scale={10}
+                            spacing={0}
+                            opacity={watermarkTextOpacity}
+                            text={watermarkText}
+                            textColor={watermarkTextColor}
+                            textFontSize={watermarkFontSize}
+                          />
+                        )}
+                      </div>
                     </div>
                   )}
                 </Section>

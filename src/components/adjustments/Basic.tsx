@@ -46,6 +46,16 @@ const ToneMapperSwitch = ({
         label: t('adjustments.basic.mappers.agx'),
         title: t('adjustments.basic.mappers.agxDesc'),
       },
+      {
+        id: 'pbrNeutral',
+        label: t('adjustments.basic.mappers.pbrNeutral'),
+        title: t('adjustments.basic.mappers.pbrNeutralDesc'),
+      },
+      {
+        id: 'aces',
+        label: t('adjustments.basic.mappers.aces'),
+        title: t('adjustments.basic.mappers.acesDesc'),
+      },
     ],
     [t],
   );
@@ -65,7 +75,7 @@ const ToneMapperSwitch = ({
 
     if (isInitialAnimation.current) {
       let initialX;
-      if (selectedMapper === 'agx') {
+      if (selectedMapper !== 'basic' && selectedIndex >= 0) {
         initialX = `${toneMapperOptions.length * 100}%`;
       } else {
         initialX = '-25%';
@@ -172,7 +182,7 @@ function BasicAdjustments({
   const handleToneMapperChange = (mapper: string) => {
     setAdjustments((prev: Partial<Adjustments>) => ({
       ...prev,
-      toneMapper: mapper as 'basic' | 'agx',
+      toneMapper: mapper as Adjustments['toneMapper'],
     }));
   };
 

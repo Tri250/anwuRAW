@@ -8,6 +8,7 @@ import { useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
 import { JobKind, useProcessStore } from '../store/useProcessStore';
 import { useSettingsStore } from '../store/useSettingsStore';
+import { useStacksStore } from '../store/useStacksStore';
 import { ImageFlag, Invokes } from '../components/ui/AppProperties';
 import { Status } from '../components/ui/ExportImportProperties';
 
@@ -78,6 +79,7 @@ export function useFileOperations(
       try {
         const command = options.includeAssociated ? 'delete_files_with_associated' : 'delete_files_from_disk';
         await invoke(command, { paths: pathsToDelete });
+        useStacksStore.getState().removePathsFromStacks(pathsToDelete);
         await refreshImageList();
 
         if (selectedImage && activeView === 'editor') {
@@ -129,20 +131,20 @@ export function useFileOperations(
       !pathsToDelete[0].includes('?vc=') &&
       imageList.some((image) => image.path.startsWith(`${pathsToDelete[0]}?vc=`));
 
-    let modalTitle = 'Confirm Delete';
+    let modalTitle = t('library.delete.confirmTitle');
     let modalMessage = '';
-    let confirmText = 'Delete';
+    let confirmText = t('library.delete.delete');
 
     if (selectionHasVirtualCopies) {
-      modalTitle = 'Delete Image and All Virtual Copies?';
-      modalMessage = `Are you sure you want to permanently delete this image and all of its virtual copies? This action cannot be undone.`;
-      confirmText = 'Delete All';
+      modalTitle = t('library.delete.deleteAllTitle');
+      modalMessage = t('library.delete.deleteAllMessage');
+      confirmText = t('library.delete.deleteAll');
     } else if (isSingle) {
-      modalMessage = `Are you sure you want to permanently delete this image? This action cannot be undone. Right-click for more options (e.g., deleting associated files).`;
-      confirmText = 'Delete Selected Only';
+      modalMessage = t('library.delete.deleteSingleMessage');
+      confirmText = t('library.delete.deleteSelected');
     } else {
-      modalMessage = `Are you sure you want to permanently delete these ${pathsToDelete.length} images? This action cannot be undone. Right-click for more options (e.g., deleting associated files).`;
-      confirmText = 'Delete Selected Only';
+      modalMessage = t('library.delete.deleteMultipleMessage', { count: pathsToDelete.length });
+      confirmText = t('library.delete.deleteSelected');
     }
 
     setUI({
@@ -155,7 +157,7 @@ export function useFileOperations(
         title: modalTitle,
       },
     });
-  }, [executeDelete]);
+  }, [executeDelete, t]);
 
   const handleDeleteRejected = useCallback(() => {
     const { imageList } = useLibraryStore.getState();

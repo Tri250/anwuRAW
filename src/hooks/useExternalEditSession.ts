@@ -68,6 +68,7 @@ export function useExternalEditSession(handleImageSelect: (path: string) => void
       stripGps: false,
       exportMasks: false,
       watermark: null,
+      textWatermark: null,
     };
 
     setIsFinishing(true);

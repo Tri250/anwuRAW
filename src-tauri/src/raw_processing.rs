@@ -369,8 +369,10 @@ fn develop_internal(
 
     let safe_highlight_compression = 1000.0;
 
+    // R1-1: fast preview path keeps an 8x headroom instead of clipping at 1.0,
+    // so highlight decisions in the preview match the exported 1000x recovery.
     let clamp_limit = if fast_demosaic {
-        1.0
+        8.0
     } else {
         safe_highlight_compression
     };
