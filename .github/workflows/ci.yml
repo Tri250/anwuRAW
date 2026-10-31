@@ -29,6 +29,13 @@ jobs:
           - platform: 'macos-14'
             target: aarch64-apple-darwin
             asset-prefix: '02'
+            # macOS runners bill at a 10x multiplier and the queued job is
+            # cancelled before its first step when the account's included
+            # macOS minutes are exhausted (observed on every attempt after a
+            # full release matrix). macOS compile coverage is guaranteed by
+            # the release workflow's 4 macOS build legs, so a quota-driven
+            # cancellation here must not fail CI for unrelated pushes.
+            continue-on-error: true
     uses: ./.github/workflows/build.yml
     with:
       platform: ${{ matrix.platform }}
