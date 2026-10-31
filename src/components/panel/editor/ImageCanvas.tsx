@@ -4,7 +4,7 @@ import 'react-image-crop/dist/ReactCrop.css';
 import { Stage, Layer, Ellipse, Line, Transformer, Group, Circle, Rect, Arrow } from 'react-konva';
 import type Konva from 'konva';
 import { PercentCrop, Crop } from 'react-image-crop';
-import { Pipette, Stamp, Bandage, Spline, BrushCleaning } from 'lucide-react';
+import { Pipette, Stamp, Bandage, Spline, BrushCleaning, AlertTriangle } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   Adjustments,
@@ -1485,6 +1485,7 @@ const ImageCanvas = memo(
     const isTargetedAdjustmentActive = useEditorStore((state) => state.isTargetedAdjustmentActive);
     const activeRelightLightId = useEditorStore((state) => state.activeRelightLightId);
     const activeCenterMarker = useEditorStore((state) => state.activeCenterMarker);
+    const embeddedPreviewFallback = useEditorStore((state) => state.embeddedPreviewFallback);
     const isCenterMarkerSectionOpen = useUIStore(
       (state) =>
         !!activeCenterMarker &&
@@ -4117,6 +4118,17 @@ const ImageCanvas = memo(
                 ) : (
                   <span className="text-xs text-text-secondary">{t('editor.targeted.hint')}</span>
                 )}
+              </div>
+            </div>
+          )}
+
+          {embeddedPreviewFallback && !isShowingOriginal && (
+            <div className="absolute bottom-3 right-3 z-50 max-w-[80%]">
+              <div className="flex items-center gap-2 rounded-md border border-yellow-500/40 bg-bg-secondary/85 px-2.5 py-1.5 backdrop-blur-sm shadow-lg">
+                <AlertTriangle size={13} className="text-yellow-500 shrink-0" />
+                <span className="text-xs text-text-primary truncate">
+                  {t('editor.embeddedPreview.badge')} · {t('editor.embeddedPreview.notice')}
+                </span>
               </div>
             </div>
           )}

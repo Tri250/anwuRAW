@@ -29,6 +29,9 @@ export function useImageLoader(cachedEditStateRef: React.RefObject<any>) {
     if (selectedImage && !selectedImage.isReady && selectedImage.path) {
       let isEffectActive = true;
 
+      // Clear any stale embedded-preview notice; the backend re-emits it during decode if needed.
+      setEditor({ embeddedPreviewFallback: null });
+
       const loadMetadataEarly = async () => {
         try {
           useEditorStore.getState().patchesSentToBackend.clear();

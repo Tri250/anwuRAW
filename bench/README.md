@@ -92,3 +92,61 @@ single export under a sampling profiler instead, for example
 
 Only compare builds on the same machine. GPU output is deterministic for one GPU and driver,
 but can differ slightly between GPUs.
+
+# Golden Render Regression
+
+`compare-renders.sh` compares two builds against each other. `golden/run-golden.mjs` compares
+one build against a **recorded baseline**: a fixed set of synthetic images
+(`golden/images/`, generated deterministically by
+`cargo run --example gen_golden_images -- ../bench/golden/images` from `src-tauri/`) exported
+with fixed adjustment snapshots (`golden/params/*.json`, listed in `golden/cases.tsv`):
+
+| case | image | stresses |
+|------|-------|----------|
+| `colorchecker` / `colorchecker-agx` | 24-patch ColorChecker chart | color accuracy (ΔE2000), basic + AgX tone mappers |
+| `gray-ramp` | 14-step + 64-step ramps, smooth gradient | tone curves, 8-bit banding |
+| `edge-contrast` | step/diagonal edges, square waves, frequency sweep | sharpening, halos |
+| `sky-backlit` | sun disk, sky gradient, dark ridge | highlight compression, dehaze, glow |
+| `portrait` | smooth skin gradients + features | denoise, clarity, vignette, grain |
+| `iso-noise` | clean + ISO400/1600/6400 flats | denoise strength |
+
+Each case is exported headless as 16-bit TIFF and checked two ways:
+
+- **byte identity** (sha256) — a refactor that must not change output passes here;
+- **perceptual tolerance** — mean/max ΔE2000, PSNR, SSIM against the recorded baseline
+  image, gated at mean ΔE ≤ 0.5, max ΔE ≤ 2.0, PSNR ≥ 40 dB, SSIM ≥ 0.995. These bounds
+  absorb the float-rounding differences between lavapipe, llvmpipe and real GPUs, so a
+  baseline recorded on one environment still gates another.
+
+Record a baseline (do this at the start of a stage, before algorithm changes):
+
+```bash
+cd src-tauri && cargo build --bins --examples   # once
+node bench/golden/run-golden.mjs src-tauri/target/debug/RapidRAW --record --name v1.6.14-baseline
+```
+
+Verify a build against it:
+
+```bash
+node bench/golden/run-golden.mjs src-tauri/target/debug/RapidRAW --name v1.6.14-baseline
+```
+
+Intentional algorithm changes (M2/M3/M4 stages) are expected to move the metrics; re-record
+the baseline in the stage PR and attach the before/after table to the PR description, as
+required by the v2.0 plan. Unintentional drift shows up as a FAIL without a re-record.
+
+For CI determinism, force the software rasterizer so the baseline and the gate run on the
+same backend:
+
+```bash
+node bench/golden/run-golden.mjs src-tauri/target/debug/RapidRAW --backend Vulkan --name lavapipe-vulkan
+```
+
+(`WGPU_BACKEND=Vulkan` selects lavapipe on Linux CI runners; the baseline name records which
+backend produced it.) Intermediates (per-case export logs, outputs) land in a temp dir unless
+`--work <dir>`/`--keep` is passed; the metrics CLI is `cargo run --example golden_metrics --`
+(`compare <a> <b>` prints the JSON report, `convert <in> <out.png>` re-encodes to 16-bit PNG).
+
+The headless export still initializes a tao/GTK event loop, so on a Linux machine without a
+display the runner wraps the export in `xvfb-run` automatically (install `xvfb`; set
+`GOLDEN_NO_XVFB=1` to opt out when a display is already available through other means).

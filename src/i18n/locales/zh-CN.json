@@ -624,6 +624,11 @@
         "transform": "透视和梯形校正"
       }
     },
+    "embeddedPreview": {
+      "badge": "嵌入预览模式",
+      "details": "此 RAW 文件无法完整解码，当前显示的是内嵌预览图。编辑能力受限——导出结果与部分调整可能无法反映原始传感器数据。",
+      "notice": "编辑能力受限"
+    },
     "externalEdit": {
       "done": "完成",
       "exporting": "正在导出…",
@@ -1176,6 +1181,14 @@
       "tags": "标签",
       "toggleFit": "切换 1:1 / 适应",
       "vc": "VC"
+    },
+    "deleteSelected": {
+      "confirmAll": "全部删除",
+      "confirmSelectedOnly": "仅删除所选",
+      "messageMultiple_other": "确定要永久删除这 {{count}} 张图像吗？此操作无法撤销。右键点击可查看更多选项（例如删除关联文件）。",
+      "messageSingle": "确定要永久删除此图像吗？此操作无法撤销。右键点击可查看更多选项（例如删除关联文件）。",
+      "messageWithVirtualCopies": "确定要永久删除此图像及其所有虚拟副本吗？此操作无法撤销。",
+      "title": "确认删除"
     },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} 张图像已不再符合筛选条件",

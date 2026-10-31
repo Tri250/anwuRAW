@@ -1205,6 +1205,16 @@
       "toggleFit": "Alterna 1:1 / Adatta",
       "vc": "CV"
     },
+    "deleteSelected": {
+      "confirmAll": "Elimina tutte",
+      "confirmSelectedOnly": "Elimina solo selezionate",
+      "messageMultiple_many": "Vuoi davvero eliminare definitivamente queste {{count}} immagini? Questa azione non può essere annullata. Fai clic con il pulsante destro per altre opzioni (ad es. eliminare i file associati).",
+      "messageMultiple_one": "Vuoi davvero eliminare definitivamente questa immagine? Questa azione non può essere annullata. Fai clic con il pulsante destro per altre opzioni (ad es. eliminare i file associati).",
+      "messageMultiple_other": "Vuoi davvero eliminare definitivamente queste {{count}} immagini? Questa azione non può essere annullata. Fai clic con il pulsante destro per altre opzioni (ad es. eliminare i file associati).",
+      "messageSingle": "Vuoi davvero eliminare definitivamente questa immagine? Questa azione non può essere annullata. Fai clic con il pulsante destro per altre opzioni (ad es. eliminare i file associati).",
+      "messageWithVirtualCopies": "Vuoi davvero eliminare definitivamente questa immagine e tutte le sue copie virtuali? Questa azione non può essere annullata.",
+      "title": "Conferma eliminazione"
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} immagini non corrispondono più al filtro",
       "hiddenMultiple_many": "{{count}} immagini non corrispondono più al filtro",

@@ -1,0 +1,11 @@
+{
+  "exposure": 0.3,
+  "highlights": -40,
+  "shadows": 25,
+  "dehaze": 40,
+  "glowAmount": 30,
+  "halationAmount": 25,
+  "flareAmount": 20,
+  "temperature": -8,
+  "vibrance": 15
+}

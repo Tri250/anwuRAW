@@ -625,6 +625,11 @@
         "transform": "Perspective and keystone correction"
       }
     },
+    "embeddedPreview": {
+      "badge": "Embedded preview mode",
+      "details": "This RAW file could not be fully decoded, so its embedded preview is shown. Editing capability is limited — export and some adjustments may not reflect the original sensor data.",
+      "notice": "Editing capability limited"
+    },
     "externalEdit": {
       "done": "Done",
       "exporting": "Exporting…",
@@ -1177,6 +1182,15 @@
       "tags": "Tags",
       "toggleFit": "Toggle 1:1 / Fit",
       "vc": "VC"
+    },
+    "deleteSelected": {
+      "confirmAll": "Delete All",
+      "confirmSelectedOnly": "Delete Selected Only",
+      "messageMultiple_one": "Are you sure you want to permanently delete these {{count}} images? This action cannot be undone. Right-click for more options (e.g., deleting associated files).",
+      "messageMultiple_other": "Are you sure you want to permanently delete these {{count}} images? This action cannot be undone. Right-click for more options (e.g., deleting associated files).",
+      "messageSingle": "Are you sure you want to permanently delete this image? This action cannot be undone. Right-click for more options (e.g., deleting associated files).",
+      "messageWithVirtualCopies": "Are you sure you want to permanently delete this image and all of its virtual copies? This action cannot be undone.",
+      "title": "Confirm Delete"
     },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} images no longer match the filter",

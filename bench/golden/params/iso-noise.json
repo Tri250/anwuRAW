@@ -1,0 +1,6 @@
+{
+  "lumaNoiseReduction": 60,
+  "colorNoiseReduction": 50,
+  "sharpness": 30,
+  "contrast": 5
+}

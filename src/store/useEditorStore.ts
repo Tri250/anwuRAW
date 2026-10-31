@@ -84,6 +84,8 @@ interface EditorState {
   isAIConnectorConnected: boolean;
   hasRenderedFirstFrame: boolean;
   patchesSentToBackend: Set<string>;
+  // Set when the RAW decoder failed and the embedded preview is shown instead.
+  embeddedPreviewFallback: { path: string; width: number; height: number } | null;
 
   // Clipboard
   copiedSectionAdjustments: any | null;
@@ -156,6 +158,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   isMaskControlHovered: false,
   hasRenderedFirstFrame: false,
   patchesSentToBackend: new Set<string>(),
+  embeddedPreviewFallback: null,
 
   setEditor: (updater) => set((state) => (typeof updater === 'function' ? updater(state) : updater)),
 

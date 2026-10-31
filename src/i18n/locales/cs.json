@@ -1232,6 +1232,17 @@
       "toggleFit": "Přepnout 1:1 / Přizpůsobit",
       "vc": "VC"
     },
+    "deleteSelected": {
+      "confirmAll": "Smazat vše",
+      "confirmSelectedOnly": "Smazat pouze vybrané",
+      "messageMultiple_few": "Opravdu chcete trvale smazat tyto {{count}} snímky? Tuto akci nelze vrátit zpět. Kliknutím pravým tlačítkem zobrazíte další možnosti (např. smazání přidružených souborů).",
+      "messageMultiple_many": "Opravdu chcete trvale smazat těchto {{count}} snímků? Tuto akci nelze vrátit zpět. Kliknutím pravým tlačítkem zobrazíte další možnosti (např. smazání přidružených souborů).",
+      "messageMultiple_one": "Opravdu chcete trvale smazat tento {{count}} snímek? Tuto akci nelze vrátit zpět. Kliknutím pravým tlačítkem zobrazíte další možnosti (např. smazání přidružených souborů).",
+      "messageMultiple_other": "Opravdu chcete trvale smazat těchto {{count}} snímků? Tuto akci nelze vrátit zpět. Kliknutím pravým tlačítkem zobrazíte další možnosti (např. smazání přidružených souborů).",
+      "messageSingle": "Opravdu chcete trvale smazat tento snímek? Tuto akci nelze vrátit zpět. Kliknutím pravým tlačítkem zobrazíte další možnosti (např. smazání přidružených souborů).",
+      "messageWithVirtualCopies": "Opravdu chcete trvale smazat tento snímek a všechny jeho virtuální kopie? Tuto akci nelze vrátit zpět.",
+      "title": "Potvrdit smazání"
+    },
     "filterExit": {
       "hiddenMultiple_one": "Snímky ({{count}}) již neodpovídají filtru",
       "hiddenMultiple_few": "Snímky ({{count}}) již neodpovídají filtru",

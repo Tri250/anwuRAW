@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "name": "v1.6.14-baseline",
+  "backend": "Vulkan",
+  "format": "tiff16",
+  "recorded_at": "2026-10-31T02:34:52.265Z",
+  "git_rev": "0a6b522 (dirty)",
+  "thresholds": {
+    "mean_delta_e": 0.5,
+    "max_delta_e": 2,
+    "psnr_min": 40,
+    "ssim_min": 0.995
+  },
+  "cases": [
+    {
+      "id": "colorchecker",
+      "image": "colorchecker.png",
+      "params": "colorchecker.json",
+      "description": "24-patch chart: tone + color accuracy (basic tonemapper)",
+      "sha256": "5a249fb76d037c0d5c651fd2692f08dcec1a6f9831f81d41462ef1aa8b2a53f5",
+      "reference": "colorchecker.png",
+      "width": 720,
+      "height": 496,
+      "metrics": {
+        "pixels_compared": 357120,
+        "mean_delta_e": 3.1537,
+        "p95_delta_e": 6.9463,
+        "p99_delta_e": 7.8612,
+        "max_delta_e": 9.9994,
+        "psnr": 24.5025,
+        "ssim": 0.979576
+      }
+    },
+    {
+      "id": "colorchecker-agx",
+      "image": "colorchecker.png",
+      "params": "colorchecker-agx.json",
+      "description": "24-patch chart: AgX tonemapper path",
+      "sha256": "afc405451108546a4f5a19a605048091652168ab75ee682c21a8d9548fae028d",
+      "reference": "colorchecker-agx.png",
+      "width": 720,
+      "height": 496,
+      "metrics": {
+        "pixels_compared": 357120,
+        "mean_delta_e": 5.5454,
+        "p95_delta_e": 11.8365,
+        "p99_delta_e": 15.7695,
+        "max_delta_e": 17.3872,
+        "psnr": 21.4109,
+        "ssim": 0.967588
+      }
+    },
+    {
+      "id": "gray-ramp",
+      "image": "gray-ramp.png",
+      "params": "gray-ramp.json",
+      "description": "14-step ramp + 64-step ramp + smooth gradient: tone curve + banding",
+      "sha256": "19a8616ac8f36fd75f89f7e4a3994263bb68ecc57d771df1b46abf93b2fa0ff8",
+      "reference": "gray-ramp.png",
+      "width": 896,
+      "height": 256,
+      "metrics": {
+        "pixels_compared": 229376,
+        "mean_delta_e": 2.3971,
+        "p95_delta_e": 4.1462,
+        "p99_delta_e": 4.2396,
+        "max_delta_e": 4.4023,
+        "psnr": 28.5661,
+        "ssim": 0.975983
+      }
+    },
+    {
+      "id": "edge-contrast",
+      "image": "edge-contrast.png",
+      "params": "edge-contrast.json",
+      "description": "step/diagonal edges, square waves, frequency sweep: sharpening",
+      "sha256": "f09bfcb2f92963a8b414ebff3a0900d6e795105e7fd83a5bb09d02a8d666d53d",
+      "reference": "edge-contrast.png",
+      "width": 1024,
+      "height": 512,
+      "metrics": {
+        "pixels_compared": 524288,
+        "mean_delta_e": 1.1502,
+        "p95_delta_e": 7.7194,
+        "p99_delta_e": 9.7482,
+        "max_delta_e": 14.0832,
+        "psnr": 27.8145,
+        "ssim": 0.991771
+      }
+    },
+    {
+      "id": "sky-backlit",
+      "image": "sky-backlit.png",
+      "params": "sky-backlit.json",
+      "description": "sun disk + sky gradient + dark ridge: highlight compression, dehaze, glow",
+      "sha256": "2c1f6424186e42e0a32cc4f4f556830be197532028135fc1b3f348e23fe8a8e8",
+      "reference": "sky-backlit.png",
+      "width": 1024,
+      "height": 512,
+      "metrics": {
+        "pixels_compared": 524288,
+        "mean_delta_e": 6.2222,
+        "p95_delta_e": 10.2158,
+        "p99_delta_e": 14.7179,
+        "max_delta_e": 21.9657,
+        "psnr": 24.0622,
+        "ssim": 0.905278
+      }
+    },
+    {
+      "id": "portrait",
+      "image": "portrait.png",
+      "params": "portrait.json",
+      "description": "smooth skin gradients + features: denoise, clarity, vignette, grain",
+      "sha256": "8ccc6fa6d14824638171f54fb48f33406a76e594eb2e39bb39e17638d6575ad1",
+      "reference": "portrait.png",
+      "width": 640,
+      "height": 896,
+      "metrics": {
+        "pixels_compared": 573440,
+        "mean_delta_e": 1.8974,
+        "p95_delta_e": 3.417,
+        "p99_delta_e": 3.7968,
+        "max_delta_e": 5.266,
+        "psnr": 32.7153,
+        "ssim": 0.983016
+      }
+    },
+    {
+      "id": "iso-noise",
+      "image": "iso-noise.png",
+      "params": "iso-noise.json",
+      "description": "clean + ISO400/1600/6400 flats: denoise strength",
+      "sha256": "05f58081bdd3f30c9a9d3bd605d8843e88f4d5ae656cb8ab7a71dfe6d86426ef",
+      "reference": "iso-noise.png",
+      "width": 1024,
+      "height": 256,
+      "metrics": {
+        "pixels_compared": 262144,
+        "mean_delta_e": 3.8665,
+        "p95_delta_e": 11.0939,
+        "p99_delta_e": 15.1761,
+        "max_delta_e": 25.5222,
+        "psnr": 33.0386,
+        "ssim": 0.818174
+      }
+    }
+  ]
+}

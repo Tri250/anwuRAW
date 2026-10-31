@@ -1205,6 +1205,16 @@
       "toggleFit": "Alternar 1:1 / Ajustar",
       "vc": "CV"
     },
+    "deleteSelected": {
+      "confirmAll": "Excluir todas",
+      "confirmSelectedOnly": "Excluir apenas a seleção",
+      "messageMultiple_many": "Tem certeza de que deseja excluir permanentemente estas {{count}} imagens? Esta ação não pode ser desfeita. Clique com o botão direito para mais opções (ex.: excluir arquivos associados).",
+      "messageMultiple_one": "Tem certeza de que deseja excluir permanentemente esta imagem? Esta ação não pode ser desfeita. Clique com o botão direito para mais opções (ex.: excluir arquivos associados).",
+      "messageMultiple_other": "Tem certeza de que deseja excluir permanentemente estas {{count}} imagens? Esta ação não pode ser desfeita. Clique com o botão direito para mais opções (ex.: excluir arquivos associados).",
+      "messageSingle": "Tem certeza de que deseja excluir permanentemente esta imagem? Esta ação não pode ser desfeita. Clique com o botão direito para mais opções (ex.: excluir arquivos associados).",
+      "messageWithVirtualCopies": "Tem certeza de que deseja excluir permanentemente esta imagem e todas as suas cópias virtuais? Esta ação não pode ser desfeita.",
+      "title": "Confirmar exclusão"
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} imagens não correspondem mais ao filtro",
       "hiddenMultiple_many": "{{count}} imagens não correspondem mais ao filtro",

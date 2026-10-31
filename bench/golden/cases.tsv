@@ -1,0 +1,9 @@
+# Golden render regression cases: <image> <params> <description>
+# Consumed by run-golden.sh; one headless export per row.
+colorchecker.png	colorchecker.json	24-patch chart: tone + color accuracy (basic tonemapper)
+colorchecker.png	colorchecker-agx.json	24-patch chart: AgX tonemapper path
+gray-ramp.png	gray-ramp.json	14-step ramp + 64-step ramp + smooth gradient: tone curve + banding
+edge-contrast.png	edge-contrast.json	step/diagonal edges, square waves, frequency sweep: sharpening
+sky-backlit.png	sky-backlit.json	sun disk + sky gradient + dark ridge: highlight compression, dehaze, glow
+portrait.png	portrait.json	smooth skin gradients + features: denoise, clarity, vignette, grain
+iso-noise.png	iso-noise.json	clean + ISO400/1600/6400 flats: denoise strength

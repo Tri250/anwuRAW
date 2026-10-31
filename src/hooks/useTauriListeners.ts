@@ -440,6 +440,15 @@ export function useTauriListeners({
           editorState.setEditor({ hasRenderedFirstFrame: true });
         }
       }),
+      listen<{ path: string; width: number; height: number }>('raw-fallback-active', (event) => {
+        if (!isEffectActive) return;
+        const selectedPath = useEditorStore.getState().selectedImage?.path;
+        if (!selectedPath) return;
+        // Ignore late events for images that are no longer selected (incl. virtual copies).
+        const baseOf = (p: string) => p.split('?vc=')[0];
+        if (baseOf(event.payload.path) !== baseOf(selectedPath)) return;
+        useEditorStore.getState().setEditor({ embeddedPreviewFallback: event.payload });
+      }),
       listen('panorama-progress', (event: any) => {
         if (isEffectActive) {
           useUIStore.getState().setUI((state) => {

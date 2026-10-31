@@ -1178,6 +1178,15 @@
       "toggleFit": "1:1 / Einpassen umschalten",
       "vc": "VK"
     },
+    "deleteSelected": {
+      "confirmAll": "Alle löschen",
+      "confirmSelectedOnly": "Nur Auswahl löschen",
+      "messageMultiple_one": "Möchten Sie dieses eine Bild wirklich endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden. Rechtsklick für weitere Optionen (z. B. Löschen verknüpfter Dateien).",
+      "messageMultiple_other": "Möchten Sie diese {{count}} Bilder wirklich endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden. Rechtsklick für weitere Optionen (z. B. Löschen verknüpfter Dateien).",
+      "messageSingle": "Möchten Sie dieses Bild wirklich endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden. Rechtsklick für weitere Optionen (z. B. Löschen verknüpfter Dateien).",
+      "messageWithVirtualCopies": "Möchten Sie dieses Bild und alle seine virtuellen Kopien wirklich endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "title": "Löschen bestätigen"
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} Bilder entsprechen nicht mehr dem Filter",
       "hiddenMultiple_other": "{{count}} Bilder entsprechen nicht mehr dem Filter",

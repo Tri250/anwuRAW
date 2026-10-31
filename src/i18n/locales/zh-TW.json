@@ -1177,6 +1177,14 @@
       "toggleFit": "切換 1:1 / 適應",
       "vc": "VC"
     },
+    "deleteSelected": {
+      "confirmAll": "全部刪除",
+      "confirmSelectedOnly": "僅刪除所選",
+      "messageMultiple_other": "確定要永久刪除這 {{count}} 張影像嗎？此操作無法復原。右鍵點擊可查看更多選項（例如刪除關聯檔案）。",
+      "messageSingle": "確定要永久刪除此影像嗎？此操作無法復原。右鍵點擊可查看更多選項（例如刪除關聯檔案）。",
+      "messageWithVirtualCopies": "確定要永久刪除此影像及其所有虛擬副本嗎？此操作無法復原。",
+      "title": "確認刪除"
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} 張影像已不再符合篩選條件",
       "hiddenMultiple_other": "{{count}} 張影像已不再符合篩選條件",

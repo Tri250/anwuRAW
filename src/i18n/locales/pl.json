@@ -1232,6 +1232,17 @@
       "toggleFit": "Przełącz 1:1 / Dopasuj",
       "vc": "KW"
     },
+    "deleteSelected": {
+      "confirmAll": "Usuń wszystkie",
+      "confirmSelectedOnly": "Usuń tylko wybrane",
+      "messageMultiple_few": "Czy na pewno trwale usunąć te {{count}} obrazy? Tej operacji nie można cofnąć. Kliknij prawym przyciskiem myszy, aby zobaczyć więcej opcji (np. usuwanie powiązanych plików).",
+      "messageMultiple_many": "Czy na pewno trwale usunąć tych {{count}} obrazów? Tej operacji nie można cofnąć. Kliknij prawym przyciskiem myszy, aby zobaczyć więcej opcji (np. usuwanie powiązanych plików).",
+      "messageMultiple_one": "Czy na pewno trwale usunąć ten {{count}} obraz? Tej operacji nie można cofnąć. Kliknij prawym przyciskiem myszy, aby zobaczyć więcej opcji (np. usuwanie powiązanych plików).",
+      "messageMultiple_other": "Czy na pewno trwale usunąć tych {{count}} obrazów? Tej operacji nie można cofnąć. Kliknij prawym przyciskiem myszy, aby zobaczyć więcej opcji (np. usuwanie powiązanych plików).",
+      "messageSingle": "Czy na pewno trwale usunąć ten obraz? Tej operacji nie można cofnąć. Kliknij prawym przyciskiem myszy, aby zobaczyć więcej opcji (np. usuwanie powiązanych plików).",
+      "messageWithVirtualCopies": "Czy na pewno trwale usunąć ten obraz i wszystkie jego kopie wirtualne? Tej operacji nie można cofnąć.",
+      "title": "Potwierdź usunięcie"
+    },
     "filterExit": {
       "hiddenMultiple_one": "Obrazy ({{count}}) nie pasują już do filtra",
       "hiddenMultiple_few": "Obrazy ({{count}}) nie pasują już do filtra",

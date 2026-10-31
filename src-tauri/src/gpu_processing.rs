@@ -333,6 +333,16 @@ pub fn get_or_init_gpu_context(
     {
         required_features |= wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES;
     }
+    // Stage-timing probe (RAPIDRAW_STAGE_TIMING=1, v2.0 plan M0-4): timestamp
+    // queries are measurement-only and free when unused, so request them
+    // whenever the adapter can provide them.
+    if adapter
+        .features()
+        .contains(wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::TIMESTAMP_QUERY_INSIDE_ENCODERS)
+    {
+        required_features |=
+            wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::TIMESTAMP_QUERY_INSIDE_ENCODERS;
+    }
 
     let limits = adapter.limits();
 
@@ -718,6 +728,178 @@ struct FlareParams {
     _pad: f32,
 }
 
+/// Per-stage GPU timings of one render, in nanoseconds (v2.0 plan M0-4).
+/// Zero when the stage did not run (cached blur textures, no flare, ...).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
+pub struct StageTimings {
+    /// Guided-filter coefficient passes (per new source image).
+    pub guided_coeffs_ns: u64,
+    /// Flare threshold + ghost passes (when flare is active).
+    pub flare_ns: u64,
+    /// Blur passes feeding USM/clarity/structure: [sharpness, tonal, clarity, structure].
+    pub blur_ns: [u64; 4],
+    /// Main compute shader, summed over tiles.
+    pub main_ns: u64,
+    /// Main-pass tile count recorded (blur cache hits show up as fewer stages).
+    pub main_tiles: u32,
+}
+
+#[derive(Clone, Copy)]
+enum Stage {
+    Guided,
+    Flare,
+    Blur(usize),
+    Main,
+}
+
+/// wgpu timestamp-query probe wrapped around each pipeline stage. Enabled per
+/// device with `RAPIDRAW_STAGE_TIMING=1` when the adapter exposes
+/// `TIMESTAMP_QUERY` + `TIMESTAMP_QUERY_INSIDE_ENCODERS` (lavapipe and
+/// discrete GPUs do; llvmpipe-only and some mobile GPUs don't). Timestamps are
+/// written on command encoders between passes — the native feature contract —
+/// so production dispatches stay untouched and the probe costs one mutex lock
+/// per stage when disabled (`None`).
+struct StageProbe {
+    query_set: wgpu::QuerySet,
+    resolve_buffer: wgpu::Buffer,
+    read_buffer: wgpu::Buffer,
+    slots: u32,
+    cursor: u32,
+    records: Vec<(Stage, u32)>,
+}
+
+impl StageProbe {
+    fn new(device: &wgpu::Device, slots: u32) -> Self {
+        let query_set = device.create_query_set(&wgpu::QuerySetDescriptor {
+            label: Some("Stage Timing Query Set"),
+            ty: wgpu::QueryType::Timestamp,
+            count: slots,
+        });
+        let bytes = slots as u64 * wgpu::QUERY_SIZE as u64;
+        let resolve_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Stage Timing Resolve Buffer"),
+            size: bytes,
+            usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        let read_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Stage Timing Read Buffer"),
+            size: bytes,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        Self {
+            query_set,
+            resolve_buffer,
+            read_buffer,
+            slots,
+            cursor: 0,
+            records: Vec::new(),
+        }
+    }
+
+    fn reset(&mut self) {
+        self.cursor = 0;
+        self.records.clear();
+    }
+
+    /// Begin a stage on a command encoder (only valid between passes). Returns
+    /// the begin slot for `end`, or `None` when the query set is full (extra
+    /// main tiles are dropped rather than wrapped).
+    fn begin(&mut self, encoder: &mut wgpu::CommandEncoder, stage: Stage) -> Option<u32> {
+        if self.cursor + 2 > self.slots {
+            return None;
+        }
+        encoder.write_timestamp(&self.query_set, self.cursor);
+        self.records.push((stage, self.cursor));
+        self.cursor += 2;
+        Some(self.cursor - 2)
+    }
+
+    fn end(&mut self, encoder: &mut wgpu::CommandEncoder, slot: u32) {
+        encoder.write_timestamp(&self.query_set, slot + 1);
+    }
+
+    /// Resolve the recorded slots, read them back and sum per-stage deltas.
+    fn finish(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) -> StageTimings {
+        let mut out = StageTimings::default();
+        if self.records.is_empty() {
+            return out;
+        }
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("Stage Timing Resolve Encoder"),
+        });
+        encoder.resolve_query_set(&self.query_set, 0..self.cursor, &self.resolve_buffer, 0);
+        encoder.copy_buffer_to_buffer(
+            &self.resolve_buffer,
+            0,
+            &self.read_buffer,
+            0,
+            self.cursor as u64 * wgpu::QUERY_SIZE as u64,
+        );
+        queue.submit(Some(encoder.finish()));
+
+        let period = queue.get_timestamp_period() as f64;
+        let slice = self.read_buffer.slice(..);
+        let (tx, rx) = std::sync::mpsc::channel();
+        slice.map_async(wgpu::MapMode::Read, move |result| {
+            let _ = tx.send(result);
+        });
+        let mapped = device
+            .poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(std::time::Duration::from_secs(5)),
+            })
+            .ok()
+            .and_then(|_| rx.recv().ok())
+            .and_then(|result| result.ok());
+        if mapped.is_none() {
+            self.read_buffer.unmap();
+            return out;
+        }
+        let stamps: Vec<u64> = slice
+            .get_mapped_range()
+            .chunks_exact(8)
+            .map(|c| u64::from_le_bytes(c.try_into().unwrap()))
+            .collect();
+        drop(slice);
+        self.read_buffer.unmap();
+
+        for (stage, begin) in &self.records {
+            let (begin, end) = (stamps[*begin as usize], stamps[*begin as usize + 1]);
+            let delta = (end.wrapping_sub(begin) as f64 * period).round() as u64;
+            match stage {
+                Stage::Guided => out.guided_coeffs_ns += delta,
+                Stage::Flare => out.flare_ns += delta,
+                Stage::Blur(slot) => out.blur_ns[*slot] += delta,
+                Stage::Main => {
+                    out.main_ns += delta;
+                    out.main_tiles += 1;
+                }
+            }
+        }
+        out
+    }
+}
+
+/// Probe slot budget for a processor sized `max_width × max_height`:
+/// guided(2) + flare(2) + blur×4(8) + main(2 per tile).
+fn stage_probe_for(device: &wgpu::Device, max_width: u32, max_height: u32) -> Option<StageProbe> {
+    if std::env::var("RAPIDRAW_STAGE_TIMING").ok().as_deref() != Some("1") {
+        return None;
+    }
+    if !device.features().contains(
+        wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::TIMESTAMP_QUERY_INSIDE_ENCODERS,
+    ) {
+        log::warn!(
+            "RAPIDRAW_STAGE_TIMING=1 ignored: device lacks TIMESTAMP_QUERY(+INSIDE_ENCODERS)"
+        );
+        return None;
+    }
+    let tiles = max_width.div_ceil(TILE_SIZE) * max_height.div_ceil(TILE_SIZE);
+    Some(StageProbe::new(device, 12 + 2 * tiles))
+}
+
 pub struct GpuProcessor {
     context: GpuContext,
     blur_bgl: wgpu::BindGroupLayout,
@@ -780,11 +962,20 @@ pub struct GpuProcessor {
     full_image_size: wgpu::Extent3d,
     display_textures: std::sync::OnceLock<DisplayTextures>,
     readback_pool: ReadbackPool,
+    /// Stage-timing probe (`RAPIDRAW_STAGE_TIMING=1`, M0-4). `None` in normal
+    /// operation: every stamp site is a single `Option` check.
+    stage_probe: std::sync::Mutex<Option<StageProbe>>,
+    last_stage_timings: std::sync::Mutex<Option<StageTimings>>,
 }
 
 type ReadbackPool = Arc<std::sync::Mutex<Vec<wgpu::Buffer>>>;
 
 const READBACK_POOL_SIZE: usize = 3;
+
+/// Main-pass tiling of the render loop (overlap keeps >128px-receptive-field
+/// algorithms seamless at tile borders).
+const TILE_SIZE: u32 = 2048;
+const TILE_OVERLAP: u32 = 128;
 
 fn recycle_readback_buffer(pool: &ReadbackPool, buffer: wgpu::Buffer) {
     let mut pool = pool.lock().unwrap_or_else(|e| e.into_inner());
@@ -1644,6 +1835,8 @@ impl GpuProcessor {
         });
         let tile_output_texture_view = tile_output_texture.create_view(&Default::default());
 
+        let stage_probe = stage_probe_for(device, max_width, max_height);
+
         Ok(Self {
             context,
             blur_bgl,
@@ -1702,7 +1895,69 @@ impl GpuProcessor {
             full_image_size,
             display_textures: std::sync::OnceLock::new(),
             readback_pool: Arc::new(std::sync::Mutex::new(Vec::new())),
+            stage_probe: std::sync::Mutex::new(stage_probe),
+            last_stage_timings: std::sync::Mutex::new(None),
         })
+    }
+
+    // ------------------------------------------------------- stage timing --
+
+    fn stage_begin(&self, encoder: &mut wgpu::CommandEncoder, stage: Stage) -> Option<u32> {
+        self.stage_probe
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_mut()?
+            .begin(encoder, stage)
+    }
+
+    fn stage_end(&self, encoder: &mut wgpu::CommandEncoder, slot: Option<u32>) {
+        let Some(slot) = slot else { return };
+        if let Some(probe) = self
+            .stage_probe
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_mut()
+        {
+            probe.end(encoder, slot);
+        }
+    }
+
+    fn stage_reset(&self) {
+        if let Some(probe) = self
+            .stage_probe
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_mut()
+        {
+            probe.reset();
+        }
+    }
+
+    /// Resolve the probe for the render that just finished and publish the
+    /// per-stage timings (no-op when the probe is disabled).
+    fn stage_finish(&self) {
+        let mut probe_lock = self.stage_probe.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(probe) = probe_lock.as_mut() else {
+            return;
+        };
+        if probe.records.is_empty() {
+            return;
+        }
+        let timings = probe.finish(&self.context.device, &self.context.queue);
+        *self
+            .last_stage_timings
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = Some(timings);
+    }
+
+    /// Per-stage GPU timings of the most recent render through this processor.
+    /// `None` unless `RAPIDRAW_STAGE_TIMING=1` was set for a device that
+    /// supports timestamp queries (v2.0 plan M0-4).
+    pub fn last_stage_timings(&self) -> Option<StageTimings> {
+        *self
+            .last_stage_timings
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
     }
 
     pub fn build_guided_coeffs(
@@ -1784,6 +2039,8 @@ impl GpuProcessor {
         let params_hz_gf = make_params(HZ_GF_RADIUS, HZ_GF_EPS, HZ_DIV as f32);
 
         let mut encoder = device.create_command_encoder(&Default::default());
+
+        let guided_slot = self.stage_begin(&mut encoder, Stage::Guided);
 
         let mut pass = |pipeline: &wgpu::ComputePipeline,
                         src_a: &wgpu::TextureView,
@@ -2008,6 +2265,7 @@ impl GpuProcessor {
             half,
         );
 
+        self.stage_end(&mut encoder, guided_slot);
         queue.submit(Some(encoder.finish()));
         GuidedTextures {
             coeffs: ab,
@@ -2407,6 +2665,8 @@ impl GpuProcessor {
         if effective_flare_amount > 0.0 {
             let mut encoder = device.create_command_encoder(&Default::default());
 
+            let flare_slot = self.stage_begin(&mut encoder, Stage::Flare);
+
             let aspect_ratio = if height > 0 {
                 width as f32 / height as f32
             } else {
@@ -2500,11 +2760,9 @@ impl GpuProcessor {
                 cpass.dispatch_workgroups(FLARE_MAP_SIZE / 16, FLARE_MAP_SIZE / 16, 1);
             }
 
+            self.stage_end(&mut encoder, flare_slot);
             queue.submit(Some(encoder.finish()));
         }
-
-        const TILE_SIZE: u32 = 2048;
-        const TILE_OVERLAP: u32 = 128;
 
         let output_len = if output_to_display {
             0
@@ -2573,6 +2831,8 @@ impl GpuProcessor {
                     queue.write_buffer(&self.blur_params_buffer, 0, bytemuck::bytes_of(&params));
 
                     let mut blur_encoder = device.create_command_encoder(&Default::default());
+
+                    let blur_slot = self.stage_begin(&mut blur_encoder, Stage::Blur(slot));
 
                     let h_blur_bg = device.create_bind_group(&wgpu::BindGroupDescriptor {
                         label: Some("H-Blur BG"),
@@ -2645,6 +2905,7 @@ impl GpuProcessor {
                         }
                     }
 
+                    self.stage_end(&mut blur_encoder, blur_slot);
                     queue.submit(Some(blur_encoder.finish()));
                     self.blur_sources.lock().unwrap_or_else(|e| e.into_inner())[slot] = source;
                     true
@@ -2677,6 +2938,8 @@ impl GpuProcessor {
                     need_structure && run_blur(3, 40.0, &self.structure_blur_view);
 
                 let mut main_encoder = device.create_command_encoder(&Default::default());
+
+                let main_slot = self.stage_begin(&mut main_encoder, Stage::Main);
 
                 let mut tile_adjustments = adjustments;
                 tile_adjustments.tile_offset_x = input_x_start;
@@ -2827,6 +3090,7 @@ impl GpuProcessor {
                     );
                 }
 
+                self.stage_end(&mut main_encoder, main_slot);
                 queue.submit(Some(main_encoder.finish()));
 
                 if !output_to_display {
@@ -2884,13 +3148,15 @@ impl GpuProcessor {
             }
         }
 
+        self.stage_finish();
+
         Ok((final_pixels, out_width, out_height, bounds.x, bounds.y))
     }
 }
 
 pub fn process_and_get_dynamic_image(
     context: &GpuContext,
-    state: &tauri::State<AppState>,
+    state: &AppState,
     base_image: &DynamicImage,
     transform_hash: u64,
     request: RenderRequest,
@@ -2911,7 +3177,7 @@ pub fn process_and_get_dynamic_image(
 
 pub fn process_and_get_dynamic_image_with_precision(
     context: &GpuContext,
-    state: &tauri::State<AppState>,
+    state: &AppState,
     base_image: &DynamicImage,
     transform_hash: u64,
     request: RenderRequest,
@@ -2934,7 +3200,7 @@ pub fn process_and_get_dynamic_image_with_precision(
 #[allow(clippy::too_many_arguments)]
 pub fn process_and_get_dynamic_image_with_analytics(
     context: &GpuContext,
-    state: &tauri::State<AppState>,
+    state: &AppState,
     base_image: &DynamicImage,
     transform_hash: u64,
     request: RenderRequest,
@@ -2958,7 +3224,7 @@ pub fn process_and_get_dynamic_image_with_analytics(
 #[allow(clippy::too_many_arguments)]
 fn process_and_get_dynamic_image_inner(
     context: &GpuContext,
-    state: &tauri::State<AppState>,
+    state: &AppState,
     base_image: &DynamicImage,
     transform_hash: u64,
     request: RenderRequest,
@@ -3051,6 +3317,10 @@ fn process_and_get_dynamic_image_inner(
 
     let processor_state = processor_lock.as_ref().unwrap();
     let processor = &processor_state.processor;
+
+    // Stage-timing probe window starts here so the guided-filter passes (which
+    // only run on a cache miss, before `run`) are recorded with this render.
+    processor.stage_reset();
 
     let cache = cache_lock.get_or_insert_with(|| GpuImageCache {
         entries: Vec::new(),

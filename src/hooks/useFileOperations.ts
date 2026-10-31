@@ -129,20 +129,20 @@ export function useFileOperations(
       !pathsToDelete[0].includes('?vc=') &&
       imageList.some((image) => image.path.startsWith(`${pathsToDelete[0]}?vc=`));
 
-    let modalTitle = 'Confirm Delete';
+    let modalTitle = t('library.deleteSelected.title');
     let modalMessage = '';
-    let confirmText = 'Delete';
+    let confirmText = '';
 
     if (selectionHasVirtualCopies) {
-      modalTitle = 'Delete Image and All Virtual Copies?';
-      modalMessage = `Are you sure you want to permanently delete this image and all of its virtual copies? This action cannot be undone.`;
-      confirmText = 'Delete All';
+      modalTitle = t('contextMenus.thumbnail.confirmDeleteVc');
+      modalMessage = t('library.deleteSelected.messageWithVirtualCopies');
+      confirmText = t('library.deleteSelected.confirmAll');
     } else if (isSingle) {
-      modalMessage = `Are you sure you want to permanently delete this image? This action cannot be undone. Right-click for more options (e.g., deleting associated files).`;
-      confirmText = 'Delete Selected Only';
+      modalMessage = t('library.deleteSelected.messageSingle');
+      confirmText = t('library.deleteSelected.confirmSelectedOnly');
     } else {
-      modalMessage = `Are you sure you want to permanently delete these ${pathsToDelete.length} images? This action cannot be undone. Right-click for more options (e.g., deleting associated files).`;
-      confirmText = 'Delete Selected Only';
+      modalMessage = t('library.deleteSelected.messageMultiple', { count: pathsToDelete.length });
+      confirmText = t('library.deleteSelected.confirmSelectedOnly');
     }
 
     setUI({
@@ -155,7 +155,7 @@ export function useFileOperations(
         title: modalTitle,
       },
     });
-  }, [executeDelete]);
+  }, [executeDelete, t]);
 
   const handleDeleteRejected = useCallback(() => {
     const { imageList } = useLibraryStore.getState();

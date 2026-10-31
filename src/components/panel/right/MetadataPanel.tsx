@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Check, ChevronDown, ChevronRight, Plus, Star, Tag, X, User } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ChevronRight, Plus, Star, Tag, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -241,6 +241,7 @@ export default function MetadataPanel() {
   const [tagInputValue, setTagInputValue] = useState('');
   const [isTagInputFocused, setIsTagInputFocused] = useState(false);
   const selectedImage = useEditorStore((s) => s.selectedImage);
+  const embeddedPreviewFallback = useEditorStore((s) => s.embeddedPreviewFallback);
   const multiSelectedPaths = useLibraryStore((s) => s.multiSelectedPaths);
   const imageRatings = useLibraryStore((s) => s.imageRatings);
   const appSettings = useSettingsStore((s) => s.appSettings);
@@ -457,6 +458,20 @@ export default function MetadataPanel() {
                 </div>
               </div>
             </div>
+
+            {embeddedPreviewFallback && (
+              <div className="flex items-start gap-2 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2.5">
+                <AlertTriangle size={14} className="text-yellow-500 shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-0.5">
+                  <Text variant={TextVariants.small} color={TextColors.primary} weight={TextWeights.semibold}>
+                    {t('editor.embeddedPreview.badge')}
+                  </Text>
+                  <Text variant={TextVariants.small} color={TextColors.secondary}>
+                    {t('editor.embeddedPreview.details')}
+                  </Text>
+                </div>
+              </div>
+            )}
 
             <div>
               <Text variant={TextVariants.heading} className="mb-3">

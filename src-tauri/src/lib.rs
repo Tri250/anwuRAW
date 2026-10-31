@@ -48,6 +48,7 @@ mod file_management;
 mod focus_stacking;
 mod fog;
 mod formats;
+pub mod golden_fixtures;
 mod gpu_processing;
 mod guided_perspective;
 mod hdr_deghosting;
@@ -63,6 +64,7 @@ mod lens_correction;
 mod lut_processing;
 mod mask_generation;
 mod memory_budget;
+mod metrics;
 mod multi_exposure;
 mod negative_conversion;
 mod panorama_stitching;
@@ -75,6 +77,9 @@ mod tagging;
 mod tagging_utils;
 mod white_balance;
 mod window_customizer;
+
+#[cfg(test)]
+mod objective_tests;
 
 use std::collections::{HashMap, hash_map::DefaultHasher};
 use std::fs;
@@ -132,6 +137,7 @@ pub use android_integration::*;
 pub use app_settings::*;
 pub use app_state::*;
 pub use launch_request::*;
+pub use metrics::*;
 use tagging_utils::{candidates, hierarchy};
 
 #[cfg(target_os = "macos")]
@@ -2167,6 +2173,8 @@ pub fn run() {
 
             let app_handle = app.handle().clone();
 
+            crate::image_loader::init_app_handle(app_handle.clone());
+
             if !is_headless {
                 crate::immich::start(&app_handle);
             }
@@ -2500,53 +2508,7 @@ pub fn run() {
 
             Ok(())
         })
-        .manage(AppState {
-            window_setup_complete: AtomicBool::new(false),
-            gpu_crash_flag_path: Mutex::new(None),
-            original_image: Mutex::new(None),
-            cached_preview: Mutex::new(None),
-            gpu_context: Mutex::new(None),
-            gpu_image_cache: Mutex::new(None),
-            gpu_processor: Mutex::new(None),
-            ai_state: Mutex::new(None),
-            ai_init_lock: TokioMutex::new(()),
-            active_ai_tasks: Mutex::new(HashMap::new()),
-            export_task_token: Arc::new(Mutex::new(None)),
-            hdr_result: Arc::new(Mutex::new(None)),
-            panorama_result: Arc::new(Mutex::new(None)),
-            focus_stack_result: Arc::new(Mutex::new(None)),
-            indexing_task_handle: Mutex::new(None),
-            lut_cache: Mutex::new(HashMap::new()),
-            initial_file_path: Mutex::new(None),
-            pending_edit_session: Mutex::new(None),
-            thumbnail_cancellation_token: Arc::new(AtomicBool::new(false)),
-            thumbnail_progress: Mutex::new(ThumbnailProgressTracker { total: 0, completed: 0 }),
-            preview_worker_tx: Mutex::new(None),
-            analytics_worker_tx: Mutex::new(None),
-            analytics_channel: Mutex::new(None),
-            mask_cache: Mutex::new(HashMap::new()),
-            patch_cache: Mutex::new(HashMap::new()),
-            geometry_cache: Mutex::new(HashMap::new()),
-            thumbnail_geometry_cache: Mutex::new(HashMap::new()),
-            lens_db: Mutex::new(None),
-            load_image_generation: Arc::new(AtomicUsize::new(0)),
-            full_warped_cache: Mutex::new(None),
-            full_warped_build_lock: Mutex::new(()),
-            wgpu_presented_generation: AtomicUsize::new(usize::MAX),
-            patched_cache: Mutex::new(None),
-            warped_cache: Mutex::new(None),
-            working_cache: Mutex::new(None),
-            effects_cache: Mutex::new(None),
-            full_transformed_cache: Mutex::new(None),
-            decoded_image_cache: Mutex::new(DecodedImageCache::new(5)),
-            decode_flights: Default::default(),
-            thumbnail_manager: ThumbnailManager::new(),
-            memory_budget: crate::memory_budget::MemoryBudget::from_total_ram(0.6),
-            metadata_manager: MetadataManager::new(),
-            disks_cache: Mutex::new(None),
-            disks_cache_refreshing: AtomicBool::new(false),
-            camera_session: Mutex::new(camera_tethering::CameraSession::new()),
-        })
+        .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
             apply_adjustments,
             subscribe_analytics,

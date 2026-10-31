@@ -1205,6 +1205,16 @@
       "toggleFit": "Alternar 1:1 / Ajustar",
       "vc": "CV"
     },
+    "deleteSelected": {
+      "confirmAll": "Elimina totes",
+      "confirmSelectedOnly": "Elimina només la selecció",
+      "messageMultiple_many": "Segur que voleu eliminar permanentment aquestes {{count}} imatges? Aquesta acció no es pot desfer. Feu clic dret per a més opcions (p. ex., eliminar fitxers associats).",
+      "messageMultiple_one": "Segur que voleu eliminar permanentment aquesta imatge? Aquesta acció no es pot desfer. Feu clic dret per a més opcions (p. ex., eliminar fitxers associats).",
+      "messageMultiple_other": "Segur que voleu eliminar permanentment aquestes {{count}} imatges? Aquesta acció no es pot desfer. Feu clic dret per a més opcions (p. ex., eliminar fitxers associats).",
+      "messageSingle": "Segur que voleu eliminar permanentment aquesta imatge? Aquesta acció no es pot desfer. Feu clic dret per a més opcions (p. ex., eliminar fitxers associats).",
+      "messageWithVirtualCopies": "Segur que voleu eliminar permanentment aquesta imatge i totes les seves còpies virtuals? Aquesta acció no es pot desfer.",
+      "title": "Confirma l'eliminació"
+    },
     "filterExit": {
       "hiddenMultiple_one": "{{count}} imatges ja no coincideixen amb el filtre",
       "hiddenMultiple_many": "{{count}} imatges ja no coincideixen amb el filtre",

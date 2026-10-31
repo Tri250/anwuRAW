@@ -1,0 +1,10 @@
+{
+  "exposure": 0.15,
+  "shadows": 20,
+  "clarity": 15,
+  "lumaNoiseReduction": 35,
+  "colorNoiseReduction": 40,
+  "grainAmount": 10,
+  "vignetteAmount": -15,
+  "temperature": 5
+}

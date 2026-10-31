@@ -1177,6 +1177,14 @@
       "toggleFit": "1:1 / 맞춤 전환",
       "vc": "VC"
     },
+    "deleteSelected": {
+      "confirmAll": "전체 삭제",
+      "confirmSelectedOnly": "선택한 항목만 삭제",
+      "messageMultiple_other": "이 이미지 {{count}}개를 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다. 더 많은 옵션(예: 관련 파일 삭제)은 마우스 오른쪽 버튼으로 확인하세요.",
+      "messageSingle": "이 이미지를 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다. 더 많은 옵션(예: 관련 파일 삭제)은 마우스 오른쪽 버튼으로 확인하세요.",
+      "messageWithVirtualCopies": "이 이미지와 모든 가상 복사본을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+      "title": "삭제 확인"
+    },
     "filterExit": {
       "hiddenMultiple_one": "이미지 {{count}}개가 더 이상 필터와 일치하지 않습니다",
       "hiddenMultiple_other": "이미지 {{count}}개가 더 이상 필터와 일치하지 않습니다",

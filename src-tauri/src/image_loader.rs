@@ -32,7 +32,26 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 use std::time::Instant;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+
+static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
+
+/// Stores the app handle so deep decode paths can emit events without threading
+/// the handle through every call site. Called once from app setup.
+pub fn init_app_handle(handle: tauri::AppHandle) {
+    let _ = APP_HANDLE.set(handle);
+}
+
+/// Emitted when a RAW file could not be fully decoded and the embedded preview is
+/// used instead — editing capability is limited in this mode.
+pub fn emit_raw_fallback_active(path: &str, width: u32, height: u32) {
+    if let Some(handle) = APP_HANDLE.get() {
+        let _ = handle.emit(
+            "raw-fallback-active",
+            serde_json::json!({ "path": path, "width": width, "height": height }),
+        );
+    }
+}
 
 #[derive(serde::Serialize)]
 pub struct LoadImageResult {
@@ -194,6 +213,7 @@ pub fn load_base_image_from_bytes(
                         preview.height()
                     );
 
+                    emit_raw_fallback_active(path_for_ext_check, preview.width(), preview.height());
                     return Ok(linearize_embedded_preview(preview));
                 }
                 Err(classified)
@@ -208,6 +228,7 @@ pub fn load_base_image_from_bytes(
                         preview.height()
                     );
 
+                    emit_raw_fallback_active(path_for_ext_check, preview.width(), preview.height());
                     return Ok(linearize_embedded_preview(preview));
                 }
                 Err(anyhow!(
