@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       platform:
-        description: 'Runner label (e.g. ubuntu-latest, windows-latest, macos-14)'
+        description: 'Runner label (e.g. ubuntu-latest, windows-latest, macos-15)'
         required: true
         type: string
       target:

@@ -79,12 +79,14 @@ required_patterns=(
   '^01_RapidRAW_v[0-9.]+_windows_x64\.exe\.sig$'
   '^01_RapidRAW_v[0-9.]+_windows-11-arm_arm64\.exe$'
   '^01_RapidRAW_v[0-9.]+_windows-11-arm_arm64\.exe\.sig$'
-  # macOS arm64 + x64, standard and tethering
-  '^02_RapidRAW_v[0-9.]+_macos-14_aarch64\.dmg$'
+  # macOS arm64 + x64, standard and tethering. arm64 assets keep matching the
+  # historical macos-14 label (releases built before the image retired) and the
+  # macos-15 runner that replaced it.
+  '^02_RapidRAW_v[0-9.]+_macos-(14|15)_aarch64\.dmg$'
   '^02_RapidRAW_v[0-9.]+_macos-15-intel_x64\.dmg$'
-  '^02_tethering_RapidRAW_v[0-9.]+_macos-14_aarch64\.dmg$'
+  '^02_tethering_RapidRAW_v[0-9.]+_macos-(14|15)_aarch64\.dmg$'
   '^02_tethering_RapidRAW_v[0-9.]+_macos-15-intel_x64\.dmg$'
-  '^02_RapidRAW_v[0-9.]+_macos-14_aarch64\.app\.tar\.gz\.sig$'
+  '^02_RapidRAW_v[0-9.]+_macos-(14|15)_aarch64\.app\.tar\.gz\.sig$'
   '^02_RapidRAW_v[0-9.]+_macos-15-intel_x64\.app\.tar\.gz\.sig$'
   # Linux: glibc 2.35 (ubuntu-22.04) and 2.39 (ubuntu-24.04), amd64 + arm64
   '^03_RapidRAW_v[0-9.]+_ubuntu-22.04_amd64\.AppImage$'

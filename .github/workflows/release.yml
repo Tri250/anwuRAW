@@ -68,13 +68,16 @@ jobs:
             args: '--bundles nsis'
             target: 'aarch64-pc-windows-msvc'
             asset-prefix: '01'
-          - platform: 'macos-14'
+          # macos-15 is the arm64 runner since the macOS 14 image retired
+          # (brownout cancellations from 2026-11-02, see
+          # https://github.com/actions/runner-images/issues/13518).
+          - platform: 'macos-15'
             target: aarch64-apple-darwin
             asset-prefix: '02'
           - platform: 'macos-15-intel'
             target: x86_64-apple-darwin
             asset-prefix: '02'
-          - platform: 'macos-14'
+          - platform: 'macos-15'
             target: aarch64-apple-darwin
             args: '--features tethering'
             asset-prefix: '02_tethering'
