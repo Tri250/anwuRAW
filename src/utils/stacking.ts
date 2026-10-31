@@ -65,7 +65,9 @@ export function buildStackBadges(images: ImageFile[], context: StackingContext):
     if (members.length < 2) continue;
     badges.set(stackBadgeKey(stack.id), {
       count: members.length,
-      label: Array.from(new Set(members.map(variantLabel))).sort().join('+'),
+      label: Array.from(new Set(members.map(variantLabel)))
+        .sort()
+        .join('+'),
       stackId: stack.id,
       isExpanded: context.expandedStackIds.has(stack.id),
       topPath: members[0],
@@ -83,11 +85,7 @@ export function findStackForPath(stacks: PhotoStack[], path: string): PhotoStack
  * Expands selection/operation paths: operating on any member of a collapsed
  * stack applies to the whole stack, mirroring RAW+JPG group behaviour.
  */
-export function expandStackedPaths(
-  images: ImageFile[],
-  paths: string[],
-  context: StackingContext,
-): string[] {
+export function expandStackedPaths(images: ImageFile[], paths: string[], context: StackingContext): string[] {
   if (context.stacks.length === 0 || paths.length === 0) return Array.from(new Set(paths));
 
   const present = new Set(images.map((img) => img.path));

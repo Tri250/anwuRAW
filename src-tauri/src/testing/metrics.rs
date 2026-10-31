@@ -86,7 +86,9 @@ pub fn psnr_u8(a: &[u8], b: &[u8]) -> f64 {
 /// Rec.709 luma plane of an interleaved RGB buffer.
 pub fn luma_plane(rgb: &[f32], width: usize, height: usize) -> Vec<f32> {
     assert_eq!(rgb.len(), width * height * 3, "luma_plane: size mismatch");
-    rgb.chunks_exact(3)
+    rgb.as_chunks::<3>()
+        .0
+        .iter()
         .map(|px| LUMA_R * px[0] + LUMA_G * px[1] + LUMA_B * px[2])
         .collect()
 }

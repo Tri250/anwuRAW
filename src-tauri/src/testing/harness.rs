@@ -618,7 +618,7 @@ impl TetrahedralLut {
         let c000 = self.at(c0r, c0g, c0b);
         let c111 = self.at(c1r, c1g, c1b);
 
-        let res = if f[0] > f[1] {
+        if f[0] > f[1] {
             if f[1] > f[2] {
                 let c100 = self.at(c1r, c0g, c0b);
                 let c110 = self.at(c1r, c1g, c0b);
@@ -722,8 +722,7 @@ impl TetrahedralLut {
                     + c110[2] * (f[0] - f[2])
                     + c111[2] * f[2],
             ]
-        };
-        res
+        }
     }
 }
 
@@ -770,7 +769,7 @@ impl ReferenceParams {
 /// subset: exposure → WB → saturation → contrast → curve → USM → grain).
 pub fn render_reference(img: &FloatImage, params: &ReferenceParams) -> FloatImage {
     let mut out = Vec::with_capacity(img.data.len());
-    for px in img.data.chunks_exact(3) {
+    for px in img.data.as_chunks::<3>().0 {
         let mut rgb = [
             exposure(px[0], params.exposure_gain),
             exposure(px[1], params.exposure_gain),

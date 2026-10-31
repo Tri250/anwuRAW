@@ -326,8 +326,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
             data-tooltip={t('survey.actions.pick')}
             onClick={() => activePath && onSetFlag(ImageFlag.Pick, [activePath])}
           >
-            <Flag size={15} />
-            P
+            <Flag size={15} />P
           </button>
           <button
             className={clsx(
@@ -339,8 +338,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
             data-tooltip={t('survey.actions.reject')}
             onClick={() => activePath && onSetFlag(ImageFlag.Reject, [activePath])}
           >
-            <Ban size={15} />
-            X
+            <Ban size={15} />X
           </button>
           <button
             className="px-3 py-2 rounded-md text-sm text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
@@ -353,7 +351,12 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
-                className={clsx('p-1 transition-colors', (imageRatings[activePath ?? ''] || 0) >= n ? 'text-yellow-400' : 'text-text-secondary/50 hover:text-yellow-400')}
+                className={clsx(
+                  'p-1 transition-colors',
+                  (imageRatings[activePath ?? ''] || 0) >= n
+                    ? 'text-yellow-400'
+                    : 'text-text-secondary/50 hover:text-yellow-400',
+                )}
                 data-tooltip={t('survey.actions.rate', { rating: n })}
                 onClick={() => activePath && onRate(n, [activePath])}
               >
@@ -371,16 +374,18 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
         </div>
 
         <div className="shrink-0 px-4 pb-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-          {([
-            ['survey.hints.navigate', '←/→'],
-            ['survey.hints.pick', 'P'],
-            ['survey.hints.reject', 'X'],
-            ['survey.hints.unflag', 'U'],
-            ['survey.hints.rate', '0–5'],
-            ['survey.hints.compare', 'C'],
-            ['survey.hints.open', 'Enter'],
-            ['survey.hints.exit', 'Esc'],
-          ] as const).map(([key, keys]) => (
+          {(
+            [
+              ['survey.hints.navigate', '←/→'],
+              ['survey.hints.pick', 'P'],
+              ['survey.hints.reject', 'X'],
+              ['survey.hints.unflag', 'U'],
+              ['survey.hints.rate', '0–5'],
+              ['survey.hints.compare', 'C'],
+              ['survey.hints.open', 'Enter'],
+              ['survey.hints.exit', 'Esc'],
+            ] as const
+          ).map(([key, keys]) => (
             <Text key={key} variant={TextVariants.small} color={TextColors.secondary} className="whitespace-nowrap">
               <span className="font-semibold text-text-primary/80">{keys}</span> {t(key)}
             </Text>

@@ -257,9 +257,7 @@ function AiEnhanceButton({ onKeyDown }: { onKeyDown(e: React.KeyboardEvent<HTMLB
       <button
         className={clsx(
           'p-2 rounded-full transition-colors disabled:cursor-not-allowed',
-          isEnhancing
-            ? 'bg-accent text-button-text'
-            : 'bg-surface hover:bg-card-active text-text-primary',
+          isEnhancing ? 'bg-accent text-button-text' : 'bg-surface hover:bg-card-active text-text-primary',
         )}
         disabled={isEnhancing}
         onClick={() => runEnhance(intensity)}

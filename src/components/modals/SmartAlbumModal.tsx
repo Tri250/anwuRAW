@@ -46,9 +46,7 @@ export default function SmartAlbumModal({ isOpen, albumId, onClose }: SmartAlbum
 
   useEffect(() => {
     if (!isOpen) return;
-    const album = albumId
-      ? useSmartAlbumsStore.getState().albums.find((a) => a.id === albumId) || null
-      : null;
+    const album = albumId ? useSmartAlbumsStore.getState().albums.find((a) => a.id === albumId) || null : null;
     setName(album?.name || '');
     setMatch(album?.match || 'all');
     setRules(album && album.rules.length > 0 ? album.rules.map((r) => ({ ...r })) : [newRule('rating')]);

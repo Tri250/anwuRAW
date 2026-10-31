@@ -410,9 +410,7 @@ export default function MetadataPanel() {
     }
     let cancelled = false;
     setGpsLocationName(null);
-    fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&lat=${gpsData.lat}&lon=${gpsData.lon}`,
-    )
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&lat=${gpsData.lat}&lon=${gpsData.lon}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { display_name?: string } | null) => {
         if (!cancelled && data?.display_name) setGpsLocationName(data.display_name);
@@ -928,9 +926,7 @@ export default function MetadataPanel() {
                     {t('editor.metadata.gps.noData')}
                   </Text>
                 )}
-                {gpsLocationName && (
-                  <MetadataItem label={t('editor.metadata.gps.location')} value={gpsLocationName} />
-                )}
+                {gpsLocationName && <MetadataItem label={t('editor.metadata.gps.location')} value={gpsLocationName} />}
                 <div className="flex flex-col gap-0.5">
                   <EditableMetadataItem
                     label={t('editor.metadata.gps.latitude')}

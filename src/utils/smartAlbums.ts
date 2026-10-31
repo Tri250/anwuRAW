@@ -8,16 +8,7 @@ import { ImageFile } from '../components/ui/AppProperties';
  */
 
 export type SmartRuleField =
-  | 'rating'
-  | 'flag'
-  | 'edited'
-  | 'raw'
-  | 'color'
-  | 'camera'
-  | 'lens'
-  | 'iso'
-  | 'dateTaken'
-  | 'filename';
+  'rating' | 'flag' | 'edited' | 'raw' | 'color' | 'camera' | 'lens' | 'iso' | 'dateTaken' | 'filename';
 
 export interface SmartRule {
   field: SmartRuleField;

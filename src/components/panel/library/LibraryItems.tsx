@@ -303,10 +303,9 @@ const ThumbnailComponent = ({
           <button
             type="button"
             className="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded-full h-5 px-1.5 bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
-            data-tooltip={t(
-              stackBadge.isExpanded ? 'library.items.collapseStack' : 'library.items.expandStack',
-              { count: stackBadge.count },
-            )}
+            data-tooltip={t(stackBadge.isExpanded ? 'library.items.collapseStack' : 'library.items.expandStack', {
+              count: stackBadge.count,
+            })}
             onClick={(e: any) => {
               e.stopPropagation();
               onToggleStack?.(stackBadge.stackId);

@@ -348,10 +348,7 @@ export function useSortedLibrary() {
 
   const appSettings = useSettingsStore((state) => state.appSettings);
 
-  const stackContext = useMemo<StackingContext>(
-    () => ({ stacks, expandedStackIds }),
-    [stacks, expandedStackIds],
-  );
+  const stackContext = useMemo<StackingContext>(() => ({ stacks, expandedStackIds }), [stacks, expandedStackIds]);
 
   const displayList = useMemo(() => {
     return computeGroupedLibrary(

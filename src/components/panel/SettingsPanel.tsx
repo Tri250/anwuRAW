@@ -1221,7 +1221,9 @@ export default function SettingsPanel({
       const combo = userCombo?.length ? userCombo : getDefaultCombo(def, osPlatform);
       const comboText = (combo || []).map((k: string) => formatKeyCode(k, osPlatform).toLowerCase()).join(' ');
       return (
-        t(def.description as any).toLowerCase().includes(keybindQuery) ||
+        t(def.description as any)
+          .toLowerCase()
+          .includes(keybindQuery) ||
         comboText.includes(keybindQuery) ||
         def.action.toLowerCase().includes(keybindQuery)
       );
@@ -2693,7 +2695,10 @@ export default function SettingsPanel({
                     </Text>
                     <div className="space-y-8">
                       <div className="relative">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                        <Search
+                          size={16}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
+                        />
                         <input
                           type="text"
                           value={keybindSearch}
@@ -2737,12 +2742,11 @@ export default function SettingsPanel({
                           </div>
                         );
                       })}
-                      {isKeybindSearchActive &&
-                        KEYBIND_DEFINITIONS.every((def) => !matchesKeybindQuery(def)) && (
-                          <Text variant={TextVariants.small} color={TextColors.secondary} className="text-center py-4">
-                            {t('settings.controls.noMatchingShortcuts')}
-                          </Text>
-                        )}
+                      {isKeybindSearchActive && KEYBIND_DEFINITIONS.every((def) => !matchesKeybindQuery(def)) && (
+                        <Text variant={TextVariants.small} color={TextColors.secondary} className="text-center py-4">
+                          {t('settings.controls.noMatchingShortcuts')}
+                        </Text>
+                      )}
                       <div className="flex justify-end mt-6">
                         <Button variant="ghost" onClick={handleRequestKeybindReset}>
                           {t('settings.controls.resetDefaults')}

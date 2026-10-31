@@ -90,7 +90,11 @@ export default function TaskCapsule() {
           </div>
         )}
         {job.error && (
-          <Text variant={TextVariants.small} color={TextColors.secondary} className="mt-1 pl-6 break-words line-clamp-2 text-red-400/90">
+          <Text
+            variant={TextVariants.small}
+            color={TextColors.secondary}
+            className="mt-1 pl-6 break-words line-clamp-2 text-red-400/90"
+          >
             {job.error}
           </Text>
         )}
@@ -156,7 +160,10 @@ export default function TaskCapsule() {
             ? t('library.jobs.activeCount', { count: activeJobs.length })
             : t('library.jobs.allDone', { count: finishedJobs.length })}
         </span>
-        <ChevronDown size={14} className={clsx('text-text-secondary transition-transform', isExpanded && 'rotate-180')} />
+        <ChevronDown
+          size={14}
+          className={clsx('text-text-secondary transition-transform', isExpanded && 'rotate-180')}
+        />
       </button>
     </div>
   );

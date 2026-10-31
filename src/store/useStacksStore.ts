@@ -35,8 +35,7 @@ const isStackArray = (value: unknown): value is PhotoStack[] =>
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((v) => typeof v === 'string');
 
-const toStringSet = (value: unknown): Set<string> =>
-  new Set(isStringArray(value) ? value : []);
+const toStringSet = (value: unknown): Set<string> => new Set(isStringArray(value) ? value : []);
 
 const persist = (state: StacksState) => {
   saveUserData(STACKS_KEY, state.stacks);
@@ -79,9 +78,7 @@ export const useStacksStore = create<StacksState>((set, get) => ({
   addPathsToStack: (stackId, paths) => {
     set((state) => ({
       stacks: state.stacks.map((stack) =>
-        stack.id === stackId
-          ? { ...stack, paths: Array.from(new Set([...stack.paths, ...paths])) }
-          : stack,
+        stack.id === stackId ? { ...stack, paths: Array.from(new Set([...stack.paths, ...paths])) } : stack,
       ),
     }));
     set((state) => ({ stacks: pruneStacks(state.stacks) }));

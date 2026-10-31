@@ -491,7 +491,14 @@ export default function ExportPanel({
             color: watermarkTextColor,
           }
         : null,
-    [enableTextWatermark, watermarkText, watermarkTextAnchor, watermarkFontSize, watermarkTextOpacity, watermarkTextColor],
+    [
+      enableTextWatermark,
+      watermarkText,
+      watermarkTextAnchor,
+      watermarkFontSize,
+      watermarkTextOpacity,
+      watermarkTextColor,
+    ],
   );
 
   const [estimatedSize, setEstimatedSize] = useState<number | null>(null);
