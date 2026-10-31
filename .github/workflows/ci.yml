@@ -16,8 +16,15 @@ jobs:
       fail-fast: false
       matrix:
         # Representative targets only: the full desktop/ARM matrix is built by
-        # the release workflow. Keeping CI to three jobs maintains cross-platform
+        # the release workflow. Keeping CI to two jobs maintains cross-platform
         # compile coverage without bundling every installer on each push.
+        #
+        # macOS is intentionally absent: its runners bill at a 10x multiplier
+        # and after a full release matrix the account's included macOS minutes
+        # are exhausted, so the queued leg is cancelled before its first step
+        # and a cancelled leg fails the whole run (continue-on-error does not
+        # shield run-level cancellation). macOS compile coverage is guaranteed
+        # by the release workflow's four macOS build legs.
         include:
           - platform: 'ubuntu-22.04'
             target: ''
@@ -26,16 +33,6 @@ jobs:
             args: '--bundles nsis'
             target: ''
             asset-prefix: '01'
-          - platform: 'macos-14'
-            target: aarch64-apple-darwin
-            asset-prefix: '02'
-            # macOS runners bill at a 10x multiplier and the queued job is
-            # cancelled before its first step when the account's included
-            # macOS minutes are exhausted (observed on every attempt after a
-            # full release matrix). macOS compile coverage is guaranteed by
-            # the release workflow's 4 macOS build legs, so a quota-driven
-            # cancellation here must not fail CI for unrelated pushes.
-            continue-on-error: true
     uses: ./.github/workflows/build.yml
     with:
       platform: ${{ matrix.platform }}
