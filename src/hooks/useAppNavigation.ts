@@ -197,14 +197,11 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
 
       if (generation !== imageSelectGeneration) return;
 
-      const hasDifferentResolution =
-        cached &&
-        (useEditorStore.getState().originalSize.width !== cached.originalSize.width ||
-          useEditorStore.getState().originalSize.height !== cached.originalSize.height);
-
-      if (!isCachedInBackend || hasDifferentResolution) {
-        setEditor({ hasRenderedFirstFrame: false });
-      }
+      // A selection always invalidates the presented surface frame: until the
+      // new image is rendered, the GPU layer still shows the previous photo.
+      // Hiding it (hasRenderedFirstFrame=false) lets the cached JPEG preview
+      // for the newly selected image show through instead of a stale frame.
+      setEditor({ hasRenderedFirstFrame: false });
 
       selectedImagePathRef.current = path;
 

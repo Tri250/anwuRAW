@@ -283,6 +283,15 @@ fn get_luma(c: vec3<f32>) -> f32 {
     return dot(c, LUMA_COEFF);
 }
 
+// NaN/Inf detector for guard clauses. `clamp` maps every finite value to
+// itself, while NaN compares false and Inf differs from the clamped max, so
+// this works on every WGSL backend (isFinite is not a portable built-in).
+fn is_finite_vec3(v: vec3<f32>) -> vec3<bool> {
+    let limit = vec3<f32>(3.4e38);
+    let clamped = clamp(v, -limit, limit);
+    return clamped == v;
+}
+
 fn srgb_to_linear(c: vec3<f32>) -> vec3<f32> {
     let cutoff = vec3<f32>(0.04045);
     let a = vec3<f32>(0.055);
@@ -771,9 +780,24 @@ fn apply_white_balance(color: vec3<f32>, log_gains: vec3<f32>) -> vec3<f32> {
     }
     let rgb_to_lms = adjustments.global.wb_rgb_to_lms_matrix;
     let lms_to_rgb = adjustments.global.wb_lms_to_rgb_matrix;
-    let gains = exp(log_gains);
+    // A zeroed/degenerate matrix pair (adjustments uploaded without the LMS
+    // conversion) maps every pixel to black. Treat it as "white balance off".
+    let wb_forward_norm = length(rgb_to_lms[0]) + length(rgb_to_lms[1]) + length(rgb_to_lms[2]);
+    let wb_inverse_norm = length(lms_to_rgb[0]) + length(lms_to_rgb[1]) + length(lms_to_rgb[2]);
+    if (wb_forward_norm < 1.0e-4 || wb_inverse_norm < 1.0e-4) {
+        return color;
+    }
+    let gains = exp(clamp(log_gains, vec3<f32>(-4.0), vec3<f32>(4.0)));
     let white = lms_to_rgb * (gains * (rgb_to_lms * vec3<f32>(1.0)));
-    return lms_to_rgb * (gains * (rgb_to_lms * color)) / get_luma(white);
+    // Guard the normalisation: an extreme tint can drive the white-point luma
+    // to ~0, which would otherwise divide by zero and flood the frame with
+    // NaN/Inf pixels (rendered as a black preview by the f16 display chain).
+    let white_luma = max(get_luma(white), 1.0e-4);
+    let balanced = lms_to_rgb * (gains * (rgb_to_lms * color)) / white_luma;
+    if (any(!is_finite_vec3(balanced))) {
+        return color;
+    }
+    return balanced;
 }
 
 fn apply_creative_color(color: vec3<f32>, sat: f32, vib: f32) -> vec3<f32> {
@@ -857,8 +881,12 @@ fn apply_hsl_panel(color: vec3<f32>, hsl_adjustments: array<HslColor, 8>, coords
     var total_sat_multiplier: f32 = 0.0;
     var total_lum_adjust: f32 = 0.0;
 
+    // Guarded divisor: a hue that falls outside every band would divide by
+    // zero and poison the whole preview with NaNs (rendered as black).
+    let safe_total_influence: f32 = max(total_raw_influence, 1e-6);
+
     for (var i = 0u; i < 8u; i = i + 1u) {
-        let normalized_influence = raw_influences[i] / total_raw_influence;
+        let normalized_influence = raw_influences[i] / safe_total_influence;
 
         let hue_sat_influence = normalized_influence * saturation_mask;
         let luma_influence = normalized_influence * luminance_weight;
@@ -1104,22 +1132,25 @@ fn apply_dehaze(color: vec3<f32>, abs_coord: vec2<u32>, local_luma: f32, amount:
     if (amount == 0.0) { return color; }
 
     let air = textureLoad(airlight_texture, vec2<i32>(0, 0), 0);
+    let air_w = max(air.w, 1.0e-4);
+    let air_rgb = max(air.rgb, vec3<f32>(1.0e-4));
     let rgb = max(color, vec3<f32>(0.0));
-    let guide = min(pow(get_luma(rgb) / air.w, HZ_GUIDE_GAMMA), HZ_GUIDE_MAX);
+    let guide = min(pow(get_luma(rgb) / air_w, HZ_GUIDE_GAMMA), HZ_GUIDE_MAX);
     let ab = sample_gf_tex(haze_texture, abs_coord).xy;
     let veil = clamp(ab.x * guide + ab.y, 0.0, 1.0);
 
     if (amount < 0.0) {
         let scene = textureLoad(airlight_texture, vec2<i32>(1, 0), 0);
-        let mist_tint = mix(vec3<f32>(1.0), scene.rgb / scene.w, 0.5);
-        let mist_light = mist_tint * sqrt(scene.w * air.w);
+        let scene_w = max(scene.w, 1.0e-4);
+        let mist_tint = mix(vec3<f32>(1.0), scene.rgb / scene_w, 0.5);
+        let mist_light = mist_tint * sqrt(scene_w * air_w);
         let density = min(-amount, 1.0) * HZ_MIST * mix(0.4, 1.0, veil);
         return mix(color, mist_light, density);
     }
 
     let detail = clamp(get_luma(rgb) / max(local_luma, 1.0e-6), 0.25, 4.0);
     let local_rgb = rgb / detail;
-    let n = local_rgb / air.rgb;
+    let n = local_rgb / air_rgb;
     let pixel_dark = min(n.r, min(n.g, n.b));
     let strength = 1.0 - (1.0 - min(amount, 1.0)) * (1.0 - min(amount, 1.0));
     let t_smooth = max(1.0 - strength * HZ_OMEGA * veil, HZ_T_MIN);
@@ -1143,7 +1174,7 @@ fn apply_dehaze(color: vec3<f32>, abs_coord: vec2<u32>, local_luma: f32, amount:
     let detail_out = exp2(detail_log + (detail_gain - 1.0) * shape_detail(detail_log, HZ_DETAIL_SIGMA));
     let lift = pow(t_smooth, -HZ_LIFT);
     let dehazed = recovered * detail_out;
-    let rolloff = min(get_luma(dehazed) / air.w, 1.0);
+    let rolloff = min(get_luma(dehazed) / air_w, 1.0);
     return dehazed * (lift / (1.0 + (lift - 1.0) * rolloff));
 }
 
@@ -1566,10 +1597,19 @@ fn agx_tonemap(c: vec3<f32>) -> vec3<f32> {
 }
 
 fn agx_full_transform(color_in: vec3<f32>) -> vec3<f32> {
+    let to_rendering = adjustments.global.agx_pipe_to_rendering_matrix;
+    let to_pipe = adjustments.global.agx_rendering_to_pipe_matrix;
+    // Degenerate gamut matrices convert the image to zero and tone map it to
+    // black. Fall back to the plain display encoding instead of a black frame.
+    let to_rendering_norm = length(to_rendering[0]) + length(to_rendering[1]) + length(to_rendering[2]);
+    let to_pipe_norm = length(to_pipe[0]) + length(to_pipe[1]) + length(to_pipe[2]);
+    if (to_rendering_norm < 1.0e-4 || to_pipe_norm < 1.0e-4) {
+        return linear_to_srgb(max(color_in, vec3<f32>(0.0)));
+    }
     let compressed_color = agx_compress_gamut(color_in);
-    let color_in_agx_space = adjustments.global.agx_pipe_to_rendering_matrix * compressed_color;
+    let color_in_agx_space = to_rendering * compressed_color;
     let tonemapped_agx = agx_tonemap(color_in_agx_space);
-    let final_color = adjustments.global.agx_rendering_to_pipe_matrix * tonemapped_agx;
+    let final_color = to_pipe * tonemapped_agx;
     return final_color;
 }
 
@@ -2209,6 +2249,14 @@ fn main(
         } else if (any(final_rgb < vec3<f32>(SHADOW_CLIP_THRESHOLD))) {
             final_rgb = SHADOW_WARNING_COLOR;
         }
+    }
+
+    // Last-resort guard: any NaN/Inf that survived the individual effect
+    // guards would be written into the f16 display texture and sampled by the
+    // compositor, turning large areas of the preview black. Fall back to the
+    // (sanitised) source colour for those pixels instead.
+    if (any(!is_finite_vec3(final_rgb))) {
+        final_rgb = clamp(initial_linear_rgb, vec3<f32>(0.0), vec3<f32>(1.0));
     }
 
     if (HIGH_PRECISION_OUTPUT == 0u) {

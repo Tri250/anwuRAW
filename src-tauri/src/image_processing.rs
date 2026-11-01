@@ -1668,10 +1668,10 @@ pub struct Point {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Pod, Zeroable, Default)]
 #[repr(C)]
 pub struct HslColor {
-    hue: f32,
-    saturation: f32,
-    luminance: f32,
-    _pad: f32,
+    pub hue: f32,
+    pub saturation: f32,
+    pub luminance: f32,
+    pub _pad: f32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Pod, Zeroable, Default)]
@@ -1680,7 +1680,7 @@ pub struct ColorGradeSettings {
     pub hue: f32,
     pub saturation: f32,
     pub luminance: f32,
-    _pad: f32,
+    pub _pad: f32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Pod, Zeroable, Default)]
@@ -1866,6 +1866,25 @@ pub struct MaskAdjustments {
 }
 
 pub const MAX_MASKS: usize = 32;
+
+/// Parses mask definitions and applies the exact same filter the GPU parameter
+/// upload uses: only visible masks with at least one sub-mask participate in
+/// rendering, capped at [`MAX_MASKS`].
+///
+/// Mask bitmaps and `mask_adjustments[i]` are paired by position, so the bitmap
+/// generator MUST be fed this filtered list. Feeding it every definition
+/// (including hidden / empty masks) shifted every later bitmap index and applied
+/// mask edits to the wrong region — or removed them entirely.
+pub fn parse_renderable_mask_definitions(js_adjustments: &Value) -> Vec<MaskDefinition> {
+    js_adjustments
+        .get("masks")
+        .and_then(|m| serde_json::from_value::<Vec<MaskDefinition>>(m.clone()).ok())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|m| m.visible && !m.sub_masks.is_empty())
+        .take(MAX_MASKS)
+        .collect()
+}
 
 #[derive(Debug, Clone, Copy, Pod, Zeroable, Default)]
 #[repr(C)]
@@ -2143,11 +2162,24 @@ fn calculate_agx_matrices_glam() -> (Mat3, Mat3) {
     (pipe_to_rendering, rendering_to_pipe)
 }
 
-fn calculate_agx_matrices() -> (GpuMat3, GpuMat3) {
+pub(crate) fn calculate_agx_matrices() -> (GpuMat3, GpuMat3) {
     let (pipe_to_rendering, rendering_to_pipe) = calculate_agx_matrices_glam();
     (
         mat3_to_gpu_mat3(pipe_to_rendering),
         mat3_to_gpu_mat3(rendering_to_pipe),
+    )
+}
+
+/// White-balance LMS conversion pair exactly as uploaded to the GPU.
+///
+/// Exposed crate-wide so preview tests build the same adjustments as the
+/// production builder: a zeroed `GpuMat3` makes `apply_white_balance` map
+/// every pixel to black as soon as any WB gain is non-zero.
+pub(crate) fn white_balance_matrices() -> (GpuMat3, GpuMat3) {
+    let rgb_to_lms = white_balance::rgb_to_lms();
+    (
+        mat3_to_gpu_mat3(rgb_to_lms),
+        mat3_to_gpu_mat3(rgb_to_lms.inverse()),
     )
 }
 
@@ -2612,7 +2644,7 @@ fn get_global_adjustments_from_json(
 
     let tone_mapper = js_adjustments["toneMapper"].as_str().unwrap_or("basic");
     let (pipe_to_rendering, rendering_to_pipe) = calculate_agx_matrices();
-    let rgb_to_lms = white_balance::rgb_to_lms();
+    let (wb_rgb_to_lms, wb_lms_to_rgb) = white_balance_matrices();
 
     let (has_lut, lut_intensity, lut_is_scene_referred) = if is_visible("lut") {
         (
@@ -2738,8 +2770,8 @@ fn get_global_adjustments_from_json(
         _pad_agx3: 0.0,
         agx_pipe_to_rendering_matrix: pipe_to_rendering,
         agx_rendering_to_pipe_matrix: rendering_to_pipe,
-        wb_rgb_to_lms_matrix: mat3_to_gpu_mat3(rgb_to_lms),
-        wb_lms_to_rgb_matrix: mat3_to_gpu_mat3(rgb_to_lms.inverse()),
+        wb_rgb_to_lms_matrix: wb_rgb_to_lms,
+        wb_lms_to_rgb_matrix: wb_lms_to_rgb,
 
         _pad_cg1: 0.0,
         _pad_cg2: 0.0,
@@ -3008,17 +3040,9 @@ pub fn get_all_adjustments_from_json(
     let mut mask_adjustments = [MaskAdjustments::default(); MAX_MASKS];
     let mut mask_count = 0;
 
-    let mask_definitions: Vec<MaskDefinition> = js_adjustments
-        .get("masks")
-        .and_then(|m| serde_json::from_value(m.clone()).ok())
-        .unwrap_or_default();
+    let mask_definitions = parse_renderable_mask_definitions(js_adjustments);
 
-    for (i, mask_def) in mask_definitions
-        .iter()
-        .filter(|m| m.visible && !m.sub_masks.is_empty())
-        .enumerate()
-        .take(MAX_MASKS)
-    {
+    for (i, mask_def) in mask_definitions.iter().enumerate() {
         mask_adjustments[i] =
             get_mask_adjustments_from_json(&mask_def.adjustments, target_white_balance);
         mask_count += 1;

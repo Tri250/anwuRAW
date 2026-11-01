@@ -128,8 +128,8 @@ use crate::image_processing::{
     warp_image_geometry,
 };
 use crate::mask_generation::{
-    MaskDefinition, build_full_warped_image_rgb8, build_warped_image_for_masks,
-    generate_mask_bitmap, get_cached_or_generate_masks, resolve_warped_image_for_masks,
+    build_full_warped_image_rgb8, build_warped_image_for_masks, generate_mask_bitmap,
+    get_cached_or_generate_masks, resolve_warped_image_for_masks,
 };
 use crate::window_customizer::PinchZoomDisablePlugin;
 pub use adjustment_utils::*;
@@ -596,7 +596,7 @@ async fn update_wgpu_transform(
                 0,
                 bytemuck::bytes_of(&display.latest_transform),
             );
-            display.render(&context.device, &context.queue);
+            let _ = display.render(&context.device, &context.queue);
         }
     })
     .await
@@ -791,10 +791,8 @@ fn process_preview_job(
     let use_lossless = (is_interactive && pixel_roi.is_some())
         || (!is_interactive && preview_dim > default_preview_dim);
 
-    let mask_definitions: Vec<MaskDefinition> = adjustments_clone
-        .get("masks")
-        .and_then(|m| serde_json::from_value(m.clone()).ok())
-        .unwrap_or_default();
+    let mask_definitions =
+        crate::image_processing::parse_renderable_mask_definitions(&adjustments_clone);
 
     let scaled_crop_offset = (
         unscaled_crop_offset.0 * effective_scale,
@@ -868,7 +866,16 @@ fn process_preview_job(
         );
 
     if let Ok(final_processed_image) = final_processed_image_result {
-        if use_wgpu_renderer {
+        // A native display render returns an empty placeholder image *only*
+        // after the surface frame was actually presented (see
+        // process_and_get_dynamic_image_inner). Non-empty pixels here mean the
+        // GPU fell back to a CPU readback, so the JPEG/PNG encode path below
+        // must still run and the UI must not be told a GPU frame is ready.
+        let native_display_rendered = use_wgpu_renderer
+            && final_processed_image.width() == 0
+            && final_processed_image.height() == 0;
+
+        if native_display_rendered {
             if layer == DisplayLayer::Original {
                 return Ok(b"WGPU_RENDER".to_vec());
             }
@@ -887,6 +894,16 @@ fn process_preview_job(
                 serde_json::json!({ "path": loaded_image.path }),
             );
             return Ok(b"WGPU_RENDER".to_vec());
+        }
+
+        // The surface could not present this frame, so the pixels below come
+        // from the CPU fallback. Tell the editor to reveal its JPEG preview
+        // again instead of keeping a stale/blank GPU surface on screen.
+        if use_wgpu_renderer && layer == DisplayLayer::Edited {
+            let _ = app_handle.emit(
+                "wgpu-frame-unavailable",
+                serde_json::json!({ "path": loaded_image.path }),
+            );
         }
 
         let final_processed_image = Arc::new(final_processed_image);
@@ -1329,10 +1346,8 @@ fn process_uncropped_job(
 
     let (preview_width, preview_height) = flipped_image.dimensions();
 
-    let mask_definitions: Vec<MaskDefinition> = adjustments_clone
-        .get("masks")
-        .and_then(|m| serde_json::from_value(m.clone()).ok())
-        .unwrap_or_default();
+    let mask_definitions =
+        crate::image_processing::parse_renderable_mask_definitions(&adjustments_clone);
 
     let mask_bitmaps = get_cached_or_generate_masks(
         &state,
@@ -1436,10 +1451,8 @@ async fn generate_preset_preview(
 
         let (img_w, img_h) = preview_image.dimensions();
 
-        let mask_definitions: Vec<MaskDefinition> = js_adjustments
-            .get("masks")
-            .and_then(|m| serde_json::from_value(m.clone()).ok())
-            .unwrap_or_default();
+        let mask_definitions =
+            crate::image_processing::parse_renderable_mask_definitions(&js_adjustments);
 
         let scaled_crop_offset = (
             unscaled_crop_offset.0 * scale_for_gpu,
@@ -1615,10 +1628,9 @@ async fn generate_all_community_previews(
                 );
                 let (img_w, img_h) = transformed_image.dimensions();
 
-                let mask_definitions: Vec<MaskDefinition> = scaled_adjustments
-                    .get("masks")
-                    .and_then(|m| serde_json::from_value(m.clone()).ok())
-                    .unwrap_or_else(Vec::new);
+                let mask_definitions = crate::image_processing::parse_renderable_mask_definitions(
+                    &scaled_adjustments,
+                );
 
                 let unscaled_crop_offset = js_adjustments
                     .get("crop")
@@ -1898,10 +1910,8 @@ async fn generate_preview_for_path(
         let (transformed_image, unscaled_crop_offset) =
             apply_all_transformations(Cow::Borrowed(base_image.as_ref()), &js_adjustments);
         let (img_w, img_h) = transformed_image.dimensions();
-        let mask_definitions: Vec<MaskDefinition> = js_adjustments
-            .get("masks")
-            .and_then(|m| serde_json::from_value(m.clone()).ok())
-            .unwrap_or_default();
+        let mask_definitions =
+            crate::image_processing::parse_renderable_mask_definitions(&js_adjustments);
 
         let warped_image =
             build_warped_image_for_masks(&base_image, is_raw, &js_adjustments, &mask_definitions);
@@ -2283,7 +2293,7 @@ pub fn run() {
                         display.config.width = size.width.max(1);
                         display.config.height = size.height.max(1);
                         display.surface.configure(&ctx.device, &display.config);
-                        display.render(&ctx.device, &ctx.queue);
+                        let _ = display.render(&ctx.device, &ctx.queue);
                     }
         })
         .setup(move |app| {

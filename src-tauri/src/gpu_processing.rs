@@ -40,6 +40,18 @@ pub struct RenderRequest<'a> {
     pub roi: Option<Roi>,
 }
 
+impl Clone for RenderRequest<'_> {
+    fn clone(&self) -> Self {
+        Self {
+            adjustments: self.adjustments,
+            mask_bitmaps: self.mask_bitmaps,
+            mask_cache_key: self.mask_cache_key,
+            lut: self.lut.clone(),
+            roi: self.roi,
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct DisplayTransform {
@@ -77,6 +89,14 @@ pub struct WgpuDisplay {
     pub current_bind_group: Option<wgpu::BindGroup>,
     pub edited_view: Option<wgpu::TextureView>,
     pub original_texture: Option<(wgpu::Texture, wgpu::TextureView)>,
+    /// Whether the last `render()` call actually acquired a surface texture and
+    /// presented it. Callers must not report a GPU frame as ready otherwise,
+    /// or the editor hides its JPEG preview and shows a stale/black surface.
+    pub last_presented: bool,
+    /// Set once a presented frame placed the image quad inside the surface.
+    /// The editor moves the quad off-screen while it has no confirmed frame;
+    /// presenting that frame must not count as "the image is visible".
+    pub ever_drew_image: bool,
 }
 
 impl WgpuDisplay {
@@ -147,7 +167,15 @@ impl WgpuDisplay {
         }));
     }
 
-    pub fn render(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
+    /// Presents the edited/original composite to the window surface.
+    ///
+    /// Returns `true` only when a surface frame was acquired and presented.
+    /// Transient failures (occluded/minimised window, surface lost, device
+    /// timeout) return `false` instead of panicking or silently pretending the
+    /// frame is visible — the preview pipeline uses that signal to fall back to
+    /// an encoded CPU image rather than leaving a black editor viewport.
+    pub fn render(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) -> bool {
+        self.last_presented = false;
         if let Some(bind_group) = &self.current_bind_group {
             let output = match self.surface.get_current_texture() {
                 wgpu::CurrentSurfaceTexture::Success(tex)
@@ -157,10 +185,10 @@ impl WgpuDisplay {
                     match self.surface.get_current_texture() {
                         wgpu::CurrentSurfaceTexture::Success(tex)
                         | wgpu::CurrentSurfaceTexture::Suboptimal(tex) => tex,
-                        _ => panic!("Failed to acquire surface texture"),
+                        _ => return false,
                     }
                 }
-                _ => return,
+                _ => return false,
             };
             let view = output
                 .texture
@@ -224,11 +252,44 @@ impl WgpuDisplay {
             }
             queue.submit(Some(encoder.finish()));
             output.present();
+            let drew_image = self.image_quad_visible();
+            self.ever_drew_image |= drew_image;
+            self.last_presented = drew_image || self.ever_drew_image;
+            return self.last_presented;
         }
+        false
+    }
+
+    /// True when the current transform places the image quad at least partially
+    /// inside the window surface. The editor parks the quad far off-screen
+    /// (`x = -999999`) until it has a confirmed frame, so a presented frame is
+    /// only meaningful when this holds.
+    fn image_quad_visible(&self) -> bool {
+        let r = self.latest_transform.rect;
+        let c = self.latest_transform.clip;
+        let x1 = r[0].max(c[0]);
+        let y1 = r[1].max(c[1]);
+        let x2 = (r[0] + r[2])
+            .min(c[0] + c[2])
+            .min(self.config.width as f32);
+        let y2 = (r[1] + r[3])
+            .min(c[1] + c[3])
+            .min(self.config.height as f32);
+        x2 > x1 && y2 > y1 && x2 > 0.0 && y2 > 0.0
     }
 }
 
 static GPU_DEVICE_LOST: AtomicBool = AtomicBool::new(false);
+
+impl GpuContext {
+    /// True when a presentation surface is attached to this GPU context.
+    pub fn has_display(&self) -> bool {
+        self.display
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_some()
+    }
+}
 
 pub fn get_or_init_gpu_context(
     state: &tauri::State<AppState>,
@@ -554,6 +615,8 @@ pub fn get_or_init_gpu_context(
             current_bind_group: None,
             edited_view: None,
             original_texture: None,
+            last_presented: false,
+            ever_drew_image: false,
         })
     } else {
         None
@@ -3624,6 +3687,13 @@ fn process_and_get_dynamic_image_inner(
     analytics_config: Option<crate::AnalyticsConfig>,
 ) -> Result<DynamicImage, String> {
     let start_time = Instant::now();
+    // Only take the native-presentation path when a surface actually exists.
+    // `resolve_wgpu_rendering()` is capability-based and can still be true when
+    // surface creation failed (e.g. a Windows/macOS window that could not be
+    // attached). Rendering "to the display" in that state would return an empty
+    // image while the caller reports a ready frame -> black preview viewport.
+    let display_available = context.has_display();
+    let display_layer = display_layer.filter(|_| display_available);
     let output_to_display = display_layer.is_some();
     // R5-5: display renders go through the high-precision tile pipeline when
     // the presentation surface is f16, keeping the preview chain quantisation-
@@ -3781,7 +3851,7 @@ fn process_and_get_dynamic_image_inner(
     let skip_readback = output_to_display;
 
     let (processed_pixels, out_w, out_h, out_x, out_y) =
-        processor.run(cache, request, output_to_display, output_precision)?;
+        processor.run(cache, request.clone(), output_to_display, output_precision)?;
 
     let mut final_encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
         label: Some("Final Passes Encoder"),
@@ -3834,15 +3904,11 @@ fn process_and_get_dynamic_image_inner(
         output_to_display.then(|| context.display.lock().unwrap_or_else(|e| e.into_inner()));
     let mut display = display_lock.as_mut().and_then(|d| d.as_mut());
 
-    let display_target = match display_layer {
-        Some(DisplayLayer::Edited) => Some(&processor.display_textures().output_texture),
-        Some(DisplayLayer::Original) => display
-            .as_deref_mut()
-            .map(|display| display.original_texture(device, width, height)),
-        None => None,
-    };
-
-    if let Some(target) = display_target {
+    if let (Some(layer), Some(display)) = (display_layer, display.as_deref_mut()) {
+        let target: &wgpu::Texture = match layer {
+            DisplayLayer::Edited => &processor.display_textures().output_texture,
+            DisplayLayer::Original => display.original_texture(device, width, height),
+        };
         final_encoder.copy_texture_to_texture(
             wgpu::TexelCopyTextureInfo {
                 texture: &processor.display_textures().working_texture,
@@ -3908,7 +3974,8 @@ fn process_and_get_dynamic_image_inner(
         }
     }
 
-    if let (Some(layer), Some(display)) = (display_layer, display) {
+    let mut display_presented = false;
+    if let (Some(layer), Some(display)) = (display_layer, display.as_deref_mut()) {
         match layer {
             DisplayLayer::Edited => {
                 display.latest_transform.image_size = [width as f32, height as f32];
@@ -3928,10 +3995,15 @@ fn process_and_get_dynamic_image_inner(
             bytemuck::bytes_of(&display.latest_transform),
         );
         display.rebind(device);
-        display.render(device, queue);
+        display_presented = display.render(device, queue);
     }
+    // Release the display before the possible CPU fallback re-run so the
+    // editor's transform sync (`update_wgpu_transform`) is not blocked by a
+    // full software render.
+    drop(display);
+    drop(display_lock);
 
-    if skip_readback {
+    if skip_readback && display_presented {
         let duration = start_time.elapsed();
         let fps = 1.0 / duration.as_secs_f64();
         log::info!(
@@ -3944,6 +4016,23 @@ fn process_and_get_dynamic_image_inner(
         );
         return Ok(DynamicImage::new_rgba8(0, 0));
     }
+
+    // The surface could not present this frame (occluded/minimised window,
+    // surface lost, device timeout). Re-run the same job into the CPU readback
+    // path so the caller receives real pixels instead of an empty image that
+    // the UI would treat as "displayed" — this was the silent black-preview
+    // failure mode.
+    let (processed_pixels, out_w, out_h) = if skip_readback {
+        log::warn!(
+            "[{}] WGPU surface did not present a frame; falling back to CPU readback",
+            caller_id
+        );
+        let (pixels, w, h, _, _) =
+            processor.run(cache, request, false, RenderOutputPrecision::EightBit)?;
+        (pixels, w, h)
+    } else {
+        (processed_pixels, out_w, out_h)
+    };
 
     let duration = start_time.elapsed();
     let fps = 1.0 / duration.as_secs_f64();
@@ -3994,6 +4083,7 @@ mod black_preview_repro {
 
     use super::*;
     use bytemuck::Zeroable;
+    use crate::image_processing::{ColorGradeSettings, HslColor};
 
     /// Counts every uncaptured wgpu validation error for the whole test run.
     /// The v2.0.0 black preview was silent in production because these errors
@@ -4159,7 +4249,22 @@ mod black_preview_repro {
         g.vignette_roundness = 0.0;
         adjustments.mask_count = 0;
         adjustments.noise_iso = 100.0; // R3-1 runtime field lives on AllAdjustments
+        apply_display_matrices(&mut adjustments);
         adjustments
+    }
+
+    /// Production always uploads the real AgX gamut matrices and the white
+    /// balance LMS pair. The sweep must do the same: with zeroed matrices any
+    /// non-zero WB gain maps the whole frame to black, which is a harness
+    /// artefact (`AllAdjustments::zeroed()`) rather than a preview bug.
+    fn apply_display_matrices(adjustments: &mut AllAdjustments) {
+        let (pipe_to_rendering, rendering_to_pipe) =
+            crate::image_processing::calculate_agx_matrices();
+        let (wb_rgb_to_lms, wb_lms_to_rgb) = crate::image_processing::white_balance_matrices();
+        adjustments.global.agx_pipe_to_rendering_matrix = pipe_to_rendering;
+        adjustments.global.agx_rendering_to_pipe_matrix = rendering_to_pipe;
+        adjustments.global.wb_rgb_to_lms_matrix = wb_rgb_to_lms;
+        adjustments.global.wb_lms_to_rgb_matrix = wb_lms_to_rgb;
     }
 
     /// Minimal deterministic PRNG (no extra dev-dependency) so the random
@@ -4214,6 +4319,34 @@ mod black_preview_repro {
         g.vignette_midpoint = rng.range_f32(0.0, 1.0);
         g.vignette_feather = rng.range_f32(0.0, 1.0);
         g.vignette_roundness = rng.range_f32(-1.0, 1.0);
+        g.vignette_center_x = rng.range_f32(-0.5, 0.5);
+        g.vignette_center_y = rng.range_f32(-0.5, 0.5);
+        // Tone/colour controls that exercise the curve, HSL, white-balance
+        // matrix, dehaze/centre and chromatic-aberration code paths.
+        g.hue = rng.range_f32(-180.0, 180.0);
+        g.dehaze = rng.range_f32(-1.0, 1.0);
+        g.centré = rng.range_f32(-1.0, 1.0);
+        g.centre_x = rng.range_f32(-1.0, 1.0);
+        g.centre_y = rng.range_f32(-1.0, 1.0);
+        g.wb_log_gain_l = rng.range_f32(-0.35, 0.35);
+        g.wb_log_gain_m = rng.range_f32(-0.35, 0.35);
+        g.wb_log_gain_s = rng.range_f32(-0.35, 0.35);
+        g.chromatic_aberration_red_cyan = rng.range_f32(-1.0, 1.0);
+        g.chromatic_aberration_blue_yellow = rng.range_f32(-1.0, 1.0);
+        g.color_grading_shadows = random_grade(&mut rng);
+        g.color_grading_midtones = random_grade(&mut rng);
+        g.color_grading_highlights = random_grade(&mut rng);
+        g.color_grading_global = random_grade(&mut rng);
+        g.color_grading_blending = rng.range_f32(0.0, 1.0);
+        g.color_grading_balance = rng.range_f32(-1.0, 1.0);
+        for slot in g.hsl.iter_mut() {
+            *slot = HslColor {
+                hue: rng.range_f32(-100.0, 100.0),
+                saturation: rng.range_f32(-1.0, 1.0),
+                luminance: rng.range_f32(-1.0, 1.0),
+                _pad: 0.0,
+            };
+        }
         // Creative effects that switch extra GPU passes on (threshold /
         // centroid / ghosts bind groups get created and dispatched).
         g.glow_amount = rng.range_f32(0.0, 1.0);
@@ -4221,7 +4354,17 @@ mod black_preview_repro {
         g.flare_amount = rng.range_f32(0.0, 1.0);
         adjustments.mask_count = 0;
         adjustments.noise_iso = rng.range_f32(50.0, 3200.0);
+        apply_display_matrices(&mut adjustments);
         adjustments
+    }
+
+    fn random_grade(rng: &mut Lcg) -> ColorGradeSettings {
+        ColorGradeSettings {
+            hue: rng.range_f32(-180.0, 180.0),
+            saturation: rng.range_f32(-1.0, 1.0),
+            luminance: rng.range_f32(-1.0, 1.0),
+            _pad: 0.0,
+        }
     }
 
     /// Replicates the production working -> output copy and reads the f16
@@ -4525,6 +4668,17 @@ mod black_preview_repro {
                     "[note] random-sweep-8bit-seed{seed}: near-black output from an extreme slider combination — pipeline still verified (no validation errors)"
                 );
             }
+            if seed == 2 {
+                // Seed 2 raises exposure by ~+1.7 EV and has no fully dark
+                // extremes, so a mostly black frame would mean the AgX gamut
+                // matrices or the white-balance LMS pair were missing — the
+                // literal "random sliders -> black preview" symptom.
+                assert!(
+                    stats.black_ratio < 0.5,
+                    "seed 2 has positive exposure but {:.1}% of its pixels are black",
+                    stats.black_ratio * 100.0
+                );
+            }
             // Determinism: the same adjustments must render byte-identical
             // pixels (grain is coordinate-hashed, not time-based), proving
             // the compute pass really ran instead of a skipped dispatch.
@@ -4591,5 +4745,124 @@ mod black_preview_repro {
             errors, 0,
             "{errors} wgpu validation error(s) occurred during the render chain — see the [wgpu-error] lines above"
         );
+    }
+
+    /// Images wider/taller than one 2048px tile are composited tile-by-tile.
+    /// A mis-sized tile copy used to leave the working texture black outside
+    /// the first tile, which looked exactly like the reported "random sliders
+    /// -> black preview" on large imports.
+    #[test]
+    fn multi_tile_preview_must_not_be_black() {
+        let Some(ctx) = software_context() else {
+            return;
+        };
+        // 2304 > TILE_SIZE (2048) => two horizontal tiles.
+        let (width, height) = (2304u32, 320u32);
+        let processor = GpuProcessor::new(ctx.clone(), width, height).expect("GpuProcessor::new");
+        let entry = make_entry(&processor, &ctx, &gradient_image(width, height));
+
+        let (pixels, out_w, out_h, _, _) = processor
+            .run(
+                &entry,
+                RenderRequest {
+                    adjustments: typical_user_adjustments(),
+                    mask_bitmaps: &[],
+                    mask_cache_key: None,
+                    lut: None,
+                    roi: None,
+                },
+                false,
+                RenderOutputPrecision::EightBit,
+            )
+            .expect("multi-tile 8-bit render failed");
+        assert_eq!((out_w, out_h), (width, height));
+        let RenderedPixels::U8(ref u8_pixels) = pixels else {
+            panic!("multi-tile render must return U8 pixels");
+        };
+        let rgb: Vec<f32> = u8_pixels
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|px| {
+                [
+                    px[0] as f32 / 255.0,
+                    px[1] as f32 / 255.0,
+                    px[2] as f32 / 255.0,
+                ]
+            })
+            .collect();
+        assert_visible("multi-tile-8bit", &stats_from_f32(&rgb));
+
+        // Display chain (tiles -> working texture -> output texture).
+        processor
+            .run(
+                &entry,
+                RenderRequest {
+                    adjustments: typical_user_adjustments(),
+                    mask_bitmaps: &[],
+                    mask_cache_key: None,
+                    lut: None,
+                    roi: None,
+                },
+                true,
+                RenderOutputPrecision::SixteenBit,
+            )
+            .expect("multi-tile display render failed");
+        let rgb = read_display_output(&ctx, &processor, width, height);
+        assert_visible("multi-tile-display", &stats_from_f32(&rgb));
+
+        let errors = WGPU_VALIDATION_ERRORS.load(std::sync::atomic::Ordering::Relaxed);
+        assert_eq!(errors, 0, "multi-tile render produced wgpu validation errors");
+    }
+
+    /// Hidden and sub-mask-less masks must be dropped *before* bitmap
+    /// generation, otherwise bitmaps[i] no longer matches
+    /// mask_adjustments[i] and mask edits land on the wrong region.
+    #[test]
+    fn renderable_mask_definitions_keep_index_alignment() {
+        let adjustments = serde_json::json!({
+            "masks": [
+                {
+                    "id": "hidden",
+                    "name": "Hidden",
+                    "visible": false,
+                    "invert": false,
+                    "opacity": 100.0,
+                    "adjustments": {},
+                    "subMasks": [{
+                        "id": "s1", "type": "radial", "visible": true,
+                        "invert": false, "opacity": 100.0, "mode": "additive",
+                        "parameters": {}
+                    }]
+                },
+                {
+                    "id": "empty",
+                    "name": "Empty",
+                    "visible": true,
+                    "invert": false,
+                    "opacity": 100.0,
+                    "adjustments": {},
+                    "subMasks": []
+                },
+                {
+                    "id": "ok",
+                    "name": "Visible",
+                    "visible": true,
+                    "invert": false,
+                    "opacity": 100.0,
+                    "adjustments": {},
+                    "subMasks": [{
+                        "id": "s2", "type": "radial", "visible": true,
+                        "invert": false, "opacity": 100.0, "mode": "additive",
+                        "parameters": {}
+                    }]
+                }
+            ]
+        });
+
+        let definitions =
+            crate::image_processing::parse_renderable_mask_definitions(&adjustments);
+        assert_eq!(definitions.len(), 1);
+        assert_eq!(definitions[0].id, "ok");
     }
 }

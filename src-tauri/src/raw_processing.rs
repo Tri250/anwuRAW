@@ -29,7 +29,7 @@ use std::sync::{
 /// persistent cache directory names, and new edit records pin the version they
 /// were created with (`processingVersion` in the sidecar JSON). Records missing
 /// the field are interpreted as version 1 and are never implicitly upgraded.
-pub const PROCESSING_VERSION: u32 = 1;
+pub const PROCESSING_VERSION: u32 = 2;
 
 /// Stamps the current processing version into an adjustments object on save so
 /// the record stays reproducible across pipeline upgrades.

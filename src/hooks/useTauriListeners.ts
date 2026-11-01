@@ -440,6 +440,19 @@ export function useTauriListeners({
           editorState.setEditor({ hasRenderedFirstFrame: true });
         }
       }),
+      // The native surface failed to present this frame and the backend fell
+      // back to a CPU-rendered image. Re-hide the GPU layer so the editor's
+      // JPEG preview becomes visible again instead of a stale/blank surface.
+      listen('wgpu-frame-unavailable', (event: { payload?: { path?: string } }) => {
+        const editorState = useEditorStore.getState();
+        if (
+          isEffectActive &&
+          editorState.hasRenderedFirstFrame &&
+          event.payload?.path === editorState.selectedImage?.path
+        ) {
+          editorState.setEditor({ hasRenderedFirstFrame: false });
+        }
+      }),
       listen('panorama-progress', (event: any) => {
         if (isEffectActive) {
           useUIStore.getState().setUI((state) => {

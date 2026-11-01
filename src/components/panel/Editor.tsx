@@ -1673,7 +1673,6 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         currentRect.height < 10 ||
         state.useWgpuRenderer === false ||
         !state.isReady ||
-        !state.hasRenderedFirstFrame ||
         irs.width === 0 ||
         irs.height === 0
       ) {

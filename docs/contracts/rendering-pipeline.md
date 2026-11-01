@@ -81,7 +81,7 @@ full_warped = hash(loaded_image.path, calculate_geometry_hash)
 定义于 `src-tauri/src/raw_processing.rs`：
 
 ```rust
-pub const PROCESSING_VERSION: u32 = 1;
+pub const PROCESSING_VERSION: u32 = 2;
 ```
 
 ### 3.1 语义（注释原文为契约）

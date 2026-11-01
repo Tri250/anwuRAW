@@ -811,3 +811,44 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - `npx tsc --noEmit`：0 错误；`npm run build`：成功；`i18n:runtime-check`：exit 0（_few/_many 回退为既有基线）。
 - `cargo +1.98.0 clippy --all-targets`：发现 8 处新增代码 lint 告警（unused_mut / too_many_arguments×2 / needless_range_loop×2 / chunks_exact→as_chunks / collapsible_if / unnecessary_lazy_evaluations），已全部修复（color_profiles.rs、ai_commands.rs、color_transfer.rs、image_processing.rs），复跑 **0 lint 告警**；`cargo fmt --all` 通过；`cargo test` 12 passed / 0 failed。
 - `prettier --check functional-modules-audit.md`：修复全文格式（表格对齐重排，内容无损）。
+
+---
+
+## 二十一、"导入 → 编辑 → 随机参数 → 预览全黑" 闭环修复（v2.0.1，第二十一轮）
+
+> 用户报障：导入图片 → 编辑 → 随机拖动参数 → 预览一片黑。本轮按「呈现层就绪判定 → GPU 兜底 → 数值防线 → 切图链路」四条路径逐层定位并修复。
+
+### 21.1 根因 A —— 空白帧被当作"就绪"（主要黑屏原因）
+
+- 旧行为：`hasRenderedFirstFrame=false` 时前端把展示 quad 移到 `x=-999999`（等于什么都没画）。后端 `WgpuDisplay::render()` 只要 `get_current_texture()` 成功就返回成功，`process_preview_job` 随之发 `wgpu-frame-ready`。前端收到后隐藏 JPEG 预览 → 画面上只剩 surface 的背景色 = **一片黑**。
+- 修复（`gpu_processing.rs`）：`render()` 改为返回 `bool`，并且只有「rect ∩ clip ∩ surface 真的覆盖到像素」(`image_quad_visible()`) 才计为已呈现；新增 `ever_drew_image`，一旦成功绘制过就不再受后续遮挡影响（避免裁切场景无谓地走 CPU 兜底）。
+- 修复（`lib.rs`）：只有 `render()` 真正 present 成功（返回空占位图）才上报 `wgpu-frame-ready`；`has_display()` 让无原生 surface 的实例（测试/无窗口）直接走 CPU 路径。
+- 修复（`Editor.tsx`）：首帧即按真实变换绘制（透明 WebView 下 JPEG `<img>` 位于 surface 之上，旧图被遮住，无露底风险）；去掉"首帧隐藏 quad"这一造成空白帧的条件。
+
+### 21.2 根因 B —— 单次 present 失败后永久停在旧帧
+
+- 新增事件 `wgpu-frame-unavailable`：GPU 展示失败、后端回退 CPU 编码时反向通知前端把 `hasRenderedFirstFrame` 置 false，JPEG 预览重新可见；后续任一成功帧再发 `wgpu-frame-ready`（前端仅在 `false` 时接受）→ **自愈闭环**。
+
+### 21.3 根因 C —— 退化矩阵把整帧归零（数值防线）
+
+- 复现分析：随机参数扫描中「正曝光（如 +1.7EV）却全黑」的样本，全部来自 `AllAdjustments::zeroed()` 下 `wb_rgb_to_lms_matrix` / `wb_lms_to_rgb_matrix` 与 AgX gamut 矩阵为全零：`apply_white_balance` 的 `white_luma` 被钳到 `1e-4`，任何非零白平衡增益都会把像素归一化为 0；AgX 模式同理先乘零矩阵再映射成黑。生产构建器始终写入真实矩阵（`calculate_agx_matrices()` / `white_balance_matrices()`），但该路径一旦缺失就是黑屏。
+- 修复（`shader.wgsl`）：`apply_white_balance` 检测前/逆向矩阵退化（列范数 < 1e-4）时按"未启用白平衡"返回原色；`agx_full_transform` 检测退化矩阵时回退为常规显示编码，不再输出全黑。
+- 修复（测试）：新增 `white_balance_matrices()`（`image_processing.rs`）供测试与生产共用；随机扫描改用真实矩阵，并对「+1.7EV 的 seed2」加断言（黑像素占比必须 < 50%），防止此类回归再次漏检。
+
+### 21.4 链路闭环修复 —— 切图必须失效旧 surface 帧
+
+- `useAppNavigation.ts`：原逻辑在"后端缓存命中且分辨率一致"时**不**重置 `hasRenderedFirstFrame`，此时 surface 仍显示上一张照片、JPEG 又不显示 → 旧图残留 / 黑帧。改为**切图一律重置**，由缓存 JPEG 或新帧接管；`wgpu-frame-ready` 到达后再恢复 GPU 层。
+
+### 21.5 配套的既有修复（本轮复核确认在位）
+
+- 渲染管线语义变更（`render` 返回值、就绪判定）按契约递增 `PROCESSING_VERSION` 1 → 2，缓存键、sidecar、文档同步。
+- 可渲染 mask 解析统一（`visible && !sub_masks.is_empty()`），shader mask 索引与 `mask_adjustments` 严格对齐。
+- shader 数值守卫：HSL 影响度除零、白平衡白点亮度、去雾空气光/场景光、最终 NaN/Inf 兜底回退源色。
+
+### 21.6 验证
+
+- `npm run typecheck`：exit 0；`npm run lint`：0 error（917 条既有 warning）。
+- `RUSTUP_TOOLCHAIN=1.98.0 cargo test --lib black_preview`（lavapipe）：**3 passed / 0 failed（66.16s）**。
+  - `8bit-readback 0.4746 / black 0`、`16bit-readback 0.1897 / black 0`、`f16-display-chain 0.4745 / black 0.0001`、`multi-tile-display 0.4851 / black 0`。
+  - 随机 16 组参数：`black_ratio` 最大 0.1348（seed1，弱光组合），seed2 由修复前 `0.0003 / 1.0000` 变为 `0.8123 / 0.0000`，全部 `nan_ratio=0`、0 个 wgpu validation error。
+
