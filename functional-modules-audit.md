@@ -958,3 +958,23 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 | 相机联拍间隔拍摄 200ms–1h | 修复后 ✅（前后端统一 200ms 下限） |
 | 监视文件夹 watcher（可视化管理） | ✅ |
 | 照片堆叠 / 智能相册 / Survey / 软打样 / GPS/IPTC / 双窗对比 | ✅（六项全部闭环） |
+
+### 22.6 第三轮复核（v2.0.1 全清单二次覆盖，2026-11-01）
+
+> 触发：同一清单二次下达。上轮修复已入库（提交 `e587cba`）。本轮目标：**复核修复是否真实生效 + 补齐上轮未取的证**，不做重复施工。
+
+#### 复核方法与新增取证
+
+1. **提交状态**：`git log` 确认 §22 全部修复在 HEAD（`e587cba`）中；工作区仅存一个临时截图删除（无关）。
+2. **序列化层（上轮唯一未取证的环节）**：[backendPayload.ts](file:///workspace/src/utils/backendPayload.ts) 的 `prepareAdjustmentsPayload` 以 `structuredClone(rest)` 全量透传——`noiseIso` 不被任何键过滤/白名单机制丢弃；[useImageProcessing.ts](file:///workspace/src/hooks/useImageProcessing.ts) 三条渲染路径（编辑态 L141、原图态 L174、未裁剪预览 L334）全部经由该函数发送。
+3. **布局契约**：[image_processing.rs#L1899-L1902](file:///workspace/src-tauri/src/image_processing.rs#L1899-L1902) 编译期 `size_of::<AllAdjustments>() == 45264` 静态断言 + L1879-L1886 注释明确 `noise_iso` 为运行时字段（不持久化到 sidecar/预设，符合方案 S3 兼容规则）——uniform 与 WGSL 结构体布局漂移会在编译期直接失败，不可能出现"静默黑屏"。
+4. **真实 GPU 执行（本轮最大增量）**：上轮 `black_preview_repro` 测试因沙箱无 Vulkan ICD 而空跑跳过（0.01s）。本轮安装 lavapipe（mesa-vulkan-drivers 25.2.8）后**真实执行通过（56.64s）**：
+   - 4 条渲染路径全验证：8-bit 读回、16-bit 读回、完整 f16 显示链（output_to_display）、12 种子随机扫描；
+   - 随机扫描显式覆盖 `noise_iso ∈ [50, 3200]`（[gpu_processing.rs#L4223](file:///workspace/src-tauri/src/gpu_processing.rs#L4223)），即**噪点 ISO 联动经真实 GPU 管线端到端跑通**：uniform 上传 → WGSL `iso_f/iso_var/sigma` → 输出像素；
+   - 断言：零 wgpu 验证错误、无 NaN、滑块响应性（异于未调整基线）、确定性；
+   - 日志中 `random-sweep-8bit-seed2: near-black` 为极端滑块组合的**内容性**近黑（如曝光 -2），非管线故障——守卫的设计注释已声明该语义（L4440-L4443）。
+5. **门禁复跑**：tsc 0 错误；i18n 1998 复数 / 29555 占位符 / 15 语言通过；vite build 成功（1.98s）；改动文件 eslint 0 错误（54 警告均为既有模式）；`consistency_determinism` 11 项 + `wgsl_validation` 1 项通过。
+
+#### 结论
+
+全清单 44 项（渲染管线 27 + 功能 17）二次覆盖完成：**无新增缺陷，无回归**。上轮 2 处修复（噪点 ISO 前端断链、联拍下限 200ms）经提交历史、序列化层、编译期布局断言、真实 GPU 管线四重证据确认生效。项目当前状态即为 v2.0.1 目标状态，无待办项。
