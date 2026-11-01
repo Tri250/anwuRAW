@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { Invokes } from '../../ui/AppProperties';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { Adjustments, normalizeLoadedAdjustments } from '../../../utils/adjustments';
+import { debouncedSave } from '../../../hooks/useEditorActions';
 import Text from '../../ui/Text';
 import { TextColors, TextVariants } from '../../../types/typography';
 import { ToolbarMenu, ToolbarMenuItem, useMenuDismiss } from './ToolbarMenu';
@@ -33,7 +34,9 @@ interface EditHistoryButtonProps {
 // Durable, non-linear snapshots stored by the Rust edit_history module. The
 // in-session undo stack stays linear; this menu is where the user pins
 // revisions, branches from any of them, and deletes branches they no longer
-// need. Left-click opens the menu; right-click on a revision deletes it.
+// need. Left-click opens the menu; right-click arms a revision for deletion
+// (two-step inline confirm, since native window.confirm is unavailable in the
+// webview) and a second click on the armed item deletes it.
 export default function EditHistoryButton({ onKeyDown }: EditHistoryButtonProps) {
   const { t } = useTranslation();
   const selectedImage = useEditorStore((s) => s.selectedImage);
@@ -41,6 +44,7 @@ export default function EditHistoryButton({ onKeyDown }: EditHistoryButtonProps)
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [history, setHistory] = useState<EditHistoryView>(EMPTY_HISTORY);
   const [isBusy, setIsBusy] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   useMenuDismiss(containerRef, isMenuOpen, setIsMenuOpen);
 
@@ -63,6 +67,7 @@ export default function EditHistoryButton({ onKeyDown }: EditHistoryButtonProps)
   useEffect(() => {
     setHistory(EMPTY_HISTORY);
     setIsMenuOpen(false);
+    setPendingDeleteId(null);
   }, [imagePath]);
 
   const handleSnapshot = async () => {
@@ -85,7 +90,11 @@ export default function EditHistoryButton({ onKeyDown }: EditHistoryButtonProps)
     setIsBusy(true);
     try {
       const loaded = await invoke<unknown>(Invokes.CheckoutEditHistory, { path: imagePath, revisionId });
-      applyRevision(normalizeLoadedAdjustments(loaded as Adjustments));
+      const normalized = normalizeLoadedAdjustments(loaded as Adjustments);
+      applyRevision(normalized);
+      // Keep the sidecar/thumbnail in sync, otherwise closing the editor right
+      // after a checkout would leave disk state at the previous revision.
+      debouncedSave(imagePath, normalized as Adjustments);
       await refresh();
     } catch (err) {
       toast.error(String(err));
@@ -96,7 +105,6 @@ export default function EditHistoryButton({ onKeyDown }: EditHistoryButtonProps)
 
   const handleDelete = async (revision: RevisionSummary) => {
     if (!imagePath || isBusy) return;
-    if (!window.confirm(`${t('editor.toolbar.deleteRevision')}: ${revision.label}?`)) return;
     setIsBusy(true);
     try {
       const view = await invoke<EditHistoryView>(Invokes.DeleteEditRevision, {
@@ -104,6 +112,7 @@ export default function EditHistoryButton({ onKeyDown }: EditHistoryButtonProps)
         revisionId: revision.id,
       });
       setHistory(view);
+      setPendingDeleteId(null);
     } catch (err) {
       toast.error(String(err));
     } finally {
@@ -116,7 +125,10 @@ export default function EditHistoryButton({ onKeyDown }: EditHistoryButtonProps)
       <button
         className="bg-surface text-text-primary p-2 rounded-full hover:bg-card-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={!selectedImage}
-        onClick={() => setIsMenuOpen((prev) => !prev)}
+        onClick={() => {
+          setIsMenuOpen((prev) => !prev);
+          setPendingDeleteId(null);
+        }}
         onKeyDown={onKeyDown}
         data-tooltip={t('editor.toolbar.history')}
         data-bench-id="edit-history"
@@ -138,21 +150,38 @@ export default function EditHistoryButton({ onKeyDown }: EditHistoryButtonProps)
             </Text>
           </div>
         ) : (
-          history.revisions.map((revision) => (
-            <div key={revision.id} style={{ paddingLeft: revision.depth * 12 }}>
-              <ToolbarMenuItem
-                detail={revision.isHead ? '\u25CF' : undefined}
-                isSelected={revision.isHead}
-                label={revision.label}
-                onClick={() => void handleCheckout(revision.id)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  void handleDelete(revision);
-                }}
-                onKeyDown={onKeyDown}
-              />
-            </div>
-          ))
+          history.revisions.map((revision) => {
+            const isPendingDelete = pendingDeleteId === revision.id;
+            // The backend protects the root and any subtree containing the
+            // head; hide the delete affordance there instead of erroring.
+            const canDelete = !revision.isHead && revision.parentId !== null;
+            return (
+              <div key={revision.id} style={{ paddingLeft: revision.depth * 12 }}>
+                <ToolbarMenuItem
+                  detail={revision.isHead ? '\u25CF' : undefined}
+                  isSelected={revision.isHead}
+                  label={isPendingDelete ? `${t('editor.toolbar.deleteRevision')}: ${revision.label}?` : revision.label}
+                  onClick={() => {
+                    if (isPendingDelete) {
+                      void handleDelete(revision);
+                      return;
+                    }
+                    setPendingDeleteId(null);
+                    void handleCheckout(revision.id);
+                  }}
+                  onContextMenu={
+                    canDelete
+                      ? (e) => {
+                          e.preventDefault();
+                          setPendingDeleteId(isPendingDelete ? null : revision.id);
+                        }
+                      : undefined
+                  }
+                  onKeyDown={onKeyDown}
+                />
+              </div>
+            );
+          })
         )}
       </ToolbarMenu>
     </div>

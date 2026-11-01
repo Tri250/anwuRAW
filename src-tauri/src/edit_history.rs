@@ -21,11 +21,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
-/// Snapshots beyond this count are pruned (oldest non-head leaves first).
+/// Snapshots beyond this count are pruned (oldest non-head revisions first).
 pub const MAX_REVISIONS: usize = 30;
-
-/// Label used when the first snapshot of an image becomes the root revision.
-pub const DEFAULT_ROOT_LABEL: &str = "Original";
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -340,14 +337,16 @@ pub fn load(path: &Path) -> Result<Option<EditHistoryGraph>, String> {
     Ok(Some(graph))
 }
 
-/// Atomic write: temp file first, then rename over the real file.
+/// Atomic write: unique temp file first, then rename over the real file. The
+/// temp name is per-call so two saves racing on the same image can never
+/// clobber each other's temp file or fail on an already-renamed one.
 pub fn save(path: &Path, graph: &EditHistoryGraph) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|error| format!("{}: {error}", parent.display()))?;
     }
     let serialized =
         serde_json::to_string_pretty(graph).map_err(|error| format!("serialize: {error}"))?;
-    let temp = path.with_extension("json.tmp");
+    let temp = path.with_extension(format!("json.{}.tmp", new_id()));
     fs::write(&temp, serialized).map_err(|error| format!("{}: {error}", temp.display()))?;
     fs::rename(&temp, path).map_err(|error| format!("{}: {error}", path.display()))?;
     Ok(())
@@ -494,11 +493,18 @@ mod tests {
         let mut graph = EditHistoryGraph::new(json!({"exposure": 1.5}), "Original", 10);
         graph.commit(None, "Warm", json!({"exposure": 2.0}), 20).unwrap();
         save(&path, &graph).unwrap();
+        save(&path, &graph).unwrap();
 
         let loaded = load(&path).unwrap().unwrap();
         assert_eq!(loaded, graph);
-        // The temp file must not survive a completed write.
-        assert!(!path.with_extension("json.tmp").exists());
+        // No temp file may survive a completed write.
+        let leftovers: Vec<_> = fs::read_dir(storage_dir(&dir))
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .map(|entry| entry.file_name().to_string_lossy().into_owned())
+            .filter(|name| name.ends_with(".tmp"))
+            .collect();
+        assert!(leftovers.is_empty(), "leftover temp files: {leftovers:?}");
 
         std::fs::remove_dir_all(&dir).ok();
     }

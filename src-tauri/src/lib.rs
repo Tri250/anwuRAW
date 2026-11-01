@@ -2239,6 +2239,7 @@ async fn save_edit_snapshot(
     tauri::async_runtime::spawn_blocking(move || {
         let file = edit_history::history_path(&data_dir, &path);
         let now = edit_history::now_secs();
+        let label = label.trim().to_string();
         let mut graph = match edit_history::load(&file)? {
             Some(graph) => graph,
             None => {
