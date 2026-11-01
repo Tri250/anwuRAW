@@ -759,7 +759,6 @@ pub struct CachedDepthMap {
     pub original_size: (u32, u32),
 }
 
-#[derive(Default)]
 pub struct AiState {
     pub models: Option<Arc<AiModels>>,
     pub denoise_model: Option<Arc<Mutex<Session>>>,
@@ -770,6 +769,26 @@ pub struct AiState {
     pub esam3_features: Option<Arc<Esam3Features>>,
     pub face_analysis: Option<Arc<FaceAnalysis>>,
     pub depth_map: Option<CachedDepthMap>,
+    residency: ResidencyTracker,
+}
+
+impl Default for AiState {
+    fn default() -> Self {
+        Self {
+            models: None,
+            denoise_model: None,
+            clip_models: None,
+            lama_model: None,
+            normal_model: None,
+            embeddings: None,
+            esam3_features: None,
+            face_analysis: None,
+            depth_map: None,
+            residency: ResidencyTracker::new(ResidencyPolicy::idle_only(
+                cfg!(target_os = "android"),
+            )),
+        }
+    }
 }
 
 impl AiState {
@@ -779,6 +798,33 @@ impl AiState {
         self.clip_models = None;
         self.lama_model = None;
         self.normal_model = None;
+        self.residency.clear();
+    }
+
+    fn touch_model(&mut self, key: &str) {
+        let now = uptime_secs();
+        self.residency.touch(key, now);
+    }
+
+    fn enforce_model_residency(&mut self, keep: &str) {
+        let now = uptime_secs();
+        let reserve = if self.residency.is_loaded(keep) { 0 } else { 1 };
+        let due = self.residency.due_for_eviction_reserving(now, reserve);
+        for key in due {
+            if key == keep {
+                continue;
+            }
+            let freed = match key.as_str() {
+                DENOISE_FILENAME => self.denoise_model.take().is_some(),
+                CLIP_MODEL_FILENAME => self.clip_models.take().is_some(),
+                LAMA_FILENAME => self.lama_model.take().is_some(),
+                NORMAL_FILENAME => self.normal_model.take().is_some(),
+                _ => false,
+            };
+            if freed {
+                self.residency.mark_released(&key);
+            }
+        }
     }
 }
 
@@ -800,6 +846,24 @@ fn cached_ai_state<T>(
         ai_state.release_sessions();
     }
     ai_state.as_ref().and_then(get)
+}
+
+fn uptime_secs() -> u64 {
+    static START: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+    START.get_or_init(Instant::now).elapsed().as_secs()
+}
+
+fn touch_state_model(ai_state_mutex: &Mutex<Option<AiState>>, key: &str) {
+    if let Some(state) = ai_state_mutex.lock().unwrap().as_mut() {
+        state.touch_model(key);
+    }
+}
+
+fn enforce_state_residency(ai_state_mutex: &Mutex<Option<AiState>>, keep: &str) {
+    let mut guard = ai_state_mutex.lock().unwrap();
+    guard
+        .get_or_insert_with(AiState::default)
+        .enforce_model_residency(keep);
 }
 
 fn edt_1d(f: &mut [f32], v: &mut [usize], z: &mut [f32], d: &mut [f32]) {
@@ -1465,6 +1529,7 @@ pub async fn get_or_init_denoise_model(
     if let Some(denoise_model) =
         cached_ai_state(ai_state_mutex, |state| state.denoise_model.clone())
     {
+        touch_state_model(ai_state_mutex, DENOISE_FILENAME);
         return Ok(denoise_model);
     }
 
@@ -1473,9 +1538,11 @@ pub async fn get_or_init_denoise_model(
     if let Some(denoise_model) =
         cached_ai_state(ai_state_mutex, |state| state.denoise_model.clone())
     {
+        touch_state_model(ai_state_mutex, DENOISE_FILENAME);
         return Ok(denoise_model);
     }
 
+    enforce_state_residency(ai_state_mutex, DENOISE_FILENAME);
     let models_dir = get_models_dir(app_handle)?;
     download_and_verify_model(app_handle, &models_dir, &DENOISE_ASSET).await?;
 
@@ -1497,6 +1564,7 @@ pub async fn get_or_init_denoise_model(
         .get_or_insert_with(AiState::default)
         .denoise_model = Some(denoise_model.clone());
 
+    touch_state_model(ai_state_mutex, DENOISE_FILENAME);
     Ok(denoise_model)
 }
 
@@ -1506,15 +1574,18 @@ pub async fn get_or_init_clip_models(
     ai_init_lock: &TokioMutex<()>,
 ) -> Result<Arc<ClipModels>> {
     if let Some(clip_models) = cached_ai_state(ai_state_mutex, |state| state.clip_models.clone()) {
+        touch_state_model(ai_state_mutex, CLIP_MODEL_FILENAME);
         return Ok(clip_models);
     }
 
     let _guard = ai_init_lock.lock().await;
 
     if let Some(clip_models) = cached_ai_state(ai_state_mutex, |state| state.clip_models.clone()) {
+        touch_state_model(ai_state_mutex, CLIP_MODEL_FILENAME);
         return Ok(clip_models);
     }
 
+    enforce_state_residency(ai_state_mutex, CLIP_MODEL_FILENAME);
     let models_dir = get_models_dir(app_handle)?;
 
     download_and_verify_model(app_handle, &models_dir, &CLIP_MODEL_ASSET).await?;
@@ -1542,6 +1613,7 @@ pub async fn get_or_init_clip_models(
         .get_or_insert_with(AiState::default)
         .clip_models = Some(clip_models.clone());
 
+    touch_state_model(ai_state_mutex, CLIP_MODEL_FILENAME);
     Ok(clip_models)
 }
 
@@ -1551,15 +1623,18 @@ pub async fn get_or_init_lama_model(
     ai_init_lock: &TokioMutex<()>,
 ) -> Result<Arc<Mutex<Session>>> {
     if let Some(lama_model) = cached_ai_state(ai_state_mutex, |state| state.lama_model.clone()) {
+        touch_state_model(ai_state_mutex, LAMA_FILENAME);
         return Ok(lama_model);
     }
 
     let _guard = ai_init_lock.lock().await;
 
     if let Some(lama_model) = cached_ai_state(ai_state_mutex, |state| state.lama_model.clone()) {
+        touch_state_model(ai_state_mutex, LAMA_FILENAME);
         return Ok(lama_model);
     }
 
+    enforce_state_residency(ai_state_mutex, LAMA_FILENAME);
     let models_dir = get_models_dir(app_handle)?;
     download_and_verify_model(app_handle, &models_dir, &LAMA_ASSET).await?;
 
@@ -1576,6 +1651,7 @@ pub async fn get_or_init_lama_model(
         .get_or_insert_with(AiState::default)
         .lama_model = Some(lama_model.clone());
 
+    touch_state_model(ai_state_mutex, LAMA_FILENAME);
     Ok(lama_model)
 }
 
@@ -1586,6 +1662,7 @@ pub async fn get_or_init_normal_model(
 ) -> Result<Arc<Mutex<Session>>> {
     if let Some(normal_model) = cached_ai_state(ai_state_mutex, |state| state.normal_model.clone())
     {
+        touch_state_model(ai_state_mutex, NORMAL_FILENAME);
         return Ok(normal_model);
     }
 
@@ -1593,9 +1670,11 @@ pub async fn get_or_init_normal_model(
 
     if let Some(normal_model) = cached_ai_state(ai_state_mutex, |state| state.normal_model.clone())
     {
+        touch_state_model(ai_state_mutex, NORMAL_FILENAME);
         return Ok(normal_model);
     }
 
+    enforce_state_residency(ai_state_mutex, NORMAL_FILENAME);
     let models_dir = get_models_dir(app_handle)?;
     download_and_verify_model(app_handle, &models_dir, &NORMAL_ASSET).await?;
 
@@ -1617,6 +1696,7 @@ pub async fn get_or_init_normal_model(
         .get_or_insert_with(AiState::default)
         .normal_model = Some(normal_model.clone());
 
+    touch_state_model(ai_state_mutex, NORMAL_FILENAME);
     Ok(normal_model)
 }
 
@@ -3202,6 +3282,31 @@ pub async fn get_ai_model_inventory(app_handle: tauri::AppHandle) -> Result<Mode
     tauri::async_runtime::spawn_blocking(move || model_inventory(&models_dir))
         .await
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn delete_ai_model(
+    app_handle: tauri::AppHandle,
+    state: tauri::State<'_, crate::AppState>,
+    role: String,
+) -> Result<(), String> {
+    let models_dir = get_models_dir(&app_handle).map_err(|error| error.to_string())?;
+    let spec = model_inventory(&models_dir)
+        .models
+        .into_iter()
+        .find(|model| model.role == role)
+        .ok_or_else(|| format!("Unknown AI model role: {role}"))?;
+    let path = models_dir.join(&spec.filename);
+
+    // A resident session keeps the file mapped on disk, so release first.
+    let _guard = state.ai_init_lock.lock().await;
+    reset_ai_sessions(&state.ai_state);
+
+    if path.exists() {
+        fs::remove_file(&path)
+            .map_err(|error| format!("Failed to delete {}: {error}", spec.filename))?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

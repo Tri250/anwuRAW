@@ -23,9 +23,17 @@ interface StorageUsage {
 
 type StorageKey = keyof StorageUsage;
 
+interface ModelInventoryEntry {
+  displayName: string;
+  filename: string;
+  installedBytes?: number;
+  role: string;
+}
+
 interface ModelInventory {
   installedCount: number;
   issues: string[];
+  models: ModelInventoryEntry[];
   totalCount: number;
 }
 
@@ -361,6 +369,18 @@ export default function DataManagementSettings({
         }),
     });
 
+  const deleteModel = (model: ModelInventoryEntry) =>
+    onRequestConfirm({
+      confirmText: t('settings.data.delete'),
+      message: t('settings.data.modals.modelsMessage'),
+      title: model.displayName,
+      onConfirm: () =>
+        run('models', async () => {
+          await invoke(Invokes.DeleteAiModel, { role: model.role });
+          return t('settings.data.statuses.cleared');
+        }),
+    });
+
   // Per-root failures (e.g. a locked sidecar on Windows) must not hide the
   // work that succeeded — report the count and flag the remainder.
   const withFailures = (message: string, failed: number) =>
@@ -546,6 +566,34 @@ export default function DataManagementSettings({
                 status={statuses[key]}
                 title={t(`settings.data.storage.${key}` as const)}
               >
+                {key === 'models' && inventory && (
+                  <div className="mt-2.5 pl-5.5 flex flex-col gap-1">
+                    {inventory.models
+                      .filter((model) => model.installedBytes !== undefined)
+                      .map((model) => (
+                        <div
+                          key={model.role}
+                          data-tooltip={model.filename}
+                          className="flex items-center gap-2"
+                        >
+                          <Text variant={TextVariants.small} className="flex-1 min-w-0 truncate">
+                            {model.displayName}
+                          </Text>
+                          <Text variant={TextVariants.small} className="tabular-nums shrink-0">
+                            {formatBytes(model.installedBytes ?? 0, t, 1)}
+                          </Text>
+                          <button
+                            data-tooltip={t('settings.data.delete')}
+                            disabled={busy.models}
+                            onClick={() => deleteModel(model)}
+                            className="p-1 rounded-md text-text-secondary hover:text-red-400 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                )}
                 {limitGb !== undefined && (
                   <LimitBar
                     color={color}

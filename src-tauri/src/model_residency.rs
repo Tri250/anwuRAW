@@ -55,6 +55,21 @@ impl ResidencyPolicy {
         }
     }
 
+    /// Idle-only policy for heavyweight models that live outside the session
+    /// pool (CLIP, LaMa, denoise, normals): they unload on idle but are not
+    /// counted against the pool budget, so a long batch job cannot evict a
+    /// model another feature is actively using.
+    pub fn idle_only(is_android: bool) -> Self {
+        Self::new(
+            if is_android {
+                ANDROID_IDLE_TIMEOUT_SECS
+            } else {
+                DESKTOP_IDLE_TIMEOUT_SECS
+            },
+            usize::MAX,
+        )
+    }
+
     pub fn idle_timeout_secs(&self) -> u64 {
         self.idle_timeout_secs
     }
@@ -279,6 +294,18 @@ mod tests {
         // A reserve that still fits the budget evicts nothing.
         let fresh = ResidencyTracker::new(ResidencyPolicy::new(600, 2));
         assert!(fresh.due_for_eviction_reserving(0, 1).is_empty());
+    }
+
+    #[test]
+    fn idle_only_policy_never_evicts_for_budget() {
+        let mut idle_only = ResidencyTracker::new(ResidencyPolicy::idle_only(false));
+        for index in 0..10 {
+            idle_only.touch(&format!("m{index}.onnx"), 0);
+        }
+        // Way over any pool budget, but freshly used: nothing to unload.
+        assert!(idle_only.due_for_eviction_reserving(0, 100).is_empty());
+        // Once idle, every entry goes regardless of the "budget".
+        assert_eq!(idle_only.due_for_eviction(600).len(), 10);
     }
 
     #[test]

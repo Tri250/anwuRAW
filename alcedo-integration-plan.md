@@ -212,7 +212,11 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 - `ai_processing::model_inventory()`（17 个模型条目，与下载常量同源）+ 命令 `get_ai_model_inventory`（`spawn_blocking` 查询磁盘大小）；
 - 设置页"数据管理 → AI 模型"显示 `已装/总数`，`data-tooltip` 列出 integrity issues（如 **`clip_tokenizer.json` 上游未提供 pinned SHA-256**——本轮实测该文件确为 `sha256: None`，属上游缺口，已作为可见告警暴露而非掩盖）。
 
-**尚未落地（第二阶段）**：真正的 `model_set` 版本化清单 / 多镜像轮询 / 断点续传 / 许可证文本随包 / 按组删除。当前是"清单 + 校验 + 可视化"的地基，不改变既有下载行为，可安全并入。
+**尚未落地（第二阶段）**：真正的 `model_set` 版本化清单 / 多镜像轮询（现有 `download_and_verify_model` 已内置 HF → hf-mirror 重试）/ 断点续传 / 许可证文本随包分发。本轮已完成"清单 + 校验 + 可视化 + 按角色删除"。
+
+**本轮追加（2026-11-01，第二阶段入口）**：
+- 命令 `delete_ai_model(role)`：按角色解析文件名 → 先 `reset_ai_sessions` 释放驻留会话（否则活会话仍映射已删文件）→ 删文件；
+- 设置页 AI 模型行展开已装模型列表（显示名 + 大小 + 删除按钮，悬停显示文件名），确认弹窗复用既有 `modelsMessage` 文案，不新增 i18n key。
 
 **验收标准**：设置页可见每个模型组的许可与体积；断网重试、SHA 校验失败自动清理重下；旧扁平清单自动迁移；APK 体积零增长（模型全走下载）。
 
@@ -231,11 +235,11 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 
 - **来源**：`puerh_mind/src/service/encoder_residency.rs`（5s 巡检 + 空闲卸载）、`lazy_semantic_engine`（首次语义请求才加载）、`UnavailableEmbeddingEngine`（无模型优雅降级）。
 - **已落地（2026-11-01）**：
-  - 新模块 [model_residency.rs](file:///workspace/src-tauri/src/model_residency.rs)：`ResidencyPolicy`（Android 空闲 60s / 上限 3，桌面 600s / 6；上限取 3 是为了让 EfficientSAM3 的 encoder+decoder+text encoder 整链同时驻留，避免同一次推理内自我驱逐）+ `ResidencyTracker`（touch / pinned / idle 超时 / LRU 预算 / `due_for_eviction_reserving` 预留槽位）；时间注入式设计，驻留模块 8 个 + 清单模块 8 个单元测试（全部零 sleep）。
+  - 新模块 [model_residency.rs](file:///workspace/src-tauri/src/model_residency.rs)：`ResidencyPolicy`（Android 空闲 60s / 上限 3，桌面 600s / 6；上限取 3 是为了让 EfficientSAM3 的 encoder+decoder+text encoder 整链同时驻留，避免同一次推理内自我驱逐）+ `ResidencyTracker`（touch / pinned / idle 超时 / LRU 预算 / `due_for_eviction_reserving` 预留槽位）；时间注入式设计，驻留模块 9 个 + 清单模块 8 个单元测试（全部零 sleep）。
   - 接线 [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L340-L406：`AiModels::session()` 为唯一加载收口，**先驱逐后加锁**避免嵌套锁；BiRefNet fp16/fp32 共用槽位归一到 `birefnet` 单键；提示词嵌入（约 16KB）刻意不计入预算。
   - 触发点：每次取用模型前调用 `enforce_residency(keep)`，超时/超预算的会话槽被 `take()` 置空（持有 `Arc` 的在途推理不受影响，只是不再复用缓存）。`residency_snapshot()` 提供当前驻留集合，供内部诊断使用，本轮未暴露为 IPC 命令（避免新增无消费方的接口）。
-- **剩余（未做）**：CLIP / LaMa / Denoise / Normal 四个模型挂在 `AiState` 而非 `AiModels`，目前仍由 `reset_ai_sessions` 整体释放；将其纳入同一驻留策略需要把 `AiState` 的加载路径一并迁移，留作后续项。
-- **验收**：Android 端 AI 批处理 50 张后峰值内存回落到基线 +30MB 内；语义搜索首次查询冷启动 <3s、热 <300ms（需真机基准，本轮仅完成逻辑层验证）。
+- **状态级模型（CLIP / LaMa / Denoise / Normal）**：本轮已补齐——挂在 `AiState` 的四个重磅模型改用 `ResidencyPolicy::idle_only`（只按空闲时间卸载，不占会话预算，避免长批处理驱逐别的功能正在用的模型）；`cached_ai_state` 命中即 touch，加载前 enforce，GPU 失败 `release_sessions` 同时清空 tracker。
+- **验收**：Android 端 AI 批处理 50 张后峰值内存回落到基线 +30MB 内；语义搜索首次查询冷启动 <3s、热 <300ms（需真机基准，本轮完成逻辑层验证）。
 
 ### B3. 非线性版本历史树（git-like 编辑 DAG）
 
@@ -345,22 +349,23 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 
 | 文件 | 变更 | 目的 |
 |------|------|------|
-| [model_residency.rs](file:///workspace/src-tauri/src/model_residency.rs) | 新增：`ResidencyPolicy` + `ResidencyTracker` + 8 个单元测试 | B2 驻留策略引擎（时间注入、零 sleep） |
+| [model_residency.rs](file:///workspace/src-tauri/src/model_residency.rs) | 新增：`ResidencyPolicy`（含 `idle_only`）+ `ResidencyTracker` + 9 个单元测试 | B2 驻留策略引擎（时间注入、零 sleep） |
 | [model_registry.rs](file:///workspace/src-tauri/src/model_registry.rs) | 新增：`ModelSpec` / `ModelManifest` / `build_manifest` 校验 / `with_installed_sizes` / `verify_file` + 8 个单元测试 | A3 第一阶段：模型清单治理与完整性校验 |
-| [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) | `AiModels` 增 `residency` / `residency_epoch`；`session()` 收口驱逐；`evict_slot` / `enforce_residency` / `residency_snapshot`；`model_inventory()`（17 条）+ 命令 `get_ai_model_inventory` | B2 接线 + A3 数据源 |
-| [lib.rs](file:///workspace/src-tauri/src/lib.rs) | 注册 `mod model_registry` / `mod model_residency`；handler 增 `get_ai_model_inventory` | 命令链路 |
-| [AppProperties.tsx](file:///workspace/src/components/ui/AppProperties.tsx) | `Invokes` 增 `GetAiModelInventory` | 前端调用契约 |
-| [DataManagementSettings.tsx](file:///workspace/src/components/panel/settings/DataManagementSettings.tsx) | 刷新时拉取清单，AI 模型行显示 `已装/总数`，`data-tooltip` 列 integrity issues | 可见治理 |
+| [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) | `AiModels` 增 `residency` / `residency_epoch`；`session()` 收口驱逐；`evict_slot` / `enforce_residency` / `residency_snapshot`；`model_inventory()`（17 条）+ 命令 `get_ai_model_inventory`；**`AiState` 增 `residency`（idle-only）并把 CLIP/LaMa/Denoise/Normal 四个 getter 接入 touch/enforce**；命令 `delete_ai_model` | B2 接线 + A3 数据源与按角色删除 |
+| [lib.rs](file:///workspace/src-tauri/src/lib.rs) | 注册 `mod model_registry` / `mod model_residency`；handler 增 `get_ai_model_inventory`、`delete_ai_model` | 命令链路 |
+| [AppProperties.tsx](file:///workspace/src/components/ui/AppProperties.tsx) | `Invokes` 增 `GetAiModelInventory`、`DeleteAiModel` | 前端调用契约 |
+| [DataManagementSettings.tsx](file:///workspace/src/components/panel/settings/DataManagementSettings.tsx) | 刷新时拉取清单，AI 模型行显示 `已装/总数`，`data-tooltip` 列 integrity issues；展开已装模型（名称/大小/删除），删除走既有确认弹窗 | 可见治理 + 按角色删除 |
 
 ### 11.2 验收结果（可复现）
 
 | 验收项 | 命令 / 方法 | 结果 |
 |--------|-------------|------|
 | 后端编译 | `cargo +nightly check --lib --ignore-rust-version`（rustc 1.98.0-nightly；**沙箱 1.94.1 无法编译 `sysinfo 0.39.6`（需 `cfg_select`）**，项目本固定 1.98） | **Finished，0 error / 0 warning** |
-| 新模块单元测试 | 独立 harness crate（`#[path]` 引入两个模块）`cargo test` | **16 passed / 0 failed** |
+| 新模块单元测试 | 独立 harness crate（`#[path]` 引入两个模块）`cargo test` | **17 passed / 0 failed** |
 | 前端类型 | `npm run typecheck`（`tsc --noEmit`） | 通过，无输出 |
 | 前端静态检查 | `npx eslint` 改动文件 | **0 error**（10 条既有 `no-explicit-any`/未用变量 warning，非本轮引入） |
-| 操作链路（命令注册表） | 脚本解析 `Invokes` 枚举（123）+ 字面量 `invoke()`（22）= 前端 144 调用；后端 `generate_handler!` 161 命令 | **前端→后端缺失 0** |
+| i18n 一致性 | `node src/i18n/check-runtime.mjs` | 15 locales / 1998 复数 / 29555 占位符全部通过（本轮未新增 key，复用既有文案） |
+| 操作链路（命令注册表） | 脚本解析 `Invokes` 枚举（124）+ 字面量 `invoke()`（22）= 前端 145 调用；后端 `generate_handler!` 162 命令 | **前端→后端缺失 0** |
 | 后端命令无消费方 | 同上（17 条） | 全部可解释：`immich_*` 经 `ImmichInvokes` 枚举、`delete_files_*` / `generate_*_patch` / `list_master_luts` 由三元表达式或动态拼接派发；**无死代码** |
 | 模型清单一致性 | `build_manifest` 自检 | 17 条中仅 `clip_tokenizer.json` 报 issue（上游 `sha256: None`，非我方遗漏） |
 
@@ -382,12 +387,18 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 | B1 ACES 2.0 / OpenDRT | 未开始 | 依赖 v2.0-M0 golden 基座与 OpenDRT 许可核验；且需 GPU/CPU 双路径同源验证 |
 | B3 版本历史 DAG | 未开始 | 跨存储层 + Rust 命令 + 编辑器时间线三层改造，需数据迁移方案；不宜与驻留/清单同批交付 |
 | B5 provider 抽象 + 凭据保险库 | 未开始 | Android Keystore 需新 Tauri 插件与权限声明，属独立合规评审项 |
-| A3 第二阶段（model_set / 多镜像 / 许可随包） | 未开始 | 会改变现有下载行为与目录结构，需要迁移与断网回归，留作独立 PR |
-| CLIP/LaMa/Denoise/Normal 纳入驻留 | 未开始 | 这四个模型挂在 `AiState`，迁移需改动 `get_or_init_*` 全链路，风险大于收益（本轮） |
+| A3 第二阶段剩余（model_set 版本化 / 断点续传 / 许可文本随包） | 部分完成 | 清单+校验+UI+按角色删除已交付；版本化清单与断点续传会改变现有下载行为与目录结构，需要迁移与断网回归，留作独立 PR |
 
-### 11.5 回滚方式
+### 11.6 本轮（第二轮）追加交付
 
-本轮为**净新增 + 内部收口**：删除 `model_residency.rs` / `model_registry.rs`、撤销 `lib.rs` 两行 `mod` 与一行 handler、撤销前端 `Invokes` 枚举项与 `DataManagementSettings` 拉取逻辑，即完全回到 v2.0.2 行为；无数据库/设置迁移，无 sidecar 字段变化。
+| 项 | 内容 | 验收 |
+|----|------|------|
+| B2 状态模型驻留 | `ResidencyPolicy::idle_only` + `AiState.residency`；CLIP/LaMa/Denoise/Normal 四个 getter 命中即 touch、加载前 enforce、`release_sessions` 清空 tracker | `idle_only_policy_never_evicts_for_budget` 单测通过；`cargo check` 0 warning |
+| A3 按角色删除 | `delete_ai_model(role)`（先释放会话再删文件）+ 设置页已装模型列表与删除按钮 | 命令链路 0 缺失；i18n 校验通过；typecheck/lint 通过 |
+
+### 11.7 回滚方式
+
+本轮为**净新增 + 内部收口**：删除 `model_residency.rs` / `model_registry.rs`、撤销 `lib.rs` 的 `mod` 与两行 handler、撤销前端两个 `Invokes` 枚举项与 `DataManagementSettings` 的清单/列表逻辑，即回到 v2.0.2 行为；无数据库/设置迁移，无 sidecar 字段变化。
 
 ---
 

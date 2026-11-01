@@ -81,6 +81,7 @@ export enum Invokes {
   ClearMetadataCache = 'clear_metadata_cache',
   GetAiJobsStatus = 'get_ai_jobs_status',
   GetAiModelInventory = 'get_ai_model_inventory',
+  DeleteAiModel = 'delete_ai_model',
   GetFolderTree = 'get_folder_tree',
   GetFolderChildren = 'get_folder_children',
   GetLogFilePath = 'get_log_file_path',

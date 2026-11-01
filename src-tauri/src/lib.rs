@@ -2836,6 +2836,7 @@ pub fn run() {
             storage::clear_immich_cache,
             storage::clear_ai_models,
             ai_processing::get_ai_model_inventory,
+            ai_processing::delete_ai_model,
             file_management::set_color_label_for_paths,
             file_management::set_rating_for_paths,
             file_management::set_flag_for_paths,
