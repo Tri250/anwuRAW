@@ -63,6 +63,8 @@ mod lens_correction;
 mod lut_processing;
 mod mask_generation;
 mod memory_budget;
+mod model_registry;
+mod model_residency;
 mod multi_exposure;
 mod negative_conversion;
 mod panorama_stitching;
@@ -2833,6 +2835,7 @@ pub fn run() {
             storage::clear_metadata_cache,
             storage::clear_immich_cache,
             storage::clear_ai_models,
+            ai_processing::get_ai_model_inventory,
             file_management::set_color_label_for_paths,
             file_management::set_rating_for_paths,
             file_management::set_flag_for_paths,

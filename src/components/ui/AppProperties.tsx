@@ -80,6 +80,7 @@ export enum Invokes {
   ClearImmichCache = 'clear_immich_cache',
   ClearMetadataCache = 'clear_metadata_cache',
   GetAiJobsStatus = 'get_ai_jobs_status',
+  GetAiModelInventory = 'get_ai_model_inventory',
   GetFolderTree = 'get_folder_tree',
   GetFolderChildren = 'get_folder_children',
   GetLogFilePath = 'get_log_file_path',

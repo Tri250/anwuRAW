@@ -27,6 +27,8 @@ use tokenizers::Tokenizer;
 use tokio::sync::Mutex as TokioMutex;
 
 use crate::face_masking::FaceAnalysis;
+use crate::model_registry::{self, ModelManifest, ModelSpec};
+use crate::model_residency::{LoadedModel, ResidencyPolicy, ResidencyTracker};
 
 const ENCODER_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/sam_vit_b_01ec64_encoder.onnx?download=true";
 const DECODER_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/sam_vit_b_01ec64_decoder.onnx?download=true";
@@ -293,6 +295,17 @@ pub struct Esam3Prompt {
     padding: Array<f32, IxDyn>,
 }
 
+/// BiRefNet fp16/fp32 share a single session slot, so residency tracks both
+/// variants under one key.
+const BIREFNET_RESIDENCY_KEY: &str = "birefnet";
+
+fn residency_key(filename: &str) -> &str {
+    match filename {
+        BIREFNET_FP16_FILENAME | BIREFNET_FP32_FILENAME => BIREFNET_RESIDENCY_KEY,
+        other => other,
+    }
+}
+
 pub struct AiModels {
     models_dir: PathBuf,
     use_gpu: bool,
@@ -309,18 +322,36 @@ pub struct AiModels {
     face_landmarks: Mutex<Option<SharedSession>>,
     face_segmenter: Mutex<Option<SharedSession>>,
     depth_anything: Mutex<Option<SharedSession>>,
+    residency: Mutex<ResidencyTracker>,
+    residency_epoch: Instant,
 }
 
 impl AiModels {
+    fn now_secs(&self) -> u64 {
+        self.residency_epoch.elapsed().as_secs()
+    }
+
+    fn touch_residency(&self, filename: &str) {
+        let key = residency_key(filename);
+        let now = self.now_secs();
+        self.residency.lock().unwrap().touch(key, now);
+    }
+
     fn session(
         &self,
         slot: &Mutex<Option<SharedSession>>,
         filename: &str,
         use_gpu: bool,
     ) -> Result<SharedSession> {
+        // Reclaim idle/over-budget sessions before building another one. This
+        // runs before `slot` is locked so the eviction path never nests locks.
+        self.enforce_residency(filename);
         let mut slot = slot.lock().unwrap();
         if let Some(session) = slot.as_ref() {
-            return Ok(Arc::clone(session));
+            let session = Arc::clone(session);
+            drop(slot);
+            self.touch_residency(filename);
+            return Ok(session);
         }
         let session = Arc::new(Mutex::new(build_session(
             &self.models_dir.join(filename),
@@ -329,7 +360,55 @@ impl AiModels {
             None,
         )?));
         *slot = Some(Arc::clone(&session));
+        drop(slot);
+        self.touch_residency(filename);
         Ok(session)
+    }
+
+    /// Drops sessions the residency policy flags as idle or over budget,
+    /// except `keep` (the model the caller is about to use). Returns what was
+    /// released; consumers may log it or surface it in diagnostics.
+    fn enforce_residency(&self, keep: &str) -> Vec<String> {
+        let keep = residency_key(keep);
+        let due = {
+            let tracker = self.residency.lock().unwrap();
+            let reserve = if tracker.is_loaded(keep) { 0 } else { 1 };
+            tracker.due_for_eviction_reserving(self.now_secs(), reserve)
+        };
+        let mut released = Vec::new();
+        for key in due {
+            if key == keep {
+                continue;
+            }
+            if self.evict_slot(&key) {
+                self.residency.lock().unwrap().mark_released(&key);
+                released.push(key);
+            }
+        }
+        released
+    }
+
+    fn evict_slot(&self, key: &str) -> bool {
+        let session_slot = match key {
+            ENCODER_FILENAME => Some(&self.sam_encoder),
+            DECODER_FILENAME => Some(&self.sam_decoder),
+            BIREFNET_RESIDENCY_KEY => Some(&self.birefnet),
+            ESAM3_IMAGE_ENCODER_FILENAME => Some(&self.esam3_image_encoder),
+            ESAM3_DECODER_FILENAME => Some(&self.esam3_decoder),
+            ESAM3_TEXT_ENCODER_FILENAME => Some(&self.esam3_text_encoder),
+            FACE_LANDMARKS_FILENAME => Some(&self.face_landmarks),
+            FACE_SEGMENTER_FILENAME => Some(&self.face_segmenter),
+            DEPTH_FILENAME => Some(&self.depth_anything),
+            // Prompt embeddings are a few kilobytes and are deliberately left
+            // out of the residency budget.
+            _ => None,
+        };
+        session_slot.is_some_and(|slot| slot.lock().unwrap().take().is_some())
+    }
+
+    pub fn residency_snapshot(&self) -> Vec<LoadedModel> {
+        let tracker = self.residency.lock().unwrap();
+        tracker.loaded(self.now_secs())
     }
 
     pub fn sam_encoder(&self) -> Result<SharedSession> {
@@ -1354,6 +1433,10 @@ pub async fn get_or_init_ai_models(
                 face_landmarks: Mutex::new(None),
                 face_segmenter: Mutex::new(None),
                 depth_anything: Mutex::new(None),
+                residency: Mutex::new(ResidencyTracker::new(ResidencyPolicy::for_platform(
+                    cfg!(target_os = "android"),
+                ))),
+                residency_epoch: Instant::now(),
             });
             ai_state_mutex
                 .lock()
@@ -3072,6 +3155,53 @@ pub struct AiDepthMaskParameters {
     pub orientation_steps: Option<u8>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ai_source: Option<String>,
+}
+
+/// Every downloadable AI model, in the order the settings UI lists them.
+/// `sha256` is empty for assets that are not hash-pinned; the manifest reports
+/// that as an integrity issue instead of quietly accepting an unverified file.
+pub fn model_inventory(models_dir: &Path) -> ModelManifest {
+    const MODEL_CARD: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models";
+    let spec = |role: &str, display_name: &str, filename: &str, url: &str, sha256: &str| ModelSpec {
+        role: role.to_string(),
+        display_name: display_name.to_string(),
+        filename: filename.to_string(),
+        download_url: url.to_string(),
+        sha256: sha256.to_string(),
+        license: "See model card".to_string(),
+        license_url: Some(MODEL_CARD.to_string()),
+        installed_bytes: None,
+    };
+
+    let specs = vec![
+        spec("sam_encoder", "SAM Encoder", ENCODER_FILENAME, ENCODER_URL, ENCODER_SHA256),
+        spec("sam_decoder", "SAM Decoder", DECODER_FILENAME, DECODER_URL, DECODER_SHA256),
+        spec("efficientsam_encoder", "EfficientSAM Encoder", ESAM3_IMAGE_ENCODER_FILENAME, ESAM3_IMAGE_ENCODER_URL, ESAM3_IMAGE_ENCODER_SHA256),
+        spec("efficientsam_decoder", "EfficientSAM Decoder", ESAM3_DECODER_FILENAME, ESAM3_DECODER_URL, ESAM3_DECODER_SHA256),
+        spec("efficientsam_text_encoder", "EfficientSAM Text Encoder", ESAM3_TEXT_ENCODER_FILENAME, ESAM3_TEXT_ENCODER_URL, ESAM3_TEXT_ENCODER_SHA256),
+        spec("efficientsam_sky_prompt", "Sky Prompt", ESAM3_SKY_PROMPT_FILENAME, ESAM3_SKY_PROMPT_URL, ESAM3_SKY_PROMPT_SHA256),
+        spec("efficientsam_face_prompt", "Face Prompt", ESAM3_FACE_PROMPT_FILENAME, ESAM3_FACE_PROMPT_URL, ESAM3_FACE_PROMPT_SHA256),
+        spec("foreground_fp16", "Foreground Model (GPU)", BIREFNET_FP16_FILENAME, BIREFNET_FP16_URL, BIREFNET_FP16_SHA256),
+        spec("foreground_fp32", "Foreground Model (CPU)", BIREFNET_FP32_FILENAME, BIREFNET_FP32_URL, BIREFNET_FP32_SHA256),
+        spec("face_landmarks", "Face Landmarks", FACE_LANDMARKS_FILENAME, FACE_LANDMARKS_URL, FACE_LANDMARKS_SHA256),
+        spec("face_segmenter", "Face Segmentation", FACE_SEGMENTER_FILENAME, FACE_SEGMENTER_URL, FACE_SEGMENTER_SHA256),
+        spec("depth", "Depth Model", DEPTH_FILENAME, DEPTH_URL, DEPTH_SHA256),
+        spec("normal", "Relight Normal Model", NORMAL_FILENAME, NORMAL_URL, NORMAL_SHA256),
+        spec("clip", "CLIP", CLIP_MODEL_FILENAME, CLIP_MODEL_URL, CLIP_MODEL_SHA256),
+        spec("clip_tokenizer", "CLIP Tokenizer", CLIP_TOKENIZER_FILENAME, CLIP_TOKENIZER_URL, ""),
+        spec("denoise", "AI Denoise", DENOISE_FILENAME, DENOISE_URL, DENOISE_SHA256),
+        spec("lama", "Generative Fill", LAMA_FILENAME, LAMA_URL, LAMA_SHA256),
+    ];
+
+    model_registry::build_manifest(model_registry::with_installed_sizes(specs, models_dir))
+}
+
+#[tauri::command]
+pub async fn get_ai_model_inventory(app_handle: tauri::AppHandle) -> Result<ModelManifest, String> {
+    let models_dir = get_models_dir(&app_handle).map_err(|error| error.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || model_inventory(&models_dir))
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[cfg(test)]

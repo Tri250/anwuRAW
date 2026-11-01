@@ -23,6 +23,12 @@ interface StorageUsage {
 
 type StorageKey = keyof StorageUsage;
 
+interface ModelInventory {
+  installedCount: number;
+  issues: string[];
+  totalCount: number;
+}
+
 interface StorageItem {
   key: StorageKey;
   color: string;
@@ -250,6 +256,7 @@ export default function DataManagementSettings({
 }: DataManagementSettingsProps) {
   const { t } = useTranslation();
   const [usage, setUsage] = useState<StorageUsage | null>(null);
+  const [inventory, setInventory] = useState<ModelInventory | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [statuses, setStatuses] = useState<Record<string, Status>>({});
@@ -265,6 +272,11 @@ export default function DataManagementSettings({
     try {
       const usage = await invoke<StorageUsage>(Invokes.GetStorageUsage);
       if (seq === refreshSeq.current) setUsage(usage);
+      const models = await invoke<ModelInventory>(Invokes.GetAiModelInventory).catch((err) => {
+        console.error('Failed to get the AI model inventory:', err);
+        return null;
+      });
+      if (seq === refreshSeq.current) setInventory(models);
     } catch (err) {
       console.error('Failed to get storage usage:', err);
     } finally {
@@ -512,7 +524,22 @@ export default function DataManagementSettings({
                   )
                 }
                 color={color}
-                description={t(`settings.data.storage.${key}Desc` as const)}
+                description={
+                  key === 'models' && inventory ? (
+                    <>
+                      {t('settings.data.storage.modelsDesc')}
+                      <span
+                        className="tabular-nums"
+                        data-tooltip={inventory.issues.length > 0 ? inventory.issues.join(' · ') : undefined}
+                      >
+                        {' '}
+                        · {inventory.installedCount}/{inventory.totalCount}
+                      </span>
+                    </>
+                  ) : (
+                    t(`settings.data.storage.${key}Desc` as const)
+                  )
+                }
                 size={
                   limitGb !== undefined && usage ? `${sizeOf(key)} / ${limitGb} ${t('export.bytes.gb')}` : sizeOf(key)
                 }

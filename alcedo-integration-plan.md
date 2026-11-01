@@ -122,7 +122,7 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 | 内存预算极紧（解码缓存 2 张、缩略图 2 线程） | [app_settings.rs](file:///workspace/src-tauri/src/app_settings.rs) L766-L784 | AI 模型必须"按需下载 + 用完卸载"（B2 项 residency 的直接动因） |
 | AI 模型运行时下载 + SHA-256 校验，目录 `app_data_dir/models` | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L100-L105（CLIP URL+SHA）、L1048-L1051（models_dir） | 已具备模型分发地基，但为**单文件扁平清单**，需升级为 A3 的 model_set 体系 |
 | AI 无平台门控（`ai_commands.rs` 无 android cfg） | 全文检索 | AI 融合项天然覆盖 Android |
-| 蒙版能力：ai_subject / ai_foreground / ai_sky 语义分割，**无点提示交互蒙版** | [mask_generation.rs](file:///workspace/src-tauri/src/mask_generation.rs) L876/L980/L1015 | A1 为净新增能力 |
+| 蒙版能力：已有 SAM ViT-B（encoder + decoder，支持框提示 `generate_subject_mask`）与 EfficientSAM3（天空/文字/人脸提示），**缺的是多轮点选 + 负点交互** | [ai_commands.rs](file:///workspace/src-tauri/src/ai_commands.rs) L509-L545、[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L2203-L2260 | A1 收敛为**交互层补齐**（后端点提示已可用） |
 | 无 HDR 输出（导出 7 格式，全部 SDR） | v2.0 方案 §1.1 交付行 | A2 为净新增能力 |
 | 远程 AI 已有雏形（云端 inpaint 中间件） | [ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs) L1-L30 | B5 是对其的架构化升级 |
 
@@ -166,7 +166,7 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 
 ### A1. SAM 2.1 点提示交互蒙版（触屏点选 + 框选精修）
 
-**为什么是它**：我方 AI 蒙版是"类别分割"（subject/foreground/sky，[mask_generation.rs](file:///workspace/src-tauri/src/mask_generation.rs) L876-L1015），用户只能接受模型给的分区；Alcedo 用 SAM 2.1 提供**点击即选**的交互蒙版（point_encoder + point_decoder 双模型，Apache-2.0）。触屏"点哪儿选哪儿"是移动端蒙版体验的最强形态。
+**为什么是它**：我方 AI 蒙版已具备 SAM ViT-B 框提示主体分割（`generate_subject_mask`，[ai_commands.rs](file:///workspace/src-tauri/src/ai_commands.rs) L509-L545）与 EfficientSAM3 的天空/文字/人脸提示，**但交互形态仍是一次性框选**；`run_sam_decoder` 内部已支持 point/box 标签数组（[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L2203-L2260），缺的是把它做成触屏"点哪儿选哪儿 + 负点减选 + 多轮增量"的交互闭环。Alcedo 的 point_encoder/point_decoder 分层与交互设计可直接借鉴。
 
 **来源证据**：`alcedo_studio/src/edit/runtime/ai_mask_coverage_work.cpp`（蒙版覆盖计算）、`rust/puerh_mind/src/server/segmentation.rs`（SAM2 服务）、`scripts/ai_models/ai_mask_model_set_v1.json`（role: point_encoder/point_decoder）、NOTICE（checkpoint 溯源与 SHA-256）。
 
@@ -207,6 +207,13 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 
 **实现方案**：Rust 侧定义 `ModelSet { id, version, revision, models: Vec<ModelAsset { role, files: 平台映射, sha256, size }>, licenses, notice }`，serde 加载 + 下载器按 role 调度 + 设置页展示"AI 模型管理"（已装/大小/许可/删除）；**许可文本随包分发**写入 `app_data_dir/models/licenses/`；复用 A1 的 residency 注册接口。
 
+**本轮已落地（2026-11-01，第一阶段）**：
+- 新模块 [model_registry.rs](file:///workspace/src-tauri/src/model_registry.rs)：`ModelSpec`（role / filename / HTTPS URL / SHA-256 / license / license_url / installed_bytes）+ `build_manifest` 一致性校验（空 role、重复 role、重复文件名、非 64 位小写 hex、非 HTTPS、缺 license 全部转为 issue 而非静默通过）；
+- `ai_processing::model_inventory()`（17 个模型条目，与下载常量同源）+ 命令 `get_ai_model_inventory`（`spawn_blocking` 查询磁盘大小）；
+- 设置页"数据管理 → AI 模型"显示 `已装/总数`，`data-tooltip` 列出 integrity issues（如 **`clip_tokenizer.json` 上游未提供 pinned SHA-256**——本轮实测该文件确为 `sha256: None`，属上游缺口，已作为可见告警暴露而非掩盖）。
+
+**尚未落地（第二阶段）**：真正的 `model_set` 版本化清单 / 多镜像轮询 / 断点续传 / 许可证文本随包 / 按组删除。当前是"清单 + 校验 + 可视化"的地基，不改变既有下载行为，可安全并入。
+
 **验收标准**：设置页可见每个模型组的许可与体积；断网重试、SHA 校验失败自动清理重下；旧扁平清单自动迁移；APK 体积零增长（模型全走下载）。
 
 ---
@@ -215,16 +222,20 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 
 ### B1. ACES 2.0 / OpenDRT 输出变换（WGSL 移植）
 
-- **现状差距**：我方 AgX 为近似实现（v2.0 方案 S6，ΔE 偏差已列），无 ACES/OpenDRT；Alcedo 以 DRT 节点 + `cuda_display_to_ap1_pass` / `grade_lut` 实现 ACES 2.0 与 OpenDRT 双通道，附 `drt_post_schedule`。
+- **现状差距（已按实测修正）**：我方已有 **ACES filmic RRT/ODT 近似色调映射**（`tonemapper_mode` 档位 3，[shader.wgsl](file:///workspace/src-tauri/src/shaders/shader.wgsl) L1589-L1600、[image_processing.rs](file:///workspace/src-tauri/src/image_processing.rs) L2169），但**没有 ACES 2.0 官方输出变换（DAV/DAC 曲线 + AP1/AP0 矩阵）与 OpenDRT**。Alcedo 的 DRT 节点 + `cuda_display_to_ap1_pass` / `grade_lut` 提供参考实现。
 - **方案**：取官方 ACES 2.0 输出变换数据（输入/输出色域矩阵 + RRT/ODT 曲线参数）与 OpenDRT 公开参数，**自写 WGSL**（数据驱动，非逐行翻译 CUDA）；作为 `tonemapper_mode` 新档位（v2.0 方案 R5-1 已预留扩展位 0/1/2/3，serde 未知值回退机制沿用）；preview 与 export 同源（M0 golden 集覆盖）。
 - **依赖**：v2.0-M0 测试基座（24 色卡 ΔE2000 校准）；**前置核验**：OpenDRT 上游许可未明（§3.2），不可确认则仅做 ACES 2.0。
 - **验收**：24 色卡 ΔE2000 均值 <1.5、最大 <3（与 v2.0 R5-1 同标）；旧 sidecar 加载不回归。
 
-### B2. CLIP 编码器驻留管理（residency）
+### B2. 模型驻留管理（residency）—— 已落地
 
 - **来源**：`puerh_mind/src/service/encoder_residency.rs`（5s 巡检 + 空闲卸载）、`lazy_semantic_engine`（首次语义请求才加载）、`UnavailableEmbeddingEngine`（无模型优雅降级）。
-- **方案**：在 [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) 增加 `ModelResidency` 管理器：所有大模型（CLIP、LaMa、SAM encoder、depth）统一注册 → 引用计数 + 空闲计时 → 超时卸载 + 事件上报（设置页可见当前驻留集合）；Android 默认空闲阈值 60s，桌面 10min。这是 A1/A3 的共享底座。
-- **验收**：Android 端 AI 批处理 50 张后峰值内存回落到基线 +30MB 内；语义搜索首次查询冷启动 <3s、热 <300ms。
+- **已落地（2026-11-01）**：
+  - 新模块 [model_residency.rs](file:///workspace/src-tauri/src/model_residency.rs)：`ResidencyPolicy`（Android 空闲 60s / 上限 3，桌面 600s / 6；上限取 3 是为了让 EfficientSAM3 的 encoder+decoder+text encoder 整链同时驻留，避免同一次推理内自我驱逐）+ `ResidencyTracker`（touch / pinned / idle 超时 / LRU 预算 / `due_for_eviction_reserving` 预留槽位）；时间注入式设计，驻留模块 8 个 + 清单模块 8 个单元测试（全部零 sleep）。
+  - 接线 [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L340-L406：`AiModels::session()` 为唯一加载收口，**先驱逐后加锁**避免嵌套锁；BiRefNet fp16/fp32 共用槽位归一到 `birefnet` 单键；提示词嵌入（约 16KB）刻意不计入预算。
+  - 触发点：每次取用模型前调用 `enforce_residency(keep)`，超时/超预算的会话槽被 `take()` 置空（持有 `Arc` 的在途推理不受影响，只是不再复用缓存）。`residency_snapshot()` 提供当前驻留集合，供内部诊断使用，本轮未暴露为 IPC 命令（避免新增无消费方的接口）。
+- **剩余（未做）**：CLIP / LaMa / Denoise / Normal 四个模型挂在 `AiState` 而非 `AiModels`，目前仍由 `reset_ai_sessions` 整体释放；将其纳入同一驻留策略需要把 `AiState` 的加载路径一并迁移，留作后续项。
+- **验收**：Android 端 AI 批处理 50 张后峰值内存回落到基线 +30MB 内；语义搜索首次查询冷启动 <3s、热 <300ms（需真机基准，本轮仅完成逻辑层验证）。
 
 ### B3. 非线性版本历史树（git-like 编辑 DAG）
 
@@ -233,11 +244,10 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 - **边界**：不做跨图 DAG 合并、不做远端同步（Alcedo 也未做）。
 - **验收**：任意节点可创建分支并独立演化；分支切换 <500ms（45MP 同图）；存储增量 ≤ 快照 JSON 体积 × 系数 1.2（参数 diff 存储）。
 
-### B4. Lensfun 镜头数据库接入
+### B4. Lensfun 镜头数据库接入 —— 已落地（无需再排期）
 
-- **现状**：我方有 [lens_correction.rs](file:///workspace/src-tauri/src/lens_correction.rs) 手动畸变/暗角/CA 校正；Alcedo 用 Lensfun 数据（`vcpkg-overlays/lensfun`）自动匹配镜头配置文件。
-- **方案**：引入 lensfun 数据库文件（数据 CC-BY-SA-3.0，附署名义务；解析层在 Rust 自写或用 `lensfun-rs` 系 crate），EXIF 镜头型号 → 自动推荐畸变/TCA/暗角参数 → 预填我方现有校正滑杆（不做黑盒自动套用，保持用户可控）。
-- **验收**：主流镜头库匹配率抽检 ≥90%；无匹配时静默回退手动模式；关于页登记 CC-BY-SA 归属。
+- **实测修正**：我方**已内嵌完整 Lensfun 数据库**（`include_dir!("$CARGO_MANIFEST_DIR/lensfun_db")`，[lens_correction.rs](file:///workspace/src-tauri/src/lens_correction.rs) L11，桌面走资源目录、Android 走内嵌路径），并已实现厂商/镜头枚举、`autodetect_lens`、`find_best_lens_match`、`resolve_lens_params`（L629-L878）。原计划"The gap = 未接入"的前提不成立。
+- **剩余可选增量**：EXIF 镜头型号模糊匹配命中率调优、无机身/镜头信息时的手动兜底提示。
 
 ### B5. 远程 AI 提供商抽象 + 凭据保险库
 
@@ -301,6 +311,8 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 
 **阶段原则**（继承 v2.0 方案）：每项独立 PR、独立回滚；新增能力默认开关可控；观感变化项（B1）附 golden 前后对比；所有融合项在 Release 说明标注来源仓库与许可。
 
+**本轮（2026-11-01）状态**：A3 第一阶段（清单+校验+UI）与 B2（驻留引擎+接线）已交付并通过编译/单测/链路验收；B4 经实测确认早已落地，无需排期；其余项见 §11.4。
+
 ---
 
 ## 9. 风险与缓解
@@ -324,6 +336,58 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 3. **合规可审计**：`NOTICE` 与 `model_set.json` 双向追溯链（来源 URL + SHA-256 + 许可文本随包）；
 4. **性能可度量**：全部验收线接入 M0 bench（帧时间 P95、内存峰值、导出耗时、ΔE golden），不允许"感觉变好"式结论；
 5. **移动端完整性**：每项明确 Android 差异行为（内存/算力/存储/返回键/网络），禁止"桌面可用、移动端未验证"的合并。
+
+---
+
+## 11. 本轮实施与验收记录（2026-11-01）
+
+### 11.1 变更清单（已落地）
+
+| 文件 | 变更 | 目的 |
+|------|------|------|
+| [model_residency.rs](file:///workspace/src-tauri/src/model_residency.rs) | 新增：`ResidencyPolicy` + `ResidencyTracker` + 8 个单元测试 | B2 驻留策略引擎（时间注入、零 sleep） |
+| [model_registry.rs](file:///workspace/src-tauri/src/model_registry.rs) | 新增：`ModelSpec` / `ModelManifest` / `build_manifest` 校验 / `with_installed_sizes` / `verify_file` + 8 个单元测试 | A3 第一阶段：模型清单治理与完整性校验 |
+| [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) | `AiModels` 增 `residency` / `residency_epoch`；`session()` 收口驱逐；`evict_slot` / `enforce_residency` / `residency_snapshot`；`model_inventory()`（17 条）+ 命令 `get_ai_model_inventory` | B2 接线 + A3 数据源 |
+| [lib.rs](file:///workspace/src-tauri/src/lib.rs) | 注册 `mod model_registry` / `mod model_residency`；handler 增 `get_ai_model_inventory` | 命令链路 |
+| [AppProperties.tsx](file:///workspace/src/components/ui/AppProperties.tsx) | `Invokes` 增 `GetAiModelInventory` | 前端调用契约 |
+| [DataManagementSettings.tsx](file:///workspace/src/components/panel/settings/DataManagementSettings.tsx) | 刷新时拉取清单，AI 模型行显示 `已装/总数`，`data-tooltip` 列 integrity issues | 可见治理 |
+
+### 11.2 验收结果（可复现）
+
+| 验收项 | 命令 / 方法 | 结果 |
+|--------|-------------|------|
+| 后端编译 | `cargo +nightly check --lib --ignore-rust-version`（rustc 1.98.0-nightly；**沙箱 1.94.1 无法编译 `sysinfo 0.39.6`（需 `cfg_select`）**，项目本固定 1.98） | **Finished，0 error / 0 warning** |
+| 新模块单元测试 | 独立 harness crate（`#[path]` 引入两个模块）`cargo test` | **16 passed / 0 failed** |
+| 前端类型 | `npm run typecheck`（`tsc --noEmit`） | 通过，无输出 |
+| 前端静态检查 | `npx eslint` 改动文件 | **0 error**（10 条既有 `no-explicit-any`/未用变量 warning，非本轮引入） |
+| 操作链路（命令注册表） | 脚本解析 `Invokes` 枚举（123）+ 字面量 `invoke()`（22）= 前端 144 调用；后端 `generate_handler!` 161 命令 | **前端→后端缺失 0** |
+| 后端命令无消费方 | 同上（17 条） | 全部可解释：`immich_*` 经 `ImmichInvokes` 枚举、`delete_files_*` / `generate_*_patch` / `list_master_luts` 由三元表达式或动态拼接派发；**无死代码** |
+| 模型清单一致性 | `build_manifest` 自检 | 17 条中仅 `clip_tokenizer.json` 报 issue（上游 `sha256: None`，非我方遗漏） |
+
+### 11.3 原方案前提修正（实测推翻）
+
+| 原断言（§2.2 / §5） | 实测结论 | 证据 | 处理 |
+|-------------------|----------|------|------|
+| "无点提示交互蒙版，A1 为净新增" | 后端 **SAM ViT-B 已支持框提示主体分割**；`run_sam_decoder` 已含 point/box 标签 | [ai_commands.rs](file:///workspace/src-tauri/src/ai_commands.rs) L509-L545、[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L2203-L2260 | A1 收敛为**前端交互层**（负点/多轮/触屏），不再新建模型链路 |
+| "无 ACES" | 已有 **ACES filmic RRT/ODT 近似**（tonemapper 档位 3）；缺的是 ACES 2.0 官方 DRT 与 OpenDRT | [shader.wgsl](file:///workspace/src-tauri/src/shaders/shader.wgsl) L1589-L1600、[image_processing.rs](file:///workspace/src-tauri/src/image_processing.rs) L2169 | B1 改为"ACES 2.0 官方变换增量"，保留 |
+| "B4 Lensfun 未接入" | **已内嵌完整 lensfun_db + autodetect_lens/find_best_lens_match** | [lens_correction.rs](file:///workspace/src-tauri/src/lens_correction.rs) L11、L830-L878 | B4 关闭，仅留匹配率调优 |
+| "A3 需从零建体系" | 单文件 `ModelAsset` 下载+校验已完备，缺的是**清单/许可/可视化**治理层 | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L1336-L1396 | A3 拆为两阶段：本轮完成清单+校验+UI，下载器升级留二期 |
+
+### 11.4 未落地项与真实原因
+
+| 项 | 状态 | 原因（可执行层面） |
+|----|------|-------------------|
+| A2 UltraHDR 导出 | 未开始 | 需 NDK 交叉编译 libultrahdr（Apache-2.0）+ gain map 生成步骤 + 导出 UI；本沙箱无 Android NDK 与外部模型/库网络（HF 直连被拒），无法完成端到端验证 |
+| A1 点选交互闭环 | 未开始 | 属前端手势/叠加层改造（触摸采集、负点标记、增量请求合并），与既有蒙版组合逻辑交织，需单独 UI 验收 |
+| B1 ACES 2.0 / OpenDRT | 未开始 | 依赖 v2.0-M0 golden 基座与 OpenDRT 许可核验；且需 GPU/CPU 双路径同源验证 |
+| B3 版本历史 DAG | 未开始 | 跨存储层 + Rust 命令 + 编辑器时间线三层改造，需数据迁移方案；不宜与驻留/清单同批交付 |
+| B5 provider 抽象 + 凭据保险库 | 未开始 | Android Keystore 需新 Tauri 插件与权限声明，属独立合规评审项 |
+| A3 第二阶段（model_set / 多镜像 / 许可随包） | 未开始 | 会改变现有下载行为与目录结构，需要迁移与断网回归，留作独立 PR |
+| CLIP/LaMa/Denoise/Normal 纳入驻留 | 未开始 | 这四个模型挂在 `AiState`，迁移需改动 `get_or_init_*` 全链路，风险大于收益（本轮） |
+
+### 11.5 回滚方式
+
+本轮为**净新增 + 内部收口**：删除 `model_residency.rs` / `model_registry.rs`、撤销 `lib.rs` 两行 `mod` 与一行 handler、撤销前端 `Invokes` 枚举项与 `DataManagementSettings` 拉取逻辑，即完全回到 v2.0.2 行为；无数据库/设置迁移，无 sidecar 字段变化。
 
 ---
 
