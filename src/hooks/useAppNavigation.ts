@@ -9,7 +9,7 @@ import { useUIStore } from '../store/useUIStore';
 import { useProcessStore } from '../store/useProcessStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { Invokes, LibraryViewMode, ImageFile } from '../components/ui/AppProperties';
-import { INITIAL_ADJUSTMENTS, normalizeLoadedAdjustments } from '../utils/adjustments';
+import { INITIAL_ADJUSTMENTS, normalizeLoadedAdjustments, exifNoiseIsoFrom } from '../utils/adjustments';
 import { globalImageCache } from '../utils/ImageLRUCache';
 import { debouncedSave, debouncedSetHistory } from './useEditorActions';
 import { clearLibrarySelection } from './useLibraryActions';
@@ -278,6 +278,14 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
               freshAdjustments = normalizeLoadedAdjustments(metadata.adjustments);
             } else {
               freshAdjustments = { ...INITIAL_ADJUSTMENTS };
+            }
+            // ISO link: seed the noise-reduction ISO anchor from the shot EXIF
+            // unless a saved value already exists.
+            if (freshAdjustments.noiseIso === undefined) {
+              const iso = exifNoiseIsoFrom(useLibraryStore.getState().exifByPath[path]);
+              if (iso !== undefined) {
+                freshAdjustments = { ...freshAdjustments, noiseIso: iso };
+              }
             }
             if (!isSliderDragging && JSON.stringify(cached.adjustments) !== JSON.stringify(freshAdjustments)) {
               setEditor({ adjustments: freshAdjustments });

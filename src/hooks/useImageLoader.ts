@@ -5,7 +5,7 @@ import { useEditorStore } from '../store/useEditorStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { Invokes } from '../components/ui/AppProperties';
-import { INITIAL_ADJUSTMENTS, normalizeLoadedAdjustments } from '../utils/adjustments';
+import { INITIAL_ADJUSTMENTS, normalizeLoadedAdjustments, exifNoiseIsoFrom } from '../utils/adjustments';
 
 export function useImageLoader(cachedEditStateRef: React.RefObject<any>) {
   const selectedImage = useEditorStore((s) => s.selectedImage);
@@ -44,6 +44,17 @@ export function useImageLoader(cachedEditStateRef: React.RefObject<any>) {
             initialAdjusts = { ...INITIAL_ADJUSTMENTS };
           }
 
+          // ISO link: seed the noise-reduction ISO anchor from the shot EXIF
+          // (library exif cache first) unless the user saved a value already.
+          if (initialAdjusts.noiseIso === undefined) {
+            const iso =
+              exifNoiseIsoFrom(useLibraryStore.getState().exifByPath[selectedImage.path]) ??
+              exifNoiseIsoFrom(selectedImage.exif);
+            if (iso !== undefined) {
+              initialAdjusts = { ...initialAdjusts, noiseIso: iso };
+            }
+          }
+
           setEditor({ adjustments: initialAdjusts });
           resetHistory(initialAdjusts);
         } catch (err) {
@@ -78,6 +89,18 @@ export function useImageLoader(cachedEditStateRef: React.RefObject<any>) {
 
           setEditor((state) => {
             if (state.selectedImage && state.selectedImage.path === selectedImage.path) {
+              let adjustments = state.adjustments;
+              // Second ISO-link chance: the full load_image EXIF just arrived
+              // and the library exif cache had no entry yet. The user cannot
+              // have edited anything at this point, so the history base is
+              // reset to keep the undo stack consistent.
+              if (adjustments.noiseIso === undefined) {
+                const iso = exifNoiseIsoFrom(loadImageResult.exif);
+                if (iso !== undefined) {
+                  adjustments = { ...adjustments, noiseIso: iso };
+                  resetHistory(adjustments);
+                }
+              }
               return {
                 selectedImage: {
                   ...state.selectedImage,
@@ -89,6 +112,7 @@ export function useImageLoader(cachedEditStateRef: React.RefObject<any>) {
                   metadata: loadImageResult.metadata,
                   width: loadImageResult.width,
                 },
+                adjustments,
               };
             }
             return state;

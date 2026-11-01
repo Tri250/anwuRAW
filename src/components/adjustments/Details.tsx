@@ -195,6 +195,17 @@ function DetailsPanel({
           {!isForMask && (
             <>
               <Slider
+                label={t('adjustments.details.noiseIso')}
+                max={12800}
+                min={50}
+                onChange={(e: any) => handleAdjustmentChange(DetailsAdjustment.NoiseIso, e.target.value)}
+                step={50}
+                value={adjustments.noiseIso ?? 100}
+                onDragStateChange={onDragStateChange}
+                defaultValue={100}
+                fillOrigin="min"
+              />
+              <Slider
                 label={t('adjustments.details.colorNrDetail')}
                 max={100}
                 min={0}

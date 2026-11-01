@@ -274,7 +274,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
   // E4: persist the default interval-capture delay (ms) into AppSettings.
   const commitCaptureInterval = () => {
     const parsed = parseInt(intervalText, 10);
-    const clamped = Number.isFinite(parsed) ? Math.min(3600000, Math.max(500, parsed)) : 5000;
+    const clamped = Number.isFinite(parsed) ? Math.min(3600000, Math.max(200, parsed)) : 5000;
     setIntervalText(String(clamped));
     if (appSettings && clamped !== (appSettings.tetherCaptureIntervalMs ?? 5000)) {
       handleSettingsChange({ ...appSettings, tetherCaptureIntervalMs: clamped });
@@ -505,7 +505,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
     if (!isConnected || isIntervalRunning) return;
 
     const parsed = parseInt(intervalText, 10);
-    const intervalMs = Math.min(3600000, Math.max(500, Number.isFinite(parsed) ? parsed : 5000));
+    const intervalMs = Math.min(3600000, Math.max(200, Number.isFinite(parsed) ? parsed : 5000));
     const channel = new Channel<{ path: string }>();
     channel.onmessage = (message) => handleIntervalCapture(message?.path);
 
@@ -1003,7 +1003,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
                 <div className="flex items-center gap-2 mt-1">
                   <input
                     type="number"
-                    min={500}
+                    min={200}
                     max={3600000}
                     step={100}
                     value={intervalText}

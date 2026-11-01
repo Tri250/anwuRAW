@@ -99,6 +99,7 @@ export enum DetailsAdjustment {
   ColorNrSmoothness = 'colorNrSmoothness',
   ColorNoiseReduction = 'colorNoiseReduction',
   LumaNoiseReduction = 'lumaNoiseReduction',
+  NoiseIso = 'noiseIso',
   NegativeBlueWeight = 'negativeBlueWeight',
   NegativeContrast = 'negativeContrast',
   NegativeConversionEnabled = 'negativeConversionEnabled',
@@ -384,6 +385,7 @@ export interface Adjustments {
   negativeExposure: number;
   negativeGreenWeight: number;
   negativeRedWeight: number;
+  noiseIso?: number;
   orientationSteps: number;
   rotation: number;
   saturation: number;
@@ -627,7 +629,12 @@ export const INITIAL_MASK_CONTAINER: MaskContainer = {
 };
 
 // Adjustments has an index signature, so keyof alone would accept any object.
-type DeclaredKeys<T> = keyof { [K in keyof T as string extends K ? never : K]: T[K] };
+// Optional keys (e.g. noiseIso, seeded per-image from the shot EXIF) are
+// excluded: they stay absent from INITIAL_ADJUSTMENTS on purpose so the EXIF
+// link can distinguish "never set" from an explicit value.
+type DeclaredKeys<T> = keyof {
+  [K in keyof T as string extends K ? never : undefined extends T[K] ? never : K]: T[K];
+};
 
 export const INITIAL_ADJUSTMENTS: Adjustments = defaultAdjustments satisfies Record<
   DeclaredKeys<Adjustments>,
@@ -658,6 +665,21 @@ const deepCloneParametric = (pCurve: any): ParametricCurve => ({
   green: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS, ...(pCurve?.green || {}) },
   blue: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS, ...(pCurve?.blue || {}) },
 });
+
+/**
+ * Noise-reduction ISO anchor: when the user has not set `noiseIso` manually,
+ * seed it from the shot's EXIF sensitivity so the WGSL sigma model
+ * (`iso_f`/`iso_var`) tracks the capture conditions automatically.
+ * Returns the ISO value to apply, or undefined when nothing should change.
+ */
+export const exifNoiseIsoFrom = (exif: Record<string, unknown> | null | undefined): number | undefined => {
+  if (!exif) return undefined;
+  const raw = exif.PhotographicSensitivity ?? exif.ISOSpeed ?? exif.ISOSpeedRatings ?? exif.ISO;
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  const iso = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+  if (!Number.isFinite(iso) || iso <= 0) return undefined;
+  return Math.min(12800, Math.max(50, Math.round(iso / 50) * 50));
+};
 
 export const normalizeLoadedAdjustments = (loadedAdjustments: Adjustments): any => {
   if (!loadedAdjustments) {
@@ -860,6 +882,7 @@ export const ADJUSTMENT_GROUPS: Record<string, AdjustmentGroup[]> = {
     {
       label: 'modals.copyPaste.groups.noiseReduction',
       keys: [
+        DetailsAdjustment.NoiseIso,
         DetailsAdjustment.LumaNoiseReduction,
         DetailsAdjustment.ColorNoiseReduction,
         DetailsAdjustment.ColorNrDetail,

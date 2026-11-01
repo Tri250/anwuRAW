@@ -548,7 +548,7 @@ pub fn tether_start_interval_capture(
         let interval = interval_ms
             .or_else(|| settings.as_ref().and_then(|s| s.tether_capture_interval_ms))
             .unwrap_or(5000)
-            .clamp(500, 3_600_000);
+            .clamp(200, 3_600_000);
 
         let token = Arc::new(AtomicBool::new(false));
         *state.tether_interval_token.lock().unwrap() = Some(Arc::clone(&token));
