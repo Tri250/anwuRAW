@@ -20,8 +20,11 @@ import {
   Sliders,
   Folder as FolderIcon,
   X,
+  Play,
+  Square,
 } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
+import { Channel, invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
@@ -217,6 +220,52 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
   const [intervalText, setIntervalText] = useState(() =>
     String(useSettingsStore.getState().appSettings?.tetherCaptureIntervalMs ?? 5000),
   );
+  const [isIntervalRunning, setIsIntervalRunning] = useState(false);
+  const [intervalShots, setIntervalShots] = useState(0);
+  const handledIntervalPaths = useRef<Set<string>>(new Set());
+
+  // 后端同时通过 Channel 与 tether-interval-capture 事件回传每张照片，
+  // 这里按路径去重，保证计数与图库刷新只执行一次。
+  const handleIntervalCapture = useCallback(
+    (path: string) => {
+      if (!path || handledIntervalPaths.current.has(path)) return;
+      handledIntervalPaths.current.add(path);
+      setIntervalShots((count) => count + 1);
+      void onLibraryRefresh();
+    },
+    [onLibraryRefresh],
+  );
+
+  useEffect(() => {
+    const listeners: Array<Promise<() => void>> = [
+      listen<{ path: string }>('tether-interval-capture', (event) => handleIntervalCapture(event.payload?.path)),
+      listen<{ error: string }>('tether-interval-error', (event) => {
+        toast.error(t('tethering.toasts.intervalCaptureError', { err: event.payload?.error }));
+      }),
+      listen<{ shots: number }>('tether-interval-stopped', (event) => {
+        setIsIntervalRunning(false);
+        toast.info(t('tethering.toasts.intervalStopped', { count: event.payload?.shots ?? 0 }));
+      }),
+    ];
+    return () => {
+      listeners.forEach((pending) => pending.then((unlisten) => unlisten()));
+    };
+  }, [handleIntervalCapture, t]);
+
+  // 间隔拍摄由后端线程驱动：面板卸载（切换面板/离开编辑器）时必须主动停止，
+  // 否则相机将持续拍摄且没有任何界面能反馈进度。
+  const isIntervalRunningRef = useRef(false);
+  useEffect(() => {
+    isIntervalRunningRef.current = isIntervalRunning;
+  }, [isIntervalRunning]);
+  useEffect(
+    () => () => {
+      if (isIntervalRunningRef.current) {
+        void invoke(Invokes.TetherStopIntervalCapture).catch(() => {});
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     setIntervalText(String(appSettings?.tetherCaptureIntervalMs ?? 5000));
@@ -225,7 +274,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
   // E4: persist the default interval-capture delay (ms) into AppSettings.
   const commitCaptureInterval = () => {
     const parsed = parseInt(intervalText, 10);
-    const clamped = Number.isFinite(parsed) ? Math.min(3600000, Math.max(200, parsed)) : 5000;
+    const clamped = Number.isFinite(parsed) ? Math.min(3600000, Math.max(500, parsed)) : 5000;
     setIntervalText(String(clamped));
     if (appSettings && clamped !== (appSettings.tetherCaptureIntervalMs ?? 5000)) {
       handleSettingsChange({ ...appSettings, tetherCaptureIntervalMs: clamped });
@@ -404,7 +453,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
     if (isFocusing || !isConnected) return;
     setIsFocusing(true);
     try {
-      await invoke('tether_autofocus');
+      await invoke(Invokes.TetherAutofocus);
     } catch (e) {
       toast.error(t('tethering.toasts.afFailed'));
     } finally {
@@ -445,6 +494,42 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
       fetchSettings();
     } finally {
       setTethering({ isCapturing: false });
+    }
+  };
+
+  const startIntervalCapture = async () => {
+    if (!currentFolderPath || currentFolderPath.startsWith('Album: ')) {
+      toast.warn(t('tethering.toasts.selectFolderFirst'));
+      return;
+    }
+    if (!isConnected || isIntervalRunning) return;
+
+    const parsed = parseInt(intervalText, 10);
+    const intervalMs = Math.min(3600000, Math.max(500, Number.isFinite(parsed) ? parsed : 5000));
+    const channel = new Channel<{ path: string }>();
+    channel.onmessage = (message) => handleIntervalCapture(message?.path);
+
+    handledIntervalPaths.current = new Set();
+    setIntervalShots(0);
+    setIsIntervalRunning(true);
+    try {
+      await invoke(Invokes.TetherStartIntervalCapture, {
+        destinationFolder: currentFolderPath,
+        intervalMs,
+        onCapture: channel,
+      });
+      toast.info(t('tethering.toasts.intervalStarted', { ms: intervalMs }));
+    } catch (e) {
+      setIsIntervalRunning(false);
+      toast.error(t('tethering.toasts.intervalStartFailed', { err: String(e) }));
+    }
+  };
+
+  const stopIntervalCapture = async () => {
+    try {
+      await invoke(Invokes.TetherStopIntervalCapture);
+    } catch (e) {
+      toast.error(t('tethering.toasts.intervalStopFailed', { err: String(e) }));
     }
   };
 
@@ -918,7 +1003,7 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
                 <div className="flex items-center gap-2 mt-1">
                   <input
                     type="number"
-                    min={200}
+                    min={500}
                     max={3600000}
                     step={100}
                     value={intervalText}
@@ -932,6 +1017,33 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
                     }}
                     className="w-full bg-bg-primary border border-surface rounded-md px-2 py-1.5 text-xs text-text-primary focus:outline-hidden focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
                   />
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  {isIntervalRunning ? (
+                    <Button
+                      className="h-8! px-3 text-xs bg-surface"
+                      onClick={stopIntervalCapture}
+                      data-tooltip={t('tethering.stopInterval')}
+                    >
+                      <Square size={13} className="mr-1.5" />
+                      {t('tethering.stopInterval')}
+                    </Button>
+                  ) : (
+                    <Button
+                      className="h-8! px-3 text-xs"
+                      onClick={startIntervalCapture}
+                      disabled={!isConnected || isCapturing}
+                      data-tooltip={t('tethering.startInterval')}
+                    >
+                      <Play size={13} className="mr-1.5" />
+                      {t('tethering.startInterval')}
+                    </Button>
+                  )}
+                  {isIntervalRunning && (
+                    <Text variant={TextVariants.small} color={TextColors.secondary}>
+                      {t('tethering.intervalShots', { count: intervalShots })}
+                    </Text>
+                  )}
                 </div>
               </div>
             </div>

@@ -811,3 +811,61 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 - `npx tsc --noEmit`：0 错误；`npm run build`：成功；`i18n:runtime-check`：exit 0（_few/_many 回退为既有基线）。
 - `cargo +1.98.0 clippy --all-targets`：发现 8 处新增代码 lint 告警（unused_mut / too_many_arguments×2 / needless_range_loop×2 / chunks_exact→as_chunks / collapsible_if / unnecessary_lazy_evaluations），已全部修复（color_profiles.rs、ai_commands.rs、color_transfer.rs、image_processing.rs），复跑 **0 lint 告警**；`cargo fmt --all` 通过；`cargo test` 12 passed / 0 failed。
 - `prettier --check functional-modules-audit.md`：修复全文格式（表格对齐重排，内容无损）。
+
+---
+
+## 二十一、v2.0.1 全量自检（2026-11-01，release 2.0.1）
+
+> 目标：100% 子功能模块 + 100% 功能模块，按「界面控件 → 状态 → IPC → 事件回传 → 持久化 → 界面反馈」闭环逐项核对；发现问题即修复并回归。
+
+### 21.1 覆盖矩阵（机器化比对结果）
+
+| 维度             | 核对方法                                            | 结果                                                                                                  |
+| ---------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 前端源文件可达性 | 从入口递归解析 import 图                            | 159 个文件，157 可达；2 例外为环境声明 `@types/i18next.d.ts` 与副作用式导入 `i18n/index.ts`，非死代码 |
+| 后端命令注册     | `invoke_handler` 注册表 vs `#[tauri::command]` 定义 | 160 条命令全部注册且全部有定义，无悬空                                                                |
+| 后端顶层模块     | `lib.rs` 的 `mod` 声明 vs 文件系统                  | 56 个模块全部声明                                                                                     |
+| IPC 调用接线     | 前端 `Invokes` 字面量全量检索                       | 命令零缺口，无「后端有、前端无入口」                                                                  |
+| 事件收发         | 后端 `emit` vs 前端 `listen`                        | 55 发送 / 55 监听，双向完全匹配                                                                       |
+| 设置字段         | 前端 `AppSettings` vs Rust `AppSettings`            | 前端 84 字段 100% 有 Rust 承载（前端多余 0）                                                          |
+| 面板枚举         | `Panel` 枚举 vs `renderAppPanel` 分支               | 9 个取值全部有渲染分支                                                                                |
+| 弹窗             | `AppModals` 挂载                                    | 16 个弹窗全部挂载（含首次引导）                                                                       |
+
+### 21.2 v2.0.1 新增功能链路逐项结论
+
+| 功能               | 链路                                                                                        | 结论                         |
+| ------------------ | ------------------------------------------------------------------------------------------- | ---------------------------- |
+| 联机间隔拍摄       | 面板按钮 → `TetherStartIntervalCapture`（Channel + 3 事件）→ 去重计数 → 图库刷新 → 卸载停止 | ✅（本轮补卸载清理）         |
+| 间隔默认值持久化   | 输入框 → 200–3600000 钳制 → `tetherCaptureIntervalMs` → 重启回填                            | ✅                           |
+| 监视文件夹自动导入 | 设置页增删 → `SetWatchedFolders` → 启动同步 → 轮询事件 → 列表/树刷新 + 提示                 | ✅                           |
+| GPU 适配器报告     | 启动异步探测 → 事件广播 + 主动拉取 → 设置页只读展示 → 降级提示                              | ✅（本轮修字段大小写与噪音） |
+| 软打样             | 工具按钮 → 菜单 → CSS 滤镜/超色域叠加 → 与 WebGPU 叠加窗口兼容                              | ✅（本轮加能力门控）         |
+| XMP 往返           | 导出（`ExportXmpSidecar`）→ 导入（`ImportXmpSidecar`）→ 合并 adjustments → 历史/预览/持久化 | ✅                           |
+| AI 一键增强        | 按钮/右键强度菜单 → `AiAutoEnhance` → 合并调整项 → 预览与历史                               | ✅                           |
+| AI 超分导出        | 导出面板 → `AiUpscaleExport` → 全局导出状态 → 完成/失败反馈                                 | ✅                           |
+| 相机配置文件       | 选择 → 前端补丁 → 启用所属工具 → 预览                                                       | ✅                           |
+| 文字水印           | 导出面板配置 → `ExportSettings` → 后端合成                                                  | ✅                           |
+| 堆叠 / 智能相册    | 右键创建/自动分组 → 持久化 → 网格折叠与排序 → 智能相册筛选                                  | ✅                           |
+| 新手引导           | 首启检测 → 弹窗 → 关闭写入标记                                                              | ✅                           |
+
+### 21.3 本轮修复（6 项）
+
+1. **GPU 报告字段大小写断链（真实缺陷）**：后端 `GpuAdapterReport` 以 `rename_all = "camelCase"` 序列化为 `isSoftware` / `wgpuRenderingActive`，前端按蛇形读取恒为 `undefined`，导致每次启动误报「GPU 不可用」、设置页状态恒显示软件回退。已统一为小驼峰（`useTauriListeners.ts`、`SettingsPanel.tsx`）。
+2. **GPU 降级提示噪音**：Linux/Android 默认关闭 WebGPU，原逻辑每次启动弹警告。已加「用户显式启用才提示」门控 + 会话级去重，并新增 `GetGpuAdapterInfo` 主动拉取兜底启动事件竞态。
+3. **软打样在 WebGPU 预览下静默无效**：CSS 滤镜无法作用于原生叠加子窗口。已加能力门控（与 `ImageCanvas` 判定完全一致：设置启用且首帧已渲染），不可用时按钮禁用并显示原因；新增 15 语言 `editor.softProofing.requiresCpuPreview`。
+4. **间隔拍摄生命周期泄漏**：面板卸载后后端线程仍持续拍摄且无界面反馈。已在卸载时主动 `TetherStopIntervalCapture`（引用式判断避免误停）。
+5. **v2.0.1 文案缺键（真实缺陷）**：`tethering.startInterval`、`tethering.stopInterval`、`settings.processing.gpuAdapter*`、`intervalShots`、`intervalStopped` 等在英文基准中缺失，界面直接显示原始键名。已用 `i18n:extract` 补齐 15 个语言包，中文（简/繁）提供人工译文。
+6. **间隔下限前后端不一致**：前端允许 200 毫秒、后端静默钳制到 500 毫秒，界面提示与实际拍摄节奏不符。已统一为 500 毫秒（输入框下限、提交钳制、启动钳制三处），并同步 15 语言说明文案。
+
+### 21.4 验证结果
+
+- 前端：`tsc --noEmit` 0 错误；`eslint` 0 错误（917 条既有警告，未增长）；`prettier --check` 通过；`i18n:check` 通过（1998 条复数解析、29541 组占位符，15 语言）；E9 门禁 6/6 未增长；`vite build` 成功（3.58s）。
+- 后端：`cargo +1.98.0 check --all-targets` 退出码 0（15m31s，含本模块改动）；`cargo +1.98.0 test --test consistency_determinism --test wgsl_validation` 全部通过（11 + 1 项，0 失败）。
+- 本地化：15 个语言包 v2.0.1 键全覆盖，无原始键名残留；复数键按各语言规则生成 `_one/_other`，中文使用 `_other`。
+
+### 21.5 已知限制（非断链，不做过度工程）
+
+- 间隔拍摄中相机断连会按轮次提示错误（后端线程持续重试），属预期提示，未做静默合并。
+- `gpuReport.reason` 为后端英文诊断句，中文界面直接展示，属诊断信息透传。
+- 超分导出为单次调用，无中途取消与进度事件；界面以「导出中」状态呈现。
+- Linux/Android 的 WebGPU 展示层尚未接入，能力判定稳定返回 CPU 预览（已有明确原因提示）。

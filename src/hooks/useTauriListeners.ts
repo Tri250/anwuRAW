@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { Channel, convertFileSrc, invoke } from '@tauri-apps/api/core';
+import i18n from 'i18next';
 import { toast } from 'react-toastify';
 import { Status, UnfinishedExportJob } from '../components/ui/ExportImportProperties';
 import { Invokes, Progress, WaveformData } from '../components/ui/AppProperties';
@@ -9,6 +10,7 @@ import { AiJobsStatus, JobKind, JobStatus, useProcessStore } from '../store/useP
 import { useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
 import { useLibraryStore } from '../store/useLibraryStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 
 const parseAnalyticsPacket = async (buffer: ArrayBuffer) => {
   const view = new DataView(buffer);
@@ -59,6 +61,34 @@ interface TauriListenerProps {
   handleSelectSubfolder: (path: string, isNewRoot?: boolean, preloadedImages?: any[], expandParents?: boolean) => void;
   refreshImageList: () => void;
   markGenerated: (path: string) => void;
+}
+
+interface GpuAdapterReport {
+  probed: boolean;
+  name: string;
+  backend: string;
+  isSoftware: boolean;
+  wgpuRenderingActive: boolean;
+  reason: string;
+}
+
+/** 每次会话只提示一次 GPU 降级，避免事件与主动拉取各弹一次。 */
+let gpuFallbackNotified = false;
+
+function notifyGpuFallback(report: GpuAdapterReport) {
+  if (gpuFallbackNotified) return;
+  // 仅当用户明确启用 WebGPU 预览时提示降级；Linux 等平台默认关闭属于正常状态。
+  const wantsWgpu = useSettingsStore.getState().appSettings?.useWgpuRenderer !== false;
+  if (!wantsWgpu) return;
+  if (!report.probed || report.isSoftware || !report.wgpuRenderingActive) {
+    gpuFallbackNotified = true;
+    toast.warn(
+      i18n.t('settings.processing.gpuFallbackNotice', {
+        name: report.name || 'CPU',
+        reason: report.reason,
+      }),
+    );
+  }
 }
 
 export function useTauriListeners({
@@ -557,7 +587,41 @@ export function useTauriListeners({
           }));
         }
       }),
+      // E10：监视文件夹自动导入。后端完成“大小稳定 + 去重”后广播新文件，
+      // 前端只在受影响的当前目录刷新列表，并同步刷新文件夹树计数。
+      listen<{ folder: string; paths: string[] }>('watched-folder-new-images', (event) => {
+        if (!isEffectActive) return;
+        const { folder, paths } = event.payload || {};
+        if (!folder || !paths || paths.length === 0) return;
+
+        const normalize = (value: string) => value.replace(/\\/g, '/');
+        const watched = normalize(folder);
+        const current = normalize(useLibraryStore.getState().currentFolderPath || '');
+        const affectsCurrent = current === watched || current.startsWith(`${watched}/`);
+
+        if (affectsCurrent) void refs.current.refreshImageList();
+        refs.current.refreshAllFolderTrees();
+
+        toast.info(
+          i18n.t('settings.watchedFolders.imported', {
+            count: paths.length,
+            folder: watched.split('/').pop() || watched,
+          }),
+        );
+      }),
+      // 启动时后端异步探测 GPU 适配器并广播一次性报告；仅在降级到软件渲染时提示用户。
+      listen<GpuAdapterReport>('gpu-adapter-report', (event) => {
+        if (!isEffectActive || !event.payload) return;
+        notifyGpuFallback(event.payload);
+      }),
     ];
+
+    // 广播可能早于监听注册完成，因此再主动拉取一次探测结果，二者去重只提示一次。
+    invoke<GpuAdapterReport>(Invokes.GetGpuAdapterInfo)
+      .then((report) => {
+        if (isEffectActive && report) notifyGpuFallback(report);
+      })
+      .catch((err) => console.error('Failed to load GPU adapter info:', err));
 
     invoke<AiJobsStatus>(Invokes.GetAiJobsStatus)
       .then((aiJobs) => {

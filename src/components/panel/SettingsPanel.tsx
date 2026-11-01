@@ -702,6 +702,15 @@ interface WatchedFolderStatus {
   lastNewImages: string[];
 }
 
+interface GpuAdapterReport {
+  probed: boolean;
+  name: string;
+  backend: string;
+  isSoftware: boolean;
+  wgpuRenderingActive: boolean;
+  reason: string;
+}
+
 // Watched-folder auto-ingest: folder list is persisted in settings while the
 // backend watcher restarts on every change via set_watched_folders.
 function WatchedFoldersSettings({
@@ -880,9 +889,16 @@ export default function SettingsPanel({
     useAppleRaw9: appSettings?.useAppleRaw9 ?? false,
   });
   const [restartRequired, setRestartRequired] = useState(false);
+  const [gpuReport, setGpuReport] = useState<GpuAdapterReport | null>(null);
   const [activeCategory, setActiveCategory] = useState('general');
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const [dpr, setDpr] = useState(() => (typeof window !== 'undefined' ? window.devicePixelRatio : 1));
+
+  useEffect(() => {
+    invoke<GpuAdapterReport>(Invokes.GetGpuAdapterInfo)
+      .then((report) => setGpuReport(report))
+      .catch((error) => console.error('Failed to load GPU adapter info:', error));
+  }, []);
 
   const settingCategories = useMemo(
     () => [
@@ -2216,6 +2232,34 @@ export default function SettingsPanel({
                           label={t('settings.processing.wgpuLabel')}
                           onChange={(checked) => handleProcessingSettingChange('useWgpuRenderer', checked)}
                         />
+                      </SettingItem>
+
+                      <SettingItem
+                        label={t('settings.processing.gpuAdapter')}
+                        description={t('settings.processing.gpuAdapterDesc')}
+                      >
+                        <div className="flex flex-col items-end gap-1 text-right max-w-64">
+                          {gpuReport?.probed ? (
+                            <>
+                              <Text variant={TextVariants.small} color={TextColors.primary} className="font-medium">
+                                {t('settings.processing.gpuAdapterStatus', {
+                                  name: gpuReport.name || '—',
+                                  backend: gpuReport.backend || '—',
+                                  status: gpuReport.wgpuRenderingActive
+                                    ? t('settings.processing.gpuAdapterActive')
+                                    : t('settings.processing.gpuAdapterFallback'),
+                                })}
+                              </Text>
+                              <Text variant={TextVariants.small} color={TextColors.secondary}>
+                                {gpuReport.reason}
+                              </Text>
+                            </>
+                          ) : (
+                            <Text variant={TextVariants.small} color={TextColors.secondary}>
+                              {t('settings.processing.gpuAdapterUnknown')}
+                            </Text>
+                          )}
+                        </div>
                       </SettingItem>
 
                       <SettingItem

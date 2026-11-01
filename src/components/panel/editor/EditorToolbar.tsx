@@ -121,6 +121,14 @@ function SoftProofingButton({ onKeyDown }: SoftProofingButtonProps) {
 
   const softProofing = useEditorStore((s) => s.softProofing);
   const setEditor = useEditorStore((s) => s.setEditor);
+  // Soft proofing is applied as a CSS filter over the CPU preview image, so it
+  // cannot affect the native WebGPU overlay. Disable the control instead of
+  // letting it silently do nothing on macOS/Windows.
+  // Keep this in sync with ImageCanvas so the button reflects whether the
+  // filter is actually applied right now.
+  const wgpuEnabled = useSettingsStore((s) => s.appSettings?.useWgpuRenderer !== false);
+  const wgpuFrameReady = useEditorStore((s) => !!s.selectedImage?.isReady && s.hasRenderedFirstFrame);
+  const isSoftProofAvailable = !(wgpuEnabled && wgpuFrameReady);
 
   const update = (updates: Partial<SoftProofingSettings>) =>
     setEditor((state) => ({ softProofing: { ...state.softProofing, ...updates } }));
@@ -130,17 +138,22 @@ function SoftProofingButton({ onKeyDown }: SoftProofingButtonProps) {
       <button
         className={clsx(
           'p-2 rounded-full transition-colors',
+          !isSoftProofAvailable && 'opacity-50 cursor-not-allowed',
           softProofing.enabled
             ? 'bg-accent text-button-text hover:bg-accent/90 hover:text-button-text'
             : 'bg-surface hover:bg-card-active text-text-primary',
         )}
+        disabled={!isSoftProofAvailable}
         onClick={() => update({ enabled: !softProofing.enabled })}
         onKeyDown={onKeyDown}
         onContextMenu={(e) => {
           e.preventDefault();
+          if (!isSoftProofAvailable) return;
           setIsMenuOpen((prev) => !prev);
         }}
-        data-tooltip={t('editor.toolbar.tooltips.softProofing')}
+        data-tooltip={
+          isSoftProofAvailable ? t('editor.toolbar.tooltips.softProofing') : t('editor.softProofing.requiresCpuPreview')
+        }
       >
         <Palette size={20} />
       </button>

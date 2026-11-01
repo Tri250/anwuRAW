@@ -144,12 +144,16 @@ export enum Invokes {
   TetherSetSetting = 'tether_set_setting',
   TetherCapture = 'tether_capture',
   TetherGetPreview = 'tether_get_preview',
+  TetherAutofocus = 'tether_autofocus',
+  TetherStartIntervalCapture = 'tether_start_interval_capture',
+  TetherStopIntervalCapture = 'tether_stop_interval_capture',
   AiAutoEnhance = 'ai_auto_enhance',
   AiUpscaleExport = 'ai_upscale_export',
   ExportXmpSidecar = 'export_xmp_sidecar',
   ImportXmpSidecar = 'import_xmp_sidecar',
   SetWatchedFolders = 'set_watched_folders',
   GetWatchedFolderStatus = 'get_watched_folder_status',
+  GetGpuAdapterInfo = 'get_gpu_adapter_info',
 }
 
 export enum ExifOverlay {

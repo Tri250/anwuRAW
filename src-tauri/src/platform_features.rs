@@ -625,6 +625,10 @@ fn scan_watched_folder(app_handle: &AppHandle, folder: &WatchedFolderConfig) {
             }
             state.pending.retain(|path, _| current.contains_key(path));
         }
+
+        if !ready_paths.is_empty() {
+            state.last_new_images = ready_paths.clone();
+        }
     }
 
     if !ready_paths.is_empty() {
