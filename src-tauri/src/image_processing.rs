@@ -1889,6 +1889,18 @@ pub struct AllAdjustments {
     pub _pad_tail3: f32,
 }
 
+// Compile-time layout guard for the v2.0.0 black-preview regression: WGSL
+// (shaders/shader.wgsl) lays AllAdjustments out with 16-byte alignment
+// (mat3x3) and pads the struct to a multiple of 16. When you add a field
+// here, add it to the WGSL struct too and update this size together —
+// otherwise the adjustments storage buffer will be smaller than the shader
+// requires, every main-pass dispatch fails validation, and the preview
+// renders fully black (silently: the Rust call still returns Ok).
+const _: () = assert!(
+    std::mem::size_of::<AllAdjustments>() == 45264,
+    "AllAdjustments size drifted from the WGSL layout (45264 bytes); update shaders/shader.wgsl AllAdjustments and this guard together"
+);
+
 struct AdjustmentScales {
     exposure: f32,
     brightness: f32,

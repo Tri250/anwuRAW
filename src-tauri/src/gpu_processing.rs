@@ -3995,6 +3995,14 @@ mod black_preview_repro {
     use super::*;
     use bytemuck::Zeroable;
 
+    /// Counts every uncaptured wgpu validation error for the whole test run.
+    /// The v2.0.0 black preview was silent in production because these errors
+    /// only reached the log handler while the render call still returned Ok.
+    /// Asserting zero here turns any future binding/layout/size mismatch into
+    /// a hard test failure instead of a black preview.
+    static WGPU_VALIDATION_ERRORS: std::sync::atomic::AtomicUsize =
+        std::sync::atomic::AtomicUsize::new(0);
+
     /// Returns `None` when no Vulkan adapter/device is available (e.g. a CI
     /// runner without an ICD) so the test skips instead of panicking. Run
     /// locally with `VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json`
@@ -4050,6 +4058,7 @@ mod black_preview_repro {
         // reveal what the user would actually see.
         device.on_uncaptured_error(Arc::new(|err: wgpu::Error| {
             println!("[wgpu-error] {}", err);
+            WGPU_VALIDATION_ERRORS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         }));
 
         Some(GpuContext {
@@ -4151,6 +4160,130 @@ mod black_preview_repro {
         adjustments.mask_count = 0;
         adjustments.noise_iso = 100.0; // R3-1 runtime field lives on AllAdjustments
         adjustments
+    }
+
+    /// Minimal deterministic PRNG (no extra dev-dependency) so the random
+    /// sweep below is reproducible across machines and CI runs.
+    struct Lcg(u64);
+
+    impl Lcg {
+        fn next_u32(&mut self) -> u32 {
+            self.0 = self
+                .0
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            (self.0 >> 32) as u32
+        }
+
+        fn range_f32(&mut self, lo: f32, hi: f32) -> f32 {
+            lo + (self.next_u32() as f32 / u32::MAX as f32) * (hi - lo)
+        }
+    }
+
+    /// The reported repro was "import, edit, randomly drag the sliders,
+    /// preview goes black". This generates such random slider combinations
+    /// (including tonemapper, flare and noise-ISO switches that the fixed
+    /// snapshot above does not touch) with plausible UI ranges.
+    fn random_adjustments(seed: u64) -> AllAdjustments {
+        let mut rng = Lcg(seed);
+        let mut adjustments = AllAdjustments::zeroed();
+        let g = &mut adjustments.global;
+        g.is_raw_image = 0; // JPEG/PNG import path
+        g.tonemapper_mode = rng.next_u32() % 4; // basic/agx/pbr-neutral/aces
+        g.exposure = rng.range_f32(-2.0, 2.0);
+        g.brightness = rng.range_f32(-0.5, 0.5);
+        g.contrast = rng.range_f32(-0.5, 0.5);
+        g.highlights = rng.range_f32(-1.0, 1.0);
+        g.shadows = rng.range_f32(-1.0, 1.0);
+        g.whites = rng.range_f32(-1.0, 1.0);
+        g.blacks = rng.range_f32(-1.0, 1.0);
+        g.saturation = rng.range_f32(-1.0, 1.0);
+        g.vibrance = rng.range_f32(-1.0, 1.0);
+        g.clarity = rng.range_f32(-1.0, 1.0);
+        g.structure = rng.range_f32(-1.0, 1.0);
+        g.sharpness = rng.range_f32(0.0, 1.0);
+        g.sharpness_threshold = rng.range_f32(0.0, 1.0);
+        g.texture_amount = rng.range_f32(0.0, 1.0);
+        g.sharpen_radius = rng.range_f32(0.1, 2.0);
+        g.luma_noise_reduction = rng.range_f32(0.0, 1.0);
+        g.color_noise_reduction = rng.range_f32(0.0, 1.0);
+        g.grain_amount = rng.range_f32(0.0, 1.0);
+        g.grain_size = rng.range_f32(1.0, 4.0);
+        g.grain_roughness = rng.range_f32(0.0, 1.0);
+        g.vignette_amount = rng.range_f32(-1.0, 1.0);
+        g.vignette_midpoint = rng.range_f32(0.0, 1.0);
+        g.vignette_feather = rng.range_f32(0.0, 1.0);
+        g.vignette_roundness = rng.range_f32(-1.0, 1.0);
+        // Creative effects that switch extra GPU passes on (threshold /
+        // centroid / ghosts bind groups get created and dispatched).
+        g.glow_amount = rng.range_f32(0.0, 1.0);
+        g.halation_amount = rng.range_f32(0.0, 1.0);
+        g.flare_amount = rng.range_f32(0.0, 1.0);
+        adjustments.mask_count = 0;
+        adjustments.noise_iso = rng.range_f32(50.0, 3200.0);
+        adjustments
+    }
+
+    /// Replicates the production working -> output copy and reads the f16
+    /// output texture back as normalized f32 RGB — what the display pass
+    /// samples right before the surface present.
+    fn read_display_output(
+        ctx: &GpuContext,
+        processor: &GpuProcessor,
+        width: u32,
+        height: u32,
+    ) -> Vec<f32> {
+        let display_textures = processor.display_textures();
+        let mut encoder = ctx
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Repro Working->Output Copy"),
+            });
+        encoder.copy_texture_to_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &display_textures.working_texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyTextureInfo {
+                texture: &display_textures.output_texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        ctx.queue.submit(Some(encoder.finish()));
+
+        let raw = read_texture_data_roi(
+            &ctx.device,
+            &ctx.queue,
+            &display_textures.output_texture,
+            wgpu::Origin3d::ZERO,
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            8,
+        )
+        .expect("display texture readback failed");
+        raw.as_chunks::<8>()
+            .0
+            .iter()
+            .flat_map(|px| {
+                [
+                    f16::from_le_bytes([px[0], px[1]]).to_f32(),
+                    f16::from_le_bytes([px[2], px[3]]).to_f32(),
+                    f16::from_le_bytes([px[4], px[5]]).to_f32(),
+                ]
+            })
+            .collect()
     }
 
     struct PixelStats {
@@ -4296,61 +4429,167 @@ mod black_preview_repro {
             .expect("display render failed");
         assert_eq!((disp_w, disp_h), (width, height));
         assert_eq!((disp_x, disp_y), (0, 0));
+        let rgb_disp = read_display_output(&ctx, &processor, width, height);
+        assert_visible("f16-display-chain", &stats_from_f32(&rgb_disp));
 
-        let display_textures = processor.display_textures();
-        // Production copies working -> output before binding it to the display
-        // pass; replicate that step.
-        let mut encoder = ctx
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Repro Working->Output Copy"),
-            });
-        encoder.copy_texture_to_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture: &display_textures.working_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::TexelCopyTextureInfo {
-                texture: &display_textures.output_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-        );
-        ctx.queue.submit(Some(encoder.finish()));
-
-        let raw = read_texture_data_roi(
-            &ctx.device,
-            &ctx.queue,
-            &display_textures.output_texture,
-            wgpu::Origin3d::ZERO,
-            wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-            8,
-        )
-        .expect("display texture readback failed");
-        let rgb_disp: Vec<f32> = raw
-            .as_chunks::<8>()
+        // --- Path 4: seeded random adjustment sweep — the exact reported
+        // repro ("randomly drag the sliders, preview goes black"). The black
+        // preview was a *pipeline* failure (bind-group / buffer-size
+        // validation silently skipped the main pass), so the sweep asserts
+        // pipeline invariants rather than image brightness: zero wgpu
+        // validation errors (asserted below), no NaN, output that actually
+        // responds to the sliders (differs from the unadjusted baseline) and
+        // is deterministic. An extreme slider combination (e.g. exposure -2)
+        // legitimately renders a near-black image — that is content, not a
+        // broken pipeline. ---
+        let (base_pixels, _, _, _, _) = processor
+            .run(
+                &entry,
+                RenderRequest {
+                    adjustments: AllAdjustments::zeroed(),
+                    mask_bitmaps: &[],
+                    mask_cache_key: None,
+                    lut: None,
+                    roi: None,
+                },
+                false,
+                RenderOutputPrecision::EightBit,
+            )
+            .expect("baseline render failed");
+        let RenderedPixels::U8(ref base_u8) = base_pixels else {
+            panic!("baseline render must return U8 pixels");
+        };
+        let base_rgb: Vec<f32> = base_u8
+            .as_chunks::<4>()
             .0
             .iter()
             .flat_map(|px| {
                 [
-                    f16::from_le_bytes([px[0], px[1]]).to_f32(),
-                    f16::from_le_bytes([px[2], px[3]]).to_f32(),
-                    f16::from_le_bytes([px[4], px[5]]).to_f32(),
+                    px[0] as f32 / 255.0,
+                    px[1] as f32 / 255.0,
+                    px[2] as f32 / 255.0,
                 ]
             })
             .collect();
-        assert_visible("f16-display-chain", &stats_from_f32(&rgb_disp));
+        report("baseline-unadjusted", &stats_from_f32(&base_rgb));
+
+        for seed in 1..=12u64 {
+            let adjustments = random_adjustments(seed);
+            let (pixels, w, h, _, _) = processor
+                .run(
+                    &entry,
+                    RenderRequest {
+                        adjustments,
+                        mask_bitmaps: &[],
+                        mask_cache_key: None,
+                        lut: None,
+                        roi: None,
+                    },
+                    false,
+                    RenderOutputPrecision::EightBit,
+                )
+                .unwrap_or_else(|e| panic!("random sweep seed {seed} (8-bit) failed: {e}"));
+            assert_eq!((w, h), (width, height));
+            let RenderedPixels::U8(ref u8_pixels) = pixels else {
+                panic!("random sweep seed {seed} must return U8 pixels");
+            };
+            let rgb: Vec<f32> = u8_pixels
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .flat_map(|px| {
+                    [
+                        px[0] as f32 / 255.0,
+                        px[1] as f32 / 255.0,
+                        px[2] as f32 / 255.0,
+                    ]
+                })
+                .collect();
+            let stats = stats_from_f32(&rgb);
+            report(&format!("random-sweep-8bit-seed{seed}"), &stats);
+            assert!(
+                stats.nan_ratio < 0.01,
+                "random sweep seed {seed}: {}% of pixels are NaN — the shader produced undefined values",
+                stats.nan_ratio * 100.0
+            );
+            let responds_to_input = rgb
+                .iter()
+                .zip(base_rgb.iter())
+                .any(|(a, b)| (a - b).abs() > 1.0 / 255.0);
+            assert!(
+                responds_to_input,
+                "random sweep seed {seed}: output is identical to the unadjusted baseline — the pipeline ignored the adjustments (the v2.0.0 black-preview signature)"
+            );
+            if stats.black_ratio > 0.9 {
+                println!(
+                    "[note] random-sweep-8bit-seed{seed}: near-black output from an extreme slider combination — pipeline still verified (no validation errors)"
+                );
+            }
+            // Determinism: the same adjustments must render byte-identical
+            // pixels (grain is coordinate-hashed, not time-based), proving
+            // the compute pass really ran instead of a skipped dispatch.
+            if seed <= 3 {
+                let (again, _, _, _, _) = processor
+                    .run(
+                        &entry,
+                        RenderRequest {
+                            adjustments,
+                            mask_bitmaps: &[],
+                            mask_cache_key: None,
+                            lut: None,
+                            roi: None,
+                        },
+                        false,
+                        RenderOutputPrecision::EightBit,
+                    )
+                    .unwrap_or_else(|e| panic!("random sweep seed {seed} (repeat) failed: {e}"));
+                let RenderedPixels::U8(ref again_u8) = again else {
+                    panic!("repeat render must return U8 pixels");
+                };
+                assert!(
+                    again_u8 == u8_pixels,
+                    "random sweep seed {seed}: re-rendering the same adjustments produced different pixels — the pipeline is non-deterministic"
+                );
+            }
+        }
+
+        // --- Path 5: a few of those random combinations through the f16
+        // display chain as well (glow/halation/flare passes included). ---
+        for seed in 13..=16u64 {
+            let request = RenderRequest {
+                adjustments: random_adjustments(seed),
+                mask_bitmaps: &[],
+                mask_cache_key: None,
+                lut: None,
+                roi: None,
+            };
+            let (_, w, h, _, _) = processor
+                .run(&entry, request, true, RenderOutputPrecision::SixteenBit)
+                .unwrap_or_else(|e| panic!("random sweep seed {seed} (display) failed: {e}"));
+            assert_eq!((w, h), (width, height));
+            let rgb = read_display_output(&ctx, &processor, width, height);
+            let stats = stats_from_f32(&rgb);
+            report(&format!("random-sweep-display-seed{seed}"), &stats);
+            assert!(
+                stats.nan_ratio < 0.01,
+                "random sweep seed {seed} (display): {}% of pixels are NaN",
+                stats.nan_ratio * 100.0
+            );
+            if stats.black_ratio > 0.9 {
+                println!(
+                    "[note] random-sweep-display-seed{seed}: near-black output from an extreme slider combination — pipeline still verified (no validation errors)"
+                );
+            }
+        }
+
+        // The whole chain above ran without a single wgpu validation error —
+        // this is the assertion that would have caught the v2.0.0 regression
+        // (ghost binding 9, undersized adjustments buffer) the moment it was
+        // introduced, instead of shipping a black preview.
+        let errors = WGPU_VALIDATION_ERRORS.load(std::sync::atomic::Ordering::Relaxed);
+        assert_eq!(
+            errors, 0,
+            "{errors} wgpu validation error(s) occurred during the render chain — see the [wgpu-error] lines above"
+        );
     }
 }
