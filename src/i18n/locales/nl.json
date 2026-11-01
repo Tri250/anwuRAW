@@ -965,7 +965,10 @@
       "sampleFailed": "Kon op deze positie geen bruikbare kleur opnemen"
     },
     "toolbar": {
+      "deleteRevision": "Revisie verwijderen",
       "history": "Geschiedenis",
+      "historyEmpty": "Nog geen opgeslagen snapshots",
+      "snapshot": "Snapshot",
       "switchToVariant": "Overschakelen naar {{label}}",
       "tooltips": {
         "aiEnhance": "AI Enhance (Right-click for intensity)",

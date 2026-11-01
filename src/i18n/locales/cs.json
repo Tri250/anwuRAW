@@ -1019,7 +1019,10 @@
       "sampleFailed": "Na této pozici se nepodařilo získat použitelnou barvu"
     },
     "toolbar": {
+      "deleteRevision": "Smazat revizi",
       "history": "Historie",
+      "historyEmpty": "Zatím žádné uložené snímky",
+      "snapshot": "Snímek",
       "switchToVariant": "Přepnout na {{label}}",
       "tooltips": {
         "aiEnhance": "AI Enhance (Right-click for intensity)",

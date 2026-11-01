@@ -992,7 +992,10 @@
       "sampleFailed": "Não foi possível amostrar uma cor utilizável nesta posição"
     },
     "toolbar": {
+      "deleteRevision": "Excluir revisão",
       "history": "Histórico",
+      "historyEmpty": "Nenhum instantâneo salvo",
+      "snapshot": "Instantâneo",
       "switchToVariant": "Switch to {{label}}",
       "tooltips": {
         "aiEnhance": "AI Enhance (Right-click for intensity)",

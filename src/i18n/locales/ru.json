@@ -1019,7 +1019,10 @@
       "sampleFailed": "Не удалось получить подходящий цвет в этой позиции"
     },
     "toolbar": {
+      "deleteRevision": "Удалить версию",
       "history": "История",
+      "historyEmpty": "Сохранённых снимков пока нет",
+      "snapshot": "Снимок",
       "switchToVariant": "Switch to {{label}}",
       "tooltips": {
         "aiEnhance": "AI Enhance (Right-click for intensity)",

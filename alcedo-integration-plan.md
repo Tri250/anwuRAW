@@ -164,9 +164,11 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 
 ## 4. 分项融合方案（P0）
 
-### A1. SAM 2.1 点提示交互蒙版（触屏点选 + 框选精修）
+### A1. SAM 点提示交互蒙版（单点点选具备，多轮/负点待补）
 
-**为什么是它**：我方 AI 蒙版已具备 SAM ViT-B 框提示主体分割（`generate_subject_mask`，[ai_commands.rs](file:///workspace/src-tauri/src/ai_commands.rs) L509-L545）与 EfficientSAM3 的天空/文字/人脸提示，**但交互形态仍是一次性框选**；`run_sam_decoder` 内部已支持 point/box 标签数组（[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L2203-L2260），缺的是把它做成触屏"点哪儿选哪儿 + 负点减选 + 多轮增量"的交互闭环。Alcedo 的 point_encoder/point_decoder 分层与交互设计可直接借鉴。
+**实测修正（2026-11-01）**：单点点选**已可用**，无需改代码——[ImageCanvas.tsx](file:///workspace/src/components/panel/editor/ImageCanvas.tsx#L3145-L3186) 在拖拽距离 <5px 时把 `endPoint` 置为 `startPoint`，而 [run_sam_decoder](file:///workspace/src-tauri/src/ai_processing.rs#L2297-L2317) 检测 `start==end` 即切换为单正点（label 1.0）提示。真正缺口只剩：多轮正点累加、负点减选、以及 `AiSubject` 之外的独立"点选蒙版"类型。
+
+**为什么是它**：我方 AI 蒙版已具备 SAM ViT-B 框提示主体分割（`generate_subject_mask`，[ai_commands.rs](file:///workspace/src-tauri/src/ai_commands.rs) L507-L547）与 EfficientSAM3 的天空/文字/人脸提示，**但交互形态仍是一次性框选或单点**；`run_sam_decoder` 内部已支持 point/box 标签数组（[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L2297-L2317），缺的是把它做成触屏"点哪儿选哪儿 + 负点减选 + 多轮增量"的交互闭环。Alcedo 的 point_encoder/point_decoder 分层与交互设计可直接借鉴。
 
 **来源证据**：`alcedo_studio/src/edit/runtime/ai_mask_coverage_work.cpp`（蒙版覆盖计算）、`rust/puerh_mind/src/server/segmentation.rs`（SAM2 服务）、`scripts/ai_models/ai_mask_model_set_v1.json`（role: point_encoder/point_decoder）、NOTICE（checkpoint 溯源与 SHA-256）。
 
@@ -241,12 +243,14 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 - **状态级模型（CLIP / LaMa / Denoise / Normal）**：本轮已补齐——挂在 `AiState` 的四个重磅模型改用 `ResidencyPolicy::idle_only`（只按空闲时间卸载，不占会话预算，避免长批处理驱逐别的功能正在用的模型）；`cached_ai_state` 命中即 touch，加载前 enforce，GPU 失败 `release_sessions` 同时清空 tracker。
 - **验收**：Android 端 AI 批处理 50 张后峰值内存回落到基线 +30MB 内；语义搜索首次查询冷启动 <3s、热 <300ms（需真机基准，本轮完成逻辑层验证）。
 
-### B3. 非线性版本历史树（git-like 编辑 DAG）
+### B3. 非线性版本历史树（git-like 编辑 DAG）—— v1 已落地
 
 - **来源**：`storage/store/edit_history/commit_graph_store.cpp`（DAG 存储）、`app/pipeline_document_history.cpp` / `pipeline_history_applier.cpp`（提交/应用/分支语义）、`docs/` 中 history 设计文档。
-- **方案**：参考其数据模型（节点=一次参数快照、边=父子演化、分支=多子节点）在**我方自有实现**中落地：Rust 侧 `edit_history.rs`（serde 快照 + SQLite/JSON 存 `app_data_dir/history/<image_id>/`），前端编辑器顶栏时间线改造为可分支视图；虚拟副本升级为"分支变体"（[imageGrouping.ts](file:///workspace/src/utils/imageGrouping.ts) 的 `is_virtual_copy` 语义向后兼容）；"复制部分 Look"复用我方预设系统。
+- **v1 方案（已交付）**：Rust 侧 [edit_history.rs](file:///workspace/src-tauri/src/edit_history.rs) 实现纯数据 DAG（`Revision{id,parentId,label,createdAt,adjustments}` + `head`），每张图一个 JSON 存于 `app_data_dir/edit_history/<sha256(路径)>.json`（temp+rename 原子写）；`save_edit_snapshot` 在当前 `head` 上提交、`checkout_edit_history` 整体替换参数并移动 head、`delete_edit_revision` 删除子树（根与含 head 的子树受保护）、`get_edit_history` 返回轻量摘要；`prune(30)` 淘汰最老非 head 修订并重挂子节点，保证线性快照链也能收敛。前端 [EditHistoryButton.tsx](file:///workspace/src/components/panel/editor/EditHistoryButton.tsx) 挂在顶栏 undo/redo 组：单击打开快照菜单、Snapshot 项保存当前参数、点击修订 checkout 后经 `applyRevision` 整体替换（保留线性 undo/redo）。
+- **与最初设想的差异**：存储由“SQLite / 按 image_id 分目录”改为“每图单 JSON 文件”（避免迁移与额外依赖，写入原子、单测可注入时间）；虚拟副本升级为分支变体、跨图复制部分 Look 未纳入 v1。
 - **边界**：不做跨图 DAG 合并、不做远端同步（Alcedo 也未做）。
-- **验收**：任意节点可创建分支并独立演化；分支切换 <500ms（45MP 同图）；存储增量 ≤ 快照 JSON 体积 × 系数 1.2（参数 diff 存储）。
+- **验收（v1）**：任意修订可创建子分支并独立演化；分支切换走整对象替换（同图不走 diff，45MP 目标 <500ms 依赖现有渲染链路）；`edit_history` 11 项单测通过（提交/分支/检出/删除保护/prune/摘要/持久化/损坏文件）。
+- **v2 待做**：虚拟副本 ↔ 分支变体打通、跨图复制部分 Look、参数 diff 存储与增量体积门禁。
 
 ### B4. Lensfun 镜头数据库接入 —— 已落地（无需再排期）
 
@@ -383,10 +387,10 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 | 项 | 状态 | 原因（可执行层面） |
 |----|------|-------------------|
 | A2 UltraHDR 导出 | 未开始 | 需 NDK 交叉编译 libultrahdr（Apache-2.0）+ gain map 生成步骤 + 导出 UI；本沙箱无 Android NDK 与外部模型/库网络（HF 直连被拒），无法完成端到端验证 |
-| A1 点选交互闭环 | 未开始 | 属前端手势/叠加层改造（触摸采集、负点标记、增量请求合并），与既有蒙版组合逻辑交织，需单独 UI 验收 |
+| A1 点选交互（多轮/负点） | 部分完成 | 单点点选已具备（拖拽 <5px → `start==end` → SAM 单正点）；多轮正点累加、负点减选、独立"点选蒙版"类型尚未做，需前端手势状态机与后端多点 prompt 数组接口 |
 | B1 ACES 2.0 / OpenDRT | 未开始 | 依赖 v2.0-M0 golden 基座与 OpenDRT 许可核验；且需 GPU/CPU 双路径同源验证 |
-| B3 版本历史 DAG | 未开始 | 跨存储层 + Rust 命令 + 编辑器时间线三层改造，需数据迁移方案；不宜与驻留/清单同批交付 |
-| B5 provider 抽象 + 凭据保险库 | 未开始 | Android Keystore 需新 Tauri 插件与权限声明，属独立合规评审项 |
+| B3 版本历史 DAG | v1 已落地 | v1 为每图单 JSON + 4 个 IPC + 顶栏快照菜单（提交/检出/删除/prune）；剩余为虚拟副本升级分支变体、跨图复制 Look、diff 存储 |
+| B5 provider 抽象 + 凭据保险库 | 未开始 | 密钥库依赖**已在** [Cargo.toml](file:///workspace/src-tauri/Cargo.toml) L86-L142（android/apple/windows/zbus 四种 store），但无任何 Rust 代码接线；Android 侧需启动时注入 `ndk_context`，且只能在真机验证 |
 | A3 第二阶段剩余（model_set 版本化 / 断点续传 / 许可文本随包） | 部分完成 | 清单+校验+UI+按角色删除已交付；版本化清单与断点续传会改变现有下载行为与目录结构，需要迁移与断网回归，留作独立 PR |
 
 ### 11.6 本轮（第二轮）追加交付
@@ -395,10 +399,11 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 |----|------|------|
 | B2 状态模型驻留 | `ResidencyPolicy::idle_only` + `AiState.residency`；CLIP/LaMa/Denoise/Normal 四个 getter 命中即 touch、加载前 enforce、`release_sessions` 清空 tracker | `idle_only_policy_never_evicts_for_budget` 单测通过；`cargo check` 0 warning |
 | A3 按角色删除 | `delete_ai_model(role)`（先释放会话再删文件）+ 设置页已装模型列表与删除按钮 | 命令链路 0 缺失；i18n 校验通过；typecheck/lint 通过 |
+| B3 版本历史 DAG v1 | `edit_history.rs`（DAG + 每图 JSON 原子持久化 + prune）+ 4 个 IPC（get/save/checkout/delete）+ `useEditorStore.applyRevision` + 顶栏 `EditHistoryButton` 快照菜单 | 11 项单测（提交/分支/检出/删除保护/prune/摘要/持久化/损坏）；前端→后端缺失 0；typecheck/lint 0 error；15 locale 校验通过 |
 
 ### 11.7 回滚方式
 
-本轮为**净新增 + 内部收口**：删除 `model_residency.rs` / `model_registry.rs`、撤销 `lib.rs` 的 `mod` 与两行 handler、撤销前端两个 `Invokes` 枚举项与 `DataManagementSettings` 的清单/列表逻辑，即回到 v2.0.2 行为；无数据库/设置迁移，无 sidecar 字段变化。
+本轮为**净新增 + 内部收口**：删除 `model_residency.rs` / `model_registry.rs`、撤销 `lib.rs` 的 `mod` 与两行 handler、撤销前端两个 `Invokes` 枚举项与 `DataManagementSettings` 的清单/列表逻辑，即回到 v2.0.2 行为；B3 额外删除 `edit_history.rs`、撤销 `mod edit_history` 与 4 行 handler、4 个 `Invokes`、`applyRevision`、`EditHistoryButton` 及其在 `EditorToolbar` 的挂载（磁盘 `app_data_dir/edit_history` 可整目录删除）；无数据库/设置迁移，无 sidecar 字段变化。
 
 ---
 

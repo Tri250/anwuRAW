@@ -992,7 +992,10 @@
       "sampleFailed": "Impossibile campionare un colore utilizzabile in questa posizione"
     },
     "toolbar": {
+      "deleteRevision": "Elimina revisione",
       "history": "Cronologia",
+      "historyEmpty": "Nessuno snapshot salvato",
+      "snapshot": "Istantanea",
       "switchToVariant": "Passa a {{label}}",
       "tooltips": {
         "aiEnhance": "AI Enhance (Right-click for intensity)",

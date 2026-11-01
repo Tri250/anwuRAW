@@ -992,7 +992,10 @@
       "sampleFailed": "Impossible d'obtenir une couleur exploitable à cette position"
     },
     "toolbar": {
+      "deleteRevision": "Supprimer la révision",
       "history": "Historique",
+      "historyEmpty": "Aucun instantané enregistré",
+      "snapshot": "Instantané",
       "switchToVariant": "Switch to {{label}}",
       "tooltips": {
         "aiEnhance": "AI Enhance (Right-click for intensity)",

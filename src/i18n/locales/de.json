@@ -965,7 +965,10 @@
       "sampleFailed": "An dieser Position konnte keine verwendbare Farbe aufgenommen werden"
     },
     "toolbar": {
+      "deleteRevision": "Revision löschen",
       "history": "Verlauf",
+      "historyEmpty": "Noch keine gespeicherten Snapshots",
+      "snapshot": "Snapshot",
       "switchToVariant": "Switch to {{label}}",
       "tooltips": {
         "aiEnhance": "AI Enhance (Right-click for intensity)",

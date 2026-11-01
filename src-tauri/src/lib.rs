@@ -39,6 +39,7 @@ mod cli;
 mod color_profiles;
 mod color_transfer;
 mod culling;
+mod edit_history;
 mod effect_maps;
 mod exif_processing;
 mod export_journal;
@@ -2204,6 +2205,102 @@ fn frontend_ready(
     })
 }
 
+#[tauri::command]
+async fn get_edit_history(
+    app_handle: tauri::AppHandle,
+    path: String,
+) -> Result<edit_history::EditHistoryView, String> {
+    let data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|error| error.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let file = edit_history::history_path(&data_dir, &path);
+        match edit_history::load(&file)? {
+            Some(graph) => Ok(graph.view()),
+            None => Ok(edit_history::EditHistoryView::empty()),
+        }
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn save_edit_snapshot(
+    app_handle: tauri::AppHandle,
+    path: String,
+    label: String,
+    adjustments: Value,
+) -> Result<String, String> {
+    let data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|error| error.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let file = edit_history::history_path(&data_dir, &path);
+        let now = edit_history::now_secs();
+        let mut graph = match edit_history::load(&file)? {
+            Some(graph) => graph,
+            None => {
+                let graph = edit_history::EditHistoryGraph::new(adjustments, label, now);
+                let id = graph.head.clone().unwrap_or_default();
+                edit_history::save(&file, &graph)?;
+                return Ok(id);
+            }
+        };
+        let id = graph.commit(None, label, adjustments, now)?;
+        graph.prune(edit_history::MAX_REVISIONS);
+        edit_history::save(&file, &graph)?;
+        Ok(id)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn checkout_edit_history(
+    app_handle: tauri::AppHandle,
+    path: String,
+    revision_id: String,
+) -> Result<Value, String> {
+    let data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|error| error.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let file = edit_history::history_path(&data_dir, &path);
+        let mut graph = edit_history::load(&file)?
+            .ok_or_else(|| "No edit history for this image".to_string())?;
+        let adjustments = graph.checkout(&revision_id)?;
+        edit_history::save(&file, &graph)?;
+        Ok(adjustments)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn delete_edit_revision(
+    app_handle: tauri::AppHandle,
+    path: String,
+    revision_id: String,
+) -> Result<edit_history::EditHistoryView, String> {
+    let data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|error| error.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let file = edit_history::history_path(&data_dir, &path);
+        let mut graph = edit_history::load(&file)?
+            .ok_or_else(|| "No edit history for this image".to_string())?;
+        graph.delete_subtree(&revision_id)?;
+        edit_history::save(&file, &graph)?;
+        Ok(graph.view())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let _ = rayon::ThreadPoolBuilder::new()
@@ -2837,6 +2934,10 @@ pub fn run() {
             storage::clear_ai_models,
             ai_processing::get_ai_model_inventory,
             ai_processing::delete_ai_model,
+            get_edit_history,
+            save_edit_snapshot,
+            checkout_edit_history,
+            delete_edit_revision,
             file_management::set_color_label_for_paths,
             file_management::set_rating_for_paths,
             file_management::set_flag_for_paths,

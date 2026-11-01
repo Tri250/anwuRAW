@@ -99,6 +99,7 @@ interface EditorState {
   redo: () => void;
   resetHistory: (initialState: Adjustments) => void;
   goToHistoryIndex: (index: number) => void;
+  applyRevision: (revision: Adjustments) => void;
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -201,5 +202,23 @@ export const useEditorStore = create<EditorState>((set) => ({
         return { historyIndex: index, adjustments: state.history[index] };
       }
       return state;
+    }),
+
+  // Swaps the whole adjustment state for a revision loaded from disk. It goes
+  // through the same truncate-and-push path as normal edits, so undo/redo keeps
+  // working across the jump without merging stale fields.
+  applyRevision: (revision) =>
+    set((state) => {
+      if (revision === state.adjustments) return state;
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(revision);
+      if (newHistory.length > 50) newHistory.shift();
+      return {
+        adjustments: revision,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+        showOriginal: false,
+        previewOverride: null,
+      };
     }),
 }));

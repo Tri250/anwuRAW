@@ -997,7 +997,10 @@
       "sampleFailed": "Could not sample a usable color at this position"
     },
     "toolbar": {
+      "deleteRevision": "Delete revision",
       "history": "History",
+      "historyEmpty": "No saved snapshots yet",
+      "snapshot": "Snapshot",
       "switchToVariant": "Switch to {{label}}",
       "tooltips": {
         "aiEnhance": "AI Enhance (Right-click for intensity)",

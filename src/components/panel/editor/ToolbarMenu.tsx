@@ -61,6 +61,7 @@ interface ToolbarMenuItemProps {
   isSelected: boolean;
   label: string;
   onClick(): void;
+  onContextMenu?(e: React.MouseEvent<HTMLButtonElement>): void;
   onKeyDown(e: React.KeyboardEvent<HTMLButtonElement>): void;
 }
 
@@ -71,6 +72,7 @@ export function ToolbarMenuItem({
   isSelected,
   label,
   onClick,
+  onContextMenu,
   onKeyDown,
 }: ToolbarMenuItemProps) {
   const textColor = isSelected ? TextColors.button : isDimmed ? TextColors.secondary : TextColors.primary;
@@ -90,6 +92,7 @@ export function ToolbarMenuItem({
             : 'hover:bg-bg-primary',
       )}
       onClick={onClick}
+      onContextMenu={onContextMenu}
       onKeyDown={onKeyDown}
     >
       {Icon && <Icon size={16} className={clsx('shrink-0', isSelected ? 'text-button-text' : 'text-text-secondary')} />}

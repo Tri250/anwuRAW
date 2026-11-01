@@ -993,7 +993,10 @@
       "sampleFailed": "未能在此位置取到可用颜色"
     },
     "toolbar": {
+      "deleteRevision": "删除版本",
       "history": "历史记录",
+      "historyEmpty": "暂无已保存的快照",
+      "snapshot": "快照",
       "switchToVariant": "切换到 {{label}}",
       "tooltips": {
         "aiEnhance": "AI 增强（右键选择强度）",

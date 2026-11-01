@@ -20,6 +20,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type { ParseKeys } from 'i18next';
 import { CompareMode, Invokes, SelectedImage, GroupingMode } from '../../ui/AppProperties';
 import { ToolbarMenu, ToolbarMenuItem, useMenuDismiss } from './ToolbarMenu';
+import EditHistoryButton from './EditHistoryButton';
 import { IconAperture, IconCalendar, IconClock, IconFocalLength, IconIso, IconShutter } from './ExifIcons';
 import Text from '../../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
@@ -884,6 +885,8 @@ const EditorToolbar = memo(
               ))}
             </ToolbarMenu>
           </div>
+
+          <EditHistoryButton onKeyDown={handleButtonKeyDown} />
 
           <AiEnhanceButton onKeyDown={handleButtonKeyDown} />
           <CompareButton

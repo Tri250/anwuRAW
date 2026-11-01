@@ -992,7 +992,10 @@
       "sampleFailed": "No s'ha pogut obtenir un color utilitzable en aquesta posició"
     },
     "toolbar": {
+      "deleteRevision": "Esborra la revisió",
       "history": "Historial",
+      "historyEmpty": "Encara no hi ha instantànies desades",
+      "snapshot": "Instantània",
       "switchToVariant": "Canviar a {{label}}",
       "tooltips": {
         "aiEnhance": "AI Enhance (Right-click for intensity)",

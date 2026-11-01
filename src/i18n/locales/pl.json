@@ -1019,7 +1019,10 @@
       "sampleFailed": "Nie udało się pobrać użytecznego koloru w tej pozycji"
     },
     "toolbar": {
+      "deleteRevision": "Usuń wersję",
       "history": "Historia",
+      "historyEmpty": "Brak zapisanych migawek",
+      "snapshot": "Migawka",
       "switchToVariant": "Switch to {{label}}",
       "tooltips": {
         "aiEnhance": "AI Enhance (Right-click for intensity)",
