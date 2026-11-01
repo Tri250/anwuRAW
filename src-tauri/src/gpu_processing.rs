@@ -157,7 +157,18 @@ impl WgpuDisplay {
                     match self.surface.get_current_texture() {
                         wgpu::CurrentSurfaceTexture::Success(tex)
                         | wgpu::CurrentSurfaceTexture::Suboptimal(tex) => tex,
-                        _ => panic!("Failed to acquire surface texture"),
+                        // Surface acquisition can fail at runtime (GPU reset,
+                        // driver update, occlusion). Callers such as the window
+                        // Resized handler run on the main thread with no panic
+                        // guard — skipping the frame keeps the app alive; the
+                        // next render call re-acquires against the reconfigured
+                        // surface.
+                        _ => {
+                            log::warn!(
+                                "Surface texture acquisition failed after reconfigure; skipping frame"
+                            );
+                            return;
+                        }
                     }
                 }
                 _ => return,

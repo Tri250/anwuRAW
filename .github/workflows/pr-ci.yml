@@ -20,7 +20,10 @@ jobs:
             args: '--bundles nsis'
             target: ''
             asset-prefix: '01'
-          - platform: 'macos-14'
+          # macos-15 is the arm64 runner since the macOS 14 image retired
+          # (brownout cancellations, actions/runner-images#13518); release.yml
+          # made the same switch.
+          - platform: 'macos-15'
             target: aarch64-apple-darwin
             asset-prefix: '02'
     uses: ./.github/workflows/build.yml

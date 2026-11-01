@@ -881,14 +881,15 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 
 #### ① 噪点抑制 ISO 联动（noise_iso 全链路）——发现断链，已修复
 
-| 环节 | 取证 | 状态 |
-|------|------|------|
-| WGSL 终点 | [shader.wgsl#L1323-L1326](file:///workspace/src-tauri/src/shaders/shader.wgsl#L1323-L1326)：`iso_f = max(noise_iso, 100) * 0.01` → `iso_var = 4e-4 * max(iso_f - 1, 0) * (0.3 + luma_a)` → `sigma = sqrt(σ²_legacy + iso_var)`，sigma 驱动引导滤波容差、细节门控、色彩降噪阈值 | ✅ 一直存在 |
-| IPC 翻译 | [image_processing.rs#L3034-L3038](file:///workspace/src-tauri/src/image_processing.rs#L3034-L3038)：读 `js_adjustments["noiseIso"]`，缺省 100、下限 50 | ✅ 一直存在 |
-| 导出路径 | [export_processing.rs#L1449](file:///workspace/src-tauri/src/export_processing.rs#L1449)：蒙版单通道构造保留 `noise_iso`，预览-导出同源 | ✅ 一直存在 |
-| **前端字段** | **`adjustments.ts` / 调整面板中完全不存在 `noiseIso` 字段与控件**，前端永远不发送该键 → WGSL 永远拿到默认 100 ISO，`iso_var` 恒为 0，**ISO 联动从未生效** | ❌ → ✅ 已修复 |
+| 环节         | 取证                                                                                                                                                                                                                                                                           | 状态           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
+| WGSL 终点    | [shader.wgsl#L1323-L1326](file:///workspace/src-tauri/src/shaders/shader.wgsl#L1323-L1326)：`iso_f = max(noise_iso, 100) * 0.01` → `iso_var = 4e-4 * max(iso_f - 1, 0) * (0.3 + luma_a)` → `sigma = sqrt(σ²_legacy + iso_var)`，sigma 驱动引导滤波容差、细节门控、色彩降噪阈值 | ✅ 一直存在    |
+| IPC 翻译     | [image_processing.rs#L3034-L3038](file:///workspace/src-tauri/src/image_processing.rs#L3034-L3038)：读 `js_adjustments["noiseIso"]`，缺省 100、下限 50                                                                                                                         | ✅ 一直存在    |
+| 导出路径     | [export_processing.rs#L1449](file:///workspace/src-tauri/src/export_processing.rs#L1449)：蒙版单通道构造保留 `noise_iso`，预览-导出同源                                                                                                                                        | ✅ 一直存在    |
+| **前端字段** | **`adjustments.ts` / 调整面板中完全不存在 `noiseIso` 字段与控件**，前端永远不发送该键 → WGSL 永远拿到默认 100 ISO，`iso_var` 恒为 0，**ISO 联动从未生效**                                                                                                                      | ❌ → ✅ 已修复 |
 
 **修复内容**（前端从零补齐全链路）：
+
 1. [adjustments.ts](file:///workspace/src/utils/adjustments.ts)：`DetailsAdjustment` 枚举新增 `NoiseIso`；`Adjustments` 接口新增 `noiseIso?: number`（可选——保持"从未设置"与"显式 100"可区分，使 EXIF 联动可判定）；复制粘贴组 `noiseReduction` 纳入该键；`satisfies` 完整性检查改为排除可选键（`defaultAdjustments.json` 故意不含该键）。
 2. [Details.tsx](file:///workspace/src/components/adjustments/Details.tsx)：降噪分区新增「拍摄 ISO」滑块（50–12800、步进 50、基准 100），仅全局调整可用（蒙版内不显示——传感器属性不属于局部蒙版）。
 3. **EXIF 自动联动**：新增 `exifNoiseIsoFrom()`（读 `PhotographicSensitivity`/`ISOSpeed`/`ISOSpeedRatings`，钳制 50–12800、按 50 取整）；在两条图像加载路径植入——[useImageLoader.ts](file:///workspace/src/hooks/useImageLoader.ts) 元数据早加载（图库 EXIF 缓存优先）+ `load_image` 完整 EXIF 到达后的第二机会（并同步重置历史基座保持撤销栈一致）、[useAppNavigation.ts](file:///workspace/src/hooks/useAppNavigation.ts) 缓存命中路径的元数据后台同步。用户手动设置过的值永远优先（持久化往返保留）。
@@ -918,18 +919,18 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 
 ### 22.2 功能核对结论（10 项）
 
-| 功能 | 链路取证 | 状态 |
-|------|----------|------|
-| XMP sidecar 双向 | 导出 `ExportXmpSidecar`（RapidRAW 完整 adjustments base64 blob + `crs:` Lightroom 互操作属性 + 原子写）→ 导入 `ImportXmpSidecar`（blob 优先无损往返，否则 `preset_converter` 的 crs 映射）；[PresetsPanel.tsx#L1105](file:///workspace/src/components/panel/right/PresetsPanel.tsx#L1105) / [#L1129](file:///workspace/src/components/panel/right/PresetsPanel.tsx#L1129) | ✅ |
-| 文字水印 | [DejaVuSans-Bold.ttf 内嵌](file:///workspace/src-tauri/src/export_processing.rs#L429)（跨平台一致含 Android）；多行 1.2 行高、锚点定位、字号相对基准高度（1%–4096px 钳制）、hex 颜色严格校验（#RRGGBB / #RRGGBBAA）、透明度 0–100% 混合、超宽 95% 等比钳制 | ✅ |
-| 相机联拍 200ms–1h | **后端钳制原为 500ms，与清单规格 200ms 不符 → 已修复**（[camera_tethering.rs#L551](file:///workspace/src-tauri/src/camera_tethering.rs#L551) `clamp(200, 3_600_000)`）；前端输入下限/提交钳制/启动钳制三处同步 200；15 语言说明文案同步「200–3600000」 | ✅（本轮统一为 200ms） |
-| 监视文件夹 watcher | 轮询式 watcher（`restart_watcher` → `watcher_loop` → `scan_watched_folder`，文件大小两次稳定判定防半写文件）；设置页可视化管理完整（[SettingsPanel.tsx#L715-L821](file:///workspace/src/components/panel/SettingsPanel.tsx#L715-L821)：添加/移除/启用开关/已知-待导入计数/最后扫描时间） | ✅ |
-| 照片堆叠 | `useStacksStore`（创建/解散/加入/移除/展开折叠/自动堆叠连拍）持久化；右键菜单三入口 + `LibraryGrid` 徽章与折叠渲染 + 排序上下文 | ✅ |
-| 智能相册 | 规则模型（[smartAlbums.ts](file:///workspace/src/utils/smartAlbums.ts)：评分/旗标/ISO 等字段 + gte/lte 等运算符）+ `filterImagesForAlbum` 基于 exifByPath 实时筛选 + 相册树集成 | ✅ |
-| Survey 工作流 | [SurveyView.tsx](file:///workspace/src/components/panel/library/SurveyView.tsx) 全屏快速选片：P 选/X 拒/U 取消旗标/0–5 评分/←→导航/C 进入对比/Enter 打开/Esc 退出，底部快捷键提示条 | ✅ |
-| 软打样 | 校样配置文件（sRGB/Display-P3/Adobe RGB/Rec2020）+ 渲染意图（感知/相对/饱和/绝对）+ CSS 滤镜模拟，WebGPU 预览下按能力门控（§21 已修） | ✅ |
-| GPS/IPTC 元数据 | 元数据面板 GPS 坐标查看与 DMS 格式化、GPS 编辑写回（`buildGpsUpdates`）、导出 GPS 剥离开关；IPTC 关键词/评级/旗标经 `exif_processing` 写 sidecar 并随导出写回 | ✅ |
-| 双窗对比 | `CompareView = off/vertical/horizontal/sideBySide`，Editor 分屏 overlay 同步 + 原图预览窗格 + 工具栏三模式切换 + 松手终渲 | ✅ |
+| 功能               | 链路取证                                                                                                                                                                                                                                                                                                                                                                  | 状态                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| XMP sidecar 双向   | 导出 `ExportXmpSidecar`（RapidRAW 完整 adjustments base64 blob + `crs:` Lightroom 互操作属性 + 原子写）→ 导入 `ImportXmpSidecar`（blob 优先无损往返，否则 `preset_converter` 的 crs 映射）；[PresetsPanel.tsx#L1105](file:///workspace/src/components/panel/right/PresetsPanel.tsx#L1105) / [#L1129](file:///workspace/src/components/panel/right/PresetsPanel.tsx#L1129) | ✅                     |
+| 文字水印           | [DejaVuSans-Bold.ttf 内嵌](file:///workspace/src-tauri/src/export_processing.rs#L429)（跨平台一致含 Android）；多行 1.2 行高、锚点定位、字号相对基准高度（1%–4096px 钳制）、hex 颜色严格校验（#RRGGBB / #RRGGBBAA）、透明度 0–100% 混合、超宽 95% 等比钳制                                                                                                                | ✅                     |
+| 相机联拍 200ms–1h  | **后端钳制原为 500ms，与清单规格 200ms 不符 → 已修复**（[camera_tethering.rs#L551](file:///workspace/src-tauri/src/camera_tethering.rs#L551) `clamp(200, 3_600_000)`）；前端输入下限/提交钳制/启动钳制三处同步 200；15 语言说明文案同步「200–3600000」                                                                                                                    | ✅（本轮统一为 200ms） |
+| 监视文件夹 watcher | 轮询式 watcher（`restart_watcher` → `watcher_loop` → `scan_watched_folder`，文件大小两次稳定判定防半写文件）；设置页可视化管理完整（[SettingsPanel.tsx#L715-L821](file:///workspace/src/components/panel/SettingsPanel.tsx#L715-L821)：添加/移除/启用开关/已知-待导入计数/最后扫描时间）                                                                                  | ✅                     |
+| 照片堆叠           | `useStacksStore`（创建/解散/加入/移除/展开折叠/自动堆叠连拍）持久化；右键菜单三入口 + `LibraryGrid` 徽章与折叠渲染 + 排序上下文                                                                                                                                                                                                                                           | ✅                     |
+| 智能相册           | 规则模型（[smartAlbums.ts](file:///workspace/src/utils/smartAlbums.ts)：评分/旗标/ISO 等字段 + gte/lte 等运算符）+ `filterImagesForAlbum` 基于 exifByPath 实时筛选 + 相册树集成                                                                                                                                                                                           | ✅                     |
+| Survey 工作流      | [SurveyView.tsx](file:///workspace/src/components/panel/library/SurveyView.tsx) 全屏快速选片：P 选/X 拒/U 取消旗标/0–5 评分/←→导航/C 进入对比/Enter 打开/Esc 退出，底部快捷键提示条                                                                                                                                                                                       | ✅                     |
+| 软打样             | 校样配置文件（sRGB/Display-P3/Adobe RGB/Rec2020）+ 渲染意图（感知/相对/饱和/绝对）+ CSS 滤镜模拟，WebGPU 预览下按能力门控（§21 已修）                                                                                                                                                                                                                                     | ✅                     |
+| GPS/IPTC 元数据    | 元数据面板 GPS 坐标查看与 DMS 格式化、GPS 编辑写回（`buildGpsUpdates`）、导出 GPS 剥离开关；IPTC 关键词/评级/旗标经 `exif_processing` 写 sidecar 并随导出写回                                                                                                                                                                                                             | ✅                     |
+| 双窗对比           | `CompareView = off/vertical/horizontal/sideBySide`，Editor 分屏 overlay 同步 + 原图预览窗格 + 工具栏三模式切换 + 松手终渲                                                                                                                                                                                                                                                 | ✅                     |
 
 ### 22.3 本轮修复（2 项）
 
@@ -944,20 +945,20 @@ camera_tethering.rs（libgphoto2 联机拍摄，7 个 tether_* 命令）、lens_
 
 ### 22.5 与清单逐项对照总表
 
-| 清单条目 | 结论 |
-|----------|------|
-| 噪点 reduction ISO 联动（noise_iso 全链路） | 修复后 ✅（EXIF 自动填充 + 手动滑块 + WGSL sigma 全链路） |
-| 暗部/中间调/高光细分通道 | ✅（曝光双分区 + 调色轮三分区） |
-| Bloom 泛光、Flare 光斑管线 | ✅（5 级 mip 金字塔 + 质心驱动 flare） |
-| LUT 全精度 f32、f16 显示管线 | ✅（Rgba32Float LUT + Rgba16Float 显示） |
-| 自适应交互画质 | ✅（交互 0.3–0.5 动态档 + 松手精渲） |
-| AI 一键增强（三档强度） | ✅（subtle/standard/strong） |
-| AI 超分导出 2×/4× | ✅（Lanczos3 + 内存预算守护 + 8192 上限） |
-| XMP sidecar 导入/导出 | ✅（双向 + Lightroom 互操作） |
-| 文字水印（锚点/字号/透明度/颜色） | ✅（DejaVu Sans Bold 内嵌） |
-| 相机联拍间隔拍摄 200ms–1h | 修复后 ✅（前后端统一 200ms 下限） |
-| 监视文件夹 watcher（可视化管理） | ✅ |
-| 照片堆叠 / 智能相册 / Survey / 软打样 / GPS/IPTC / 双窗对比 | ✅（六项全部闭环） |
+| 清单条目                                                    | 结论                                                      |
+| ----------------------------------------------------------- | --------------------------------------------------------- |
+| 噪点 reduction ISO 联动（noise_iso 全链路）                 | 修复后 ✅（EXIF 自动填充 + 手动滑块 + WGSL sigma 全链路） |
+| 暗部/中间调/高光细分通道                                    | ✅（曝光双分区 + 调色轮三分区）                           |
+| Bloom 泛光、Flare 光斑管线                                  | ✅（5 级 mip 金字塔 + 质心驱动 flare）                    |
+| LUT 全精度 f32、f16 显示管线                                | ✅（Rgba32Float LUT + Rgba16Float 显示）                  |
+| 自适应交互画质                                              | ✅（交互 0.3–0.5 动态档 + 松手精渲）                      |
+| AI 一键增强（三档强度）                                     | ✅（subtle/standard/strong）                              |
+| AI 超分导出 2×/4×                                           | ✅（Lanczos3 + 内存预算守护 + 8192 上限）                 |
+| XMP sidecar 导入/导出                                       | ✅（双向 + Lightroom 互操作）                             |
+| 文字水印（锚点/字号/透明度/颜色）                           | ✅（DejaVu Sans Bold 内嵌）                               |
+| 相机联拍间隔拍摄 200ms–1h                                   | 修复后 ✅（前后端统一 200ms 下限）                        |
+| 监视文件夹 watcher（可视化管理）                            | ✅                                                        |
+| 照片堆叠 / 智能相册 / Survey / 软打样 / GPS/IPTC / 双窗对比 | ✅（六项全部闭环）                                        |
 
 ### 22.6 第三轮复核（v2.0.1 全清单二次覆盖，2026-11-01）
 
