@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import { CloudSun, Loader2, Sparkles, User, Wand2, Waves, Eraser } from 'lucide-react';
+import { CloudSun, Loader2, Sparkles, User, Wand2, Waves, Eraser, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -44,6 +44,7 @@ export default function CrystalAiToolsPanel() {
     findContainer,
     setMaskAdjustments,
     maskReady,
+    removeContainer,
   } = useCrystalAiMasks();
 
   const runEnhance = useCallback(async () => {
@@ -240,44 +241,66 @@ export default function CrystalAiToolsPanel() {
           </div>
 
           {skyReady && (
-            <CxSliderRow
-              label={t('crystal.ai.skyStrength')}
-              min={0}
-              max={100}
-              step={1}
-              value={Math.max(0, Math.min(100, skyStrength))}
-              onChange={(v) =>
-                skyContainer &&
-                setMaskAdjustments(skyContainer.id, {
-                  clarity: Math.round(v * 0.2),
-                  dehaze: Math.round(v * 0.15),
-                  saturation: Math.round(v * 0.1),
-                })
-              }
-            />
+            <>
+              <CxSliderRow
+                label={t('crystal.ai.skyStrength')}
+                min={0}
+                max={100}
+                step={1}
+                value={Math.max(0, Math.min(100, skyStrength))}
+                onChange={(v) =>
+                  skyContainer &&
+                  setMaskAdjustments(skyContainer.id, {
+                    clarity: Math.round(v * 0.2),
+                    dehaze: Math.round(v * 0.15),
+                    saturation: Math.round(v * 0.1),
+                  })
+                }
+              />
+              <button className="cx-mask-remove" onClick={() => removeContainer(Mask.AiSky)}>
+                <X size={11} />
+                {t('crystal.ai.removeMask')}
+              </button>
+            </>
           )}
           {subjectReady && (
-            <CxSliderRow
-              label={t('crystal.ai.subjectStrength')}
-              min={0}
-              max={100}
-              step={1}
-              value={Math.max(0, Math.min(100, subjectStrength))}
-              onChange={(v) =>
-                subjectContainer && setMaskAdjustments(subjectContainer.id, { clarity: Math.round(v * 0.2) })
-              }
-            />
+            <>
+              <CxSliderRow
+                label={t('crystal.ai.subjectStrength')}
+                min={0}
+                max={100}
+                step={1}
+                value={Math.max(0, Math.min(100, subjectStrength))}
+                onChange={(v) =>
+                  subjectContainer && setMaskAdjustments(subjectContainer.id, { clarity: Math.round(v * 0.2) })
+                }
+              />
+              <button className="cx-mask-remove" onClick={() => removeContainer(Mask.AiForeground)}>
+                <X size={11} />
+                {t('crystal.ai.removeMask')}
+              </button>
+            </>
           )}
 
           {denoiseOn && (
-            <CxSliderRow
-              label={t('crystal.ai.denoiseAmount')}
-              min={0}
-              max={100}
-              step={1}
-              value={Number(adjustments.aiDenoiseAmount ?? 0)}
-              onChange={(v) => applyPatch({ aiDenoiseAmount: v })}
-            />
+            <>
+              <CxSliderRow
+                label={t('crystal.ai.denoiseAmount')}
+                min={0}
+                max={100}
+                step={1}
+                value={Number(adjustments.aiDenoiseAmount ?? 0)}
+                onChange={(v) => applyPatch({ aiDenoiseAmount: v })}
+              />
+              <CxSliderRow
+                label={t('crystal.ai.denoiseDetail')}
+                min={0}
+                max={100}
+                step={1}
+                value={Number(adjustments.aiDenoiseDetail ?? 0)}
+                onChange={(v) => applyPatch({ aiDenoiseDetail: v })}
+              />
+            </>
           )}
           <CxSliderRow
             label={t('crystal.ai.lumaNr')}

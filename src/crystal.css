@@ -241,6 +241,52 @@
   background: rgba(212, 175, 55, 0.28);
 }
 
+/* v2.1.13: 构图三分网格（取景辅助，不拦截手势） */
+.cx-preview-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.cx-preview-grid .cx-grid-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.28);
+}
+.cx-preview-grid .cx-grid-v {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+.cx-preview-grid .cx-grid-h {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+/* v2.1.13: 裁剪拖动提示（底部居中，不遮挡浮层） */
+.cx-crop-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 46px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(126, 217, 126, 0.5);
+  background: rgba(9, 26, 10, 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #b8f0b8;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 3;
+  pointer-events: none;
+}
+
 /* EXIF 信息栏白条（预览内 DOM 渲染，与导出合成参数同源） */
 .cx-exif-bar {
   position: absolute;
@@ -361,6 +407,239 @@
 }
 .crystal-shell .cx-panel .text-sm {
   font-size: 13px;
+}
+
+/* v2.1.13: 调色子页签（光效 / 颜色 / 曲线） */
+.cx-tone-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: var(--cx-elev);
+  border: 1px solid var(--cx-border);
+}
+.cx-tone-tab {
+  flex: 1;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cx-muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+.cx-tone-tab.active {
+  background: color-mix(in srgb, var(--cx-accent) 24%, transparent);
+  color: var(--cx-accent);
+}
+
+/* v2.1.13: HSL 色彩混合（8 色带 + 色相/饱和度/明度） */
+.cx-hsl {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cx-border);
+}
+.cx-hsl-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--cx-muted);
+  margin-bottom: 8px;
+}
+.cx-hsl-bands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.cx-hsl-band {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--cx-border);
+  background: var(--cx-elev);
+  color: var(--cx-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.cx-hsl-band .cx-hswatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--band-color, var(--cx-accent));
+}
+.cx-hsl-band.active {
+  border-color: var(--band-color, var(--cx-accent));
+  color: var(--cx-ink);
+  background: color-mix(in srgb, var(--band-color, var(--cx-accent)) 18%, var(--cx-elev));
+}
+
+/* v2.1.13: 参数曲线预览卡 */
+.cx-curve-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 132px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: var(--cx-elev);
+  border: 1px solid var(--cx-border);
+  overflow: hidden;
+}
+.cx-curve-svg {
+  width: 100%;
+  height: 100%;
+}
+.cx-curve-reset {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--cx-border);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--cx-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.cx-curve-reset:active {
+  color: var(--cx-ink);
+}
+
+/* v2.1.13: 蒙版移除（识别闭环：可识别 → 可调 → 可移除） */
+.cx-mask-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: -4px 0 8px auto;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--cx-border);
+  background: transparent;
+  color: var(--cx-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.cx-mask-remove:active {
+  color: var(--cx-ink);
+  border-color: var(--cx-accent);
+}
+
+/* v2.1.13: 特效子分区 */
+.cx-subsection {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--cx-border);
+}
+.cx-subsection:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+.cx-subsection-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--cx-muted);
+  margin-bottom: 6px;
+}
+
+/* v2.1.13: LUT 滤镜条 */
+.cx-lut {
+  margin-bottom: 4px;
+}
+.cx-lut-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.cx-lut-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--cx-muted);
+}
+.cx-lut-import {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--cx-border);
+  background: var(--cx-elev);
+  color: var(--cx-ink);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.cx-lut-import:active {
+  border-color: var(--cx-accent);
+}
+.cx-lut-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.cx-lut-strip::-webkit-scrollbar {
+  display: none;
+}
+.cx-lut-thumb {
+  flex: none;
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.cx-lut-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cx-elev);
+  border: 2px solid transparent;
+  color: var(--cx-muted);
+}
+.cx-lut-thumb.active .cx-lut-img {
+  border-color: var(--cx-accent);
+}
+.cx-lut-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cx-lut-name {
+  max-width: 56px;
+  font-size: 9.5px;
+  color: var(--cx-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cx-lut-thumb.active .cx-lut-name {
+  color: var(--cx-accent);
+}
+.cx-lut-empty {
+  font-size: 11px;
+  color: var(--cx-muted);
+  padding: 16px 0;
 }
 
 /* ================= 底部操作栏（6键） ================= */

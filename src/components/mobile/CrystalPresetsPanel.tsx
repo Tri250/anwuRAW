@@ -123,13 +123,26 @@ function usePresetPreviewQueue() {
   const queueRef = useRef<Array<PreviewSource>>([]);
   const processingRef = useRef(false);
   const urlsRef = useRef<string[]>([]);
+  const genRef = useRef(0);
+
+  /** v2.1.13: 切图后作废全部缩略图与在途任务（旧图残留会误导滤镜选择） */
+  const resetGeneration = useCallback(() => {
+    genRef.current += 1;
+    queueRef.current = [];
+    urlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    urlsRef.current = [];
+    previewsRef.current = {};
+    setPreviews({});
+  }, []);
 
   const processQueue = useCallback(async () => {
     if (processingRef.current || queueRef.current.length === 0) return;
     processingRef.current = true;
+    const gen = genRef.current;
     const pathAtStart = useEditorStore.getState().selectedImage?.path ?? null;
 
     while (queueRef.current.length > 0) {
+      if (genRef.current !== gen) break;
       const item = queueRef.current.shift();
       if (!item) break;
       if (previewsRef.current[item.id] !== undefined) continue;
@@ -139,6 +152,7 @@ function usePresetPreviewQueue() {
         const imageData: Uint8Array = await invoke(Invokes.GeneratePresetPreview, {
           jsAdjustments: fullAdjustments,
         });
+        if (genRef.current !== gen) break;
         if (useEditorStore.getState().selectedImage?.path !== pathAtStart) continue;
 
         const blob = new Blob([new Uint8Array(imageData)], { type: 'image/jpeg' });
@@ -159,6 +173,8 @@ function usePresetPreviewQueue() {
     }
 
     processingRef.current = false;
+    // 代次切换后旧循环可能提前退出，此时队列里已有新任务，自恢复排空
+    if (queueRef.current.length > 0) void processQueue();
   }, []);
 
   const enqueue = useCallback(
@@ -179,7 +195,7 @@ function usePresetPreviewQueue() {
     [],
   );
 
-  return { previews, enqueue };
+  return { previews, enqueue, resetGeneration };
 }
 
 /* ---------------------------- AI 推荐（真实像素场景识别 + 真实 AiAutoEnhance） ---------------------------- */
@@ -314,9 +330,10 @@ function AiRecommendCard() {
 export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
+  const selectedImagePath = useEditorStore((s) => s.selectedImage?.path);
   const { applyPresetObject, setAdjustments } = useCrystalAdjust();
   const { presets, isLoading } = usePresets(adjustments);
-  const { previews, enqueue } = usePresetPreviewQueue();
+  const { previews, enqueue, resetGeneration } = usePresetPreviewQueue();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [intensity, setIntensity] = useState(100);
@@ -373,9 +390,14 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     }));
   }, [mode, presetGroups, selectedGroup, t]);
 
+  // v2.1.13: 切图后缩略图队列整体作废并按新图重建（必须在 enqueue 效果之前声明）
+  useEffect(() => {
+    resetGeneration();
+  }, [selectedImagePath, resetGeneration]);
+
   useEffect(() => {
     enqueue(sources);
-  }, [sources, enqueue]);
+  }, [sources, enqueue, selectedImagePath]);
 
   const activeSource = activeId ? (sources.find((s) => s.id === activeId) ?? null) : null;
 

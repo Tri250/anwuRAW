@@ -313,6 +313,19 @@ export function CxSwitch({
 }
 
 /* --------------------------------------------------------------------------
+ * 移动端子分区标题（特效等面板内的分组）
+ * ------------------------------------------------------------------------ */
+export function CxSubSection({ labelKey, children }: { labelKey: ParseKeys; children: React.ReactNode }) {
+  const { t } = useTranslation();
+  return (
+    <div className="cx-subsection">
+      <div className="cx-subsection-title">{t(labelKey)}</div>
+      {children}
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
  * 移动端滑杆行：label + 当前值/默认值双标记，点数值输入（复用全局 Slider）
  * ------------------------------------------------------------------------ */
 export function CxSliderRow({
@@ -480,6 +493,16 @@ export function useCrystalAiMasks() {
     [findContainer],
   );
 
+  // 移除整个蒙版容器：蒙版类功能「可识别 → 可调 → 可移除」闭环
+  const removeContainer = useCallback(
+    (type: Mask) => {
+      const container = findContainer(type);
+      if (!container) return;
+      setAdjustments((prev) => ({ ...prev, masks: (prev.masks || []).filter((c) => c.id !== container.id) }));
+    },
+    [findContainer, setAdjustments],
+  );
+
   return {
     handleGenerateAiFaceMask,
     handleGenerateAiSkyMask,
@@ -488,5 +511,6 @@ export function useCrystalAiMasks() {
     ensureContainer,
     setMaskAdjustments,
     maskReady,
+    removeContainer,
   };
 }
