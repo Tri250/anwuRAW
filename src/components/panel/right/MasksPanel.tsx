@@ -1982,6 +1982,12 @@ function SettingsPanel({
     setTextPrompt(activeSubMask?.parameters?.prompt || '');
   }, [activeSubMask?.id]);
 
+  // Cancel any pending face-part generation debounce when the active sub mask
+  // changes or the panel unmounts, so a stale timer never fires afterwards.
+  useEffect(() => {
+    return () => clearTimeout(faceMaskTimeoutRef.current);
+  }, [activeSubMask?.id]);
+
   const placeholderContainer = {
     ...INITIAL_MASK_CONTAINER,
     adjustments: INITIAL_MASK_ADJUSTMENTS,
@@ -2706,7 +2712,7 @@ function SettingsPanel({
                   max={param.max}
                   step={param.step}
                   defaultValue={param.defaultValue}
-                  value={(activeSubMask.parameters[param.key] || 0) * (param.multiplier || 1)}
+                  value={(activeSubMask.parameters?.[param.key] || 0) * (param.multiplier || 1)}
                   onChange={(e: any) =>
                     handleSubMaskParametersChange({ [param.key]: parseFloat(e.target.value) / (param.multiplier || 1) })
                   }

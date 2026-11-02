@@ -20,10 +20,11 @@ use crate::{get_cached_full_warped_image, get_cached_full_warped_image_for_path}
 
 const MASK_CACHE_LIMIT_BYTES: usize = 128 * 1024 * 1024;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[serde(crate = "serde")]
 #[serde(rename_all = "camelCase")]
 pub enum SubMaskMode {
+    #[default]
     Additive,
     Subtractive,
     Intersect,
@@ -41,12 +42,18 @@ pub struct SubMask {
     pub invert: bool,
     #[serde(default = "default_opacity")]
     pub opacity: f32,
+    #[serde(default)]
     pub mode: SubMaskMode,
+    #[serde(default = "default_empty_object")]
     pub parameters: Value,
 }
 
 fn default_opacity() -> f32 {
     100.0
+}
+
+fn default_empty_object() -> Value {
+    Value::Object(serde_json::Map::new())
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -56,10 +63,13 @@ pub struct MaskDefinition {
     pub id: String,
     pub name: String,
     pub visible: bool,
+    #[serde(default)]
     pub invert: bool,
     #[serde(default = "default_opacity")]
     pub opacity: f32,
+    #[serde(default = "default_empty_object")]
     pub adjustments: Value,
+    #[serde(default)]
     pub sub_masks: Vec<SubMask>,
 }
 
@@ -962,10 +972,8 @@ fn generate_ai_depth_bitmap(
         .collect();
     let mut mask = GrayImage::from_raw(w, h, data)?;
 
-    if params.feather > 0.0 {
-        mask = image::imageops::blur(&mask, params.feather * 0.1);
-    }
-
+    // Feather is applied exactly once through apply_grow_and_feather, matching
+    // every other AI mask type (foreground/subject/sky/face/text).
     apply_grow_and_feather(
         &mut mask,
         grow_feather.grow,

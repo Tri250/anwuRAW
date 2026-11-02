@@ -693,6 +693,7 @@ export const normalizeLoadedAdjustments = (loadedAdjustments: Adjustments): any 
       invert: false,
       opacity: 100,
       ...subMask,
+      parameters: subMask.parameters ?? {},
     }));
   };
 
