@@ -32,7 +32,7 @@ function Item({ label, description, children }: { label: string; description?: s
       </Text>
       {children}
       {description && (
-        <Text variant={TextVariants.small} className="mt-2">
+        <Text variant={TextVariants.small} className="mt-2 leading-relaxed">
           {description}
         </Text>
       )}
@@ -132,7 +132,7 @@ export default function ImmichSettings() {
             bgClassName="bg-bg-primary"
           />
           {keyInfo.apiKey && !connectionChanged && (
-            <Text variant={TextVariants.small} className="mt-2 flex items-center gap-1.5">
+            <Text variant={TextVariants.small} className="mt-2 flex items-center gap-1.5 leading-relaxed">
               {keyInfo.inCredentialStore ? <Lock size={12} /> : <FileLock size={12} />}
               {keyInfo.inCredentialStore ? t('immich.settings.keyInStore') : t('immich.settings.keyInFile')}
             </Text>

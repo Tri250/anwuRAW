@@ -399,7 +399,7 @@ const CloudDashboard = () => {
           </div>
         </div>
       ) : (
-        <Text variant={TextVariants.small}>
+        <Text variant={TextVariants.small} className="leading-relaxed">
           {t('settings.processing.ai.cloud.signedOut.upgradeDesc')}{' '}
           <button
             onClick={() => open('https://www.getrapidraw.com/cloud')}
@@ -688,10 +688,10 @@ function UpdaterSettings({
         <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
           <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500" />
           <div className="space-y-1">
-            <Text variant={TextVariants.small} color={TextColors.error}>
+            <Text variant={TextVariants.small} color={TextColors.error} className="leading-relaxed">
               {t('settings.updater.failed', { error })}
             </Text>
-            <Text variant={TextVariants.small} color={TextColors.secondary}>
+            <Text variant={TextVariants.small} color={TextColors.secondary} className="leading-relaxed">
               {t('settings.updater.networkHint')}
             </Text>
           </div>
@@ -2083,7 +2083,7 @@ export default function SettingsPanel({
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2 }}
                               >
-                                <Text variant={TextVariants.small} className="mb-4">
+                                <Text variant={TextVariants.small} className="mb-4 leading-relaxed">
                                   {t('settings.processing.staticDesc')}
                                 </Text>
                                 <div className="pl-4 border-l-2 border-border-color ml-1">
@@ -2110,7 +2110,7 @@ export default function SettingsPanel({
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2 }}
                               >
-                                <Text variant={TextVariants.small} className="mb-4">
+                                <Text variant={TextVariants.small} className="mb-4 leading-relaxed">
                                   {t('settings.processing.dynamicDesc')}
                                 </Text>
                                 <div className="pl-4 border-l-2 border-border-color ml-1 space-y-3">
@@ -2275,7 +2275,7 @@ export default function SettingsPanel({
                         <div className="flex flex-col items-end gap-1 text-right max-w-64">
                           {gpuReport?.probed ? (
                             <>
-                              <Text variant={TextVariants.small} color={TextColors.primary} className="font-medium">
+                              <Text variant={TextVariants.small} color={TextColors.primary} className="font-medium leading-relaxed">
                                 {t('settings.processing.gpuAdapterStatus', {
                                   name: gpuReport.name || '—',
                                   backend: gpuReport.backend || '—',
@@ -2284,7 +2284,7 @@ export default function SettingsPanel({
                                     : t('settings.processing.gpuAdapterFallback'),
                                 })}
                               </Text>
-                              <Text variant={TextVariants.small} color={TextColors.secondary}>
+                              <Text variant={TextVariants.small} color={TextColors.secondary} className="leading-relaxed">
                                 {gpuReport.reason}
                               </Text>
                             </>

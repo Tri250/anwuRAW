@@ -225,7 +225,7 @@ function Row({
           <Text variant={TextVariants.label} color={TextColors.primary} weight={TextWeights.medium}>
             {title}
           </Text>
-          <Text variant={TextVariants.small} className="mt-0.5">
+          <Text variant={TextVariants.small} className="mt-0.5 leading-relaxed">
             {description}
           </Text>
         </div>
