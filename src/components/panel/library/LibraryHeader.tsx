@@ -658,7 +658,7 @@ export function ViewOptionsDropdown({
                     ? t('library.header.viewOptions.sortDescending')
                     : t('library.header.viewOptions.sortAscending')
                 }
-                className="absolute top-1/2 right-3 -translate-y-1/2 p-1 bg-transparent border-none text-text-secondary hover:text-text-primary rounded-sm transition-colors"
+                className="absolute top-1/2 right-3 -translate-y-1/2 p-1 bg-transparent border-none text-text-secondary hover:text-text-primary rounded-sm transition-colors cursor-pointer"
               >
                 {sortCriteria.order === SortDirection.Ascending ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
@@ -887,7 +887,7 @@ const fileName = (path: string) => path.split('?vc=')[0].split(/[\\/]/).pop() ??
 
 const MAX_LISTED_AI_JOBS = 50;
 const AI_JOB_ICON_BUTTON_CLASS =
-  'shrink-0 p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-colors';
+  'shrink-0 p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-colors cursor-pointer';
 
 const AI_JOB_COLLAPSE_ANIMATION = {
   initial: { opacity: 0, height: 0 },

@@ -56,6 +56,7 @@ export default function ImmichTimeline({
               showCount
               isSelected={false}
               onSelect={() => setOpenYear(openYear === year ? null : year)}
+              trailing={openYear === year ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             />
             {openYear === year &&
               months.map(({ month, count }) => {

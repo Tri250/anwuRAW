@@ -223,6 +223,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
         className={clsx(
           'relative flex-1 min-w-0 flex items-center justify-center overflow-hidden rounded-lg bg-bg-primary/60',
           isCompare && (isActive ? 'ring-2 ring-accent' : 'ring-1 ring-border-color opacity-80'),
+          isCompare && 'cursor-pointer',
         )}
         onClick={() => isCompare && setActivePane(paneRole)}
       >
@@ -286,7 +287,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
           </Text>
           <button
             className={clsx(
-              'p-2 rounded-md transition-colors text-text-secondary hover:bg-surface hover:text-text-primary',
+              'p-2 rounded-md transition-colors text-text-secondary hover:bg-surface hover:text-text-primary cursor-pointer',
               isCompare && 'bg-card-active text-text-primary',
             )}
             data-tooltip={t('survey.compareToggle')}
@@ -295,7 +296,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
             <Columns2 size={18} />
           </button>
           <button
-            className="p-2 rounded-md transition-colors text-text-secondary hover:bg-surface hover:text-text-primary"
+            className="p-2 rounded-md transition-colors text-text-secondary hover:bg-surface hover:text-text-primary cursor-pointer"
             data-tooltip={t('survey.close')}
             onClick={close}
           >
@@ -310,7 +311,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
 
         <div className="shrink-0 px-4 pb-3 flex items-center justify-center gap-2">
           <button
-            className="p-2 rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
+            className="p-2 rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors cursor-pointer"
             data-tooltip={t('survey.prev')}
             onClick={goPrev}
           >
@@ -318,7 +319,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
           </button>
           <button
             className={clsx(
-              'flex items-center gap-1.5 px-3 py-2 rounded-md text-sm transition-colors',
+              'flex items-center gap-1.5 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer',
               flagsByPath[activePath ?? ''] === ImageFlag.Pick
                 ? 'bg-green-500/20 text-green-400'
                 : 'text-text-secondary hover:bg-surface hover:text-text-primary',
@@ -330,7 +331,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
           </button>
           <button
             className={clsx(
-              'flex items-center gap-1.5 px-3 py-2 rounded-md text-sm transition-colors',
+              'flex items-center gap-1.5 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer',
               flagsByPath[activePath ?? ''] === ImageFlag.Reject
                 ? 'bg-red-500/20 text-red-400'
                 : 'text-text-secondary hover:bg-surface hover:text-text-primary',
@@ -341,7 +342,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
             <Ban size={15} />X
           </button>
           <button
-            className="px-3 py-2 rounded-md text-sm text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
+            className="px-3 py-2 rounded-md text-sm text-text-secondary hover:bg-surface hover:text-text-primary transition-colors cursor-pointer"
             data-tooltip={t('survey.actions.unflag')}
             onClick={() => activePath && onSetFlag(null, [activePath])}
           >
@@ -352,7 +353,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
               <button
                 key={n}
                 className={clsx(
-                  'p-1 transition-colors',
+                  'p-1 transition-colors cursor-pointer',
                   (imageRatings[activePath ?? ''] || 0) >= n
                     ? 'text-yellow-400'
                     : 'text-text-secondary/50 hover:text-yellow-400',
@@ -365,7 +366,7 @@ export default function SurveyView({ requestThumbnails, onImageSelect, onSetFlag
             ))}
           </div>
           <button
-            className="p-2 rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
+            className="p-2 rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors cursor-pointer"
             data-tooltip={t('survey.next')}
             onClick={goNext}
           >
