@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import { Check, FileDown, FileUp, Loader2, Pencil, Plus, Save, Sparkles, Trash2, Wand2 } from 'lucide-react';
+import { Check, FileDown, FileUp, Loader2, Pencil, Plus, Save, Sparkles, Trash2, Wand2, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { usePresets, UserPreset } from '../../hooks/usePresets';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -376,6 +376,8 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   const [intensity, setIntensity] = useState(100);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const baseRef = useRef<Adjustments | null>(null);
+  /** 当前应用中的滤镜/预设源：取消/换卡时用于取参数键集（activeId 的伴生 ref，二者同生命周期） */
+  const activeSourceRef = useRef<PreviewSource | null>(null);
   /** 强度 0 时暂存的蒙版（与桌面 hiddenPresetMasks 同语义），>0 时还原 */
   const hiddenMasksRef = useRef<Array<MaskContainer> | null>(null);
   /** 长按动作面板目标（仅 presets 模式） */
@@ -448,6 +450,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     setActiveId(null);
     setIntensity(100);
     baseRef.current = null;
+    activeSourceRef.current = null;
     hiddenMasksRef.current = null;
   }, [selectedImagePath]);
 
@@ -493,19 +496,48 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     }
   }, []);
 
+  /** 取消应用：仅还原该滤镜/预设涉及的参数键（从 base 快照），保留用户对其余键的手动调整。
+   *  供「再次点击同卡取消」与强度滑杆旁的显式取消按钮共用（分组过滤会隐藏激活卡，后者是唯一入口）。 */
+  const cancelActive = useCallback(() => {
+    const base = baseRef.current;
+    const source = activeSourceRef.current;
+    baseRef.current = null;
+    activeSourceRef.current = null;
+    hiddenMasksRef.current = null;
+    setActiveId(null);
+    setIntensity(100);
+    if (base && source) {
+      const patch: Record<string, unknown> = {};
+      for (const key of Object.keys(source.adjustments)) {
+        patch[key] = (base as Record<string, unknown>)[key];
+      }
+      setAdjustments({ ...useEditorStore.getState().adjustments, ...patch } as Adjustments);
+    }
+  }, [setAdjustments]);
+
   const handleApply = useCallback(
     (source: PreviewSource) => {
       if (activeId === source.id) {
-        // 再次点击取消：恢复应用前状态
-        const base = baseRef.current;
-        baseRef.current = null;
-        hiddenMasksRef.current = null;
-        setActiveId(null);
-        setIntensity(100);
-        if (base) setAdjustments(base);
+        // 再次点击取消：按参数键还原（见 cancelActive）
+        cancelActive();
         return;
       }
-      baseRef.current = adjustments;
+      const current = useEditorStore.getState().adjustments;
+      const base = baseRef.current;
+      // 换卡：先还原上一个滤镜的参数键，避免两套滤镜参数叠加污染
+      // （如 A 的 saturation -100 会压过 B 的 -12）；再以还原后状态为新基线。
+      let workingBase = current;
+      const prevSource = activeId ? activeSourceRef.current : null;
+      if (prevSource && base) {
+        const patch: Record<string, unknown> = {};
+        for (const key of Object.keys(prevSource.adjustments)) {
+          patch[key] = (base as Record<string, unknown>)[key];
+        }
+        workingBase = { ...current, ...patch } as Adjustments;
+        setAdjustments(workingBase);
+      }
+      baseRef.current = workingBase;
+      activeSourceRef.current = source;
       setActiveId(source.id);
       setIntensity(100);
       hiddenMasksRef.current = null;
@@ -518,7 +550,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         hasAi && presetMasks ? { ...source.adjustments, masks: stripAiMaskResults(presetMasks) } : source.adjustments,
       );
     },
-    [activeId, adjustments, applyPresetObject, resolvePresetAiMasks, setAdjustments],
+    [activeId, applyPresetObject, cancelActive, resolvePresetAiMasks, setAdjustments],
   );
 
   const handleIntensity = useCallback(
@@ -719,6 +751,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         setActiveId(null);
         setIntensity(100);
         baseRef.current = null;
+        activeSourceRef.current = null;
         hiddenMasksRef.current = null;
       }
     },
@@ -899,6 +932,11 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
             suffix="%"
             onChange={handleIntensity}
           />
+          {/* 显式取消入口：分组过滤隐藏激活卡时，「再点同卡取消」不可达，此处兜底闭环 */}
+          <button className="cx-mask-remove mt-2 w-full" onClick={cancelActive}>
+            <X size={11} />
+            {t('modals.confirm.cancel')}
+          </button>
         </div>
       )}
 
