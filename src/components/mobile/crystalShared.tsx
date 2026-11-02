@@ -289,17 +289,20 @@ export function CxSwitch({
   onChange,
   label,
   hint,
+  disabled,
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
   label: string;
   hint?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
-      className="w-full flex items-center justify-between gap-3 bg-transparent border-none p-0"
+      className={`w-full flex items-center justify-between gap-3 bg-transparent border-none p-0${disabled ? ' opacity-50' : ''}`}
       onClick={() => onChange(!checked)}
+      disabled={disabled}
     >
       <span className="text-left">
         <span className="cx-frame-label block">{label}</span>

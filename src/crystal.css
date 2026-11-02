@@ -799,6 +799,89 @@
   padding: 16px 0;
 }
 
+/* v2.1.13: 特效 Spatial AI（镜头模糊散景/重打光光源/雾化生成态） */
+.cx-gen-busy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 0 4px;
+  color: var(--cx-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.cx-gen-busy .gen-status {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--cx-accent);
+}
+.cx-fx-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--cx-muted);
+}
+.cx-fx-hint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--cx-muted);
+  padding: 2px 0 6px;
+}
+.cx-light-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cx-light-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2px solid var(--cx-border);
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.cx-light-swatch.is-active {
+  border-color: var(--cx-accent);
+  box-shadow: 0 0 0 2px var(--cx-accent-soft);
+}
+.cx-light-add {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1.5px dashed var(--cx-muted);
+  background: transparent;
+  color: var(--cx-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cx-light-add:active {
+  border-color: var(--cx-accent);
+  color: var(--cx-accent);
+}
+.cx-light-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.cx-light-actions .cx-mask-remove {
+  margin: 0;
+}
+.cx-color-input {
+  width: 40px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--cx-border);
+  border-radius: 8px;
+  background: var(--cx-elev);
+  cursor: pointer;
+}
+
 /* ================= 底部操作栏（6键） ================= */
 .cx-bottombar {
   flex: none;

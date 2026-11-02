@@ -5,16 +5,22 @@ import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
 import {
   Aperture,
+  Circle,
+  CopyPlus,
   Eye,
   FlipHorizontal,
   FlipVertical,
+  Hexagon,
   ImageOff,
   Loader2,
+  Octagon,
+  Plus,
   RotateCcw,
   RotateCw,
   ScanLine,
   Smile,
   Sparkles,
+  Trash2,
   Upload,
   Wand2,
   X,
@@ -30,7 +36,10 @@ import {
   ParametricCurve,
   INITIAL_ADJUSTMENTS,
   INITIAL_MASK_CONTAINER,
+  RelightLight,
+  createRelightLight,
   getActiveTools,
+  getRelightLightColor,
   setToolActive,
 } from '../../utils/adjustments';
 import { calculateCenteredCrop, calculateAutoCropForRotation } from '../../utils/cropUtils';
@@ -39,7 +48,9 @@ import { createSubMask } from '../../utils/maskUtils';
 import { getTransformAdjustments } from '../../hooks/useAiMasking';
 import { useEditorActions } from '../../hooks/useEditorActions';
 import { Invokes } from '../ui/AppProperties';
-import { CxSliderRow, CxSubSection, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
+import { DepthRangePicker } from '../ui/DepthRangePicker';
+import { selectAiModelDownloadStatus, useProcessStore } from '../../store/useProcessStore';
+import { CxSliderRow, CxSubSection, CxSwitch, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
 import { Mask } from '../panel/right/Masks';
 import type { CrystalCategory } from './CrystalMobileApp';
 import CrystalPresetsPanel from './CrystalPresetsPanel';
@@ -1364,6 +1375,23 @@ interface LutPreviewResult {
 }
 const LUT_PREVIEW_SIZE = 96;
 
+/* Spatial AI 散景形状 / 重打光光源类型（与桌面 Effects.tsx 同枚举） */
+type BokehShape = 'circle' | 'hexagon' | 'octagon' | 'ring';
+type RelightLightType = 'point' | 'spot' | 'directional';
+
+const BOKEH_SHAPES: Array<{ id: BokehShape; Icon: typeof Circle; labelKey: ParseKeys }> = [
+  { id: 'circle', Icon: Circle, labelKey: 'adjustments.effects.bokehCircular' },
+  { id: 'hexagon', Icon: Hexagon, labelKey: 'adjustments.effects.bokehHexagonal' },
+  { id: 'octagon', Icon: Octagon, labelKey: 'adjustments.effects.bokehOctagonal' },
+  { id: 'ring', Icon: Aperture, labelKey: 'adjustments.effects.bokehRing' },
+];
+
+const RELIGHT_TYPES: Array<{ id: RelightLightType; labelKey: ParseKeys }> = [
+  { id: 'point', labelKey: 'adjustments.effects.relightTypes.point' },
+  { id: 'spot', labelKey: 'adjustments.effects.relightTypes.spot' },
+  { id: 'directional', labelKey: 'adjustments.effects.relightTypes.directional' },
+];
+
 function FxPanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
@@ -1488,6 +1516,88 @@ function FxPanel() {
       lutIsSceneReferred: false,
     });
 
+  /* ---------------- Spatial AI 三件套（与桌面 Effects 同链路） ----------------
+   * 镜头模糊/雾化共用 generate_full_image_depth_map，重打光走 generate_relight_normal_map；
+   * 生成失败按桌面语义回退开关，避免半开启状态；模型下载进度复用全局下载状态。 */
+  const aiProvider = useSettingsStore((s) => s.appSettings?.aiProvider);
+  const showSpatial = aiProvider !== 'ai-free';
+  const aiDownloadStatus = useProcessStore(selectAiModelDownloadStatus);
+  const [genBusy, setGenBusy] = useState<'lensBlur' | 'fog' | 'relight' | null>(null);
+
+  const generateEffectMap = useCallback(
+    async (kind: 'lensBlur' | 'fog' | 'relight') => {
+      if (genBusy) return;
+      setGenBusy(kind);
+      try {
+        const { adjustments: adj } = useEditorStore.getState();
+        if (kind === 'relight') {
+          const b64 = await invoke<string>('generate_relight_normal_map', { jsAdjustments: adj });
+          applyPatch({ relightNormalMap: b64 });
+        } else {
+          const b64 = await invoke<string>('generate_full_image_depth_map', { jsAdjustments: adj });
+          applyPatch(kind === 'lensBlur' ? { lensBlurDepthMap: b64 } : { fogDepthMap: b64 });
+        }
+      } catch (e) {
+        console.error('Effect map generation failed:', e);
+        toast.error(t(kind === 'relight' ? 'crystal.fx.normalFailed' : 'crystal.fx.depthFailed'));
+        applyPatch(
+          kind === 'lensBlur'
+            ? { lensBlurEnabled: false }
+            : kind === 'fog'
+              ? { fogEnabled: false }
+              : { relightEnabled: false },
+        );
+      } finally {
+        setGenBusy(null);
+      }
+    },
+    [applyPatch, genBusy, t],
+  );
+
+  const toggleLensBlur = (on: boolean) => {
+    applyPatch({ lensBlurEnabled: on });
+    if (on && !adjustments.lensBlurDepthMap) void generateEffectMap('lensBlur');
+  };
+
+  const toggleFog = (on: boolean) => {
+    applyPatch({ fogEnabled: on });
+    if (on && !adjustments.fogDepthMap) void generateEffectMap('fog');
+  };
+
+  const toggleRelight = (on: boolean) => {
+    applyPatch({ relightEnabled: on });
+    if (on && !adjustments.relightNormalMap) void generateEffectMap('relight');
+  };
+
+  /* 重打光光源管理：添加/复制/删除/选中 + 参数与位置（移动端以 X/Y 滑杆
+   * 替代桌面画布拾取，同样写 relightLights[].x/y，渲染管线无差别）。 */
+  const relightLights: Array<RelightLight> = adjustments.relightLights || [];
+  const [activeLightId, setActiveLightId] = useState<string | null>(null);
+  const activeLight = relightLights.find((l) => l.id === activeLightId) ?? null;
+
+  const updateLight = (id: string, patch: Partial<RelightLight>) =>
+    applyPatch({ relightLights: relightLights.map((l) => (l.id === id ? { ...l, ...patch } : l)) });
+
+  const addLight = () => {
+    const light = createRelightLight(0.5, 0.5);
+    applyPatch({ relightLights: [...relightLights, light] });
+    setActiveLightId(light.id);
+  };
+
+  const removeLight = (id: string) => {
+    applyPatch({ relightLights: relightLights.filter((l) => l.id !== id) });
+    if (id === activeLightId) setActiveLightId(null);
+  };
+
+  const duplicateLight = (id: string) => {
+    const src = relightLights.find((l) => l.id === id);
+    if (!src) return;
+    const copy: RelightLight = { ...src, id: uuidv4() };
+    const idx = relightLights.findIndex((l) => l.id === id);
+    applyPatch({ relightLights: [...relightLights.slice(0, idx + 1), copy, ...relightLights.slice(idx + 1)] });
+    setActiveLightId(copy.id);
+  };
+
   const vignetteOn = Number(adjustments.vignetteAmount ?? 0) !== 0;
   const grainOn = Number(adjustments.grainAmount ?? 0) > 0;
 
@@ -1581,6 +1691,25 @@ function FxPanel() {
               defaultValue={50}
               onChange={(v) => applyPatch({ vignetteFeather: v })}
             />
+            {/* 中心点位置：桌面为画布拖拽标记，移动端以 X/Y 滑杆闭环（0-100 → 0-1） */}
+            <CxSliderRow
+              label={t('crystal.fx.centerX')}
+              min={0}
+              max={100}
+              step={1}
+              value={Math.round(Number(adjustments.vignetteCenterX ?? 0.5) * 100)}
+              defaultValue={50}
+              onChange={(v) => applyPatch({ vignetteCenterX: v / 100 })}
+            />
+            <CxSliderRow
+              label={t('crystal.fx.centerY')}
+              min={0}
+              max={100}
+              step={1}
+              value={Math.round(Number(adjustments.vignetteCenterY ?? 0.5) * 100)}
+              defaultValue={50}
+              onChange={(v) => applyPatch({ vignetteCenterY: v / 100 })}
+            />
           </>
         )}
       </CxSubSection>
@@ -1648,6 +1777,406 @@ function FxPanel() {
           onChange={(v) => applyPatch({ flareAmount: v })}
         />
       </CxSubSection>
+
+      {/* ------- Spatial AI：镜头模糊 / 重打光 / 雾化（ai-free 档隐藏，与桌面一致） ------- */}
+      {showSpatial && (
+        <>
+          <CxSubSection labelKey="adjustments.effects.lensBlur">
+            <CxSwitch
+              checked={!!adjustments.lensBlurEnabled}
+              onChange={toggleLensBlur}
+              disabled={genBusy !== null && genBusy !== 'lensBlur'}
+              label={t('adjustments.effects.lensBlur')}
+            />
+            {genBusy === 'lensBlur' ? (
+              <div className="cx-gen-busy">
+                <Loader2 size={13} className="animate-spin" />
+                <span className={aiDownloadStatus ? 'gen-status' : undefined}>
+                  {aiDownloadStatus || t('editor.ai.generatingDepthMap')}
+                </span>
+              </div>
+            ) : adjustments.lensBlurEnabled ? (
+              <>
+                <CxSliderRow
+                  label={t('adjustments.effects.amount')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.lensBlurAmount ?? 40)}
+                  defaultValue={40}
+                  onChange={(v) => applyPatch({ lensBlurAmount: v })}
+                />
+                <CxSliderRow
+                  label={t('adjustments.effects.lensDiffusion')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.lensBlurDiffusion ?? 0)}
+                  defaultValue={0}
+                  onChange={(v) => applyPatch({ lensBlurDiffusion: v })}
+                />
+                <div className="cx-grid-tiles mb-2" role="radiogroup" aria-label={t('adjustments.effects.bokehShape')}>
+                  {BOKEH_SHAPES.map((shape) => (
+                    <button
+                      key={shape.id}
+                      className={`cx-tile${(adjustments.lensBlurShape || 'circle') === shape.id ? ' is-active' : ''}`}
+                      onClick={() => applyPatch({ lensBlurShape: shape.id })}
+                    >
+                      <span className="cx-tile-color flex items-center justify-center">
+                        <shape.Icon size={13} />
+                      </span>
+                      {t(shape.labelKey)}
+                    </button>
+                  ))}
+                </div>
+                <DepthRangePicker
+                  minDepth={100 - (adjustments.lensBlurMaxDepth ?? 100)}
+                  maxDepth={100 - (adjustments.lensBlurMinDepth ?? 20)}
+                  minFade={adjustments.lensBlurMaxFade ?? 20}
+                  maxFade={adjustments.lensBlurMinFade ?? 20}
+                  defaultMinDepth={0}
+                  defaultMaxDepth={80}
+                  defaultMinFade={20}
+                  defaultMaxFade={20}
+                  onChange={(values) =>
+                    applyPatch({
+                      lensBlurMinDepth: 100 - values.maxDepth,
+                      lensBlurMaxDepth: 100 - values.minDepth,
+                      lensBlurMinFade: values.maxFade,
+                      lensBlurMaxFade: values.minFade,
+                    })
+                  }
+                />
+              </>
+            ) : null}
+          </CxSubSection>
+
+          <CxSubSection labelKey="adjustments.effects.relight">
+            <CxSwitch
+              checked={!!adjustments.relightEnabled}
+              onChange={toggleRelight}
+              disabled={genBusy !== null && genBusy !== 'relight'}
+              label={t('adjustments.effects.relight')}
+            />
+            {genBusy === 'relight' ? (
+              <div className="cx-gen-busy">
+                <Loader2 size={13} className="animate-spin" />
+                <span className={aiDownloadStatus ? 'gen-status' : undefined}>
+                  {aiDownloadStatus || t('editor.ai.generatingNormalMap')}
+                </span>
+              </div>
+            ) : adjustments.relightEnabled ? (
+              <>
+                <CxSliderRow
+                  label={t('adjustments.effects.relightAmbient')}
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.relightAmbient ?? 0)}
+                  defaultValue={0}
+                  onChange={(v) => applyPatch({ relightAmbient: v })}
+                />
+                <CxSliderRow
+                  label={t('adjustments.effects.relightSoftness')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.relightSoftness ?? 25)}
+                  defaultValue={25}
+                  onChange={(v) => applyPatch({ relightSoftness: v })}
+                />
+                <CxSliderRow
+                  label={t('adjustments.effects.relightShine')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.relightShine ?? 0)}
+                  defaultValue={0}
+                  onChange={(v) => applyPatch({ relightShine: v })}
+                />
+                <CxSwitch
+                  checked={!!adjustments.relightShadows}
+                  onChange={(on) => applyPatch({ relightShadows: on })}
+                  label={t('adjustments.effects.relightShadows')}
+                />
+                {adjustments.relightShadows && (
+                  <CxSliderRow
+                    label={t('adjustments.effects.relightShadowSoftness')}
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={Number(adjustments.relightShadowSoftness ?? 15)}
+                    defaultValue={15}
+                    onChange={(v) => applyPatch({ relightShadowSoftness: v })}
+                  />
+                )}
+                <div className="cx-light-strip">
+                  {relightLights.map((light) => (
+                    <button
+                      key={light.id}
+                      className={`cx-light-swatch${light.id === activeLightId ? ' is-active' : ''}`}
+                      style={{ background: getRelightLightColor(light) }}
+                      onClick={() => setActiveLightId(light.id === activeLightId ? null : light.id)}
+                      aria-label={t('adjustments.effects.relightLight', {
+                        index: relightLights.indexOf(light) + 1,
+                      })}
+                    />
+                  ))}
+                  <button className="cx-light-add" onClick={addLight} aria-label={t('adjustments.effects.relightAddLight')}>
+                    <Plus size={13} />
+                  </button>
+                </div>
+                {activeLight ? (
+                  <>
+                    <div className="cx-light-actions">
+                      <button className="cx-mask-remove" onClick={() => duplicateLight(activeLight.id)}>
+                        <CopyPlus size={11} />
+                        {t('adjustments.effects.relightDuplicateLight')}
+                      </button>
+                      <button className="cx-mask-remove" onClick={() => removeLight(activeLight.id)}>
+                        <Trash2 size={11} />
+                        {t('adjustments.effects.relightRemoveLight')}
+                      </button>
+                    </div>
+                    <div className="cx-fx-label mb-1">{t('adjustments.effects.relightType')}</div>
+                    <div className="cx-tone-tabs mb-2" role="tablist">
+                      {RELIGHT_TYPES.map((tp) => (
+                        <button
+                          key={tp.id}
+                          role="tab"
+                          aria-selected={activeLight.type === tp.id}
+                          className={`cx-tone-tab${activeLight.type === tp.id ? ' active' : ''}`}
+                          onClick={() => updateLight(activeLight.id, { type: tp.id })}
+                        >
+                          {t(tp.labelKey)}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="cx-fx-label">{t('adjustments.effects.relightColor')}</span>
+                      <input
+                        className="cx-color-input"
+                        type="color"
+                        value={activeLight.color || '#ffffff'}
+                        onChange={(e) => updateLight(activeLight.id, { color: e.target.value })}
+                        aria-label={t('adjustments.effects.relightColor')}
+                      />
+                    </div>
+                    <CxSliderRow
+                      label={t('adjustments.effects.relightIntensity')}
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={activeLight.intensity}
+                      defaultValue={60}
+                      onChange={(v) => updateLight(activeLight.id, { intensity: v })}
+                    />
+                    {activeLight.type !== 'directional' && (
+                      <>
+                        <CxSliderRow
+                          label={t('adjustments.effects.relightDepth')}
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={activeLight.depth}
+                          defaultValue={0}
+                          onChange={(v) => updateLight(activeLight.id, { depth: v })}
+                        />
+                        <CxSliderRow
+                          label={t('adjustments.effects.relightFalloff')}
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={activeLight.radius}
+                          defaultValue={30}
+                          onChange={(v) => updateLight(activeLight.id, { radius: v })}
+                        />
+                      </>
+                    )}
+                    {activeLight.type !== 'point' && (
+                      <>
+                        <CxSliderRow
+                          label={t('adjustments.effects.relightAngle')}
+                          min={0}
+                          max={360}
+                          step={1}
+                          suffix="°"
+                          value={activeLight.angle}
+                          defaultValue={135}
+                          onChange={(v) => updateLight(activeLight.id, { angle: v })}
+                        />
+                        <CxSliderRow
+                          label={t('adjustments.effects.relightElevation')}
+                          min={-180}
+                          max={180}
+                          step={1}
+                          suffix="°"
+                          value={activeLight.elevation}
+                          defaultValue={60}
+                          onChange={(v) => updateLight(activeLight.id, { elevation: v })}
+                        />
+                      </>
+                    )}
+                    {activeLight.type === 'spot' && (
+                      <>
+                        <CxSliderRow
+                          label={t('adjustments.effects.relightCone')}
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={activeLight.cone}
+                          defaultValue={40}
+                          onChange={(v) => updateLight(activeLight.id, { cone: v })}
+                        />
+                        <CxSliderRow
+                          label={t('adjustments.effects.feather')}
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={activeLight.feather}
+                          defaultValue={50}
+                          onChange={(v) => updateLight(activeLight.id, { feather: v })}
+                        />
+                      </>
+                    )}
+                    <CxSliderRow
+                      label={t('adjustments.color.temperature')}
+                      min={-100}
+                      max={100}
+                      step={1}
+                      value={activeLight.temperature}
+                      defaultValue={0}
+                      onChange={(v) => updateLight(activeLight.id, { temperature: v })}
+                    />
+                    <CxSliderRow
+                      label={t('adjustments.color.tint')}
+                      min={-100}
+                      max={100}
+                      step={1}
+                      value={activeLight.tint}
+                      defaultValue={0}
+                      onChange={(v) => updateLight(activeLight.id, { tint: v })}
+                    />
+                    {/* 光源定位：桌面为画布点选/拖拽，移动端以 X/Y 滑杆等价闭环 */}
+                    <CxSliderRow
+                      label={t('crystal.fx.lightPosX')}
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={Math.round(activeLight.x * 100)}
+                      defaultValue={50}
+                      onChange={(v) => updateLight(activeLight.id, { x: v / 100 })}
+                    />
+                    <CxSliderRow
+                      label={t('crystal.fx.lightPosY')}
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={Math.round(activeLight.y * 100)}
+                      defaultValue={50}
+                      onChange={(v) => updateLight(activeLight.id, { y: v / 100 })}
+                    />
+                  </>
+                ) : (
+                  <div className="cx-fx-hint">{t('crystal.fx.relightHint')}</div>
+                )}
+              </>
+            ) : null}
+          </CxSubSection>
+
+          <CxSubSection labelKey="adjustments.effects.fog">
+            <CxSwitch
+              checked={!!adjustments.fogEnabled}
+              onChange={toggleFog}
+              disabled={genBusy !== null && genBusy !== 'fog'}
+              label={t('adjustments.effects.fog')}
+            />
+            {genBusy === 'fog' ? (
+              <div className="cx-gen-busy">
+                <Loader2 size={13} className="animate-spin" />
+                <span className={aiDownloadStatus ? 'gen-status' : undefined}>
+                  {aiDownloadStatus || t('editor.ai.generatingDepthMap')}
+                </span>
+              </div>
+            ) : adjustments.fogEnabled ? (
+              <>
+                <CxSliderRow
+                  label={t('adjustments.effects.amount')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.fogAmount ?? 50)}
+                  defaultValue={50}
+                  onChange={(v) => applyPatch({ fogAmount: v })}
+                />
+                <CxSliderRow
+                  label={t('adjustments.effects.fogStart')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.fogStart ?? 0)}
+                  defaultValue={0}
+                  onChange={(v) => applyPatch({ fogStart: v })}
+                />
+                <CxSliderRow
+                  label={t('adjustments.effects.fogDensity')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.fogDensity ?? 50)}
+                  defaultValue={50}
+                  onChange={(v) => applyPatch({ fogDensity: v })}
+                />
+                <CxSliderRow
+                  label={t('adjustments.effects.fogHeight')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.fogHeight ?? 0)}
+                  defaultValue={0}
+                  onChange={(v) => applyPatch({ fogHeight: v })}
+                />
+                <CxSliderRow
+                  label={t('adjustments.effects.fogVariation')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.fogVariation ?? 25)}
+                  defaultValue={25}
+                  onChange={(v) => applyPatch({ fogVariation: v })}
+                />
+                <CxSliderRow
+                  label={t('adjustments.effects.glow')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.fogGlow ?? 25)}
+                  defaultValue={25}
+                  onChange={(v) => applyPatch({ fogGlow: v })}
+                />
+                <CxSliderRow
+                  label={t('adjustments.color.temperature')}
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.fogTemperature ?? 0)}
+                  defaultValue={0}
+                  onChange={(v) => applyPatch({ fogTemperature: v })}
+                />
+                <CxSliderRow
+                  label={t('adjustments.color.tint')}
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.fogTint ?? 0)}
+                  defaultValue={0}
+                  onChange={(v) => applyPatch({ fogTint: v })}
+                />
+              </>
+            ) : null}
+          </CxSubSection>
+        </>
+      )}
 
       <CxSubSection labelKey="crystal.fx.groupClarity">
         <CxSliderRow
