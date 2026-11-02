@@ -85,7 +85,7 @@ tauri-plugin-store = "2.5.0"
 trash = "5.2.6"
 keyring-core = "1"
 tauri-plugin-single-instance = "2.4.3"
-reqwest = { version = "0.13", default-features = false, features = ["json", "multipart", "rustls"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "multipart", "rustls", "system-proxy"] }
 tauri-plugin-clerk = "0.1.1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
@@ -135,7 +135,9 @@ rustls = { version = "0.23", default-features = false, features = [
     "tls12",
 ] }
 webpki-roots = "1"
-reqwest = { version = "0.13", default-features = false, features = ["json", "multipart", "rustls"] }
+# system-proxy: honor OS proxy configuration (Windows registry / macOS
+# SystemConfiguration) so model downloads work behind desktop proxies.
+reqwest = { version = "0.13", default-features = false, features = ["json", "multipart", "rustls", "system-proxy"] }
 include_dir = "0.7.4"
 
 [target.'cfg(target_os = "linux")'.dependencies]

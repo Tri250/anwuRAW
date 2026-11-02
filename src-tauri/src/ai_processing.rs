@@ -1235,6 +1235,11 @@ static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::
         // Detect dead connections (NAT timeouts, sleeping devices) instead of
         // letting a stalled model download hang forever.
         .tcp_keepalive(Duration::from_secs(30))
+        // Idle-read timeout: a connection that stops delivering chunks for a
+        // minute is dead even if the TCP stack has not noticed yet. The
+        // downloader's Range resume makes the next attempt continue from the
+        // last byte instead of restarting the transfer.
+        .read_timeout(Duration::from_secs(60))
         .build()
         .expect("failed to build HTTP client for model downloads")
 });
