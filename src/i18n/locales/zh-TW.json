@@ -526,16 +526,21 @@
       "touchUpTitle": "潤色"
     },
     "aiEnhance": {
-      "failed": "AI enhance failed",
-      "title": "AI Enhance"
+      "failed": "AI 增強失敗",
+      "intensities": {
+        "standard": "標準",
+        "strong": "強力",
+        "subtle": "輕微"
+      },
+      "title": "AI 增強"
     },
     "canvas": {
-      "pickerCancel": "to cancel",
+      "pickerCancel": "取消",
       "pickerHints": {
-        "marker": "Click on the image to place the overlay",
-        "relight": "Click on the image to place the light",
-        "targeted": "Click or drag on the image to adjust",
-        "wb": "Click or drag on the image to sample white balance"
+        "marker": "在圖像上點擊以放置疊加層",
+        "relight": "在圖像上點擊以放置光源",
+        "targeted": "在圖像上點擊或拖曳以調整",
+        "wb": "在圖像上點擊或拖曳以取樣白平衡"
       }
     },
     "compare": {
@@ -902,11 +907,11 @@
         "exportAllTitle": "匯出所有預設",
         "exportTitle": "匯出 {{type}}",
         "importPresetsTitle": "匯入預設",
-        "importXmpTitle": "Import XMP Adjustments",
+        "importXmpTitle": "匯入 XMP 調整",
         "legacyPreset": "舊版預設",
         "presetFile": "預設檔案",
         "rapidRawPreset": "RapidRAW 預設",
-        "xmpFile": "XMP File"
+        "xmpFile": "XMP 檔案"
       },
       "menu": {
         "configurePreset": "配置預設",
@@ -915,8 +920,8 @@
         "duplicatePreset": "複製預設",
         "exportFolder": "匯出資料夾",
         "exportPreset": "匯出預設",
-        "exportXmp": "Export Current Adjustments as XMP…",
-        "importXmp": "Import Adjustments from XMP…",
+        "exportXmp": "將目前調整匯出為 XMP…",
+        "importXmp": "從 XMP 匯入調整…",
         "newFolder": "新建資料夾",
         "newPreset": "新建預設",
         "overwrite": "覆蓋",
@@ -940,10 +945,10 @@
         "exportSuccess": "預設已匯出",
         "importFailed": "匯入預設失敗",
         "importFailures": "{{num}} 個預設檔案匯入失敗",
-        "xmpExportFailed": "Failed to export XMP sidecar",
-        "xmpExportSuccess": "XMP sidecar exported",
-        "xmpImportFailed": "Failed to import XMP",
-        "xmpImportSuccess": "Adjustments imported from XMP"
+        "xmpExportFailed": "匯出 XMP 附屬檔案失敗",
+        "xmpExportSuccess": "XMP 附屬檔案已匯出",
+        "xmpImportFailed": "匯入 XMP 失敗",
+        "xmpImportSuccess": "已從 XMP 匯入調整"
       },
       "tooltips": {
         "explore": "探索社群預設",
@@ -959,12 +964,24 @@
       }
     },
     "softProofing": {
-      "description": "Simulate how the exported image will look on a target output profile.",
-      "gamutWarning": "Gamut Warning",
+      "description": "模擬匯出圖像在目標輸出色彩配置下的顯示效果。",
+      "gamutWarning": "色域警告",
+      "intents": {
+        "absolute": "絕對比色",
+        "perceptual": "感知",
+        "relative": "相對比色",
+        "saturation": "飽和度"
+      },
+      "profiles": {
+        "adobeRgb": "Adobe RGB",
+        "displayP3": "Display P3",
+        "rec2020": "Rec. 2020",
+        "srgb": "sRGB"
+      },
       "requiresCpuPreview": "軟打樣需要 CPU 預覽渲染器。請在「設定 > 處理」中關閉「使用 WebGPU 渲染器」，然後重新開啟本面板。",
-      "simulatePaper": "Simulate Paper",
-      "title": "Soft Proofing",
-      "turnOff": "Turn Off Soft Proofing"
+      "simulatePaper": "模擬紙張",
+      "title": "軟打樣",
+      "turnOff": "關閉軟打樣"
     },
     "switcher": {
       "tooltips": {
@@ -988,9 +1005,9 @@
       "history": "歷史記錄",
       "historyEmpty": "尚無已儲存的快照",
       "snapshot": "快照",
-      "switchToVariant": "Switch to {{label}}",
+      "switchToVariant": "切換到 {{label}}",
       "tooltips": {
-        "aiEnhance": "AI Enhance (Right-click for intensity)",
+        "aiEnhance": "AI 增強（右鍵選擇強度）",
         "aperture": "光圈",
         "backToLibrary": "返回相簿",
         "compare": "前後對比（B）或模式（右鍵）",
@@ -999,7 +1016,7 @@
         "iso": "ISO",
         "redo": "重做（Ctrl+Y）或歷史記錄（右鍵單擊）",
         "shutterSpeed": "快門速度",
-        "softProofing": "Soft Proofing",
+        "softProofing": "軟打樣",
         "undo": "復原（Ctrl+Z）或歷史記錄（右鍵單擊）"
       },
       "vc": "VC"

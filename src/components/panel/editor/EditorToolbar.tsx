@@ -161,7 +161,7 @@ function SoftProofingButton({ onKeyDown }: SoftProofingButtonProps) {
 
       <ToolbarMenu isOpen={isMenuOpen} title={t('editor.softProofing.title')}>
         <div className="px-4 pb-1">
-          <Text variant={TextVariants.small} color={TextColors.secondary}>
+          <Text variant={TextVariants.small} color={TextColors.secondary} className="leading-relaxed">
             {t('editor.softProofing.description')}
           </Text>
         </div>
