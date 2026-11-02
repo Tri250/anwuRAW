@@ -503,7 +503,6 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
   const [renameFolderState, setRenameFolderState] = useState<FolderState>({ isOpen: false, folder: null });
   const [expandedFolders, setExpandedFolders] = useState(new Set<string>());
   const [activeItem, setActiveItem] = useState<any>(null);
-  const [folderPreviewsGenerated, setFolderPreviewsGenerated] = useState<Set<string>>(new Set());
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
@@ -682,18 +681,22 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
   );
 
   const toggleFolder = (folderId: string) => {
+    const willExpand = !expandedFoldersRef.current.has(folderId);
     setExpandedFolders((prev: Set<string>) => {
       const newSet = new Set(prev);
       if (newSet.has(folderId)) {
         newSet.delete(folderId);
       } else {
         newSet.add(folderId);
-        if (!folderPreviewsGenerated.has(folderId)) {
-          generateFolderPreviews(folderId);
-        }
       }
       return newSet;
     });
+    if (willExpand) {
+      // Re-enqueue on every expand: previews whose queue entries were skipped
+      // while the folder was collapsed would otherwise never be regenerated.
+      // generateFolderPreviews filters out presets that already have one.
+      generateFolderPreviews(folderId);
+    }
   };
 
   const generateSinglePreview = useCallback(
@@ -755,7 +758,6 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
       if (presetsToGenerate.length > 0) {
         enqueuePreviews(presetsToGenerate, folderId);
       }
-      setFolderPreviewsGenerated((prev: Set<string>) => new Set(prev).add(folderId));
     },
     [selectedImage?.isReady, presets, enqueuePreviews],
   );
@@ -787,7 +789,6 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
       previewQueue.current = [];
 
       setPreviews({});
-      setFolderPreviewsGenerated(new Set<string>());
 
       setActivePresetId(null);
       setBaseAdjustments(null);
@@ -986,11 +987,6 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
           newSet.delete(id);
           return newSet;
         });
-        setFolderPreviewsGenerated((prev: Set<string>) => {
-          const newSet = new Set(prev);
-          newSet.delete(id);
-          return newSet;
-        });
       }
     }, 300);
   };
@@ -1028,9 +1024,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
       if (activeParentId !== targetFolderId) {
         movePreset(activeId, targetFolderId);
         setExpandedFolders((prev: Set<string>) => new Set(prev).add(targetFolderId));
-        if (!folderPreviewsGenerated.has(targetFolderId)) {
-          generateFolderPreviews(targetFolderId);
-        }
+        generateFolderPreviews(targetFolderId);
       } else {
         reorderItems(activeId, overId);
       }
@@ -1075,7 +1069,6 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
         toast.error(t('editor.presets.toasts.importFailures', { num: failures.length }));
       }
 
-      setFolderPreviewsGenerated(new Set<string>());
       setPreviews({});
 
       failures.forEach((failure: PresetImportFailure) =>
@@ -1168,7 +1161,27 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
       }
 
       const imported = await invoke<Partial<Adjustments>>(Invokes.ImportXmpSidecar, { path: selectedPath });
-      setAdjustments((prev: Adjustments) => ({ ...prev, ...imported }));
+      // 导入的 XMP 值不含 activeTools：为非默认值键启用 owning tools，防止
+      // 用户已关闭的工具在 GPU 端把导入效果静默吞掉（与预设应用链路一致）。
+      const toolsToEnable = getToolOwnersForKeys(
+        Object.keys(imported).filter(
+          (key) =>
+            JSON.stringify((imported as Record<string, unknown>)[key]) !==
+            JSON.stringify(INITIAL_ADJUSTMENTS[key as keyof Adjustments]),
+        ),
+      );
+      setAdjustments((prev: Adjustments) => ({
+        ...prev,
+        ...imported,
+        ...(toolsToEnable.length
+          ? {
+              activeTools: {
+                ...getActiveTools(prev),
+                ...Object.fromEntries(toolsToEnable.map((id) => [id, true])),
+              },
+            }
+          : {}),
+      }));
       toast.success(t('editor.presets.toasts.xmpImportSuccess'));
     } catch (error) {
       console.error('Failed to import XMP:', error);

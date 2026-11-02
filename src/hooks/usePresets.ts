@@ -37,7 +37,19 @@ export function usePresets(currentAdjustments: Adjustments) {
   const [presets, setPresets] = useState<Array<UserPreset>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const savePresetsToBackend = useCallback(
+    debounce((presetsToSave: Array<UserPreset>) => {
+      invoke(Invokes.SavePresets, { presets: presetsToSave }).catch((err) =>
+        console.error('Failed to save presets:', err),
+      );
+    }, 500),
+    [],
+  );
+
   const loadPresets = useCallback(async () => {
+    // The backend is about to hand back the authoritative library: drop any
+    // pending debounced save so a stale local list can't clobber it.
+    savePresetsToBackend.cancel();
     setIsLoading(true);
     try {
       const loadedPresets: Array<UserPreset> = await invoke(Invokes.LoadPresets);
@@ -48,16 +60,7 @@ export function usePresets(currentAdjustments: Adjustments) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  const savePresetsToBackend = useCallback(
-    debounce((presetsToSave: Array<UserPreset>) => {
-      invoke(Invokes.SavePresets, { presets: presetsToSave }).catch((err) =>
-        console.error('Failed to save presets:', err),
-      );
-    }, 500),
-    [],
-  );
+  }, [savePresetsToBackend]);
 
   useEffect(() => {
     loadPresets();
@@ -579,6 +582,10 @@ export function usePresets(currentAdjustments: Adjustments) {
 
   const importPresetsFromFile = useCallback(
     async (filePath: string) => {
+      // The import command merges + saves server-side and returns the merged
+      // list: cancel any pending debounced save so it can't overwrite the
+      // freshly imported library with pre-import state.
+      savePresetsToBackend.cancel();
       setIsLoading(true);
       try {
         const updatedPresetList: Array<any> = await invoke(Invokes.HandleImportPresetsFromFile, { filePath });
@@ -590,11 +597,12 @@ export function usePresets(currentAdjustments: Adjustments) {
         setIsLoading(false);
       }
     },
-    [setPresets],
+    [savePresetsToBackend, setPresets],
   );
 
   const importLegacyPresetsFromFile = useCallback(
     async (filePath: string) => {
+      savePresetsToBackend.cancel();
       setIsLoading(true);
       try {
         const updatedPresetList: Array<UserPreset> = await invoke(Invokes.HandleImportLegacyPresetsFromFile, {
@@ -608,11 +616,12 @@ export function usePresets(currentAdjustments: Adjustments) {
         setIsLoading(false);
       }
     },
-    [setPresets],
+    [savePresetsToBackend, setPresets],
   );
 
   const importPresetsFromFiles = useCallback(
     async (filePaths: Array<string>): Promise<PresetImportResult> => {
+      savePresetsToBackend.cancel();
       setIsLoading(true);
       try {
         const result: PresetImportResult = await invoke(Invokes.HandleImportPresetsFromFiles, { filePaths });
@@ -625,7 +634,7 @@ export function usePresets(currentAdjustments: Adjustments) {
         setIsLoading(false);
       }
     },
-    [setPresets],
+    [savePresetsToBackend, setPresets],
   );
 
   const exportPresetsToFile = useCallback(async (presetsToExport: Array<any>, filePath: string) => {
