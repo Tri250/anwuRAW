@@ -23,8 +23,10 @@ import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import {
   Adjustments,
+  ColorCalibration,
   DEFAULT_PARAMETRIC_CURVE_SETTINGS,
   ParametricCurve,
+  INITIAL_ADJUSTMENTS,
   INITIAL_MASK_CONTAINER,
   getActiveTools,
   setToolActive,
@@ -74,15 +76,44 @@ const HSL_BANDS: Array<{ id: keyof Adjustments['hsl']; labelKey: ParseKeys; swat
   { id: 'magentas', labelKey: 'crystal.tone.bandMagentas', swatch: '#f783ac' },
 ];
 
+/* 分级调色 / 曲线通道 / 校准原色（复用桌面文案键，与 Color.tsx / Curves.tsx 同源） */
+type GradingRegion = 'shadows' | 'midtones' | 'highlights' | 'global';
+type CurveChannel = 'luma' | 'red' | 'green' | 'blue';
+
+const GRADING_REGIONS: Array<{ id: GradingRegion; labelKey: ParseKeys; swatch: string }> = [
+  { id: 'shadows', labelKey: 'adjustments.color.grading.shadows', swatch: '#4dabf7' },
+  { id: 'midtones', labelKey: 'adjustments.color.grading.midtones', swatch: '#b197fc' },
+  { id: 'highlights', labelKey: 'adjustments.color.grading.highlights', swatch: '#ffa94d' },
+  { id: 'global', labelKey: 'adjustments.color.grading.global', swatch: '#868e96' },
+];
+
+const CURVE_CHANNELS: Array<{ id: CurveChannel; swatch: string }> = [
+  { id: 'luma', swatch: '#adb5bd' },
+  { id: 'red', swatch: '#ff6b6b' },
+  { id: 'green', swatch: '#69db7c' },
+  { id: 'blue', swatch: '#4dabf7' },
+];
+
+const CALIBRATION_PRIMARIES: Array<{ id: 'red' | 'green' | 'blue'; swatch: string }> = [
+  { id: 'red', swatch: '#f87171' },
+  { id: 'green', swatch: '#4ade80' },
+  { id: 'blue', swatch: '#60a5fa' },
+];
+
 function TonePanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
   const { applyPatch } = useCrystalAdjust();
   const [tab, setTab] = useState<ToneTab>('light');
   const [band, setBand] = useState<keyof Adjustments['hsl']>('reds');
+  const [gradingRegion, setGradingRegion] = useState<GradingRegion>('shadows');
+  const [primary, setPrimary] = useState<'red' | 'green' | 'blue'>('red');
+  const [curveChannel, setCurveChannel] = useState<CurveChannel>('luma');
 
   const bandHsl = adjustments.hsl?.[band] ?? { hue: 0, saturation: 0, luminance: 0 };
-  const lumaCurve = adjustments.parametricCurve?.luma ?? DEFAULT_PARAMETRIC_CURVE_SETTINGS;
+  const grading = adjustments.colorGrading ?? INITIAL_ADJUSTMENTS.colorGrading;
+  const gradingRegionHsl = grading[gradingRegion] ?? { hue: 0, saturation: 0, luminance: 0 };
+  const calibration = adjustments.colorCalibration ?? INITIAL_ADJUSTMENTS.colorCalibration;
   // ParametricCurve 索引签名要求四通道齐备，缺省时以默认值补全
   const parametricBase: ParametricCurve =
     adjustments.parametricCurve ??
@@ -92,28 +123,40 @@ function TonePanel() {
       luma: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
       red: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
     } as ParametricCurve);
-  const curvePoints = buildParametricPoints(lumaCurve);
+  const curveSettings = adjustments.parametricCurve?.[curveChannel] ?? DEFAULT_PARAMETRIC_CURVE_SETTINGS;
+  const curvePoints = buildParametricPoints(curveSettings);
 
   const setHsl = (key: 'hue' | 'saturation' | 'luminance', value: number) =>
     applyPatch({ hsl: { ...(adjustments.hsl ?? {}), [band]: { ...bandHsl, [key]: value } } });
 
-  /* 参数化曲线：滑杆实时换算为点曲线（后端渲染 curves.luma），与桌面 Curves 同一套数学 */
+  /* 分级调色：区域 hue/sat/lum + blending/balance（与桌面 ColorGradingPanel 同数据结构） */
+  const setGradingHsl = (key: 'hue' | 'saturation' | 'luminance', value: number) =>
+    applyPatch({ colorGrading: { ...grading, [gradingRegion]: { ...gradingRegionHsl, [key]: value } } });
+
+  const setGradingMix = (key: 'blending' | 'balance', value: number) =>
+    applyPatch({ colorGrading: { ...grading, [key]: value } });
+
+  /* 相机校准：红/绿/蓝原色 hue/sat + 阴影色调（与桌面 ColorCalibrationPanel 同源） */
+  const setCalibration = (key: keyof ColorCalibration, value: number) =>
+    applyPatch({ colorCalibration: { ...calibration, [key]: value } });
+
+  /* 参数化曲线：按通道滑杆实时换算为点曲线（后端渲染 curves[channel]），与桌面 Curves 同一套数学 */
   const setParametric = (key: keyof typeof DEFAULT_PARAMETRIC_CURVE_SETTINGS, value: number) => {
-    const next = { ...lumaCurve, [key]: value };
+    const next = { ...curveSettings, [key]: value };
     applyPatch({
-      parametricCurve: { ...parametricBase, luma: next },
+      parametricCurve: { ...parametricBase, [curveChannel]: next },
       curveMode: 'parametric',
-      curves: { ...(adjustments.curves ?? {}), luma: buildParametricPoints(next) },
+      curves: { ...(adjustments.curves ?? {}), [curveChannel]: buildParametricPoints(next) },
     });
   };
 
   const resetCurve = () =>
     applyPatch({
-      parametricCurve: { ...parametricBase, luma: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS } },
+      parametricCurve: { ...parametricBase, [curveChannel]: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS } },
       curveMode: 'parametric',
       curves: {
         ...(adjustments.curves ?? {}),
-        luma: buildParametricPoints(DEFAULT_PARAMETRIC_CURVE_SETTINGS),
+        [curveChannel]: buildParametricPoints(DEFAULT_PARAMETRIC_CURVE_SETTINGS),
       },
     });
 
@@ -284,17 +327,137 @@ function TonePanel() {
               onChange={(v) => setHsl('luminance', v)}
             />
           </div>
+
+          <CxSubSection labelKey="adjustments.color.colorGrading">
+            <div className="cx-hsl-bands">
+              {GRADING_REGIONS.map((region) => (
+                <button
+                  key={region.id}
+                  className={`cx-hsl-band${gradingRegion === region.id ? ' active' : ''}`}
+                  style={{ '--band-color': region.swatch } as React.CSSProperties}
+                  onClick={() => setGradingRegion(region.id)}
+                  aria-pressed={gradingRegion === region.id}
+                >
+                  <span className="cx-hswatch" />
+                  {t(region.labelKey)}
+                </button>
+              ))}
+            </div>
+            <CxSliderRow
+              label={t('crystal.tone.hslHue')}
+              min={0}
+              max={360}
+              step={1}
+              value={Number(gradingRegionHsl.hue ?? 0)}
+              defaultValue={0}
+              onChange={(v) => setGradingHsl('hue', v)}
+            />
+            <CxSliderRow
+              label={t('crystal.tone.hslSaturation')}
+              min={0}
+              max={100}
+              step={1}
+              value={Number(gradingRegionHsl.saturation ?? 0)}
+              defaultValue={0}
+              onChange={(v) => setGradingHsl('saturation', v)}
+            />
+            <CxSliderRow
+              label={t('crystal.tone.hslLuminance')}
+              min={-100}
+              max={100}
+              step={1}
+              value={Number(gradingRegionHsl.luminance ?? 0)}
+              defaultValue={0}
+              onChange={(v) => setGradingHsl('luminance', v)}
+            />
+            <CxSliderRow
+              label={t('adjustments.color.grading.blending')}
+              min={0}
+              max={100}
+              step={1}
+              value={Number(grading.blending ?? 0)}
+              defaultValue={0}
+              onChange={(v) => setGradingMix('blending', v)}
+            />
+            <CxSliderRow
+              label={t('adjustments.color.grading.balance')}
+              min={-100}
+              max={100}
+              step={1}
+              value={Number(grading.balance ?? 0)}
+              defaultValue={0}
+              onChange={(v) => setGradingMix('balance', v)}
+            />
+          </CxSubSection>
+
+          <CxSubSection labelKey="adjustments.color.calibration.title">
+            <div className="cx-hsl-bands">
+              {CALIBRATION_PRIMARIES.map((prim) => (
+                <button
+                  key={prim.id}
+                  className={`cx-hsl-band${primary === prim.id ? ' active' : ''}`}
+                  style={{ '--band-color': prim.swatch } as React.CSSProperties}
+                  onClick={() => setPrimary(prim.id)}
+                  aria-pressed={primary === prim.id}
+                >
+                  <span className="cx-hswatch" />
+                  {t(`adjustments.color.calibration.colors.${prim.id}`)}
+                </button>
+              ))}
+            </div>
+            <CxSliderRow
+              label={t('adjustments.color.calibration.hue')}
+              min={-100}
+              max={100}
+              step={1}
+              value={Number(calibration[`${primary}Hue`] ?? 0)}
+              defaultValue={0}
+              onChange={(v) => setCalibration(`${primary}Hue`, v)}
+            />
+            <CxSliderRow
+              label={t('adjustments.color.calibration.saturation')}
+              min={-100}
+              max={100}
+              step={1}
+              value={Number(calibration[`${primary}Saturation`] ?? 0)}
+              defaultValue={0}
+              onChange={(v) => setCalibration(`${primary}Saturation`, v)}
+            />
+            <CxSliderRow
+              label={`${t('adjustments.color.calibration.shadows')} · ${t('adjustments.color.calibration.tint')}`}
+              min={-100}
+              max={100}
+              step={1}
+              value={Number(calibration.shadowsTint ?? 0)}
+              defaultValue={0}
+              onChange={(v) => setCalibration('shadowsTint', v)}
+            />
+          </CxSubSection>
         </>
       )}
 
       {tab === 'curve' && (
         <>
+          <div className="cx-hsl-bands">
+            {CURVE_CHANNELS.map((ch) => (
+              <button
+                key={ch.id}
+                className={`cx-hsl-band${curveChannel === ch.id ? ' active' : ''}`}
+                style={{ '--band-color': ch.swatch } as React.CSSProperties}
+                onClick={() => setCurveChannel(ch.id)}
+                aria-pressed={curveChannel === ch.id}
+              >
+                <span className="cx-hswatch" />
+                {t(`adjustments.curves.channels.${ch.id}`)}
+              </button>
+            ))}
+          </div>
           <div className="cx-curve-card">
             <svg className="cx-curve-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
               <line x1="0" y1="100" x2="100" y2="0" stroke="rgba(255,255,255,0.18)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
               <polyline
                 fill="none"
-                stroke="var(--color-accent)"
+                stroke={CURVE_CHANNELS.find((ch) => ch.id === curveChannel)?.swatch ?? 'var(--color-accent)'}
                 strokeWidth="2"
                 vectorEffect="non-scaling-stroke"
                 points={curvePoints.map((p) => `${(p.x / 255) * 100},${100 - (p.y / 255) * 100}`).join(' ')}
@@ -310,7 +473,7 @@ function TonePanel() {
             min={-100}
             max={100}
             step={1}
-            value={Number(lumaCurve.darks ?? 0)}
+            value={Number(curveSettings.darks ?? 0)}
             defaultValue={0}
             onChange={(v) => setParametric('darks', v)}
           />
@@ -319,7 +482,7 @@ function TonePanel() {
             min={-100}
             max={100}
             step={1}
-            value={Number(lumaCurve.shadows ?? 0)}
+            value={Number(curveSettings.shadows ?? 0)}
             defaultValue={0}
             onChange={(v) => setParametric('shadows', v)}
           />
@@ -328,7 +491,7 @@ function TonePanel() {
             min={-100}
             max={100}
             step={1}
-            value={Number(lumaCurve.highlights ?? 0)}
+            value={Number(curveSettings.highlights ?? 0)}
             defaultValue={0}
             onChange={(v) => setParametric('highlights', v)}
           />
@@ -337,7 +500,7 @@ function TonePanel() {
             min={-100}
             max={100}
             step={1}
-            value={Number(lumaCurve.lights ?? 0)}
+            value={Number(curveSettings.lights ?? 0)}
             defaultValue={0}
             onChange={(v) => setParametric('lights', v)}
           />
@@ -346,7 +509,7 @@ function TonePanel() {
             min={0}
             max={100}
             step={1}
-            value={Number(lumaCurve.blackLevel ?? 0)}
+            value={Number(curveSettings.blackLevel ?? 0)}
             defaultValue={0}
             onChange={(v) => setParametric('blackLevel', v)}
           />
@@ -355,7 +518,7 @@ function TonePanel() {
             min={-100}
             max={0}
             step={1}
-            value={Number(lumaCurve.whiteLevel ?? 0)}
+            value={Number(curveSettings.whiteLevel ?? 0)}
             defaultValue={0}
             onChange={(v) => setParametric('whiteLevel', v)}
           />
