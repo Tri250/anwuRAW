@@ -343,8 +343,8 @@ export function useEditorActions() {
 
     invoke(Invokes.ApplyAutoLensCorrectionToPaths, { paths: pathsToUpdate })
       .then(() => reloadAdjustmentsForPaths(pathsToUpdate))
-      .catch((err) => toast.error(`Failed to apply auto lens correction: ${err}`));
-  }, []);
+      .catch((err) => toast.error(t('contextMenus.toasts.failedLensCorrection', { err: String(err) })));
+  }, [t]);
 
   const handleAutoStraightenPaths = useCallback(
     (paths: string[]) => {
@@ -388,9 +388,9 @@ export function useEditorActions() {
         : patch;
       invoke(Invokes.ApplyAdjustmentsToPaths, { paths: batchPaths, adjustments: batchPatch })
         .then(() => reloadAdjustmentsForPaths(batchPaths))
-        .catch((err) => toast.error(`Failed to apply adjustments: ${err}`));
+        .catch((err) => toast.error(t('contextMenus.toasts.failedApplyAdjustments', { err: String(err) })));
     },
-    [setAdjustments],
+    [setAdjustments, t],
   );
 
   const handleCopyAdjustments = useCallback(async (pathOrEvent?: string | any) => {
@@ -414,7 +414,7 @@ export function useEditorActions() {
           sourceAdjustments = INITIAL_ADJUSTMENTS;
         }
       } catch (err) {
-        toast.error(`Failed to load metadata for copying: ${err}`);
+        toast.error(t('contextMenus.toasts.failedLoadMetadataCopy', { err: String(err) }));
         return;
       }
     }
@@ -430,7 +430,7 @@ export function useEditorActions() {
     }
     useEditorStore.getState().setEditor({ copiedAdjustments: adjustmentsToCopy });
     useProcessStore.getState().setProcess({ isCopied: true });
-  }, []);
+  }, [t]);
 
   const handlePasteAdjustments = useCallback(
     (paths?: string[]) => {
@@ -506,11 +506,11 @@ export function useEditorActions() {
           const pasted = Object.fromEntries(pastedKeys.map((key) => [key, meta.adjustments[key]]));
           setAdjustments((prev: any) => ({ ...prev, ...pasted }));
         })
-        .catch((err) => toast.error(`Failed to paste adjustments: ${err}`));
+        .catch((err) => toast.error(t('contextMenus.toasts.failedPaste', { err: String(err) })));
 
       setProcess({ isPasted: true });
     },
-    [setAdjustments],
+    [setAdjustments, t],
   );
 
   const handleZoomChange = useCallback((zoomValue: number, fitToWindow: boolean = false) => {

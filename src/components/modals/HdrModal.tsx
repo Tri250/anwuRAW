@@ -62,6 +62,15 @@ export default function HdrModal({
     onClose();
   }, [onClose, isSaving]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleClose]);
+
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
     mouseDownTarget.current = e.target;
   };

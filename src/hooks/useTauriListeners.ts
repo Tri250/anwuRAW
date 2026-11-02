@@ -566,7 +566,8 @@ export function useTauriListeners({
             cullingModalState: {
               ...state.cullingModalState,
               isOpen: true,
-              progress: { current: 0, total: event.payload, stage: 'Initializing...' },
+              // stage 缺省由 CullingModal 渲染已翻译的 starting 文案
+              progress: { current: 0, total: event.payload },
               suggestions: null,
               error: null,
             },

@@ -280,7 +280,8 @@ export default function AppModals(props: AppModalsProps) {
           if (action === 'reject') {
             props.handleSetFlag(ImageFlag.Reject, paths);
           } else if (action === 'rate_zero') {
-            props.handleRate(1, paths);
+            // rate_zero 语义为清零评分；handleRate 的同星 toggle 语义下传 1 会打出 1 星
+            props.handleRate(0, paths);
           } else if (action === 'delete') {
             props.executeDelete(paths, { includeAssociated: false });
           }

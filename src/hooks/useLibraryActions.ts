@@ -263,9 +263,9 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
 
     invoke(Invokes.SetFlagForPaths, { paths: expandedPaths, flag }).catch((err) => {
       console.error(err);
-      toast.error(`Failed to update flag: ${err}`);
+      toast.error(t('contextMenus.toasts.failedFlag', { err: String(err) }));
     });
-  }, []);
+  }, [t]);
 
   const handleToggleFlag = useCallback(
     (flag: ImageFlag, paths?: string[]) => {

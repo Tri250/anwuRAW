@@ -135,8 +135,19 @@ export default function CullingModal({
       });
       suggestions.blurryImages.forEach((img) => initialRejects.add(img.path));
       setSelectedRejects(initialRejects);
+      // 默认 tab 跟随实际结果：仅有模糊图时 similar tab 为空集，避免内容区空白
+      setActiveTab(suggestions.similarGroups.length > 0 ? 'similar' : 'blurry');
     }
   }, [stage, suggestions]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   const handleStartCulling = useCallback(async () => {
     try {

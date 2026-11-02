@@ -62,7 +62,7 @@ interface HdrModalState {
 interface CullingModalState {
   isOpen: boolean;
   suggestions: CullingSuggestions | null;
-  progress: { current: number; total: number; stage: string } | null;
+  progress: { current: number; total: number; stage?: string } | null;
   error: string | null;
   pathsToCull: Array<string>;
 }

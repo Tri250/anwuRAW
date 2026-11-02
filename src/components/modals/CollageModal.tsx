@@ -77,6 +77,15 @@ export default function CollageModal({ isOpen, onClose, onSave, sourceImages }: 
   const [error, setError] = useState<string | null>(null);
   const [savedPath, setSavedPath] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSaving) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isSaving, onClose]);
+
   const [availableLayouts, setAvailableLayouts] = useState<LayoutDefinition[]>([]);
   const [activeLayout, setActiveLayout] = useState<Layout | null>(null);
   const [activeAspectRatio, setActiveAspectRatio] = useState<AspectRatioPreset>(ASPECT_RATIO_PRESETS[0]);

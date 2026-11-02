@@ -1,10 +1,12 @@
 import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { useTranslation } from 'react-i18next';
 import { useUIStore } from '../store/useUIStore';
 import { Invokes } from '../components/ui/AppProperties';
 
 export function useProductivityActions(refreshImageList: () => Promise<void>) {
   const setUI = useUIStore((state) => state.setUI);
+  const { t } = useTranslation();
 
   const handleStartPanorama = useCallback(
     (paths: string[]) => {
@@ -14,7 +16,8 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
           isProcessing: true,
           error: null,
           finalImageBase64: null,
-          progressMessage: 'Starting panorama process...',
+          // progressMessage 置空由模态渲染已翻译的 initializing 文案
+          progressMessage: null,
         },
       }));
       invoke(Invokes.StitchPanorama, { paths }).catch((err) => {
@@ -29,7 +32,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
   const handleSavePanorama = useCallback(async (): Promise<string> => {
     const { panoramaModalState } = useUIStore.getState();
     if (panoramaModalState.stitchingSourcePaths.length === 0) {
-      const err = 'Source paths for panorama not found.';
+      const err = t('modals.panorama.noSources');
       setUI((state) => ({ panoramaModalState: { ...state.panoramaModalState, error: err } }));
       throw new Error(err);
     }
@@ -44,7 +47,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
       setUI((state) => ({ panoramaModalState: { ...state.panoramaModalState, error: String(err) } }));
       throw err;
     }
-  }, [refreshImageList, setUI]);
+  }, [refreshImageList, setUI, t]);
 
   const handleStartFocusStack = useCallback(
     (paths: string[]) => {
@@ -55,7 +58,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
           error: null,
           finalImageBase64: null,
           depthMapBase64: null,
-          progressMessage: 'Starting focus stacking process...',
+          progressMessage: null,
         },
       }));
       invoke(Invokes.StitchFocusStack, { paths }).catch((err) => {
@@ -70,7 +73,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
   const handleSaveFocusStack = useCallback(async (): Promise<string> => {
     const { focusStackModalState } = useUIStore.getState();
     if (focusStackModalState.sourcePaths.length === 0) {
-      const err = 'Source paths for focus stack not found.';
+      const err = t('modals.focusStack.noSources');
       setUI((state) => ({ focusStackModalState: { ...state.focusStackModalState, error: err } }));
       throw new Error(err);
     }
@@ -85,7 +88,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
       setUI((state) => ({ focusStackModalState: { ...state.focusStackModalState, error: String(err) } }));
       throw err;
     }
-  }, [refreshImageList, setUI]);
+  }, [refreshImageList, setUI, t]);
 
   const handleStartHdr = useCallback(
     (paths: string[]) => {
@@ -95,7 +98,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
           isProcessing: true,
           error: null,
           finalImageBase64: null,
-          progressMessage: 'Starting HDR process...',
+          progressMessage: null,
         },
       }));
       invoke(Invokes.MergeHdr, { paths }).catch((err) => {
@@ -108,7 +111,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
   const handleSaveHdr = useCallback(async (): Promise<string> => {
     const { hdrModalState } = useUIStore.getState();
     if (hdrModalState.stitchingSourcePaths.length === 0) {
-      const err = 'Source paths for HDR not found.';
+      const err = t('modals.hdr.noSources');
       setUI((state) => ({ hdrModalState: { ...state.hdrModalState, error: err } }));
       throw new Error(err);
     }
@@ -121,7 +124,7 @@ export function useProductivityActions(refreshImageList: () => Promise<void>) {
       setUI((state) => ({ hdrModalState: { ...state.hdrModalState, error: String(err) } }));
       throw err;
     }
-  }, [refreshImageList, setUI]);
+  }, [refreshImageList, setUI, t]);
 
   const handleSaveCollage = useCallback(
     async (base64Data: string, firstPath: string): Promise<string> => {
