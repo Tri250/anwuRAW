@@ -415,15 +415,18 @@
       "enhance": "AI 強化",
       "failed": "AI 強化に失敗しました",
       "noExif": "EXIF 手がかりなし — AI強化を試してください",
+      "noScene": "確度の高いシーンなし — AI強化を試してください",
       "recipe": "シーンレシピ",
       "sceneBasis": "{{scene}}の可能性 · 根拠 {{basis}}",
       "scenes": {
+        "food": "料理",
         "landscape": "風景",
         "night": "夜景",
         "portrait": "ポートレート",
         "tele": "望遠"
       },
       "tagExif": "EXIF",
+      "tagStats": "シーン解析",
       "title": "AI レコメンド"
     },
     "backToLibrary": "ライブラリへ戻る",

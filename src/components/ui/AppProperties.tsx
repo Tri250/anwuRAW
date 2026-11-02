@@ -154,6 +154,7 @@ export enum Invokes {
   TetherStartIntervalCapture = 'tether_start_interval_capture',
   TetherStopIntervalCapture = 'tether_stop_interval_capture',
   AiAutoEnhance = 'ai_auto_enhance',
+  SceneClassify = 'scene_classify',
   AiUpscaleExport = 'ai_upscale_export',
   ExportXmpSidecar = 'export_xmp_sidecar',
   ImportXmpSidecar = 'import_xmp_sidecar',

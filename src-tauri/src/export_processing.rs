@@ -3181,3 +3181,232 @@ pub async fn estimate_export_sizes(
 
     Ok(single_image_extrapolated_size * paths.len())
 }
+
+/// Crystal 移动端（W4）：白底 EXIF 信息栏合成链路测试。
+/// 覆盖：注入 EXIF 的源文件 → extract_metadata 键名 → 栏底/品牌红/
+/// 画布不变性；以及 enabled=false、无 EXIF、show_exif=false、空段落
+/// 四类降级路径（EXIF 读取失败不阻断导出）。
+#[cfg(test)]
+mod exif_frame_tests {
+    use super::*;
+    use exif::In;
+    use std::io::Cursor as IoCursor;
+
+    const W: u32 = 400;
+    const H: u32 = 300;
+    /// bar_h = clamp(round(H*0.045)=14, 24, 160) = 24，与合成实现同源。
+    const BAR_H: u32 = 24;
+    const BASE_COLOR: [u8; 3] = [10, 10, 10];
+
+    fn solid_base(w: u32, h: u32, color: [u8; 3]) -> DynamicImage {
+        DynamicImage::ImageRgb8(ImageBuffer::from_fn(w, h, |_, _| image::Rgb(color)))
+    }
+
+    fn encode_jpeg(img: &DynamicImage) -> Vec<u8> {
+        let mut cursor = IoCursor::new(Vec::new());
+        img.to_rgb8()
+            .write_with_encoder(JpegEncoder::new_with_quality(&mut cursor, 90))
+            .expect("encode jpeg");
+        cursor.into_inner()
+    }
+
+    /// 用 kamadak-exif Writer 产出 TIFF 裸流，再以 APP1 段注入 JPEG
+    /// SOI 之后，构造带拍摄参数的源文件字节（与 extract_metadata 的
+    /// read_from_container 读取链路兼容）。
+    fn jpeg_with_exif(model: Option<&str>) -> Vec<u8> {
+        let jpeg = encode_jpeg(&solid_base(W, H, [90, 90, 90]));
+        // kamadak-exif 0.6 的 push_field 借用 &Field，字段需先作为局部变量存活。
+        let model_field = model.map(|m| exif::Field {
+            tag: exif::Tag::Model,
+            ifd_num: In::PRIMARY,
+            value: exif::Value::Ascii(vec![m.as_bytes().to_vec()]),
+        });
+        let focal_field = exif::Field {
+            tag: exif::Tag::FocalLength,
+            ifd_num: In::PRIMARY,
+            value: exif::Value::Rational(vec![exif::Rational { num: 38, denom: 1 }]),
+        };
+        let fnumber_field = exif::Field {
+            tag: exif::Tag::FNumber,
+            ifd_num: In::PRIMARY,
+            value: exif::Value::Rational(vec![exif::Rational { num: 28, denom: 5 }]),
+        };
+        let exposure_field = exif::Field {
+            tag: exif::Tag::ExposureTime,
+            ifd_num: In::PRIMARY,
+            value: exif::Value::Rational(vec![exif::Rational { num: 1, denom: 200 }]),
+        };
+        let iso_field = exif::Field {
+            tag: exif::Tag::ISOSpeed,
+            ifd_num: In::PRIMARY,
+            value: exif::Value::Short(vec![200]),
+        };
+        let mut writer = exif::experimental::Writer::new();
+        if let Some(ref f) = model_field {
+            writer.push_field(f);
+        }
+        writer.push_field(&focal_field);
+        writer.push_field(&fnumber_field);
+        writer.push_field(&exposure_field);
+        writer.push_field(&iso_field);
+        let mut tiff = IoCursor::new(Vec::new());
+        writer.write(&mut tiff, true).expect("write exif tiff");
+        let tiff = tiff.into_inner();
+
+        // APP1 注入：SOI 之后插入 [FFE1][段长 BE][Exif\0\0][TIFF]。
+        let mut out = Vec::with_capacity(jpeg.len() + tiff.len() + 16);
+        out.extend_from_slice(&jpeg[0..2]);
+        let seg_len = (2 + 6 + tiff.len()) as u16;
+        out.extend_from_slice(&[0xFF, 0xE1]);
+        out.extend_from_slice(&seg_len.to_be_bytes());
+        out.extend_from_slice(b"Exif\0\0");
+        out.extend_from_slice(&tiff);
+        out.extend_from_slice(&jpeg[2..]);
+        out
+    }
+
+    fn write_temp_source(bytes: &[u8], name: &str) -> PathBuf {
+        let path = std::env::temp_dir()
+            .join(format!("crystal-exif-frame-{}-{}.jpg", std::process::id(), name));
+        fs::write(&path, bytes).expect("write temp source");
+        path
+    }
+
+    fn frame_options(enabled: bool, brand: &str, show_exif: bool) -> ExifFrameOptions {
+        ExifFrameOptions {
+            enabled,
+            brand: brand.to_string(),
+            show_exif,
+        }
+    }
+
+    fn is_brand_red(px: [u8; 3]) -> bool {
+        px[0] > 150 && px[1] < 110 && px[2] < 110
+    }
+
+    fn is_bar_bg(px: [u8; 3]) -> bool {
+        (px[0] as i32 - 244).abs() <= 8
+            && (px[1] as i32 - 244).abs() <= 8
+            && (px[2] as i32 - 240).abs() <= 8
+    }
+
+    /// bar 区内是否存在品牌红字像素（draw_text_mut 实心像素为精确红）。
+    fn bar_has_brand_red(rgb: &image::RgbImage) -> bool {
+        (H - BAR_H..H).any(|y| (0..W).any(|x| is_brand_red(rgb.get_pixel(x, y).0)))
+    }
+
+    #[test]
+    fn injected_exif_parses_into_expected_segment_keys() {
+        // 注入 → extract_metadata 键名链路（W4 参数段落的数据源）。
+        let bytes = jpeg_with_exif(Some("E-M10MarkIV"));
+        let map = exif_processing::extract_metadata(&bytes).expect("exif should parse");
+        assert_eq!(map.get("Model").map(String::as_str), Some("E-M10MarkIV"));
+        assert_eq!(map.get("FocalLength").map(String::as_str), Some("38"));
+        assert_eq!(map.get("FNumber").map(String::as_str), Some("f/5.6"));
+        assert_eq!(map.get("ExposureTime").map(String::as_str), Some("1/200 s"));
+        let iso = map
+            .get("ISOSpeed")
+            .expect("ISOSpeed present")
+            .replace('"', "")
+            .trim()
+            .to_string();
+        assert_eq!(iso, "200");
+    }
+
+    #[test]
+    fn exif_frame_renders_bar_brand_and_keeps_canvas() {
+        let path = write_temp_source(&jpeg_with_exif(Some("E-M10MarkIV")), "full");
+        let mut base = solid_base(W, H, BASE_COLOR);
+        apply_exif_frame(
+            &mut base,
+            &frame_options(true, "CRYSTAL", true),
+            path.to_str().unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(base.dimensions(), (W, H), "overlay 不得改变画布尺寸");
+        let rgb = base.to_rgb8();
+        // 左下角：bar 背景色（padding 之前，无文字）。
+        let corner = rgb.get_pixel(2, H - 2).0;
+        assert!(
+            is_bar_bg(corner),
+            "底部应为白底信息栏背景, got {:?}",
+            corner
+        );
+        // 顶部保持底图原色。
+        assert_eq!(rgb.get_pixel(10, 10).0, BASE_COLOR);
+        // bar 区内存在品牌红字像素。
+        assert!(
+            bar_has_brand_red(&rgb),
+            "bar 区应存在品牌红像素"
+        );
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn exif_frame_disabled_leaves_image_unchanged() {
+        let path = write_temp_source(&jpeg_with_exif(Some("E-M10MarkIV")), "disabled");
+        let before = solid_base(W, H, BASE_COLOR);
+        let mut after = before.clone();
+        apply_exif_frame(
+            &mut after,
+            &frame_options(false, "CRYSTAL", true),
+            path.to_str().unwrap(),
+        )
+        .unwrap();
+        assert_eq!(before.to_rgb8().as_raw(), after.to_rgb8().as_raw());
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn exif_frame_without_exif_renders_brand_only() {
+        let path = write_temp_source(&encode_jpeg(&solid_base(W, H, [90, 90, 90])), "brand-only");
+        let mut base = solid_base(W, H, BASE_COLOR);
+        apply_exif_frame(
+            &mut base,
+            &frame_options(true, "CRYSTAL", true),
+            path.to_str().unwrap(),
+        )
+        .unwrap();
+
+        let rgb = base.to_rgb8();
+        assert!(
+            is_bar_bg(rgb.get_pixel(2, H - 2).0),
+            "无 EXIF 也应有品牌栏背景"
+        );
+        assert!(bar_has_brand_red(&rgb), "bar 区应存在品牌红像素");
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn exif_frame_show_exif_false_skips_params_but_keeps_brand() {
+        let path = write_temp_source(&jpeg_with_exif(Some("E-M10MarkIV")), "no-exif-flag");
+        let mut base = solid_base(W, H, BASE_COLOR);
+        apply_exif_frame(
+            &mut base,
+            &frame_options(true, "CRYSTAL", false),
+            path.to_str().unwrap(),
+        )
+        .unwrap();
+        let rgb = base.to_rgb8();
+        assert!(is_bar_bg(rgb.get_pixel(2, H - 2).0));
+        assert!(bar_has_brand_red(&rgb));
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn exif_frame_no_brand_no_exif_is_noop() {
+        // 无 EXIF + 空白品牌：段落为空 → 早退，图像逐像素不变。
+        let path = write_temp_source(&encode_jpeg(&solid_base(W, H, [90, 90, 90])), "noop");
+        let before = solid_base(W, H, BASE_COLOR);
+        let mut after = before.clone();
+        apply_exif_frame(
+            &mut after,
+            &frame_options(true, "  ", true),
+            path.to_str().unwrap(),
+        )
+        .unwrap();
+        assert_eq!(before.to_rgb8().as_raw(), after.to_rgb8().as_raw());
+        let _ = fs::remove_file(&path);
+    }
+}

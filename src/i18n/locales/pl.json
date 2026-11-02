@@ -458,15 +458,18 @@
       "enhance": "Ulepszenie AI",
       "failed": "Ulepszenie AI nie powiodło się",
       "noExif": "Brak wskazówek EXIF — wypróbuj ulepszanie AI",
+      "noScene": "Brak jednoznacznej sceny — wypróbuj ulepszanie AI",
       "recipe": "Recepta sceny",
       "sceneBasis": "Wygląda jak {{scene}} · na podstawie {{basis}}",
       "scenes": {
+        "food": "jedzenie",
         "landscape": "krajobraz",
         "night": "noc",
         "portrait": "portret",
         "tele": "teleobiektyw"
       },
       "tagExif": "EXIF",
+      "tagStats": "Analiza sceny",
       "title": "Rekomendacja AI"
     },
     "backToLibrary": "Powrót do biblioteki",

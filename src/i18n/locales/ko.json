@@ -415,15 +415,18 @@
       "enhance": "AI 강화",
       "failed": "AI 강화 실패",
       "noExif": "EXIF 단서 없음 — AI 강화를 사용해 보세요",
+      "noScene": "확실한 장면 없음 — AI 강화를 시도해 보세요",
       "recipe": "장면 레시피",
       "sceneBasis": "{{scene}} 추정 · 근거 {{basis}}",
       "scenes": {
+        "food": "음식",
         "landscape": "풍경",
         "night": "야경",
         "portrait": "인물",
         "tele": "망원"
       },
       "tagExif": "EXIF",
+      "tagStats": "장면 분석",
       "title": "AI 추천"
     },
     "backToLibrary": "라이브러리로 돌아가기",

@@ -438,15 +438,18 @@
       "enhance": "Millora IA",
       "failed": "Ha fallat la millora IA",
       "noExif": "Sense pistes EXIF — prova la millora IA",
+      "noScene": "Cap escena concloent — prova la millora IA",
       "recipe": "Recepta d'escena",
       "sceneBasis": "Sembla {{scene}} · segons {{basis}}",
       "scenes": {
+        "food": "menjar",
         "landscape": "paisatge",
         "night": "nit",
         "portrait": "retrat",
         "tele": "teleobjectiu"
       },
       "tagExif": "EXIF",
+      "tagStats": "Anàlisi d'escena",
       "title": "Recomanació IA"
     },
     "backToLibrary": "Torna a la biblioteca",

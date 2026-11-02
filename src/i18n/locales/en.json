@@ -421,15 +421,18 @@
       "enhance": "AI Enhance",
       "failed": "AI enhance failed",
       "noExif": "No EXIF scene hints — try AI enhance",
+      "noScene": "No confident scene match — try AI enhance",
       "recipe": "Scene recipe",
       "sceneBasis": "Looks like {{scene}} · based on {{basis}}",
       "scenes": {
+        "food": "food",
         "landscape": "landscape",
         "night": "night",
         "portrait": "portrait",
         "tele": "telephoto"
       },
       "tagExif": "EXIF",
+      "tagStats": "Scene analysis",
       "title": "AI Recommend"
     },
     "backToLibrary": "Back to library",

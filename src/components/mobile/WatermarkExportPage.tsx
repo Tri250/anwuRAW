@@ -1,33 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
-import {
-  BookmarkPlus,
-  ChevronLeft,
-  Heart,
-  Images,
-  Loader2,
-  Star,
-} from 'lucide-react';
+import { BookmarkPlus, ChevronLeft, Heart, Images, Loader2, Star } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useProcessStore } from '../../store/useProcessStore';
 import { useLibraryStore } from '../../store/useLibraryStore';
 import { useShallow } from 'zustand/react/shallow';
-import {
-  BorderBasis,
-  ExportSettings,
-  Status,
-  WatermarkAnchor,
-} from '../ui/ExportImportProperties';
+import { BorderBasis, ExportSettings, Status, WatermarkAnchor } from '../ui/ExportImportProperties';
 import { Invokes } from '../ui/AppProperties';
-import {
-  WATERMARK_TEMPLATES,
-  WatermarkTemplate,
-  summarizeExif,
-  useWmPrefs,
-  CxSwitch,
-} from './crystalShared';
+import { WATERMARK_TEMPLATES, WatermarkTemplate, summarizeExif, useWmPrefs, CxSwitch } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * Crystal 水印导出域（青绿主题，图4）。
@@ -200,10 +182,7 @@ export default function WatermarkExportPage({
               fontFamily: prefs.fontFamily,
             }
           : null,
-      exif_frame:
-        showInfoBarFrame && tpl.exifBar
-          ? { enabled: true, brand: tpl.brand, showExif: true }
-          : null,
+      exif_frame: showInfoBarFrame && tpl.exifBar ? { enabled: true, brand: tpl.brand, showExif: true } : null,
       dpi: 300,
     };
 
@@ -258,7 +237,10 @@ export default function WatermarkExportPage({
             {finalPreviewUrl ? (
               <img ref={previewImgRef} src={finalPreviewUrl} alt={t('crystal.previewAlt')} draggable={false} />
             ) : (
-              <div className="h-[38vh] w-full flex items-center justify-center text-xs" style={{ color: 'var(--cx-faint)' }}>
+              <div
+                className="h-[38vh] w-full flex items-center justify-center text-xs"
+                style={{ color: 'var(--cx-faint)' }}
+              >
                 {t('crystal.previewRendering')}
               </div>
             )}
@@ -315,7 +297,11 @@ export default function WatermarkExportPage({
               <span className="cx-frame-label block">{t('crystal.export.infoFrameLabel')}</span>
               <span className="cx-frame-hint block">{t('crystal.export.infoFrameHint')}</span>
             </span>
-            <CxSwitch checked={showInfoBarFrame} onChange={setShowInfoBarFrame} label={t('crystal.export.infoFrameLabel')} />
+            <CxSwitch
+              checked={showInfoBarFrame}
+              onChange={setShowInfoBarFrame}
+              label={t('crystal.export.infoFrameLabel')}
+            />
           </div>
         </div>
 
@@ -375,10 +361,16 @@ export default function WatermarkExportPage({
           <div className="mt-3">
             <div className="cx-export-label">{t('crystal.export.fontFamily')}</div>
             <div className="cx-seg">
-              <button className={prefs.fontFamily === 'system' ? '' : 'is-active'} onClick={() => updatePrefs({ fontFamily: 'builtin' })}>
+              <button
+                className={prefs.fontFamily === 'system' ? '' : 'is-active'}
+                onClick={() => updatePrefs({ fontFamily: 'builtin' })}
+              >
                 {t('crystal.export.fontBuiltin')}
               </button>
-              <button className={prefs.fontFamily === 'system' ? 'is-active' : ''} onClick={() => updatePrefs({ fontFamily: 'system' })}>
+              <button
+                className={prefs.fontFamily === 'system' ? 'is-active' : ''}
+                onClick={() => updatePrefs({ fontFamily: 'system' })}
+              >
                 {t('crystal.export.fontSystem')}
               </button>
             </div>
@@ -387,7 +379,11 @@ export default function WatermarkExportPage({
             <div className="cx-export-label">{t('crystal.export.fontScale')}</div>
             <div className="cx-quality-row">
               {[3, 4, 6, 8].map((v) => (
-                <button key={v} className={`cx-quality-btn ${prefs.fontScale === v ? 'is-active' : ''}`} onClick={() => updatePrefs({ fontScale: v })}>
+                <button
+                  key={v}
+                  className={`cx-quality-btn ${prefs.fontScale === v ? 'is-active' : ''}`}
+                  onClick={() => updatePrefs({ fontScale: v })}
+                >
                   {v}
                 </button>
               ))}
@@ -411,7 +407,11 @@ export default function WatermarkExportPage({
           <div className="cx-export-label">{t('crystal.export.quality')}</div>
           <div className="cx-quality-row">
             {QUALITIES.map((q) => (
-              <button key={q} className={`cx-quality-btn ${quality === q ? 'is-active' : ''}`} onClick={() => setQuality(q)}>
+              <button
+                key={q}
+                className={`cx-quality-btn ${quality === q ? 'is-active' : ''}`}
+                onClick={() => setQuality(q)}
+              >
                 {q}
               </button>
             ))}

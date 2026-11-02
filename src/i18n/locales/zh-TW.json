@@ -415,15 +415,18 @@
       "enhance": "AI 強化",
       "failed": "AI 強化失敗",
       "noExif": "無 EXIF 場景線索 — 試試 AI 強化",
+      "noScene": "暫無高信心場景 — 試試 AI 強化",
       "recipe": "場景配方",
       "sceneBasis": "疑似{{scene}} · 依據 {{basis}}",
       "scenes": {
+        "food": "美食",
         "landscape": "風景",
         "night": "夜景",
         "portrait": "人像",
         "tele": "長焦"
       },
       "tagExif": "EXIF",
+      "tagStats": "畫面分析",
       "title": "AI 推薦"
     },
     "backToLibrary": "返回圖庫",
