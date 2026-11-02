@@ -1005,7 +1005,7 @@ export default function MasksPanel() {
           <div className="flex items-center gap-1">
             <button
               className={clsx(
-                'p-2 rounded-full transition-colors',
+                'p-2 rounded-full transition-colors cursor-pointer',
                 isAdjustmentsPanelVisible
                   ? 'opacity-50 cursor-not-allowed text-text-secondary'
                   : isWaveformVisible
@@ -1023,7 +1023,7 @@ export default function MasksPanel() {
               <ChartArea size={18} />
             </button>
             <button
-              className="p-2 rounded-full hover:bg-surface transition-colors"
+              className="p-2 rounded-full hover:bg-surface transition-colors cursor-pointer"
               onClick={handleResetAllMasks}
               data-tooltip={t('editor.masks.resetMaskingTooltip')}
             >
@@ -1337,7 +1337,7 @@ function DraggableGridItem({ maskType, onClick, onRightClick, activeMaskContaine
         onRightClick(event);
       }}
       className={`bg-surface text-text-primary rounded-lg p-2 flex flex-col items-center justify-center gap-2 aspect-square transition-colors
-        ${maskType.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-card-active active:bg-accent/20'}
+        ${maskType.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-card-active active:bg-accent/20 cursor-pointer'}
         ${isDragging ? 'opacity-50' : ''}`}
       data-tooltip={tooltip}
       whileTap={{ scale: 0.98 }}
@@ -1570,7 +1570,7 @@ function ContainerRow({
         </div>
         <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            className="p-1 hover:text-text-primary text-text-secondary"
+            className="p-1 hover:text-text-primary text-text-secondary cursor-pointer"
             onMouseEnter={() => setIsMaskControlHovered(true)}
             onMouseLeave={() => setIsMaskControlHovered(false)}
             data-tooltip={container.visible ? t('editor.masks.actions.hideMask') : t('editor.masks.actions.showMask')}
@@ -1582,7 +1582,7 @@ function ContainerRow({
             {container.visible ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
           <button
-            className="p-1 hover:text-red-500 text-text-secondary"
+            className="p-1 hover:text-red-500 text-text-secondary cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               handleDelete(container.id);
@@ -1857,7 +1857,7 @@ function SubMaskRow({
       <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
         {index > 1 && (
           <button
-            className="p-1 hover:text-text-primary text-text-secondary"
+            className="p-1 hover:text-text-primary text-text-secondary cursor-pointer"
             data-tooltip={
               subMask.mode === SubMaskMode.Additive
                 ? t('editor.masks.actions.switchToSubtract')
@@ -1887,7 +1887,7 @@ function SubMaskRow({
           </button>
         )}
         <button
-          className="p-1 hover:text-text-primary text-text-secondary"
+          className="p-1 hover:text-text-primary text-text-secondary cursor-pointer"
           data-tooltip={
             subMask.visible ? t('editor.masks.actions.hideComponent') : t('editor.masks.actions.showComponent')
           }
@@ -1901,7 +1901,7 @@ function SubMaskRow({
           {subMask.visible ? <Eye size={16} /> : <EyeOff size={16} />}
         </button>
         <button
-          className="p-1 hover:text-red-500 text-text-secondary"
+          className="p-1 hover:text-red-500 text-text-secondary cursor-pointer"
           data-tooltip={t('editor.ai.actions.deleteComponent')}
           onClick={(e) => {
             e.stopPropagation();
@@ -2548,7 +2548,7 @@ function SettingsPanel({
                     key={part}
                     onClick={() => handleToggleFacePart(part)}
                     className={clsx(
-                      'px-1 py-2 text-xs leading-tight rounded-md transition-colors',
+                      'px-1 py-2 text-xs leading-tight rounded-md transition-colors cursor-pointer',
                       faceParts.includes(part)
                         ? 'bg-accent text-button-text'
                         : 'bg-bg-primary text-text-secondary hover:bg-card-active hover:text-text-primary',

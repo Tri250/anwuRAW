@@ -224,7 +224,7 @@ export default function LUTControl({
         onMouseLeave={() => onLutHover?.(null)}
         onClick={() => handleSwatchClick(entry)}
         onContextMenu={entry.isBuiltIn ? undefined : (e) => handleContextMenu(e, entry)}
-        className={`relative aspect-square rounded-md overflow-hidden bg-bg-tertiary border-2 transition-colors ${
+        className={`relative aspect-square rounded-md overflow-hidden bg-bg-tertiary border-2 transition-colors cursor-pointer ${
           isSelected ? 'border-accent' : 'border-transparent hover:border-surface'
         }`}
         data-tooltip={entry.name}
@@ -253,7 +253,7 @@ export default function LUTControl({
           {lutName && (
             <button
               onClick={onClear}
-              className="flex items-center justify-center p-0.5 rounded-full bg-bg-tertiary hover:bg-surface text-text-secondary hover:text-text-primary transition-colors"
+              className="flex items-center justify-center p-0.5 rounded-full bg-bg-tertiary hover:bg-surface text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
               data-tooltip={t('ui.lut.clearLut')}
             >
               <X size={14} />
@@ -321,7 +321,7 @@ export default function LUTControl({
                   {customLuts.length > 0 && (
                     <button
                       onClick={handleImport}
-                      className="text-xs text-text-secondary hover:text-accent flex items-center gap-1 transition-colors"
+                      className="text-xs text-text-secondary hover:text-accent flex items-center gap-1 transition-colors cursor-pointer"
                       data-tooltip={t('ui.lut.import')}
                     >
                       <Upload size={12} />

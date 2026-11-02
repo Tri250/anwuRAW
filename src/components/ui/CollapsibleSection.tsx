@@ -51,10 +51,20 @@ export default function CollapsibleSection({
   return (
     <div className="bg-surface rounded-lg overflow-hidden shrink-0" onContextMenu={onContextMenu}>
       <div
-        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-card-active transition-colors duration-200"
+        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-card-active transition-colors duration-200 cursor-pointer select-none"
         onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        role="button"
+        aria-expanded={isOpen}
+        tabIndex={0}
       >
         <div className="flex items-center gap-2">
           <Text variant={TextVariants.title} weight={TextWeights.normal}>

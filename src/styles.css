@@ -79,6 +79,24 @@
   &.slider-thumb-active::-moz-range-thumb {
     @apply scale-110;
   }
+
+  /* Keyboard users otherwise get no visible focus: the input is an invisible
+     full-width strip, so render the focus ring on the thumb instead. */
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+      0 0 0 2px var(--color-bg-secondary),
+      0 0 0 4px var(--color-accent);
+  }
+
+  &:focus-visible::-moz-range-thumb {
+    box-shadow:
+      0 0 0 2px var(--color-bg-secondary),
+      0 0 0 4px var(--color-accent);
+  }
 }
 
 @utility slider-thumb-active {

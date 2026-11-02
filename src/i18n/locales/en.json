@@ -48,6 +48,7 @@
         "balance": "Balance",
         "blending": "Blending",
         "global": "Global",
+        "threeWay": "3-way (shadows / midtones / highlights)",
         "highlights": "Highlights",
         "midtones": "Midtones",
         "shadows": "Shadows"

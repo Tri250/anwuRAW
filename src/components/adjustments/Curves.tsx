@@ -839,7 +839,7 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
       <div className="flex items-center justify-between gap-2 mb-2 mt-2">
         <div className="flex items-center gap-1 p-1 rounded-lg bg-surface-secondary shrink-0">
           <button
-            className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${
+            className={`w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer ${
               !isParametricMode ? 'bg-surface text-text-primary' : 'text-text-secondary hover:text-text-primary'
             }`}
             onClick={() => handleToggleMode('point')}
@@ -849,7 +849,7 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
             <Spline size={16} />
           </button>
           <button
-            className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${
+            className={`w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer ${
               isParametricMode ? 'bg-surface text-text-primary' : 'text-text-secondary hover:text-text-primary'
             }`}
             onClick={() => handleToggleMode('parametric')}
@@ -867,7 +867,7 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
             return (
               <button
                 key={channel}
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                   selected ? 'ring-2 ring-offset-2 ring-offset-surface ring-accent' : 'bg-surface-secondary'
                 } ${channel === ActiveChannel.Luma ? 'text-text-primary' : ''}`}
                 onClick={() => setActiveChannel(channel)}

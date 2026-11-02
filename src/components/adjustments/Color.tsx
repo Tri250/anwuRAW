@@ -104,7 +104,7 @@ export const ColorSwatch = ({ color, name, isActive, ariaLabel, onClick }: Color
   return (
     <button
       aria-label={ariaLabel}
-      className="relative w-6 h-6 focus:outline-hidden group"
+      className="relative w-6 h-6 cursor-pointer focus:outline-hidden group"
       onClick={handleClick}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
@@ -276,12 +276,15 @@ const ColorGradingPanel = ({ adjustments, setAdjustments, onDragStateChange }: C
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as '3way' | 'global')}
-              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all focus:outline-none
+              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer focus:outline-none
                 ${
                   isActive
                     ? 'ring-2 ring-offset-2 ring-offset-surface ring-accent text-text-primary'
                     : 'bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-bg-secondary/80'
                 }`}
+              data-tooltip={
+                isActive ? undefined : tab.id === '3way' ? t('adjustments.color.grading.threeWay') : t('adjustments.color.grading.global')
+              }
             >
               {tab.icon}
             </button>
@@ -678,7 +681,7 @@ function ColorPanel({
               <div className="flex items-center gap-1">
                 <button
                   onClick={toggleWhiteBalanceMode}
-                  className={`w-6 h-6 flex items-center justify-center rounded-md text-xs font-semibold transition-colors ${
+                  className={`w-6 h-6 flex items-center justify-center rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                     isKelvinMode ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
                   }`}
                   data-tooltip={t('adjustments.color.kelvinModeTooltip')}
@@ -688,7 +691,7 @@ function ColorPanel({
                 {toggleWbPicker && (
                   <button
                     onClick={toggleWbPicker}
-                    className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${
+                    className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors cursor-pointer ${
                       isWbPickerActive ? 'bg-accent text-button-text' : 'hover:bg-bg-secondary text-text-secondary'
                     }`}
                     data-tooltip={t('adjustments.color.wbPickerTooltip')}
@@ -817,7 +820,7 @@ function ColorPanel({
             !isForMask && (
               <button
                 onClick={toggleTargetedAdjustment}
-                className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${
+                className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors cursor-pointer ${
                   isTargetedAdjustmentActive
                     ? 'bg-accent text-button-text'
                     : 'hover:bg-bg-secondary text-text-secondary'

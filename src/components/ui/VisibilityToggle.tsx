@@ -17,7 +17,7 @@ export default function VisibilityToggle({ className, isVisible, onToggle, revea
   return (
     <button
       className={clsx(
-        'p-1 rounded-full text-text-secondary hover:bg-bg-primary transition-opacity duration-300',
+        'p-1 rounded-full text-text-secondary hover:bg-bg-primary transition-opacity duration-300 cursor-pointer',
         revealOnHover &&
           isVisible &&
           'opacity-0 pointer-events-none group-hover/visibility:opacity-100 group-hover/visibility:pointer-events-auto',

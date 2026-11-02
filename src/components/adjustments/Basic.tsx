@@ -136,7 +136,7 @@ const ToneMapperSwitch = ({
               data-tooltip={mapper.title}
               onClick={() => onMapperChange(mapper.id)}
               className={clsx(
-                'relative flex-1 flex items-center justify-center gap-2 px-3 p-1.5 text-sm font-medium rounded-md transition-colors',
+                'relative flex-1 flex items-center justify-center gap-2 px-3 p-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer',
                 {
                   'text-text-primary hover:bg-surface': selectedMapper !== mapper.id,
                   'text-button-text': selectedMapper === mapper.id,

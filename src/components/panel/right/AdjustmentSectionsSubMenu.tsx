@@ -94,7 +94,7 @@ function VisibilityToggle({ isDisabled, isHidden, onToggle }: VisibilityTogglePr
 
   return (
     <button
-      className="p-1 rounded-full text-text-secondary hover:text-text-primary hover:bg-card-active disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="p-1 rounded-full text-text-secondary hover:text-text-primary hover:bg-card-active disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
       disabled={isDisabled}
       onClick={onToggle}
       data-tooltip={
@@ -167,7 +167,7 @@ function SectionRow({
         />
         {toolOrder.length > 0 && (
           <button
-            className="p-1 rounded-full text-text-secondary hover:text-text-primary hover:bg-card-active transition-colors"
+            className="p-1 rounded-full text-text-secondary hover:text-text-primary hover:bg-card-active transition-colors cursor-pointer"
             onClick={onToggleExpanded}
           >
             <ChevronDown size={16} className={clsx('transition-transform duration-200', isExpanded && 'rotate-180')} />
@@ -289,7 +289,7 @@ function AdjustmentSectionsSubMenu() {
       </Reorder.Group>
       <div className="h-px bg-text-secondary/20 my-1 mx-2" />
       <button
-        className="w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 transition-colors duration-150 text-text-primary hover:bg-bg-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        className="w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 transition-colors duration-150 text-text-primary hover:bg-bg-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent cursor-pointer"
         disabled={isDefaultLayout}
         onClick={handleReset}
         role="menuitem"

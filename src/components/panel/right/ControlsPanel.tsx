@@ -243,7 +243,7 @@ export default function Controls() {
         <Text variant={TextVariants.title}>{t('editor.adjustments.title')}</Text>
         <div className="flex items-center gap-1">
           <button
-            className="p-2 rounded-full hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-full hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             disabled={!selectedImage}
             onClick={() => handleAutoAdjustments()}
             onContextMenu={handleAutoAdjustContextMenu}
@@ -253,7 +253,7 @@ export default function Controls() {
           </button>
           <button
             className={clsx(
-              'p-2 rounded-full transition-colors',
+              'p-2 rounded-full transition-colors cursor-pointer',
               isWaveformVisible ? 'bg-surface hover:bg-card-active' : 'hover:bg-surface',
             )}
             onClick={onToggleWaveform}
@@ -262,7 +262,7 @@ export default function Controls() {
             <ChartArea size={18} />
           </button>
           <button
-            className="p-2 rounded-full hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-full hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             disabled={!selectedImage}
             onClick={handleResetAdjustments}
             data-tooltip={t('editor.adjustments.tooltips.resetAdjustments')}

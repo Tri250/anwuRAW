@@ -109,7 +109,7 @@ const Dropdown = <T extends React.Key>({
         aria-haspopup="listbox"
         disabled={disabled}
         className={clsx(
-          'w-full border border-border-color rounded-md px-3 py-2 flex justify-between items-center text-left disabled:opacity-50 disabled:cursor-not-allowed',
+          'w-full border border-border-color rounded-md px-3 py-2 flex justify-between items-center text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
           'focus:ring-accent focus:border-accent focus:outline-hidden focus:ring-2',
           triggerClassName || 'bg-surface',
         )}
@@ -158,7 +158,7 @@ const Dropdown = <T extends React.Key>({
                     onClick={() => handleSelect(option)}
                     disabled={option.disabled}
                     className={clsx(
-                      'w-full text-left px-3 py-2 rounded-md flex items-center justify-between',
+                      'w-full text-left px-3 py-2 rounded-md flex items-center justify-between cursor-pointer',
                       'transition-colors duration-150',
                       {
                         'bg-bg-primary': isSelected,

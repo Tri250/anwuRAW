@@ -48,6 +48,7 @@
         "balance": "平衡",
         "blending": "混合",
         "global": "全局",
+        "threeWay": "三向调色（阴影 / 中间调 / 高光）",
         "highlights": "高光",
         "midtones": "中间调",
         "shadows": "阴影"

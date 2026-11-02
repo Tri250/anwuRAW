@@ -134,7 +134,7 @@ const BokehShapeSwitch = ({ selectedShape, onShapeChange }: BokehShapeSwitchProp
                 data-tooltip={shape.title}
                 onClick={() => onShapeChange(shape.id)}
                 className={clsx(
-                  'relative flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                  'relative flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer',
                   {
                     'text-text-secondary hover:text-text-primary hover:bg-surface': selectedShape !== shape.id,
                     'text-button-text': selectedShape === shape.id,
@@ -637,7 +637,7 @@ function EffectsPanel({
                                 />
                                 {hoveredLightId === light.id && (
                                   <button
-                                    className="absolute -top-1 -right-1 z-10 p-0.5 rounded-full bg-card-active text-text-secondary hover:bg-red-500/20 hover:text-red-500 transition-all"
+                                    className="absolute -top-1 -right-1 z-10 p-0.5 rounded-full bg-card-active text-text-secondary hover:bg-red-500/20 hover:text-red-500 transition-all cursor-pointer"
                                     onClick={(e: React.MouseEvent) => {
                                       e.stopPropagation();
                                       handleRemoveLight(light.id);
@@ -653,7 +653,7 @@ function EffectsPanel({
                               aria-label={t('adjustments.effects.relightAddLight')}
                               data-tooltip={t('adjustments.effects.relightAddLight')}
                               onClick={handleAddLight}
-                              className="w-6 h-6 flex items-center justify-center rounded-full border-2 border-dashed border-text-secondary text-text-secondary hover:border-text-primary hover:text-text-primary transition-colors"
+                              className="w-6 h-6 flex items-center justify-center rounded-full border-2 border-dashed border-text-secondary text-text-secondary hover:border-text-primary hover:text-text-primary transition-colors cursor-pointer"
                             >
                               <Plus size={14} />
                             </button>
