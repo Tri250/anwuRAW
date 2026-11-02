@@ -836,7 +836,8 @@
         "iso": "ISO",
         "lens": "Lens",
         "shutterSpeed": "Shutter Speed",
-        "title": "Camera Details"
+        "title": "Camera Details",
+        "body": "Camera Body"
       },
       "clickToEdit": "Click to edit",
       "copied": "Copied",
@@ -898,7 +899,13 @@
         "tags": "Tags",
         "title": "Organization"
       },
-      "title": "Metadata"
+      "title": "Metadata",
+      "toasts": {
+        "addTagFailed": "Failed to add tag: {{error}}",
+        "removeTagFailed": "Failed to remove tag: {{error}}",
+        "setColorFailed": "Failed to set color label: {{error}}",
+        "updateFailed": "Failed to update metadata: {{error}}"
+      }
     },
     "presets": {
       "amount": "Amount",

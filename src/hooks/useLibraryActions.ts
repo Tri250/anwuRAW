@@ -1,6 +1,7 @@
 import { createElement, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
@@ -216,6 +217,8 @@ const applyWithAutoAdvance = (changedPaths: string[], undoable: boolean, applyCh
 };
 
 export function useLibraryActions(handleImageSelect?: (path: string, openInEditor?: boolean) => void) {
+  const { t } = useTranslation();
+
   const handleRate = useCallback((newRating: number, paths?: string[]) => {
     const { imageRatings, imageList, setLibrary } = useLibraryStore.getState();
 
@@ -308,9 +311,42 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
         })),
       );
     } catch (err) {
-      toast.error(`Failed to set color label: ${err}`);
+      toast.error(t('editor.metadata.toasts.setColorFailed', { error: String(err) }));
     }
+  }, [t]);
+
+  /**
+   * 增量式标签同步：只添加/移除单个标签，保留每张图各自已有的其他标签。
+   * 与后端 AddTagForPaths/RemoveTagForPaths 的增量语义对齐；
+   * 全量替换语义请使用 handleTagsChanged（标签编辑模态等场景）。
+   */
+  const applyTagDelta = useCallback((changedPaths: string[], tag: string, isAdd: boolean) => {
+    const { imageList } = useLibraryStore.getState();
+    const groupingMode = useSettingsStore.getState().appSettings?.grouping ?? 'off';
+    const pathsToUpdate = expandGroupedPaths(imageList, changedPaths, groupingMode);
+    const pathSet = new Set(pathsToUpdate);
+
+    applyWithAutoAdvance(pathsToUpdate, false, () =>
+      useLibraryStore.getState().setLibrary((state) => ({
+        imageList: state.imageList.map((image) => {
+          if (!pathSet.has(image.path)) return image;
+          const tags = image.tags || [];
+          const next = isAdd ? (tags.includes(tag) ? tags : [...tags, tag]) : tags.filter((t) => t !== tag);
+          const finalTags = [...next].sort();
+          return { ...image, tags: finalTags.length > 0 ? finalTags : null };
+        }),
+      })),
+    );
   }, []);
+
+  const handleTagAdded = useCallback((changedPaths: string[], tag: string) => applyTagDelta(changedPaths, tag, true), [
+    applyTagDelta,
+  ]);
+
+  const handleTagRemoved = useCallback(
+    (changedPaths: string[], tag: string) => applyTagDelta(changedPaths, tag, false),
+    [applyTagDelta],
+  );
 
   const handleTagsChanged = useCallback((changedPaths: string[], newTags: { tag: string; isUser: boolean }[]) => {
     const { imageList } = useLibraryStore.getState();
@@ -337,7 +373,7 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
     const { multiSelectedPaths, imageList, setLibrary } = useLibraryStore.getState();
     const { selectedImage, setEditor } = useEditorStore.getState();
 
-    const pathsToUpdate =
+    const selectedPaths =
       paths && paths.length > 0
         ? paths
         : multiSelectedPaths.length > 0
@@ -345,6 +381,11 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
           : selectedImage
             ? [selectedImage.path]
             : [];
+    if (selectedPaths.length === 0) return;
+
+    // 与评分/旗标/颜色/标签链路保持一致：分组开启时 raw 组内文件同步生效。
+    const groupingMode = useSettingsStore.getState().appSettings?.grouping ?? 'off';
+    const pathsToUpdate = expandGroupedPaths(imageList, selectedPaths, groupingMode);
     if (pathsToUpdate.length === 0) return;
 
     const physicalPathsSet = new Set(pathsToUpdate.map((p) => p.split('?vc=')[0]));
@@ -378,9 +419,9 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
         }
       });
     } catch (err) {
-      toast.error(`Failed to update metadata: ${err}`);
+      toast.error(t('editor.metadata.toasts.updateFailed', { error: String(err) }));
     }
-  }, []);
+  }, [t]);
 
   const handleClearSelection = useCallback(() => {
     const activeView = useUIStore.getState().activeView;
@@ -670,6 +711,8 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
     handleSetFlag,
     handleToggleFlag,
     handleSetColorLabel,
+    handleTagAdded,
+    handleTagRemoved,
     handleTagsChanged,
     handleUpdateExif,
     handleClearSelection,

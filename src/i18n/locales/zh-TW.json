@@ -824,7 +824,8 @@
         "iso": "ISO",
         "lens": "鏡頭",
         "shutterSpeed": "快門速度",
-        "title": "相機詳情"
+        "title": "相機詳情",
+        "body": "機身"
       },
       "clickToEdit": "點選編輯",
       "copied": "已複製",
@@ -886,7 +887,13 @@
         "tags": "標籤",
         "title": "組織"
       },
-      "title": "後設資料"
+      "title": "後設資料",
+      "toasts": {
+        "addTagFailed": "新增標籤失敗：{{error}}",
+        "removeTagFailed": "移除標籤失敗：{{error}}",
+        "setColorFailed": "設定顏色標籤失敗：{{error}}",
+        "updateFailed": "更新中繼資料失敗：{{error}}"
+      }
     },
     "presets": {
       "amount": "數量",

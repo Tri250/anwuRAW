@@ -832,7 +832,8 @@
         "iso": "ISO",
         "lens": "镜头",
         "shutterSpeed": "快门速度",
-        "title": "相机详情"
+        "title": "相机详情",
+        "body": "机身"
       },
       "clickToEdit": "点击编辑",
       "copied": "已复制",
@@ -894,7 +895,13 @@
         "tags": "标签",
         "title": "组织"
       },
-      "title": "元数据"
+      "title": "元数据",
+      "toasts": {
+        "addTagFailed": "添加标签失败：{{error}}",
+        "removeTagFailed": "移除标签失败：{{error}}",
+        "setColorFailed": "设置颜色标签失败：{{error}}",
+        "updateFailed": "更新元数据失败：{{error}}"
+      }
     },
     "presets": {
       "amount": "数量",

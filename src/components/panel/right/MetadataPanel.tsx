@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { BookOpen, Check, ChevronDown, ChevronRight, MapPin, Plus, Star, Tag, X, User } from 'lucide-react';
+import { BookOpen, Camera, Check, ChevronDown, ChevronRight, MapPin, Plus, Star, Tag, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -301,7 +301,7 @@ export default function MetadataPanel() {
   const appSettings = useSettingsStore((s) => s.appSettings);
   const liveThumbnailUrl = useProcessStore((s) => (selectedImage ? s.thumbnails[selectedImage.path] : undefined));
 
-  const { handleRate, handleToggleFlag, handleSetColorLabel, handleTagsChanged, handleUpdateExif } =
+  const { handleRate, handleToggleFlag, handleSetColorLabel, handleTagAdded, handleTagRemoved, handleUpdateExif } =
     useLibraryActions();
 
   const rating = selectedImage ? imageRatings[selectedImage.path] || 0 : 0;
@@ -318,7 +318,7 @@ export default function MetadataPanel() {
     return expandGroupedPaths(imageList, targetPaths, groupingMode);
   };
 
-  const { cameraGridSettings, lensSetting, gpsData, otherExifEntries } = useMemo(() => {
+  const { cameraGridSettings, lensSetting, bodySetting, gpsData, otherExifEntries } = useMemo(() => {
     const exif = selectedImage?.exif || {};
 
     const cameraGridKeys = ['ExposureTime', 'FNumber', 'PhotographicSensitivity', 'FocalLengthIn35mmFilm'];
@@ -362,6 +362,16 @@ export default function MetadataPanel() {
             : '-',
     };
 
+    const bodyValue = [exif['Make'], exif['Model']]
+      .filter((v) => v !== undefined && v !== null && v !== '')
+      .map((v) => String(v).replace(/"/g, ''))
+      .join(' ');
+    const bodySetting = {
+      key: 'Body',
+      label: t('editor.metadata.camera.body'),
+      value: bodyValue || '-',
+    };
+
     const latStr = exif.GPSLatitude;
     const latRef = exif.GPSLatitudeRef;
     const lonStr = exif.GPSLongitude;
@@ -380,6 +390,10 @@ export default function MetadataPanel() {
     const handledKeys = [
       ...cameraGridKeys,
       'LensModel',
+      'Make',
+      'Model',
+      'DateTimeOriginal',
+      'GPSAltitude',
       ...EDITABLE_FIELDS.map((f) => f.key),
       ...GPS_EDIT_KEYS,
       ...IPTC_FIELDS.map((f) => f.key),
@@ -388,7 +402,7 @@ export default function MetadataPanel() {
       .filter(([key]) => !handledKeys.includes(key))
       .sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
 
-    return { cameraGridSettings, lensSetting, gpsData, otherExifEntries };
+    return { cameraGridSettings, lensSetting, bodySetting, gpsData, otherExifEntries };
   }, [selectedImage?.exif, t]);
 
   const currentColor = useMemo(() => {
@@ -440,30 +454,31 @@ export default function MetadataPanel() {
   const handleAddTag = async (tagToAdd: string) => {
     const newTagValue = tagToAdd.trim().toLowerCase();
     if (newTagValue && !currentTags.some((t) => t.tag === newTagValue)) {
+      const prefixedTag = `${USER_TAG_PREFIX}${newTagValue}`;
       try {
-        const prefixedTag = `${USER_TAG_PREFIX}${newTagValue}`;
         const pathsToUpdate = getPathsToUpdate();
         await invoke(Invokes.AddTagForPaths, { paths: pathsToUpdate, tag: prefixedTag });
 
-        const newTags = [...currentTags, { tag: newTagValue, isUser: true }];
-        handleTagsChanged(targetPaths, newTags);
+        // 增量同步：仅追加新标签，保留多选中各图已有的其他标签。
+        handleTagAdded(targetPaths, prefixedTag);
         setTagInputValue('');
       } catch (err) {
         console.error(`Failed to add tag: ${err}`);
+        toast.error(t('editor.metadata.toasts.addTagFailed', { error: String(err) }));
       }
     }
   };
 
   const handleRemoveTag = async (tagToRemove: { tag: string; isUser: boolean }) => {
+    const prefixedTag = tagToRemove.isUser ? `${USER_TAG_PREFIX}${tagToRemove.tag}` : tagToRemove.tag;
     try {
-      const prefixedTag = tagToRemove.isUser ? `${USER_TAG_PREFIX}${tagToRemove.tag}` : tagToRemove.tag;
       const pathsToUpdate = getPathsToUpdate();
       await invoke(Invokes.RemoveTagForPaths, { paths: pathsToUpdate, tag: prefixedTag });
 
-      const newTags = currentTags.filter((t) => t.tag !== tagToRemove.tag);
-      handleTagsChanged(targetPaths, newTags);
+      handleTagRemoved(targetPaths, prefixedTag);
     } catch (err) {
       console.error(`Failed to remove tag: ${err}`);
+      toast.error(t('editor.metadata.toasts.removeTagFailed', { error: String(err) }));
     }
   };
 
@@ -631,6 +646,24 @@ export default function MetadataPanel() {
                     className="truncate"
                   >
                     {lensSetting.value}
+                  </Text>
+                </div>
+
+                <div
+                  className="flex items-center gap-2 bg-surface border border-surface px-3 py-2 rounded-xl cursor-default"
+                  data-tooltip={bodySetting.label}
+                >
+                  <span className="text-text-secondary opacity-90 flex items-center justify-center shrink-0">
+                    <Camera size={16} />
+                  </span>
+                  <Text
+                    as="span"
+                    variant={TextVariants.small}
+                    weight={TextWeights.medium}
+                    color={TextColors.primary}
+                    className="truncate"
+                  >
+                    {bodySetting.value}
                   </Text>
                 </div>
               </div>
