@@ -13,34 +13,34 @@
 
 AlcedoStudio 与本项目**不是同源分叉，而是同一赛道的独立实现**：
 
-| 维度 | AlcedoStudio v0.3.3 | anwuRAW v2.0.2（我方） |
-|------|---------------------|------------------------|
-| 技术栈 | C++20 + Qt，CMake + vcpkg，Rust sidecar | Tauri 2 + Rust + React/TS，WebView UI |
-| GPU 后端 | 原生 CUDA（Windows）/ OpenCL（Windows）/ Metal（macOS），83 个 kernel 文件 | wgpu/WGSL 统一计算管线（桌面已启用，Android 显示路径未接通） |
-| 色彩架构 | 场景参照（scene-referred 32-bit float）+ 节点图（Develop → ColorGrade* → DisplayTransform）+ ACES 2.0 / OpenDRT 输出变换 | 显示参照管线 + AgX 近似 / PBR Neutral（[shader.wgsl](file:///workspace/src-tauri/src/shaders/shader.wgsl)） |
-| AI 架构 | **进程分离**：Rust gRPC sidecar `puerh_mind`（CLIP 语义搜索、SAM 2.1 蒙版、远程提供商抽象） | **进程内**：ort 直连（[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs)），模型运行时下载 + SHA-256 校验 |
-| 目录/存储 | DuckDB 嵌入式目录 + 项目文件（单文件库） | 文件系统直读 + 分组/堆叠（[imageGrouping.ts](file:///workspace/src/utils/imageGrouping.ts)、[stacking.ts](file:///workspace/src/utils/stacking.ts)） |
-| 移动端 | **不支持**（仅 Windows x64 + macOS Apple Silicon） | **支持**：完整 Gradle 工程（`src-tauri/gen/android`），有已知限制（见 §2） |
-| 许可证 | GPL-3.0 | AGPL-3.0 |
+| 维度      | AlcedoStudio v0.3.3                                                                                                      | anwuRAW v2.0.2（我方）                                                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 技术栈    | C++20 + Qt，CMake + vcpkg，Rust sidecar                                                                                  | Tauri 2 + Rust + React/TS，WebView UI                                                                                                                |
+| GPU 后端  | 原生 CUDA（Windows）/ OpenCL（Windows）/ Metal（macOS），83 个 kernel 文件                                               | wgpu/WGSL 统一计算管线（桌面已启用，Android 显示路径未接通）                                                                                         |
+| 色彩架构  | 场景参照（scene-referred 32-bit float）+ 节点图（Develop → ColorGrade* → DisplayTransform）+ ACES 2.0 / OpenDRT 输出变换 | 显示参照管线 + AgX 近似 / PBR Neutral（[shader.wgsl](file:///workspace/src-tauri/src/shaders/shader.wgsl)）                                          |
+| AI 架构   | **进程分离**：Rust gRPC sidecar `puerh_mind`（CLIP 语义搜索、SAM 2.1 蒙版、远程提供商抽象）                              | **进程内**：ort 直连（[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs)），模型运行时下载 + SHA-256 校验                          |
+| 目录/存储 | DuckDB 嵌入式目录 + 项目文件（单文件库）                                                                                 | 文件系统直读 + 分组/堆叠（[imageGrouping.ts](file:///workspace/src/utils/imageGrouping.ts)、[stacking.ts](file:///workspace/src/utils/stacking.ts)） |
+| 移动端    | **不支持**（仅 Windows x64 + macOS Apple Silicon）                                                                       | **支持**：完整 Gradle 工程（`src-tauri/gen/android`），有已知限制（见 §2）                                                                           |
+| 许可证    | GPL-3.0                                                                                                                  | AGPL-3.0                                                                                                                                             |
 
 **结论**：不存在"直接搬运代码"的捷径；可融合的是三类资产——**① 许可友好的模型/数据资产，② 后端无关的架构设计，③ 可重写为 Rust/WGSL 的算法**。且 AlcedoStudio 不支持 Android，我方移动端反而是差异化的落点。
 
 ### 0.2 融合候选总览（决策矩阵）
 
-| 级别 | 融合项 | 类型 | 合规 | Android 价值 | 依赖 |
-|------|--------|------|------|--------------|------|
-| **P0-A1** | SAM 2.1 点提示交互蒙版 | 模型资产 + 算法重写 | Apache-2.0 ✅ | ★★★ 触屏点选天然契合 | 无 |
-| **P0-A2** | UltraHDR（gain map）导出 | C++ 库 NDK 集成 | Apache-2.0 ✅ | ★★★ Android 14 原生显示 | 无 |
-| **P0-A3** | AI 模型包分发治理升级 | 机制移植 | 自研 ✅ | ★★★ Android 体积控制 | 无 |
-| **P1-B1** | ACES 2.0 / OpenDRT 输出变换（WGSL） | 算法移植 | 需逐项核验 | ★★ 画质跃升 | v2.0-M0 |
-| **P1-B2** | CLIP 编码器驻留管理（residency） | 架构移植 | GPL 思想借鉴 ✅ | ★★★ 移动端内存关键 | 无 |
-| **P1-B3** | 非线性版本历史树 | 架构移植 | GPL 思想借鉴 ✅ | ★★ 移动端修图工作流 | 无 |
-| **P1-B4** | Lensfun 镜头数据库接入 | 数据资产 | LGPL-3 + CC-BY-SA-3.0 ⚠ | ★★ 提升校正覆盖 | 无 |
-| **P1-B5** | 远程 AI 提供商抽象 + 凭据保险库 | 架构移植 | GPL 思想借鉴 ✅ | ★★ 弱网/隐私合规 | 无 |
-| **P2-C1** | DAG 执行计划 + 内容寻址缓存蓝图 | 架构借鉴 | GPL 思想借鉴 ✅ | ★★★ 但依赖 wgpu 直通 | v2.0-R1-3/4 |
-| **P2-C2** | alcedo-cli 式 Agent 协作闭环 | 方向参考 | — | ★ 长期 | B5 |
-| **P2-C3** | Nikon HEF（LibRaw fork 解码） | C++ 库 NDK 集成 | LGPL-2.1/CDDL ✅ | ★ 移动端场景少 | — |
-| **不建议** | DuckDB 目录 / gRPC sidecar / CUDA-OpenCL-Metal kernel 直移 / OpenCV+CUTLASS / 113 胶片 LUT 抓取再分发 | — | — | — | 见 §6.5 |
+| 级别       | 融合项                                                                                                | 类型                | 合规                    | Android 价值            | 依赖        |
+| ---------- | ----------------------------------------------------------------------------------------------------- | ------------------- | ----------------------- | ----------------------- | ----------- |
+| **P0-A1**  | SAM 2.1 点提示交互蒙版                                                                                | 模型资产 + 算法重写 | Apache-2.0 ✅           | ★★★ 触屏点选天然契合    | 无          |
+| **P0-A2**  | UltraHDR（gain map）导出                                                                              | C++ 库 NDK 集成     | Apache-2.0 ✅           | ★★★ Android 14 原生显示 | 无          |
+| **P0-A3**  | AI 模型包分发治理升级                                                                                 | 机制移植            | 自研 ✅                 | ★★★ Android 体积控制    | 无          |
+| **P1-B1**  | ACES 2.0 / OpenDRT 输出变换（WGSL）                                                                   | 算法移植            | 需逐项核验              | ★★ 画质跃升             | v2.0-M0     |
+| **P1-B2**  | CLIP 编码器驻留管理（residency）                                                                      | 架构移植            | GPL 思想借鉴 ✅         | ★★★ 移动端内存关键      | 无          |
+| **P1-B3**  | 非线性版本历史树                                                                                      | 架构移植            | GPL 思想借鉴 ✅         | ★★ 移动端修图工作流     | 无          |
+| **P1-B4**  | Lensfun 镜头数据库接入                                                                                | 数据资产            | LGPL-3 + CC-BY-SA-3.0 ⚠ | ★★ 提升校正覆盖         | 无          |
+| **P1-B5**  | 远程 AI 提供商抽象 + 凭据保险库                                                                       | 架构移植            | GPL 思想借鉴 ✅         | ★★ 弱网/隐私合规        | 无          |
+| **P2-C1**  | DAG 执行计划 + 内容寻址缓存蓝图                                                                       | 架构借鉴            | GPL 思想借鉴 ✅         | ★★★ 但依赖 wgpu 直通    | v2.0-R1-3/4 |
+| **P2-C2**  | alcedo-cli 式 Agent 协作闭环                                                                          | 方向参考            | —                       | ★ 长期                  | B5          |
+| **P2-C3**  | Nikon HEF（LibRaw fork 解码）                                                                         | C++ 库 NDK 集成     | LGPL-2.1/CDDL ✅        | ★ 移动端场景少          | —           |
+| **不建议** | DuckDB 目录 / gRPC sidecar / CUDA-OpenCL-Metal kernel 直移 / OpenCV+CUTLASS / 113 胶片 LUT 抓取再分发 | —                   | —                       | —                       | 见 §6.5     |
 
 ### 0.3 投入产出判断
 
@@ -93,11 +93,11 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 
 ### 1.3 AI 资产溯源（来自 `ai_mask_model_set_v1_NOTICE.txt`，权威）
 
-| 模型 | 角色 | 上游 | 许可 | 分发格式 |
-|------|------|------|------|----------|
-| SAM 2.1 Hiera Tiny | point_encoder / point_decoder | Meta facebookresearch/sam2，checkpoint `sam2.1_hiera_tiny.pt`（SHA-256 `7402e0d8…`） | **Apache-2.0** | ONNX fp32（Windows）/ Core ML（macOS） |
-| S3OD（people/sky/head 分割） | people_sky_head | 含 DINOv3 encoder | MIT（S3OD）+ **DINOv3 自定义许可** + GPL-3.0（Alcedo 训练权重） | ONNX / Core ML |
-| CLIP 语义搜索 | 文/图 embedding | OpenAI CLIP 系 | MIT 系 | ONNX / Core ML |
+| 模型                         | 角色                          | 上游                                                                                 | 许可                                                            | 分发格式                               |
+| ---------------------------- | ----------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------- | -------------------------------------- |
+| SAM 2.1 Hiera Tiny           | point_encoder / point_decoder | Meta facebookresearch/sam2，checkpoint `sam2.1_hiera_tiny.pt`（SHA-256 `7402e0d8…`） | **Apache-2.0**                                                  | ONNX fp32（Windows）/ Core ML（macOS） |
+| S3OD（people/sky/head 分割） | people_sky_head               | 含 DINOv3 encoder                                                                    | MIT（S3OD）+ **DINOv3 自定义许可** + GPL-3.0（Alcedo 训练权重） | ONNX / Core ML                         |
+| CLIP 语义搜索                | 文/图 embedding               | OpenAI CLIP 系                                                                       | MIT 系                                                          | ONNX / Core ML                         |
 
 要点：Alcedo **只做格式转换不改权重**并在 NOTICE 中记录 checkpoint SHA-256——这一合规范式我方应完全复制。其模型包从 `static.aoraw.org` 服务器分发，**不在 git 内，不可直接抓取再分发**。
 
@@ -115,16 +115,16 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 
 ### 2.2 关键约束（融合方案的边界条件）
 
-| 约束 | 证据 | 对融合的影响 |
-|------|------|--------------|
-| wgpu 预览在 Android 被禁用（GPU compute 可用、显示 surface 未接通） | [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs) L171-L258（`wgpu_rendering_decision` 对 Linux/Android 恒 false，注释明确"display-surface not wired up yet, R1-3 follow-up"）；[lib.rs](file:///workspace/src-tauri/src/lib.rs) L677-L681 | 任何"实时 GPU 新特效"类融合项都受 B2 断点制约；**模型推理类、导出类、架构类融合不受影响** |
-| 预览走 CPU JPEG 编码 + IPC bytes | v2.0 方案 B2 | 同上 |
-| 内存预算极紧（解码缓存 2 张、缩略图 2 线程） | [app_settings.rs](file:///workspace/src-tauri/src/app_settings.rs) L766-L784 | AI 模型必须"按需下载 + 用完卸载"（B2 项 residency 的直接动因） |
-| AI 模型运行时下载 + SHA-256 校验，目录 `app_data_dir/models` | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L100-L105（CLIP URL+SHA）、L1048-L1051（models_dir） | 已具备模型分发地基，但为**单文件扁平清单**，需升级为 A3 的 model_set 体系 |
-| AI 无平台门控（`ai_commands.rs` 无 android cfg） | 全文检索 | AI 融合项天然覆盖 Android |
-| 蒙版能力：已有 SAM ViT-B（encoder + decoder，支持框提示 `generate_subject_mask`）与 EfficientSAM3（天空/文字/人脸提示），**缺的是多轮点选 + 负点交互** | [ai_commands.rs](file:///workspace/src-tauri/src/ai_commands.rs) L509-L545、[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L2203-L2260 | A1 收敛为**交互层补齐**（后端点提示已可用） |
-| 无 HDR 输出（导出 7 格式，全部 SDR） | v2.0 方案 §1.1 交付行 | A2 为净新增能力 |
-| 远程 AI 已有雏形（云端 inpaint 中间件） | [ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs) L1-L30 | B5 是对其的架构化升级 |
+| 约束                                                                                                                                                   | 证据                                                                                                                                                                                                                                                                  | 对融合的影响                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| wgpu 预览在 Android 被禁用（GPU compute 可用、显示 surface 未接通）                                                                                    | [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs) L171-L258（`wgpu_rendering_decision` 对 Linux/Android 恒 false，注释明确"display-surface not wired up yet, R1-3 follow-up"）；[lib.rs](file:///workspace/src-tauri/src/lib.rs) L677-L681 | 任何"实时 GPU 新特效"类融合项都受 B2 断点制约；**模型推理类、导出类、架构类融合不受影响** |
+| 预览走 CPU JPEG 编码 + IPC bytes                                                                                                                       | v2.0 方案 B2                                                                                                                                                                                                                                                          | 同上                                                                                      |
+| 内存预算极紧（解码缓存 2 张、缩略图 2 线程）                                                                                                           | [app_settings.rs](file:///workspace/src-tauri/src/app_settings.rs) L766-L784                                                                                                                                                                                          | AI 模型必须"按需下载 + 用完卸载"（B2 项 residency 的直接动因）                            |
+| AI 模型运行时下载 + SHA-256 校验，目录 `app_data_dir/models`                                                                                           | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L100-L105（CLIP URL+SHA）、L1048-L1051（models_dir）                                                                                                                                             | 已具备模型分发地基，但为**单文件扁平清单**，需升级为 A3 的 model_set 体系                 |
+| AI 无平台门控（`ai_commands.rs` 无 android cfg）                                                                                                       | 全文检索                                                                                                                                                                                                                                                              | AI 融合项天然覆盖 Android                                                                 |
+| 蒙版能力：已有 SAM ViT-B（encoder + decoder，支持框提示 `generate_subject_mask`）与 EfficientSAM3（天空/文字/人脸提示），**缺的是多轮点选 + 负点交互** | [ai_commands.rs](file:///workspace/src-tauri/src/ai_commands.rs) L509-L545、[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L2203-L2260                                                                                                          | A1 收敛为**交互层补齐**（后端点提示已可用）                                               |
+| 无 HDR 输出（导出 7 格式，全部 SDR）                                                                                                                   | v2.0 方案 §1.1 交付行                                                                                                                                                                                                                                                 | A2 为净新增能力                                                                           |
+| 远程 AI 已有雏形（云端 inpaint 中间件）                                                                                                                | [ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs) L1-L30                                                                                                                                                                                             | B5 是对其的架构化升级                                                                     |
 
 ---
 
@@ -141,18 +141,18 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 
 ### 3.2 资产级许可矩阵（来自 `third_party_licenses/` 与模型 NOTICE）
 
-| 资产 | 许可 | 再分发结论 | 附加义务 |
-|------|------|-----------|----------|
-| SAM 2.1 权重（转换后） | Apache-2.0 | ✅ 可自行从 Meta checkpoint 转换并随模型包分发 | 附 Apache-2.0 文本 + NOTICE 记录源 checkpoint SHA-256 |
-| S3OD 权重 | MIT + **DINOv3 License** + GPL-3.0（Alcedo 训练部分） | ⚠ **条件性**：DINOv3 为 Meta 自定义许可（限制用其输出训练竞争模型等条款）；且 Alcedo 训练权重为 GPL-3.0，直接取用将把该模型链路绑入 GPL（我方 AGPL 体系可容纳，但需接受该子件传递性） | 逐条核验 DINOv3 License 文本（`third_party_licenses/DINOv3-LICENSE.md`）后再决定；**默认绕开**：人像/天空分割我方已有自有模型，A1 只用 SAM 2.1 即可 |
-| libultrahdr（含 Alcedo dither 分支改进） | Apache-2.0（上游） | ✅ 可 NDK 集成 | 保留上游 NOTICE；若采纳 fork 的 dither 改动，该改动随 GPL-3.0 仓库整体授权——**用其思想在自有代码中重写更干净**（改动量小） |
-| Lensfun 数据库 | LGPL-3.0（代码）+ **CC-BY-SA-3.0（数据）** | ✅ 可集成 | 数据文件附带署名与相同方式共享义务（`Lensfun-data-CC-BY-SA-3.0.txt`） |
-| LibRaw fork（Nikon HEF） | LGPL-2.1 / CDDL 双许可 | ✅ 可集成 | 动态链接/独立进程可保持 LGPL 边界；静态链接需满足 LGPL 释放条款——Android 上建议以独立 `.so` 集成 |
-| RCD demosaic（参考实现源） | GPL-3.0 | ✅（并入 AGPL 组合） | 若重写我方 demosaic 可参考其算法；Rawler 已含 RCD，无需重复 |
-| ACES 相关（aces-core / aces-looks） | 自带许可文本 | ✅ 按文本核验 | ACES 输出变换以官方数据（矩阵/LUT）+ 自写 WGSL 实现，附许可 |
-| OpenDRT | **未出现在其 third_party 清单** | ⚠ 需核验上游许可（可能为自实现） | 融合前确认；不可确认则只做 ACES 2.0 |
-| 113 胶片 LUT 包 | 不在 git 内（aoraw.org 分发） | ❌ **不抓取、不再分发**；LUT 数据版权归属不明且为商业分发渠道 | 改为：支持用户侧导入 `.cube` + 兼容 `ALCEDO_LUT` 元数据注释规范（只读兼容，无版权风险） |
-| darktable / RawTherapee 参考算法 | GPL 系 | ✅（并入 AGPL 组合） | 重写或并入均需登记 |
+| 资产                                     | 许可                                                  | 再分发结论                                                                                                                                                                            | 附加义务                                                                                                                                            |
+| ---------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SAM 2.1 权重（转换后）                   | Apache-2.0                                            | ✅ 可自行从 Meta checkpoint 转换并随模型包分发                                                                                                                                        | 附 Apache-2.0 文本 + NOTICE 记录源 checkpoint SHA-256                                                                                               |
+| S3OD 权重                                | MIT + **DINOv3 License** + GPL-3.0（Alcedo 训练部分） | ⚠ **条件性**：DINOv3 为 Meta 自定义许可（限制用其输出训练竞争模型等条款）；且 Alcedo 训练权重为 GPL-3.0，直接取用将把该模型链路绑入 GPL（我方 AGPL 体系可容纳，但需接受该子件传递性） | 逐条核验 DINOv3 License 文本（`third_party_licenses/DINOv3-LICENSE.md`）后再决定；**默认绕开**：人像/天空分割我方已有自有模型，A1 只用 SAM 2.1 即可 |
+| libultrahdr（含 Alcedo dither 分支改进） | Apache-2.0（上游）                                    | ✅ 可 NDK 集成                                                                                                                                                                        | 保留上游 NOTICE；若采纳 fork 的 dither 改动，该改动随 GPL-3.0 仓库整体授权——**用其思想在自有代码中重写更干净**（改动量小）                          |
+| Lensfun 数据库                           | LGPL-3.0（代码）+ **CC-BY-SA-3.0（数据）**            | ✅ 可集成                                                                                                                                                                             | 数据文件附带署名与相同方式共享义务（`Lensfun-data-CC-BY-SA-3.0.txt`）                                                                               |
+| LibRaw fork（Nikon HEF）                 | LGPL-2.1 / CDDL 双许可                                | ✅ 可集成                                                                                                                                                                             | 动态链接/独立进程可保持 LGPL 边界；静态链接需满足 LGPL 释放条款——Android 上建议以独立 `.so` 集成                                                    |
+| RCD demosaic（参考实现源）               | GPL-3.0                                               | ✅（并入 AGPL 组合）                                                                                                                                                                  | 若重写我方 demosaic 可参考其算法；Rawler 已含 RCD，无需重复                                                                                         |
+| ACES 相关（aces-core / aces-looks）      | 自带许可文本                                          | ✅ 按文本核验                                                                                                                                                                         | ACES 输出变换以官方数据（矩阵/LUT）+ 自写 WGSL 实现，附许可                                                                                         |
+| OpenDRT                                  | **未出现在其 third_party 清单**                       | ⚠ 需核验上游许可（可能为自实现）                                                                                                                                                      | 融合前确认；不可确认则只做 ACES 2.0                                                                                                                 |
+| 113 胶片 LUT 包                          | 不在 git 内（aoraw.org 分发）                         | ❌ **不抓取、不再分发**；LUT 数据版权归属不明且为商业分发渠道                                                                                                                         | 改为：支持用户侧导入 `.cube` + 兼容 `ALCEDO_LUT` 元数据注释规范（只读兼容，无版权风险）                                                             |
+| darktable / RawTherapee 参考算法         | GPL 系                                                | ✅（并入 AGPL 组合）                                                                                                                                                                  | 重写或并入均需登记                                                                                                                                  |
 
 ### 3.3 合规红线（写入每项验收）
 
@@ -180,6 +180,7 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 4. **Android 专项**：ort 执行提供者优先级 `NNAPI > CPU`（fp16 压缩评估，SAM tiny encoder 量化后 <40MB）；encoder 加载纳入 B2 residency（空闲卸载）；image encoder 输入分辨率 1024²，在中端机型上的推理耗时需达验收线（见下）。
 
 **验收标准**：
+
 - 功能：单点 <1.5s 出蒙版（中端 arm64 基准，如 Snapdragon 7 系）；追加正/负点 <300ms 增量更新；蒙版可加减交组合并进入既有渲染参数累加管线；
 - 合规：`model_set.json` 登记 Apache-2.0 + 源 checkpoint SHA-256 + NOTICE；
 - 性能：encoder 常驻内存 ≤150MB（fp16），空闲 60s 自动卸载；
@@ -198,6 +199,7 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 5. **衔接**：与 v2.0 方案 R5-1/R5-5（官方 DRT、f16 预览）共享 HDR 基础设施——先有"能产出 HDR 编码"，DRT 落地后自然升级为真 HDR 工作流。
 
 **验收标准**：
+
 - 功能：导出的 JPEG_R 在 Android 14+ 相册显示为 HDR（增益图生效）；SDR 设备回退显示基底 JPEG；文件兼容 ISO 21496-1 校验器；
 - 性能：45MP 图 gain map 生成 + 编码增幅 ≤ 25% 导出耗时；文件体积增幅 ≤ 40%（gain map 1/4 分辨率）；
 - 合规：Apache-2.0 上游 NOTICE 登记；
@@ -210,6 +212,7 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 **实现方案**：Rust 侧定义 `ModelSet { id, version, revision, models: Vec<ModelAsset { role, files: 平台映射, sha256, size }>, licenses, notice }`，serde 加载 + 下载器按 role 调度 + 设置页展示"AI 模型管理"（已装/大小/许可/删除）；**许可文本随包分发**写入 `app_data_dir/models/licenses/`；复用 A1 的 residency 注册接口。
 
 **本轮已落地（2026-11-01，第一阶段）**：
+
 - 新模块 [model_registry.rs](file:///workspace/src-tauri/src/model_registry.rs)：`ModelSpec`（role / filename / HTTPS URL / SHA-256 / license / license_url / installed_bytes）+ `build_manifest` 一致性校验（空 role、重复 role、重复文件名、非 64 位小写 hex、非 HTTPS、缺 license 全部转为 issue 而非静默通过）；
 - `ai_processing::model_inventory()`（17 个模型条目，与下载常量同源）+ 命令 `get_ai_model_inventory`（`spawn_blocking` 查询磁盘大小）；
 - 设置页"数据管理 → AI 模型"显示 `已装/总数`，`data-tooltip` 列出 integrity issues（如 **`clip_tokenizer.json` 上游未提供 pinned SHA-256**——本轮实测该文件确为 `sha256: None`，属上游缺口，已作为可见告警暴露而非掩盖）。
@@ -217,6 +220,7 @@ third_party_licenses/  # 38 个第三方许可文本（合规底账完整，见 
 **尚未落地（第二阶段）**：真正的 `model_set` 版本化清单 / 多镜像轮询（现有 `download_and_verify_model` 已内置 HF → hf-mirror 重试）/ 断点续传 / 许可证文本随包分发。本轮已完成"清单 + 校验 + 可视化 + 按角色删除"。
 
 **本轮追加（2026-11-01，第二阶段入口）**：
+
 - 命令 `delete_ai_model(role)`：按角色解析文件名 → 先 `reset_ai_sessions` 释放驻留会话（否则活会话仍映射已删文件）→ 删文件；
 - 设置页 AI 模型行展开已装模型列表（显示名 + 大小 + 删除按钮，悬停显示文件名），确认弹窗复用既有 `modelsMessage` 文案，不新增 i18n key。
 
@@ -285,14 +289,14 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 
 ### 6.5 明确不建议（含理由）
 
-| 项 | 理由 |
-|----|------|
-| DuckDB 图库目录 | Android 上徒增 APK 体积与依赖；我方文件系统 + 内存索引 + justified 虚拟滚动已覆盖移动端量级（单库数千张） |
-| gRPC sidecar 进程分离 | Android 进程/内存模型不适合双进程常驻；其价值（隔离、跨语言）在我方单 Rust 后端下为零——**吸收其内部工程模式（B2/B5）即可** |
-| CUDA/OpenCL/Metal kernel 直接移植 | 无对应后端；等价物是我方 WGSL 重写，已并入各算法项 |
-| OpenCV / CUTLASS / protobuf / QuickQanava 依赖 | 体积/复杂度/许可负担不成比例 |
-| 抓取 113 胶片 LUT 包再分发 | 许可归属不明 + 非开源分发渠道；改为 `.cube` 导入兼容（§3.2） |
-| S3OD / DINOv3 权重 | DINOv3 自定义许可未核验 + Alcedo 训练权重 GPL 传递（§3.2 默认绕开） |
+| 项                                             | 理由                                                                                                                       |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| DuckDB 图库目录                                | Android 上徒增 APK 体积与依赖；我方文件系统 + 内存索引 + justified 虚拟滚动已覆盖移动端量级（单库数千张）                  |
+| gRPC sidecar 进程分离                          | Android 进程/内存模型不适合双进程常驻；其价值（隔离、跨语言）在我方单 Rust 后端下为零——**吸收其内部工程模式（B2/B5）即可** |
+| CUDA/OpenCL/Metal kernel 直接移植              | 无对应后端；等价物是我方 WGSL 重写，已并入各算法项                                                                         |
+| OpenCV / CUTLASS / protobuf / QuickQanava 依赖 | 体积/复杂度/许可负担不成比例                                                                                               |
+| 抓取 113 胶片 LUT 包再分发                     | 许可归属不明 + 非开源分发渠道；改为 `.cube` 导入兼容（§3.2）                                                               |
+| S3OD / DINOv3 权重                             | DINOv3 自定义许可未核验 + Alcedo 训练权重 GPL 传递（§3.2 默认绕开）                                                        |
 
 ---
 
@@ -308,14 +312,14 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 
 ## 8. 实施路线图
 
-| 阶段 | 内容 | 前置 | 交付物与验收门 |
-|------|------|------|----------------|
-| **F0 合规底账**（先行） | 建立 `NOTICE`/`THIRD_PARTY_NOTICE.txt` 维护流程；核验 OpenDRT 与 DINOv3 条款；A3 model_set schema 设计定稿 | 无 | 合规清单入库；两项核验结论书面化（阻塞 B1/S3OD 决策） |
-| **F1 净新增能力** | A3 模型包体系 → A1 SAM 2.1 点选蒙版（桌面先行、Android 同版交付）→ A2 UltraHDR 导出 | F0（A3 先行） | 各项按 §4 验收标准；性能基准进 M0 bench 回放脚本 |
-| **F2 画质与资源底座** | B2 模型驻留管理 → B1 DRT 输出变换（ACES 2.0 为主） | F1（A3）、v2.0-M0 | 驻留内存验收 + 色卡 ΔE golden 入 CI |
-| **F3 工作流深化** | B3 版本历史树 → B4 Lensfun 接入 → B5 provider 抽象 | F1 | §5 各项验收；迁移/回滚演练（旧 sidecar 兼容矩阵） |
-| **F4 架构演进衔接** | C1 DAG 执行计划落地（与 v2.0 R1-3/R1-4 wgpu Android 直通合并立项） | v2.0-M1 | 架构评审通过 + ROI 求值性能门禁 |
-| **持续** | C2 Agent 闭环、C3 HEF、C4 神经 demosaic | 信号触发 | 按触发条件重新评估 |
+| 阶段                    | 内容                                                                                                       | 前置              | 交付物与验收门                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------- |
+| **F0 合规底账**（先行） | 建立 `NOTICE`/`THIRD_PARTY_NOTICE.txt` 维护流程；核验 OpenDRT 与 DINOv3 条款；A3 model_set schema 设计定稿 | 无                | 合规清单入库；两项核验结论书面化（阻塞 B1/S3OD 决策） |
+| **F1 净新增能力**       | A3 模型包体系 → A1 SAM 2.1 点选蒙版（桌面先行、Android 同版交付）→ A2 UltraHDR 导出                        | F0（A3 先行）     | 各项按 §4 验收标准；性能基准进 M0 bench 回放脚本      |
+| **F2 画质与资源底座**   | B2 模型驻留管理 → B1 DRT 输出变换（ACES 2.0 为主）                                                         | F1（A3）、v2.0-M0 | 驻留内存验收 + 色卡 ΔE golden 入 CI                   |
+| **F3 工作流深化**       | B3 版本历史树 → B4 Lensfun 接入 → B5 provider 抽象                                                         | F1                | §5 各项验收；迁移/回滚演练（旧 sidecar 兼容矩阵）     |
+| **F4 架构演进衔接**     | C1 DAG 执行计划落地（与 v2.0 R1-3/R1-4 wgpu Android 直通合并立项）                                         | v2.0-M1           | 架构评审通过 + ROI 求值性能门禁                       |
+| **持续**                | C2 Agent 闭环、C3 HEF、C4 神经 demosaic                                                                    | 信号触发          | 按触发条件重新评估                                    |
 
 **阶段原则**（继承 v2.0 方案）：每项独立 PR、独立回滚；新增能力默认开关可控；观感变化项（B1）附 golden 前后对比；所有融合项在 Release 说明标注来源仓库与许可。
 
@@ -325,15 +329,15 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 
 ## 9. 风险与缓解
 
-| 风险 | 影响 | 缓解 |
-|------|------|------|
-| GPL 污染焦虑 | 团队对 GPL 代码引入有顾虑 | 以"思想借鉴 + 自研重写 + 资产许可核验"为默认路径；逐字复制仅限 Apache-2.0/LGPL 资产；§3 红线进 PR 检查单 |
-| SAM 2.1 在低端机的推理耗时 | 蒙版体验劣化 | tiny 模型 + fp16 + encoder 缓存；性能不达线的设备在设置页明示并降级为既有语义蒙版 |
-| ort NNAPI EP 的设备碎片化 | 部分 EP 回退/崩溃 | EP 探测 + 白名单启用 NNAPI，异常自动回退 CPU（沿用 `probe_gpu_adapter` 模式） |
-| UltraHDR 兼容性 | 非 14 设备/第三方相册显示异常 | 标准化 ISO 21496-1 输出 + SDR 基底兜底；默认关闭、显式开启 |
-| DRT 改变出图观感 | 用户对照旧版差异 | 沿用 v2.0 R5-1 的 golden 校准 + 新旧对照 Release 说明，不做隐式切换 |
-| 模型下载体验（国内网络） | HF 拉取慢/失败 | model_set 支持多镜像 URL 轮询 + 断点续传 + SHA 校验重下（A3 内置） |
-| 与 v2.0 管线重构撞车 | 同文件冲突 | 融合项落点集中在 ai_processing/export_processing/lut_processing/history 新文件；WGSL 改动仅 B1 一项且排期在 M0 之后 |
+| 风险                       | 影响                          | 缓解                                                                                                                |
+| -------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| GPL 污染焦虑               | 团队对 GPL 代码引入有顾虑     | 以"思想借鉴 + 自研重写 + 资产许可核验"为默认路径；逐字复制仅限 Apache-2.0/LGPL 资产；§3 红线进 PR 检查单            |
+| SAM 2.1 在低端机的推理耗时 | 蒙版体验劣化                  | tiny 模型 + fp16 + encoder 缓存；性能不达线的设备在设置页明示并降级为既有语义蒙版                                   |
+| ort NNAPI EP 的设备碎片化  | 部分 EP 回退/崩溃             | EP 探测 + 白名单启用 NNAPI，异常自动回退 CPU（沿用 `probe_gpu_adapter` 模式）                                       |
+| UltraHDR 兼容性            | 非 14 设备/第三方相册显示异常 | 标准化 ISO 21496-1 输出 + SDR 基底兜底；默认关闭、显式开启                                                          |
+| DRT 改变出图观感           | 用户对照旧版差异              | 沿用 v2.0 R5-1 的 golden 校准 + 新旧对照 Release 说明，不做隐式切换                                                 |
+| 模型下载体验（国内网络）   | HF 拉取慢/失败                | model_set 支持多镜像 URL 轮询 + 断点续传 + SHA 校验重下（A3 内置）                                                  |
+| 与 v2.0 管线重构撞车       | 同文件冲突                    | 融合项落点集中在 ai_processing/export_processing/lut_processing/history 新文件；WGSL 改动仅 B1 一项且排期在 M0 之后 |
 
 ---
 
@@ -351,54 +355,54 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 
 ### 11.1 变更清单（已落地）
 
-| 文件 | 变更 | 目的 |
-|------|------|------|
-| [model_residency.rs](file:///workspace/src-tauri/src/model_residency.rs) | 新增：`ResidencyPolicy`（含 `idle_only`）+ `ResidencyTracker` + 9 个单元测试 | B2 驻留策略引擎（时间注入、零 sleep） |
-| [model_registry.rs](file:///workspace/src-tauri/src/model_registry.rs) | 新增：`ModelSpec` / `ModelManifest` / `build_manifest` 校验 / `with_installed_sizes` / `verify_file` + 8 个单元测试 | A3 第一阶段：模型清单治理与完整性校验 |
-| [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) | `AiModels` 增 `residency` / `residency_epoch`；`session()` 收口驱逐；`evict_slot` / `enforce_residency` / `residency_snapshot`；`model_inventory()`（17 条）+ 命令 `get_ai_model_inventory`；**`AiState` 增 `residency`（idle-only）并把 CLIP/LaMa/Denoise/Normal 四个 getter 接入 touch/enforce**；命令 `delete_ai_model` | B2 接线 + A3 数据源与按角色删除 |
-| [lib.rs](file:///workspace/src-tauri/src/lib.rs) | 注册 `mod model_registry` / `mod model_residency`；handler 增 `get_ai_model_inventory`、`delete_ai_model` | 命令链路 |
-| [AppProperties.tsx](file:///workspace/src/components/ui/AppProperties.tsx) | `Invokes` 增 `GetAiModelInventory`、`DeleteAiModel` | 前端调用契约 |
-| [DataManagementSettings.tsx](file:///workspace/src/components/panel/settings/DataManagementSettings.tsx) | 刷新时拉取清单，AI 模型行显示 `已装/总数`，`data-tooltip` 列 integrity issues；展开已装模型（名称/大小/删除），删除走既有确认弹窗 | 可见治理 + 按角色删除 |
+| 文件                                                                                                     | 变更                                                                                                                                                                                                                                                                                                                       | 目的                                  |
+| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| [model_residency.rs](file:///workspace/src-tauri/src/model_residency.rs)                                 | 新增：`ResidencyPolicy`（含 `idle_only`）+ `ResidencyTracker` + 9 个单元测试                                                                                                                                                                                                                                               | B2 驻留策略引擎（时间注入、零 sleep） |
+| [model_registry.rs](file:///workspace/src-tauri/src/model_registry.rs)                                   | 新增：`ModelSpec` / `ModelManifest` / `build_manifest` 校验 / `with_installed_sizes` / `verify_file` + 8 个单元测试                                                                                                                                                                                                        | A3 第一阶段：模型清单治理与完整性校验 |
+| [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs)                                     | `AiModels` 增 `residency` / `residency_epoch`；`session()` 收口驱逐；`evict_slot` / `enforce_residency` / `residency_snapshot`；`model_inventory()`（17 条）+ 命令 `get_ai_model_inventory`；**`AiState` 增 `residency`（idle-only）并把 CLIP/LaMa/Denoise/Normal 四个 getter 接入 touch/enforce**；命令 `delete_ai_model` | B2 接线 + A3 数据源与按角色删除       |
+| [lib.rs](file:///workspace/src-tauri/src/lib.rs)                                                         | 注册 `mod model_registry` / `mod model_residency`；handler 增 `get_ai_model_inventory`、`delete_ai_model`                                                                                                                                                                                                                  | 命令链路                              |
+| [AppProperties.tsx](file:///workspace/src/components/ui/AppProperties.tsx)                               | `Invokes` 增 `GetAiModelInventory`、`DeleteAiModel`                                                                                                                                                                                                                                                                        | 前端调用契约                          |
+| [DataManagementSettings.tsx](file:///workspace/src/components/panel/settings/DataManagementSettings.tsx) | 刷新时拉取清单，AI 模型行显示 `已装/总数`，`data-tooltip` 列 integrity issues；展开已装模型（名称/大小/删除），删除走既有确认弹窗                                                                                                                                                                                          | 可见治理 + 按角色删除                 |
 
 ### 11.2 验收结果（可复现）
 
-| 验收项 | 命令 / 方法 | 结果 |
-|--------|-------------|------|
-| 后端编译 | `cargo +nightly check --lib --ignore-rust-version`（rustc 1.98.0-nightly；**沙箱 1.94.1 无法编译 `sysinfo 0.39.6`（需 `cfg_select`）**，项目本固定 1.98） | **Finished，0 error / 0 warning** |
-| 新模块单元测试 | 独立 harness crate（`#[path]` 引入两个模块）`cargo test` | **17 passed / 0 failed** |
-| 前端类型 | `npm run typecheck`（`tsc --noEmit`） | 通过，无输出 |
-| 前端静态检查 | `npx eslint` 改动文件 | **0 error**（10 条既有 `no-explicit-any`/未用变量 warning，非本轮引入） |
-| i18n 一致性 | `node src/i18n/check-runtime.mjs` | 15 locales / 1998 复数 / 29555 占位符全部通过（本轮未新增 key，复用既有文案） |
-| 操作链路（命令注册表） | 脚本解析 `Invokes` 枚举（124）+ 字面量 `invoke()`（22）= 前端 145 调用；后端 `generate_handler!` 162 命令 | **前端→后端缺失 0** |
-| 后端命令无消费方 | 同上（17 条） | 全部可解释：`immich_*` 经 `ImmichInvokes` 枚举、`delete_files_*` / `generate_*_patch` / `list_master_luts` 由三元表达式或动态拼接派发；**无死代码** |
-| 模型清单一致性 | `build_manifest` 自检 | 17 条中仅 `clip_tokenizer.json` 报 issue（上游 `sha256: None`，非我方遗漏） |
+| 验收项                 | 命令 / 方法                                                                                                                                               | 结果                                                                                                                                                |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 后端编译               | `cargo +nightly check --lib --ignore-rust-version`（rustc 1.98.0-nightly；**沙箱 1.94.1 无法编译 `sysinfo 0.39.6`（需 `cfg_select`）**，项目本固定 1.98） | **Finished，0 error / 0 warning**                                                                                                                   |
+| 新模块单元测试         | 独立 harness crate（`#[path]` 引入两个模块）`cargo test`                                                                                                  | **17 passed / 0 failed**                                                                                                                            |
+| 前端类型               | `npm run typecheck`（`tsc --noEmit`）                                                                                                                     | 通过，无输出                                                                                                                                        |
+| 前端静态检查           | `npx eslint` 改动文件                                                                                                                                     | **0 error**（10 条既有 `no-explicit-any`/未用变量 warning，非本轮引入）                                                                             |
+| i18n 一致性            | `node src/i18n/check-runtime.mjs`                                                                                                                         | 15 locales / 1998 复数 / 29555 占位符全部通过（本轮未新增 key，复用既有文案）                                                                       |
+| 操作链路（命令注册表） | 脚本解析 `Invokes` 枚举（124）+ 字面量 `invoke()`（22）= 前端 145 调用；后端 `generate_handler!` 162 命令                                                 | **前端→后端缺失 0**                                                                                                                                 |
+| 后端命令无消费方       | 同上（17 条）                                                                                                                                             | 全部可解释：`immich_*` 经 `ImmichInvokes` 枚举、`delete_files_*` / `generate_*_patch` / `list_master_luts` 由三元表达式或动态拼接派发；**无死代码** |
+| 模型清单一致性         | `build_manifest` 自检                                                                                                                                     | 17 条中仅 `clip_tokenizer.json` 报 issue（上游 `sha256: None`，非我方遗漏）                                                                         |
 
 ### 11.3 原方案前提修正（实测推翻）
 
-| 原断言（§2.2 / §5） | 实测结论 | 证据 | 处理 |
-|-------------------|----------|------|------|
-| "无点提示交互蒙版，A1 为净新增" | 后端 **SAM ViT-B 已支持框提示主体分割**；`run_sam_decoder` 已含 point/box 标签 | [ai_commands.rs](file:///workspace/src-tauri/src/ai_commands.rs) L509-L545、[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L2203-L2260 | A1 收敛为**前端交互层**（负点/多轮/触屏），不再新建模型链路 |
-| "无 ACES" | 已有 **ACES filmic RRT/ODT 近似**（tonemapper 档位 3）；缺的是 ACES 2.0 官方 DRT 与 OpenDRT | [shader.wgsl](file:///workspace/src-tauri/src/shaders/shader.wgsl) L1589-L1600、[image_processing.rs](file:///workspace/src-tauri/src/image_processing.rs) L2169 | B1 改为"ACES 2.0 官方变换增量"，保留 |
-| "B4 Lensfun 未接入" | **已内嵌完整 lensfun_db + autodetect_lens/find_best_lens_match** | [lens_correction.rs](file:///workspace/src-tauri/src/lens_correction.rs) L11、L830-L878 | B4 关闭，仅留匹配率调优 |
-| "A3 需从零建体系" | 单文件 `ModelAsset` 下载+校验已完备，缺的是**清单/许可/可视化**治理层 | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L1336-L1396 | A3 拆为两阶段：本轮完成清单+校验+UI，下载器升级留二期 |
+| 原断言（§2.2 / §5）             | 实测结论                                                                                    | 证据                                                                                                                                                             | 处理                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| "无点提示交互蒙版，A1 为净新增" | 后端 **SAM ViT-B 已支持框提示主体分割**；`run_sam_decoder` 已含 point/box 标签              | [ai_commands.rs](file:///workspace/src-tauri/src/ai_commands.rs) L509-L545、[ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L2203-L2260     | A1 收敛为**前端交互层**（负点/多轮/触屏），不再新建模型链路 |
+| "无 ACES"                       | 已有 **ACES filmic RRT/ODT 近似**（tonemapper 档位 3）；缺的是 ACES 2.0 官方 DRT 与 OpenDRT | [shader.wgsl](file:///workspace/src-tauri/src/shaders/shader.wgsl) L1589-L1600、[image_processing.rs](file:///workspace/src-tauri/src/image_processing.rs) L2169 | B1 改为"ACES 2.0 官方变换增量"，保留                        |
+| "B4 Lensfun 未接入"             | **已内嵌完整 lensfun_db + autodetect_lens/find_best_lens_match**                            | [lens_correction.rs](file:///workspace/src-tauri/src/lens_correction.rs) L11、L830-L878                                                                          | B4 关闭，仅留匹配率调优                                     |
+| "A3 需从零建体系"               | 单文件 `ModelAsset` 下载+校验已完备，缺的是**清单/许可/可视化**治理层                       | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs) L1336-L1396                                                                                 | A3 拆为两阶段：本轮完成清单+校验+UI，下载器升级留二期       |
 
 ### 11.4 未落地项与真实原因
 
-| 项 | 状态 | 原因（可执行层面） |
-|----|------|-------------------|
-| A2 UltraHDR 导出 | 未开始 | 需 NDK 交叉编译 libultrahdr（Apache-2.0）+ gain map 生成步骤 + 导出 UI；本沙箱无 Android NDK 与外部模型/库网络（HF 直连被拒），无法完成端到端验证 |
-| A1 点选交互（多轮/负点） | 部分完成 | 单点点选已具备（拖拽 <5px → `start==end` → SAM 单正点）；多轮正点累加、负点减选、独立"点选蒙版"类型尚未做，需前端手势状态机与后端多点 prompt 数组接口 |
-| B1 ACES 2.0 / OpenDRT | 未开始 | 依赖 v2.0-M0 golden 基座与 OpenDRT 许可核验；且需 GPU/CPU 双路径同源验证 |
-| B3 版本历史 DAG | v1 已落地 | v1 为每图单 JSON + 4 个 IPC + 顶栏快照菜单（提交/检出/删除/prune）；剩余为虚拟副本升级分支变体、跨图复制 Look、diff 存储 |
-| B5 provider 抽象 + 凭据保险库 | 未开始 | 密钥库依赖**已在** [Cargo.toml](file:///workspace/src-tauri/Cargo.toml) L86-L142（android/apple/windows/zbus 四种 store），但无任何 Rust 代码接线；Android 侧需启动时注入 `ndk_context`，且只能在真机验证 |
-| A3 第二阶段剩余（model_set 版本化 / 断点续传 / 许可文本随包） | 部分完成 | 清单+校验+UI+按角色删除已交付；版本化清单与断点续传会改变现有下载行为与目录结构，需要迁移与断网回归，留作独立 PR |
+| 项                                                            | 状态      | 原因（可执行层面）                                                                                                                                                                                        |
+| ------------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A2 UltraHDR 导出                                              | 未开始    | 需 NDK 交叉编译 libultrahdr（Apache-2.0）+ gain map 生成步骤 + 导出 UI；本沙箱无 Android NDK 与外部模型/库网络（HF 直连被拒），无法完成端到端验证                                                         |
+| A1 点选交互（多轮/负点）                                      | 部分完成  | 单点点选已具备（拖拽 <5px → `start==end` → SAM 单正点）；多轮正点累加、负点减选、独立"点选蒙版"类型尚未做，需前端手势状态机与后端多点 prompt 数组接口                                                     |
+| B1 ACES 2.0 / OpenDRT                                         | 未开始    | 依赖 v2.0-M0 golden 基座与 OpenDRT 许可核验；且需 GPU/CPU 双路径同源验证                                                                                                                                  |
+| B3 版本历史 DAG                                               | v1 已落地 | v1 为每图单 JSON + 4 个 IPC + 顶栏快照菜单（提交/检出/删除/prune）；剩余为虚拟副本升级分支变体、跨图复制 Look、diff 存储                                                                                  |
+| B5 provider 抽象 + 凭据保险库                                 | 未开始    | 密钥库依赖**已在** [Cargo.toml](file:///workspace/src-tauri/Cargo.toml) L86-L142（android/apple/windows/zbus 四种 store），但无任何 Rust 代码接线；Android 侧需启动时注入 `ndk_context`，且只能在真机验证 |
+| A3 第二阶段剩余（model_set 版本化 / 断点续传 / 许可文本随包） | 部分完成  | 清单+校验+UI+按角色删除已交付；版本化清单与断点续传会改变现有下载行为与目录结构，需要迁移与断网回归，留作独立 PR                                                                                          |
 
 ### 11.6 本轮（第二轮）追加交付
 
-| 项 | 内容 | 验收 |
-|----|------|------|
-| B2 状态模型驻留 | `ResidencyPolicy::idle_only` + `AiState.residency`；CLIP/LaMa/Denoise/Normal 四个 getter 命中即 touch、加载前 enforce、`release_sessions` 清空 tracker | `idle_only_policy_never_evicts_for_budget` 单测通过；`cargo check` 0 warning |
-| A3 按角色删除 | `delete_ai_model(role)`（先释放会话再删文件）+ 设置页已装模型列表与删除按钮 | 命令链路 0 缺失；i18n 校验通过；typecheck/lint 通过 |
+| 项                 | 内容                                                                                                                                                              | 验收                                                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| B2 状态模型驻留    | `ResidencyPolicy::idle_only` + `AiState.residency`；CLIP/LaMa/Denoise/Normal 四个 getter 命中即 touch、加载前 enforce、`release_sessions` 清空 tracker            | `idle_only_policy_never_evicts_for_budget` 单测通过；`cargo check` 0 warning                                             |
+| A3 按角色删除      | `delete_ai_model(role)`（先释放会话再删文件）+ 设置页已装模型列表与删除按钮                                                                                       | 命令链路 0 缺失；i18n 校验通过；typecheck/lint 通过                                                                      |
 | B3 版本历史 DAG v1 | `edit_history.rs`（DAG + 每图 JSON 原子持久化 + prune）+ 4 个 IPC（get/save/checkout/delete）+ `useEditorStore.applyRevision` + 顶栏 `EditHistoryButton` 快照菜单 | 11 项单测（提交/分支/检出/删除保护/prune/摘要/持久化/损坏）；前端→后端缺失 0；typecheck/lint 0 error；15 locale 校验通过 |
 
 ### 11.7 回滚方式
@@ -409,28 +413,28 @@ Alcedo 的 X-Trans 神经 demosaic 是 CUDA 自研算子库（`cuda/nn/`：conv2
 
 ## 附录 A：AlcedoStudio 证据索引（相对其仓库根，v0.3.3）
 
-| 主题 | 位置 |
-|------|------|
-| 节点图模型 | `alcedo_studio/src/edit/graph/{develop_node_model,color_grade_node_model,drt_node_model,pipeline_graph*}.cpp` |
-| 后端无关执行层 | `alcedo_studio/src/edit/runtime/{graph_compiler,execution_plan,static_execution_plan_cache,result_content_key,grade_lut,grade_schedule,lut_bake,runtime_invalidation}.cpp` |
-| 三后端 pass | `alcedo_studio/src/edit/runtime/{cuda,opencl,metal}/`（83 个 kernel 文件，含 `cuda_display_to_ap1_pass.cu` 等） |
-| 神经 demosaic 算子 | `alcedo_studio/src/cuda/nn/*.cu` |
-| 版本历史 DAG | `alcedo_studio/src/storage/store/edit_history/commit_graph_store.cpp`、`alcedo_studio/src/app/pipeline_document_history.cpp` |
-| Rust AI sidecar | `rust/puerh_mind/src/{server,service}/`（segmentation/semantic/encoder_residency/credential_vault/providers） |
-| 模型包 schema | `scripts/ai_models/ai_mask_model_set_v1.json` + `ai_mask_model_set_v1_NOTICE.txt` |
-| LUT 元数据规范 | `scripts/luts/alcedo_lut_metadata.py`（ALCEDO_LUT schema-1） |
-| 第三方许可底账 | `third_party_licenses/`（38 项）、`NOTICE`、`THIRD_PARTY_NOTICE.txt` |
-| 子模块清单 | `.gitmodules`（libraw fork `main_alcedo` 分支、libultrahdr fork `alcedo-v1.4.0-dither` 分支、lensfun 等） |
+| 主题               | 位置                                                                                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 节点图模型         | `alcedo_studio/src/edit/graph/{develop_node_model,color_grade_node_model,drt_node_model,pipeline_graph*}.cpp`                                                              |
+| 后端无关执行层     | `alcedo_studio/src/edit/runtime/{graph_compiler,execution_plan,static_execution_plan_cache,result_content_key,grade_lut,grade_schedule,lut_bake,runtime_invalidation}.cpp` |
+| 三后端 pass        | `alcedo_studio/src/edit/runtime/{cuda,opencl,metal}/`（83 个 kernel 文件，含 `cuda_display_to_ap1_pass.cu` 等）                                                            |
+| 神经 demosaic 算子 | `alcedo_studio/src/cuda/nn/*.cu`                                                                                                                                           |
+| 版本历史 DAG       | `alcedo_studio/src/storage/store/edit_history/commit_graph_store.cpp`、`alcedo_studio/src/app/pipeline_document_history.cpp`                                               |
+| Rust AI sidecar    | `rust/puerh_mind/src/{server,service}/`（segmentation/semantic/encoder_residency/credential_vault/providers）                                                              |
+| 模型包 schema      | `scripts/ai_models/ai_mask_model_set_v1.json` + `ai_mask_model_set_v1_NOTICE.txt`                                                                                          |
+| LUT 元数据规范     | `scripts/luts/alcedo_lut_metadata.py`（ALCEDO_LUT schema-1）                                                                                                               |
+| 第三方许可底账     | `third_party_licenses/`（38 项）、`NOTICE`、`THIRD_PARTY_NOTICE.txt`                                                                                                       |
+| 子模块清单         | `.gitmodules`（libraw fork `main_alcedo` 分支、libultrahdr fork `alcedo-v1.4.0-dither` 分支、lensfun 等）                                                                  |
 
 ## 附录 B：我方仓库锚点索引
 
-| 主题 | 位置 |
-|------|------|
-| Android wgpu 决策 | [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs#L171-L258)、[lib.rs](file:///workspace/src-tauri/src/lib.rs#L677-L681) |
+| 主题                     | 位置                                                                                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Android wgpu 决策        | [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs#L171-L258)、[lib.rs](file:///workspace/src-tauri/src/lib.rs#L677-L681)                       |
 | Android 初始化与缓存路径 | [android_integration.rs](file:///workspace/src-tauri/src/android_integration.rs#L33-L81)、[#L113-L161](file:///workspace/src-tauri/src/android_integration.rs#L113-L161) |
-| 移动端资源默认值 | [app_settings.rs](file:///workspace/src-tauri/src/app_settings.rs#L766-L784) |
-| 模型下载与目录 | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs#L100-L105)、[#L1048-L1051](file:///workspace/src-tauri/src/ai_processing.rs#L1048-L1051) |
-| 既有 AI 蒙版类型 | [mask_generation.rs](file:///workspace/src-tauri/src/mask_generation.rs#L876-L1015) |
-| 云端 AI 现状 | [ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs#L1-L30) |
-| Android 导出落点 | [file_management.rs](file:///workspace/src-tauri/src/file_management.rs#L3600-L3604) |
-| 返回键层栈 | [useAndroidBackHandler.ts](file:///workspace/src/hooks/useAndroidBackHandler.ts#L6-L113) |
+| 移动端资源默认值         | [app_settings.rs](file:///workspace/src-tauri/src/app_settings.rs#L766-L784)                                                                                             |
+| 模型下载与目录           | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs#L100-L105)、[#L1048-L1051](file:///workspace/src-tauri/src/ai_processing.rs#L1048-L1051)             |
+| 既有 AI 蒙版类型         | [mask_generation.rs](file:///workspace/src-tauri/src/mask_generation.rs#L876-L1015)                                                                                      |
+| 云端 AI 现状             | [ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs#L1-L30)                                                                                                |
+| Android 导出落点         | [file_management.rs](file:///workspace/src-tauri/src/file_management.rs#L3600-L3604)                                                                                     |
+| 返回键层栈               | [useAndroidBackHandler.ts](file:///workspace/src/hooks/useAndroidBackHandler.ts#L6-L113)                                                                                 |

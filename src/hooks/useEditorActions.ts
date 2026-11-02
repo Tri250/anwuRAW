@@ -325,27 +325,30 @@ export function useEditorActions() {
     [setEditor],
   );
 
-  const handleAutoLensCorrection = useCallback((paths?: string[]) => {
-    const { multiSelectedPaths } = useLibraryStore.getState();
-    const { selectedImage } = useEditorStore.getState();
+  const handleAutoLensCorrection = useCallback(
+    (paths?: string[]) => {
+      const { multiSelectedPaths } = useLibraryStore.getState();
+      const { selectedImage } = useEditorStore.getState();
 
-    const pathsToUpdate =
-      paths && paths.length > 0
-        ? paths
-        : multiSelectedPaths.length > 0
-          ? multiSelectedPaths
-          : selectedImage
-            ? [selectedImage.path]
-            : [];
+      const pathsToUpdate =
+        paths && paths.length > 0
+          ? paths
+          : multiSelectedPaths.length > 0
+            ? multiSelectedPaths
+            : selectedImage
+              ? [selectedImage.path]
+              : [];
 
-    if (pathsToUpdate.length === 0) return;
+      if (pathsToUpdate.length === 0) return;
 
-    pathsToUpdate.forEach((p) => globalImageCache.delete(p));
+      pathsToUpdate.forEach((p) => globalImageCache.delete(p));
 
-    invoke(Invokes.ApplyAutoLensCorrectionToPaths, { paths: pathsToUpdate })
-      .then(() => reloadAdjustmentsForPaths(pathsToUpdate))
-      .catch((err) => toast.error(t('contextMenus.toasts.failedLensCorrection', { err: String(err) })));
-  }, [t]);
+      invoke(Invokes.ApplyAutoLensCorrectionToPaths, { paths: pathsToUpdate })
+        .then(() => reloadAdjustmentsForPaths(pathsToUpdate))
+        .catch((err) => toast.error(t('contextMenus.toasts.failedLensCorrection', { err: String(err) })));
+    },
+    [t],
+  );
 
   const handleAutoStraightenPaths = useCallback(
     (paths: string[]) => {
@@ -394,44 +397,47 @@ export function useEditorActions() {
     [setAdjustments, t],
   );
 
-  const handleCopyAdjustments = useCallback(async (pathOrEvent?: string | any) => {
-    const pathOverride = typeof pathOrEvent === 'string' ? pathOrEvent : undefined;
-    const { selectedImage, adjustments } = useEditorStore.getState();
-    const { libraryActivePath, multiSelectedPaths } = useLibraryStore.getState();
-    let sourceAdjustments: any = null;
+  const handleCopyAdjustments = useCallback(
+    async (pathOrEvent?: string | any) => {
+      const pathOverride = typeof pathOrEvent === 'string' ? pathOrEvent : undefined;
+      const { selectedImage, adjustments } = useEditorStore.getState();
+      const { libraryActivePath, multiSelectedPaths } = useLibraryStore.getState();
+      let sourceAdjustments: any = null;
 
-    const editingPath = useUIStore.getState().activeView === 'editor' ? selectedImage?.path : undefined;
-    const pathToCopyFrom =
-      pathOverride || editingPath || libraryActivePath || multiSelectedPaths[0] || selectedImage?.path;
+      const editingPath = useUIStore.getState().activeView === 'editor' ? selectedImage?.path : undefined;
+      const pathToCopyFrom =
+        pathOverride || editingPath || libraryActivePath || multiSelectedPaths[0] || selectedImage?.path;
 
-    if (selectedImage && pathToCopyFrom === selectedImage.path) {
-      sourceAdjustments = adjustments;
-    } else if (pathToCopyFrom) {
-      try {
-        const meta: any = await invoke(Invokes.LoadMetadata, { path: pathToCopyFrom });
-        if (meta?.adjustments && !meta.adjustments.is_null) {
-          sourceAdjustments = normalizeLoadedAdjustments(meta.adjustments);
-        } else {
-          sourceAdjustments = INITIAL_ADJUSTMENTS;
+      if (selectedImage && pathToCopyFrom === selectedImage.path) {
+        sourceAdjustments = adjustments;
+      } else if (pathToCopyFrom) {
+        try {
+          const meta: any = await invoke(Invokes.LoadMetadata, { path: pathToCopyFrom });
+          if (meta?.adjustments && !meta.adjustments.is_null) {
+            sourceAdjustments = normalizeLoadedAdjustments(meta.adjustments);
+          } else {
+            sourceAdjustments = INITIAL_ADJUSTMENTS;
+          }
+        } catch (err) {
+          toast.error(t('contextMenus.toasts.failedLoadMetadataCopy', { err: String(err) }));
+          return;
         }
-      } catch (err) {
-        toast.error(t('contextMenus.toasts.failedLoadMetadataCopy', { err: String(err) }));
-        return;
       }
-    }
 
-    if (!sourceAdjustments) return;
+      if (!sourceAdjustments) return;
 
-    const adjustmentsToCopy: any = {};
+      const adjustmentsToCopy: any = {};
 
-    for (const key of COPYABLE_ADJUSTMENT_KEYS) {
-      if (Object.prototype.hasOwnProperty.call(sourceAdjustments, key)) {
-        adjustmentsToCopy[key] = structuredClone(sourceAdjustments[key]);
+      for (const key of COPYABLE_ADJUSTMENT_KEYS) {
+        if (Object.prototype.hasOwnProperty.call(sourceAdjustments, key)) {
+          adjustmentsToCopy[key] = structuredClone(sourceAdjustments[key]);
+        }
       }
-    }
-    useEditorStore.getState().setEditor({ copiedAdjustments: adjustmentsToCopy });
-    useProcessStore.getState().setProcess({ isCopied: true });
-  }, [t]);
+      useEditorStore.getState().setEditor({ copiedAdjustments: adjustmentsToCopy });
+      useProcessStore.getState().setProcess({ isCopied: true });
+    },
+    [t],
+  );
 
   const handlePasteAdjustments = useCallback(
     (paths?: string[]) => {

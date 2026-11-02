@@ -283,7 +283,11 @@ const ColorGradingPanel = ({ adjustments, setAdjustments, onDragStateChange }: C
                     : 'bg-bg-secondary text-text-secondary hover:text-text-primary hover:bg-bg-secondary/80'
                 }`}
               data-tooltip={
-                isActive ? undefined : tab.id === '3way' ? t('adjustments.color.grading.threeWay') : t('adjustments.color.grading.global')
+                isActive
+                  ? undefined
+                  : tab.id === '3way'
+                    ? t('adjustments.color.grading.threeWay')
+                    : t('adjustments.color.grading.global')
               }
             >
               {tab.icon}

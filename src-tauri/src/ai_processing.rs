@@ -784,9 +784,9 @@ impl Default for AiState {
             esam3_features: None,
             face_analysis: None,
             depth_map: None,
-            residency: ResidencyTracker::new(ResidencyPolicy::idle_only(
-                cfg!(target_os = "android"),
-            )),
+            residency: ResidencyTracker::new(ResidencyPolicy::idle_only(cfg!(
+                target_os = "android"
+            ))),
         }
     }
 }
@@ -1502,9 +1502,9 @@ pub async fn get_or_init_ai_models(
                 face_landmarks: Mutex::new(None),
                 face_segmenter: Mutex::new(None),
                 depth_anything: Mutex::new(None),
-                residency: Mutex::new(ResidencyTracker::new(ResidencyPolicy::for_platform(
-                    cfg!(target_os = "android"),
-                ))),
+                residency: Mutex::new(ResidencyTracker::new(ResidencyPolicy::for_platform(cfg!(
+                    target_os = "android"
+                )))),
                 residency_epoch: Instant::now(),
             });
             ai_state_mutex
@@ -3247,35 +3247,138 @@ pub struct AiDepthMaskParameters {
 /// that as an integrity issue instead of quietly accepting an unverified file.
 pub fn model_inventory(models_dir: &Path) -> ModelManifest {
     const MODEL_CARD: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models";
-    let spec = |role: &str, display_name: &str, filename: &str, url: &str, sha256: &str| ModelSpec {
-        role: role.to_string(),
-        display_name: display_name.to_string(),
-        filename: filename.to_string(),
-        download_url: url.to_string(),
-        sha256: sha256.to_string(),
-        license: "See model card".to_string(),
-        license_url: Some(MODEL_CARD.to_string()),
-        installed_bytes: None,
-    };
+    let spec =
+        |role: &str, display_name: &str, filename: &str, url: &str, sha256: &str| ModelSpec {
+            role: role.to_string(),
+            display_name: display_name.to_string(),
+            filename: filename.to_string(),
+            download_url: url.to_string(),
+            sha256: sha256.to_string(),
+            license: "See model card".to_string(),
+            license_url: Some(MODEL_CARD.to_string()),
+            installed_bytes: None,
+        };
 
     let specs = vec![
-        spec("sam_encoder", "SAM Encoder", ENCODER_FILENAME, ENCODER_URL, ENCODER_SHA256),
-        spec("sam_decoder", "SAM Decoder", DECODER_FILENAME, DECODER_URL, DECODER_SHA256),
-        spec("efficientsam_encoder", "EfficientSAM Encoder", ESAM3_IMAGE_ENCODER_FILENAME, ESAM3_IMAGE_ENCODER_URL, ESAM3_IMAGE_ENCODER_SHA256),
-        spec("efficientsam_decoder", "EfficientSAM Decoder", ESAM3_DECODER_FILENAME, ESAM3_DECODER_URL, ESAM3_DECODER_SHA256),
-        spec("efficientsam_text_encoder", "EfficientSAM Text Encoder", ESAM3_TEXT_ENCODER_FILENAME, ESAM3_TEXT_ENCODER_URL, ESAM3_TEXT_ENCODER_SHA256),
-        spec("efficientsam_sky_prompt", "Sky Prompt", ESAM3_SKY_PROMPT_FILENAME, ESAM3_SKY_PROMPT_URL, ESAM3_SKY_PROMPT_SHA256),
-        spec("efficientsam_face_prompt", "Face Prompt", ESAM3_FACE_PROMPT_FILENAME, ESAM3_FACE_PROMPT_URL, ESAM3_FACE_PROMPT_SHA256),
-        spec("foreground_fp16", "Foreground Model (GPU)", BIREFNET_FP16_FILENAME, BIREFNET_FP16_URL, BIREFNET_FP16_SHA256),
-        spec("foreground_fp32", "Foreground Model (CPU)", BIREFNET_FP32_FILENAME, BIREFNET_FP32_URL, BIREFNET_FP32_SHA256),
-        spec("face_landmarks", "Face Landmarks", FACE_LANDMARKS_FILENAME, FACE_LANDMARKS_URL, FACE_LANDMARKS_SHA256),
-        spec("face_segmenter", "Face Segmentation", FACE_SEGMENTER_FILENAME, FACE_SEGMENTER_URL, FACE_SEGMENTER_SHA256),
-        spec("depth", "Depth Model", DEPTH_FILENAME, DEPTH_URL, DEPTH_SHA256),
-        spec("normal", "Relight Normal Model", NORMAL_FILENAME, NORMAL_URL, NORMAL_SHA256),
-        spec("clip", "CLIP", CLIP_MODEL_FILENAME, CLIP_MODEL_URL, CLIP_MODEL_SHA256),
-        spec("clip_tokenizer", "CLIP Tokenizer", CLIP_TOKENIZER_FILENAME, CLIP_TOKENIZER_URL, ""),
-        spec("denoise", "AI Denoise", DENOISE_FILENAME, DENOISE_URL, DENOISE_SHA256),
-        spec("lama", "Generative Fill", LAMA_FILENAME, LAMA_URL, LAMA_SHA256),
+        spec(
+            "sam_encoder",
+            "SAM Encoder",
+            ENCODER_FILENAME,
+            ENCODER_URL,
+            ENCODER_SHA256,
+        ),
+        spec(
+            "sam_decoder",
+            "SAM Decoder",
+            DECODER_FILENAME,
+            DECODER_URL,
+            DECODER_SHA256,
+        ),
+        spec(
+            "efficientsam_encoder",
+            "EfficientSAM Encoder",
+            ESAM3_IMAGE_ENCODER_FILENAME,
+            ESAM3_IMAGE_ENCODER_URL,
+            ESAM3_IMAGE_ENCODER_SHA256,
+        ),
+        spec(
+            "efficientsam_decoder",
+            "EfficientSAM Decoder",
+            ESAM3_DECODER_FILENAME,
+            ESAM3_DECODER_URL,
+            ESAM3_DECODER_SHA256,
+        ),
+        spec(
+            "efficientsam_text_encoder",
+            "EfficientSAM Text Encoder",
+            ESAM3_TEXT_ENCODER_FILENAME,
+            ESAM3_TEXT_ENCODER_URL,
+            ESAM3_TEXT_ENCODER_SHA256,
+        ),
+        spec(
+            "efficientsam_sky_prompt",
+            "Sky Prompt",
+            ESAM3_SKY_PROMPT_FILENAME,
+            ESAM3_SKY_PROMPT_URL,
+            ESAM3_SKY_PROMPT_SHA256,
+        ),
+        spec(
+            "efficientsam_face_prompt",
+            "Face Prompt",
+            ESAM3_FACE_PROMPT_FILENAME,
+            ESAM3_FACE_PROMPT_URL,
+            ESAM3_FACE_PROMPT_SHA256,
+        ),
+        spec(
+            "foreground_fp16",
+            "Foreground Model (GPU)",
+            BIREFNET_FP16_FILENAME,
+            BIREFNET_FP16_URL,
+            BIREFNET_FP16_SHA256,
+        ),
+        spec(
+            "foreground_fp32",
+            "Foreground Model (CPU)",
+            BIREFNET_FP32_FILENAME,
+            BIREFNET_FP32_URL,
+            BIREFNET_FP32_SHA256,
+        ),
+        spec(
+            "face_landmarks",
+            "Face Landmarks",
+            FACE_LANDMARKS_FILENAME,
+            FACE_LANDMARKS_URL,
+            FACE_LANDMARKS_SHA256,
+        ),
+        spec(
+            "face_segmenter",
+            "Face Segmentation",
+            FACE_SEGMENTER_FILENAME,
+            FACE_SEGMENTER_URL,
+            FACE_SEGMENTER_SHA256,
+        ),
+        spec(
+            "depth",
+            "Depth Model",
+            DEPTH_FILENAME,
+            DEPTH_URL,
+            DEPTH_SHA256,
+        ),
+        spec(
+            "normal",
+            "Relight Normal Model",
+            NORMAL_FILENAME,
+            NORMAL_URL,
+            NORMAL_SHA256,
+        ),
+        spec(
+            "clip",
+            "CLIP",
+            CLIP_MODEL_FILENAME,
+            CLIP_MODEL_URL,
+            CLIP_MODEL_SHA256,
+        ),
+        spec(
+            "clip_tokenizer",
+            "CLIP Tokenizer",
+            CLIP_TOKENIZER_FILENAME,
+            CLIP_TOKENIZER_URL,
+            "",
+        ),
+        spec(
+            "denoise",
+            "AI Denoise",
+            DENOISE_FILENAME,
+            DENOISE_URL,
+            DENOISE_SHA256,
+        ),
+        spec(
+            "lama",
+            "Generative Fill",
+            LAMA_FILENAME,
+            LAMA_URL,
+            LAMA_SHA256,
+        ),
     ];
 
     model_registry::build_manifest(model_registry::with_installed_sizes(specs, models_dir))

@@ -188,7 +188,10 @@ const KeybindRow = ({
       <Text variant={TextVariants.label}>{t(def.description as any)}</Text>
       <div className="flex items-center gap-1">
         {isConflicting && <span className="text-yellow-400 text-xs">⚠</span>}
-        <button onClick={() => onStartRecording(def.action)} className="flex items-center gap-1 flex-wrap shrink-0 cursor-pointer">
+        <button
+          onClick={() => onStartRecording(def.action)}
+          className="flex items-center gap-1 flex-wrap shrink-0 cursor-pointer"
+        >
           {recording ? (
             <Text
               as="kbd"
@@ -2275,7 +2278,11 @@ export default function SettingsPanel({
                         <div className="flex flex-col items-end gap-1 text-right max-w-64">
                           {gpuReport?.probed ? (
                             <>
-                              <Text variant={TextVariants.small} color={TextColors.primary} className="font-medium leading-relaxed">
+                              <Text
+                                variant={TextVariants.small}
+                                color={TextColors.primary}
+                                className="font-medium leading-relaxed"
+                              >
                                 {t('settings.processing.gpuAdapterStatus', {
                                   name: gpuReport.name || '—',
                                   backend: gpuReport.backend || '—',
@@ -2284,7 +2291,11 @@ export default function SettingsPanel({
                                     : t('settings.processing.gpuAdapterFallback'),
                                 })}
                               </Text>
-                              <Text variant={TextVariants.small} color={TextColors.secondary} className="leading-relaxed">
+                              <Text
+                                variant={TextVariants.small}
+                                color={TextColors.secondary}
+                                className="leading-relaxed"
+                              >
                                 {gpuReport.reason}
                               </Text>
                             </>

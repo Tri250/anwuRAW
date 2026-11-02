@@ -285,7 +285,11 @@ impl EditHistoryGraph {
         // cycle render as a bounded depth instead of hanging the UI.
         for _ in 0..=self.revisions.len() {
             match current {
-                Some(revision) => match revision.parent_id.as_deref().and_then(|pid| self.revisions.get(pid)) {
+                Some(revision) => match revision
+                    .parent_id
+                    .as_deref()
+                    .and_then(|pid| self.revisions.get(pid))
+                {
                     Some(parent) => {
                         depth += 1;
                         current = Some(parent);
@@ -380,8 +384,12 @@ mod tests {
     fn commit_branches_from_explicit_parent_and_moves_head() {
         let mut graph = EditHistoryGraph::new(json!({"exposure": 0.0}), "Original", 10);
         let root = graph.head.clone().unwrap();
-        let first = graph.commit(Some(&root), "Warm", json!({"exposure": 1.0}), 20).unwrap();
-        let second = graph.commit(Some(&root), "Cool", json!({"exposure": -1.0}), 21).unwrap();
+        let first = graph
+            .commit(Some(&root), "Warm", json!({"exposure": 1.0}), 20)
+            .unwrap();
+        let second = graph
+            .commit(Some(&root), "Cool", json!({"exposure": -1.0}), 21)
+            .unwrap();
         assert_eq!(graph.head.as_deref(), Some(second.as_str()));
         assert_eq!(graph.len(), 3);
         let children = graph.children(&root);
@@ -393,7 +401,9 @@ mod tests {
     #[test]
     fn commit_rejects_unknown_parent() {
         let mut graph = EditHistoryGraph::new(json!({}), "Original", 10);
-        let error = graph.commit(Some("missing"), "Bad", json!({}), 20).unwrap_err();
+        let error = graph
+            .commit(Some("missing"), "Bad", json!({}), 20)
+            .unwrap_err();
         assert!(error.contains("Unknown parent"));
         assert_eq!(graph.len(), 1);
     }
@@ -402,7 +412,9 @@ mod tests {
     fn checkout_returns_whole_adjustments_and_moves_head() {
         let mut graph = EditHistoryGraph::new(json!({"exposure": 0.0}), "Original", 10);
         let root = graph.head.clone().unwrap();
-        let branch = graph.commit(Some(&root), "Branch", json!({"exposure": 2.0}), 20).unwrap();
+        let branch = graph
+            .commit(Some(&root), "Branch", json!({"exposure": 2.0}), 20)
+            .unwrap();
         assert_eq!(graph.head.as_deref(), Some(branch.as_str()));
         let applied = graph.checkout(&root).unwrap();
         assert_eq!(applied, json!({"exposure": 0.0}));
@@ -450,10 +462,12 @@ mod tests {
             .find(|revision| revision.parent_id.is_none())
             .unwrap();
         assert!(graph.get(&remaining_root.id).is_some());
-        assert!(graph.revisions.values().all(|revision| revision
-            .parent_id
-            .as_deref()
-            .is_none_or(|parent| graph.get(parent).is_some())));
+        assert!(graph.revisions.values().all(|revision| {
+            revision
+                .parent_id
+                .as_deref()
+                .is_none_or(|parent| graph.get(parent).is_some())
+        }));
     }
 
     #[test]
@@ -491,7 +505,9 @@ mod tests {
         assert!(path.starts_with(storage_dir(&dir)));
 
         let mut graph = EditHistoryGraph::new(json!({"exposure": 1.5}), "Original", 10);
-        graph.commit(None, "Warm", json!({"exposure": 2.0}), 20).unwrap();
+        graph
+            .commit(None, "Warm", json!({"exposure": 2.0}), 20)
+            .unwrap();
         save(&path, &graph).unwrap();
         save(&path, &graph).unwrap();
 

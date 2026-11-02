@@ -252,7 +252,9 @@ export function useFileOperations(
 
             const { selectedImage: currentSelected } = useEditorStore.getState();
             if (currentSelected && isInRenamedFolder(currentSelected.path)) {
-              useEditorStore.getState().setEditor({ selectedImage: { ...currentSelected, path: remap(currentSelected.path) } });
+              useEditorStore
+                .getState()
+                .setEditor({ selectedImage: { ...currentSelected, path: remap(currentSelected.path) } });
             }
 
             await refreshImageList();

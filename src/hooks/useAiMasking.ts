@@ -37,8 +37,7 @@ const beginAiMaskRequest = (subMaskId: string) => {
   aiMaskRequestEpochs.set(subMaskId, epoch);
   return epoch;
 };
-const isStaleAiMaskRequest = (subMaskId: string, epoch: number) =>
-  aiMaskRequestEpochs.get(subMaskId) !== epoch;
+const isStaleAiMaskRequest = (subMaskId: string, epoch: number) => aiMaskRequestEpochs.get(subMaskId) !== epoch;
 
 export function useAiMasking() {
   const { setAdjustments } = useEditorActions();

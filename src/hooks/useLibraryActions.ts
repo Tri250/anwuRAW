@@ -251,21 +251,24 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
     });
   }, []);
 
-  const handleSetFlag = useCallback((flag: ImageFlag | null, paths?: string[]) => {
-    const { expandedPaths } = resolveTargetPaths(paths);
-    if (expandedPaths.length === 0) return;
+  const handleSetFlag = useCallback(
+    (flag: ImageFlag | null, paths?: string[]) => {
+      const { expandedPaths } = resolveTargetPaths(paths);
+      if (expandedPaths.length === 0) return;
 
-    applyWithAutoAdvance(expandedPaths, true, () =>
-      useLibraryStore.getState().setLibrary((state) => ({
-        imageList: withFlag(state.imageList, expandedPaths, flag),
-      })),
-    );
+      applyWithAutoAdvance(expandedPaths, true, () =>
+        useLibraryStore.getState().setLibrary((state) => ({
+          imageList: withFlag(state.imageList, expandedPaths, flag),
+        })),
+      );
 
-    invoke(Invokes.SetFlagForPaths, { paths: expandedPaths, flag }).catch((err) => {
-      console.error(err);
-      toast.error(t('contextMenus.toasts.failedFlag', { err: String(err) }));
-    });
-  }, [t]);
+      invoke(Invokes.SetFlagForPaths, { paths: expandedPaths, flag }).catch((err) => {
+        console.error(err);
+        toast.error(t('contextMenus.toasts.failedFlag', { err: String(err) }));
+      });
+    },
+    [t],
+  );
 
   const handleToggleFlag = useCallback(
     (flag: ImageFlag, paths?: string[]) => {
@@ -279,41 +282,44 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
     [handleSetFlag],
   );
 
-  const handleSetColorLabel = useCallback(async (color: string | null, paths?: string[]) => {
-    const { libraryActivePath, imageList, setLibrary } = useLibraryStore.getState();
-    const { selectedImage } = useEditorStore.getState();
+  const handleSetColorLabel = useCallback(
+    async (color: string | null, paths?: string[]) => {
+      const { libraryActivePath, imageList, setLibrary } = useLibraryStore.getState();
+      const { selectedImage } = useEditorStore.getState();
 
-    const { selectedPaths, expandedPaths: pathsToUpdate } = resolveTargetPaths(paths);
-    if (selectedPaths.length === 0) return;
+      const { selectedPaths, expandedPaths: pathsToUpdate } = resolveTargetPaths(paths);
+      if (selectedPaths.length === 0) return;
 
-    const primaryPath = selectedImage?.path || libraryActivePath;
-    const primaryImage = imageList.find((img: ImageFile) => img.path === primaryPath);
-    let currentColor = null;
-    if (primaryImage && primaryImage.tags) {
-      const colorTag = primaryImage.tags.find((tag: string) => tag.startsWith('color:'));
-      if (colorTag) currentColor = colorTag.substring(6);
-    }
-    const finalColor = color !== null && color === currentColor ? null : color;
+      const primaryPath = selectedImage?.path || libraryActivePath;
+      const primaryImage = imageList.find((img: ImageFile) => img.path === primaryPath);
+      let currentColor = null;
+      if (primaryImage && primaryImage.tags) {
+        const colorTag = primaryImage.tags.find((tag: string) => tag.startsWith('color:'));
+        if (colorTag) currentColor = colorTag.substring(6);
+      }
+      const finalColor = color !== null && color === currentColor ? null : color;
 
-    try {
-      await invoke(Invokes.SetColorLabelForPaths, { paths: pathsToUpdate, color: finalColor });
-      const pathSet = new Set(pathsToUpdate);
-      applyWithAutoAdvance(pathsToUpdate, true, () =>
-        setLibrary((state) => ({
-          imageList: state.imageList.map((image: ImageFile) => {
-            if (pathSet.has(image.path)) {
-              const otherTags = (image.tags || []).filter((tag: string) => !tag.startsWith('color:'));
-              const newTags = finalColor ? [...otherTags, `color:${finalColor}`] : otherTags;
-              return { ...image, tags: newTags };
-            }
-            return image;
-          }),
-        })),
-      );
-    } catch (err) {
-      toast.error(t('editor.metadata.toasts.setColorFailed', { error: String(err) }));
-    }
-  }, [t]);
+      try {
+        await invoke(Invokes.SetColorLabelForPaths, { paths: pathsToUpdate, color: finalColor });
+        const pathSet = new Set(pathsToUpdate);
+        applyWithAutoAdvance(pathsToUpdate, true, () =>
+          setLibrary((state) => ({
+            imageList: state.imageList.map((image: ImageFile) => {
+              if (pathSet.has(image.path)) {
+                const otherTags = (image.tags || []).filter((tag: string) => !tag.startsWith('color:'));
+                const newTags = finalColor ? [...otherTags, `color:${finalColor}`] : otherTags;
+                return { ...image, tags: newTags };
+              }
+              return image;
+            }),
+          })),
+        );
+      } catch (err) {
+        toast.error(t('editor.metadata.toasts.setColorFailed', { error: String(err) }));
+      }
+    },
+    [t],
+  );
 
   /**
    * 增量式标签同步：只添加/移除单个标签，保留每张图各自已有的其他标签。
@@ -339,9 +345,10 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
     );
   }, []);
 
-  const handleTagAdded = useCallback((changedPaths: string[], tag: string) => applyTagDelta(changedPaths, tag, true), [
-    applyTagDelta,
-  ]);
+  const handleTagAdded = useCallback(
+    (changedPaths: string[], tag: string) => applyTagDelta(changedPaths, tag, true),
+    [applyTagDelta],
+  );
 
   const handleTagRemoved = useCallback(
     (changedPaths: string[], tag: string) => applyTagDelta(changedPaths, tag, false),
@@ -369,59 +376,64 @@ export function useLibraryActions(handleImageSelect?: (path: string, openInEdito
     );
   }, []);
 
-  const handleUpdateExif = useCallback(async (paths: Array<string> | undefined, updates: Record<string, string>) => {
-    const { multiSelectedPaths, imageList, setLibrary } = useLibraryStore.getState();
-    const { selectedImage, setEditor } = useEditorStore.getState();
+  const handleUpdateExif = useCallback(
+    async (paths: Array<string> | undefined, updates: Record<string, string>) => {
+      const { multiSelectedPaths, imageList, setLibrary } = useLibraryStore.getState();
+      const { selectedImage, setEditor } = useEditorStore.getState();
 
-    const selectedPaths =
-      paths && paths.length > 0
-        ? paths
-        : multiSelectedPaths.length > 0
-          ? multiSelectedPaths
-          : selectedImage
-            ? [selectedImage.path]
-            : [];
-    if (selectedPaths.length === 0) return;
+      const selectedPaths =
+        paths && paths.length > 0
+          ? paths
+          : multiSelectedPaths.length > 0
+            ? multiSelectedPaths
+            : selectedImage
+              ? [selectedImage.path]
+              : [];
+      if (selectedPaths.length === 0) return;
 
-    // 与评分/旗标/颜色/标签链路保持一致：分组开启时 raw 组内文件同步生效。
-    const groupingMode = useSettingsStore.getState().appSettings?.grouping ?? 'off';
-    const pathsToUpdate = expandGroupedPaths(imageList, selectedPaths, groupingMode);
-    if (pathsToUpdate.length === 0) return;
+      // 与评分/旗标/颜色/标签链路保持一致：分组开启时 raw 组内文件同步生效。
+      const groupingMode = useSettingsStore.getState().appSettings?.grouping ?? 'off';
+      const pathsToUpdate = expandGroupedPaths(imageList, selectedPaths, groupingMode);
+      if (pathsToUpdate.length === 0) return;
 
-    const physicalPathsSet = new Set(pathsToUpdate.map((p) => p.split('?vc=')[0]));
-    const physicalPathsArray = Array.from(physicalPathsSet);
+      const physicalPathsSet = new Set(pathsToUpdate.map((p) => p.split('?vc=')[0]));
+      const physicalPathsArray = Array.from(physicalPathsSet);
 
-    try {
-      await invoke(Invokes.UpdateExifFields, { paths: physicalPathsArray, updates });
+      try {
+        await invoke(Invokes.UpdateExifFields, { paths: physicalPathsArray, updates });
 
-      setEditor((state) => {
-        if (!state.selectedImage || !physicalPathsSet.has(state.selectedImage.path.split('?vc=')[0])) return state;
-        return { selectedImage: { ...state.selectedImage, exif: { ...(state.selectedImage.exif || {}), ...updates } } };
-      });
+        setEditor((state) => {
+          if (!state.selectedImage || !physicalPathsSet.has(state.selectedImage.path.split('?vc=')[0])) return state;
+          return {
+            selectedImage: { ...state.selectedImage, exif: { ...(state.selectedImage.exif || {}), ...updates } },
+          };
+        });
 
-      setLibrary((state) => {
-        const exifByPath = { ...state.exifByPath };
-        for (const img of state.imageList) {
-          if (physicalPathsSet.has(img.path.split('?vc=')[0])) {
-            exifByPath[img.path] = { ...(exifByPath[img.path] || {}), ...updates };
+        setLibrary((state) => {
+          const exifByPath = { ...state.exifByPath };
+          for (const img of state.imageList) {
+            if (physicalPathsSet.has(img.path.split('?vc=')[0])) {
+              exifByPath[img.path] = { ...(exifByPath[img.path] || {}), ...updates };
+            }
           }
-        }
-        return { exifByPath };
-      });
+          return { exifByPath };
+        });
 
-      pathsToUpdate.forEach((p) => {
-        const cached = globalImageCache.get(p);
-        if (cached && cached.selectedImage) {
-          globalImageCache.set(p, {
-            ...cached,
-            selectedImage: { ...cached.selectedImage, exif: { ...(cached.selectedImage.exif || {}), ...updates } },
-          });
-        }
-      });
-    } catch (err) {
-      toast.error(t('editor.metadata.toasts.updateFailed', { error: String(err) }));
-    }
-  }, [t]);
+        pathsToUpdate.forEach((p) => {
+          const cached = globalImageCache.get(p);
+          if (cached && cached.selectedImage) {
+            globalImageCache.set(p, {
+              ...cached,
+              selectedImage: { ...cached.selectedImage, exif: { ...(cached.selectedImage.exif || {}), ...updates } },
+            });
+          }
+        });
+      } catch (err) {
+        toast.error(t('editor.metadata.toasts.updateFailed', { error: String(err) }));
+      }
+    },
+    [t],
+  );
 
   const handleClearSelection = useCallback(() => {
     const activeView = useUIStore.getState().activeView;

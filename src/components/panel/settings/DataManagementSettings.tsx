@@ -571,11 +571,7 @@ export default function DataManagementSettings({
                     {inventory.models
                       .filter((model) => model.installedBytes !== undefined)
                       .map((model) => (
-                        <div
-                          key={model.role}
-                          data-tooltip={model.filename}
-                          className="flex items-center gap-2"
-                        >
+                        <div key={model.role} data-tooltip={model.filename} className="flex items-center gap-2">
                           <Text variant={TextVariants.small} className="flex-1 min-w-0 truncate">
                             {model.displayName}
                           </Text>

@@ -55,7 +55,10 @@ impl ModelManifest {
 }
 
 fn is_lower_hex_64(value: &str) -> bool {
-    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 /// Validates a model table and assembles the manifest. Returns issues rather
@@ -70,7 +73,10 @@ pub fn build_manifest(mut models: Vec<ModelSpec>) -> ModelManifest {
         if model.role.trim().is_empty() {
             issues.push(format!("{}: empty role", model.filename));
         } else if seen_roles.contains(&model.role.as_str()) {
-            issues.push(format!("{}: duplicate role '{}'", model.filename, model.role));
+            issues.push(format!(
+                "{}: duplicate role '{}'",
+                model.filename, model.role
+            ));
         } else {
             seen_roles.push(&model.role);
         }
@@ -91,10 +97,7 @@ pub fn build_manifest(mut models: Vec<ModelSpec>) -> ModelManifest {
         }
 
         if !model.download_url.starts_with("https://") {
-            issues.push(format!(
-                "{}: download URL must use HTTPS",
-                model.filename
-            ));
+            issues.push(format!("{}: download URL must use HTTPS", model.filename));
         }
 
         if model.license.trim().is_empty() {
@@ -103,7 +106,10 @@ pub fn build_manifest(mut models: Vec<ModelSpec>) -> ModelManifest {
     }
 
     models.sort_by(|a, b| a.role.cmp(&b.role));
-    let installed_count = models.iter().filter(|model| model.installed_bytes.is_some()).count();
+    let installed_count = models
+        .iter()
+        .filter(|model| model.installed_bytes.is_some())
+        .count();
     let total_count = models.len();
 
     ModelManifest {
@@ -165,7 +171,10 @@ mod tests {
 
     #[test]
     fn consistent_table_has_no_issues() {
-        let manifest = build_manifest(vec![spec("sam_encoder", "sam.onnx"), spec("clip", "clip.onnx")]);
+        let manifest = build_manifest(vec![
+            spec("sam_encoder", "sam.onnx"),
+            spec("clip", "clip.onnx"),
+        ]);
         assert!(manifest.issues.is_empty());
         assert_eq!(manifest.total_count, 2);
         assert_eq!(manifest.installed_count, 0);
@@ -177,13 +186,23 @@ mod tests {
     #[test]
     fn duplicate_filenames_are_reported() {
         let manifest = build_manifest(vec![spec("a", "same.onnx"), spec("b", "same.onnx")]);
-        assert!(manifest.issues.iter().any(|issue| issue.contains("duplicate filename")));
+        assert!(
+            manifest
+                .issues
+                .iter()
+                .any(|issue| issue.contains("duplicate filename"))
+        );
     }
 
     #[test]
     fn duplicate_roles_are_reported() {
         let manifest = build_manifest(vec![spec("a", "one.onnx"), spec("a", "two.onnx")]);
-        assert!(manifest.issues.iter().any(|issue| issue.contains("duplicate role")));
+        assert!(
+            manifest
+                .issues
+                .iter()
+                .any(|issue| issue.contains("duplicate role"))
+        );
     }
 
     #[test]
@@ -202,7 +221,12 @@ mod tests {
         let mut model = spec("x", "x.onnx");
         model.license = "  ".to_string();
         let manifest = build_manifest(vec![model]);
-        assert!(manifest.issues.iter().any(|issue| issue.contains("missing license")));
+        assert!(
+            manifest
+                .issues
+                .iter()
+                .any(|issue| issue.contains("missing license"))
+        );
     }
 
     #[test]
@@ -224,7 +248,13 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("model.bin");
         std::fs::write(&path, b"abc").unwrap();
-        assert!(verify_file(&path, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad").is_ok());
+        assert!(
+            verify_file(
+                &path,
+                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+            )
+            .is_ok()
+        );
         assert!(verify_file(&path, &"0".repeat(64)).is_err());
         std::fs::remove_dir_all(&dir).ok();
     }
@@ -235,13 +265,32 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("present.onnx"), b"hello").unwrap();
         let models = with_installed_sizes(
-            vec![spec("present", "present.onnx"), spec("absent", "absent.onnx")],
+            vec![
+                spec("present", "present.onnx"),
+                spec("absent", "absent.onnx"),
+            ],
             &dir,
         );
         let manifest = build_manifest(models);
         assert_eq!(manifest.installed_count, 1);
-        assert_eq!(manifest.models.iter().find(|m| m.role == "present").unwrap().installed_bytes, Some(5));
-        assert_eq!(manifest.models.iter().find(|m| m.role == "absent").unwrap().installed_bytes, None);
+        assert_eq!(
+            manifest
+                .models
+                .iter()
+                .find(|m| m.role == "present")
+                .unwrap()
+                .installed_bytes,
+            Some(5)
+        );
+        assert_eq!(
+            manifest
+                .models
+                .iter()
+                .find(|m| m.role == "absent")
+                .unwrap()
+                .installed_bytes,
+            None
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 }

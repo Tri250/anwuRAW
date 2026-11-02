@@ -225,11 +225,7 @@ function EditableMetadataItem({ label, value, onSave }: EditableMetadataItemProp
             className="text-xs px-2 py-0.5 min-h-[24px] flex items-center justify-end rounded-sm cursor-text border transition-colors text-right truncate w-full text-text-primary bg-bg-secondary/40 border-surface/50 hover:bg-bg-secondary/80 hover:border-text-tertiary/40"
             data-tooltip={value ? t('editor.metadata.clickToEdit') : t('editor.metadata.emptyClickToAdd')}
           >
-            {value ? (
-              value
-            ) : (
-              <span className="italic text-text-tertiary">{t('editor.metadata.emptyClickToAdd')}</span>
-            )}
+            {value ? value : <span className="italic text-text-tertiary">{t('editor.metadata.emptyClickToAdd')}</span>}
           </div>
         )}
       </div>

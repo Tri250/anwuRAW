@@ -256,7 +256,10 @@ mod tests {
         tracker.set_pinned("job.onnx", true);
         assert!(tracker.due_for_eviction(1_000).is_empty());
         tracker.set_pinned("job.onnx", false);
-        assert_eq!(tracker.due_for_eviction(1_000), vec!["job.onnx".to_string()]);
+        assert_eq!(
+            tracker.due_for_eviction(1_000),
+            vec!["job.onnx".to_string()]
+        );
     }
 
     #[test]
