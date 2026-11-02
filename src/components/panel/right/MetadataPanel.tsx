@@ -676,7 +676,8 @@ export default function MetadataPanel() {
               <div className="bg-surface rounded-xl overflow-hidden">
                 <button
                   onClick={() => setIsAuthorExpanded(!isAuthorExpanded)}
-                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors"
+                  aria-expanded={isAuthorExpanded}
+                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors cursor-pointer"
                 >
                   <Text
                     as="span"
@@ -730,7 +731,8 @@ export default function MetadataPanel() {
               <div className="bg-surface rounded-xl overflow-hidden">
                 <button
                   onClick={() => setIsOrganizationExpanded(!isOrganizationExpanded)}
-                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors"
+                  aria-expanded={isOrganizationExpanded}
+                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors cursor-pointer"
                 >
                   <Text
                     as="span"
@@ -998,7 +1000,8 @@ export default function MetadataPanel() {
               <div className="bg-surface rounded-xl overflow-hidden">
                 <button
                   onClick={() => setIsIptcExpanded(!isIptcExpanded)}
-                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors"
+                  aria-expanded={isIptcExpanded}
+                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors cursor-pointer"
                 >
                   <Text
                     as="span"

@@ -52,7 +52,7 @@ export default function AdjustmentSubSection({ actions, children, id, order, tit
   return (
     <div className="p-1 bg-bg-tertiary rounded-md" style={{ order }}>
       <div
-        className="group/visibility flex items-center gap-2 cursor-pointer select-none"
+        className="group/visibility flex items-center gap-2 cursor-pointer select-none rounded-md transition-colors hover:bg-bg-primary/40"
         onClick={handleToggle}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget) return;
