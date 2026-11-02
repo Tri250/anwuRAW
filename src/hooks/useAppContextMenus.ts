@@ -616,7 +616,9 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
             }, null) as Album;
 
             if (albumObj) {
-              setLibrary({ imageList: imageList.filter((i) => albumObj.images.includes(i.path)) });
+              // Functional update: imageList from the closure may be stale if
+              // other updates landed while awaiting the album save/reload.
+              setLibrary((state) => ({ imageList: state.imageList.filter((i) => albumObj.images.includes(i.path)) }));
             }
           } catch (e) {
             toast.error(t('contextMenus.toasts.failedRemoveImages', { err: e }));
@@ -1430,6 +1432,15 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
                     isDestructive: true,
                     onClick: () => {
                       const newTree = structuredClone(albumTree);
+                      // Collect every album id inside the deleted subtree so the
+                      // open view can be cleared if it points at a removed album.
+                      const deletedAlbumIds = new Set<string>();
+                      const collectAlbumIds = (node: AlbumItem) => {
+                        if (node.id === item.id) deletedAlbumIds.add(node.id);
+                        if (node.type === 'group') (node as AlbumGroup).children.forEach(collectAlbumIds);
+                      };
+                      collectAlbumIds(item);
+
                       const del = (nodes: AlbumItem[]) => {
                         const idx = nodes.findIndex((n) => n.id === item.id);
                         if (idx !== -1) nodes.splice(idx, 1);
@@ -1441,7 +1452,24 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
                       del(newTree);
                       invoke(Invokes.SaveAlbums, { tree: newTree })
                         .then(() => invoke(Invokes.GetAlbums))
-                        .then((sorted: any) => setLibrary({ albumTree: sorted }))
+                        .then((sorted: any) => {
+                          setLibrary({ albumTree: sorted });
+
+                          const { activeAlbumId, setLibrary: setLib } = useLibraryStore.getState();
+                          if (activeAlbumId && deletedAlbumIds.has(activeAlbumId)) {
+                            // Leaving the open view on a deleted album would make
+                            // every subsequent album operation target a dead id.
+                            setLib({
+                              activeAlbumId: null,
+                              currentFolderPath: null,
+                              imageList: [],
+                              libraryActivePath: null,
+                              multiSelectedPaths: [],
+                              selectionAnchorPath: null,
+                            });
+                            props.handleBackToLibrary();
+                          }
+                        })
                         .catch((err) => toast.error(t('contextMenus.toasts.failedDelete', { err })));
                     },
                   },
@@ -1498,6 +1526,10 @@ export function useAppContextMenus(latestProps: UseAppContextMenusProps) {
                 onClick: async () => {
                   try {
                     await transferFiles(JobKind.Copy, copiedFilePaths, currentFolderPath as string);
+                    // Copies change the target folder's contents: refresh the
+                    // tree too so image counts stay in sync (move branch does
+                    // the same below).
+                    props.refreshAllFolderTrees();
                     props.handleLibraryRefresh();
                   } catch (err) {
                     toast.error(t('contextMenus.toasts.failedCopy', { err }));

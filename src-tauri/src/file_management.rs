@@ -3261,22 +3261,38 @@ fn update_metadata_for_paths(
     paths: &[String],
     app_handle: &AppHandle,
     update: impl Fn(&mut ImageMetadata) + Sync,
-) {
+) -> Result<(), String> {
     let settings = load_settings(app_handle.clone()).unwrap_or_default();
     let enable_xmp_sync = settings.enable_xmp_sync.unwrap_or(false);
     let create_xmp_if_missing = settings.create_xmp_if_missing.unwrap_or(false);
 
-    paths.par_iter().for_each(|path| {
-        let (source_path, sidecar_path) = parse_virtual_path(path);
+    // Surface sidecar write failures (read-only disks, permissions, ...) to the
+    // caller instead of silently swallowing them: otherwise the UI would report
+    // success while the rating/flag/color never persisted.
+    let errors: Vec<String> = paths
+        .par_iter()
+        .filter_map(|path| {
+            let (source_path, sidecar_path) = parse_virtual_path(path);
 
-        match crate::exif_processing::update_sidecar(&sidecar_path, &source_path, &update) {
-            Ok(metadata) if enable_xmp_sync => {
-                sync_metadata_to_xmp(&source_path, &metadata, create_xmp_if_missing);
+            match crate::exif_processing::update_sidecar(&sidecar_path, &source_path, &update) {
+                Ok(metadata) if enable_xmp_sync => {
+                    sync_metadata_to_xmp(&source_path, &metadata, create_xmp_if_missing);
+                    None
+                }
+                Ok(_) => None,
+                Err(e) => {
+                    log::error!("Failed to update sidecar for {}: {}", path, e);
+                    Some(format!("{}: {}", path, e))
+                }
             }
-            Ok(_) => {}
-            Err(e) => log::error!("Failed to update sidecar for {}: {}", path, e),
-        }
-    });
+        })
+        .collect();
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join("; "))
+    }
 }
 
 #[tauri::command]
@@ -3298,9 +3314,7 @@ pub fn set_color_label_for_paths(
         if !tags.is_empty() {
             metadata.tags = Some(tags);
         }
-    });
-
-    Ok(())
+    })
 }
 
 #[tauri::command]
@@ -3314,9 +3328,7 @@ pub fn set_rating_for_paths(
         if rating > 0 && metadata.flag == Some(ImageFlag::Reject) {
             metadata.flag = None;
         }
-    });
-
-    Ok(())
+    })
 }
 
 #[tauri::command]
@@ -3327,9 +3339,7 @@ pub fn set_flag_for_paths(
 ) -> Result<(), String> {
     update_metadata_for_paths(&paths, &app_handle, |metadata| {
         metadata.flag = flag;
-    });
-
-    Ok(())
+    })
 }
 
 #[tauri::command]

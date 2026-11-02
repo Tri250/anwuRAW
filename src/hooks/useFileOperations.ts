@@ -238,6 +238,24 @@ export function useFileOperations(
           }
           if (currentFolderPath && isInRenamedFolder(currentFolderPath)) {
             setLibrary({ currentFolderPath: renamePath(currentFolderPath) });
+
+            // The visible list still references the old folder: remap the
+            // active path/selection/editor image so clicking doesn't hit
+            // missing files, then reload the renamed folder's contents.
+            const { libraryActivePath, multiSelectedPaths, selectionAnchorPath } = useLibraryStore.getState();
+            const remap = (p: string) => (isInRenamedFolder(p) ? renamePath(p) : p);
+            setLibrary({
+              libraryActivePath: libraryActivePath ? remap(libraryActivePath) : null,
+              multiSelectedPaths: multiSelectedPaths.map(remap),
+              selectionAnchorPath: selectionAnchorPath ? remap(selectionAnchorPath) : null,
+            });
+
+            const { selectedImage: currentSelected } = useEditorStore.getState();
+            if (currentSelected && isInRenamedFolder(currentSelected.path)) {
+              useEditorStore.getState().setEditor({ selectedImage: { ...currentSelected, path: remap(currentSelected.path) } });
+            }
+
+            await refreshImageList();
           }
 
           const currentPins = appSettings?.pinnedFolders || [];
@@ -245,6 +263,18 @@ export function useFileOperations(
             const newPins = currentPins.map(renamePath).sort((a: string, b: string) => a.localeCompare(b));
             newAppSettings.pinnedFolders = newPins;
             settingsChanged = true;
+          }
+
+          // Stacks persist in localStorage, so folder renames must remap their
+          // paths (the backend only fixes albums via sync_album_path_changes).
+          const stackRenames: Record<string, string> = {};
+          for (const stack of useStacksStore.getState().stacks) {
+            for (const p of stack.paths) {
+              if (isInRenamedFolder(p)) stackRenames[p] = renamePath(p);
+            }
+          }
+          if (Object.keys(stackRenames).length > 0) {
+            useStacksStore.getState().renamePathsInStacks(stackRenames);
           }
 
           if (settingsChanged) {
@@ -257,7 +287,7 @@ export function useFileOperations(
         }
       }
     },
-    [refreshAllFolderTrees],
+    [refreshAllFolderTrees, refreshImageList],
   );
 
   const handleSaveRename = useCallback(
@@ -272,6 +302,16 @@ export function useFileOperations(
             nameTemplate,
             paths: renameTargetPaths,
           });
+
+          // Stacks persist in localStorage: remap renamed paths so stack
+          // references stay valid (albums are fixed by the backend).
+          const stackRenames: Record<string, string> = {};
+          renameTargetPaths.forEach((oldPath, index) => {
+            if (newPaths[index] && newPaths[index] !== oldPath) stackRenames[oldPath] = newPaths[index];
+          });
+          if (Object.keys(stackRenames).length > 0) {
+            useStacksStore.getState().renamePathsInStacks(stackRenames);
+          }
 
           await refreshImageList();
 
@@ -434,8 +474,10 @@ export function useFileOperations(
           await transferFiles(JobKind.Move, copiedFilePaths, currentFolderPath);
           setProcess({ copiedFilePaths: [] });
           setLibrary({ multiSelectedPaths: [] });
-          await refreshAllFolderTrees();
         }
+        // Both copy and move change folder contents: refresh the tree so
+        // image counts / ordering stay in sync.
+        await refreshAllFolderTrees();
         await refreshImageList();
       } catch (err) {
         toast.error(`Failed to ${mode} files: ${err}`);

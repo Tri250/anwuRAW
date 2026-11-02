@@ -16,6 +16,7 @@ interface StacksState {
   toggleExpanded: (stackId: string) => void;
   setExpanded: (stackId: string, expanded: boolean) => void;
   removePathsFromStacks: (paths: string[]) => void;
+  renamePathsInStacks: (renames: Record<string, string>) => void;
 }
 
 const STACKS_KEY = 'stacks.v1';
@@ -102,6 +103,18 @@ export const useStacksStore = create<StacksState>((set, get) => ({
         ...stack,
         paths: stack.paths.filter((p) => !toRemove.has(p)),
       }));
+      return { stacks: pruneStacks(stacks) };
+    });
+    persist(get());
+  },
+
+  // Renames (files or folders) keep stack references valid: stacks persist in
+  // localStorage, so they must follow the same path transitions the backend
+  // applies to albums via sync_album_path_changes.
+  renamePathsInStacks: (renames) => {
+    const rename = (path: string) => renames[path] ?? path;
+    set((state) => {
+      const stacks = state.stacks.map((stack) => ({ ...stack, paths: stack.paths.map(rename) }));
       return { stacks: pruneStacks(stacks) };
     });
     persist(get());

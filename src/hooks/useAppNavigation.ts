@@ -652,7 +652,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         handleSelectAlbum(target.path, target.albumName!, target.images!, false, true);
       }
     }
-  }, [handleSelectSubfolder, handleSelectAlbum]);
+  }, [handleSelectSubfolder, handleSelectSmartAlbum, handleSelectAlbum]);
 
   const handleNavForward = useCallback(async () => {
     const { navHistory, navIndex, setLibrary } = useLibraryStore.getState();
@@ -670,7 +670,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         handleSelectAlbum(target.path, target.albumName!, target.images!, false, true);
       }
     }
-  }, [handleSelectSubfolder, handleSelectAlbum]);
+  }, [handleSelectSubfolder, handleSelectSmartAlbum, handleSelectAlbum]);
 
   const handleOpenFolder = useCallback(async () => {
     const { osPlatform, appSettings, handleSettingsChange } = useSettingsStore.getState();
