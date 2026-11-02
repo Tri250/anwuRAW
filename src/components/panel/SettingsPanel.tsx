@@ -2356,7 +2356,7 @@ export default function SettingsPanel({
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                                 className="overflow-hidden"
                               >
                                 <div className="px-4 pb-4 pt-4 border-t border-surface/50 space-y-8">
