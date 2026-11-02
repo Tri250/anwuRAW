@@ -1293,7 +1293,9 @@
       "syncZoomAndPan": "Sync Zoom and Pan",
       "tags": "Tags",
       "toggleFit": "Toggle 1:1 / Fit",
-      "vc": "VC"
+      "vc": "VC",
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out"
     },
     "delete": {
       "confirmTitle": "Delete Image",
@@ -1314,6 +1316,7 @@
       "undo": "Undo"
     },
     "filters": {
+      "clearFilters": "Clear filters",
       "edited": {
         "all": "All Images",
         "editedOnly": "Edited Only",

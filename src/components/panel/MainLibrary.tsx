@@ -149,7 +149,7 @@ function DisplayModeSwitch({ displayMode, setDisplayMode, t }: DisplayModeSwitch
             <button
               key={opt.id}
               onClick={() => setDisplayMode(opt.id)}
-              className={`relative z-10 flex-1 h-full flex items-center justify-center rounded-md transition-colors duration-200 outline-none focus:outline-none ${
+              className={`relative z-10 flex-1 h-full flex items-center justify-center rounded-md transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer ${
                 isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary'
               }`}
               data-tooltip={opt.tooltip}
@@ -199,6 +199,22 @@ export default function MainLibrary(props: MainLibraryProps) {
 
   const searchCriteria = useLibraryStore((state) => state.searchCriteria);
   const setLibrary = useLibraryStore((state) => state.setLibrary);
+  const setFilterCriteria = useLibraryStore((state) => state.setFilterCriteria);
+  const setSearchCriteria = useLibraryStore((state) => state.setSearchCriteria);
+
+  const clearAllFilters = () => {
+    setFilterCriteria({
+      colors: [],
+      rating: 0,
+      rawStatus: RawStatus.All,
+      editedStatus: EditedStatus.All,
+      flagStatus: FlagStatus.All,
+    });
+  };
+
+  const clearAllSearch = () => {
+    setSearchCriteria({ tags: [], text: '', mode: 'OR' });
+  };
 
   const translatedRatingFilterOptions = useMemo(
     () => [
@@ -599,7 +615,7 @@ export default function MainLibrary(props: MainLibraryProps) {
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <button
-                className="flex items-center justify-center w-11 h-11 self-center bg-surface rounded-lg border border-border-color/20 text-text-secondary hover:text-text-primary transition-colors"
+                className="flex items-center justify-center w-11 h-11 self-center bg-surface rounded-lg border border-border-color/20 text-text-secondary hover:text-text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-text-secondary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
                 data-tooltip={t('survey.title')}
                 disabled={props.imageList.length === 0}
                 onClick={() =>
@@ -616,7 +632,7 @@ export default function MainLibrary(props: MainLibraryProps) {
                 <Expand className="w-5 h-5" />
               </button>
               <button
-                className="flex items-center justify-center w-11 h-11 self-center bg-surface rounded-lg border border-border-color/20 text-text-secondary hover:text-text-primary transition-colors"
+                className="flex items-center justify-center w-11 h-11 self-center bg-surface rounded-lg border border-border-color/20 text-text-secondary hover:text-text-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-text-secondary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
                 data-tooltip={t('survey.compareEntry')}
                 disabled={props.imageList.length < 2}
                 onClick={() =>
@@ -739,11 +755,29 @@ export default function MainLibrary(props: MainLibraryProps) {
             {t('library.search.noResultsDesc')}
             {!props.appSettings?.enableAiTagging && t('library.search.noResultsAiHint')}
           </Text>
+          <Button
+            className="mt-6 bg-surface text-text-primary shadow-none"
+            onClick={clearAllSearch}
+            size="sm"
+            variant="ghost"
+          >
+            <X size={14} className="mr-1" />
+            {t('library.header.search.tooltipClearSearch')}
+          </Button>
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center" onContextMenu={props.onEmptyAreaContextMenu}>
           <SlidersHorizontal className="h-12 w-12 mb-4 text-text-secondary" />
-          <Text>{t('library.filters.noMatch')}</Text>
+          <Text color={TextColors.secondary}>{t('library.filters.noMatch')}</Text>
+          <Button
+            className="mt-4 bg-surface text-text-primary shadow-none"
+            onClick={clearAllFilters}
+            size="sm"
+            variant="ghost"
+          >
+            <SlidersHorizontal size={14} className="mr-1" />
+            {t('library.filters.clearFilters')}
+          </Button>
         </div>
       )}
       {props.isAndroid && (

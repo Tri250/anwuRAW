@@ -556,7 +556,7 @@ function CullingPreview({
               </Text>
               <button
                 onClick={() => setShowInfoBar(false)}
-                className="text-white/50 hover:text-white transition-colors"
+                className="text-white/50 hover:text-white transition-colors cursor-pointer"
               >
                 <X size={14} />
               </button>
@@ -655,7 +655,7 @@ function CullingPreview({
               </Text>
               <button
                 onClick={() => setShowRateBar(false)}
-                className="text-white/50 hover:text-white transition-colors"
+                className="text-white/50 hover:text-white transition-colors cursor-pointer"
               >
                 <X size={14} />
               </button>
@@ -673,7 +673,7 @@ function CullingPreview({
                   <button
                     key={star}
                     onClick={() => handleRate(star, [image.path])}
-                    className="focus:outline-hidden transition-transform active:scale-95 hover:scale-110"
+                    className="focus:outline-hidden transition-transform active:scale-95 hover:scale-110 cursor-pointer"
                   >
                     <StarIcon
                       size={18}
@@ -706,7 +706,7 @@ function CullingPreview({
                 <button
                   onClick={() => handleSetColorLabel(null, [image.path])}
                   className={clsx(
-                    'w-5 h-5 rounded-full flex items-center justify-center transition-all hover:scale-110',
+                    'w-5 h-5 rounded-full flex items-center justify-center transition-all hover:scale-110 cursor-pointer',
                     currentColor === null
                       ? 'ring-2 ring-white/50 ring-offset-1 ring-offset-bg-primary'
                       : 'opacity-50 hover:opacity-100 hover:ring-2 hover:ring-white/30',
@@ -720,7 +720,7 @@ function CullingPreview({
                     key={color.name}
                     onClick={() => handleSetColorLabel(color.name, [image.path])}
                     className={clsx(
-                      'w-5 h-5 rounded-full transition-all hover:scale-110',
+                      'w-5 h-5 rounded-full transition-all hover:scale-110 cursor-pointer',
                       currentColor === color.name
                         ? 'ring-2 ring-white ring-offset-1 ring-offset-bg-primary'
                         : 'hover:ring-2 hover:ring-white/30',
@@ -778,7 +778,7 @@ function CullingPreview({
                 <button
                   onClick={() => handleAddTag(tagInputValue)}
                   disabled={!tagInputValue.trim()}
-                  className="text-white/50 hover:text-white disabled:opacity-30 transition-colors"
+                  className="text-white/50 hover:text-white disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-not-allowed"
                 >
                   <Plus size={14} />
                 </button>
@@ -862,7 +862,7 @@ function CullingPreview({
             e.stopPropagation();
             onImageDoubleClick(image.path);
           }}
-          className="p-1.5 text-white/60 hover:bg-white/10 hover:text-white rounded-full transition-colors shrink-0"
+          className="p-1.5 text-white/60 hover:bg-white/10 hover:text-white rounded-full transition-colors shrink-0 cursor-pointer"
           data-tooltip={t('library.culling.editImage')}
         >
           <SquarePen size={14} />
@@ -877,7 +877,7 @@ function CullingPreview({
             });
           }}
           className={clsx(
-            'p-1.5 rounded-full transition-colors shrink-0',
+            'p-1.5 rounded-full transition-colors shrink-0 cursor-pointer',
             showInfoBar ? 'bg-accent text-button-text' : 'text-white/60 hover:bg-white/10 hover:text-white',
           )}
           data-tooltip={t('library.culling.metadata')}
@@ -894,7 +894,7 @@ function CullingPreview({
             });
           }}
           className={clsx(
-            'p-1.5 rounded-full transition-colors shrink-0',
+            'p-1.5 rounded-full transition-colors shrink-0 cursor-pointer',
             showRateBar ? 'bg-accent text-button-text' : 'text-white/60 hover:bg-white/10 hover:text-white',
           )}
           data-tooltip={t('library.culling.rateAndLabel')}
@@ -907,7 +907,7 @@ function CullingPreview({
         <button
           onClick={toggleSync}
           className={clsx(
-            'p-1.5 rounded-full transition-colors shrink-0',
+            'p-1.5 rounded-full transition-colors shrink-0 cursor-pointer',
             syncViewport.isActive ? 'bg-accent text-button-text' : 'text-white/60 hover:bg-white/10 hover:text-white',
           )}
           data-tooltip={t('library.culling.syncZoomAndPan')}
@@ -917,7 +917,8 @@ function CullingPreview({
 
         <button
           onClick={handleZoomOut}
-          className="p-1.5 text-white/60 hover:bg-white/10 hover:text-white rounded-full transition-colors shrink-0"
+          className="p-1.5 text-white/60 hover:bg-white/10 hover:text-white rounded-full transition-colors shrink-0 cursor-pointer"
+          data-tooltip={t('library.culling.zoomOut')}
         >
           <ZoomOut size={16} />
         </button>
@@ -932,7 +933,8 @@ function CullingPreview({
 
         <button
           onClick={handleZoomIn}
-          className="p-1.5 text-white/60 hover:bg-white/10 hover:text-white rounded-full transition-colors shrink-0"
+          className="p-1.5 text-white/60 hover:bg-white/10 hover:text-white rounded-full transition-colors shrink-0 cursor-pointer"
+          data-tooltip={t('library.culling.zoomIn')}
         >
           <ZoomIn size={16} />
         </button>

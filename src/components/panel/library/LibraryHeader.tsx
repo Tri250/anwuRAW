@@ -159,7 +159,7 @@ const SegmentedSwitch = ({ options, value, onChange }: SegmentedSwitchProps) => 
             key={option.id}
             onClick={() => onChange(option.id)}
             className={clsx(
-              'relative flex-1 flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-md transition-colors truncate',
+              'relative flex-1 flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-md transition-colors truncate cursor-pointer',
               {
                 'text-text-secondary hover:text-text-primary': value !== option.id,
                 'text-text-primary font-semibold': value === option.id,
@@ -217,7 +217,7 @@ const RatingSegmentedSwitch = ({ rating, onChange, ratingFilterOptions, operator
           <button
             onClick={() => onChange(0)}
             className={clsx(
-              'relative flex-1 flex items-center justify-center px-1 py-1.5 text-xs rounded-md transition-colors truncate',
+              'relative flex-1 flex items-center justify-center px-1 py-1.5 text-xs rounded-md transition-colors truncate cursor-pointer',
               activeIndex === 0 ? 'text-text-primary font-semibold' : 'text-text-secondary hover:text-text-primary',
             )}
           >
@@ -227,7 +227,7 @@ const RatingSegmentedSwitch = ({ rating, onChange, ratingFilterOptions, operator
           <button
             onClick={() => onChange(-1)}
             className={clsx(
-              'relative flex-1 flex items-center justify-center px-1 py-1.5 text-xs rounded-md transition-colors truncate',
+              'relative flex-1 flex items-center justify-center px-1 py-1.5 text-xs rounded-md transition-colors truncate cursor-pointer',
               activeIndex === 1 ? 'text-text-primary font-semibold' : 'text-text-secondary hover:text-text-primary',
             )}
           >
@@ -256,7 +256,7 @@ const RatingSegmentedSwitch = ({ rating, onChange, ratingFilterOptions, operator
                       e.stopPropagation();
                       onChange(rating === starValue ? 0 : starValue);
                     }}
-                    className="focus:outline-hidden transition-transform hover:scale-110 flex items-center justify-center p-0.5"
+                    className="focus:outline-hidden transition-transform hover:scale-110 flex items-center justify-center p-0.5 cursor-pointer"
                   >
                     <StarIcon
                       size={14}
@@ -274,7 +274,7 @@ const RatingSegmentedSwitch = ({ rating, onChange, ratingFilterOptions, operator
       <button
         onClick={() => onOperatorChange(op.next)}
         data-tooltip={t(op.labelKey)}
-        className="w-8 shrink-0 flex items-center justify-center rounded-md bg-bg-primary text-sm font-semibold text-text-primary hover:bg-card-active transition-colors"
+        className="w-8 shrink-0 flex items-center justify-center rounded-md bg-bg-primary text-sm font-semibold text-text-primary hover:bg-card-active transition-colors cursor-pointer"
       >
         {op.symbol}
       </button>
@@ -338,7 +338,18 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if ((e.key === ',' || e.key === 'Enter') && text.trim()) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (text) {
+        setSearchCriteria((prev) => ({ ...prev, text: '' }));
+      } else if (tags.length > 0) {
+        setSearchCriteria({ tags: [], text: '', mode: 'OR' });
+      } else {
+        setIsSearchActive(false);
+        inputRef.current?.blur();
+      }
+    } else if ((e.key === ',' || e.key === 'Enter') && text.trim()) {
       e.preventDefault();
       setSearchCriteria((prev) => ({
         ...prev,
@@ -404,7 +415,7 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
       onClick={() => inputRef.current?.focus()}
     >
       <button
-        className="h-12 w-12 flex items-center justify-center text-text-primary z-10 shrink-0 bg-surface outline-hidden"
+        className="h-12 w-12 flex items-center justify-center text-text-primary z-10 shrink-0 bg-surface outline-hidden cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
           if (!isActive) setIsSearchActive(true);
@@ -477,7 +488,7 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
           <button
             onMouseDown={(e) => e.preventDefault()}
             onClick={toggleMode}
-            className="p-1.5 rounded-md hover:bg-bg-primary w-10 shrink-0 flex items-center justify-center outline-hidden"
+            className="p-1.5 rounded-md hover:bg-bg-primary w-10 shrink-0 flex items-center justify-center outline-hidden cursor-pointer"
             data-tooltip={mode === 'AND' ? t('library.header.search.matchAll') : t('library.header.search.matchAny')}
           >
             <Text variant={TextVariants.small} color={TextColors.primary} weight={TextWeights.semibold}>
@@ -495,7 +506,7 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
           <button
             onMouseDown={(e) => e.preventDefault()}
             onClick={clearSearch}
-            className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-primary shrink-0 outline-hidden"
+            className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-primary shrink-0 outline-hidden cursor-pointer"
             data-tooltip={t('library.header.search.tooltipClearSearch')}
           >
             <X className="h-5 w-5" />
@@ -621,7 +632,7 @@ export function ViewOptionsDropdown({
     <DropdownMenu
       buttonContent={
         <>
-          <SlidersHorizontal className="w-8 h-8" />
+          <SlidersHorizontal className="w-5 h-5" />
           {isFilterActive && <div className="absolute -top-1 -right-1 bg-accent rounded-full w-3 h-3" />}
         </>
       }
@@ -850,7 +861,7 @@ export function ViewOptionsDropdown({
                     key={color.name}
                     data-tooltip={title}
                     onClick={(e: any) => handleColorClick(color.name, e)}
-                    className="w-5 h-5 rounded-full focus:outline-hidden focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface transition-transform hover:scale-110"
+                    className="w-5 h-5 rounded-full focus:outline-hidden focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface transition-transform hover:scale-110 cursor-pointer"
                     role="menuitem"
                   >
                     <div className="relative w-full h-full">

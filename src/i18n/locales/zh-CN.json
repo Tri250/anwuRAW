@@ -1289,7 +1289,9 @@
       "syncZoomAndPan": "同步缩放和平移",
       "tags": "标签",
       "toggleFit": "切换 1:1 / 适应",
-      "vc": "VC"
+      "vc": "VC",
+      "zoomIn": "放大",
+      "zoomOut": "缩小"
     },
     "delete": {
       "confirmTitle": "删除图像",
@@ -1309,6 +1311,7 @@
       "undo": "撤销"
     },
     "filters": {
+      "clearFilters": "清除筛选",
       "edited": {
         "all": "所有图像",
         "editedOnly": "仅已编辑",

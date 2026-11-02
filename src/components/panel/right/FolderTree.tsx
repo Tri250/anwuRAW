@@ -220,7 +220,7 @@ function FolderOptionsMenu({
     <div className="relative" ref={menuRef}>
       <button
         className={clsx(
-          'flex items-center justify-center shrink-0 w-9 h-9 bg-surface rounded-md hover:bg-card-active transition-colors text-text-secondary hover:text-text-primary',
+          'flex items-center justify-center shrink-0 w-9 h-9 bg-surface rounded-md hover:bg-card-active transition-colors text-text-secondary hover:text-text-primary cursor-pointer',
           isOpen && 'bg-card-active',
         )}
         onClick={() => setIsOpen(!isOpen)}
@@ -264,7 +264,7 @@ function FolderOptionsMenu({
                       ? t('library.header.viewOptions.sortDescending')
                       : t('library.header.viewOptions.sortAscending')
                   }
-                  className="p-1 bg-transparent border-none text-text-secondary hover:text-text-primary transition-colors"
+                  className="p-1 bg-transparent border-none text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
                 >
                   {sort.order === SortDirection.Ascending ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </button>
@@ -275,7 +275,7 @@ function FolderOptionsMenu({
                 return (
                   <button
                     key={opt.key}
-                    className="w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 justify-between transition-colors duration-150 text-text-primary hover:bg-bg-primary"
+                    className="w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 justify-between transition-colors duration-150 text-text-primary hover:bg-bg-primary cursor-pointer"
                     onClick={() => {
                       if (sort.key !== opt.key) {
                         onChange({ key: opt.key as any, order: sort.order });
@@ -293,7 +293,7 @@ function FolderOptionsMenu({
               })}
               <div className="h-px bg-text-secondary/20 my-1 mx-2" />
               <button
-                className="w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 justify-between transition-colors duration-150 text-text-primary hover:bg-bg-primary"
+                className="w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 justify-between transition-colors duration-150 text-text-primary hover:bg-bg-primary cursor-pointer"
                 onClick={() => {
                   onAddFolder();
                   setIsOpen(false);
@@ -307,7 +307,7 @@ function FolderOptionsMenu({
               </button>
 
               <button
-                className="w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 justify-between transition-colors duration-150 text-text-primary hover:bg-bg-primary"
+                className="w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 justify-between transition-colors duration-150 text-text-primary hover:bg-bg-primary cursor-pointer"
                 onClick={() => {
                   onRefresh();
                   setIsOpen(false);
@@ -952,7 +952,7 @@ export default function FolderTree({
         <Text variant={TextVariants.title}>{t('library.folders.sourcesTitle')}</Text>
         <div className="flex items-center gap-1">
           <button
-            className="p-1.5 rounded-full hover:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-text-secondary hover:text-text-primary"
+            className="p-1.5 rounded-full hover:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-text-secondary hover:text-text-primary cursor-pointer"
             disabled={navIndex <= 0}
             onClick={onNavBack}
             data-tooltip={t('library.folders.tooltips.navBack')}
@@ -960,7 +960,7 @@ export default function FolderTree({
             <ArrowLeft size={16} />
           </button>
           <button
-            className="p-1.5 rounded-full hover:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-text-secondary hover:text-text-primary"
+            className="p-1.5 rounded-full hover:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-text-secondary hover:text-text-primary cursor-pointer"
             disabled={navIndex >= navHistory.length - 1}
             onClick={onNavForward}
             data-tooltip={t('library.folders.tooltips.navForward')}
@@ -978,12 +978,20 @@ export default function FolderTree({
               placeholder={t('library.folders.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 bg-surface border border-transparent rounded-md pl-9 pr-8 py-2 text-sm focus:outline-hidden truncate"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSearchQuery('');
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
+              className="w-full h-9 bg-surface border border-transparent rounded-md pl-9 pr-8 py-2 text-sm focus:outline-hidden focus:border-accent/50 transition-colors truncate"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-card-active"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-card-active cursor-pointer"
                 data-tooltip={t('library.folders.tooltips.clearSearch')}
               >
                 <X size={16} className="text-text-secondary" />
@@ -1137,7 +1145,7 @@ export default function FolderTree({
                   />
                   {!isSearching && (
                     <button
-                      className="p-1.5 rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors shrink-0"
+                      className="p-1.5 rounded-md text-text-secondary hover:bg-surface hover:text-text-primary transition-colors shrink-0 cursor-pointer"
                       data-tooltip={t('contextMenus.smartAlbums.new')}
                       onClick={(e) => {
                         e.stopPropagation();

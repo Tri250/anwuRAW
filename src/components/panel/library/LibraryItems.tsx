@@ -302,7 +302,7 @@ const ThumbnailComponent = ({
         {stackBadge && !isCloudPlaceholder && (
           <button
             type="button"
-            className="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded-full h-5 px-1.5 bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
+            className="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded-full h-5 px-1.5 bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors cursor-pointer"
             data-tooltip={t(stackBadge.isExpanded ? 'library.items.collapseStack' : 'library.items.expandStack', {
               count: stackBadge.count,
             })}
@@ -722,7 +722,7 @@ const ListItemComponent = ({
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`flex items-center w-full h-full cursor-pointer transition-all duration-150 ${borderClass} ${roundingClass} ${stateClass} ${isDragging ? 'opacity-50 ring-2 ring-accent z-50' : ''}`}
+      className={`flex items-center w-full h-full cursor-pointer transition-all duration-150 ${borderClass} ${roundingClass} ${stateClass} group ${isDragging ? 'opacity-50 ring-2 ring-accent z-50' : ''}`}
       onClick={(e: any) => {
         e.stopPropagation();
         if (selectionModeActive) {
@@ -767,8 +767,8 @@ const ListItemComponent = ({
       >
         <div
           className={clsx(
-            'w-full h-full relative overflow-hidden rounded-sm bg-surface flex items-center justify-center',
-            isRejected && 'opacity-40',
+            'w-full h-full relative overflow-hidden rounded-sm bg-surface flex items-center justify-center transition-opacity duration-150',
+            isRejected && 'opacity-40 group-hover:opacity-100',
           )}
         >
           {layers.length > 0 && (

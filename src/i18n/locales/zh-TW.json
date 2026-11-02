@@ -1257,7 +1257,9 @@
       "syncZoomAndPan": "同步縮放與平移",
       "tags": "標籤",
       "toggleFit": "切換 1:1 / 適應",
-      "vc": "VC"
+      "vc": "VC",
+      "zoomIn": "放大",
+      "zoomOut": "縮小"
     },
     "delete": {
       "confirmTitle": "Delete Image",
@@ -1276,6 +1278,7 @@
       "undo": "復原"
     },
     "filters": {
+      "clearFilters": "清除篩選",
       "edited": {
         "all": "所有影像",
         "editedOnly": "僅已編輯",
