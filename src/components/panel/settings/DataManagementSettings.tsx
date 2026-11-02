@@ -126,7 +126,7 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled || busy}
       className={clsx(
-        'flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium shrink-0 transition-colors',
+        'flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium shrink-0 transition-colors cursor-pointer',
         'text-text-secondary bg-bg-primary border border-border-color',
         'disabled:opacity-40 disabled:cursor-not-allowed',
         danger
@@ -496,7 +496,7 @@ export default function DataManagementSettings({
             onClick={refreshUsage}
             disabled={isRefreshing}
             data-tooltip={t('settings.data.refresh')}
-            className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-colors"
+            className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw size={14} className={clsx(isRefreshing && 'animate-spin')} />
           </button>
@@ -586,7 +586,7 @@ export default function DataManagementSettings({
                             data-tooltip={t('settings.data.delete')}
                             disabled={busy.models}
                             onClick={() => deleteModel(model)}
-                            className="p-1 rounded-md text-text-secondary hover:text-red-400 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            className="p-1 rounded-md text-text-secondary hover:text-red-400 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                           >
                             <Trash2 size={12} />
                           </button>

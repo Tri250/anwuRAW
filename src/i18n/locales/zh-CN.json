@@ -2479,6 +2479,7 @@
     "watchedFolders": {
       "add": "添加文件夹",
       "desc": "自动导入这些文件夹中出现的新图像。",
+      "duplicate": "文件夹已在监视列表中：{{path}}",
       "empty": "尚无监视的文件夹。",
       "enabled": "启用",
       "imported_other": "已从 {{folder}} 导入 {{count}} 张新图像",

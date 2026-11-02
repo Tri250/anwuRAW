@@ -34,6 +34,7 @@ import { check, Update, DownloadEvent } from '@tauri-apps/plugin-updater';
 import { getVersion } from '@tauri-apps/api/app';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import clsx from 'clsx';
+import { toast } from 'react-toastify';
 import { ClerkProvider, SignIn, useClerk } from '@clerk/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useCloudStore } from '../../store/useCloudStore';
@@ -187,7 +188,7 @@ const KeybindRow = ({
       <Text variant={TextVariants.label}>{t(def.description as any)}</Text>
       <div className="flex items-center gap-1">
         {isConflicting && <span className="text-yellow-400 text-xs">⚠</span>}
-        <button onClick={() => onStartRecording(def.action)} className="flex items-center gap-1 flex-wrap shrink-0">
+        <button onClick={() => onStartRecording(def.action)} className="flex items-center gap-1 flex-wrap shrink-0 cursor-pointer">
           {recording ? (
             <Text
               as="kbd"
@@ -402,7 +403,7 @@ const CloudDashboard = () => {
           {t('settings.processing.ai.cloud.signedOut.upgradeDesc')}{' '}
           <button
             onClick={() => open('https://www.getrapidraw.com/cloud')}
-            className="text-accent hover:underline focus:outline-none"
+            className="text-accent hover:underline focus:outline-none cursor-pointer"
           >
             {t('settings.processing.ai.cloud.signedOut.upgradeBtn')}
           </button>
@@ -435,7 +436,7 @@ const CanvasInputModeSwitch = ({ mode, onModeChange }: CanvasInputModeSwitchProp
           key={item.id}
           onClick={() => onModeChange(item.id as 'mouse' | 'trackpad')}
           className={clsx(
-            'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors',
+            'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors cursor-pointer',
             {
               'text-text-primary hover:bg-surface': mode !== item.id,
               'text-button-text': mode === item.id,
@@ -636,7 +637,14 @@ function UpdaterSettings({
         description={t('settings.updater.desc')}
       >
         <Button onClick={runCheck} disabled={isBusy}>
-          {status === 'checking' ? t('settings.updater.checking') : t('settings.updater.checkNow')}
+          {status === 'checking' ? (
+            <>
+              <Loader2 size={14} className="mr-1 animate-spin" />
+              {t('settings.updater.checking')}
+            </>
+          ) : (
+            t('settings.updater.checkNow')
+          )}
         </Button>
       </SettingItem>
 
@@ -759,7 +767,10 @@ function WatchedFoldersSettings({
         title: t('settings.watchedFolders.add'),
       });
       if (!selected || typeof selected !== 'string') return;
-      if (folders.some((folder) => folder.path === selected)) return;
+      if (folders.some((folder) => folder.path === selected)) {
+        toast.info(t('settings.watchedFolders.duplicate', { path: selected }));
+        return;
+      }
       await persistFolders([...folders, { path: selected, enabled: true }]);
     } catch (error) {
       console.error('Failed to add watched folder:', error);
@@ -805,7 +816,7 @@ function WatchedFoldersSettings({
                 }
               />
               <button
-                className="p-1.5 rounded-md text-text-secondary hover:text-red-400 hover:bg-surface transition-colors"
+                className="p-1.5 rounded-md text-text-secondary hover:text-red-400 hover:bg-surface transition-colors cursor-pointer"
                 onClick={() => persistFolders(folders.filter((f) => f.path !== folder.path))}
                 data-tooltip={t('settings.watchedFolders.remove')}
               >
@@ -1280,7 +1291,7 @@ export default function SettingsPanel({
                     categoryScrollRef.current?.scrollTo({ top: 0 });
                   }}
                   className={clsx(
-                    'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors',
+                    'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors cursor-pointer',
                     {
                       'text-text-primary hover:bg-surface': activeCategory !== category.id,
                       'text-button-text': activeCategory === category.id,
@@ -2776,7 +2787,7 @@ export default function SettingsPanel({
                         />
                         {isKeybindSearchActive && (
                           <button
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary hover:text-text-primary transition-colors"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
                             data-tooltip={t('settings.data.clear')}
                             onClick={() => setKeybindSearch('')}
                           >

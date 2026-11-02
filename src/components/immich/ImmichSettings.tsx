@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, FileLock, Lock, Wifi, WifiOff } from 'lucide-react';
+import { Check, FileLock, Loader2, Lock, Wifi, WifiOff } from 'lucide-react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Text from '../ui/Text';
@@ -142,7 +142,14 @@ export default function ImmichSettings() {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <Button className="min-w-32" onClick={testConnection} disabled={isBusy || !hasCredentials}>
-              {isBusy ? t('immich.settings.working') : t('immich.settings.test')}
+              {isBusy ? (
+                <>
+                  <Loader2 size={14} className="mr-1 animate-spin" />
+                  {t('immich.settings.working')}
+                </>
+              ) : (
+                t('immich.settings.test')
+              )}
             </Button>
             <Button className="min-w-32" onClick={saveConnection} disabled={isBusy || !connectionChanged}>
               {t('immich.settings.save')}

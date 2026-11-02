@@ -2488,6 +2488,7 @@
     "watchedFolders": {
       "add": "Add Folder",
       "desc": "Automatically import new images that appear in these folders.",
+      "duplicate": "Folder is already being watched: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
       "imported": "{{count}} new images imported from {{folder}}",
