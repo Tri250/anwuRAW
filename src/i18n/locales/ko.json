@@ -396,6 +396,7 @@
       "dehaze": "안개 제거",
       "denoiseAmount": "노이즈 감소량",
       "denoiseDetail": "디테일",
+      "depthStrength": "깊이 강도",
       "lumaNr": "휘도 노이즈",
       "maskFailed": "인식 실패",
       "modelDownloading": "AI 모델 다운로드 중",
@@ -403,6 +404,7 @@
       "skyStrength": "하늘 강도",
       "structure": "구조",
       "subjectStrength": "피사체 강도",
+      "textStrength": "텍스트 강도",
       "texture": "질감",
       "tiles": {
         "auto": "자동 톤",

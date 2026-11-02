@@ -419,6 +419,7 @@
       "dehaze": "Reduzir névoa",
       "denoiseAmount": "Redução de ruído",
       "denoiseDetail": "Detalhe",
+      "depthStrength": "Intensidade de profundidade",
       "lumaNr": "Ruído de luminância",
       "maskFailed": "Falha no reconhecimento",
       "modelDownloading": "Baixando modelo de IA",
@@ -426,6 +427,7 @@
       "skyStrength": "Intensidade do céu",
       "structure": "Estrutura",
       "subjectStrength": "Intensidade do sujeito",
+      "textStrength": "Intensidade do texto",
       "texture": "Textura",
       "tiles": {
         "auto": "Tom auto",

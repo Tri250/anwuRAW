@@ -439,6 +439,7 @@
       "dehaze": "Odstranit opar",
       "denoiseAmount": "Míra odšumění",
       "denoiseDetail": "Detail",
+      "depthStrength": "Intenzita hloubky",
       "lumaNr": "Šum jasnosti",
       "maskFailed": "Rozpoznání selhalo",
       "modelDownloading": "Stahuji model AI",
@@ -446,6 +447,7 @@
       "skyStrength": "Intenzita oblohy",
       "structure": "Struktura",
       "subjectStrength": "Intenzita objektu",
+      "textStrength": "Intenzita textu",
       "texture": "Textura",
       "tiles": {
         "auto": "Automatický tón",

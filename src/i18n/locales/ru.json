@@ -439,6 +439,7 @@
       "dehaze": "Убрать дымку",
       "denoiseAmount": "Шумоподавление",
       "denoiseDetail": "Детализация",
+      "depthStrength": "Интенсивность глубины",
       "lumaNr": "Шум яркости",
       "maskFailed": "Ошибка распознавания",
       "modelDownloading": "Загрузка ИИ-модели",
@@ -446,6 +447,7 @@
       "skyStrength": "Сила неба",
       "structure": "Структура",
       "subjectStrength": "Сила объекта",
+      "textStrength": "Интенсивность текста",
       "texture": "Текстура",
       "tiles": {
         "auto": "Автотон",

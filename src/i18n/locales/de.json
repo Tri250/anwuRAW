@@ -399,6 +399,7 @@
       "dehaze": "Dunst entfernen",
       "denoiseAmount": "Rauschentfernung",
       "denoiseDetail": "Detail",
+      "depthStrength": "Tiefenstärke",
       "lumaNr": "Luminanz-Rauschen",
       "maskFailed": "Erkennung fehlgeschlagen",
       "modelDownloading": "KI-Modell wird geladen",
@@ -406,6 +407,7 @@
       "skyStrength": "Himmelstärke",
       "structure": "Struktur",
       "subjectStrength": "Motivstärke",
+      "textStrength": "Textstärke",
       "texture": "Textur",
       "tiles": {
         "auto": "Auto-Ton",

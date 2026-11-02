@@ -396,6 +396,7 @@
       "dehaze": "去霧",
       "denoiseAmount": "降噪強度",
       "denoiseDetail": "降噪細節",
+      "depthStrength": "深度強度",
       "lumaNr": "明度降噪",
       "maskFailed": "識別失敗",
       "modelDownloading": "AI 模型下載中",
@@ -403,6 +404,7 @@
       "skyStrength": "天空強度",
       "structure": "結構",
       "subjectStrength": "主體強度",
+      "textStrength": "文字強度",
       "texture": "紋理",
       "tiles": {
         "auto": "自動色調",

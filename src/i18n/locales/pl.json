@@ -439,6 +439,7 @@
       "dehaze": "Usuń zamglenie",
       "denoiseAmount": "Poziom odszumiania",
       "denoiseDetail": "Detal",
+      "depthStrength": "Siła głębi",
       "lumaNr": "Szum luminancji",
       "maskFailed": "Rozpoznanie nieudane",
       "modelDownloading": "Pobieranie modelu AI",
@@ -446,6 +447,7 @@
       "skyStrength": "Siła nieba",
       "structure": "Struktura",
       "subjectStrength": "Siła obiektu",
+      "textStrength": "Siła tekstu",
       "texture": "Tekstura",
       "tiles": {
         "auto": "Auto ton",

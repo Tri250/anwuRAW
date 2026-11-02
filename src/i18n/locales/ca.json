@@ -419,6 +419,7 @@
       "dehaze": "Treu la boira",
       "denoiseAmount": "Reducció de soroll",
       "denoiseDetail": "Detall",
+      "depthStrength": "Intensitat de la profunditat",
       "lumaNr": "Soroll de lluminància",
       "maskFailed": "Error de reconeixement",
       "modelDownloading": "Descarregant model IA",
@@ -426,6 +427,7 @@
       "skyStrength": "Intensitat del cel",
       "structure": "Estructura",
       "subjectStrength": "Intensitat del subjecte",
+      "textStrength": "Intensitat del text",
       "texture": "Textura",
       "tiles": {
         "auto": "To automàtic",

@@ -419,6 +419,7 @@
       "dehaze": "Anti-voile",
       "denoiseAmount": "Réduction du bruit",
       "denoiseDetail": "Détail",
+      "depthStrength": "Intensité de la profondeur",
       "lumaNr": "Bruit de luminance",
       "maskFailed": "Échec de la reconnaissance",
       "modelDownloading": "Téléchargement du modèle IA",
@@ -426,6 +427,7 @@
       "skyStrength": "Intensité du ciel",
       "structure": "Structure",
       "subjectStrength": "Intensité du sujet",
+      "textStrength": "Intensité du texte",
       "texture": "Texture",
       "tiles": {
         "auto": "Tonalité auto",

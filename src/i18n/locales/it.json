@@ -419,6 +419,7 @@
       "dehaze": "Riduci foschia",
       "denoiseAmount": "Riduzione rumore",
       "denoiseDetail": "Dettaglio",
+      "depthStrength": "Intensità profondità",
       "lumaNr": "Rumore luminanza",
       "maskFailed": "Riconoscimento non riuscito",
       "modelDownloading": "Download del modello IA",
@@ -426,6 +427,7 @@
       "skyStrength": "Intensità del cielo",
       "structure": "Struttura",
       "subjectStrength": "Intensità del soggetto",
+      "textStrength": "Intensità testo",
       "texture": "Texture",
       "tiles": {
         "auto": "Tono auto",

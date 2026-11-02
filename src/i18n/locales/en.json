@@ -402,6 +402,7 @@
       "dehaze": "Dehaze",
       "denoiseAmount": "Denoise amount",
       "denoiseDetail": "Detail",
+      "depthStrength": "Depth strength",
       "lumaNr": "Luma NR",
       "maskFailed": "Recognition failed",
       "modelDownloading": "Downloading AI model",
@@ -409,6 +410,7 @@
       "skyStrength": "Sky strength",
       "structure": "Structure",
       "subjectStrength": "Subject strength",
+      "textStrength": "Text strength",
       "texture": "Texture",
       "tiles": {
         "auto": "Auto Tone",

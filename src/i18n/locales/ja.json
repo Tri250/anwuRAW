@@ -396,6 +396,7 @@
       "dehaze": "かすみ除去",
       "denoiseAmount": "ノイズ除去量",
       "denoiseDetail": "ディテール",
+      "depthStrength": "深度の強さ",
       "lumaNr": "輝度ノイズ除去",
       "maskFailed": "認識に失敗しました",
       "modelDownloading": "AIモデルをダウンロード中",
@@ -403,6 +404,7 @@
       "skyStrength": "空の強さ",
       "structure": "ストラクチャー",
       "subjectStrength": "被写体の強さ",
+      "textStrength": "テキストの強さ",
       "texture": "テクスチャ",
       "tiles": {
         "auto": "自動トーン",

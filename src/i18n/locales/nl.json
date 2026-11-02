@@ -399,6 +399,7 @@
       "dehaze": "Nevel verwijderen",
       "denoiseAmount": "Ruisonderdrukking",
       "denoiseDetail": "Detail",
+      "depthStrength": "Dieptesterkte",
       "lumaNr": "Luminantie-ruis",
       "maskFailed": "Herkenning mislukt",
       "modelDownloading": "AI-model downloaden",
@@ -406,6 +407,7 @@
       "skyStrength": "Luchtsterkte",
       "structure": "Structuur",
       "subjectStrength": "Onderwerpsterkte",
+      "textStrength": "Tekststerkte",
       "texture": "Textuur",
       "tiles": {
         "auto": "Auto-toon",
