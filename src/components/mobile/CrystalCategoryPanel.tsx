@@ -12,6 +12,7 @@ import {
   Loader2,
   RotateCcw,
   RotateCw,
+  ScanLine,
   Smile,
   Sparkles,
   Upload,
@@ -1118,7 +1119,9 @@ function ComposePanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
   const selectedImage = useEditorStore((s) => s.selectedImage);
+  const isAutoStraightening = useEditorStore((s) => s.isAutoStraightening);
   const { applyPatch } = useCrystalAdjust();
+  const { handleAutoStraighten, handleAutoLensCorrection } = useEditorActions();
 
   /* 旋转 90°：与桌面 handleRotate 同源 —— 比例取逆、裁剪按新朝向重算、拉直归零 */
   const rotate90 = useCallback(() => {
@@ -1179,6 +1182,40 @@ function ComposePanel() {
     [adjustments.aspectRatio, adjustments.crop, adjustments.orientationSteps, adjustments.rotation, applyPatch, selectedImage],
   );
 
+  /* 重置构图：与桌面 CropPanel.handleReset 同键集（几何变换 + 镜头校正档案/参数一并还原） */
+  const resetCompose = useCallback(() => {
+    applyPatch(
+      {
+        aspectRatio: INITIAL_ADJUSTMENTS.aspectRatio,
+        crop: INITIAL_ADJUSTMENTS.crop,
+        flipHorizontal: INITIAL_ADJUSTMENTS.flipHorizontal,
+        flipVertical: INITIAL_ADJUSTMENTS.flipVertical,
+        orientationSteps: INITIAL_ADJUSTMENTS.orientationSteps,
+        rotation: INITIAL_ADJUSTMENTS.rotation,
+        transformDistortion: INITIAL_ADJUSTMENTS.transformDistortion,
+        transformVertical: INITIAL_ADJUSTMENTS.transformVertical,
+        transformHorizontal: INITIAL_ADJUSTMENTS.transformHorizontal,
+        transformRotate: INITIAL_ADJUSTMENTS.transformRotate,
+        transformAspect: INITIAL_ADJUSTMENTS.transformAspect,
+        transformScale: INITIAL_ADJUSTMENTS.transformScale,
+        transformXOffset: INITIAL_ADJUSTMENTS.transformXOffset,
+        transformYOffset: INITIAL_ADJUSTMENTS.transformYOffset,
+        guidedPerspective: INITIAL_ADJUSTMENTS.guidedPerspective,
+        lensMaker: INITIAL_ADJUSTMENTS.lensMaker,
+        lensModel: INITIAL_ADJUSTMENTS.lensModel,
+        lensDistortionAmount: INITIAL_ADJUSTMENTS.lensDistortionAmount,
+        lensVignetteAmount: INITIAL_ADJUSTMENTS.lensVignetteAmount,
+        lensTcaAmount: INITIAL_ADJUSTMENTS.lensTcaAmount,
+        lensDistortionEnabled: INITIAL_ADJUSTMENTS.lensDistortionEnabled,
+        lensTcaEnabled: INITIAL_ADJUSTMENTS.lensTcaEnabled,
+        lensVignetteEnabled: INITIAL_ADJUSTMENTS.lensVignetteEnabled,
+        lensDistortionParams: INITIAL_ADJUSTMENTS.lensDistortionParams,
+        lensCorrectionMode: INITIAL_ADJUSTMENTS.lensCorrectionMode,
+      },
+      { enableTools: false },
+    );
+  }, [applyPatch]);
+
   return (
     <PanelShell titleKey="crystal.categories.compose">
       <div className="cx-chip-row mb-3">
@@ -1211,6 +1248,20 @@ function ComposePanel() {
           <FlipVertical size={14} className="inline mr-1 -mt-0.5" />
           {t('crystal.compose.flipV')}
         </button>
+        {/* 自动拉直：与桌面旋转区同链路（CalculateAutoStraighten + 面积保持裁剪） */}
+        <button className="cx-chip" disabled={isAutoStraightening} onClick={() => void handleAutoStraighten()}>
+          {isAutoStraightening ? (
+            <Loader2 size={14} className="inline mr-1 -mt-0.5 animate-spin" />
+          ) : (
+            <ScanLine size={14} className="inline mr-1 -mt-0.5" />
+          )}
+          {t('contextMenus.editor.autoStraighten')}
+        </button>
+        {/* 自动镜头校正：与桌面工具栏同链路（EXIF → 镜头档案 → ApplyAutoLensCorrectionToPaths） */}
+        <button className="cx-chip" onClick={() => handleAutoLensCorrection()}>
+          <Aperture size={14} className="inline mr-1 -mt-0.5" />
+          {t('contextMenus.editor.autoLensCorrection')}
+        </button>
       </div>
       <CxSliderRow
         label={t('crystal.compose.straighten')}
@@ -1237,6 +1288,65 @@ function ComposePanel() {
         value={Number(adjustments.transformHorizontal ?? 0)}
         onChange={(v) => applyPatch({ transformHorizontal: v }, { enableTools: false })}
       />
+      {/* 几何变换（与桌面 modals.transform 滑杆组同范围/同默认值） */}
+      <CxSliderRow
+        label={t('modals.transform.distortion')}
+        min={-100}
+        max={100}
+        step={1}
+        value={Number(adjustments.transformDistortion ?? 0)}
+        defaultValue={0}
+        onChange={(v) => applyPatch({ transformDistortion: v }, { enableTools: false })}
+      />
+      <CxSliderRow
+        label={t('modals.transform.rotate')}
+        min={-45}
+        max={45}
+        step={0.1}
+        value={Number(adjustments.transformRotate ?? 0)}
+        defaultValue={0}
+        onChange={(v) => applyPatch({ transformRotate: v }, { enableTools: false })}
+      />
+      <CxSliderRow
+        label={t('modals.transform.aspect')}
+        min={-100}
+        max={100}
+        step={1}
+        value={Number(adjustments.transformAspect ?? 0)}
+        defaultValue={0}
+        onChange={(v) => applyPatch({ transformAspect: v }, { enableTools: false })}
+      />
+      <CxSliderRow
+        label={t('modals.transform.scale')}
+        min={50}
+        max={150}
+        step={1}
+        value={Number(adjustments.transformScale ?? 100)}
+        defaultValue={100}
+        onChange={(v) => applyPatch({ transformScale: v }, { enableTools: false })}
+      />
+      <CxSliderRow
+        label={t('modals.transform.xAxis')}
+        min={-100}
+        max={100}
+        step={1}
+        value={Number(adjustments.transformXOffset ?? 0)}
+        defaultValue={0}
+        onChange={(v) => applyPatch({ transformXOffset: v }, { enableTools: false })}
+      />
+      <CxSliderRow
+        label={t('modals.transform.yAxis')}
+        min={-100}
+        max={100}
+        step={1}
+        value={Number(adjustments.transformYOffset ?? 0)}
+        defaultValue={0}
+        onChange={(v) => applyPatch({ transformYOffset: v }, { enableTools: false })}
+      />
+      <button className="cx-mask-remove mt-2 w-full" onClick={resetCompose}>
+        <RotateCcw size={11} />
+        {t('adjustments.basic.reset')}
+      </button>
     </PanelShell>
   );
 }
