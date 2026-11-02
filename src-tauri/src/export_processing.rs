@@ -146,6 +146,11 @@ pub struct ExportSettings {
     pub filename_template: Option<String>,
     pub watermark: Option<WatermarkSettings>,
     pub text_watermark: Option<TextWatermarkSettings>,
+    /// Crystal 移动端（Android）白底 EXIF 信息栏。旧版调用方不发送该
+    /// 字段，serde default 保持向后兼容（Rust ExportSettings 未启用
+    /// deny_unknown_fields，未知字段本就被忽略）。
+    #[serde(default)]
+    pub exif_frame: Option<ExifFrameOptions>,
     #[serde(default)]
     pub export_masks: bool,
     #[serde(default)]
@@ -206,6 +211,24 @@ pub struct TextWatermarkSettings {
     pub font_size: f32,
     pub opacity: f32,
     pub color: String,
+}
+
+/// Crystal 移动端水印导出（交付方案图4）：白底 EXIF 信息栏参数。
+/// `brand` 为模板品牌字（如 "CRYSTAL"，固定红字），`show_exif` 控制
+/// 是否随品牌一起渲染从源文件读取的拍摄参数（相机型号 / 焦距 / 光圈
+/// / 快门 / ISO）。移动端 WatermarkExportPage 的 `.cx-exif-bar` 预览
+/// 与此处合成参数同源。
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExifFrameOptions {
+    pub enabled: bool,
+    pub brand: String,
+    #[serde(default = "default_exif_frame_show_exif")]
+    pub show_exif: bool,
+}
+
+fn default_exif_frame_show_exif() -> bool {
+    true
 }
 
 struct WatermarkCacheEntry {
@@ -541,6 +564,188 @@ fn apply_text_watermark(
         y,
         opacity_factor,
     );
+
+    Ok(())
+}
+
+/// Crystal 移动端：将白底 EXIF 信息栏合成到导出图底部，与移动端
+/// WatermarkExportPage 的 `.cx-exif-bar` 预览同源——布局为
+/// 「相机型号 | 品牌(红) | 38mm f/5.6 1/200s ISO 200」，拍摄参数从
+/// 源文件 EXIF 实时读取，缺失的段落自动省略。EXIF 读取失败仅降级为
+/// 纯品牌栏（或跳过），不阻断导出。
+/// 注意：需 cargo 1.98 环境编译验证（沙箱 toolchain 1.94.1 不可用）。
+fn apply_exif_frame(
+    base_image: &mut DynamicImage,
+    frame: &ExifFrameOptions,
+    source_path: &str,
+) -> Result<(), String> {
+    if !frame.enabled {
+        return Ok(());
+    }
+
+    // 与 load_watermark_image 同源：Android SAF 源需经 ContentResolver 读字节。
+    let is_android_content_uri = crate::android_integration::is_android_content_uri(source_path);
+    let source_bytes = if is_android_content_uri {
+        #[cfg(target_os = "android")]
+        {
+            match crate::android_integration::read_android_content_uri(source_path) {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    log::warn!(
+                        "EXIF frame: failed to read Android source '{}': {}",
+                        source_path,
+                        e
+                    );
+                    return Ok(());
+                }
+            }
+        }
+        #[cfg(not(target_os = "android"))]
+        {
+            return Ok(());
+        }
+    } else {
+        match fs::read(source_path) {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                log::warn!("EXIF frame: failed to read source '{}': {}", source_path, e);
+                return Ok(());
+            }
+        }
+    };
+
+    // 段落组装顺序与移动端预览一致：相机型号 → 品牌(红) → 拍摄参数。
+    let exif_text_color: [u8; 3] = [28, 28, 24];
+    let brand_color: [u8; 3] = [180, 68, 60];
+    let exif_map = if frame.show_exif {
+        exif_processing::extract_metadata(&source_bytes)
+    } else {
+        None
+    };
+
+    let mut segments: Vec<(String, [u8; 3])> = Vec::new();
+    if let Some(model) = exif_map
+        .as_ref()
+        .and_then(|map| map.get("Model"))
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+    {
+        segments.push((model, exif_text_color));
+    }
+
+    let brand = frame.brand.trim();
+    if !brand.is_empty() {
+        segments.push((brand.to_string(), brand_color));
+    }
+
+    if let Some(map) = exif_map.as_ref() {
+        let mut params: Vec<String> = Vec::new();
+        if let Some(focal) = map
+            .get("FocalLength")
+            .and_then(|v| v.trim().parse::<f32>().ok())
+            .filter(|v| *v > 0.0)
+        {
+            if focal.fract() == 0.0 {
+                params.push(format!("{}mm", focal as u32));
+            } else {
+                params.push(format!("{:.1}mm", focal));
+            }
+        }
+        if let Some(f_number) = map
+            .get("FNumber")
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty())
+        {
+            params.push(f_number);
+        }
+        // extract_metadata 形如 "1/200 s"，设计稿为 "1/200s"。
+        if let Some(shutter) = map
+            .get("ExposureTime")
+            .map(|v| v.trim().replace(" s", "s"))
+            .filter(|v| !v.is_empty())
+        {
+            params.push(shutter);
+        }
+        if let Some(iso) = map
+            .get("ISOSpeed")
+            .or_else(|| map.get("PhotographicSensitivity"))
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty())
+        {
+            params.push(format!("ISO {}", iso));
+        }
+        if !params.is_empty() {
+            segments.push((params.join(" "), exif_text_color));
+        }
+    }
+
+    if segments.is_empty() {
+        return Ok(());
+    }
+
+    let font = text_watermark_font()?;
+    let (base_w, base_h) = base_image.dimensions();
+    if base_w == 0 || base_h == 0 {
+        return Ok(());
+    }
+
+    // 与移动端预览 .cx-exif-bar 同源的比例：栏高 ≈ 4.5% 图高，字号 ≈ 40% 栏高。
+    let bar_h = ((base_h as f32 * 0.045).round() as u32).clamp(24, 160);
+    let font_px = (bar_h as f32 * 0.40).round().clamp(9.0, 128.0);
+    let scale = PxScale::from(font_px);
+    let gap = ((bar_h as f32 * 0.28).round() as i32).max(4);
+    let padding = ((bar_h as f32 * 0.30).round() as i32).max(6);
+    let sep_w = 1i32;
+
+    // 宽度自适应：总宽超出画布时优先去掉相机型号段，其余按画布裁切。
+    let measure_total = |segs: &[(String, [u8; 3])]| -> i32 {
+        let text_w: i32 = segs
+            .iter()
+            .map(|(text, _)| drawing::text_size(scale, font, text).0 as i32)
+            .sum();
+        let sep_total = if segs.len() > 1 {
+            (segs.len() as i32 - 1) * (gap * 2 + sep_w)
+        } else {
+            0
+        };
+        text_w + sep_total + padding * 2
+    };
+    if segments.len() > 1 && measure_total(&segments) > base_w as i32 {
+        segments.remove(0);
+    }
+
+    let mut bar = ImageBuffer::from_pixel(base_w, bar_h, image::Rgba([244, 244, 240, 255]));
+    let text_y = ((bar_h as f32 - font_px) / 2.0).round().max(0.0) as i32;
+    let sep_h = ((bar_h as f32 * 0.32).round() as u32).max(1).min(bar_h);
+    let sep_top = ((bar_h as i32 - sep_h as i32) / 2).max(0) as u32;
+    // 分隔线颜色：#1C1C18 以 35% 透明度叠加在 #F4F4F0 上的等效不透明色。
+    let sep_color = image::Rgba([168, 168, 164, 255]);
+
+    let mut x = padding;
+    for (index, (text, color)) in segments.iter().enumerate() {
+        if index > 0 {
+            let sep_x = (x + gap).max(0) as u32;
+            for yy in sep_top..(sep_top + sep_h).min(bar_h) {
+                if sep_x < base_w {
+                    bar.put_pixel(sep_x, yy, sep_color);
+                }
+            }
+            x += gap * 2 + sep_w;
+        }
+        drawing::draw_text_mut(
+            &mut bar,
+            image::Rgba([color[0], color[1], color[2], 255]),
+            x,
+            text_y,
+            scale,
+            font,
+            text,
+        );
+        x += drawing::text_size(scale, font, text).0 as i32;
+    }
+
+    let bar_y = (base_h as i64 - bar_h as i64).max(0);
+    imageops::overlay(base_image, &DynamicImage::ImageRgba8(bar), 0, bar_y);
 
     Ok(())
 }
@@ -1103,6 +1308,7 @@ fn apply_export_geometry(
 fn apply_export_geometry_and_watermark(
     image: DynamicImage,
     export_settings: &ExportSettings,
+    source_path: Option<&str>,
 ) -> Result<(DynamicImage, ExportGeometry), String> {
     let (mut image, geometry) = apply_export_geometry(image, export_settings)?;
 
@@ -1111,6 +1317,11 @@ fn apply_export_geometry_and_watermark(
     }
     if let Some(text_watermark_settings) = &export_settings.text_watermark {
         apply_text_watermark(&mut image, text_watermark_settings)?;
+    }
+    // Crystal 移动端白底 EXIF 信息栏：仅主图导出（source_path = Some），
+    // 蒙版导出走 None 路径跳过。
+    if let (Some(frame), Some(path)) = (&export_settings.exif_frame, source_path) {
+        apply_exif_frame(&mut image, frame, path)?;
     }
     Ok((image, geometry))
 }
@@ -1435,7 +1646,8 @@ fn process_image_for_export(
         render_output_precision(output_format, export_settings),
     )?;
 
-    apply_export_geometry_and_watermark(processed_image, export_settings).map(|(image, _)| image)
+    apply_export_geometry_and_watermark(processed_image, export_settings, Some(path))
+        .map(|(image, _)| image)
 }
 
 fn build_single_mask_adjustments(all: &AllAdjustments, mask_index: usize) -> AllAdjustments {
@@ -1738,7 +1950,7 @@ fn export_masks_for_image(
             ensure_export_not_cancelled(cancellation_token)?;
 
             let (with_options, geometry) =
-                apply_export_geometry_and_watermark(processed, export_settings)?;
+                apply_export_geometry_and_watermark(processed, export_settings, None)?;
 
             let alpha_scaled = imageops::resize(
                 &mask_bitmaps[i],
@@ -2563,6 +2775,7 @@ pub async fn run_headless_export(
         filename_template: None,
         watermark: None,
         text_watermark: None,
+        exif_frame: None,
         export_masks: false,
         preserve_folders: true,
         destination_type: None,

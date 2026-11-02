@@ -80,13 +80,13 @@
       "whiteBalance": "Weißabgleich"
     },
     "curves": {
+      "channelTitle": "{{channel}}-Kanal",
       "channels": {
         "blue": "Blau",
         "green": "Grün",
         "luma": "Luma",
         "red": "Rot"
       },
-      "channelTitle": "{{channel}}-Kanal",
       "copyParametric": "Parametrische {{channel}}-Kurve kopieren",
       "copyPoint": "Punktkurve ({{channel}}) kopieren",
       "curveDataUnavailable": "Kurvendaten nicht verfügbar.",
@@ -175,8 +175,8 @@
       "relightIntensity": "Intensität",
       "relightLight": "Licht {{index}}",
       "relightRemoveLight": "Licht entfernen",
-      "relightShadows": "Schatten",
       "relightShadowSoftness": "Schattenweichheit",
+      "relightShadows": "Schatten",
       "relightShine": "Glanz",
       "relightSoftness": "Weichheit",
       "relightType": "Lichttyp",
@@ -310,14 +310,14 @@
     },
     "stacking": {
       "autoStack": "Auto-Stack by Burst",
+      "autoStackNone": "No burst groups found to stack.",
       "autoStackedToast_one": "Created {{count}} stacks.",
       "autoStackedToast_other": "Created {{count}} stacks.",
-      "autoStackNone": "No burst groups found to stack.",
+      "createFailed": "Not enough images to create a stack.",
       "create_one": "Stack into Group ({{count}})",
       "create_other": "Stack into Group ({{count}})",
       "createdToast_one": "Created a stack with {{count}} images.",
       "createdToast_other": "Created a stack with {{count}} images.",
-      "createFailed": "Not enough images to create a stack.",
       "title": "Stacking",
       "unstack": "Unstack"
     },
@@ -392,6 +392,174 @@
       "failedRemoveImages": "Bilder entfernen fehlgeschlagen: {{err}}",
       "failedSyncAdjustments": "Synchronisieren der Anpassungen mit den ausgewählten Bildern fehlgeschlagen: {{err}}"
     }
+  },
+  "crystal": {
+    "ai": {
+      "clarity": "Klarheit",
+      "dehaze": "Dunst entfernen",
+      "denoiseAmount": "Rauschentfernung",
+      "lumaNr": "Luminanz-Rauschen",
+      "structure": "Struktur",
+      "texture": "Textur",
+      "tiles": {
+        "auto": "Auto-Ton",
+        "denoise": "KI-Rauschentf.",
+        "detail": "Detail+",
+        "enhance": "KI-Verbesserung"
+      }
+    },
+    "aiRecommend": {
+      "enhance": "KI-Verbesserung",
+      "failed": "KI-Verbesserung fehlgeschlagen",
+      "noExif": "Keine EXIF-Hinweise — KI-Verbesserung testen",
+      "recipe": "Szenenrezept",
+      "sceneBasis": "Wirkt wie {{scene}} · Grundlage {{basis}}",
+      "scenes": {
+        "landscape": "Landschaft",
+        "night": "Nacht",
+        "portrait": "Porträt",
+        "tele": "Tele"
+      },
+      "tagExif": "EXIF",
+      "title": "KI-Empfehlung"
+    },
+    "backToLibrary": "Zur Bibliothek",
+    "bottom": {
+      "compare": "Vergleich",
+      "original": "Original",
+      "redo": "Wiederholen",
+      "reset": "Zurücksetzen",
+      "save": "Speichern",
+      "undo": "Rückgängig"
+    },
+    "categories": {
+      "ai": "KI",
+      "compose": "Zuschnitt",
+      "filter": "Filter",
+      "fx": "Effekte",
+      "portrait": "Porträt",
+      "presets": "Presets",
+      "tone": "Tonwert"
+    },
+    "compose": {
+      "flipH": "Horizontal spiegeln",
+      "flipV": "Vertikal spiegeln",
+      "free": "Frei",
+      "perspectiveH": "Horizontal",
+      "perspectiveV": "Vertikal",
+      "ratio11": "1:1",
+      "ratio169": "16:9",
+      "ratio32": "3:2",
+      "ratio43": "4:3",
+      "ratio916": "9:16",
+      "rotate90": "90° drehen",
+      "straighten": "Ausrichten"
+    },
+    "export": {
+      "backToEdit": "Zur Bearbeitung",
+      "backToLibrary": "Bibliothek",
+      "cta": "Auf Gerät speichern",
+      "done": "Auf Gerät gespeichert",
+      "exporting": "Speichern…",
+      "favorite": "Favorit",
+      "fontScale": "Schriftgröße",
+      "format": "Format",
+      "infoFrameHint": "Brennt EXIF-Leiste und Bildrahmen in den Export",
+      "infoFrameLabel": "Infoleiste & Rahmen anzeigen",
+      "livePreview": "Live-Vorschau",
+      "noExif": "Kein EXIF",
+      "progress": "Speichere {{current}}/{{total}}",
+      "quality": "Qualität",
+      "saveTemplate": "Sichern",
+      "setDefault": "Standard",
+      "signature": "Signatur",
+      "signaturePlaceholder": "CRYSTAL · Pro Fotografie",
+      "templates": "Wasserzeichen-Vorlagen"
+    },
+    "filters": {
+      "airy": "Luftig",
+      "coolBlue": "Kühlblau",
+      "cyber": "Cyber",
+      "faded": "Ausgeblichen",
+      "film": "Film",
+      "goldBlack": "Gold & Schwarz",
+      "goldenHour": "Goldene Stunde",
+      "hdrPunch": "HDR-Punch",
+      "mono": "Mono",
+      "softMist": "Soft-Dunst",
+      "vintage": "Vintage",
+      "vivid": "Brillant"
+    },
+    "fx": {
+      "dehaze": "Dunst entfernen",
+      "flare": "Blendlaterne",
+      "glow": "Glanz",
+      "grain": "Korn",
+      "halation": "Halation",
+      "vignette": "Vignette"
+    },
+    "originalBadge": "ORIGINAL",
+    "portrait": {
+      "clarity": "Klarheit",
+      "contour": "Kontur",
+      "glow": "Glanz",
+      "oneTap": "Porträt auf einen Tipp",
+      "softSkin": "Weiche Haut",
+      "warmth": "Wärme"
+    },
+    "presets": {
+      "empty": "Noch keine Presets — auf dem Desktop erstellen oder importieren.",
+      "intensity": "Stärke"
+    },
+    "previewAlt": "Bearbeitungsvorschau",
+    "previewRendering": "Rendern…",
+    "redo": "Wiederholen",
+    "resetConfirm": {
+      "message": "Stellt das Original wieder her und baut den Verlauf neu auf.",
+      "title": "Alle Bearbeitungen zurücksetzen?"
+    },
+    "save": "Speichern",
+    "subtitleFallback": "Foto",
+    "templates": {
+      "cinema": {
+        "name": "Kino",
+        "sub": "Film-Look"
+      },
+      "landscape": {
+        "name": "Landschaft",
+        "sub": "Breiter Rahmen"
+      },
+      "minimal": {
+        "name": "Minimal",
+        "sub": "Nur Signatur"
+      },
+      "mono": {
+        "name": "Mono Klassik",
+        "sub": "S/W-Infoblech"
+      },
+      "pro": {
+        "name": "Pro Foto",
+        "sub": "Infoblech + Rahmen"
+      },
+      "street": {
+        "name": "Street",
+        "sub": "Schlanke Signatur"
+      }
+    },
+    "title": "Pro-Bearbeitung",
+    "tone": {
+      "blacks": "Schwarz",
+      "contrast": "Kontrast",
+      "exposure": "Belichtung",
+      "highlights": "Lichter",
+      "saturation": "Sättigung",
+      "shadows": "Tiefen",
+      "temperature": "Temperatur",
+      "tint": "Tönung",
+      "vibrance": "Dynamik",
+      "whites": "Weiß"
+    },
+    "undo": "Rückgängig"
   },
   "editor": {
     "adjustments": {
@@ -565,8 +733,8 @@
         "hPlaceholder": "H",
         "hTooltip": "Höhe",
         "removeTooltip": "Gespeichertes Seitenverhältnis entfernen",
-        "savedTooltip": "Gespeichertes Seitenverhältnis {{ratio}}",
         "saveTooltip": "Seitenverhältnis als Vorgabe speichern",
+        "savedTooltip": "Gespeichertes Seitenverhältnis {{ratio}}",
         "wPlaceholder": "B",
         "wTooltip": "Breite"
       },
@@ -782,8 +950,8 @@
         "copySectionSettings": "{{section}}-Einstellungen kopieren",
         "faceParts": {
           "bodySkin": "Körperhaut",
-          "eyebrows": "Augenbrauen",
           "eyeWhites": "Augenweiß",
+          "eyebrows": "Augenbrauen",
           "faceSkin": "Gesichtshaut",
           "hair": "Haare",
           "iris": "Iris & Pupille",
@@ -881,8 +1049,8 @@
       "organization": {
         "addTagPlaceholder": "Tag hinzufügen...",
         "colorLabel": "Farbmarkierung",
-        "none": "Keine",
         "noTags": "Keine Tags",
+        "none": "Keine",
         "rating": "Bewertung",
         "ratingLabels": "Bewertung & Markierungen",
         "tags": "Tags",
@@ -1119,12 +1287,12 @@
       "estimatedSize": "Geschätzte Dateigröße: ~{{size}}",
       "estimatedTotalSize": "Geschätzte Gesamtgröße: ~{{size}}",
       "estimatingSize": "Größe wird geschätzt...",
-      "exporting": "Wird exportiert…",
-      "exportingProgress": "Wird exportiert… ({{current}}/{{total}})",
       "exportMultiple": "Exportiere {{count}} {{label}}",
       "exportMultiple_one": "Exportiere {{count}} {{label}}",
       "exportMultiple_other": "Exportiere {{count}} {{label}}",
       "exportSingle": "{{label}} exportieren",
+      "exporting": "Wird exportiert…",
+      "exportingProgress": "Wird exportiert… ({{current}}/{{total}})",
       "failed": "Export fehlgeschlagen",
       "noImageSelected": "Kein Bild zum Exportieren ausgewählt.",
       "noImagesSelected": "Keine Bilder ausgewählt.",
@@ -1272,8 +1440,8 @@
       "iso": "ISO",
       "metadata": "Metadaten",
       "noMetadataAvailable": "Keine Metadaten verfügbar",
-      "none": "Keine",
       "noTagsAdded": "Keine Tags hinzugefügt",
+      "none": "Keine",
       "rateAndLabel": "Bewerten & Markieren",
       "rating": "Bewertung",
       "selectImagesToCompare": "Wählen Sie Bilder zum Vergleichen aus",
@@ -1636,8 +1804,8 @@
       "layout": "Layout",
       "original": "Original",
       "saveButton": "Collage speichern",
-      "saved": "Collage gespeichert!",
       "saveFailed": "Collage konnte nicht gespeichert werden.",
+      "saved": "Collage gespeichert!",
       "saving": "Wird gespeichert...",
       "shuffleTooltip": "Bilder mischen",
       "spacing": "Abstand"
@@ -1721,9 +1889,9 @@
       "applyButton_one": "Auf 1 Bild anwenden",
       "applyButton_other": "Auf {{count}} Bilder anwenden",
       "bestImage": "Bestes Bild",
-      "blurryImagesTab": "Unscharfe Bilder",
       "blurThreshold": "Unschärfe-Schwellenwert",
       "blurThresholdDesc": "Bilder mit einem Schärfewert unter diesem Wert werden markiert. Höher ist strenger.",
+      "blurryImagesTab": "Unscharfe Bilder",
       "cancel": "Abbrechen",
       "close": "Schließen",
       "cullingFailed": "Aussortieren fehlgeschlagen",
@@ -1882,11 +2050,11 @@
       "create": "Create",
       "createTitle": "New Smart Album",
       "description": "A smart album automatically collects images matching the rules below.",
+      "editTitle": "Edit Smart Album",
       "edited": {
         "edited": "Edited",
         "unedited": "Unedited"
       },
-      "editTitle": "Edit Smart Album",
       "fields": {
         "camera": "Camera",
         "color": "Color Label",
@@ -2381,8 +2549,8 @@
     "tagging": {
       "addCustomPlaceholder": "Benutzerdefinierte KI-Tags hinzufügen (kommagetrennt)...",
       "addCustomTooltip": "KI-Tag hinzufügen",
-      "addShortcutsPlaceholder": "Shortcuts hinzufügen (kommagetrennt)...",
       "addShortcutTooltip": "Shortcut hinzufügen",
+      "addShortcutsPlaceholder": "Shortcuts hinzufügen (kommagetrennt)...",
       "aiTagging": "KI-Tagging",
       "aiTaggingDesc": "Aktiviert automatisches Bild-Tagging mit einem KI-Modell (CLIP). Dies lädt ein zusätzliches Modell herunter und beeinträchtigt die Leistung beim Durchsuchen.",
       "amount": "Betrag",
@@ -2420,13 +2588,13 @@
       "autoCheck": "Automatisch nach Updates suchen",
       "autoCheckDesc": "Beim Start der App auf GitHub nach einer neuen Version suchen.",
       "available": "Version {{version}} ist verfügbar.",
-      "checking": "Suche nach Updates…",
       "checkNow": "Nach Updates suchen",
+      "checking": "Suche nach Updates…",
       "connecting": "Verbindung zum Update-Server wird hergestellt…",
       "currentVersion": "Aktuelle Version: {{version}}",
       "desc": "Halten Sie die App auf dem neuesten Stand mit den neuesten Funktionen und Korrekturen.",
-      "downloading": "Update wird heruntergeladen…",
       "downloadInstall": "Herunterladen und Installieren",
+      "downloading": "Update wird heruntergeladen…",
       "failed": "Update-Prüfung fehlgeschlagen: {{error}}",
       "installing": "Wird installiert und neu gestartet…",
       "lastChecked": "Zuletzt geprüft: {{time}}",
@@ -2514,8 +2682,8 @@
       "connectionFailed": "Verbindung fehlgeschlagen: {{err}}",
       "detectionFailed": "Erkennung fehlgeschlagen: {{err}}",
       "intervalCaptureError": "Interval capture failed: {{err}}",
-      "intervalStarted": "Interval capture started (every {{ms}} ms)",
       "intervalStartFailed": "Failed to start interval capture: {{err}}",
+      "intervalStarted": "Interval capture started (every {{ms}} ms)",
       "intervalStopFailed": "Failed to stop interval capture: {{err}}",
       "intervalStopped_one": "Interval capture stopped after {{count}} shot",
       "intervalStopped_other": "Interval capture stopped after {{count}} shots",

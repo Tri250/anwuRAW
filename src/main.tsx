@@ -4,6 +4,7 @@ import App from './App';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { installFrontendLogBridge } from './utils/frontendLogBridge';
 import './styles.css';
+import './crystal.css';
 
 installFrontendLogBridge();
 

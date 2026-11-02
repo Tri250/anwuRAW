@@ -80,13 +80,13 @@
       "whiteBalance": "ホワイトバランス"
     },
     "curves": {
+      "channelTitle": "{{channel}} チャンネル",
       "channels": {
         "blue": "ブルー",
         "green": "グリーン",
         "luma": "ルミナンス",
         "red": "レッド"
       },
-      "channelTitle": "{{channel}} チャンネル",
       "copyParametric": "{{channel}} パラメトリックカーブをコピー",
       "copyPoint": "{{channel}} ポイントカーブをコピー",
       "curveDataUnavailable": "カーブデータがありません。",
@@ -175,8 +175,8 @@
       "relightIntensity": "強度",
       "relightLight": "ライト {{index}}",
       "relightRemoveLight": "ライトを削除",
-      "relightShadows": "影",
       "relightShadowSoftness": "影の柔らかさ",
+      "relightShadows": "影",
       "relightShine": "光沢",
       "relightSoftness": "柔らかさ",
       "relightType": "ライトの種類",
@@ -310,11 +310,11 @@
     },
     "stacking": {
       "autoStack": "Auto-Stack by Burst",
-      "autoStackedToast_other": "Created {{count}} stacks.",
       "autoStackNone": "No burst groups found to stack.",
+      "autoStackedToast_other": "Created {{count}} stacks.",
+      "createFailed": "Not enough images to create a stack.",
       "create_other": "Stack into Group ({{count}})",
       "createdToast_other": "Created a stack with {{count}} images.",
-      "createFailed": "Not enough images to create a stack.",
       "title": "Stacking",
       "unstack": "Unstack"
     },
@@ -389,6 +389,174 @@
       "failedRemoveImages": "画像の削除に失敗しました: {{err}}",
       "failedSyncAdjustments": "選択した画像への調整の同期に失敗しました：{{err}}"
     }
+  },
+  "crystal": {
+    "ai": {
+      "clarity": "明瞭度",
+      "dehaze": "かすみ除去",
+      "denoiseAmount": "ノイズ除去量",
+      "lumaNr": "輝度ノイズ除去",
+      "structure": "ストラクチャー",
+      "texture": "テクスチャ",
+      "tiles": {
+        "auto": "自動トーン",
+        "denoise": "AI ノイズ除去",
+        "detail": "ディテール+",
+        "enhance": "AI 強化"
+      }
+    },
+    "aiRecommend": {
+      "enhance": "AI 強化",
+      "failed": "AI 強化に失敗しました",
+      "noExif": "EXIF 手がかりなし — AI強化を試してください",
+      "recipe": "シーンレシピ",
+      "sceneBasis": "{{scene}}の可能性 · 根拠 {{basis}}",
+      "scenes": {
+        "landscape": "風景",
+        "night": "夜景",
+        "portrait": "ポートレート",
+        "tele": "望遠"
+      },
+      "tagExif": "EXIF",
+      "title": "AI レコメンド"
+    },
+    "backToLibrary": "ライブラリへ戻る",
+    "bottom": {
+      "compare": "比較",
+      "original": "原画像",
+      "redo": "やり直す",
+      "reset": "リセット",
+      "save": "保存",
+      "undo": "元に戻す"
+    },
+    "categories": {
+      "ai": "AI",
+      "compose": " crop",
+      "filter": "フィルター",
+      "fx": "エフェクト",
+      "portrait": "ポートレート",
+      "presets": "プリセット",
+      "tone": "トーン"
+    },
+    "compose": {
+      "flipH": "左右反転",
+      "flipV": "上下反転",
+      "free": "自由",
+      "perspectiveH": "横透视",
+      "perspectiveV": "縦透视",
+      "ratio11": "1:1",
+      "ratio169": "16:9",
+      "ratio32": "3:2",
+      "ratio43": "4:3",
+      "ratio916": "9:16",
+      "rotate90": "90°回転",
+      "straighten": "水平補正"
+    },
+    "export": {
+      "backToEdit": "編集に戻る",
+      "backToLibrary": "ライブラリ",
+      "cta": "端末に保存",
+      "done": "端末に保存しました",
+      "exporting": "保存中…",
+      "favorite": "お気に入り",
+      "fontScale": "フォントサイズ",
+      "format": "形式",
+      "infoFrameHint": "書き出し時に EXIF 情報バーと枠を焼き込みます",
+      "infoFrameLabel": "情報バーと枠を表示",
+      "livePreview": "ライブプレビュー",
+      "noExif": "EXIF なし",
+      "progress": "保存中 {{current}}/{{total}}",
+      "quality": "品質",
+      "saveTemplate": "保存",
+      "setDefault": "既定に設定",
+      "signature": "署名",
+      "signaturePlaceholder": "CRYSTAL · プロフォトグラフィー",
+      "templates": "ウォーターマーク"
+    },
+    "filters": {
+      "airy": "エアリー",
+      "coolBlue": "クールブルー",
+      "cyber": "サイバー",
+      "faded": "フェード",
+      "film": "フィルム",
+      "goldBlack": "ゴールド×黒",
+      "goldenHour": "ゴールデンアワー",
+      "hdrPunch": "HDRパンチ",
+      "mono": "モノクロ",
+      "softMist": "ソフトミスト",
+      "vintage": "ヴィンテージ",
+      "vivid": "ビビッド"
+    },
+    "fx": {
+      "dehaze": "かすみ除去",
+      "flare": "フレア",
+      "glow": "グロー",
+      "grain": "グレイン",
+      "halation": "ハレーション",
+      "vignette": "周辺減光"
+    },
+    "originalBadge": "原画像",
+    "portrait": {
+      "clarity": "明瞭度",
+      "contour": "輪郭",
+      "glow": "グロー",
+      "oneTap": "ワンタップ補正",
+      "softSkin": "肌なじみ",
+      "warmth": "暖かさ"
+    },
+    "presets": {
+      "empty": "プリセットがありません — デスクトップで作成・読み込みできます。",
+      "intensity": "強さ"
+    },
+    "previewAlt": "編集プレビュー",
+    "previewRendering": "レンダリング中…",
+    "redo": "やり直す",
+    "resetConfirm": {
+      "message": "元の見た目に戻し、履歴を再構築します。",
+      "title": "すべての編集をリセット？"
+    },
+    "save": "保存",
+    "subtitleFallback": "写真",
+    "templates": {
+      "cinema": {
+        "name": "シネマ",
+        "sub": "フィルム風"
+      },
+      "landscape": {
+        "name": "ランドスケープ",
+        "sub": "ワイド枠"
+      },
+      "minimal": {
+        "name": "ミニマル",
+        "sub": "署名のみ"
+      },
+      "mono": {
+        "name": "モノクラシック",
+        "sub": "白黒情報バー"
+      },
+      "pro": {
+        "name": "プロフォト",
+        "sub": "情報バー+枠"
+      },
+      "street": {
+        "name": "ストリート",
+        "sub": "シンプル署名"
+      }
+    },
+    "title": "プロ現像",
+    "tone": {
+      "blacks": "黒",
+      "contrast": "コントラスト",
+      "exposure": "露出",
+      "highlights": "ハイライト",
+      "saturation": "彩度",
+      "shadows": "シャドウ",
+      "temperature": "色温度",
+      "tint": "色合い",
+      "vibrance": "自然な彩度",
+      "whites": "白"
+    },
+    "undo": "元に戻す"
   },
   "editor": {
     "adjustments": {
@@ -561,8 +729,8 @@
         "hPlaceholder": "H",
         "hTooltip": "高さ",
         "removeTooltip": "保存したアスペクト比を削除",
-        "savedTooltip": "保存したアスペクト比 {{ratio}}",
         "saveTooltip": "アスペクト比をプリセットとして保存",
+        "savedTooltip": "保存したアスペクト比 {{ratio}}",
         "wPlaceholder": "W",
         "wTooltip": "幅"
       },
@@ -778,8 +946,8 @@
         "copySectionSettings": "{{section}}設定をコピー",
         "faceParts": {
           "bodySkin": "体の肌",
-          "eyebrows": "眉",
           "eyeWhites": "白目",
+          "eyebrows": "眉",
           "faceSkin": "顔の肌",
           "hair": "髪",
           "iris": "虹彩と瞳孔",
@@ -876,8 +1044,8 @@
       "organization": {
         "addTagPlaceholder": "タグを追加...",
         "colorLabel": "カラーラベル",
-        "none": "なし",
         "noTags": "タグなし",
+        "none": "なし",
         "rating": "評価",
         "ratingLabels": "評価とラベル",
         "tags": "タグ",
@@ -1114,12 +1282,12 @@
       "estimatedSize": "推定ファイルサイズ: ~{{size}}",
       "estimatedTotalSize": "推定合計サイズ: ~{{size}}",
       "estimatingSize": "サイズを推定中...",
-      "exporting": "書き出し中…",
-      "exportingProgress": "書き出し中… ({{current}}/{{total}})",
       "exportMultiple": "{{count}} 件の {{label}} を書き出し",
       "exportMultiple_one": "{{count}} 件 of {{label}} を書き出し",
       "exportMultiple_other": "{{count}} 件の {{label}} を書き出し",
       "exportSingle": "{{label}} を書き出し",
+      "exporting": "書き出し中…",
+      "exportingProgress": "書き出し中… ({{current}}/{{total}})",
       "failed": "書き出しに失敗しました",
       "noImageSelected": "書き出す画像が選択されていません。",
       "noImagesSelected": "画像が選択されていません。",
@@ -1267,8 +1435,8 @@
       "iso": "ISO",
       "metadata": "メタデータ",
       "noMetadataAvailable": "メタデータがありません",
-      "none": "なし",
       "noTagsAdded": "タグが追加されていません",
+      "none": "なし",
       "rateAndLabel": "評価とラベル",
       "rating": "評価",
       "selectImagesToCompare": "比較する画像を選択",
@@ -1626,8 +1794,8 @@
       "layout": "レイアウト",
       "original": "オリジナル",
       "saveButton": "コラージュを保存",
-      "saved": "コラージュを保存しました！",
       "saveFailed": "コラージュを保存できませんでした。",
+      "saved": "コラージュを保存しました！",
       "saving": "保存中...",
       "shuffleTooltip": "画像をシャッフル",
       "spacing": "間隔"
@@ -1711,9 +1879,9 @@
       "applyButton_one": "1 枚の画像に適用",
       "applyButton_other": "{{count}} 枚の画像に適用",
       "bestImage": "ベスト画像",
-      "blurryImagesTab": "ぼやけた画像",
       "blurThreshold": "ブレのしきい値",
       "blurThresholdDesc": "この値以下のシャープネススコアを持つ画像にフラグを立てます。高いほど厳密になります。",
+      "blurryImagesTab": "ぼやけた画像",
       "cancel": "キャンセル",
       "close": "閉じる",
       "cullingFailed": "選別失敗",
@@ -1872,11 +2040,11 @@
       "create": "Create",
       "createTitle": "New Smart Album",
       "description": "A smart album automatically collects images matching the rules below.",
+      "editTitle": "Edit Smart Album",
       "edited": {
         "edited": "Edited",
         "unedited": "Unedited"
       },
-      "editTitle": "Edit Smart Album",
       "fields": {
         "camera": "Camera",
         "color": "Color Label",
@@ -2371,8 +2539,8 @@
     "tagging": {
       "addCustomPlaceholder": "カスタムAIタグを入力（カンマ区切り）...",
       "addCustomTooltip": "AIタグを追加",
-      "addShortcutsPlaceholder": "ショートカットを入力（カンマ区切り）...",
       "addShortcutTooltip": "ショートカットを追加",
+      "addShortcutsPlaceholder": "ショートカットを入力（カンマ区切り）...",
       "aiTagging": "AIタグ付け",
       "aiTaggingDesc": "AI（CLIP）モデルを使用した自動画像タグ付けを有効にします。追加のモデルがダウンロードされ、フォルダ閲覧時のパフォーマンスに影響します。タグはフォルダ内検索に使用されます。",
       "amount": "適用度",
@@ -2410,13 +2578,13 @@
       "autoCheck": "自動的にアップデートを確認",
       "autoCheckDesc": "アプリ起動時に GitHub で新バージョンを確認します。",
       "available": "バージョン {{version}} が利用可能です。",
-      "checking": "アップデートを確認中…",
       "checkNow": "アップデートを確認",
+      "checking": "アップデートを確認中…",
       "connecting": "アップデートサーバーに接続中…",
       "currentVersion": "現在のバージョン: {{version}}",
       "desc": "最新の機能と修正を取り込むため、アプリを最新の状態に保ちましょう。",
-      "downloading": "アップデートをダウンロード中…",
       "downloadInstall": "ダウンロードしてインストール",
+      "downloading": "アップデートをダウンロード中…",
       "failed": "アップデートの確認に失敗しました: {{error}}",
       "installing": "インストールして再起動中…",
       "lastChecked": "最終確認：{{time}}",
@@ -2502,8 +2670,8 @@
       "connectionFailed": "接続に失敗しました: {{err}}",
       "detectionFailed": "検出に失敗しました: {{err}}",
       "intervalCaptureError": "Interval capture failed: {{err}}",
-      "intervalStarted": "Interval capture started (every {{ms}} ms)",
       "intervalStartFailed": "Failed to start interval capture: {{err}}",
+      "intervalStarted": "Interval capture started (every {{ms}} ms)",
       "intervalStopFailed": "Failed to stop interval capture: {{err}}",
       "intervalStopped_other": "Interval capture stopped after {{count}} shots",
       "noCamerasFound": "カメラが見つかりません。PCリモートモードになっていることを確認してください。",

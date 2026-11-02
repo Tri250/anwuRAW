@@ -80,13 +80,13 @@
       "whiteBalance": "白平衡"
     },
     "curves": {
+      "channelTitle": "{{channel}} 通道",
       "channels": {
         "blue": "藍色",
         "green": "綠色",
         "luma": "亮度",
         "red": "紅色"
       },
-      "channelTitle": "{{channel}} 通道",
       "copyParametric": "複製 {{channel}} 參數曲線",
       "copyPoint": "複製 {{channel}} 點曲線",
       "curveDataUnavailable": "曲線資料不可用。",
@@ -175,8 +175,8 @@
       "relightIntensity": "強度",
       "relightLight": "燈光 {{index}}",
       "relightRemoveLight": "移除燈光",
-      "relightShadows": "陰影",
       "relightShadowSoftness": "陰影柔和度",
+      "relightShadows": "陰影",
       "relightShine": "光澤",
       "relightSoftness": "柔和度",
       "relightType": "燈光類型",
@@ -310,11 +310,11 @@
     },
     "stacking": {
       "autoStack": "Auto-Stack by Burst",
-      "autoStackedToast_other": "Created {{count}} stacks.",
       "autoStackNone": "No burst groups found to stack.",
+      "autoStackedToast_other": "Created {{count}} stacks.",
+      "createFailed": "Not enough images to create a stack.",
       "create_other": "Stack into Group ({{count}})",
       "createdToast_other": "Created a stack with {{count}} images.",
-      "createFailed": "Not enough images to create a stack.",
       "title": "Stacking",
       "unstack": "Unstack"
     },
@@ -389,6 +389,174 @@
       "failedRemoveImages": "移除影像失敗：{{err}}",
       "failedSyncAdjustments": "同步調整到選中影像失敗：{{err}}"
     }
+  },
+  "crystal": {
+    "ai": {
+      "clarity": "清晰度",
+      "dehaze": "去霧",
+      "denoiseAmount": "降噪強度",
+      "lumaNr": "明度降噪",
+      "structure": "結構",
+      "texture": "紋理",
+      "tiles": {
+        "auto": "自動色調",
+        "denoise": "AI 降噪",
+        "detail": "細節+",
+        "enhance": "AI 強化"
+      }
+    },
+    "aiRecommend": {
+      "enhance": "AI 強化",
+      "failed": "AI 強化失敗",
+      "noExif": "無 EXIF 場景線索 — 試試 AI 強化",
+      "recipe": "場景配方",
+      "sceneBasis": "疑似{{scene}} · 依據 {{basis}}",
+      "scenes": {
+        "landscape": "風景",
+        "night": "夜景",
+        "portrait": "人像",
+        "tele": "長焦"
+      },
+      "tagExif": "EXIF",
+      "title": "AI 推薦"
+    },
+    "backToLibrary": "返回圖庫",
+    "bottom": {
+      "compare": "比較",
+      "original": "原圖",
+      "redo": "重做",
+      "reset": "重設",
+      "save": "儲存",
+      "undo": "復原"
+    },
+    "categories": {
+      "ai": "AI工具",
+      "compose": "構圖",
+      "filter": "濾鏡",
+      "fx": "特效",
+      "portrait": "人像",
+      "presets": "預設集",
+      "tone": "調色"
+    },
+    "compose": {
+      "flipH": "水平翻轉",
+      "flipV": "垂直翻轉",
+      "free": "自由",
+      "perspectiveH": "水平透視",
+      "perspectiveV": "垂直透視",
+      "ratio11": "1:1",
+      "ratio169": "16:9",
+      "ratio32": "3:2",
+      "ratio43": "4:3",
+      "ratio916": "9:16",
+      "rotate90": "旋轉 90°",
+      "straighten": "拉直"
+    },
+    "export": {
+      "backToEdit": "返回編輯",
+      "backToLibrary": "圖庫",
+      "cta": "儲存到相簿",
+      "done": "已儲存到相簿",
+      "exporting": "儲存中…",
+      "favorite": "收藏",
+      "fontScale": "字體大小",
+      "format": "格式",
+      "infoFrameHint": "匯出時烙印 EXIF 資訊條與照片相框",
+      "infoFrameLabel": "在成片中顯示資訊欄與相框",
+      "livePreview": "即時預覽",
+      "noExif": "無 EXIF",
+      "progress": "正在儲存 {{current}}/{{total}}",
+      "quality": "畫質",
+      "saveTemplate": "儲存範本",
+      "setDefault": "設為預設",
+      "signature": "簽名文案",
+      "signaturePlaceholder": "CRYSTAL · 專業攝影",
+      "templates": "浮水印範本"
+    },
+    "filters": {
+      "airy": "日系",
+      "coolBlue": "冷調",
+      "cyber": "賽博",
+      "faded": "褪色",
+      "film": "底片",
+      "goldBlack": "黑金",
+      "goldenHour": "暖陽",
+      "hdrPunch": "通透",
+      "mono": "黑白",
+      "softMist": "柔霧",
+      "vintage": "復古",
+      "vivid": "鮮豔"
+    },
+    "fx": {
+      "dehaze": "去霧",
+      "flare": "眩光",
+      "glow": "柔光",
+      "grain": "顆粒",
+      "halation": "光暈",
+      "vignette": "暗角"
+    },
+    "originalBadge": "原圖",
+    "portrait": {
+      "clarity": "清晰度",
+      "contour": "輪廓",
+      "glow": "柔光",
+      "oneTap": "一鍵人像",
+      "softSkin": "柔膚",
+      "warmth": "暖調"
+    },
+    "presets": {
+      "empty": "尚無預設集 — 可在桌面版建立或匯入。",
+      "intensity": "強度"
+    },
+    "previewAlt": "編輯預覽",
+    "previewRendering": "算繪中…",
+    "redo": "重做",
+    "resetConfirm": {
+      "message": "將恢復原始畫面，並重建復原歷史。",
+      "title": "重設所有編輯？"
+    },
+    "save": "儲存",
+    "subtitleFallback": "照片",
+    "templates": {
+      "cinema": {
+        "name": "電影底片",
+        "sub": "底片質感"
+      },
+      "landscape": {
+        "name": "風景大片",
+        "sub": "寬幅相框"
+      },
+      "minimal": {
+        "name": "極簡高級",
+        "sub": "僅簽名"
+      },
+      "mono": {
+        "name": "黑白經典",
+        "sub": "黑白資訊欄"
+      },
+      "pro": {
+        "name": "專業攝影",
+        "sub": "資訊欄+相框"
+      },
+      "street": {
+        "name": "街拍隨行",
+        "sub": "簡潔簽名"
+      }
+    },
+    "title": "專業修圖",
+    "tone": {
+      "blacks": "黑色",
+      "contrast": "對比",
+      "exposure": "曝光",
+      "highlights": "亮部",
+      "saturation": "飽和度",
+      "shadows": "陰影",
+      "temperature": "色溫",
+      "tint": "色調",
+      "vibrance": "自然飽和度",
+      "whites": "白色"
+    },
+    "undo": "復原"
   },
   "editor": {
     "adjustments": {
@@ -566,8 +734,8 @@
         "hPlaceholder": "高",
         "hTooltip": "高度",
         "removeTooltip": "刪除已儲存的寬高比",
-        "savedTooltip": "已儲存的寬高比 {{ratio}}",
         "saveTooltip": "將寬高比儲存為預設",
+        "savedTooltip": "已儲存的寬高比 {{ratio}}",
         "wPlaceholder": "寬",
         "wTooltip": "寬度"
       },
@@ -783,8 +951,8 @@
         "copySectionSettings": "複製 {{section}} 設定",
         "faceParts": {
           "bodySkin": "身體皮膚",
-          "eyebrows": "眉毛",
           "eyeWhites": "眼白",
+          "eyebrows": "眉毛",
           "faceSkin": "臉部皮膚",
           "hair": "頭髮",
           "iris": "虹膜與瞳孔",
@@ -894,8 +1062,8 @@
       "organization": {
         "addTagPlaceholder": "新增標籤...",
         "colorLabel": "顏色標籤",
-        "none": "無",
         "noTags": "無標籤",
+        "none": "無",
         "rating": "評分",
         "ratingLabels": "評分與標籤",
         "tags": "標籤",
@@ -1144,12 +1312,12 @@
       "estimatedSize": "預計檔案大小：約 {{size}}",
       "estimatedTotalSize": "預計總大小：約 {{size}}",
       "estimatingSize": "正在估算大小...",
-      "exporting": "匯出中…",
-      "exportingProgress": "匯出中…（{{current}}/{{total}}）",
       "exportMultiple": "匯出 {{count}} {{label}}",
       "exportMultiple_one": "匯出 {{count}} {{label}}",
       "exportMultiple_other": "匯出 {{count}} {{label}}",
       "exportSingle": "匯出 {{label}}",
+      "exporting": "匯出中…",
+      "exportingProgress": "匯出中…（{{current}}/{{total}}）",
       "failed": "匯出失敗",
       "noImageSelected": "未選擇要匯出的影像。",
       "noImagesSelected": "未選擇影像。",
@@ -1297,8 +1465,8 @@
       "iso": "ISO",
       "metadata": "中繼資料",
       "noMetadataAvailable": "無可用中繼資料",
-      "none": "無",
       "noTagsAdded": "未新增標籤",
+      "none": "無",
       "rateAndLabel": "評分與標籤",
       "rating": "評分",
       "selectImagesToCompare": "選擇要比較的影像",
@@ -1656,8 +1824,8 @@
       "layout": "版面配置",
       "original": "原始",
       "saveButton": "儲存拼貼畫",
-      "saved": "拼貼畫已儲存！",
       "saveFailed": "無法儲存拼貼畫。",
+      "saved": "拼貼畫已儲存！",
       "saving": "儲存中...",
       "shuffleTooltip": "隨機排列影像",
       "spacing": "間距"
@@ -1741,9 +1909,9 @@
       "applyButton_one": "應用到 1 張影像",
       "applyButton_other": "應用到 {{count}} 張影像",
       "bestImage": "最佳影像",
-      "blurryImagesTab": "模糊影像",
       "blurThreshold": "模糊臨界值",
       "blurThresholdDesc": "銳度評分低於此值的影像將被標記。值越高越嚴格。",
+      "blurryImagesTab": "模糊影像",
       "cancel": "取消",
       "close": "關閉",
       "cullingFailed": "篩選失敗",
@@ -1902,11 +2070,11 @@
       "create": "Create",
       "createTitle": "New Smart Album",
       "description": "A smart album automatically collects images matching the rules below.",
+      "editTitle": "Edit Smart Album",
       "edited": {
         "edited": "Edited",
         "unedited": "Unedited"
       },
-      "editTitle": "Edit Smart Album",
       "fields": {
         "camera": "Camera",
         "color": "Color Label",
@@ -2401,8 +2569,8 @@
     "tagging": {
       "addCustomPlaceholder": "新增自定義 AI 標籤（逗號分隔）...",
       "addCustomTooltip": "新增 AI 標籤",
-      "addShortcutsPlaceholder": "新增快捷方式（逗號分隔）...",
       "addShortcutTooltip": "新增快捷方式",
+      "addShortcutsPlaceholder": "新增快捷方式（逗號分隔）...",
       "aiTagging": "AI 標籤",
       "aiTaggingDesc": "使用 AI（CLIP）模型啟用自動影像標籤。這將下載額外的模型，並在瀏覽資料夾時影響效能。標籤用於搜尋資料夾。",
       "amount": "數量",
@@ -2440,13 +2608,13 @@
       "autoCheck": "自動檢查更新",
       "autoCheckDesc": "應用程式啟動時檢查 GitHub 上是否有新版本。",
       "available": "發現新版本 {{version}}。",
-      "checking": "正在檢查更新…",
       "checkNow": "檢查更新",
+      "checking": "正在檢查更新…",
       "connecting": "正在連線更新伺服器…",
       "currentVersion": "目前版本：{{version}}",
       "desc": "保持應用程式為最新版本，取得最新功能與修復。",
-      "downloading": "正在下載更新…",
       "downloadInstall": "下載並安裝",
+      "downloading": "正在下載更新…",
       "failed": "檢查更新失敗：{{error}}",
       "installing": "正在安裝並重新啟動…",
       "lastChecked": "最近檢查：{{time}}",
@@ -2532,8 +2700,8 @@
       "connectionFailed": "連線失敗: {{err}}",
       "detectionFailed": "偵測失敗: {{err}}",
       "intervalCaptureError": "間隔拍攝失敗：{{err}}",
-      "intervalStarted": "間隔拍攝已啟動（每 {{ms}} 毫秒）",
       "intervalStartFailed": "啟動間隔拍攝失敗：{{err}}",
+      "intervalStarted": "間隔拍攝已啟動（每 {{ms}} 毫秒）",
       "intervalStopFailed": "停止間隔拍攝失敗：{{err}}",
       "intervalStopped_other": "間隔拍攝已停止，共拍攝 {{count}} 張",
       "noCamerasFound": "未找到相機。請確保處於 PC 遙控模式。",

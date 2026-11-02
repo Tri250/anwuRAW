@@ -38,6 +38,7 @@ import PresetsPanel from './components/panel/right/PresetsPanel';
 import TetheringPanel from './components/panel/right/TetheringPanel';
 
 import EditorView from './components/views/EditorView';
+import CrystalMobileApp from './components/mobile/CrystalMobileApp';
 import LibraryView from './components/views/LibraryView';
 
 import { ContextMenuProvider } from './context/ContextMenuContext';
@@ -958,8 +959,11 @@ function App() {
                     activeView === 'editor' && selectedImage ? 'flex' : 'hidden',
                   )}
                 >
-                  {selectedImage && (
-                    <EditorView
+                  {selectedImage &&
+                    (isAndroid && (appSettings?.crystalMobile ?? true) ? (
+                      <CrystalMobileApp onBackToLibrary={handleBackToLibrary} />
+                    ) : (
+                      <EditorView
                       transformWrapperRef={transformWrapperRef}
                       isResizing={isResizing}
                       layoutMode={layoutMode}
@@ -984,7 +988,7 @@ function App() {
                       requestThumbnails={requestThumbnails}
                       renderAppPanel={renderAppPanel}
                     />
-                  )}
+                    ))}
                 </div>
                 <div
                   className={clsx(

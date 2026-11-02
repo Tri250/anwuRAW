@@ -80,13 +80,13 @@
       "whiteBalance": "Witbalans"
     },
     "curves": {
+      "channelTitle": "{{channel}} kanaal",
       "channels": {
         "blue": "Blauw",
         "green": "Groen",
         "luma": "Luma",
         "red": "Rood"
       },
-      "channelTitle": "{{channel}} kanaal",
       "copyParametric": "Kopieer {{channel}} parametrische curve",
       "copyPoint": "Kopieer {{channel}} puntcurve",
       "curveDataUnavailable": "Curvegegevens niet beschikbaar.",
@@ -175,8 +175,8 @@
       "relightIntensity": "Intensiteit",
       "relightLight": "Licht {{index}}",
       "relightRemoveLight": "Licht verwijderen",
-      "relightShadows": "Schaduwen",
       "relightShadowSoftness": "Schaduwzachtheid",
+      "relightShadows": "Schaduwen",
       "relightShine": "Glans",
       "relightSoftness": "Zachtheid",
       "relightType": "Lichttype",
@@ -310,14 +310,14 @@
     },
     "stacking": {
       "autoStack": "Auto-Stack by Burst",
+      "autoStackNone": "No burst groups found to stack.",
       "autoStackedToast_one": "Created {{count}} stacks.",
       "autoStackedToast_other": "Created {{count}} stacks.",
-      "autoStackNone": "No burst groups found to stack.",
+      "createFailed": "Not enough images to create a stack.",
       "create_one": "Stack into Group ({{count}})",
       "create_other": "Stack into Group ({{count}})",
       "createdToast_one": "Created a stack with {{count}} images.",
       "createdToast_other": "Created a stack with {{count}} images.",
-      "createFailed": "Not enough images to create a stack.",
       "title": "Stacking",
       "unstack": "Unstack"
     },
@@ -392,6 +392,174 @@
       "failedRemoveImages": "Afbeeldingen verwijderen mislukt: {{err}}",
       "failedSyncAdjustments": "Synchroniseren van aanpassingen met geselecteerde afbeeldingen mislukt: {{err}}"
     }
+  },
+  "crystal": {
+    "ai": {
+      "clarity": "Helderheid",
+      "dehaze": "Nevel verwijderen",
+      "denoiseAmount": "Ruisonderdrukking",
+      "lumaNr": "Luminantie-ruis",
+      "structure": "Structuur",
+      "texture": "Textuur",
+      "tiles": {
+        "auto": "Auto-toon",
+        "denoise": "AI-ruis",
+        "detail": "Detail+",
+        "enhance": "AI-verbetering"
+      }
+    },
+    "aiRecommend": {
+      "enhance": "AI-verbetering",
+      "failed": "AI-verbetering mislukt",
+      "noExif": "Geen EXIF-aanwijzingen — probeer AI-verbetering",
+      "recipe": "Scènerecept",
+      "sceneBasis": "Lijkt op {{scene}} · op basis van {{basis}}",
+      "scenes": {
+        "landscape": "landschap",
+        "night": "nacht",
+        "portrait": "portret",
+        "tele": "teleobjectief"
+      },
+      "tagExif": "EXIF",
+      "title": "AI-advies"
+    },
+    "backToLibrary": "Terug naar bibliotheek",
+    "bottom": {
+      "compare": "Vergelijken",
+      "original": "Origineel",
+      "redo": "Opnieuw",
+      "reset": "Herstellen",
+      "save": "Opslaan",
+      "undo": "Ongedaan maken"
+    },
+    "categories": {
+      "ai": "AI",
+      "compose": "Uitsnede",
+      "filter": "Filters",
+      "fx": "Effecten",
+      "portrait": "Portret",
+      "presets": "Voorinstellingen",
+      "tone": "Toon"
+    },
+    "compose": {
+      "flipH": "Spiegel H",
+      "flipV": "Spiegel V",
+      "free": "Vrij",
+      "perspectiveH": "Horizontaal",
+      "perspectiveV": "Verticaal",
+      "ratio11": "1:1",
+      "ratio169": "16:9",
+      "ratio32": "3:2",
+      "ratio43": "4:3",
+      "ratio916": "9:16",
+      "rotate90": "90° draaien",
+      "straighten": "Rechtzetten"
+    },
+    "export": {
+      "backToEdit": "Terug naar bewerken",
+      "backToLibrary": "Bibliotheek",
+      "cta": "Opslaan op toestel",
+      "done": "Opgeslagen op toestel",
+      "exporting": "Opslaan…",
+      "favorite": "Favoriet",
+      "fontScale": "Tekengrootte",
+      "format": "Formaat",
+      "infoFrameHint": "Brandt de EXIF-balk en het kader in de export",
+      "infoFrameLabel": "Infolbalk & kader tonen",
+      "livePreview": "Live voorvertoning",
+      "noExif": "Geen EXIF",
+      "progress": "Opslaan {{current}}/{{total}}",
+      "quality": "Kwaliteit",
+      "saveTemplate": "Opslaan",
+      "setDefault": "Standaard",
+      "signature": "Handtekening",
+      "signaturePlaceholder": "CRYSTAL · Pro Fotografie",
+      "templates": "Watermerksjablonen"
+    },
+    "filters": {
+      "airy": "Luchtig",
+      "coolBlue": "Koei blauw",
+      "cyber": "Cyber",
+      "faded": "Vervaagd",
+      "film": "Film",
+      "goldBlack": "Goud & zwart",
+      "goldenHour": "Gouden uur",
+      "hdrPunch": "HDR-punch",
+      "mono": "Mono",
+      "softMist": "Zachte mist",
+      "vintage": "Vintage",
+      "vivid": "Levendig"
+    },
+    "fx": {
+      "dehaze": "Nevel verwijderen",
+      "flare": "Stralenkrans",
+      "glow": "Gloed",
+      "grain": "Korrel",
+      "halation": "Haling",
+      "vignette": "Vignet"
+    },
+    "originalBadge": "ORIGINEEL",
+    "portrait": {
+      "clarity": "Helderheid",
+      "contour": "Contour",
+      "glow": "Gloed",
+      "oneTap": "Portret met één tik",
+      "softSkin": "Zachte huid",
+      "warmth": "Warmte"
+    },
+    "presets": {
+      "empty": "Nog geen voorinstellingen — maak of importeer ze op desktop.",
+      "intensity": "Sterkte"
+    },
+    "previewAlt": "Bewerkte voorvertoning",
+    "previewRendering": "Renderen…",
+    "redo": "Opnieuw",
+    "resetConfirm": {
+      "message": "Herstelt het origineel en bouwt de geschiedenis opnieuw op.",
+      "title": "Alle bewerkingen herstellen?"
+    },
+    "save": "Opslaan",
+    "subtitleFallback": "Foto",
+    "templates": {
+      "cinema": {
+        "name": "Cinema",
+        "sub": "Filmlook"
+      },
+      "landscape": {
+        "name": "Landschap",
+        "sub": "Breed kader"
+      },
+      "minimal": {
+        "name": "Minimal",
+        "sub": "Alleen handtekening"
+      },
+      "mono": {
+        "name": "Mono Klassiek",
+        "sub": "Z/W-infolbalk"
+      },
+      "pro": {
+        "name": "Pro Foto",
+        "sub": "Infolbalk + kader"
+      },
+      "street": {
+        "name": "Street",
+        "sub": "Strakke handtekening"
+      }
+    },
+    "title": "Pro-bewerking",
+    "tone": {
+      "blacks": "Zwarten",
+      "contrast": "Contrast",
+      "exposure": "Belichting",
+      "highlights": "Hoge lichten",
+      "saturation": "Verzadiging",
+      "shadows": "Schaduwen",
+      "temperature": "Temperatuur",
+      "tint": "Tint",
+      "vibrance": "Levendigheid",
+      "whites": "Witten"
+    },
+    "undo": "Ongedaan maken"
   },
   "editor": {
     "adjustments": {
@@ -565,8 +733,8 @@
         "hPlaceholder": "H",
         "hTooltip": "Hoogte",
         "removeTooltip": "Opgeslagen beeldverhouding verwijderen",
-        "savedTooltip": "Opgeslagen beeldverhouding {{ratio}}",
         "saveTooltip": "Beeldverhouding opslaan als voorinstelling",
+        "savedTooltip": "Opgeslagen beeldverhouding {{ratio}}",
         "wPlaceholder": "B",
         "wTooltip": "Breedte"
       },
@@ -782,8 +950,8 @@
         "copySectionSettings": "{{section}} instellingen kopiëren",
         "faceParts": {
           "bodySkin": "Lichaamshuid",
-          "eyebrows": "Wenkbrauwen",
           "eyeWhites": "Oogwit",
+          "eyebrows": "Wenkbrauwen",
           "faceSkin": "Gezichtshuid",
           "hair": "Haar",
           "iris": "Iris en pupil",
@@ -881,8 +1049,8 @@
       "organization": {
         "addTagPlaceholder": "Tag toevoegen...",
         "colorLabel": "Kleurlabel",
-        "none": "Geen",
         "noTags": "Geen tags",
+        "none": "Geen",
         "rating": "Beoordeling",
         "ratingLabels": "Beoordeling & labels",
         "tags": "Tags",
@@ -1119,12 +1287,12 @@
       "estimatedSize": "Geschatte bestandsgrootte: ~{{size}}",
       "estimatedTotalSize": "Geschatte totale grootte: ~{{size}}",
       "estimatingSize": "Grootte schatten...",
-      "exporting": "Exporteren…",
-      "exportingProgress": "Exporteren… ({{current}}/{{total}})",
       "exportMultiple": "{{count}} {{label}} exporteren",
       "exportMultiple_one": "{{count}} {{label}} exporteren",
       "exportMultiple_other": "{{count}} {{label}} exporteren",
       "exportSingle": "{{label}} exporteren",
+      "exporting": "Exporteren…",
+      "exportingProgress": "Exporteren… ({{current}}/{{total}})",
       "failed": "Export mislukt",
       "noImageSelected": "Geen afbeelding geselecteerd voor export.",
       "noImagesSelected": "Geen afbeeldingen geselecteerd.",
@@ -1272,8 +1440,8 @@
       "iso": "ISO",
       "metadata": "Metadata",
       "noMetadataAvailable": "Geen metadata beschikbaar",
-      "none": "Geen",
       "noTagsAdded": "Geen tags toegevoegd",
+      "none": "Geen",
       "rateAndLabel": "Beoordelen & labelen",
       "rating": "Beoordeling",
       "selectImagesToCompare": "Selecteer afbeeldingen om te vergelijken",
@@ -1636,8 +1804,8 @@
       "layout": "Indeling",
       "original": "Origineel",
       "saveButton": "Collage opslaan",
-      "saved": "Collage opgeslagen!",
       "saveFailed": "Kon de collage niet opslaan.",
+      "saved": "Collage opgeslagen!",
       "saving": "Opslaan...",
       "shuffleTooltip": "Afbeeldingen door elkaar schudden",
       "spacing": "Tussenruimte"
@@ -1721,9 +1889,9 @@
       "applyButton_one": "Toepassen op 1 afbeelding",
       "applyButton_other": "Toepassen op {{count}} afbeeldingen",
       "bestImage": "Beste afbeelding",
-      "blurryImagesTab": "Onscherpe afbeeldingen",
       "blurThreshold": "Onscherptedrempel",
       "blurThresholdDesc": "Afbeeldingen met een scherptewaarde onder deze waarde worden gemarkeerd. Hoger is strenger.",
+      "blurryImagesTab": "Onscherpe afbeeldingen",
       "cancel": "Annuleren",
       "close": "Sluiten",
       "cullingFailed": "Selectie mislukt",
@@ -1882,11 +2050,11 @@
       "create": "Create",
       "createTitle": "New Smart Album",
       "description": "A smart album automatically collects images matching the rules below.",
+      "editTitle": "Edit Smart Album",
       "edited": {
         "edited": "Edited",
         "unedited": "Unedited"
       },
-      "editTitle": "Edit Smart Album",
       "fields": {
         "camera": "Camera",
         "color": "Color Label",
@@ -2381,8 +2549,8 @@
     "tagging": {
       "addCustomPlaceholder": "Aangepaste AI-tags toevoegen (komma gescheiden)...",
       "addCustomTooltip": "AI-tag toevoegen",
-      "addShortcutsPlaceholder": "Snelkoppelingen toevoegen (komma gescheiden)...",
       "addShortcutTooltip": "Snelkoppeling toevoegen",
+      "addShortcutsPlaceholder": "Snelkoppelingen toevoegen (komma gescheiden)...",
       "aiTagging": "AI-tagging",
       "aiTaggingDesc": "Schakelt automatische afbeeldingstagging in met behulp van een AI (CLIP) model. Dit downloadt een extra model en beïnvloedt de prestaties tijdens het bladeren door mappen. Tags worden gebruikt voor het doorzoeken van een map.",
       "amount": "Hoeveelheid",
@@ -2420,13 +2588,13 @@
       "autoCheck": "Automatisch controleren op updates",
       "autoCheckDesc": "Controleer bij het starten van de app op GitHub of er een nieuwe versie is.",
       "available": "Versie {{version}} is beschikbaar.",
-      "checking": "Controleren op updates…",
       "checkNow": "Controleren op updates",
+      "checking": "Controleren op updates…",
       "connecting": "Verbinding maken met de updateserver…",
       "currentVersion": "Huidige versie: {{version}}",
       "desc": "Houd de app actueel met de nieuwste functies en verbeteringen.",
-      "downloading": "Update wordt gedownload…",
       "downloadInstall": "Downloaden en installeren",
+      "downloading": "Update wordt gedownload…",
       "failed": "Updatecontrole mislukt: {{error}}",
       "installing": "Installeren en herstarten…",
       "lastChecked": "Laatst gecontroleerd: {{time}}",
@@ -2514,8 +2682,8 @@
       "connectionFailed": "Verbinding mislukt: {{err}}",
       "detectionFailed": "Detectie mislukt: {{err}}",
       "intervalCaptureError": "Interval capture failed: {{err}}",
-      "intervalStarted": "Interval capture started (every {{ms}} ms)",
       "intervalStartFailed": "Failed to start interval capture: {{err}}",
+      "intervalStarted": "Interval capture started (every {{ms}} ms)",
       "intervalStopFailed": "Failed to stop interval capture: {{err}}",
       "intervalStopped_one": "Interval capture stopped after {{count}} shot",
       "intervalStopped_other": "Interval capture stopped after {{count}} shots",

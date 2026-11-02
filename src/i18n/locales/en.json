@@ -80,13 +80,13 @@
       "whiteBalance": "White Balance"
     },
     "curves": {
+      "channelTitle": "{{channel}} Channel",
       "channels": {
         "blue": "Blue",
         "green": "Green",
         "luma": "Luma",
         "red": "Red"
       },
-      "channelTitle": "{{channel}} Channel",
       "copyParametric": "Copy {{channel}} Parametric Curve",
       "copyPoint": "Copy {{channel}} Point Curve",
       "curveDataUnavailable": "Curve data not available.",
@@ -175,8 +175,8 @@
       "relightIntensity": "Intensity",
       "relightLight": "Light {{index}}",
       "relightRemoveLight": "Remove Light",
-      "relightShadows": "Shadows",
       "relightShadowSoftness": "Shadow Softness",
+      "relightShadows": "Shadows",
       "relightShine": "Shine",
       "relightSoftness": "Softness",
       "relightType": "Light Type",
@@ -310,17 +310,17 @@
     },
     "stacking": {
       "autoStack": "Auto-Stack by Burst",
+      "autoStackNone": "No burst groups found to stack.",
       "autoStackedToast": "Created {{count}} stacks.",
       "autoStackedToast_one": "Created {{count}} stacks.",
       "autoStackedToast_other": "Created {{count}} stacks.",
-      "autoStackNone": "No burst groups found to stack.",
       "create": "Stack into Group ({{count}})",
+      "createFailed": "Not enough images to create a stack.",
       "create_one": "Stack into Group ({{count}})",
       "create_other": "Stack into Group ({{count}})",
       "createdToast": "Created a stack with {{count}} images.",
       "createdToast_one": "Created a stack with {{count}} images.",
       "createdToast_other": "Created a stack with {{count}} images.",
-      "createFailed": "Not enough images to create a stack.",
       "title": "Stacking",
       "unstack": "Unstack"
     },
@@ -395,6 +395,174 @@
       "failedRemoveImages": "Failed to remove images: {{err}}",
       "failedSyncAdjustments": "Failed to sync adjustments to selected images: {{err}}"
     }
+  },
+  "crystal": {
+    "ai": {
+      "clarity": "Clarity",
+      "dehaze": "Dehaze",
+      "denoiseAmount": "Denoise amount",
+      "lumaNr": "Luma NR",
+      "structure": "Structure",
+      "texture": "Texture",
+      "tiles": {
+        "auto": "Auto Tone",
+        "denoise": "AI Denoise",
+        "detail": "Detail+",
+        "enhance": "AI Enhance"
+      }
+    },
+    "aiRecommend": {
+      "enhance": "AI Enhance",
+      "failed": "AI enhance failed",
+      "noExif": "No EXIF scene hints — try AI enhance",
+      "recipe": "Scene recipe",
+      "sceneBasis": "Looks like {{scene}} · based on {{basis}}",
+      "scenes": {
+        "landscape": "landscape",
+        "night": "night",
+        "portrait": "portrait",
+        "tele": "telephoto"
+      },
+      "tagExif": "EXIF",
+      "title": "AI Recommend"
+    },
+    "backToLibrary": "Back to library",
+    "bottom": {
+      "compare": "Compare",
+      "original": "Original",
+      "redo": "Redo",
+      "reset": "Reset",
+      "save": "Save",
+      "undo": "Undo"
+    },
+    "categories": {
+      "ai": "AI",
+      "compose": "Crop",
+      "filter": "Filters",
+      "fx": "Effects",
+      "portrait": "Portrait",
+      "presets": "Presets",
+      "tone": "Tone"
+    },
+    "compose": {
+      "flipH": "Flip H",
+      "flipV": "Flip V",
+      "free": "Free",
+      "perspectiveH": "Horizontal",
+      "perspectiveV": "Vertical",
+      "ratio11": "1:1",
+      "ratio169": "16:9",
+      "ratio32": "3:2",
+      "ratio43": "4:3",
+      "ratio916": "9:16",
+      "rotate90": "Rotate 90°",
+      "straighten": "Straighten"
+    },
+    "export": {
+      "backToEdit": "Back to edit",
+      "backToLibrary": "Library",
+      "cta": "Save to device",
+      "done": "Saved to device",
+      "exporting": "Saving…",
+      "favorite": "Favorite",
+      "fontScale": "Font size",
+      "format": "Format",
+      "infoFrameHint": "Burns the EXIF strip and photo frame into the export",
+      "infoFrameLabel": "Show info bar & frame",
+      "livePreview": "Live preview",
+      "noExif": "No EXIF",
+      "progress": "Saving {{current}}/{{total}}",
+      "quality": "Quality",
+      "saveTemplate": "Save",
+      "setDefault": "Default",
+      "signature": "Signature",
+      "signaturePlaceholder": "CRYSTAL · Pro Photography",
+      "templates": "Watermark templates"
+    },
+    "filters": {
+      "airy": "Airy",
+      "coolBlue": "Cool Blue",
+      "cyber": "Cyber",
+      "faded": "Faded",
+      "film": "Film",
+      "goldBlack": "Gold & Black",
+      "goldenHour": "Golden Hour",
+      "hdrPunch": "HDR Punch",
+      "mono": "Mono",
+      "softMist": "Soft Mist",
+      "vintage": "Vintage",
+      "vivid": "Vivid"
+    },
+    "fx": {
+      "dehaze": "Dehaze",
+      "flare": "Flare",
+      "glow": "Glow",
+      "grain": "Grain",
+      "halation": "Halation",
+      "vignette": "Vignette"
+    },
+    "originalBadge": "ORIGINAL",
+    "portrait": {
+      "clarity": "Clarity",
+      "contour": "Contour",
+      "glow": "Glow",
+      "oneTap": "One-tap portrait",
+      "softSkin": "Soft skin",
+      "warmth": "Warmth"
+    },
+    "presets": {
+      "empty": "No presets yet — create or import them on desktop.",
+      "intensity": "Strength"
+    },
+    "previewAlt": "Edited preview",
+    "previewRendering": "Rendering…",
+    "redo": "Redo",
+    "resetConfirm": {
+      "message": "This restores the original look and rebuilds the undo history.",
+      "title": "Reset all edits?"
+    },
+    "save": "Save",
+    "subtitleFallback": "Photo",
+    "templates": {
+      "cinema": {
+        "name": "Cinema",
+        "sub": "Film mood"
+      },
+      "landscape": {
+        "name": "Landscape",
+        "sub": "Wide frame"
+      },
+      "minimal": {
+        "name": "Minimal",
+        "sub": "Signature only"
+      },
+      "mono": {
+        "name": "Mono Classic",
+        "sub": "B&W info bar"
+      },
+      "pro": {
+        "name": "Pro Photo",
+        "sub": "Info bar + frame"
+      },
+      "street": {
+        "name": "Street",
+        "sub": "Clean signature"
+      }
+    },
+    "title": "Pro Edit",
+    "tone": {
+      "blacks": "Blacks",
+      "contrast": "Contrast",
+      "exposure": "Exposure",
+      "highlights": "Highlights",
+      "saturation": "Saturation",
+      "shadows": "Shadows",
+      "temperature": "Temperature",
+      "tint": "Tint",
+      "vibrance": "Vibrance",
+      "whites": "Whites"
+    },
+    "undo": "Undo"
   },
   "editor": {
     "adjustments": {
@@ -573,8 +741,8 @@
         "hPlaceholder": "H",
         "hTooltip": "Height",
         "removeTooltip": "Remove saved aspect ratio",
-        "savedTooltip": "Saved aspect ratio {{ratio}}",
         "saveTooltip": "Save aspect ratio as preset",
+        "savedTooltip": "Saved aspect ratio {{ratio}}",
         "wPlaceholder": "W",
         "wTooltip": "Width"
       },
@@ -790,8 +958,8 @@
         "copySectionSettings": "Copy {{section}} Settings",
         "faceParts": {
           "bodySkin": "Body Skin",
-          "eyebrows": "Eyebrows",
           "eyeWhites": "Eye Whites",
+          "eyebrows": "Eyebrows",
           "faceSkin": "Face Skin",
           "hair": "Hair",
           "iris": "Iris & Pupil",
@@ -902,8 +1070,8 @@
       "organization": {
         "addTagPlaceholder": "Add tag...",
         "colorLabel": "Color Label",
-        "none": "None",
         "noTags": "No tags",
+        "none": "None",
         "rating": "Rating",
         "ratingLabels": "Rating & Labels",
         "tags": "Tags",
@@ -1152,12 +1320,12 @@
       "estimatedSize": "Estimated file size: ~{{size}}",
       "estimatedTotalSize": "Estimated total size: ~{{size}}",
       "estimatingSize": "Estimating size...",
-      "exporting": "Exporting…",
-      "exportingProgress": "Exporting… ({{current}}/{{total}})",
       "exportMultiple": "Export {{count}} {{label}}",
       "exportMultiple_one": "Export {{count}} {{label}}",
       "exportMultiple_other": "Export {{count}} {{label}}",
       "exportSingle": "Export {{label}}",
+      "exporting": "Exporting…",
+      "exportingProgress": "Exporting… ({{current}}/{{total}})",
       "failed": "Export failed",
       "noImageSelected": "No image selected for export.",
       "noImagesSelected": "No images selected.",
@@ -1305,8 +1473,8 @@
       "iso": "ISO",
       "metadata": "Metadata",
       "noMetadataAvailable": "No metadata available",
-      "none": "None",
       "noTagsAdded": "No tags added",
+      "none": "None",
       "rateAndLabel": "Rate & Label",
       "rating": "Rating",
       "selectImagesToCompare": "Select images to compare",
@@ -1674,8 +1842,8 @@
       "layout": "Layout",
       "original": "Original",
       "saveButton": "Save Collage",
-      "saved": "Collage Saved!",
       "saveFailed": "Could not save the collage.",
+      "saved": "Collage Saved!",
       "saving": "Saving...",
       "shuffleTooltip": "Shuffle Images",
       "spacing": "Spacing"
@@ -1759,9 +1927,9 @@
       "applyButton_one": "Apply to 1 image",
       "applyButton_other": "Apply to {{count}} images",
       "bestImage": "Best Image",
-      "blurryImagesTab": "Blurry Images",
       "blurThreshold": "Blur Threshold",
       "blurThresholdDesc": "Images with a sharpness score below this value are flagged. Higher is stricter.",
+      "blurryImagesTab": "Blurry Images",
       "cancel": "Cancel",
       "close": "Close",
       "cullingFailed": "Culling Failed",
@@ -1920,11 +2088,11 @@
       "create": "Create",
       "createTitle": "New Smart Album",
       "description": "A smart album automatically collects images matching the rules below.",
+      "editTitle": "Edit Smart Album",
       "edited": {
         "edited": "Edited",
         "unedited": "Unedited"
       },
-      "editTitle": "Edit Smart Album",
       "fields": {
         "camera": "Camera",
         "color": "Color Label",
@@ -2445,8 +2613,8 @@
     "tagging": {
       "addCustomPlaceholder": "Add custom AI tags (comma separated)...",
       "addCustomTooltip": "Add AI tag",
-      "addShortcutsPlaceholder": "Add shortcuts (comma separated)...",
       "addShortcutTooltip": "Add Shortcut",
+      "addShortcutsPlaceholder": "Add shortcuts (comma separated)...",
       "aiTagging": "AI Tagging",
       "aiTaggingDesc": "Enables automatic image tagging using an AI (CLIP) model. This will download an additional model and impact performance while browsing folders. Tags are used for searching a folder.",
       "amount": "Amount",
@@ -2484,13 +2652,13 @@
       "autoCheck": "Automatically check for updates",
       "autoCheckDesc": "Check GitHub for a new version when the app starts.",
       "available": "Version {{version}} is available.",
-      "checking": "Checking for updates…",
       "checkNow": "Check for Updates",
+      "checking": "Checking for updates…",
       "connecting": "Connecting to the update server…",
       "currentVersion": "Current version: {{version}}",
       "desc": "Keep the app up to date with the latest features and fixes.",
-      "downloading": "Downloading update…",
       "downloadInstall": "Download and Install",
+      "downloading": "Downloading update…",
       "failed": "Update check failed: {{error}}",
       "installing": "Installing and restarting…",
       "lastChecked": "Last checked: {{time}}",
@@ -2590,8 +2758,8 @@
       "connectionFailed": "Connection failed: {{err}}",
       "detectionFailed": "Detection failed: {{err}}",
       "intervalCaptureError": "Interval capture failed: {{err}}",
-      "intervalStarted": "Interval capture started (every {{ms}} ms)",
       "intervalStartFailed": "Failed to start interval capture: {{err}}",
+      "intervalStarted": "Interval capture started (every {{ms}} ms)",
       "intervalStopFailed": "Failed to stop interval capture: {{err}}",
       "intervalStopped": "Interval capture stopped after {{count}} shots",
       "intervalStopped_one": "Interval capture stopped after {{count}} shot",
