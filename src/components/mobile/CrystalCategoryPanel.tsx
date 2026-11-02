@@ -12,16 +12,29 @@ import {
   Loader2,
   RotateCcw,
   RotateCw,
+  Smile,
+  Sparkles,
   Upload,
   X,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { v4 as uuidv4 } from 'uuid';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { Adjustments, DEFAULT_PARAMETRIC_CURVE_SETTINGS, ParametricCurve } from '../../utils/adjustments';
+import {
+  Adjustments,
+  DEFAULT_PARAMETRIC_CURVE_SETTINGS,
+  ParametricCurve,
+  INITIAL_MASK_CONTAINER,
+  getActiveTools,
+  setToolActive,
+} from '../../utils/adjustments';
 import { calculateCenteredCrop, calculateAutoCropForRotation } from '../../utils/cropUtils';
 import { buildParametricPoints } from '../../utils/parametricCurve';
+import { createSubMask } from '../../utils/maskUtils';
+import { getTransformAdjustments } from '../../hooks/useAiMasking';
 import { useEditorActions } from '../../hooks/useEditorActions';
+import { Invokes } from '../ui/AppProperties';
 import { CxSliderRow, CxSubSection, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
 import { Mask } from '../panel/right/Masks';
 import type { CrystalCategory } from './CrystalMobileApp';
@@ -352,16 +365,77 @@ function TonePanel() {
   );
 }
 
-/* ---------------------------- 人像（真实参数组合，无伪造 AI） ---------------------------- */
+/* ---------------------------- 人像 ---------------------------- */
+/* 人像精修算子：与桌面 MasksPanel RETOUCH_OPERATORS 同源（kind/parts/调整映射/激活分区）。
+ * 每个算子一个独立 AiFace 容器（parameters.retouchKind 与桌面互相兼容），
+ * 强度值由容器调整反推，滑杆 0 时移除容器（与桌面 handleRetouchChange 一致）。 */
+interface RetouchOp {
+  kind: 'smoothing' | 'teeth' | 'eyes';
+  parts: string[];
+  labelKey: ParseKeys;
+  sections: [string, string];
+  tileColor: string;
+  map: (v: number) => Record<string, number>;
+  inv: (adj: Record<string, unknown>) => number;
+}
+
+const RETOUCH_OPS: Array<RetouchOp> = [
+  {
+    kind: 'smoothing',
+    parts: ['faceSkin', 'bodySkin'],
+    labelKey: 'crystal.portrait.smoothSkin',
+    sections: ['details', 'details'],
+    tileColor: 'var(--cx-cat-tone)',
+    map: (v) => ({ lumaNoiseReduction: v, sharpness: v * 0.3 }),
+    inv: (adj) => Math.round(Number(adj.lumaNoiseReduction ?? 0)),
+  },
+  {
+    kind: 'teeth',
+    parts: ['teeth'],
+    labelKey: 'crystal.portrait.teethWhiten',
+    sections: ['basic', 'color'],
+    tileColor: 'var(--cx-cat-portrait)',
+    map: (v) => ({ exposure: v * 0.25, saturation: -v * 0.4 }),
+    inv: (adj) => Math.round(Number(adj.exposure ?? 0) / 0.25),
+  },
+  {
+    kind: 'eyes',
+    parts: ['iris', 'eyeWhites'],
+    labelKey: 'crystal.portrait.eyeEnhance',
+    sections: ['basic', 'details'],
+    tileColor: 'var(--cx-cat-ai)',
+    map: (v) => ({ clarity: v * 0.4, exposure: v * 0.12 }),
+    inv: (adj) => Math.round(Number(adj.clarity ?? 0) / 0.4),
+  },
+];
+const RETOUCH_DEFAULT = 50;
+
 function PortraitPanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
-  const { applyPatch } = useCrystalAdjust();
-  const { handleGenerateAiFaceMask, findContainer, ensureContainer, setMaskAdjustments, maskReady, removeContainer } =
-    useCrystalAiMasks();
+  const { applyPatch, setAdjustments } = useCrystalAdjust();
+  const {
+    handleGenerateAiFaceMask,
+    findContainer,
+    ensureContainer,
+    findContainerByKind,
+    removeContainerByKind,
+    updateSubMaskParameters,
+    setMaskAdjustments,
+  } = useCrystalAiMasks();
 
-  const [eyeBusy, setEyeBusy] = useState(false);
+  const [opBusy, setOpBusy] = useState<string | null>(null);
+  const [unifyBusy, setUnifyBusy] = useState(false);
   const [blurBusy, setBlurBusy] = useState(false);
+  const liquifyTimerRef = useRef<number | null>(null);
+  const liquifyGenRef = useRef(0);
+
+  useEffect(
+    () => () => {
+      if (liquifyTimerRef.current) window.clearTimeout(liquifyTimerRef.current);
+    },
+    [],
+  );
 
   const oneTapPortrait = useCallback(() => {
     // 一键人像：柔肤降噪 + 轻微通透 + 暖调，全部为真实管线参数。
@@ -375,39 +449,224 @@ function PortraitPanel() {
     });
   }, [adjustments, applyPatch]);
 
-  /* 边界计划 P1：眼部增强 —— 复用桌面 face mask（iris/eyeWhites）链路。
-   * 强度 v → clarity 0.4v + exposure 0.12v（MasksPanel RetouchKind.eyes 同源映射）。 */
-  const runEyeEnhance = useCallback(async () => {
-    if (eyeBusy) return;
-    setEyeBusy(true);
-    try {
-      const container = ensureContainer(Mask.AiFace, { parts: ['iris', 'eyeWhites'] });
-      await handleGenerateAiFaceMask(container.subMasks[0].id, ['iris', 'eyeWhites']);
-      if (maskReady(Mask.AiFace)) {
-        // 仅首次识别后写入默认强度；重复执行不覆盖用户已调值。
-        if (!Number(container.adjustments.clarity ?? 0)) setMaskAdjustments(container.id, { clarity: 20, exposure: 6 });
-      } else {
-        toast.error(t('crystal.ai.maskFailed'));
-      }
-    } catch {
-      toast.error(t('crystal.ai.maskFailed'));
-    } finally {
-      setEyeBusy(false);
-    }
-  }, [ensureContainer, eyeBusy, handleGenerateAiFaceMask, maskReady, setMaskAdjustments, t]);
+  const activateSections = (sections: [string, string]): Record<string, boolean> => {
+    const at = { ...getActiveTools(INITIAL_MASK_CONTAINER.adjustments) } as Record<string, boolean>;
+    at[sections[0]] = true;
+    at[sections[1]] = true;
+    return at;
+  };
 
-  const eyesContainer = findContainer(Mask.AiFace);
-  const eyeReady = maskReady(Mask.AiFace);
-  const eyeStrength = eyesContainer ? Math.round(Number(eyesContainer.adjustments.clarity ?? 0) / 0.4) : 0;
-  const setEyeStrength = useCallback(
-    (v: number) => {
-      if (eyesContainer)
-        setMaskAdjustments(eyesContainer.id, { clarity: Math.round(v * 0.4), exposure: Math.round(v * 0.12) });
+  /* 算子开关：未开启 → 建独立 AiFace 容器（parts 限定作用域）并识别；已开启 → 移除。 */
+  const runOperator = useCallback(
+    async (op: RetouchOp) => {
+      if (opBusy) return;
+      if (findContainerByKind(op.kind)) {
+        removeContainerByKind(op.kind);
+        return;
+      }
+      setOpBusy(op.kind);
+      try {
+        const { selectedImage: img } = useEditorStore.getState();
+        const subMask = createSubMask(Mask.AiFace, { width: img?.width ?? 1000, height: img?.height ?? 1000 });
+        subMask.parameters = {
+          ...subMask.parameters,
+          parts: [...op.parts],
+          retouchKind: op.kind,
+          retouch: { [op.kind]: RETOUCH_DEFAULT },
+        };
+        const containerId = uuidv4();
+        const container = {
+          ...INITIAL_MASK_CONTAINER,
+          id: containerId,
+          name: t(`editor.masks.retouch.${op.kind}Container`),
+          subMasks: [subMask],
+          adjustments: {
+            ...INITIAL_MASK_CONTAINER.adjustments,
+            ...op.map(RETOUCH_DEFAULT),
+            activeTools: activateSections(op.sections),
+          },
+        };
+        setAdjustments((prev) => ({ ...prev, masks: [...(prev.masks || []), container] }));
+        await handleGenerateAiFaceMask(subMask.id, op.parts);
+        const latest = useEditorStore.getState().adjustments;
+        const created = (latest.masks || []).find((c) => c.id === containerId);
+        if (!created?.subMasks[0]?.parameters?.maskDataBase64) {
+          toast.error(t('crystal.ai.maskFailed'));
+        }
+      } catch {
+        toast.error(t('crystal.ai.maskFailed'));
+      } finally {
+        setOpBusy(null);
+      }
     },
-    [eyesContainer, setMaskAdjustments],
+    [findContainerByKind, handleGenerateAiFaceMask, opBusy, removeContainerByKind, setAdjustments, t],
   );
 
-  /* 边界计划 P1：背景虚化 —— 复用桌面 Effects 链路（generate_full_image_depth_map
+  /* 移除算子容器；若其承载美型（liquify）值，则同步清掉对应 aiPatch。 */
+  const removeOperator = useCallback(
+    (op: RetouchOp) => {
+      const container = findContainerByKind(op.kind);
+      removeContainerByKind(op.kind);
+      const liq = container?.subMasks[0]?.parameters?.liquify as { slimFace?: number; jawline?: number } | undefined;
+      if (container && liq && ((liq.slimFace ?? 0) > 0 || (liq.jawline ?? 0) > 0)) {
+        const patchId = `face-liquify-${container.id}`;
+        useEditorStore.getState().patchesSentToBackend.delete(patchId);
+        setAdjustments((prev) => ({
+          ...prev,
+          aiPatches: (prev.aiPatches || []).filter((p) => p.id !== patchId),
+        }));
+      }
+    },
+    [findContainerByKind, removeContainerByKind, setAdjustments],
+  );
+
+  /* 统一肤色：复用桌面 ComputeSkinUnify，结果写入磨皮容器 colorGrading.global。 */
+  const handleUnifySkin = useCallback(async () => {
+    const container = findContainerByKind('smoothing');
+    const img = useEditorStore.getState().selectedImage;
+    if (!container || !img) return;
+    setUnifyBusy(true);
+    try {
+      const main = useEditorStore.getState();
+      const result: { colorGrading?: { global?: Record<string, unknown> } } | null = await invoke(
+        Invokes.ComputeSkinUnify,
+        {
+          jsAdjustments: getTransformAdjustments(main.adjustments),
+          path: img.path,
+          rotation: main.adjustments.rotation ?? 0,
+          flipHorizontal: main.adjustments.flipHorizontal ?? false,
+          flipVertical: main.adjustments.flipVertical ?? false,
+          orientationSteps: main.adjustments.orientationSteps ?? 0,
+        },
+      );
+      const global = result?.colorGrading?.global;
+      if (global) {
+        setAdjustments((prev) => ({
+          ...prev,
+          masks: (prev.masks || []).map((c) =>
+            c.id === container.id
+              ? {
+                  ...c,
+                  adjustments: {
+                    ...c.adjustments,
+                    colorGrading: {
+                      ...INITIAL_MASK_CONTAINER.adjustments.colorGrading,
+                      ...(c.adjustments.colorGrading ?? {}),
+                      global: {
+                        ...INITIAL_MASK_CONTAINER.adjustments.colorGrading.global,
+                        ...((c.adjustments.colorGrading ?? {}).global ?? {}),
+                        ...global,
+                      },
+                    },
+                    activeTools: setToolActive(getActiveTools(c.adjustments), 'color', true),
+                  },
+                }
+              : c,
+          ),
+        }));
+        toast.success(t('crystal.portrait.unifyDone'));
+      }
+    } catch (e) {
+      console.error('Skin unify failed:', e);
+      toast.error(t('crystal.portrait.unifyFailed'));
+    } finally {
+      setUnifyBusy(false);
+    }
+  }, [findContainerByKind, setAdjustments, t]);
+
+  /* 美型（瘦脸/下颌线）：值存宿主 AiFace 容器 submask.parameters.liquify（与桌面一致），
+   * 防抖 600ms 调 GenerateFaceLiquifyPatch → aiPatches upsert；双 0 自动移除补丁。 */
+  const runFaceLiquify = useCallback(async () => {
+    const main = useEditorStore.getState();
+    const host = (main.adjustments.masks || []).find((c) => c.subMasks.some((sm) => sm.type === Mask.AiFace));
+    if (!host || !main.selectedImage) return;
+    const liq = (host.subMasks[0]?.parameters?.liquify ?? {}) as { slimFace?: number; jawline?: number };
+    const slim = liq.slimFace ?? 0;
+    const jaw = liq.jawline ?? 0;
+    const patchId = `face-liquify-${host.id}`;
+    const existing = (main.adjustments.aiPatches || []).find((p) => p.id === patchId);
+    if (slim <= 0 && jaw <= 0) {
+      if (existing) {
+        useEditorStore.getState().patchesSentToBackend.delete(patchId);
+        setAdjustments((prev) => ({
+          ...prev,
+          aiPatches: (prev.aiPatches || []).filter((p) => p.id !== patchId),
+        }));
+      }
+      return;
+    }
+    const gen = ++liquifyGenRef.current;
+    setAdjustments((prev) => ({
+      ...prev,
+      aiPatches: existing
+        ? (prev.aiPatches || []).map((p) => (p.id === patchId ? { ...p, isLoading: true } : p))
+        : [
+            ...(prev.aiPatches || []),
+            {
+              id: patchId,
+              invert: false,
+              isLoading: true,
+              name: t('editor.masks.retouch.faceLiquify'),
+              patchData: null,
+              prompt: '',
+              subMasks: [
+                {
+                  ...createSubMask(Mask.Liquify, {
+                    width: main.selectedImage?.width ?? 1000,
+                    height: main.selectedImage?.height ?? 1000,
+                  }),
+                  parameters: { radiusX: 0, radiusY: 0 },
+                },
+              ],
+              visible: true,
+            },
+          ],
+    }));
+    try {
+      const patchJson: string = await invoke(Invokes.GenerateFaceLiquifyPatch, {
+        jsAdjustments: getTransformAdjustments(main.adjustments),
+        path: main.selectedImage.path,
+        rotation: main.adjustments.rotation ?? 0,
+        flipHorizontal: main.adjustments.flipHorizontal ?? false,
+        flipVertical: main.adjustments.flipVertical ?? false,
+        orientationSteps: main.adjustments.orientationSteps ?? 0,
+        patchId,
+        slimFace: slim,
+        jawline: jaw,
+      });
+      if (gen !== liquifyGenRef.current) return;
+      const patchData = JSON.parse(patchJson);
+      // 同 id 补丁内容已变化：清掉已发送标记，让下一次渲染载荷把新 patchData 发给后端
+      useEditorStore.getState().patchesSentToBackend.delete(patchId);
+      setAdjustments((prev) => ({
+        ...prev,
+        aiPatches: (prev.aiPatches || []).map((p) =>
+          p.id === patchId ? { ...p, patchData, isLoading: false } : p,
+        ),
+      }));
+    } catch (e) {
+      console.error('Face liquify failed:', e);
+      setAdjustments((prev) => ({
+        ...prev,
+        aiPatches: (prev.aiPatches || []).map((p) => (p.id === patchId ? { ...p, isLoading: false } : p)),
+      }));
+      toast.error(t('crystal.portrait.liquifyFailed'));
+    }
+  }, [setAdjustments, t]);
+
+  const setLiquify = useCallback(
+    (key: 'slimFace' | 'jawline', v: number) => {
+      let host = findContainer(Mask.AiFace);
+      if (!host) host = ensureContainer(Mask.AiFace, { parts: ['faceSkin'] });
+      const liq = (host.subMasks[0]?.parameters?.liquify ?? {}) as { slimFace?: number; jawline?: number };
+      updateSubMaskParameters(host.id, host.subMasks[0].id, { liquify: { ...liq, [key]: v } });
+      if (liquifyTimerRef.current) window.clearTimeout(liquifyTimerRef.current);
+      liquifyTimerRef.current = window.setTimeout(() => void runFaceLiquify(), 600);
+    },
+    [ensureContainer, findContainer, runFaceLiquify, updateSubMaskParameters],
+  );
+
+  /* 背景虚化 —— 复用桌面 Effects 链路（generate_full_image_depth_map
    * → lensBlurDepthMap + lensBlurEnabled/Amount），深度图驱动真实管线虚化。 */
   const runBgBlur = useCallback(async () => {
     if (blurBusy) return;
@@ -432,6 +691,12 @@ function PortraitPanel() {
     }
   }, [applyPatch, blurBusy, t]);
 
+  const liquifyHost = findContainer(Mask.AiFace);
+  const liquifyValues = (liquifyHost?.subMasks[0]?.parameters?.liquify ?? {}) as {
+    slimFace?: number;
+    jawline?: number;
+  };
+
   return (
     <PanelShell titleKey="crystal.categories.portrait">
       <button className="cx-ai-apply mb-3 w-full" onClick={oneTapPortrait} style={{ width: '100%' }}>
@@ -439,19 +704,36 @@ function PortraitPanel() {
       </button>
 
       <div className="cx-grid-tiles mb-2">
-        <button className="cx-tile" onClick={runEyeEnhance} disabled={eyeBusy}>
-          {eyeBusy ? (
-            <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
-          ) : (
-            <span
-              className="cx-tile-color flex items-center justify-center"
-              style={{ ['--cx-tile-color' as string]: 'var(--cx-cat-ren)' }}
+        {RETOUCH_OPS.map((op) => {
+          const active = Boolean(findContainerByKind(op.kind));
+          const busy = opBusy === op.kind;
+          return (
+            <button
+              key={op.kind}
+              className={`cx-tile ${active ? 'is-active' : ''}`}
+              onClick={() => void runOperator(op)}
+              disabled={Boolean(opBusy) && !busy}
             >
-              <Eye size={13} />
-            </span>
-          )}
-          {t('crystal.portrait.eyeEnhance')}
-        </button>
+              {busy ? (
+                <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
+              ) : (
+                <span
+                  className="cx-tile-color flex items-center justify-center"
+                  style={{ ['--cx-tile-color' as string]: op.tileColor }}
+                >
+                  {op.kind === 'smoothing' ? (
+                    <Sparkles size={13} />
+                  ) : op.kind === 'teeth' ? (
+                    <Smile size={13} />
+                  ) : (
+                    <Eye size={13} />
+                  )}
+                </span>
+              )}
+              {t(op.labelKey)}
+            </button>
+          );
+        })}
         <button
           className={`cx-tile ${adjustments.lensBlurEnabled ? 'is-active' : ''}`}
           onClick={runBgBlur}
@@ -462,7 +744,7 @@ function PortraitPanel() {
           ) : (
             <span
               className="cx-tile-color flex items-center justify-center"
-              style={{ ['--cx-tile-color' as string]: 'var(--cx-cat-comp)' }}
+              style={{ ['--cx-tile-color' as string]: 'var(--cx-cat-compose)' }}
             >
               <Aperture size={13} />
             </span>
@@ -471,22 +753,60 @@ function PortraitPanel() {
         </button>
       </div>
 
-      {eyeReady && (
-        <>
-          <CxSliderRow
-            label={t('crystal.portrait.eyeStrength')}
-            min={0}
-            max={100}
-            step={1}
-            value={Math.max(0, Math.min(100, eyeStrength))}
-            onChange={setEyeStrength}
-          />
-          <button className="cx-mask-remove" onClick={() => removeContainer(Mask.AiFace)}>
-            <X size={11} />
-            {t('crystal.portrait.removeMask')}
-          </button>
-        </>
-      )}
+      {RETOUCH_OPS.map((op) => {
+        const container = findContainerByKind(op.kind);
+        if (!container) return null;
+        const ready = Boolean(container.subMasks[0]?.parameters?.maskDataBase64);
+        const strength = Math.max(0, Math.min(100, op.inv(container.adjustments as Record<string, unknown>)));
+        return (
+          <div key={`sec-${op.kind}`} className="mb-1">
+            <CxSliderRow
+              label={`${t(op.labelKey)} · ${t('crystal.portrait.opStrength')}`}
+              min={0}
+              max={100}
+              step={1}
+              value={strength}
+              onChange={(v) => {
+                if (v <= 0) {
+                  removeOperator(op);
+                  return;
+                }
+                setMaskAdjustments(container.id, op.map(v));
+              }}
+            />
+            {op.kind === 'smoothing' && ready && (
+              <button className="cx-mask-remove" onClick={() => void handleUnifySkin()} disabled={unifyBusy}>
+                {unifyBusy ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                {t('crystal.portrait.unifySkin')}
+              </button>
+            )}
+            <button className="cx-mask-remove" onClick={() => removeOperator(op)}>
+              <X size={11} />
+              {t('crystal.portrait.removeMask')}
+            </button>
+          </div>
+        );
+      })}
+
+      <CxSubSection labelKey="crystal.portrait.faceShape">
+        <CxSliderRow
+          label={t('crystal.portrait.slimFace')}
+          min={0}
+          max={100}
+          step={1}
+          value={Number(liquifyValues.slimFace ?? 0)}
+          onChange={(v) => setLiquify('slimFace', v)}
+        />
+        <CxSliderRow
+          label={t('crystal.portrait.jawline')}
+          min={0}
+          max={100}
+          step={1}
+          value={Number(liquifyValues.jawline ?? 0)}
+          onChange={(v) => setLiquify('jawline', v)}
+        />
+      </CxSubSection>
+
       {Boolean(adjustments.lensBlurEnabled) && (
         <CxSliderRow
           label={t('crystal.portrait.bgBlurStrength')}

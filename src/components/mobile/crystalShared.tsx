@@ -473,11 +473,49 @@ export function useCrystalAiMasks() {
 
   // 局部调整写入容器级 MaskAdjustments（与桌面滑杆写法一致）
   const setMaskAdjustments = useCallback(
-    (containerId: string, patch: Record<string, number>) => {
+    (containerId: string, patch: Record<string, unknown>) => {
       setAdjustments((prev) => ({
         ...prev,
         masks: (prev.masks || []).map((c: MaskContainer) =>
           c.id === containerId ? { ...c, adjustments: { ...c.adjustments, ...patch } } : c,
+        ),
+      }));
+    },
+    [setAdjustments],
+  );
+
+  // 按精修算子 kind 查找容器（与桌面 parameters.retouchKind 约定同源），
+  // 使磨皮/牙齿/眼部多个 AiFace 容器可并存互不覆盖。
+  const findContainerByKind = useCallback((kind: string): AiContainer | null => {
+    const { adjustments } = useEditorStore.getState();
+    return (
+      (adjustments.masks || []).find((c: MaskContainer) => c.subMasks[0]?.parameters?.retouchKind === kind) || null
+    );
+  }, []);
+
+  const removeContainerByKind = useCallback(
+    (kind: string) => {
+      const container = findContainerByKind(kind);
+      if (!container) return;
+      setAdjustments((prev) => ({ ...prev, masks: (prev.masks || []).filter((c) => c.id !== container.id) }));
+    },
+    [findContainerByKind, setAdjustments],
+  );
+
+  // 写入 subMask.parameters（retouch 强度 / liquify 美型值等），与桌面存储位置一致
+  const updateSubMaskParameters = useCallback(
+    (containerId: string, subMaskId: string, patch: Record<string, unknown>) => {
+      setAdjustments((prev) => ({
+        ...prev,
+        masks: (prev.masks || []).map((c: MaskContainer) =>
+          c.id === containerId
+            ? {
+                ...c,
+                subMasks: c.subMasks.map((sm: SubMask) =>
+                  sm.id === subMaskId ? { ...sm, parameters: { ...sm.parameters, ...patch } } : sm,
+                ),
+              }
+            : c,
         ),
       }));
     },
@@ -509,6 +547,9 @@ export function useCrystalAiMasks() {
     handleGenerateAiForegroundMask,
     findContainer,
     ensureContainer,
+    findContainerByKind,
+    removeContainerByKind,
+    updateSubMaskParameters,
     setMaskAdjustments,
     maskReady,
     removeContainer,
