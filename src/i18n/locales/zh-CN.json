@@ -369,6 +369,8 @@
       "virtualCopy": "虚拟副本"
     },
     "toasts": {
+      "aiDenoiseFailed": "AI 降噪失败：{{err}}",
+      "aiProcessingFailed": "AI 处理失败：{{err}}",
       "couldNotShowExplorer": "无法在文件资源管理器中显示文件：{{err}}",
       "couldNotShowFolder": "无法显示文件夹：{{err}}",
       "failedAddToAlbum": "添加到相册失败：{{err}}",
@@ -1782,6 +1784,7 @@
       "noSources": "未找到景深合成的源图像。",
       "openInEditor": "在编辑器中打开",
       "result": "结果",
+      "retry": "重试",
       "save": "保存",
       "savedSuccess": "焦距合成已成功保存！",
       "stacking": "正在合成焦距",

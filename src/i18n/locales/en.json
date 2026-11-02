@@ -372,6 +372,8 @@
       "virtualCopy": "Virtual Copy"
     },
     "toasts": {
+      "aiDenoiseFailed": "AI denoise failed: {{err}}",
+      "aiProcessingFailed": "AI processing failed: {{err}}",
       "couldNotShowExplorer": "Could not show file in explorer: {{err}}",
       "couldNotShowFolder": "Could not show folder: {{err}}",
       "failedAddToAlbum": "Failed to add to album: {{err}}",
@@ -1791,6 +1793,7 @@
       "noSources": "Source images for focus stacking not found.",
       "openInEditor": "Open in Editor",
       "result": "Result",
+      "retry": "Retry",
       "save": "Save",
       "savedSuccess": "Focus Stack Saved Successfully!",
       "stacking": "Stacking Focus",

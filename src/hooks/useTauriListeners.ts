@@ -397,7 +397,7 @@ export function useTauriListeners({
       listen<{ path: string; error: string }>('ai-denoise-error', (event) => {
         if (!isEffectActive) return;
         const { path, error } = event.payload;
-        toast.error(`AI denoise failed: ${error}`);
+        toast.error(i18n.t('contextMenus.toasts.aiDenoiseFailed', { err: String(error) }));
         useEditorStore.getState().setEditor((state) => {
           const { [path]: _, ...aiDenoiseProgress } = state.aiDenoiseProgress;
           return {
@@ -414,7 +414,7 @@ export function useTauriListeners({
         const selectedPath = useEditorStore.getState().selectedImage?.path;
         event.payload.failed
           .filter((job) => job.path === selectedPath && !aiJobs.failed.some((prev) => prev.path === job.path))
-          .forEach((job) => toast.error(`AI Processing Failed: ${job.error}`));
+          .forEach((job) => toast.error(i18n.t('contextMenus.toasts.aiProcessingFailed', { err: String(job.error) })));
         setProcess({ aiJobs: event.payload });
       }),
       listen<{ added: string[]; removed: string[]; resolved: boolean }>('ai-jobs-pending', (event) => {
@@ -511,15 +511,18 @@ export function useTauriListeners({
       }),
       listen('hdr-progress', (event: any) => {
         if (isEffectActive) {
-          useUIStore.getState().setUI((state) => ({
-            hdrModalState: {
-              ...state.hdrModalState,
-              error: null,
-              finalImageBase64: null,
-              isOpen: true,
-              progressMessage: event.payload,
-            },
-          }));
+          useUIStore.getState().setUI((state) => {
+            if (state.hdrModalState.finalImageBase64 || state.hdrModalState.error) return state;
+            return {
+              hdrModalState: {
+                ...state.hdrModalState,
+                error: null,
+                finalImageBase64: null,
+                isOpen: true,
+                progressMessage: event.payload,
+              },
+            };
+          });
         }
       }),
       listen('hdr-complete', (event: any) => {
@@ -530,7 +533,7 @@ export function useTauriListeners({
               error: null,
               finalImageBase64: event.payload.base64,
               isProcessing: false,
-              progressMessage: 'Hdr Ready',
+              progressMessage: null,
             },
           }));
         }

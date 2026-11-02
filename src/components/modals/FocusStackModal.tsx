@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, XCircle, Loader2, Save, Layers, Map } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Save, Layers, Map, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import Button from '../ui/Button';
@@ -145,7 +145,7 @@ export default function FocusStackModal({
                   type="button"
                   onClick={() => setShowDepthMap(false)}
                   className={clsx(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors select-none',
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors select-none cursor-pointer',
                     !showDepthMap ? 'bg-accent text-button-text' : 'text-white/60 hover:bg-white/10 hover:text-white',
                   )}
                 >
@@ -157,7 +157,7 @@ export default function FocusStackModal({
                   type="button"
                   onClick={() => setShowDepthMap(true)}
                   className={clsx(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors select-none',
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors select-none cursor-pointer',
                     showDepthMap ? 'bg-accent text-button-text' : 'text-white/60 hover:bg-white/10 hover:text-white',
                   )}
                 >
@@ -255,7 +255,7 @@ export default function FocusStackModal({
         <>
           <button
             onClick={handleClose}
-            className="px-4 py-2 rounded-md text-text-secondary hover:bg-card-active transition-colors"
+            className="px-4 py-2 rounded-md text-text-secondary hover:bg-card-active transition-colors cursor-pointer"
           >
             {t('modals.focusStack.close')}
           </button>
@@ -270,17 +270,21 @@ export default function FocusStackModal({
       <div className={`w-full flex items-center justify-end gap-2 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
         <button
           onClick={handleClose}
-          className="px-4 py-2 rounded-md text-text-secondary hover:bg-card-active transition-colors text-sm"
+          className="px-4 py-2 rounded-md text-text-secondary hover:bg-card-active transition-colors text-sm cursor-pointer"
         >
           {finalImageBase64 ? t('modals.focusStack.close') : t('modals.focusStack.cancel')}
         </button>
 
-        {!finalImageBase64 && (
-          <Button onClick={onMerge} disabled={isProcessing} variant="primary">
-            {isProcessing ? <Loader2 className="animate-spin mr-2" size={16} /> : <Layers className="mr-2" size={16} />}
-            {t('modals.focusStack.start')}
-          </Button>
-        )}
+        <Button onClick={onMerge} disabled={isProcessing} variant={finalImageBase64 ? 'secondary' : 'primary'}>
+          {isProcessing ? (
+            <Loader2 className="animate-spin mr-2" size={16} />
+          ) : finalImageBase64 ? (
+            <RefreshCw className="mr-2" size={16} />
+          ) : (
+            <Layers className="mr-2" size={16} />
+          )}
+          {finalImageBase64 ? t('modals.focusStack.retry') : t('modals.focusStack.start')}
+        </Button>
 
         {finalImageBase64 && (
           <Button onClick={handleSave} disabled={isSaving || isProcessing}>

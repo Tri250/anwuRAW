@@ -220,7 +220,7 @@ export default function HdrModal({
         <>
           <button
             onClick={handleClose}
-            className="px-4 py-2 rounded-md text-text-secondary hover:bg-card-active transition-colors"
+            className="px-4 py-2 rounded-md text-text-secondary hover:bg-card-active transition-colors cursor-pointer"
           >
             {t('modals.hdr.close')}
           </button>
@@ -235,7 +235,7 @@ export default function HdrModal({
       <div className={`w-full flex items-center justify-end gap-2 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
         <button
           onClick={handleClose}
-          className="px-4 py-2 rounded-md text-text-secondary hover:bg-card-active transition-colors text-sm"
+          className="px-4 py-2 rounded-md text-text-secondary hover:bg-card-active transition-colors text-sm cursor-pointer"
         >
           {finalImageBase64 ? t('modals.hdr.close') : t('modals.hdr.cancel')}
         </button>

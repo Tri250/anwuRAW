@@ -191,6 +191,7 @@ export function useEditorActions() {
           jsAdjustments: useEditorStore.getState().adjustments,
           mode,
         });
+        if (useEditorStore.getState().selectedImage?.path !== selectedImage.path) return;
         setAdjustments((prev: Adjustments) => ({
           ...prev,
           ...autoAdjustments,
