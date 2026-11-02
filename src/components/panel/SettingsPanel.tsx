@@ -260,7 +260,7 @@ const AiProviderSwitch = ({ selectedProvider, onProviderChange }: AiProviderSwit
           key={provider.id}
           onClick={() => onProviderChange(provider.id)}
           className={clsx(
-            'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors',
+            'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors cursor-pointer',
             {
               'text-text-primary hover:bg-surface': selectedProvider !== provider.id,
               'text-button-text': selectedProvider === provider.id,
@@ -484,7 +484,7 @@ const PreviewModeSwitch = ({ mode, onModeChange }: PreviewModeSwitchProps) => {
           key={item.id}
           onClick={() => onModeChange(item.id as 'static' | 'dynamic')}
           className={clsx(
-            'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors',
+            'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-1.5 py-2 min-[1200px]:px-3 text-sm font-medium rounded-md transition-colors cursor-pointer',
             {
               'text-text-primary hover:bg-surface': mode !== item.id,
               'text-button-text': mode === item.id,
@@ -843,7 +843,7 @@ export default function SettingsPanel({
   const { authStatus, clerk, user, initAuth } = useCloudStore(
     useShallow((s) => ({ authStatus: s.authStatus, clerk: s.clerk, user: s.user, initAuth: s.initAuth })),
   );
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [confirmModalState, setConfirmModalState] = useState<ConfirmModalState>({
     confirmText: t('settings.data.modals.confirmClear'),
     confirmVariant: 'primary',
@@ -1353,7 +1353,7 @@ export default function SettingsPanel({
                             { value: 'zh-CN', label: '简体中文' },
                             { value: 'zh-TW', label: '繁體中文' },
                           ]}
-                          value={appSettings?.language || 'zh-CN'}
+                          value={appSettings?.language || i18n.language || 'zh-CN'}
                           triggerClassName="bg-bg-primary"
                         />
                       </SettingItem>
@@ -1623,9 +1623,14 @@ export default function SettingsPanel({
                                     disabled={testStatus.testing || !aiConnectorAddress}
                                     onClick={handleTestConnection}
                                   >
-                                    {testStatus.testing
-                                      ? t('settings.processing.ai.connector.testing')
-                                      : t('settings.processing.ai.connector.test')}
+                                    {testStatus.testing ? (
+                                      <>
+                                        <Loader2 size={14} className="mr-1 animate-spin" />
+                                        {t('settings.processing.ai.connector.testing')}
+                                      </>
+                                    ) : (
+                                      t('settings.processing.ai.connector.test')
+                                    )}
                                   </Button>
                                 </div>
                                 {testStatus.message && (
@@ -1681,7 +1686,7 @@ export default function SettingsPanel({
                                       {t('settings.processing.ai.cloud.signedOut.noAccount')}{' '}
                                       <button
                                         onClick={() => open('https://www.getrapidraw.com/cloud')}
-                                        className="text-accent hover:underline focus:outline-none"
+                                        className="text-accent hover:underline focus:outline-none cursor-pointer"
                                       >
                                         {t('settings.processing.ai.cloud.signedOut.signup')}
                                       </button>
@@ -1774,7 +1779,7 @@ export default function SettingsPanel({
                               </div>
                               <button
                                 onClick={() => handleRemoveLens(index)}
-                                className="p-2 text-text-secondary hover:text-red-400 hover:bg-bg-primary rounded-md transition-colors"
+                                className="p-2 text-text-secondary hover:text-red-400 hover:bg-bg-primary rounded-md transition-colors cursor-pointer"
                                 data-tooltip={t('settings.lenses.removeTooltip')}
                               >
                                 <Trash2 size={16} />
@@ -1871,8 +1876,16 @@ export default function SettingsPanel({
                                               animate="visible"
                                               exit="exit"
                                               onClick={() => handleRemoveAiTag(tag)}
+                                              onKeyDown={(e: any) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                  e.preventDefault();
+                                                  handleRemoveAiTag(tag);
+                                                }
+                                              }}
+                                              role="button"
+                                              tabIndex={0}
                                               data-tooltip={t('settings.tagging.removeCustomTooltip', { tag })}
-                                              className="flex items-center gap-1 bg-surface px-2 py-1 rounded-sm group cursor-pointer"
+                                              className="flex items-center gap-1 bg-surface px-2 py-1 rounded-sm group cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                             >
                                               <Text variant={TextVariants.label} color={TextColors.primary}>
                                                 {tag}
@@ -1910,7 +1923,8 @@ export default function SettingsPanel({
                                         />
                                         <button
                                           onClick={handleAddAiTag}
-                                          className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface"
+                                          disabled={!newAiTag.trim()}
+                                          className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-text-secondary disabled:hover:bg-transparent cursor-pointer"
                                           data-tooltip={t('settings.tagging.addCustomTooltip')}
                                         >
                                           <Plus size={18} />
@@ -1950,8 +1964,16 @@ export default function SettingsPanel({
                                     animate="visible"
                                     exit="exit"
                                     onClick={() => handleRemoveShortcut(shortcut)}
+                                    onKeyDown={(e: any) => {
+                                      if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleRemoveShortcut(shortcut);
+                                      }
+                                    }}
+                                    role="button"
+                                    tabIndex={0}
                                     data-tooltip={t('settings.tagging.removeShortcutTooltip', { shortcut })}
-                                    className="flex items-center gap-1 bg-surface px-2 py-1 rounded-sm group cursor-pointer"
+                                    className="flex items-center gap-1 bg-surface px-2 py-1 rounded-sm group cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                   >
                                     <Text variant={TextVariants.label} color={TextColors.primary}>
                                       {shortcut}
@@ -1988,7 +2010,8 @@ export default function SettingsPanel({
                               />
                               <button
                                 onClick={handleAddShortcut}
-                                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface"
+                                disabled={!newShortcut.trim()}
+                                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-text-secondary disabled:hover:bg-transparent cursor-pointer"
                                 data-tooltip={t('settings.tagging.addShortcutTooltip')}
                               >
                                 <Plus size={18} />
@@ -2301,7 +2324,8 @@ export default function SettingsPanel({
                         <div className="bg-bg-primary rounded-xl overflow-hidden">
                           <button
                             onClick={() => setIsAdvancedProcessingExpanded((expanded) => !expanded)}
-                            className="w-full flex items-center justify-between p-3.5 hover:bg-card-active transition-colors"
+                            aria-expanded={isAdvancedProcessingExpanded}
+                            className="w-full flex items-center justify-between p-3.5 hover:bg-card-active transition-colors cursor-pointer"
                           >
                             <Text
                               as="span"
