@@ -386,7 +386,8 @@
       "failedMove": "移動檔案失敗：{{err}}",
       "failedMoveError": "移動失敗：{{err}}",
       "failedMoveInvalid": "移動失敗：未找到目標組或目標組無效。",
-      "failedRemoveImages": "移除影像失敗：{{err}}"
+      "failedRemoveImages": "移除影像失敗：{{err}}",
+      "failedSyncAdjustments": "同步調整到選中影像失敗：{{err}}"
     }
   },
   "editor": {

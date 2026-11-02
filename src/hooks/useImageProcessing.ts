@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'react-toastify';
+import i18n from 'i18next';
 import debounce from 'lodash.debounce';
 import throttle from 'lodash.throttle';
 import { useEditorStore } from '../store/useEditorStore';
@@ -536,6 +538,7 @@ export function useImageProcessing(
               otherPaths.forEach((p) => globalImageCache.delete(p));
               invoke(Invokes.ApplyAdjustmentsToPaths, { paths: otherPaths, adjustments: syncPatch }).catch((err) => {
                 console.error('Failed to apply adjustments to multi-selection:', err);
+                toast.error(i18n.t('contextMenus.toasts.failedSyncAdjustments', { err: String(err) }));
               });
             }
           }

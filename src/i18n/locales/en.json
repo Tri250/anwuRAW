@@ -392,7 +392,8 @@
       "failedMove": "Failed to move files: {{err}}",
       "failedMoveError": "Failed to move: {{err}}",
       "failedMoveInvalid": "Failed to move: Target group not found or invalid.",
-      "failedRemoveImages": "Failed to remove images: {{err}}"
+      "failedRemoveImages": "Failed to remove images: {{err}}",
+      "failedSyncAdjustments": "Failed to sync adjustments to selected images: {{err}}"
     }
   },
   "editor": {
