@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import { Adjustments, getActiveTools, getToolOwnersForKeys, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
+import { v4 as uuidv4 } from 'uuid';
+import { Adjustments, getActiveTools, getToolOwnersForKeys, INITIAL_ADJUSTMENTS, INITIAL_MASK_CONTAINER } from '../../utils/adjustments';
+import type { MaskContainer } from '../../utils/adjustments';
+import { createSubMask } from '../../utils/maskUtils';
+import { Mask } from '../panel/right/Masks';
+import type { SubMask } from '../panel/right/Masks';
+import { useAiMasking } from '../../hooks/useAiMasking';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useEditorActions } from '../../hooks/useEditorActions';
 
@@ -344,4 +350,79 @@ function CrystalRangeSlider({
       />
     </div>
   );
+}
+
+/* ---------------------------------------------------------------------------
+ * 边界计划 P1/P2：移动端复用桌面 AI 蒙版链路的最小封装。
+ * 数据流与桌面 MasksPanel 同源：ensure 容器（Mask.AiFace/AiSky/AiForeground）
+ * → useAiMasking 生成蒙版参数 → updateSubMask 合并 → 容器级 MaskAdjustments
+ * 提供局部调整（clarity/exposure 等），全链路真实管线，无伪造。
+ * ------------------------------------------------------------------------- */
+type AiContainer = MaskContainer & { subMasks: Array<SubMask> };
+
+export function useCrystalAiMasks() {
+  const { handleGenerateAiFaceMask, handleGenerateAiSkyMask, handleGenerateAiForegroundMask } = useAiMasking();
+  const { setAdjustments } = useEditorActions();
+
+  const findContainer = useCallback((type: Mask): AiContainer | null => {
+    const { adjustments } = useEditorStore.getState();
+    return (
+      (adjustments.masks || []).find((c: MaskContainer) => c.subMasks.some((sm: SubMask) => sm.type === type)) ||
+      null
+    );
+  }, []);
+
+  const ensureContainer = useCallback(
+    (type: Mask, parameters?: Record<string, unknown>): AiContainer => {
+      const existing = findContainer(type);
+      if (existing) return existing;
+      const { selectedImage } = useEditorStore.getState();
+      const subMask = createSubMask(type, {
+        width: selectedImage?.width ?? 1000,
+        height: selectedImage?.height ?? 1000,
+      });
+      if (parameters) subMask.parameters = { ...subMask.parameters, ...parameters };
+      const container: AiContainer = {
+        ...INITIAL_MASK_CONTAINER,
+        id: uuidv4(),
+        name: subMask.name || type,
+        subMasks: [subMask],
+      };
+      setAdjustments((prev) => ({ ...prev, masks: [...(prev.masks || []), container] }));
+      return container;
+    },
+    [findContainer, setAdjustments],
+  );
+
+  // 局部调整写入容器级 MaskAdjustments（与桌面滑杆写法一致）
+  const setMaskAdjustments = useCallback(
+    (containerId: string, patch: Record<string, number>) => {
+      setAdjustments((prev) => ({
+        ...prev,
+        masks: (prev.masks || []).map((c: MaskContainer) =>
+          c.id === containerId ? { ...c, adjustments: { ...c.adjustments, ...patch } } : c,
+        ),
+      }));
+    },
+    [setAdjustments],
+  );
+
+  // 蒙版生成成功的判定：后端已把 maskDataBase64 写入 subMask 参数
+  const maskReady = useCallback(
+    (type: Mask) => {
+      const container = findContainer(type);
+      return Boolean(container?.subMasks[0]?.parameters?.maskDataBase64);
+    },
+    [findContainer],
+  );
+
+  return {
+    handleGenerateAiFaceMask,
+    handleGenerateAiSkyMask,
+    handleGenerateAiForegroundMask,
+    findContainer,
+    ensureContainer,
+    setMaskAdjustments,
+    maskReady,
+  };
 }

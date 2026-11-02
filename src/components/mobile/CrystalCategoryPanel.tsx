@@ -1,10 +1,13 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import { FlipHorizontal, FlipVertical, RotateCw } from 'lucide-react';
+import { Aperture, Eye, FlipHorizontal, FlipVertical, Loader2, RotateCw } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { useEditorStore } from '../../store/useEditorStore';
 import { calculateCenteredCrop } from '../../utils/cropUtils';
-import { CxSliderRow, useCrystalAdjust } from './crystalShared';
+import { CxSliderRow, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
+import { Mask } from '../panel/right/Masks';
 import type { CrystalCategory } from './CrystalMobileApp';
 import CrystalPresetsPanel from './CrystalPresetsPanel';
 import CrystalAiToolsPanel from './CrystalAiToolsPanel';
@@ -65,6 +68,10 @@ function PortraitPanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
   const { applyPatch } = useCrystalAdjust();
+  const { handleGenerateAiFaceMask, findContainer, ensureContainer, setMaskAdjustments, maskReady } = useCrystalAiMasks();
+
+  const [eyeBusy, setEyeBusy] = useState(false);
+  const [blurBusy, setBlurBusy] = useState(false);
 
   const oneTapPortrait = useCallback(() => {
     // 一键人像：柔肤降噪 + 轻微通透 + 暖调，全部为真实管线参数。
@@ -78,11 +85,106 @@ function PortraitPanel() {
     });
   }, [adjustments, applyPatch]);
 
+  /* 边界计划 P1：眼部增强 —— 复用桌面 face mask（iris/eyeWhites）链路。
+   * 强度 v → clarity 0.4v + exposure 0.12v（MasksPanel RetouchKind.eyes 同源映射）。 */
+  const runEyeEnhance = useCallback(async () => {
+    if (eyeBusy) return;
+    setEyeBusy(true);
+    try {
+      const container = ensureContainer(Mask.AiFace, { parts: ['iris', 'eyeWhites'] });
+      await handleGenerateAiFaceMask(container.subMasks[0].id, ['iris', 'eyeWhites']);
+      if (maskReady(Mask.AiFace)) {
+        setMaskAdjustments(container.id, { clarity: 20, exposure: 6 }); // v=50 默认
+      } else {
+        toast.error(t('crystal.ai.maskFailed'));
+      }
+    } catch {
+      toast.error(t('crystal.ai.maskFailed'));
+    } finally {
+      setEyeBusy(false);
+    }
+  }, [ensureContainer, eyeBusy, handleGenerateAiFaceMask, maskReady, setMaskAdjustments, t]);
+
+  const eyesContainer = findContainer(Mask.AiFace);
+  const eyeReady = maskReady(Mask.AiFace);
+  const eyeStrength = eyesContainer ? Math.round(Number(eyesContainer.adjustments.clarity ?? 0) / 0.4) : 0;
+  const setEyeStrength = useCallback(
+    (v: number) => {
+      if (eyesContainer) setMaskAdjustments(eyesContainer.id, { clarity: Math.round(v * 0.4), exposure: Math.round(v * 0.12) });
+    },
+    [eyesContainer, setMaskAdjustments],
+  );
+
+  /* 边界计划 P1：背景虚化 —— 复用桌面 Effects 链路（generate_full_image_depth_map
+   * → lensBlurDepthMap + lensBlurEnabled/Amount），深度图驱动真实管线虚化。 */
+  const runBgBlur = useCallback(async () => {
+    if (blurBusy) return;
+    const { adjustments: adj } = useEditorStore.getState();
+    if (adj.lensBlurEnabled) {
+      applyPatch({ lensBlurEnabled: false });
+      return;
+    }
+    setBlurBusy(true);
+    try {
+      const b64: string = await invoke('generate_full_image_depth_map', { jsAdjustments: adj });
+      applyPatch({ lensBlurDepthMap: b64, lensBlurEnabled: true, lensBlurAmount: 50 });
+    } catch {
+      toast.error(t('crystal.portrait.blurFailed'));
+    } finally {
+      setBlurBusy(false);
+    }
+  }, [applyPatch, blurBusy, t]);
+
   return (
     <PanelShell titleKey="crystal.categories.portrait">
       <button className="cx-ai-apply mb-3 w-full" onClick={oneTapPortrait} style={{ width: '100%' }}>
         {t('crystal.portrait.oneTap')}
       </button>
+
+      <div className="cx-grid-tiles mb-2">
+        <button className="cx-tile" onClick={runEyeEnhance} disabled={eyeBusy}>
+          {eyeBusy ? (
+            <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
+          ) : (
+            <span className="cx-tile-color flex items-center justify-center" style={{ ['--cx-tile-color' as string]: 'var(--cx-cat-ren)' }}>
+              <Eye size={13} />
+            </span>
+          )}
+          {t('crystal.portrait.eyeEnhance')}
+        </button>
+        <button className={`cx-tile ${adjustments.lensBlurEnabled ? 'is-active' : ''}`} onClick={runBgBlur} disabled={blurBusy}>
+          {blurBusy ? (
+            <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
+          ) : (
+            <span className="cx-tile-color flex items-center justify-center" style={{ ['--cx-tile-color' as string]: 'var(--cx-cat-comp)' }}>
+              <Aperture size={13} />
+            </span>
+          )}
+          {t('crystal.portrait.bgBlur')}
+        </button>
+      </div>
+
+      {eyeReady && (
+        <CxSliderRow
+          label={t('crystal.portrait.eyeStrength')}
+          min={0}
+          max={100}
+          step={1}
+          value={Math.max(0, Math.min(100, eyeStrength))}
+          onChange={setEyeStrength}
+        />
+      )}
+      {Boolean(adjustments.lensBlurEnabled) && (
+        <CxSliderRow
+          label={t('crystal.portrait.bgBlurStrength')}
+          min={0}
+          max={100}
+          step={1}
+          value={Number(adjustments.lensBlurAmount ?? 0)}
+          onChange={(v) => applyPatch({ lensBlurAmount: v })}
+        />
+      )}
+
       <CxSliderRow
         label={t('crystal.portrait.softSkin')}
         min={0}

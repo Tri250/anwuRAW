@@ -2,14 +2,15 @@ import { useCallback, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import { Loader2, Sparkles, Wand2, Waves, Eraser } from 'lucide-react';
+import { CloudSun, Loader2, Sparkles, User, Wand2, Waves, Eraser } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { Adjustments, getAiDenoiseEnablePatch } from '../../utils/adjustments';
 import { Invokes } from '../ui/AppProperties';
+import { Mask } from '../panel/right/Masks';
 import { useEditorActions } from '../../hooks/useEditorActions';
-import { CxSliderRow, useCrystalAdjust } from './crystalShared';
+import { CxSliderRow, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * Crystal AI 工具面板：全部为真实管线能力。
@@ -35,7 +36,9 @@ export default function CrystalAiToolsPanel() {
   const { applyPatch } = useCrystalAdjust();
 
   const [intensity, setIntensity] = useState<EnhanceIntensity>('standard');
-  const [busy, setBusy] = useState<'enhance' | 'auto' | null>(null);
+  const [busy, setBusy] = useState<'enhance' | 'auto' | 'sky' | 'subject' | null>(null);
+  const { handleGenerateAiSkyMask, handleGenerateAiForegroundMask, ensureContainer, findContainer, setMaskAdjustments, maskReady } =
+    useCrystalAiMasks();
 
   const runEnhance = useCallback(async () => {
     if (busy) return;
@@ -64,6 +67,54 @@ export default function CrystalAiToolsPanel() {
 
   const denoiseOn = Boolean(adjustments.aiDenoiseEnabled);
 
+  /* 边界计划 P2：天空识别 —— 复用桌面 sky mask 链路；识别成功后以容器级
+   * MaskAdjustments（clarity/dehaze/saturation）提供「天空强度」滑杆。 */
+  const runSky = useCallback(async () => {
+    if (busy) return;
+    setBusy('sky');
+    try {
+      const container = ensureContainer(Mask.AiSky);
+      await handleGenerateAiSkyMask(container.subMasks[0].id);
+      if (maskReady(Mask.AiSky)) {
+        setMaskAdjustments(container.id, { clarity: 10, dehaze: 8, saturation: 5 }); // v=50 默认
+      } else {
+        toast.error(t('crystal.ai.maskFailed'));
+      }
+    } catch {
+      toast.error(t('crystal.ai.maskFailed'));
+    } finally {
+      setBusy(null);
+    }
+  }, [busy, ensureContainer, handleGenerateAiSkyMask, maskReady, setMaskAdjustments, t]);
+
+  /* 边界计划 P2：主体识别 —— AiForeground 前景分割（桌面语义同为主体识别，
+   * 且无需框选坐标，适合移动端一键交互）。 */
+  const runSubject = useCallback(async () => {
+    if (busy) return;
+    setBusy('subject');
+    try {
+      const container = ensureContainer(Mask.AiForeground);
+      await handleGenerateAiForegroundMask(container.subMasks[0].id);
+      if (maskReady(Mask.AiForeground)) {
+        setMaskAdjustments(container.id, { clarity: 10 }); // v=50 默认
+      } else {
+        toast.error(t('crystal.ai.maskFailed'));
+      }
+    } catch {
+      toast.error(t('crystal.ai.maskFailed'));
+    } finally {
+      setBusy(null);
+    }
+  }, [busy, ensureContainer, handleGenerateAiForegroundMask, maskReady, setMaskAdjustments, t]);
+
+  const skyContainer = findContainer(Mask.AiSky);
+  const skyReady = maskReady(Mask.AiSky);
+  const skyStrength = skyContainer ? Math.round(Number(skyContainer.adjustments.clarity ?? 0) / 0.2) : 0;
+
+  const subjectContainer = findContainer(Mask.AiForeground);
+  const subjectReady = maskReady(Mask.AiForeground);
+  const subjectStrength = subjectContainer ? Math.round(Number(subjectContainer.adjustments.clarity ?? 0) / 0.2) : 0;
+
   const toggleDenoise = useCallback(() => {
     const patch = denoiseOn
       ? { aiDenoiseEnabled: false }
@@ -76,6 +127,8 @@ export default function CrystalAiToolsPanel() {
     { id: 'auto', label: t('crystal.ai.tiles.auto'), icon: Wand2, color: 'var(--cx-cat-presets)', onClick: runAuto, busy: busy === 'auto' },
     { id: 'denoise', label: t('crystal.ai.tiles.denoise'), icon: Eraser, color: 'var(--cx-cat-tone)', onClick: toggleDenoise, active: denoiseOn },
     { id: 'lumaNr', label: t('crystal.ai.tiles.detail'), icon: Waves, color: 'var(--cx-cat-filter)', onClick: () => applyPatch({ structure: Math.max(Number(adjustments.structure ?? 0), 10), clarity: Math.max(Number(adjustments.clarity ?? 0), 10) }) },
+    { id: 'sky', label: t('crystal.ai.tiles.sky'), icon: CloudSun, color: 'var(--cx-cat-tone)', onClick: runSky, active: skyReady, busy: busy === 'sky' },
+    { id: 'subject', label: t('crystal.ai.tiles.subject'), icon: User, color: 'var(--cx-cat-ren)', onClick: runSubject, active: subjectReady, busy: busy === 'subject' },
   ];
 
   return (
@@ -101,6 +154,27 @@ export default function CrystalAiToolsPanel() {
           </button>
         ))}
       </div>
+
+      {skyReady && (
+        <CxSliderRow
+          label={t('crystal.ai.skyStrength')}
+          min={0}
+          max={100}
+          step={1}
+          value={Math.max(0, Math.min(100, skyStrength))}
+          onChange={(v) => skyContainer && setMaskAdjustments(skyContainer.id, { clarity: Math.round(v * 0.2), dehaze: Math.round(v * 0.15), saturation: Math.round(v * 0.1) })}
+        />
+      )}
+      {subjectReady && (
+        <CxSliderRow
+          label={t('crystal.ai.subjectStrength')}
+          min={0}
+          max={100}
+          step={1}
+          value={Math.max(0, Math.min(100, subjectStrength))}
+          onChange={(v) => subjectContainer && setMaskAdjustments(subjectContainer.id, { clarity: Math.round(v * 0.2) })}
+        />
+      )}
 
       {denoiseOn && (
         <CxSliderRow

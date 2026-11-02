@@ -893,6 +893,26 @@
   background: rgba(212, 175, 55, 0.28);
 }
 
+/* 模型下载进度胶囊（顶栏下方，金描边） */
+.cx-dl-pill {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 14px 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--cx-accent-soft);
+  background: rgba(20, 17, 6, 0.72);
+  color: var(--cx-muted);
+  font-size: 11px;
+  font-weight: 600;
+  width: fit-content;
+}
+.cx-dl-pill svg {
+  color: var(--cx-accent);
+}
+
 /* ================= F12: 签名实时叠加（尺寸/位置由内联样式给出） ================= */
 .cx-wm-signature {
   position: absolute;

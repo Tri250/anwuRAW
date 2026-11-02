@@ -8,6 +8,7 @@ import {
   Crop,
   ImageIcon,
   Layers,
+  Loader2,
   Redo2,
   RotateCcw,
   Save,
@@ -27,6 +28,7 @@ import { Status } from '../ui/ExportImportProperties';
 import ConfirmModal from '../modals/ConfirmModal';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
 import { CRYSTAL_LONG_PRESS_MS, summarizeExif, useShowOriginalHold } from './crystalShared';
+import { selectAiModelDownloadStatus } from '../../store/useProcessStore';
 import CrystalCategoryPanel from './CrystalCategoryPanel';
 import WatermarkExportPage from './WatermarkExportPage';
 
@@ -213,6 +215,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
   const setEditor = useEditorStore((s) => s.setEditor);
   const exportState = useProcessStore((s) => s.exportState);
   const isExporting = [Status.Exporting, Status.Cancelling].includes(exportState.status);
+  const modelDownloadStatus = useProcessStore(selectAiModelDownloadStatus);
   const osPlatform = useSettingsStore((s) => s.osPlatform);
 
   const exif = summarizeExif((selectedImage?.exif ?? null) as Record<string, unknown> | null);
@@ -261,6 +264,12 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
             onBack={onBackToLibrary}
             onSave={() => setFlow('export')}
           />
+          {modelDownloadStatus && (
+            <div className="cx-dl-pill" role="status">
+              <Loader2 size={11} className="animate-spin" />
+              {t('crystal.ai.modelDownloading')} · {modelDownloadStatus}
+            </div>
+          )}
           <CrystalPreview />
           <CrystalCatNavBar active={activeCategory} onSelect={setActiveCategory} />
           <CrystalCategoryPanel category={activeCategory} />
