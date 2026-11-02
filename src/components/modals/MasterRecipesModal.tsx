@@ -118,13 +118,17 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !currentImagePath) {
+    // Reset recipe state ONLY on image switch: closing/reopening the modal
+    // must not clear the active recipe, otherwise re-clicking the same recipe
+    // snapshots its own already-applied values as the undo baseline and the
+    // recipe can never be properly toggled off.
+    if (!currentImagePath) {
       return;
     }
     setActiveRecipeId(null);
     previousAdjustments.current = null;
     setIntensity(RECIPE_INTENSITY_DEFAULT);
-  }, [isOpen, currentImagePath]);
+  }, [currentImagePath]);
 
   const activeRecipe = useMemo(
     () => MASTER_RECIPES.find((recipe) => recipe.id === activeRecipeId) ?? null,
@@ -145,7 +149,9 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
       }
 
       if (!activeRecipeId) {
-        previousAdjustments.current = snapshotAdjustments(adjustments);
+        // Snapshot from the store at click time: the render closure can go
+        // stale and would corrupt the toggle-off baseline.
+        previousAdjustments.current = snapshotAdjustments(useEditorStore.getState().adjustments);
       }
       setActiveRecipeId(recipe.id);
       setIntensity(RECIPE_INTENSITY_DEFAULT);
@@ -156,11 +162,13 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
       // 与胶片 LUT 选择一致：先把 LUT 解析进后端缓存并验证可用，再写入渲染状态。
       // 否则损坏的 LUT 只会在主渲染时加载失败，画面表现为异常甚至全黑。
       let verifiedLutPath: string | null = null;
+      let verifiedLutSize = 0;
       let verifiedIsSceneReferred = MASTER_LUT_IS_SCENE_REFERRED;
       if (entry) {
         try {
-          await invoke('load_and_parse_lut', { path: entry.path });
+          const parsed: { size: number } = await invoke('load_and_parse_lut', { path: entry.path });
           verifiedLutPath = entry.path;
+          verifiedLutSize = parsed.size;
           verifiedIsSceneReferred = entry.isSceneReferred ?? MASTER_LUT_IS_SCENE_REFERRED;
         } catch (error) {
           console.error('Master recipe LUT failed to load:', error);
@@ -175,12 +183,13 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
         ...patch,
         lutPath: verifiedLutPath,
         lutName: verifiedLutPath ? masterLutBaseName(recipe) : null,
+        lutSize: verifiedLutPath ? verifiedLutSize : 0,
         lutIntensity: verifiedLutPath ? RECIPE_INTENSITY_DEFAULT : 0,
         lutIsSceneReferred: verifiedIsSceneReferred,
         activeTools: enableRecipeTools(getActiveTools(prev)),
       }));
     },
-    [activeRecipeId, adjustments, luts, setAdjustments, t],
+    [activeRecipeId, luts, setAdjustments, t],
   );
 
   const handleIntensityChange = useCallback(
@@ -225,10 +234,14 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
   );
 
   const handleFilmLutClear = useCallback(() => {
+    // 与 Effects 面板的 handleLutClear 保持一致：同时复位 lutSize/lutData，
+    // 避免 sidecar 里残留上一个 LUT 的尺寸信息。
     setAdjustments((prev: Adjustments) => ({
       ...prev,
       lutPath: null,
       lutName: null,
+      lutData: null,
+      lutSize: 0,
       lutIntensity: RECIPE_INTENSITY_DEFAULT,
       lutIsSceneReferred: false,
     }));
