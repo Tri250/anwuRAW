@@ -240,11 +240,12 @@ export default function WatermarkExportPage({
   return (
     <div className="cx-app" data-flow="export">
       <div className="cx-back-capsules">
-        <button className="cx-back-capsule" onClick={onBackToEdit}>
+        {/* UX：导出进行中禁用返回，避免离开导出页丢失进度反馈（进度条在页内） */}
+        <button className="cx-back-capsule" onClick={onBackToEdit} disabled={isExporting}>
           <ChevronLeft size={15} />
           {t('crystal.export.backToEdit')}
         </button>
-        <button className="cx-back-capsule" onClick={onBackToLibrary}>
+        <button className="cx-back-capsule" onClick={onBackToLibrary} disabled={isExporting}>
           <Images size={15} />
           {t('crystal.export.backToLibrary')}
         </button>

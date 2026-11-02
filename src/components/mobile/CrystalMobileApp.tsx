@@ -220,6 +220,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
   const cameraSubtitle = exif.camera || (selectedImage?.width ? `${selectedImage.width}×${selectedImage.height}` : '');
 
   // Android 返回键闭环：导出域 → 回编辑域；编辑域 → 回图库。
+  // UX：导出进行中消费返回事件但不切域——进度反馈在导出页内，离开即丢失。
   useEffect(() => {
     if (osPlatform !== 'android') return;
     const handler = () => {
@@ -228,6 +229,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
         return;
       }
       if (flow === 'export') {
+        if (isExporting) return;
         setFlow('edit');
         return;
       }
@@ -235,7 +237,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     };
     pushExitLayer(handler);
     return () => removeExitLayer(handler);
-  }, [flow, onBackToLibrary, osPlatform]);
+  }, [flow, isExporting, onBackToLibrary, osPlatform]);
 
   const handleReset = useCallback(() => {
     const sel = useEditorStore.getState().selectedImage;
