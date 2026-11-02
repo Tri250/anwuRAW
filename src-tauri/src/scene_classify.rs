@@ -88,14 +88,23 @@ fn collect_stats(img: &DynamicImage) -> Stats {
             warm += 1;
         }
         // 经典皮肤启发（0-255 域）：R>95, G>40, B>20, max-min>15, |R-G|>15, R>G, R>B。
-        if r > 95.0 && g > 40.0 && b > 20.0 && max - min > 15.0 && (r - g).abs() > 15.0 && r > g && g > b {
+        if r > 95.0
+            && g > 40.0
+            && b > 20.0
+            && max - min > 15.0
+            && (r - g).abs() > 15.0
+            && r > g
+            && g > b
+        {
             skin += 1;
         }
     }
 
     lumas.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let p = |q: f32| -> f32 {
-        let idx = ((lumas.len() as f32 - 1.0) * q).round().clamp(0.0, lumas.len() as f32 - 1.0) as usize;
+        let idx = ((lumas.len() as f32 - 1.0) * q)
+            .round()
+            .clamp(0.0, lumas.len() as f32 - 1.0) as usize;
         lumas[idx]
     };
     let contrast = (p(0.9) - p(0.1)).max(0.0);
@@ -227,7 +236,11 @@ mod tests {
             }
         }));
         let result = classify(&img);
-        assert_eq!(result.scene, "night", "expected night, got {}", result.scene);
+        assert_eq!(
+            result.scene, "night",
+            "expected night, got {}",
+            result.scene
+        );
         assert!(result.confidence >= DISPLAY_CONFIDENCE_GATE);
     }
 
@@ -242,7 +255,11 @@ mod tests {
             }
         }));
         let result = classify(&img);
-        assert_eq!(result.scene, "landscape", "expected landscape, got {}", result.scene);
+        assert_eq!(
+            result.scene, "landscape",
+            "expected landscape, got {}",
+            result.scene
+        );
         assert!(result.confidence >= DISPLAY_CONFIDENCE_GATE);
     }
 

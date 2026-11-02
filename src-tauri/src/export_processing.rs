@@ -3266,8 +3266,11 @@ mod exif_frame_tests {
     }
 
     fn write_temp_source(bytes: &[u8], name: &str) -> PathBuf {
-        let path = std::env::temp_dir()
-            .join(format!("crystal-exif-frame-{}-{}.jpg", std::process::id(), name));
+        let path = std::env::temp_dir().join(format!(
+            "crystal-exif-frame-{}-{}.jpg",
+            std::process::id(),
+            name
+        ));
         fs::write(&path, bytes).expect("write temp source");
         path
     }
@@ -3336,10 +3339,7 @@ mod exif_frame_tests {
         // 顶部保持底图原色。
         assert_eq!(rgb.get_pixel(10, 10).0, BASE_COLOR);
         // bar 区内存在品牌红字像素。
-        assert!(
-            bar_has_brand_red(&rgb),
-            "bar 区应存在品牌红像素"
-        );
+        assert!(bar_has_brand_red(&rgb), "bar 区应存在品牌红像素");
         let _ = fs::remove_file(&path);
     }
 
