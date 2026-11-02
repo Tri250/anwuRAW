@@ -531,7 +531,10 @@
       "intensity": "強さ"
     },
     "previewAlt": "編集プレビュー",
+    "previewCloseCompare": "比較を終了",
+    "previewEdited": "処理後",
     "previewRendering": "レンダリング中…",
+    "previewResetZoom": "ズームをリセット",
     "redo": "やり直す",
     "resetConfirm": {
       "message": "元の見た目に戻し、履歴を再構築します。",

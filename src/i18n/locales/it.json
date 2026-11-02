@@ -554,7 +554,10 @@
       "intensity": "Intensità"
     },
     "previewAlt": "Anteprima modificata",
+    "previewCloseCompare": "Esci dal confronto",
+    "previewEdited": "Modificato",
     "previewRendering": "Rendering…",
+    "previewResetZoom": "Reimposta zoom",
     "redo": "Ripeti",
     "resetConfirm": {
       "message": "Ripristina l'aspetto originale e ricostruisce la cronologia.",

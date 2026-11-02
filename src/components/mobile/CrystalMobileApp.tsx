@@ -21,15 +21,15 @@ import {
 import { useEditorStore } from '../../store/useEditorStore';
 import { useProcessStore } from '../../store/useProcessStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { useShallow } from 'zustand/react/shallow';
 import { Adjustments, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
 import { Invokes } from '../ui/AppProperties';
 import { Status } from '../ui/ExportImportProperties';
 import ConfirmModal from '../modals/ConfirmModal';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
-import { CRYSTAL_LONG_PRESS_MS, summarizeExif, useShowOriginalHold } from './crystalShared';
+import { summarizeExif, useShowOriginalHold } from './crystalShared';
 import { selectAiModelDownloadStatus } from '../../store/useProcessStore';
 import CrystalCategoryPanel from './CrystalCategoryPanel';
+import CrystalPreview from './CrystalPreview';
 import WatermarkExportPage from './WatermarkExportPage';
 
 export type CrystalCategory = 'presets' | 'portrait' | 'filter' | 'tone' | 'compose' | 'ai' | 'fx';
@@ -44,8 +44,6 @@ const CATEGORIES: Array<{ id: CrystalCategory; labelKey: ParseKeys; color: strin
   { id: 'ai', labelKey: 'crystal.categories.ai', color: 'var(--cx-cat-ai)', icon: Sparkles },
   { id: 'fx', labelKey: 'crystal.categories.fx', color: 'var(--cx-cat-fx)', icon: Contrast },
 ];
-
-const LONG_PRESS_MS = CRYSTAL_LONG_PRESS_MS;
 
 function CrystalTopBar({ camera, onBack, onSave }: { camera: string; onBack: () => void; onSave: () => void }) {
   const { t } = useTranslation();
@@ -76,41 +74,6 @@ function CrystalTopBar({ camera, onBack, onSave }: { camera: string; onBack: () 
   );
 }
 
-function CrystalPreview() {
-  const { t } = useTranslation();
-  const { finalPreviewUrl, originalPreview, showOriginal, hasRenderedFirstFrame } = useEditorStore(
-    useShallow((s) => ({
-      finalPreviewUrl: s.finalPreviewUrl,
-      originalPreview: s.originalPreview,
-      showOriginal: s.showOriginal,
-      hasRenderedFirstFrame: s.hasRenderedFirstFrame,
-    })),
-  );
-  const url = showOriginal ? (originalPreview?.url ?? null) : finalPreviewUrl;
-  // G11 预览区左下「原图｜对比」浮层：与底栏同手势、同渲染路径。
-  const originalHold = useShowOriginalHold(0);
-  const compareHold = useShowOriginalHold(LONG_PRESS_MS / 2);
-
-  return (
-    <div className="cx-preview">
-      {url ? (
-        <img className="cx-preview-img" src={url} alt={t('crystal.previewAlt')} draggable={false} />
-      ) : (
-        <div className="cx-preview-empty">{hasRenderedFirstFrame ? t('crystal.previewRendering') : ''}</div>
-      )}
-      <div className="cx-float-pills">
-        <button className="cx-float-pill" {...originalHold}>
-          {t('crystal.bottom.original')}
-        </button>
-        <button className="cx-float-pill" {...compareHold}>
-          {t('crystal.bottom.compare')}
-        </button>
-      </div>
-      {showOriginal && <div className="cx-preview-corner">{t('crystal.originalBadge')}</div>}
-    </div>
-  );
-}
-
 function CrystalCatNavBar({ active, onSelect }: { active: CrystalCategory; onSelect: (id: CrystalCategory) => void }) {
   const { t } = useTranslation();
   return (
@@ -132,14 +95,21 @@ function CrystalCatNavBar({ active, onSelect }: { active: CrystalCategory; onSel
   );
 }
 
-function CrystalBottomBar({ onExport, onReset }: { onExport: () => void; onReset: () => void }) {
+function CrystalBottomBar({
+  onExport,
+  onReset,
+  onCompare,
+}: {
+  onExport: () => void;
+  onReset: () => void;
+  onCompare: () => void;
+}) {
   const { t } = useTranslation();
   const canUndo = useEditorStore((s) => s.historyIndex > 0);
   const canRedo = useEditorStore((s) => s.historyIndex < s.history.length - 1);
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
   const originalHold = useShowOriginalHold(0);
-  const compareHold = useShowOriginalHold(LONG_PRESS_MS / 2);
 
   return (
     <div className="cx-bottombar">
@@ -162,8 +132,8 @@ function CrystalBottomBar({ onExport, onReset }: { onExport: () => void; onReset
         </span>
         {t('crystal.bottom.redo')}
       </button>
-      {/* 对比：按住看原图，松开恢复 */}
-      <button className="cx-bottom-btn" {...compareHold}>
+      {/* 对比：进入前后对比分割视图，再点退出 */}
+      <button className="cx-bottom-btn" onClick={onCompare}>
         <span className="cx-b-icon">
           <Contrast size={19} />
         </span>
@@ -194,6 +164,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
   const { t } = useTranslation();
   const [flow, setFlow] = useState<'edit' | 'export'>('edit');
   const [activeCategory, setActiveCategory] = useState<CrystalCategory>('presets');
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   const selectedImage = useEditorStore((s) => s.selectedImage);
@@ -208,11 +179,15 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
   // 副标题：机型（截断）；无 EXIF 时回退画幅
   const cameraSubtitle = exif.camera || (selectedImage?.width ? `${selectedImage.width}×${selectedImage.height}` : '');
 
-  // Android 返回键闭环：导出域 → 回编辑域；编辑域 → 回图库。
+  // Android 返回键闭环：对比视图 → 回编辑；导出域 → 回编辑域；编辑域 → 回图库。
   // UX：导出进行中消费返回事件但不切域——进度反馈在导出页内，离开即丢失。
   useEffect(() => {
     if (osPlatform !== 'android') return;
     const handler = () => {
+      if (isCompareOpen) {
+        setIsCompareOpen(false);
+        return;
+      }
       if (useEditorStore.getState().showOriginal) {
         useEditorStore.getState().setEditor({ showOriginal: false });
         return;
@@ -226,7 +201,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     };
     pushExitLayer(handler);
     return () => removeExitLayer(handler);
-  }, [flow, isExporting, onBackToLibrary, osPlatform]);
+  }, [flow, isCompareOpen, isExporting, onBackToLibrary, osPlatform]);
 
   const handleReset = useCallback(() => {
     const sel = useEditorStore.getState().selectedImage;
@@ -239,23 +214,32 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     }
   }, [resetHistory, setEditor]);
 
+  const goExport = useCallback(() => {
+    setIsCompareOpen(false);
+    setFlow('export');
+  }, []);
+
   if (!selectedImage) return null;
 
   return (
     <div className="crystal-shell" data-flow={flow}>
       {flow === 'edit' ? (
         <div className="cx-app">
-          <CrystalTopBar camera={cameraSubtitle} onBack={onBackToLibrary} onSave={() => setFlow('export')} />
+          <CrystalTopBar camera={cameraSubtitle} onBack={onBackToLibrary} onSave={goExport} />
           {modelDownloadStatus && (
             <div className="cx-dl-pill" role="status">
               <Loader2 size={11} className="animate-spin" />
               {t('crystal.ai.modelDownloading')} · {modelDownloadStatus}
             </div>
           )}
-          <CrystalPreview />
+          <CrystalPreview compare={isCompareOpen} onCompareChange={setIsCompareOpen} activeCategory={activeCategory} />
           <CrystalCatNavBar active={activeCategory} onSelect={setActiveCategory} />
           <CrystalCategoryPanel category={activeCategory} />
-          <CrystalBottomBar onExport={() => setFlow('export')} onReset={() => setIsResetConfirmOpen(true)} />
+          <CrystalBottomBar
+            onExport={goExport}
+            onReset={() => setIsResetConfirmOpen(true)}
+            onCompare={() => setIsCompareOpen((v) => !v)}
+          />
           <ConfirmModal
             isOpen={isResetConfirmOpen}
             title={t('crystal.resetConfirm.title')}

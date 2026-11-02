@@ -531,7 +531,10 @@
       "intensity": "強度"
     },
     "previewAlt": "編輯預覽",
+    "previewCloseCompare": "退出對比",
+    "previewEdited": "效果",
     "previewRendering": "算繪中…",
+    "previewResetZoom": "重設縮放",
     "redo": "重做",
     "resetConfirm": {
       "message": "將恢復原始畫面，並重建復原歷史。",

@@ -534,7 +534,10 @@
       "intensity": "强度"
     },
     "previewAlt": "编辑预览",
+    "previewCloseCompare": "退出对比",
+    "previewEdited": "效果",
     "previewRendering": "渲染中…",
+    "previewResetZoom": "复位缩放",
     "redo": "重做",
     "resetConfirm": {
       "message": "将恢复原始画面，并重建撤销历史。",

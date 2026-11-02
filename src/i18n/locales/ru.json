@@ -574,7 +574,10 @@
       "intensity": "Сила"
     },
     "previewAlt": "Предпросмотр",
+    "previewCloseCompare": "Выйти из сравнения",
+    "previewEdited": "После обработки",
     "previewRendering": "Рендеринг…",
+    "previewResetZoom": "Сбросить масштаб",
     "redo": "Повторить",
     "resetConfirm": {
       "message": "Вернёт исходный вид и пересоберёт историю правок.",

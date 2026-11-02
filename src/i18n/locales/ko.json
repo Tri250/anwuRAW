@@ -531,7 +531,10 @@
       "intensity": "강도"
     },
     "previewAlt": "편집 미리보기",
+    "previewCloseCompare": "비교 종료",
+    "previewEdited": "편집됨",
     "previewRendering": "렌더링 중…",
+    "previewResetZoom": "확대 초기화",
     "redo": "다시 실행",
     "resetConfirm": {
       "message": "원본 상태로 되돌리고 기록을 다시 만듭니다.",
