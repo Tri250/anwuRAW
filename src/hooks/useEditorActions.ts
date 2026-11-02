@@ -289,6 +289,16 @@ export function useEditorActions() {
     [setEditor],
   );
 
+  // Generic preview override (e.g. master-recipe card hover): renders a full
+  // adjustment snapshot without touching the committed adjustments, unlike the
+  // LUT-only setLutPreviewOverride.
+  const setPreviewOverride = useCallback(
+    (override: Adjustments | null) => {
+      setEditor({ previewOverride: override });
+    },
+    [setEditor],
+  );
+
   const handleResetAdjustments = useCallback(
     (paths?: string[]) => {
       const { multiSelectedPaths, libraryActivePath, setLibrary } = useLibraryStore.getState();
@@ -561,6 +571,7 @@ export function useEditorActions() {
     handleAutoStraightenPaths,
     handleLutSelect,
     setLutPreviewOverride,
+    setPreviewOverride,
     handleResetAdjustments,
     handleAutoLensCorrection,
     handleEnableAdjustments,

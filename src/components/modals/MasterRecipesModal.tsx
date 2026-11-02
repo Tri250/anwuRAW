@@ -81,7 +81,7 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
   const selectedImage = useEditorStore((state) => state.selectedImage);
   const adjustments = useEditorStore((state) => state.adjustments);
   const setEditor = useEditorStore((state) => state.setEditor);
-  const { setAdjustments, handleLutSelect, setLutPreviewOverride } = useEditorActions();
+  const { setAdjustments, handleLutSelect, setLutPreviewOverride, setPreviewOverride } = useEditorActions();
 
   const [tab, setTab] = useState<RecipeTab>('master');
   const [luts, setLuts] = useState<Array<LutEntry>>([]);
@@ -130,6 +130,32 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
     setIntensity(RECIPE_INTENSITY_DEFAULT);
   }, [currentImagePath]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      return;
+    }
+    // Hover previews must not leak past modal close: the hovered card unmounts
+    // without a mouseleave, which would leave previewOverride stuck on.
+    const { showOriginal } = useEditorStore.getState();
+    if (!showOriginal) {
+      setLutPreviewOverride(null);
+      setPreviewOverride(null);
+    }
+  }, [isOpen, setLutPreviewOverride, setPreviewOverride]);
+
   const activeRecipe = useMemo(
     () => MASTER_RECIPES.find((recipe) => recipe.id === activeRecipeId) ?? null,
     [activeRecipeId],
@@ -137,6 +163,9 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
 
   const handleApplyRecipe = useCallback(
     async (recipe: MasterRecipe) => {
+      // Clear any hover preview first: it would keep overriding the render and
+      // freeze the view on pre-click values while the intensity slider moves.
+      setPreviewOverride(null);
       if (activeRecipeId === recipe.id) {
         const restore = previousAdjustments.current;
         if (restore) {
@@ -189,7 +218,30 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
         activeTools: enableRecipeTools(getActiveTools(prev)),
       }));
     },
-    [activeRecipeId, luts, setAdjustments, t],
+    [activeRecipeId, luts, setAdjustments, setPreviewOverride, t],
+  );
+
+  // Master recipe card hover preview (parity with the film tab's LUT hover):
+  // renders the recipe on top of the current adjustments without committing.
+  const handleRecipeHover = useCallback(
+    (recipe: MasterRecipe | null) => {
+      if (!recipe || recipe.id === activeRecipeId) {
+        setPreviewOverride(null);
+        return;
+      }
+      const entry = resolveMasterLutEntry(recipe, luts);
+      const { adjustments: current } = useEditorStore.getState();
+      setPreviewOverride({
+        ...current,
+        ...recipeToAdjustments(recipe, RECIPE_INTENSITY_DEFAULT),
+        lutPath: entry?.path ?? null,
+        lutName: entry ? masterLutBaseName(recipe) : null,
+        lutIntensity: RECIPE_INTENSITY_DEFAULT,
+        lutIsSceneReferred: entry?.isSceneReferred ?? MASTER_LUT_IS_SCENE_REFERRED,
+        activeTools: enableRecipeTools(getActiveTools(current)),
+      });
+    },
+    [activeRecipeId, luts, setPreviewOverride],
   );
 
   const handleIntensityChange = useCallback(
@@ -266,7 +318,7 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-2 text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
+            className="cursor-pointer rounded-full p-2 text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
             data-tooltip={t('editor.masterRecipes.close')}
           >
             <X size={18} />
@@ -283,7 +335,7 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
+              className={`flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
                 tab === id ? 'bg-surface text-text-primary' : 'text-text-secondary hover:bg-surface/60'
               }`}
             >
@@ -308,7 +360,9 @@ export default function MasterRecipesModal({ isOpen, onClose }: MasterRecipesMod
                   <button
                     key={recipe.id}
                     onClick={() => void handleApplyRecipe(recipe)}
-                    className={`group flex flex-col overflow-hidden rounded-lg border text-left transition-colors ${
+                    onMouseEnter={() => handleRecipeHover(recipe)}
+                    onMouseLeave={() => handleRecipeHover(null)}
+                    className={`group flex cursor-pointer flex-col overflow-hidden rounded-lg border text-left transition-colors ${
                       isActive ? 'border-accent bg-surface' : 'border-transparent bg-surface/50 hover:bg-surface'
                     }`}
                   >
