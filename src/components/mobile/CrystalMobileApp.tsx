@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -26,7 +26,7 @@ import { Invokes } from '../ui/AppProperties';
 import { Status } from '../ui/ExportImportProperties';
 import ConfirmModal from '../modals/ConfirmModal';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
-import { summarizeExif } from './crystalShared';
+import { CRYSTAL_LONG_PRESS_MS, summarizeExif, useShowOriginalHold } from './crystalShared';
 import CrystalCategoryPanel from './CrystalCategoryPanel';
 import WatermarkExportPage from './WatermarkExportPage';
 
@@ -43,7 +43,7 @@ const CATEGORIES: Array<{ id: CrystalCategory; labelKey: ParseKeys; color: strin
   { id: 'fx', labelKey: 'crystal.categories.fx', color: 'var(--cx-cat-fx)', icon: Contrast },
 ];
 
-const LONG_PRESS_MS = 450;
+const LONG_PRESS_MS = CRYSTAL_LONG_PRESS_MS;
 
 function CrystalTopBar({
   camera,
@@ -93,6 +93,9 @@ function CrystalPreview() {
     })),
   );
   const url = showOriginal ? (originalPreview?.url ?? null) : finalPreviewUrl;
+  // G11 预览区左下「原图｜对比」浮层：与底栏同手势、同渲染路径。
+  const originalHold = useShowOriginalHold(0);
+  const compareHold = useShowOriginalHold(LONG_PRESS_MS / 2);
 
   return (
     <div className="cx-preview">
@@ -101,6 +104,14 @@ function CrystalPreview() {
       ) : (
         <div className="cx-preview-empty">{hasRenderedFirstFrame ? t('crystal.previewRendering') : ''}</div>
       )}
+      <div className="cx-float-pills">
+        <button className="cx-float-pill" {...originalHold}>
+          {t('crystal.bottom.original')}
+        </button>
+        <button className="cx-float-pill" {...compareHold}>
+          {t('crystal.bottom.compare')}
+        </button>
+      </div>
       {showOriginal && <div className="cx-preview-corner">{t('crystal.originalBadge')}</div>}
     </div>
   );
@@ -135,53 +146,17 @@ function CrystalBottomBar({
   onReset: () => void;
 }) {
   const { t } = useTranslation();
-  const setEditor = useEditorStore((s) => s.setEditor);
   const canUndo = useEditorStore((s) => s.historyIndex > 0);
   const canRedo = useEditorStore((s) => s.historyIndex < s.history.length - 1);
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
-
-  const holdTimer = useRef<number | null>(null);
-  const holdActive = useRef(false);
-
-  const startHold = useCallback(
-    (label: string) => {
-      holdTimer.current = window.setTimeout(() => {
-        holdActive.current = true;
-        setEditor({ showOriginal: true });
-      }, label === 'original' ? 0 : LONG_PRESS_MS / 2);
-    },
-    [setEditor],
-  );
-
-  const endHold = useCallback(() => {
-    if (holdTimer.current !== null) {
-      clearTimeout(holdTimer.current);
-      holdTimer.current = null;
-    }
-    if (holdActive.current) {
-      holdActive.current = false;
-      setEditor({ showOriginal: false });
-    }
-  }, [setEditor]);
-
-  useEffect(
-    () => () => {
-      if (holdTimer.current !== null) clearTimeout(holdTimer.current);
-    },
-    [],
-  );
+  const originalHold = useShowOriginalHold(0);
+  const compareHold = useShowOriginalHold(LONG_PRESS_MS / 2);
 
   return (
     <div className="cx-bottombar">
       {/* 原图：按下即看原图 */}
-      <button
-        className="cx-bottom-btn"
-        onPointerDown={() => startHold('original')}
-        onPointerUp={endHold}
-        onPointerLeave={endHold}
-        onPointerCancel={endHold}
-      >
+      <button className="cx-bottom-btn" {...originalHold}>
         <span className="cx-b-icon">
           <ImageIcon size={19} />
         </span>
@@ -200,13 +175,7 @@ function CrystalBottomBar({
         {t('crystal.bottom.redo')}
       </button>
       {/* 对比：按住看原图，松开恢复 */}
-      <button
-        className="cx-bottom-btn"
-        onPointerDown={() => startHold('compare')}
-        onPointerUp={endHold}
-        onPointerLeave={endHold}
-        onPointerCancel={endHold}
-      >
+      <button className="cx-bottom-btn" {...compareHold}>
         <span className="cx-b-icon">
           <Contrast size={19} />
         </span>

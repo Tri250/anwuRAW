@@ -482,7 +482,10 @@
       "done": "Enregistré sur l'appareil",
       "exporting": "Enregistrement…",
       "favorite": "Favori",
+      "fontBuiltin": "Classique",
+      "fontFamily": "Police",
       "fontScale": "Taille de police",
+      "fontSystem": "Système",
       "format": "Format",
       "infoFrameHint": "Incruste le bandeau EXIF et le cadre dans l'export",
       "infoFrameLabel": "Afficher bandeau & cadre",
@@ -528,6 +531,7 @@
       "warmth": "Chaleur"
     },
     "presets": {
+      "all": "Tout",
       "empty": "Aucun préréglage — créez ou importez sur desktop.",
       "intensity": "Intensité"
     },

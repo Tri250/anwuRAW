@@ -4,8 +4,7 @@ version = "2.1.2"
 description = "A blazingly-fast, non-destructive, and GPU-accelerated RAW image editor built with performance in mind."
 authors = ["Timon Käch"]
 edition = "2024"
-# SANDBOX-ONLY: 临时降级以在 1.94.1 工具链做 cargo check 验证，验证后必须还原为 1.98。
-rust-version = "1.94"
+rust-version = "1.98"
 
 [lib]
 name = "rapidraw_lib"

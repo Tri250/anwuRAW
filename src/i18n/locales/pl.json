@@ -502,7 +502,10 @@
       "done": "Zapisano na urządzeniu",
       "exporting": "Zapisywanie…",
       "favorite": "Ulubiony",
+      "fontBuiltin": "Klasyczny",
+      "fontFamily": "Czcionka",
       "fontScale": "Rozmiar czcionki",
+      "fontSystem": "Systemowy",
       "format": "Format",
       "infoFrameHint": "Wypala pasek EXIF i ramkę w eksporcie",
       "infoFrameLabel": "Pokaż pasek i ramkę",
@@ -548,6 +551,7 @@
       "warmth": "Ciepło"
     },
     "presets": {
+      "all": "Wszystkie",
       "empty": "Brak presetów — utwórz je lub zaimportuj na desktopie.",
       "intensity": "Siła"
     },

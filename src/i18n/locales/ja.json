@@ -459,7 +459,10 @@
       "done": "端末に保存しました",
       "exporting": "保存中…",
       "favorite": "お気に入り",
+      "fontBuiltin": "クラシック",
+      "fontFamily": "フォント",
       "fontScale": "フォントサイズ",
+      "fontSystem": "システム",
       "format": "形式",
       "infoFrameHint": "書き出し時に EXIF 情報バーと枠を焼き込みます",
       "infoFrameLabel": "情報バーと枠を表示",
@@ -505,6 +508,7 @@
       "warmth": "暖かさ"
     },
     "presets": {
+      "all": "すべて",
       "empty": "プリセットがありません — デスクトップで作成・読み込みできます。",
       "intensity": "強さ"
     },

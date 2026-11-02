@@ -482,7 +482,10 @@
       "done": "Salvato sul dispositivo",
       "exporting": "Salvataggio…",
       "favorite": "Preferito",
+      "fontBuiltin": "Classica",
+      "fontFamily": "Carattere",
       "fontScale": "Dimensione testo",
+      "fontSystem": "Sistema",
       "format": "Formato",
       "infoFrameHint": "Incide la barra EXIF e la cornice nell'esportazione",
       "infoFrameLabel": "Mostra barra e cornice",
@@ -528,6 +531,7 @@
       "warmth": "Calore"
     },
     "presets": {
+      "all": "Tutte",
       "empty": "Nessun preset — crealo o importalo su desktop.",
       "intensity": "Intensità"
     },

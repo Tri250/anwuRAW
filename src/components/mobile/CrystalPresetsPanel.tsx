@@ -202,23 +202,42 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [intensity, setIntensity] = useState(100);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const baseRef = useRef<Adjustments | null>(null);
 
-  const flatPresets: Preset[] = useMemo(() => {
-    const out: Preset[] = [];
+  // G5: 按文件夹分组（保持首次出现顺序），'' 为未分组。
+  const presetGroups = useMemo(() => {
+    const groups: Array<{ name: string; presets: Preset[] }> = [];
+    const byName = new Map<string, Preset[]>();
+    const push = (name: string, preset: Preset) => {
+      let list = byName.get(name);
+      if (!list) {
+        list = [];
+        byName.set(name, list);
+        groups.push({ name, presets: list });
+      }
+      list.push(preset);
+    };
     (presets as Array<UserPreset>).forEach((item) => {
-      if (item.preset) out.push(item.preset);
-      else if (item.folder?.children) out.push(...(item.folder.children as Preset[]));
+      if (item.preset) push('', item.preset);
+      else if (item.folder) {
+        const name = item.folder.name ?? '';
+        ((item.folder.children ?? []) as Preset[]).forEach((p) => push(name, p));
+      }
     });
-    return out;
+    return groups;
   }, [presets]);
+
+  const namedGroups = useMemo(() => presetGroups.filter((g) => g.name), [presetGroups]);
+  const totalPresetCount = useMemo(() => presetGroups.reduce((n, g) => n + g.presets.length, 0), [presetGroups]);
 
   const sources: Array<PreviewSource> = useMemo(() => {
     if (mode === 'filter') {
       return BUILTIN_FILTERS.map((f) => ({ id: `filter:${f.id}`, name: t(f.labelKey), adjustments: f.adjustments as Record<string, unknown> }));
     }
-    return flatPresets.map((p) => ({ id: `preset:${p.id}`, name: p.name, adjustments: (p.adjustments ?? {}) as Record<string, unknown> }));
-  }, [mode, flatPresets, t]);
+    const pool = selectedGroup ? (presetGroups.find((g) => g.name === selectedGroup)?.presets ?? []) : presetGroups.flatMap((g) => g.presets);
+    return pool.map((p) => ({ id: `preset:${p.id}`, name: p.name, adjustments: (p.adjustments ?? {}) as Record<string, unknown> }));
+  }, [mode, presetGroups, selectedGroup, t]);
 
   useEffect(() => {
     enqueue(sources);
@@ -255,7 +274,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     [activeSource, applyPresetObject],
   );
 
-  if (mode === 'presets' && isLoading && flatPresets.length === 0) {
+  if (mode === 'presets' && isLoading && totalPresetCount === 0) {
     return (
       <div className="flex items-center justify-center h-full" style={{ color: 'var(--cx-faint)' }}>
         <Loader2 size={20} className="animate-spin" />
@@ -271,6 +290,19 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
       </div>
 
       {mode === 'presets' && <AiRecommendCard />}
+
+      {mode === 'presets' && namedGroups.length > 0 && (
+        <div className="cx-chip-row mt-3">
+          <button className={`cx-chip ${selectedGroup === null ? 'is-active' : ''}`} onClick={() => setSelectedGroup(null)}>
+            {t('crystal.presets.all')}
+          </button>
+          {namedGroups.map((g) => (
+            <button key={g.name} className={`cx-chip ${selectedGroup === g.name ? 'is-active' : ''}`} onClick={() => setSelectedGroup(g.name)}>
+              {g.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className={mode === 'presets' ? 'cx-hstrip mt-3' : 'cx-hstrip'}>
         {sources.map((source) => {

@@ -482,7 +482,10 @@
       "done": "Guardado no dispositivo",
       "exporting": "A guardar…",
       "favorite": "Favorito",
+      "fontBuiltin": "Clássica",
+      "fontFamily": "Font",
       "fontScale": "Tamanho da letra",
+      "fontSystem": "Sistema",
       "format": "Formato",
       "infoFrameHint": "Grava a barra EXIF e a moldura na exportação",
       "infoFrameLabel": "Mostrar barra e moldura",
@@ -528,6 +531,7 @@
       "warmth": "Calor"
     },
     "presets": {
+      "all": "Todas",
       "empty": "Ainda sem predefinições — crie ou importe no desktop.",
       "intensity": "Intensidade"
     },

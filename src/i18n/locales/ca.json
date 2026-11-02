@@ -482,7 +482,10 @@
       "done": "Desat al dispositiu",
       "exporting": "Desant…",
       "favorite": "Preferit",
+      "fontBuiltin": "Clàssica",
+      "fontFamily": "Font",
       "fontScale": "Mida de la lletra",
+      "fontSystem": "Sistema",
       "format": "Format",
       "infoFrameHint": "Grava la barra EXIF i el marc en l'exportació",
       "infoFrameLabel": "Mostra barra i marc",
@@ -528,6 +531,7 @@
       "warmth": "Calor"
     },
     "presets": {
+      "all": "Totes",
       "empty": "Encara no hi ha predefinits — crea'ls o importa'ls a l'escriptori.",
       "intensity": "Intensitat"
     },

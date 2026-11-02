@@ -1,9 +1,12 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
 import { Adjustments, getActiveTools, getToolOwnersForKeys, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useEditorActions } from '../../hooks/useEditorActions';
+
+/** 长按阈值（G10：原图按下即看 / 对比稍延迟区分两种手势） */
+export const CRYSTAL_LONG_PRESS_MS = 450;
 
 /* --------------------------------------------------------------------------
  * 持久化偏好（水印模板收藏/默认/文案/字体/画质），localStorage 即可，
@@ -14,6 +17,8 @@ export interface CrystalWatermarkPrefs {
   defaultTemplateId: string | null;
   signature: string;
   fontScale: number;
+  /** G19 字体族：builtin = 内嵌 DejaVu；system = 系统字体（后端加载失败回落 builtin） */
+  fontFamily: 'builtin' | 'system';
   savedTemplateId: string | null;
 }
 
@@ -24,6 +29,7 @@ export const DEFAULT_WM_PREFS: CrystalWatermarkPrefs = {
   defaultTemplateId: null,
   signature: 'CRYSTAL · 专业摄影',
   fontScale: 4,
+  fontFamily: 'builtin',
   savedTemplateId: null,
 };
 
@@ -95,6 +101,8 @@ export interface ExifSummary {
   aperture: string;
   shutter: string;
   iso: string;
+  /** 拍摄时间（G14/W4-2：无机型时的信息栏兜底文案） */
+  taken: string;
 }
 
 export function summarizeExif(exif: Record<string, unknown> | null | undefined): ExifSummary {
@@ -109,6 +117,7 @@ export function summarizeExif(exif: Record<string, unknown> | null | undefined):
     aperture: EXIF_STR(e.FNumber) || EXIF_STR(e.ApertureValue) || '',
     shutter: EXIF_STR(e.ExposureTime) || '',
     iso: EXIF_STR(e.PhotographicSensitivity) || EXIF_STR(e.ISOSpeedRatings) || EXIF_STR(e.ISO) || '',
+    taken: EXIF_STR(e.DateTimeOriginal) || EXIF_STR(e.CreateDate) || EXIF_STR(e.DateTime) || '',
   };
 }
 
@@ -162,6 +171,48 @@ export function useCrystalAdjust() {
   );
 
   return { applyPatch, applyPresetObject, setAdjustments };
+}
+
+/* --------------------------------------------------------------------------
+ * 按住看原图手势（G10/G11）：底栏原图/对比键与预览浮层共用。
+ * showDelayMs=0 立即显示（原图键），>0 用于区分点击与按住（对比键）。
+ * ------------------------------------------------------------------------ */
+export function useShowOriginalHold(showDelayMs = 0) {
+  const setEditor = useEditorStore((s) => s.setEditor);
+  const holdTimer = useRef<number | null>(null);
+  const holdActive = useRef(false);
+
+  const start = useCallback(() => {
+    holdTimer.current = window.setTimeout(() => {
+      holdActive.current = true;
+      setEditor({ showOriginal: true });
+    }, showDelayMs);
+  }, [setEditor, showDelayMs]);
+
+  const end = useCallback(() => {
+    if (holdTimer.current !== null) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
+    if (holdActive.current) {
+      holdActive.current = false;
+      setEditor({ showOriginal: false });
+    }
+  }, [setEditor]);
+
+  useEffect(
+    () => () => {
+      if (holdTimer.current !== null) clearTimeout(holdTimer.current);
+    },
+    [],
+  );
+
+  return {
+    onPointerDown: start,
+    onPointerUp: end,
+    onPointerLeave: end,
+    onPointerCancel: end,
+  };
 }
 
 /* --------------------------------------------------------------------------

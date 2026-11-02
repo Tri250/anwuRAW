@@ -462,7 +462,10 @@
       "done": "Opgeslagen op toestel",
       "exporting": "Opslaan…",
       "favorite": "Favoriet",
+      "fontBuiltin": "Klassiek",
+      "fontFamily": "Lettertype",
       "fontScale": "Tekengrootte",
+      "fontSystem": "Systeem",
       "format": "Formaat",
       "infoFrameHint": "Brandt de EXIF-balk en het kader in de export",
       "infoFrameLabel": "Infolbalk & kader tonen",
@@ -508,6 +511,7 @@
       "warmth": "Warmte"
     },
     "presets": {
+      "all": "Alles",
       "empty": "Nog geen voorinstellingen — maak of importeer ze op desktop.",
       "intensity": "Sterkte"
     },

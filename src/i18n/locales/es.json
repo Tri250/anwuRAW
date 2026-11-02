@@ -482,7 +482,10 @@
       "done": "Guardado en el dispositivo",
       "exporting": "Guardando…",
       "favorite": "Favorita",
+      "fontBuiltin": "Clásica",
+      "fontFamily": "Fuente",
       "fontScale": "Tamaño de fuente",
+      "fontSystem": "Sistema",
       "format": "Formato",
       "infoFrameHint": "Graba la barra EXIF y el marco en la exportación",
       "infoFrameLabel": "Mostrar barra y marco",
@@ -528,6 +531,7 @@
       "warmth": "Calidez"
     },
     "presets": {
+      "all": "Todas",
       "empty": "Aún no hay ajustes — créalos o impórtalos en escritorio.",
       "intensity": "Intensidad"
     },

@@ -459,7 +459,10 @@
       "done": "기기에 저장됨",
       "exporting": "저장 중…",
       "favorite": "즐겨찾기",
+      "fontBuiltin": "클래식",
+      "fontFamily": "서체",
       "fontScale": "글꼴 크기",
+      "fontSystem": "시스템",
       "format": "형식",
       "infoFrameHint": "내보낼 때 EXIF 정보바와 프레임을 삽입합니다",
       "infoFrameLabel": "정보바와 프레임 표시",
@@ -505,6 +508,7 @@
       "warmth": "따뜻함"
     },
     "presets": {
+      "all": "전체",
       "empty": "프리셋이 없습니다 — 데스크톱에서 만들거나 가져오세요.",
       "intensity": "강도"
     },

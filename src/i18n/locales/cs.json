@@ -502,7 +502,10 @@
       "done": "Uloženo do zařízení",
       "exporting": "Ukládání…",
       "favorite": "Oblíbené",
+      "fontBuiltin": "Klasické",
+      "fontFamily": "Písmo",
       "fontScale": "Velikost písma",
+      "fontSystem": "Systém",
       "format": "Formát",
       "infoFrameHint": "Vypálí EXIF lištu a rám do exportu",
       "infoFrameLabel": "Zobrazit lištu a rám",
@@ -548,6 +551,7 @@
       "warmth": "Teplota"
     },
     "presets": {
+      "all": "Vše",
       "empty": "Zatím žádné předvolby — vytvořte nebo importujte v desktopu.",
       "intensity": "Intenzita"
     },

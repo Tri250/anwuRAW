@@ -211,6 +211,10 @@ pub struct TextWatermarkSettings {
     pub font_size: f32,
     pub opacity: f32,
     pub color: String,
+    /// F3/G19: 'builtin' (bundled DejaVu) or 'system' (OS font with builtin
+    /// fallback). Absent on payloads from older frontends.
+    #[serde(default)]
+    pub font_family: Option<String>,
 }
 
 /// Crystal 移动端水印导出（交付方案图4）：白底 EXIF 信息栏参数。
@@ -459,6 +463,50 @@ fn text_watermark_font() -> Result<&'static FontArc, String> {
         .map_err(|e| e.clone())
 }
 
+/// F3/G19: OS font candidates tried when the user picks the "system" family
+/// for a text watermark. Paths cover Android, macOS, Linux and Windows; the
+/// first readable + parseable file wins.
+static SYSTEM_WATERMARK_FONT: OnceLock<Result<FontArc, String>> = OnceLock::new();
+
+const SYSTEM_FONT_CANDIDATES: &[&str] = &[
+    // Android
+    "/system/fonts/Roboto-Bold.ttf",
+    "/system/fonts/Roboto-Regular.ttf",
+    // macOS
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+    "/System/Library/Fonts/Helvetica.ttc",
+    // Linux
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    // Windows
+    "C:\\Windows\\Fonts\\segoeuib.ttf",
+    "C:\\Windows\\Fonts\\arialbd.ttf",
+];
+
+/// Resolves the text-watermark font: `Some("system")` loads the first
+/// available OS font (cached), falling back to the bundled DejaVu Sans Bold
+/// when no system font can be read so exports never block. Every other value
+/// (including absent) uses the bundled font directly.
+fn watermark_font_for_family(family: Option<&str>) -> Result<&'static FontArc, String> {
+    if family == Some("system") {
+        let loaded = SYSTEM_WATERMARK_FONT.get_or_init(|| {
+            SYSTEM_FONT_CANDIDATES
+                .iter()
+                .find_map(|path| {
+                    fs::read(path)
+                        .ok()
+                        .and_then(|bytes| FontArc::try_from_vec(bytes).ok())
+                })
+                .ok_or_else(|| "No usable system font found".to_string())
+        });
+        if let Ok(font) = loaded {
+            return Ok(font);
+        }
+        log::warn!("System watermark font unavailable; falling back to the bundled font.");
+    }
+    text_watermark_font()
+}
+
 fn parse_hex_color_checked(color: &str) -> Result<[u8; 4], String> {
     let hex = color.trim().trim_start_matches('#');
     if !hex.is_ascii() {
@@ -501,7 +549,7 @@ fn apply_text_watermark(
         return Ok(());
     }
 
-    let font = text_watermark_font()?;
+    let font = watermark_font_for_family(settings.font_family.as_deref())?;
     let [r, g, b, _] = parse_hex_color_checked(&settings.color)?;
 
     let (base_w, base_h) = base_image.dimensions();

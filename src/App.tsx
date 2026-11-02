@@ -1,4 +1,5 @@
-import { type PointerEvent as ReactPointerEvent, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { type PointerEvent as ReactPointerEvent, useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -37,7 +38,8 @@ import AIPanel from './components/panel/right/AIPanel';
 import PresetsPanel from './components/panel/right/PresetsPanel';
 import TetheringPanel from './components/panel/right/TetheringPanel';
 
-import EditorView from './components/views/EditorView';
+// W1-7: 桌面编辑器按需加载 —— Crystal 移动壳（Android 默认）永不加载此 chunk。
+const EditorView = lazy(() => import('./components/views/EditorView'));
 import CrystalMobileApp from './components/mobile/CrystalMobileApp';
 import LibraryView from './components/views/LibraryView';
 
@@ -963,7 +965,14 @@ function App() {
                     (isAndroid && (appSettings?.crystalMobile ?? true) ? (
                       <CrystalMobileApp onBackToLibrary={handleBackToLibrary} />
                     ) : (
-                      <EditorView
+                      <Suspense
+                        fallback={
+                          <div className="flex-1 flex items-center justify-center">
+                            <Loader2 className="animate-spin text-accent" size={28} />
+                          </div>
+                        }
+                      >
+                        <EditorView
                       transformWrapperRef={transformWrapperRef}
                       isResizing={isResizing}
                       layoutMode={layoutMode}
@@ -988,6 +997,7 @@ function App() {
                       requestThumbnails={requestThumbnails}
                       renderAppPanel={renderAppPanel}
                     />
+                      </Suspense>
                     ))}
                 </div>
                 <div

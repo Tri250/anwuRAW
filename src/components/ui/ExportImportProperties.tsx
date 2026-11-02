@@ -107,6 +107,8 @@ export interface TextWatermarkSettings {
   fontSize: number;
   opacity: number;
   color: string;
+  /** 'builtin' (bundled DejaVu) or 'system' (OS font, falls back to builtin). */
+  fontFamily?: string;
 }
 
 export interface ExportState {

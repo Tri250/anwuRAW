@@ -462,7 +462,10 @@
       "done": "Auf Gerät gespeichert",
       "exporting": "Speichern…",
       "favorite": "Favorit",
+      "fontBuiltin": "Klassisch",
+      "fontFamily": "Schriftart",
       "fontScale": "Schriftgröße",
+      "fontSystem": "System",
       "format": "Format",
       "infoFrameHint": "Brennt EXIF-Leiste und Bildrahmen in den Export",
       "infoFrameLabel": "Infoleiste & Rahmen anzeigen",
@@ -508,6 +511,7 @@
       "warmth": "Wärme"
     },
     "presets": {
+      "all": "Alle",
       "empty": "Noch keine Presets — auf dem Desktop erstellen oder importieren.",
       "intensity": "Stärke"
     },

@@ -459,7 +459,10 @@
       "done": "已儲存到相簿",
       "exporting": "儲存中…",
       "favorite": "收藏",
+      "fontBuiltin": "經典",
+      "fontFamily": "字體",
       "fontScale": "字體大小",
+      "fontSystem": "系統",
       "format": "格式",
       "infoFrameHint": "匯出時烙印 EXIF 資訊條與照片相框",
       "infoFrameLabel": "在成片中顯示資訊欄與相框",
@@ -505,6 +508,7 @@
       "warmth": "暖調"
     },
     "presets": {
+      "all": "全部",
       "empty": "尚無預設集 — 可在桌面版建立或匯入。",
       "intensity": "強度"
     },

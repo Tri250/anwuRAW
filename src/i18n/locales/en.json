@@ -465,7 +465,10 @@
       "done": "Saved to device",
       "exporting": "Saving…",
       "favorite": "Favorite",
+      "fontBuiltin": "Classic",
+      "fontFamily": "Font",
       "fontScale": "Font size",
+      "fontSystem": "System",
       "format": "Format",
       "infoFrameHint": "Burns the EXIF strip and photo frame into the export",
       "infoFrameLabel": "Show info bar & frame",
@@ -511,6 +514,7 @@
       "warmth": "Warmth"
     },
     "presets": {
+      "all": "All",
       "empty": "No presets yet — create or import them on desktop.",
       "intensity": "Strength"
     },

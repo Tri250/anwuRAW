@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import {
@@ -41,7 +41,8 @@ type CrystalExportSettings = ExportSettings & {
   exif_frame?: { enabled: boolean; brand: string; showExif: boolean } | null;
 };
 
-const QUALITIES = [100, 90, 75];
+/* G18: 画质三档映射到真实 JPEG 质量 100/80/60。 */
+const QUALITIES = [100, 80, 60];
 
 function TemplateDemo({ tpl }: { tpl: WatermarkTemplate }) {
   return (
@@ -87,7 +88,7 @@ export default function WatermarkExportPage({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(prefs.defaultTemplateId ?? 'pro');
   const [showInfoBarFrame, setShowInfoBarFrame] = useState(true);
   const [format, setFormat] = useState<'jpeg' | 'png'>('jpeg');
-  const [quality, setQuality] = useState(90);
+  const [quality, setQuality] = useState(100);
   const [signatureDraft, setSignatureDraft] = useState(prefs.signature);
 
   const { finalPreviewUrl, adjustments } = useEditorStore(
@@ -107,9 +108,60 @@ export default function WatermarkExportPage({
     .join(' ');
   const isExporting = [Status.Exporting, Status.Cancelling].includes(exportState.status);
 
+  // F12: 测量预览图实际显示区域（object-fit contain 时元素盒与图像区可能不一致），
+  // 用于签名叠加的字号（fontScale 为图像高度百分比，与 Rust font_size 语义一致）
+  // 与锚点边距（Rust 为短边 2.5%）。
+  const previewImgRef = useRef<HTMLImageElement | null>(null);
+  const [imgRect, setImgRect] = useState<{ left: number; top: number; w: number; h: number } | null>(null);
+  useEffect(() => {
+    const el = previewImgRef.current;
+    if (!el) {
+      setImgRect(null);
+      return;
+    }
+    const measure = () => {
+      const nw = el.naturalWidth;
+      const nh = el.naturalHeight;
+      const ew = el.clientWidth;
+      const eh = el.clientHeight;
+      if (!nw || !nh || !ew || !eh) {
+        setImgRect(null);
+        return;
+      }
+      const scale = Math.min(ew / nw, eh / nh);
+      const w = nw * scale;
+      const h = nh * scale;
+      setImgRect({ left: (ew - w) / 2, top: (eh - h) / 2, w, h });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    el.addEventListener('load', measure);
+    return () => {
+      ro.disconnect();
+      el.removeEventListener('load', measure);
+    };
+  }, [finalPreviewUrl]);
+
+  // F9: 导出成功一次性全局 toast（inline 状态条已存在；防止状态滞留重复弹）。
+  const successToastShownRef = useRef(false);
+  useEffect(() => {
+    if (exportState.status === Status.Success) {
+      if (!successToastShownRef.current) {
+        successToastShownRef.current = true;
+        toast.success(t('crystal.export.done'));
+      }
+    } else {
+      successToastShownRef.current = false;
+    }
+  }, [exportState.status, t]);
+
   const handleSelectTemplate = (id: string) => {
     setSelectedTemplateId(id);
   };
+
+  const signatureText = (signatureDraft || prefs.signature).trim();
+  const sigMargin = imgRect ? Math.round(0.025 * Math.min(imgRect.w, imgRect.h)) : 8;
 
   const commitSignature = (value: string) => {
     setSignatureDraft(value);
@@ -147,6 +199,7 @@ export default function WatermarkExportPage({
               fontSize: prefs.fontScale,
               opacity: 85,
               color: '#FFFFFF',
+              fontFamily: prefs.fontFamily,
             }
           : null,
       exif_frame:
@@ -204,7 +257,7 @@ export default function WatermarkExportPage({
         <div className="cx-export-card mt-1">
           <div className="cx-frame-preview">
             {finalPreviewUrl ? (
-              <img src={finalPreviewUrl} alt={t('crystal.previewAlt')} draggable={false} />
+              <img ref={previewImgRef} src={finalPreviewUrl} alt={t('crystal.previewAlt')} draggable={false} />
             ) : (
               <div className="h-[38vh] w-full flex items-center justify-center text-xs" style={{ color: 'var(--cx-faint)' }}>
                 {t('crystal.previewRendering')}
@@ -217,9 +270,36 @@ export default function WatermarkExportPage({
             <span className="cx-preview-badge" style={{ top: 10, right: 10 }}>
               {t(tpl.nameKey)}
             </span>
+            {/* F12: 签名实时叠加（与 Rust 绘制次序一致：信息栏 DOM 在后、覆盖底部签名） */}
+            {tpl.signatureAnchor && signatureText && imgRect && (
+              <span
+                className="cx-wm-signature"
+                style={{
+                  left: imgRect.left,
+                  top: imgRect.top,
+                  width: imgRect.w,
+                  height: imgRect.h,
+                  fontSize: Math.max(9, (prefs.fontScale / 100) * imgRect.h),
+                }}
+              >
+                <span
+                  style={
+                    tpl.signatureAnchor === 'topLeft'
+                      ? { top: sigMargin, left: sigMargin }
+                      : tpl.signatureAnchor === 'bottomLeft'
+                        ? { bottom: sigMargin, left: sigMargin }
+                        : tpl.signatureAnchor === 'bottomCenter'
+                          ? { bottom: sigMargin, left: '50%', transform: 'translateX(-50%)' }
+                          : { bottom: sigMargin, right: sigMargin }
+                  }
+                >
+                  {signatureText}
+                </span>
+              </span>
+            )}
             {showInfoBarFrame && tpl.exifBar && (
               <div className="cx-exif-bar" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
-                <span className="truncate">{exif.camera || t('crystal.export.noExif')}</span>
+                <span className="truncate">{exif.camera || exif.taken || t('crystal.export.noExif')}</span>
                 <span className="cx-exif-sep" />
                 <span className="cx-exif-brand">{tpl.brand}</span>
                 {exifParams && (
@@ -292,6 +372,17 @@ export default function WatermarkExportPage({
               placeholder={t('crystal.export.signaturePlaceholder')}
               maxLength={40}
             />
+          </div>
+          <div className="mt-3">
+            <div className="cx-export-label">{t('crystal.export.fontFamily')}</div>
+            <div className="cx-seg">
+              <button className={prefs.fontFamily === 'system' ? '' : 'is-active'} onClick={() => updatePrefs({ fontFamily: 'builtin' })}>
+                {t('crystal.export.fontBuiltin')}
+              </button>
+              <button className={prefs.fontFamily === 'system' ? 'is-active' : ''} onClick={() => updatePrefs({ fontFamily: 'system' })}>
+                {t('crystal.export.fontSystem')}
+              </button>
+            </div>
           </div>
           <div className="mt-3">
             <div className="cx-export-label">{t('crystal.export.fontScale')}</div>

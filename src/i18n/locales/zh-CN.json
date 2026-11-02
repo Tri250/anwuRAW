@@ -462,7 +462,10 @@
       "done": "已保存到相册",
       "exporting": "保存中…",
       "favorite": "收藏",
+      "fontBuiltin": "经典",
+      "fontFamily": "字体",
       "fontScale": "字体大小",
+      "fontSystem": "系统",
       "format": "格式",
       "infoFrameHint": "导出时烧录 EXIF 信息条与照片相框",
       "infoFrameLabel": "在成片中显示信息栏与相框",
@@ -508,6 +511,7 @@
       "warmth": "暖调"
     },
     "presets": {
+      "all": "全部",
       "empty": "还没有预设 — 可在桌面端创建或导入。",
       "intensity": "强度"
     },

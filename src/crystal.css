@@ -825,3 +825,83 @@
 .crystal-shell [data-tooltip]:hover::after {
   display: none !important;
 }
+
+/* ================= F5/G20: 横屏降级（编辑域左右分区，导出域保持纵向流） ================= */
+@media (orientation: landscape) {
+  .cx-app:not([data-flow='export']) {
+    display: grid;
+    grid-template-columns: 1fr minmax(320px, 42%);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'top top'
+      'preview catnav'
+      'preview panel'
+      'preview bottombar';
+  }
+  .cx-app:not([data-flow='export']) .cx-topbar {
+    grid-area: top;
+  }
+  .cx-app:not([data-flow='export']) .cx-preview {
+    grid-area: preview;
+    min-height: 0;
+    min-width: 0;
+  }
+  .cx-app:not([data-flow='export']) .cx-catnav {
+    grid-area: catnav;
+  }
+  .cx-app:not([data-flow='export']) .cx-panel {
+    grid-area: panel;
+    height: auto;
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+  }
+  .cx-app:not([data-flow='export']) .cx-bottombar {
+    grid-area: bottombar;
+  }
+}
+
+/* ================= F6/G11: 预览左下「原图｜对比」浮层 ================= */
+.cx-float-pills {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 3;
+}
+.cx-float-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  background: rgba(20, 17, 6, 0.66);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--cx-ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+.cx-float-pill:active {
+  background: rgba(212, 175, 55, 0.28);
+}
+
+/* ================= F12: 签名实时叠加（尺寸/位置由内联样式给出） ================= */
+.cx-wm-signature {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+.cx-wm-signature > span {
+  position: absolute;
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 95%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
