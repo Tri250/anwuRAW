@@ -33,19 +33,27 @@ interface PreviewSource {
 }
 
 /* ---------------------------- 内置滤镜（真实参数组合） ---------------------------- */
-const BUILTIN_FILTERS: Array<{ id: string; labelKey: ParseKeys; adjustments: Partial<Adjustments> }> = [
-  { id: 'vivid', labelKey: 'crystal.filters.vivid', adjustments: { vibrance: 30, saturation: 8, contrast: 12, blacks: -10 } },
-  { id: 'softMist', labelKey: 'crystal.filters.softMist', adjustments: { glowAmount: 30, highlights: 15, shadows: 12, dehaze: -8, contrast: -6 } },
-  { id: 'film', labelKey: 'crystal.filters.film', adjustments: { contrast: 8, saturation: -12, grainAmount: 22, temperature: 6, blacks: -6 } },
-  { id: 'mono', labelKey: 'crystal.filters.mono', adjustments: { saturation: -100, contrast: 18, structure: 8, grainAmount: 14 } },
-  { id: 'goldBlack', labelKey: 'crystal.filters.goldBlack', adjustments: { temperature: 14, vibrance: 18, shadows: -12, blacks: -18, vignetteAmount: 24 } },
-  { id: 'cyber', labelKey: 'crystal.filters.cyber', adjustments: { tint: -18, temperature: -14, saturation: 22, contrast: 14, halationAmount: 16 } },
-  { id: 'airy', labelKey: 'crystal.filters.airy', adjustments: { exposure: 0.25, contrast: -8, saturation: -8, temperature: -4, highlights: -10 } },
-  { id: 'vintage', labelKey: 'crystal.filters.vintage', adjustments: { saturation: -18, temperature: 10, vignetteAmount: 20, grainAmount: 18, blacks: 12 } },
-  { id: 'coolBlue', labelKey: 'crystal.filters.coolBlue', adjustments: { temperature: -18, tint: 4, contrast: 8 } },
-  { id: 'goldenHour', labelKey: 'crystal.filters.goldenHour', adjustments: { temperature: 18, vibrance: 12, glowAmount: 10 } },
-  { id: 'hdrPunch', labelKey: 'crystal.filters.hdrPunch', adjustments: { clarity: 24, structure: 14, contrast: 10, vibrance: 16, dehaze: 8 } },
-  { id: 'faded', labelKey: 'crystal.filters.faded', adjustments: { contrast: -12, blacks: 16, saturation: -14, shadows: 10 } },
+const BUILTIN_FILTERS: Array<{ id: string; labelKey: ParseKeys; group: 'landscape' | 'portrait' | 'film' | 'mono'; adjustments: Partial<Adjustments> }> = [
+  { id: 'vivid', labelKey: 'crystal.filters.vivid', group: 'landscape', adjustments: { vibrance: 30, saturation: 8, contrast: 12, blacks: -10 } },
+  { id: 'softMist', labelKey: 'crystal.filters.softMist', group: 'portrait', adjustments: { glowAmount: 30, highlights: 15, shadows: 12, dehaze: -8, contrast: -6 } },
+  { id: 'film', labelKey: 'crystal.filters.film', group: 'film', adjustments: { contrast: 8, saturation: -12, grainAmount: 22, temperature: 6, blacks: -6 } },
+  { id: 'mono', labelKey: 'crystal.filters.mono', group: 'mono', adjustments: { saturation: -100, contrast: 18, structure: 8, grainAmount: 14 } },
+  { id: 'goldBlack', labelKey: 'crystal.filters.goldBlack', group: 'film', adjustments: { temperature: 14, vibrance: 18, shadows: -12, blacks: -18, vignetteAmount: 24 } },
+  { id: 'cyber', labelKey: 'crystal.filters.cyber', group: 'film', adjustments: { tint: -18, temperature: -14, saturation: 22, contrast: 14, halationAmount: 16 } },
+  { id: 'airy', labelKey: 'crystal.filters.airy', group: 'portrait', adjustments: { exposure: 0.25, contrast: -8, saturation: -8, temperature: -4, highlights: -10 } },
+  { id: 'vintage', labelKey: 'crystal.filters.vintage', group: 'film', adjustments: { saturation: -18, temperature: 10, vignetteAmount: 20, grainAmount: 18, blacks: 12 } },
+  { id: 'coolBlue', labelKey: 'crystal.filters.coolBlue', group: 'landscape', adjustments: { temperature: -18, tint: 4, contrast: 8 } },
+  { id: 'goldenHour', labelKey: 'crystal.filters.goldenHour', group: 'landscape', adjustments: { temperature: 18, vibrance: 12, glowAmount: 10 } },
+  { id: 'hdrPunch', labelKey: 'crystal.filters.hdrPunch', group: 'landscape', adjustments: { clarity: 24, structure: 14, contrast: 10, vibrance: 16, dehaze: 8 } },
+  { id: 'faded', labelKey: 'crystal.filters.faded', group: 'film', adjustments: { contrast: -12, blacks: 16, saturation: -14, shadows: 10 } },
+];
+
+/* §3.2 滤镜子标签（全部/风景/人像/胶片/黑白），按滤镜真实调性归类 */
+const FILTER_GROUPS: ReadonlyArray<{ id: 'landscape' | 'portrait' | 'film' | 'mono'; labelKey: ParseKeys }> = [
+  { id: 'landscape', labelKey: 'crystal.filters.groupLandscape' },
+  { id: 'portrait', labelKey: 'crystal.filters.groupPortrait' },
+  { id: 'film', labelKey: 'crystal.filters.groupFilm' },
+  { id: 'mono', labelKey: 'crystal.filters.groupMono' },
 ];
 
 /* ---------------------------- 缩略图渲染队列（同桌面 PresetsPanel） ---------------------------- */
@@ -231,9 +239,15 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   const namedGroups = useMemo(() => presetGroups.filter((g) => g.name), [presetGroups]);
   const totalPresetCount = useMemo(() => presetGroups.reduce((n, g) => n + g.presets.length, 0), [presetGroups]);
 
+  // 模式切换时复位分组，避免预设分组名泄漏到滤镜过滤
+  useEffect(() => {
+    setSelectedGroup(null);
+  }, [mode]);
+
   const sources: Array<PreviewSource> = useMemo(() => {
     if (mode === 'filter') {
-      return BUILTIN_FILTERS.map((f) => ({ id: `filter:${f.id}`, name: t(f.labelKey), adjustments: f.adjustments as Record<string, unknown> }));
+      const list = selectedGroup ? BUILTIN_FILTERS.filter((f) => f.group === selectedGroup) : BUILTIN_FILTERS;
+      return list.map((f) => ({ id: `filter:${f.id}`, name: t(f.labelKey), adjustments: f.adjustments as Record<string, unknown> }));
     }
     const pool = selectedGroup ? (presetGroups.find((g) => g.name === selectedGroup)?.presets ?? []) : presetGroups.flatMap((g) => g.presets);
     return pool.map((p) => ({ id: `preset:${p.id}`, name: p.name, adjustments: (p.adjustments ?? {}) as Record<string, unknown> }));
@@ -304,7 +318,21 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         </div>
       )}
 
-      <div className={mode === 'presets' ? 'cx-hstrip mt-3' : 'cx-hstrip'}>
+      {/* §3.2 滤镜子标签：全部/风景/人像/胶片/黑白 */}
+      {mode === 'filter' && (
+        <div className="cx-chip-row mt-3">
+          <button className={`cx-chip ${selectedGroup === null ? 'is-active' : ''}`} onClick={() => setSelectedGroup(null)}>
+            {t('crystal.presets.all')}
+          </button>
+          {FILTER_GROUPS.map((g) => (
+            <button key={g.id} className={`cx-chip ${selectedGroup === g.id ? 'is-active' : ''}`} onClick={() => setSelectedGroup(g.id)}>
+              {t(g.labelKey)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="cx-hstrip mt-3">
         {sources.map((source) => {
           const url = previews[source.id];
           const isActive = activeId === source.id;
