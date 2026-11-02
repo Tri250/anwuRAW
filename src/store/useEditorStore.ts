@@ -9,6 +9,39 @@ import { DEFAULT_SOFT_PROOFING, SoftProofingSettings } from '../utils/softProofi
 
 export type CenterMarker = 'vignette' | 'centre';
 
+// When a history navigation swaps in an adjustments snapshot, any AI patch /
+// mask-data blob whose object identity differs from the live state was never
+// sent to the backend under that content. Drop the sent markers so the next
+// render payload re-ships the actual data instead of the backend hydrating a
+// newer cached blob (e.g. undoing a patch regeneration).
+const syncSentPatchMarkers = (prev: Adjustments, next: Adjustments, sent: Set<string>) => {
+  const prevPatches = prev.aiPatches || [];
+  (next.aiPatches || []).forEach((patch: AiPatch) => {
+    const prevPatch = prevPatches.find((p: AiPatch) => p.id === patch.id);
+    if (!prevPatch || prevPatch.patchData !== patch.patchData) {
+      sent.delete(patch.id);
+    }
+    const prevSubMasks = prevPatch?.subMasks || [];
+    (patch.subMasks || []).forEach((sm: any) => {
+      const prevSm = prevSubMasks.find((p: any) => p.id === sm.id);
+      if (!prevSm || prevSm.parameters !== sm.parameters) {
+        sent.delete(sm.id);
+      }
+    });
+  });
+
+  const prevMasks = prev.masks || [];
+  (next.masks || []).forEach((container: MaskContainer) => {
+    const prevContainer = prevMasks.find((m: MaskContainer) => m.id === container.id);
+    (container.subMasks || []).forEach((sm: any) => {
+      const prevSm = prevContainer?.subMasks?.find((p: any) => p.id === sm.id);
+      if (!prevSm || prevSm.parameters !== sm.parameters) {
+        sent.delete(sm.id);
+      }
+    });
+  });
+};
+
 interface InteractivePatch {
   url: string;
   normX: number;
@@ -175,6 +208,7 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((state) => {
       if (state.historyIndex > 0) {
         const newIndex = state.historyIndex - 1;
+        syncSentPatchMarkers(state.adjustments, state.history[newIndex], state.patchesSentToBackend);
         return { historyIndex: newIndex, adjustments: state.history[newIndex] };
       }
       return state;
@@ -184,6 +218,7 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((state) => {
       if (state.historyIndex < state.history.length - 1) {
         const newIndex = state.historyIndex + 1;
+        syncSentPatchMarkers(state.adjustments, state.history[newIndex], state.patchesSentToBackend);
         return { historyIndex: newIndex, adjustments: state.history[newIndex] };
       }
       return state;
@@ -199,6 +234,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   goToHistoryIndex: (index) =>
     set((state) => {
       if (index >= 0 && index < state.history.length) {
+        syncSentPatchMarkers(state.adjustments, state.history[index], state.patchesSentToBackend);
         return { historyIndex: index, adjustments: state.history[index] };
       }
       return state;
@@ -210,6 +246,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   applyRevision: (revision) =>
     set((state) => {
       if (revision === state.adjustments) return state;
+      syncSentPatchMarkers(state.adjustments, revision, state.patchesSentToBackend);
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(revision);
       if (newHistory.length > 50) newHistory.shift();

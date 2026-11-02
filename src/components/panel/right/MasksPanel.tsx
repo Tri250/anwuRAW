@@ -2255,6 +2255,7 @@ function SettingsPanel({
 
     if (slimFace <= 0 && jawline <= 0) {
       if (existing) {
+        useEditorStore.getState().patchesSentToBackend.delete(patchId);
         setAdjustments((prev: Adjustments) => ({
           ...prev,
           aiPatches: (prev.aiPatches || []).filter((p: AiPatch) => p.id !== patchId),
@@ -2304,6 +2305,10 @@ function SettingsPanel({
       });
       if (gen !== faceLiquifyGenRef.current) return;
       const patchData = JSON.parse(patchJson);
+      // The patch content changed under the same id; drop the sent marker so
+      // the next render payload ships the fresh patchData to the backend
+      // (otherwise hydrate_adjustments keeps serving the cached old patch).
+      useEditorStore.getState().patchesSentToBackend.delete(patchId);
       setAdjustments((prev: Adjustments) => ({
         ...prev,
         aiPatches: (prev.aiPatches || []).map((p: AiPatch) =>

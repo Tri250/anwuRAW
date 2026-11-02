@@ -518,6 +518,10 @@ pub async fn invoke_generative_replace_with_mask_def(
 
         ai_w = (ai_w / 16) * 16;
         ai_h = (ai_h / 16) * 16;
+        // A tiny mask bbox can round down to 0; the cloud backend needs a
+        // non-empty multiple-of-16 crop, so clamp to the smallest valid size.
+        ai_w = ai_w.max(16);
+        ai_h = ai_h.max(16);
 
         let resize_needed = ai_w != crop_w || ai_h != crop_h;
 
@@ -753,6 +757,32 @@ pub async fn generate_liquify_patch(
     let (img_w, img_h) = source_dynamic.dimensions();
     let source_image = source_dynamic.into_rgb8();
 
+    let orientation_steps = current_adjustments
+        .get("orientationSteps")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0) as u8;
+    let (trans_w, trans_h) = if orientation_steps % 2 == 1 {
+        (img_h, img_w)
+    } else {
+        (img_w, img_h)
+    };
+
+    // Stroke points are recorded against the transformed display space (the
+    // canvas the user drew on), while the patch is baked against the base
+    // image. Map every point back so the warp aligns under
+    // rotation/flip/orientation/geometry adjustments (same convention as
+    // generate_manual_cleanup_patch's source point).
+    let display_to_base = |x: f64, y: f64| -> (f32, f32) {
+        let (bx, by) = crate::image_processing::inverse_transform_point(
+            x,
+            y,
+            trans_w as f64,
+            trans_h as f64,
+            &current_adjustments,
+        );
+        (bx as f32, by as f32)
+    };
+
     let mut all_points = Vec::new();
 
     #[derive(Clone, Copy, PartialEq)]
@@ -840,7 +870,7 @@ pub async fn generate_liquify_patch(
                                     pts[0].get("x").and_then(|v| v.as_f64()),
                                     pts[0].get("y").and_then(|v| v.as_f64()),
                                 ) {
-                                    let (xf, yf) = (x as f32, y as f32);
+                                    let (xf, yf) = display_to_base(x, y);
                                     all_points.push((xf, yf, radius));
                                     strokes.push(Stroke {
                                         x1: xf,
@@ -865,7 +895,7 @@ pub async fn generate_liquify_patch(
                                         p_val.get("x").and_then(|v| v.as_f64()),
                                         p_val.get("y").and_then(|v| v.as_f64()),
                                     ) {
-                                        let (xf, yf) = (x as f32, y as f32);
+                                        let (xf, yf) = display_to_base(x, y);
                                         all_points.push((xf, yf, radius));
 
                                         if let Some((px, py)) = prev_pt {
@@ -1401,6 +1431,32 @@ pub async fn generate_retouch_patch(
     let mut max_radius = 0.0_f32;
     let mut intensity = 50.0_f32;
 
+    let orientation_steps = current_adjustments
+        .get("orientationSteps")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0) as u8;
+    let (trans_w, trans_h) = if orientation_steps % 2 == 1 {
+        (img_h, img_w)
+    } else {
+        (img_w, img_h)
+    };
+
+    // Stroke points are recorded against the transformed display space (the
+    // canvas the user drew on), while the patch is baked against the base
+    // image. Map every point back so the retouch aligns under
+    // rotation/flip/orientation/geometry adjustments (same convention as
+    // generate_manual_cleanup_patch's source point).
+    let display_to_base = |x: f64, y: f64| -> (f32, f32) {
+        let (bx, by) = crate::image_processing::inverse_transform_point(
+            x,
+            y,
+            trans_w as f64,
+            trans_h as f64,
+            &current_adjustments,
+        );
+        (bx as f32, by as f32)
+    };
+
     let sub_masks_val = serde_json::to_value(&patch_definition.sub_masks).unwrap_or(Value::Null);
     let mut mask_canvas = vec![0u8; (img_w * img_h) as usize];
 
@@ -1433,7 +1489,7 @@ pub async fn generate_retouch_patch(
                                     pts[0].get("x").and_then(|v| v.as_f64()),
                                     pts[0].get("y").and_then(|v| v.as_f64()),
                                 ) {
-                                    let (xf, yf) = (x as f32, y as f32);
+                                    let (xf, yf) = display_to_base(x, y);
                                     min_x = min_x.min(xf - r);
                                     min_y = min_y.min(yf - r);
                                     max_x = max_x.max(xf + r);
@@ -1459,7 +1515,7 @@ pub async fn generate_retouch_patch(
                                         p_val.get("x").and_then(|v| v.as_f64()),
                                         p_val.get("y").and_then(|v| v.as_f64()),
                                     ) {
-                                        let (xf, yf) = (x as f32, y as f32);
+                                        let (xf, yf) = display_to_base(x, y);
                                         min_x = min_x.min(xf - r);
                                         min_y = min_y.min(yf - r);
                                         max_x = max_x.max(xf + r);

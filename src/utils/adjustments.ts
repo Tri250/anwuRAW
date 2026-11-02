@@ -733,6 +733,9 @@ export const normalizeLoadedAdjustments = (loadedAdjustments: Adjustments): any 
   const normalizedAiPatches = (loadedAdjustments.aiPatches || []).map((patch: any) => ({
     visible: true,
     ...patch,
+    // A save can land while a patch is still generating; never restore the
+    // loading flag from disk or the patch would spin forever on reload.
+    isLoading: false,
     subMasks: normalizeSubMasks(patch.subMasks),
   }));
 

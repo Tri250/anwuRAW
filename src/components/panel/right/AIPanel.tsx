@@ -752,7 +752,8 @@ export default function AIPanel() {
     clonedContainer.invert = options.invert ? !clonedContainer.invert : clonedContainer.invert;
     clonedContainer.isLoading = false;
     clonedContainer.name = options.rename === false ? clonedContainer.name : `${container.name} Copy`;
-    clonedContainer.patchData = null;
+    // Keep the deep-cloned patchData: duplicates/pastes must stay visually
+    // identical, and composite_patches_cow skips patches without patchData.
     clonedContainer.subMasks = clonedContainer.subMasks.map((subMask: SubMask) => ({
       ...subMask,
       id: uuidv4(),
@@ -1022,12 +1023,18 @@ export default function AIPanel() {
 
           const [movedSubMask] = sourceContainer.subMasks.splice(subMaskIndex, 1);
 
+          // Moving the container's last sub-mask out strands its patchData;
+          // carry it over so the new standalone container keeps rendering.
+          const sourceEmptied = sourceContainer.subMasks.length === 0;
+          const carriedPatchData = sourceEmptied ? sourceContainer.patchData : null;
+          if (sourceEmptied) sourceContainer.patchData = null;
+
           const newContainer: AiPatch = {
             id: uuidv4(),
             invert: false,
             isLoading: false,
             name: t('editor.ai.patches.aiEdit', { count: newPatches.length + 1 }),
-            patchData: null,
+            patchData: carriedPatchData,
             prompt: '',
             subMasks: [movedSubMask],
             visible: true,
