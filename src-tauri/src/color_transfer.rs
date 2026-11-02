@@ -609,6 +609,14 @@ fn load_analysis_image(
     if crate::file_management::is_cloud_placeholder(Path::new(path)) {
         return Err(format!("'{}' is stored in iCloud and not downloaded", path));
     }
+    // Android SAF 文件选择返回 content:// URI，需经 ContentResolver 读字节
+    // （与预设/LUT 导入同链路）；否则 std::fs::read 会直接失败。
+    #[cfg(target_os = "android")]
+    if crate::android_integration::is_android_content_uri(path) {
+        let bytes = crate::android_integration::read_android_content_uri(path)?;
+        return crate::image_loader::load_base_image_from_bytes(&bytes, path, true, settings, None)
+            .map_err(|e| e.to_string());
+    }
     let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
     crate::image_loader::load_base_image_from_bytes(&bytes, path, true, settings, None)
         .map_err(|e| e.to_string())

@@ -15,6 +15,7 @@ import {
   Smile,
   Sparkles,
   Upload,
+  Wand2,
   X,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -139,6 +140,67 @@ function TonePanel() {
   /* 相机校准：红/绿/蓝原色 hue/sat + 阴影色调（与桌面 ColorCalibrationPanel 同源） */
   const setCalibration = (key: keyof ColorCalibration, value: number) =>
     applyPatch({ colorCalibration: { ...calibration, [key]: value } });
+
+  /* 分级/校准整节重置（移动端闭环补充；桌面经由全局重置入口） */
+  const resetGrading = () => applyPatch({ colorGrading: { ...INITIAL_ADJUSTMENTS.colorGrading } });
+  const resetCalibration = () => applyPatch({ colorCalibration: { ...INITIAL_ADJUSTMENTS.colorCalibration } });
+
+  /* 色彩匹配（AI 追色）：拾取样片 → ComputeColorMatch → 合并 colorGrading/curves 补丁。
+   * 与桌面 handleColorMatch 同链路；Android 样片为 content:// URI，由后端 ContentResolver 读取。 */
+  const [matchBusy, setMatchBusy] = useState(false);
+  const handleColorMatch = useCallback(async () => {
+    const img = useEditorStore.getState().selectedImage;
+    if (!img || matchBusy) return;
+    setMatchBusy(true);
+    try {
+      const { osPlatform } = useSettingsStore.getState();
+      const selected = await open({
+        multiple: false,
+        filters:
+          osPlatform === 'android'
+            ? []
+            : [
+                {
+                  name: 'Images',
+                  extensions: [
+                    'jpg', 'jpeg', 'png', 'tif', 'tiff', 'webp', 'avif', 'jxl', 'heic',
+                    'dng', 'cr2', 'cr3', 'nef', 'arw', 'raf', 'orf', 'rw2',
+                  ],
+                },
+              ],
+      });
+      const samplePath = Array.isArray(selected) ? selected[0] : selected;
+      if (!samplePath) return;
+      const result = await invoke<{
+        adjustments?: { colorGrading?: Record<string, unknown>; curves?: Record<string, unknown> };
+        metrics?: { deltaEReduction?: number };
+      }>(Invokes.ComputeColorMatch, { samplePath, targetPath: img.path });
+      const patch = result.adjustments || {};
+      const cur = useEditorStore.getState().adjustments;
+      const next: Partial<Adjustments> = {};
+      if (patch.colorGrading) {
+        next.colorGrading = {
+          ...INITIAL_ADJUSTMENTS.colorGrading,
+          ...(cur.colorGrading ?? {}),
+          ...patch.colorGrading,
+        } as Adjustments['colorGrading'];
+      }
+      if (patch.curves) {
+        next.curves = {
+          ...INITIAL_ADJUSTMENTS.curves,
+          ...(cur.curves ?? {}),
+          ...patch.curves,
+        } as Adjustments['curves'];
+      }
+      if (Object.keys(next).length > 0) applyPatch(next);
+      toast.success(t('adjustments.color.colorMatchDone', { reduction: Math.round(result.metrics?.deltaEReduction ?? 0) }));
+    } catch (e) {
+      console.error('Color match failed:', e);
+      toast.error(t('adjustments.color.colorMatchFailed'));
+    } finally {
+      setMatchBusy(false);
+    }
+  }, [applyPatch, matchBusy, t]);
 
   /* 参数化曲线：按通道滑杆实时换算为点曲线（后端渲染 curves[channel]），与桌面 Curves 同一套数学 */
   const setParametric = (key: keyof typeof DEFAULT_PARAMETRIC_CURVE_SETTINGS, value: number) => {
@@ -343,6 +405,15 @@ function TonePanel() {
                 </button>
               ))}
             </div>
+            <button
+              className="cx-ai-apply mb-2 w-full"
+              style={{ width: '100%' }}
+              onClick={() => void handleColorMatch()}
+              disabled={matchBusy}
+            >
+              {matchBusy ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
+              {t('adjustments.color.colorMatch')}
+            </button>
             <CxSliderRow
               label={t('crystal.tone.hslHue')}
               min={0}
@@ -376,7 +447,7 @@ function TonePanel() {
               max={100}
               step={1}
               value={Number(grading.blending ?? 0)}
-              defaultValue={0}
+              defaultValue={50}
               onChange={(v) => setGradingMix('blending', v)}
             />
             <CxSliderRow
@@ -388,6 +459,10 @@ function TonePanel() {
               defaultValue={0}
               onChange={(v) => setGradingMix('balance', v)}
             />
+            <button className="cx-mask-remove" onClick={resetGrading}>
+              <RotateCcw size={11} />
+              {t('adjustments.basic.reset')}
+            </button>
           </CxSubSection>
 
           <CxSubSection labelKey="adjustments.color.calibration.title">
@@ -432,6 +507,10 @@ function TonePanel() {
               defaultValue={0}
               onChange={(v) => setCalibration('shadowsTint', v)}
             />
+            <button className="cx-mask-remove" onClick={resetCalibration}>
+              <RotateCcw size={11} />
+              {t('adjustments.basic.reset')}
+            </button>
           </CxSubSection>
         </>
       )}
