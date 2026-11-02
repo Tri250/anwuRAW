@@ -2299,6 +2299,27 @@ const ImageCanvas = memo(
       return () => window.removeEventListener('pointerdown', handlePointerDown, true);
     }, [isRelightPickerActive, setEditor]);
 
+    useEffect(() => {
+      if (!isWbPickerActive) return;
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key !== 'Escape') return;
+        // 拖拽取样进行中：取消本次拖拽但保持 picker 激活；
+        // 空闲态：退出 picker。与 useTargetedAdjustment 的 Esc 语义一致。
+        if (wbDragRef.current || isDrawing.current) {
+          wbDragRef.current = null;
+          isDrawing.current = false;
+          drawingStageRef.current = null;
+          setWbBox(null);
+          return;
+        }
+        setEditor({ isWbPickerActive: false });
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isWbPickerActive, setEditor]);
+
     const centerMarkerConfig = activeCenterMarker ? CENTER_MARKERS[activeCenterMarker] : null;
 
     const showCenterMarker =
