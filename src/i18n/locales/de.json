@@ -534,7 +534,10 @@
       "intensity": "Stärke"
     },
     "previewAlt": "Bearbeitungsvorschau",
+    "previewCloseCompare": "Vergleich beenden",
+    "previewEdited": "Bearbeitet",
     "previewRendering": "Rendern…",
+    "previewResetZoom": "Zoom zurücksetzen",
     "redo": "Wiederholen",
     "resetConfirm": {
       "message": "Stellt das Original wieder her und baut den Verlauf neu auf.",

@@ -554,7 +554,10 @@
       "intensity": "Intensitat"
     },
     "previewAlt": "Vista prèvia editada",
+    "previewCloseCompare": "Surt de la comparació",
+    "previewEdited": "Editat",
     "previewRendering": "Renderitzant…",
+    "previewResetZoom": "Restableix el zoom",
     "redo": "Refés",
     "resetConfirm": {
       "message": "Recupera l'aspecte original i reconstrueix l'historial.",

@@ -537,7 +537,10 @@
       "intensity": "Strength"
     },
     "previewAlt": "Edited preview",
+    "previewCloseCompare": "Exit compare",
+    "previewEdited": "Edited",
     "previewRendering": "Rendering…",
+    "previewResetZoom": "Reset zoom",
     "redo": "Redo",
     "resetConfirm": {
       "message": "This restores the original look and rebuilds the undo history.",

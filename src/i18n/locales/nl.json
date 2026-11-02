@@ -534,7 +534,10 @@
       "intensity": "Sterkte"
     },
     "previewAlt": "Bewerkte voorvertoning",
+    "previewCloseCompare": "Vergelijken sluiten",
+    "previewEdited": "Bewerkt",
     "previewRendering": "Renderen…",
+    "previewResetZoom": "Zoom herstellen",
     "redo": "Opnieuw",
     "resetConfirm": {
       "message": "Herstelt het origineel en bouwt de geschiedenis opnieuw op.",

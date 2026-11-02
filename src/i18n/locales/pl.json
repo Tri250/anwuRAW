@@ -574,7 +574,10 @@
       "intensity": "Siła"
     },
     "previewAlt": "Podgląd edycji",
+    "previewCloseCompare": "Zakończ porównanie",
+    "previewEdited": "Po edycji",
     "previewRendering": "Renderowanie…",
+    "previewResetZoom": "Resetuj powiększenie",
     "redo": "Ponów",
     "resetConfirm": {
       "message": "Przywróci oryginalny wygląd i odbuduje historię.",

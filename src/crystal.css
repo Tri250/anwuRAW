@@ -139,12 +139,27 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  /* P2: 预览区接管全部触摸手势（双指缩放/平移），阻断浏览器默认滚动缩放 */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .cx-preview img.cx-preview-img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
   pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+/* P2: 缩放舞台——变换作用于该层，浮层/分割层不受影响 */
+.cx-preview-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
 }
 .cx-preview-badge {
   position: absolute;
@@ -195,6 +210,35 @@
 .cx-preview-empty {
   color: var(--cx-faint);
   font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* P2: 缩放指示/复位 chip（预览区顶部居中） */
+.cx-zoom-chip {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 200, 66, 0.5);
+  background: rgba(20, 17, 6, 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--cx-gold);
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 3;
+}
+.cx-zoom-chip:active {
+  background: rgba(212, 175, 55, 0.28);
 }
 
 /* EXIF 信息栏白条（预览内 DOM 渲染，与导出合成参数同源） */
@@ -891,6 +935,94 @@
 }
 .cx-float-pill:active {
   background: rgba(212, 175, 55, 0.28);
+}
+.cx-float-pill:disabled {
+  opacity: 0.45;
+}
+
+/* P2: 前后对比分割视图（原图 | 效果，整层拖动） */
+.cx-compare-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  touch-action: none;
+}
+.cx-compare-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.cx-compare-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-1px);
+  background: rgba(245, 200, 66, 0.9);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.55);
+  z-index: 2;
+}
+.cx-compare-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cx-gold);
+  background: rgba(20, 17, 6, 0.85);
+  border: 1.5px solid rgba(245, 200, 66, 0.9);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+.cx-compare-tag {
+  position: absolute;
+  top: 10px;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cx-ink);
+  background: rgba(20, 17, 6, 0.66);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  z-index: 2;
+}
+.cx-compare-tag-l {
+  left: 10px;
+}
+.cx-compare-tag-r {
+  right: 10px;
+  color: var(--cx-gold);
+}
+.cx-compare-close {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cx-ink);
+  background: rgba(20, 17, 6, 0.72);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  z-index: 3;
 }
 
 /* 模型下载进度胶囊（顶栏下方，金描边） */

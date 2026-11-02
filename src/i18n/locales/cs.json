@@ -574,7 +574,10 @@
       "intensity": "Intenzita"
     },
     "previewAlt": "Náhled úprav",
+    "previewCloseCompare": "Ukončit porovnání",
+    "previewEdited": "Upraveno",
     "previewRendering": "Vykreslování…",
+    "previewResetZoom": "Obnovit přiblížení",
     "redo": "Znovu",
     "resetConfirm": {
       "message": "Obnoví původní vzhled a znovu sestaví historii.",
