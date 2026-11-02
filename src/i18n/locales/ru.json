@@ -50,7 +50,8 @@
         "global": "Глобально",
         "highlights": "Света",
         "midtones": "Средние тона",
-        "shadows": "Тени"
+        "shadows": "Тени",
+        "threeWay": "Трёхканальная (тени / средние тона / света)"
       },
       "hue": "Цветовой тон",
       "kelvinModeTooltip": "Показывать температуру в кельвинах",
@@ -408,9 +409,12 @@
       "virtualCopy": "Виртуальная копия"
     },
     "toasts": {
+      "aiDenoiseFailed": "Не удалось выполнить ИИ-шумоподавление: {{err}}",
+      "aiProcessingFailed": "Не удалось выполнить обработку ИИ: {{err}}",
       "couldNotShowExplorer": "Не удалось показать файл в проводнике: {{err}}",
       "couldNotShowFolder": "Не удалось показать папку: {{err}}",
       "failedAddToAlbum": "Не удалось добавить в альбом: {{err}}",
+      "failedApplyAdjustments": "Не удалось применить коррекции: {{err}}",
       "failedApplyAuto": "Не удалось применить автонастройки: {{err}}",
       "failedChangeIcon": "Не удалось изменить значок: {{err}}",
       "failedCopy": "Не удалось скопировать файлы: {{err}}",
@@ -418,10 +422,15 @@
       "failedDelete": "Не удалось удалить: {{err}}",
       "failedDeleteFolder": "Не удалось удалить папку: {{err}}",
       "failedDuplicate": "Не удалось дублировать файл: {{err}}",
+      "failedFlag": "Не удалось обновить флажок: {{err}}",
+      "failedLensCorrection": "Не удалось применить автоматическую коррекцию объектива: {{err}}",
+      "failedLoadMetadataCopy": "Не удалось загрузить метаданные для копирования: {{err}}",
       "failedMove": "Не удалось переместить файлы: {{err}}",
       "failedMoveError": "Не удалось переместить: {{err}}",
       "failedMoveInvalid": "Не удалось переместить: целевая группа не найдена или недействительна.",
-      "failedRemoveImages": "Не удалось удалить изображения: {{err}}"
+      "failedPaste": "Не удалось вставить коррекции: {{err}}",
+      "failedRemoveImages": "Не удалось удалить изображения: {{err}}",
+      "failedSyncAdjustments": "Не удалось синхронизировать коррекции с выбранными изображениями: {{err}}"
     }
   },
   "editor": {
@@ -877,6 +886,7 @@
       },
       "camera": {
         "aperture": "Диафрагма",
+        "body": "Корпус камеры",
         "focalLength": "Фокусное расстояние",
         "iso": "ISO",
         "lens": "Объектив",
@@ -886,6 +896,7 @@
       "clickToEdit": "Нажмите для редактирования",
       "copied": "Скопировано",
       "copy": "Копировать",
+      "copyFailed": "Не удалось скопировать",
       "emptyClickToAdd": "Пусто (нажмите, чтобы добавить)",
       "extendedExif": {
         "title": "Расширенный EXIF"
@@ -900,6 +911,10 @@
         "dimensions": "{{width}} × {{height}} пикс • {{megapixels}} Мп",
         "dimensionsNoMp": "{{width}} × {{height}} пикс",
         "emptyDimensions": "- × - пикс",
+        "multiSelected_one": "Выбрано {{count}} изображение",
+        "multiSelected_few": "Выбрано {{count}} изображения",
+        "multiSelected_many": "Выбрано {{count}} изображений",
+        "multiSelected_other": "Выбрано {{count}} изображения",
         "title": "Информация о файле",
         "virtualCopy": "Виртуальная копия"
       },
@@ -929,7 +944,13 @@
         "tags": "Теги",
         "title": "Организация"
       },
-      "title": "Метаданные"
+      "title": "Метаданные",
+      "toasts": {
+        "addTagFailed": "Не удалось добавить тег: {{error}}",
+        "removeTagFailed": "Не удалось удалить тег: {{error}}",
+        "setColorFailed": "Не удалось установить цветную метку: {{error}}",
+        "updateFailed": "Не удалось обновить метаданные: {{error}}"
+      }
     },
     "presets": {
       "amount": "Интенсивность",
@@ -962,7 +983,8 @@
       "status": {
         "empty": "Пока нет сохраненных пресетов. Создайте свои, импортируйте из файла или изучите пресеты сообщества.",
         "getCommunity": "Загрузить пресеты сообщества",
-        "loading": "Загрузка пресетов..."
+        "loading": "Загрузка пресетов...",
+        "previewFailed": "Предпросмотр недоступен"
       },
       "supports": {
         "cropTransform": "Кадрирование и трансформация",
@@ -1321,7 +1343,9 @@
       "syncZoomAndPan": "Синхронизировать масштаб и панорамирование",
       "tags": "Теги",
       "toggleFit": "Переключить 1:1 / Вписать",
-      "vc": "ВК"
+      "vc": "ВК",
+      "zoomIn": "Увеличить",
+      "zoomOut": "Уменьшить"
     },
     "delete": {
       "confirmTitle": "Delete Image",
@@ -1345,6 +1369,7 @@
       "undo": "Отменить"
     },
     "filters": {
+      "clearFilters": "Сбросить фильтры",
       "edited": {
         "all": "Все изображения",
         "editedOnly": "Только измененные",
@@ -1694,6 +1719,7 @@
       "original": "Исходный",
       "saveButton": "Сохранить коллаж",
       "saved": "Коллаж сохранен!",
+      "saveFailed": "Не удалось сохранить коллаж.",
       "saving": "Сохранение...",
       "shuffleTooltip": "Перемешать изображения",
       "spacing": "Интервал"
@@ -1817,8 +1843,10 @@
       "descriptionWithCount_other": "Объедините {{count}} изображений с разным фокусным расстоянием в одно идеально резкое изображение.",
       "failed": "Стекинг по фокусу не удался",
       "initializing": "Инициализация...",
+      "noSources": "Исходные изображения для стекинга фокуса не найдены.",
       "openInEditor": "Открыть в редакторе",
       "result": "Результат",
+      "retry": "Повторить",
       "save": "Сохранить",
       "savedSuccess": "Стек фокуса успешно сохранен!",
       "stacking": "Выполнение стекинга",
@@ -1837,6 +1865,7 @@
       "failed": "Объединение HDR не удалось",
       "initializing": "Инициализация...",
       "merging": "Выполняется объединение HDR",
+      "noSources": "Исходные изображения для HDR-слияния не найдены.",
       "openInEditor": "Открыть в редакторе",
       "retry": "Повторить",
       "save": "Сохранить",
@@ -1903,6 +1932,7 @@
       "descGeneric": "Объедините перекрывающиеся кадры в бесшовную панораму.",
       "failed": "Создание панорамы не удалось",
       "initializing": "Инициализация...",
+      "noSources": "Исходные изображения для панорамы не найдены.",
       "openInEditor": "Открыть в редакторе",
       "retry": "Повторить",
       "save": "Сохранить",
@@ -2511,6 +2541,7 @@
     "watchedFolders": {
       "add": "Add Folder",
       "desc": "Automatically import new images that appear in these folders.",
+      "duplicate": "Папка уже отслеживается: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
       "imported_one": "{{count}} new image imported from {{folder}}",

@@ -48,10 +48,10 @@
         "balance": "平衡",
         "blending": "混合",
         "global": "全局",
-        "threeWay": "三向调色（阴影 / 中间调 / 高光）",
         "highlights": "高光",
         "midtones": "中间调",
-        "shadows": "阴影"
+        "shadows": "阴影",
+        "threeWay": "三向调色（阴影 / 中间调 / 高光）"
       },
       "hue": "色相",
       "kelvinModeTooltip": "以开尔文显示色温",
@@ -376,19 +376,19 @@
       "failedAddToAlbum": "添加到相册失败：{{err}}",
       "failedApplyAdjustments": "应用调整失败：{{err}}",
       "failedApplyAuto": "应用自动调整失败：{{err}}",
-      "failedFlag": "更新旗标失败：{{err}}",
-      "failedLensCorrection": "应用自动镜头校正失败：{{err}}",
-      "failedLoadMetadataCopy": "加载元数据以复制失败：{{err}}",
-      "failedPaste": "粘贴调整失败：{{err}}",
       "failedChangeIcon": "更换图标失败：{{err}}",
       "failedCopy": "复制文件失败：{{err}}",
       "failedCreateVirtualCopy": "创建虚拟副本失败：{{err}}",
       "failedDelete": "删除失败：{{err}}",
       "failedDeleteFolder": "删除文件夹失败：{{err}}",
       "failedDuplicate": "复制文件失败：{{err}}",
+      "failedFlag": "更新旗标失败：{{err}}",
+      "failedLensCorrection": "应用自动镜头校正失败：{{err}}",
+      "failedLoadMetadataCopy": "加载元数据以复制失败：{{err}}",
       "failedMove": "移动文件失败：{{err}}",
       "failedMoveError": "移动失败：{{err}}",
       "failedMoveInvalid": "移动失败：未找到目标组或目标组无效。",
+      "failedPaste": "粘贴调整失败：{{err}}",
       "failedRemoveImages": "移除图像失败：{{err}}",
       "failedSyncAdjustments": "同步调整到选中图像失败：{{err}}"
     }
@@ -836,12 +836,12 @@
       },
       "camera": {
         "aperture": "光圈",
+        "body": "机身",
         "focalLength": "焦距",
         "iso": "ISO",
         "lens": "镜头",
         "shutterSpeed": "快门速度",
-        "title": "相机详情",
-        "body": "机身"
+        "title": "相机详情"
       },
       "clickToEdit": "点击编辑",
       "copied": "已复制",
@@ -874,6 +874,7 @@
         "dimensionsNoMp": "{{width}} × {{height}} 像素",
         "emptyDimensions": "- × - 像素",
         "multiSelected": "已选中 {{count}} 张图片",
+        "multiSelected_other": "已选中 {{count}} 张图片",
         "title": "文件信息",
         "virtualCopy": "虚拟副本"
       },

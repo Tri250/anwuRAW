@@ -50,7 +50,8 @@
         "global": "グローバル",
         "highlights": "ハイライト",
         "midtones": "中間調",
-        "shadows": "シャドウ"
+        "shadows": "シャドウ",
+        "threeWay": "3ウェイ（シャドウ / 中間調 / ハイライト）"
       },
       "hue": "色相",
       "kelvinModeTooltip": "色温度をケルビンで表示",
@@ -365,9 +366,12 @@
       "virtualCopy": "仮想コピー"
     },
     "toasts": {
+      "aiDenoiseFailed": "AIノイズ除去に失敗しました：{{err}}",
+      "aiProcessingFailed": "AI処理に失敗しました：{{err}}",
       "couldNotShowExplorer": "エクスプローラーでファイルを表示できませんでした: {{err}}",
       "couldNotShowFolder": "フォルダを表示できませんでした: {{err}}",
       "failedAddToAlbum": "アルバムへの追加に失敗しました: {{err}}",
+      "failedApplyAdjustments": "調整の適用に失敗しました：{{err}}",
       "failedApplyAuto": "自動補正の適用に失敗しました: {{err}}",
       "failedChangeIcon": "アイコンの変更に失敗しました: {{err}}",
       "failedCopy": "ファイルのコピーに失敗しました: {{err}}",
@@ -375,10 +379,15 @@
       "failedDelete": "削除に失敗しました: {{err}}",
       "failedDeleteFolder": "フォルダの削除に失敗しました: {{err}}",
       "failedDuplicate": "ファイルの複製に失敗しました: {{err}}",
+      "failedFlag": "フラグの更新に失敗しました：{{err}}",
+      "failedLensCorrection": "自動レンズ補正の適用に失敗しました：{{err}}",
+      "failedLoadMetadataCopy": "コピー用メタデータの読み込みに失敗しました：{{err}}",
       "failedMove": "ファイルの移動に失敗しました: {{err}}",
       "failedMoveError": "移動に失敗しました: {{err}}",
       "failedMoveInvalid": "移動に失敗しました: 対象グループが見つからないか無効です。",
-      "failedRemoveImages": "画像の削除に失敗しました: {{err}}"
+      "failedPaste": "調整の貼り付けに失敗しました：{{err}}",
+      "failedRemoveImages": "画像の削除に失敗しました: {{err}}",
+      "failedSyncAdjustments": "選択した画像への調整の同期に失敗しました：{{err}}"
     }
   },
   "editor": {
@@ -819,6 +828,7 @@
       },
       "camera": {
         "aperture": "絞り値",
+        "body": "カメラボディ",
         "focalLength": "焦点距離",
         "iso": "ISO感度",
         "lens": "レンズ",
@@ -828,6 +838,7 @@
       "clickToEdit": "クリックして編集",
       "copied": "コピーしました",
       "copy": "コピー",
+      "copyFailed": "コピーに失敗しました",
       "emptyClickToAdd": "未設定 (クリックして追加)",
       "extendedExif": {
         "title": "拡張EXIF"
@@ -842,6 +853,7 @@
         "dimensions": "{{width}} × {{height}} px • {{megapixels}} MP",
         "dimensionsNoMp": "{{width}} × {{height}} px",
         "emptyDimensions": "- × - px",
+        "multiSelected_other": "{{count}} 枚の画像を選択中",
         "title": "ファイル情報",
         "virtualCopy": "仮想コピー"
       },
@@ -871,7 +883,13 @@
         "tags": "タグ",
         "title": "整理"
       },
-      "title": "メタデータ"
+      "title": "メタデータ",
+      "toasts": {
+        "addTagFailed": "タグの追加に失敗しました：{{error}}",
+        "removeTagFailed": "タグの削除に失敗しました：{{error}}",
+        "setColorFailed": "カラーラベルの設定に失敗しました：{{error}}",
+        "updateFailed": "メタデータの更新に失敗しました：{{error}}"
+      }
     },
     "presets": {
       "amount": "適用量",
@@ -904,7 +922,8 @@
       "status": {
         "empty": "保存されたプリセットはまだありません。作成、インポート、またはコミュニティのプリセットを探してみましょう。",
         "getCommunity": "コミュニティプリセットを入手",
-        "loading": "プリセットを読み込み中..."
+        "loading": "プリセットを読み込み中...",
+        "previewFailed": "プレビューは利用できません"
       },
       "supports": {
         "cropTransform": "切り抜きと変形",
@@ -1257,7 +1276,9 @@
       "syncZoomAndPan": "ズームとパンを同期",
       "tags": "タグ",
       "toggleFit": "1:1 / 全体表示の切り替え",
-      "vc": "VC"
+      "vc": "VC",
+      "zoomIn": "拡大",
+      "zoomOut": "縮小"
     },
     "delete": {
       "confirmTitle": "Delete Image",
@@ -1276,6 +1297,7 @@
       "undo": "元に戻す"
     },
     "filters": {
+      "clearFilters": "フィルターをクリア",
       "edited": {
         "all": "すべての画像",
         "editedOnly": "編集済みのみ",
@@ -1605,6 +1627,7 @@
       "original": "オリジナル",
       "saveButton": "コラージュを保存",
       "saved": "コラージュを保存しました！",
+      "saveFailed": "コラージュを保存できませんでした。",
       "saving": "保存中...",
       "shuffleTooltip": "画像をシャッフル",
       "spacing": "間隔"
@@ -1722,8 +1745,10 @@
       "descriptionWithCount_other": "ピント位置の異なる {{count}} 枚の画像を結合し、全体にピントが合った1枚の画像を作成します。",
       "failed": "フォーカススタッキングに失敗しました",
       "initializing": "初期化中...",
+      "noSources": "フォーカススタッキングのソース画像が見つかりません。",
       "openInEditor": "エディターで開く",
       "result": "結果",
+      "retry": "再試行",
       "save": "保存",
       "savedSuccess": "フォーカススタックを正常に保存しました！",
       "stacking": "フォーカスをスタック中",
@@ -1740,6 +1765,7 @@
       "failed": "HDR統合に失敗しました",
       "initializing": "初期化中...",
       "merging": "HDR統合中",
+      "noSources": "HDR合成のソース画像が見つかりません。",
       "openInEditor": "エディタで開く",
       "retry": "再試行",
       "save": "保存",
@@ -1804,6 +1830,7 @@
       "descGeneric": "重複する画像をシームレスなパノラマに結合します。",
       "failed": "パノラマ作成に失敗しました",
       "initializing": "初期化中...",
+      "noSources": "パノラマのソース画像が見つかりません。",
       "openInEditor": "エディタで開く",
       "retry": "再試行",
       "save": "保存",
@@ -2402,6 +2429,7 @@
     "watchedFolders": {
       "add": "Add Folder",
       "desc": "Automatically import new images that appear in these folders.",
+      "duplicate": "フォルダはすでに監視対象です：{{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
       "imported_other": "{{count}} new images imported from {{folder}}",

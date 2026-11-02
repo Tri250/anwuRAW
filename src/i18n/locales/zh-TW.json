@@ -48,10 +48,10 @@
         "balance": "平衡",
         "blending": "混合",
         "global": "全域",
-        "threeWay": "三向調色（陰影 / 中間調 / 亮部）",
         "highlights": "亮部",
         "midtones": "中間調",
-        "shadows": "陰影"
+        "shadows": "陰影",
+        "threeWay": "三向調色（陰影 / 中間調 / 亮部）"
       },
       "hue": "色相",
       "kelvinModeTooltip": "以克耳文顯示色溫",
@@ -373,19 +373,19 @@
       "failedAddToAlbum": "新增到相簿失敗：{{err}}",
       "failedApplyAdjustments": "套用調整失敗：{{err}}",
       "failedApplyAuto": "應用自動調整失敗：{{err}}",
-      "failedFlag": "更新旗標失敗：{{err}}",
-      "failedLensCorrection": "套用自動鏡頭校正失敗：{{err}}",
-      "failedLoadMetadataCopy": "載入中繼資料以複製失敗：{{err}}",
-      "failedPaste": "貼上調整失敗：{{err}}",
       "failedChangeIcon": "更換圖示失敗：{{err}}",
       "failedCopy": "複製檔案失敗：{{err}}",
       "failedCreateVirtualCopy": "建立虛擬副本失敗：{{err}}",
       "failedDelete": "刪除失敗：{{err}}",
       "failedDeleteFolder": "刪除資料夾失敗：{{err}}",
       "failedDuplicate": "複製檔案失敗：{{err}}",
+      "failedFlag": "更新旗標失敗：{{err}}",
+      "failedLensCorrection": "套用自動鏡頭校正失敗：{{err}}",
+      "failedLoadMetadataCopy": "載入中繼資料以複製失敗：{{err}}",
       "failedMove": "移動檔案失敗：{{err}}",
       "failedMoveError": "移動失敗：{{err}}",
       "failedMoveInvalid": "移動失敗：未找到目標組或目標組無效。",
+      "failedPaste": "貼上調整失敗：{{err}}",
       "failedRemoveImages": "移除影像失敗：{{err}}",
       "failedSyncAdjustments": "同步調整到選中影像失敗：{{err}}"
     }
@@ -833,12 +833,12 @@
       },
       "camera": {
         "aperture": "光圈",
+        "body": "機身",
         "focalLength": "焦距",
         "iso": "ISO",
         "lens": "鏡頭",
         "shutterSpeed": "快門速度",
-        "title": "相機詳情",
-        "body": "機身"
+        "title": "相機詳情"
       },
       "clickToEdit": "點選編輯",
       "copied": "已複製",
@@ -871,6 +871,7 @@
         "dimensionsNoMp": "{{width}} × {{height}} 畫素",
         "emptyDimensions": "- × - 畫素",
         "multiSelected": "已選取 {{count}} 張圖片",
+        "multiSelected_other": "已選取 {{count}} 張圖片",
         "title": "檔案資訊",
         "virtualCopy": "虛擬副本"
       },

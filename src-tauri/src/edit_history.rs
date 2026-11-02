@@ -103,10 +103,10 @@ impl EditHistoryGraph {
             Some(id) => Some(id.to_string()),
             None => self.head.clone(),
         };
-        if let Some(parent_id) = &parent {
-            if !self.revisions.contains_key(parent_id) {
-                return Err(format!("Unknown parent revision: {parent_id}"));
-            }
+        if let Some(parent_id) = &parent
+            && !self.revisions.contains_key(parent_id)
+        {
+            return Err(format!("Unknown parent revision: {parent_id}"));
         }
 
         let id = new_id();
@@ -171,10 +171,10 @@ impl EditHistoryGraph {
         }
 
         let doomed = self.subtree_ids(id);
-        if let Some(head) = &self.head {
-            if doomed.contains(head) {
-                return Err("Cannot delete a revision that contains the current head".to_string());
-            }
+        if let Some(head) = &self.head
+            && doomed.contains(head)
+        {
+            return Err("Cannot delete a revision that contains the current head".to_string());
         }
 
         let removed = doomed.len();
@@ -262,7 +262,7 @@ impl EditHistoryGraph {
             .filter(|revision| revision.parent_id.as_deref() == Some(id))
             .map(|revision| revision.id.clone())
             .collect();
-        ids.sort_by(|a, b| a.cmp(b));
+        ids.sort();
         ids
     }
 

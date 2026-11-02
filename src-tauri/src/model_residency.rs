@@ -205,7 +205,7 @@ impl ResidencyTracker {
             .copied()
             .filter(|(_, entry)| !entry.pinned)
             .collect();
-        candidates.sort_by(|a, b| a.1.last_used_secs.cmp(&b.1.last_used_secs));
+        candidates.sort_by_key(|(_, entry)| entry.last_used_secs);
         for (key, _) in candidates {
             if to_drop == 0 {
                 break;

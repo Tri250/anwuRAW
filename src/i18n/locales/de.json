@@ -50,7 +50,8 @@
         "global": "Global",
         "highlights": "Lichter",
         "midtones": "Mitteltöne",
-        "shadows": "Tiefen"
+        "shadows": "Tiefen",
+        "threeWay": "3-Wege (Tiefen / Mitteltöne / Lichter)"
       },
       "hue": "Farbton",
       "kelvinModeTooltip": "Temperatur in Kelvin anzeigen",
@@ -368,9 +369,12 @@
       "virtualCopy": "Virtuelle Kopie"
     },
     "toasts": {
+      "aiDenoiseFailed": "KI-Rauschunterdrückung fehlgeschlagen: {{err}}",
+      "aiProcessingFailed": "KI-Verarbeitung fehlgeschlagen: {{err}}",
       "couldNotShowExplorer": "Datei konnte nicht im Explorer angezeigt werden: {{err}}",
       "couldNotShowFolder": "Ordner konnte nicht angezeigt werden: {{err}}",
       "failedAddToAlbum": "Fehler beim Hinzufügen zum Album: {{err}}",
+      "failedApplyAdjustments": "Anwenden der Anpassungen fehlgeschlagen: {{err}}",
       "failedApplyAuto": "Fehler bei der autom. Anpassung: {{err}}",
       "failedChangeIcon": "Fehler beim Ändern des Symbols: {{err}}",
       "failedCopy": "Dateien kopieren fehlgeschlagen: {{err}}",
@@ -378,10 +382,15 @@
       "failedDelete": "Löschen fehlgeschlagen: {{err}}",
       "failedDeleteFolder": "Ordner löschen fehlgeschlagen: {{err}}",
       "failedDuplicate": "Datei duplizieren fehlgeschlagen: {{err}}",
+      "failedFlag": "Aktualisieren der Markierung fehlgeschlagen: {{err}}",
+      "failedLensCorrection": "Anwenden der autom. Objektivkorrektur fehlgeschlagen: {{err}}",
+      "failedLoadMetadataCopy": "Laden der Metadaten zum Kopieren fehlgeschlagen: {{err}}",
       "failedMove": "Dateien verschieben fehlgeschlagen: {{err}}",
       "failedMoveError": "Verschieben fehlgeschlagen: {{err}}",
       "failedMoveInvalid": "Verschieben fehlgeschlagen: Zielgruppe nicht gefunden oder ungültig.",
-      "failedRemoveImages": "Bilder entfernen fehlgeschlagen: {{err}}"
+      "failedPaste": "Einfügen der Anpassungen fehlgeschlagen: {{err}}",
+      "failedRemoveImages": "Bilder entfernen fehlgeschlagen: {{err}}",
+      "failedSyncAdjustments": "Synchronisieren der Anpassungen mit den ausgewählten Bildern fehlgeschlagen: {{err}}"
     }
   },
   "editor": {
@@ -823,6 +832,7 @@
       },
       "camera": {
         "aperture": "Blende",
+        "body": "Kameragehäuse",
         "focalLength": "Brennweite",
         "iso": "ISO",
         "lens": "Objektiv",
@@ -832,6 +842,7 @@
       "clickToEdit": "Zum Bearbeiten klicken",
       "copied": "Kopiert",
       "copy": "Kopieren",
+      "copyFailed": "Kopieren fehlgeschlagen",
       "emptyClickToAdd": "Leer (Klicken zum Hinzufügen)",
       "extendedExif": {
         "title": "Erweiterte EXIF"
@@ -846,6 +857,8 @@
         "dimensions": "{{width}} × {{height}} px • {{megapixels}} MP",
         "dimensionsNoMp": "{{width}} × {{height}} px",
         "emptyDimensions": "- × - px",
+        "multiSelected_one": "{{count}} Bild ausgewählt",
+        "multiSelected_other": "{{count}} Bilder ausgewählt",
         "title": "Dateiinformationen",
         "virtualCopy": "Virtuelle Kopie"
       },
@@ -875,7 +888,13 @@
         "tags": "Tags",
         "title": "Organisation"
       },
-      "title": "Metadaten"
+      "title": "Metadaten",
+      "toasts": {
+        "addTagFailed": "Hinzufügen des Tags fehlgeschlagen: {{error}}",
+        "removeTagFailed": "Entfernen des Tags fehlgeschlagen: {{error}}",
+        "setColorFailed": "Setzen des Farbetiketts fehlgeschlagen: {{error}}",
+        "updateFailed": "Aktualisieren der Metadaten fehlgeschlagen: {{error}}"
+      }
     },
     "presets": {
       "amount": "Stärke",
@@ -908,7 +927,8 @@
       "status": {
         "empty": "Noch keine Vorgaben gespeichert. Eigene erstellen, importieren oder Community-Vorgaben entdecken.",
         "getCommunity": "Community-Vorgaben holen",
-        "loading": "Vorgaben laden..."
+        "loading": "Vorgaben laden...",
+        "previewFailed": "Vorschau nicht verfügbar"
       },
       "supports": {
         "cropTransform": "Zuschnitt & Form",
@@ -1261,7 +1281,9 @@
       "syncZoomAndPan": "Zoom und Schwenken synchronisieren",
       "tags": "Tags",
       "toggleFit": "1:1 / Einpassen umschalten",
-      "vc": "VK"
+      "vc": "VK",
+      "zoomIn": "Vergrößern",
+      "zoomOut": "Verkleinern"
     },
     "delete": {
       "confirmTitle": "Delete Image",
@@ -1281,6 +1303,7 @@
       "undo": "Rückgängig"
     },
     "filters": {
+      "clearFilters": "Filter zurücksetzen",
       "edited": {
         "all": "Alle Bilder",
         "editedOnly": "Nur bearbeitete",
@@ -1614,6 +1637,7 @@
       "original": "Original",
       "saveButton": "Collage speichern",
       "saved": "Collage gespeichert!",
+      "saveFailed": "Collage konnte nicht gespeichert werden.",
       "saving": "Wird gespeichert...",
       "shuffleTooltip": "Bilder mischen",
       "spacing": "Abstand"
@@ -1731,8 +1755,10 @@
       "descriptionWithCount_other": "Kombinieren Sie {{count}} Bilder mit unterschiedlichen Fokusdistanzen zu einem einzigen, perfekt scharfen Bild.",
       "failed": "Fokus-Stacking fehlgeschlagen",
       "initializing": "Wird initialisiert...",
+      "noSources": "Quellbilder für die Fokusreihung nicht gefunden.",
       "openInEditor": "Im Editor öffnen",
       "result": "Ergebnis",
+      "retry": "Wiederholen",
       "save": "Speichern",
       "savedSuccess": "Fokus-Stack erfolgreich gespeichert!",
       "stacking": "Fokus wird gestapelt",
@@ -1749,6 +1775,7 @@
       "failed": "HDR-Zusammenfügung fehlgeschlagen",
       "initializing": "Wird initialisiert...",
       "merging": "HDR wird zusammengefügt",
+      "noSources": "Quellbilder für den HDR-Zusammenschnitt nicht gefunden.",
       "openInEditor": "Im Editor öffnen",
       "retry": "Wiederholen",
       "save": "Speichern",
@@ -1813,6 +1840,7 @@
       "descGeneric": "Kombinieren Sie Ihre überlappenden Bilder zu einem nahtlosen Panorama.",
       "failed": "Panorama fehlgeschlagen",
       "initializing": "Wird initialisiert...",
+      "noSources": "Quellbilder für das Panorama nicht gefunden.",
       "openInEditor": "Im Editor öffnen",
       "retry": "Wiederholen",
       "save": "Speichern",
@@ -2411,6 +2439,7 @@
     "watchedFolders": {
       "add": "Add Folder",
       "desc": "Automatically import new images that appear in these folders.",
+      "duplicate": "Ordner wird bereits überwacht: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
       "imported_one": "{{count}} new image imported from {{folder}}",

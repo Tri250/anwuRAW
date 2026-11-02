@@ -50,7 +50,8 @@
         "global": "전체",
         "highlights": "하이라이트",
         "midtones": "중간톤",
-        "shadows": "섀도우"
+        "shadows": "섀도우",
+        "threeWay": "3웨이(그림자 / 중간톤 / 하이라이트)"
       },
       "hue": "색조",
       "kelvinModeTooltip": "색온도를 켈빈으로 표시",
@@ -365,9 +366,12 @@
       "virtualCopy": "가상 복사본"
     },
     "toasts": {
+      "aiDenoiseFailed": "AI 노이즈 감소 실패: {{err}}",
+      "aiProcessingFailed": "AI 처리 실패: {{err}}",
       "couldNotShowExplorer": "탐색기에서 파일을 표시할 수 없습니다: {{err}}",
       "couldNotShowFolder": "폴더를 표시할 수 없습니다: {{err}}",
       "failedAddToAlbum": "앨범에 추가하지 못했습니다: {{err}}",
+      "failedApplyAdjustments": "보정 적용 실패: {{err}}",
       "failedApplyAuto": "자동 조정을 적용하지 못했습니다: {{err}}",
       "failedChangeIcon": "아이콘을 변경하지 못했습니다: {{err}}",
       "failedCopy": "파일을 복사하지 못했습니다: {{err}}",
@@ -375,10 +379,15 @@
       "failedDelete": "삭제하지 못했습니다: {{err}}",
       "failedDeleteFolder": "폴더를 삭제하지 못했습니다: {{err}}",
       "failedDuplicate": "파일을 복제하지 못했습니다: {{err}}",
+      "failedFlag": "플래그 업데이트 실패: {{err}}",
+      "failedLensCorrection": "자동 렌즈 보정 적용 실패: {{err}}",
+      "failedLoadMetadataCopy": "복사할 메타데이터 로드 실패: {{err}}",
       "failedMove": "파일을 이동하지 못했습니다: {{err}}",
       "failedMoveError": "이동하지 못했습니다: {{err}}",
       "failedMoveInvalid": "이동하지 못했습니다: 대상 그룹을 찾을 수 없거나 유효하지 않습니다.",
-      "failedRemoveImages": "이미지를 제거하지 못했습니다: {{err}}"
+      "failedPaste": "보정 붙여넣기 실패: {{err}}",
+      "failedRemoveImages": "이미지를 제거하지 못했습니다: {{err}}",
+      "failedSyncAdjustments": "선택한 이미지에 보정 동기화 실패: {{err}}"
     }
   },
   "editor": {
@@ -819,6 +828,7 @@
       },
       "camera": {
         "aperture": "조리개",
+        "body": "카메라 바디",
         "focalLength": "초점 거리",
         "iso": "ISO",
         "lens": "렌즈",
@@ -828,6 +838,7 @@
       "clickToEdit": "클릭하여 편집",
       "copied": "복사됨",
       "copy": "복사",
+      "copyFailed": "복사 실패",
       "emptyClickToAdd": "비어 있음 (클릭하여 추가)",
       "extendedExif": {
         "title": "확장 EXIF"
@@ -842,6 +853,7 @@
         "dimensions": "{{width}} × {{height}} px • {{megapixels}} MP",
         "dimensionsNoMp": "{{width}} × {{height}} px",
         "emptyDimensions": "- × - px",
+        "multiSelected_other": "이미지 {{count}}장 선택됨",
         "title": "파일 정보",
         "virtualCopy": "가상 복사본"
       },
@@ -871,7 +883,13 @@
         "tags": "태그",
         "title": "정리"
       },
-      "title": "메타데이터"
+      "title": "메타데이터",
+      "toasts": {
+        "addTagFailed": "태그 추가 실패: {{error}}",
+        "removeTagFailed": "태그 제거 실패: {{error}}",
+        "setColorFailed": "색상 라벨 설정 실패: {{error}}",
+        "updateFailed": "메타데이터 업데이트 실패: {{error}}"
+      }
     },
     "presets": {
       "amount": "양",
@@ -904,7 +922,8 @@
       "status": {
         "empty": "아직 저장된 프리셋이 없습니다. 직접 만들거나, 파일에서 가져오거나, 커뮤니티 프리셋을 둘러보세요.",
         "getCommunity": "커뮤니티 프리셋 받기",
-        "loading": "프리셋 로딩 중..."
+        "loading": "프리셋 로딩 중...",
+        "previewFailed": "미리보기를 사용할 수 없음"
       },
       "supports": {
         "cropTransform": "자르기 및 변형",
@@ -1257,7 +1276,9 @@
       "syncZoomAndPan": "줌 및 이동 동기화",
       "tags": "태그",
       "toggleFit": "1:1 / 맞춤 전환",
-      "vc": "VC"
+      "vc": "VC",
+      "zoomIn": "확대",
+      "zoomOut": "축소"
     },
     "delete": {
       "confirmTitle": "Delete Image",
@@ -1276,6 +1297,7 @@
       "undo": "실행 취소"
     },
     "filters": {
+      "clearFilters": "필터 지우기",
       "edited": {
         "all": "모든 이미지",
         "editedOnly": "편집된 항목만",
@@ -1605,6 +1627,7 @@
       "original": "원본",
       "saveButton": "콜라주 저장",
       "saved": "콜라주가 저장되었습니다!",
+      "saveFailed": "콜라주를 저장할 수 없습니다.",
       "saving": "저장 중...",
       "shuffleTooltip": "이미지 섞기",
       "spacing": "간격"
@@ -1722,8 +1745,10 @@
       "descriptionWithCount_other": "초점 거리가 다른 {{count}}개의 이미지를 결합하여 완벽하게 선명한 단일 이미지를 만듭니다.",
       "failed": "포커스 스태킹 실패",
       "initializing": "초기화 중...",
+      "noSources": "포커스 스태킹용 원본 이미지를 찾을 수 없습니다.",
       "openInEditor": "편집기에서 열기",
       "result": "결과",
+      "retry": "다시 시도",
       "save": "저장",
       "savedSuccess": "포커스 스택이 성공적으로 저장되었습니다!",
       "stacking": "포커스 스태킹 중",
@@ -1740,6 +1765,7 @@
       "failed": "HDR 병합 실패",
       "initializing": "초기화 중...",
       "merging": "HDR 병합 중",
+      "noSources": "HDR 병합용 원본 이미지를 찾을 수 없습니다.",
       "openInEditor": "편집기에서 열기",
       "retry": "다시 시도",
       "save": "저장",
@@ -1804,6 +1830,7 @@
       "descGeneric": "겹치는 이미지를 매끄러운 파노라마로 결합합니다.",
       "failed": "파노라마 실패",
       "initializing": "초기화 중...",
+      "noSources": "파노라마용 원본 이미지를 찾을 수 없습니다.",
       "openInEditor": "편집기에서 열기",
       "retry": "다시 시도",
       "save": "저장",
@@ -2402,6 +2429,7 @@
     "watchedFolders": {
       "add": "Add Folder",
       "desc": "Automatically import new images that appear in these folders.",
+      "duplicate": "이미 감시 중인 폴더입니다: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
       "imported_other": "{{count}} new images imported from {{folder}}",

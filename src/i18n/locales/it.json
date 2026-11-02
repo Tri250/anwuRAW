@@ -50,7 +50,8 @@
         "global": "Globale",
         "highlights": "Luci",
         "midtones": "Mezzitoni",
-        "shadows": "Ombre"
+        "shadows": "Ombre",
+        "threeWay": "A tre vie (ombre / mezzitoni / luci)"
       },
       "hue": "Tonalità",
       "kelvinModeTooltip": "Mostra la temperatura in Kelvin",
@@ -388,9 +389,12 @@
       "virtualCopy": "Copia Virtuale"
     },
     "toasts": {
+      "aiDenoiseFailed": "Riduzione del rumore AI non riuscita: {{err}}",
+      "aiProcessingFailed": "Elaborazione AI non riuscita: {{err}}",
       "couldNotShowExplorer": "Impossibile mostrare il file in esplora risorse: {{err}}",
       "couldNotShowFolder": "Impossibile mostrare la cartella: {{err}}",
       "failedAddToAlbum": "Impossibile aggiungere all'album: {{err}}",
+      "failedApplyAdjustments": "Applicazione delle regolazioni non riuscita: {{err}}",
       "failedApplyAuto": "Impossibile applicare le regolazioni automatiche: {{err}}",
       "failedChangeIcon": "Impossibile cambiare l'icona: {{err}}",
       "failedCopy": "Impossibile copiare i file: {{err}}",
@@ -398,10 +402,15 @@
       "failedDelete": "Impossibile eliminare: {{err}}",
       "failedDeleteFolder": "Impossibile eliminare la cartella: {{err}}",
       "failedDuplicate": "Impossibile duplicare il file: {{err}}",
+      "failedFlag": "Aggiornamento della bandierina non riuscito: {{err}}",
+      "failedLensCorrection": "Applicazione della correzione automatica dell'obiettivo non riuscita: {{err}}",
+      "failedLoadMetadataCopy": "Caricamento dei metadati per la copia non riuscito: {{err}}",
       "failedMove": "Impossibile spostare i file: {{err}}",
       "failedMoveError": "Impossibile spostare: {{err}}",
       "failedMoveInvalid": "Impossibile spostare: Gruppo di destinazione non trovato o non valido.",
-      "failedRemoveImages": "Impossibile rimuovere le immagini: {{err}}"
+      "failedPaste": "Incollaggio delle regolazioni non riuscito: {{err}}",
+      "failedRemoveImages": "Impossibile rimuovere le immagini: {{err}}",
+      "failedSyncAdjustments": "Sincronizzazione delle regolazioni con le immagini selezionate non riuscita: {{err}}"
     }
   },
   "editor": {
@@ -850,6 +859,7 @@
       },
       "camera": {
         "aperture": "Apertura",
+        "body": "Corpo macchina",
         "focalLength": "Lunghezza Focale",
         "iso": "ISO",
         "lens": "Obiettivo",
@@ -859,6 +869,7 @@
       "clickToEdit": "Clicca per modificare",
       "copied": "Copiato",
       "copy": "Copia",
+      "copyFailed": "Copia non riuscita",
       "emptyClickToAdd": "Vuoto (Clicca per aggiungere)",
       "extendedExif": {
         "title": "EXIF Estesi"
@@ -873,6 +884,9 @@
         "dimensions": "{{width}} × {{height}} px • {{megapixels}} MP",
         "dimensionsNoMp": "{{width}} × {{height}} px",
         "emptyDimensions": "- × - px",
+        "multiSelected_one": "{{count}} immagine selezionata",
+        "multiSelected_many": "{{count}} immagini selezionate",
+        "multiSelected_other": "{{count}} immagini selezionate",
         "title": "Informazioni File",
         "virtualCopy": "Copia Virtuale"
       },
@@ -902,7 +916,13 @@
         "tags": "Tag",
         "title": "Organizzazione"
       },
-      "title": "Metadati"
+      "title": "Metadati",
+      "toasts": {
+        "addTagFailed": "Aggiunta del tag non riuscita: {{error}}",
+        "removeTagFailed": "Rimozione del tag non riuscita: {{error}}",
+        "setColorFailed": "Impostazione dell'etichetta colore non riuscita: {{error}}",
+        "updateFailed": "Aggiornamento dei metadati non riuscito: {{error}}"
+      }
     },
     "presets": {
       "amount": "Quantità",
@@ -935,7 +955,8 @@
       "status": {
         "empty": "Ancora nessun predefinito salvato. Creane uno, importalo da un file o esplora i predefiniti della community.",
         "getCommunity": "Ottieni Predefiniti della Community",
-        "loading": "Caricamento Predefiniti..."
+        "loading": "Caricamento Predefiniti...",
+        "previewFailed": "Anteprima non disponibile"
       },
       "supports": {
         "cropTransform": "Ritaglio e Trasformazione",
@@ -1291,7 +1312,9 @@
       "syncZoomAndPan": "Sincronizza zoom e panoramica",
       "tags": "Tag",
       "toggleFit": "Alterna 1:1 / Adatta",
-      "vc": "CV"
+      "vc": "CV",
+      "zoomIn": "Ingrandisci",
+      "zoomOut": "Riduci"
     },
     "delete": {
       "confirmTitle": "Delete Image",
@@ -1313,6 +1336,7 @@
       "undo": "Annulla"
     },
     "filters": {
+      "clearFilters": "Azzera filtri",
       "edited": {
         "all": "Tutte le Immagini",
         "editedOnly": "Solo Modificate",
@@ -1654,6 +1678,7 @@
       "original": "Originale",
       "saveButton": "Salva Collage",
       "saved": "Collage Salvato!",
+      "saveFailed": "Impossibile salvare il collage.",
       "saving": "Salvataggio in corso...",
       "shuffleTooltip": "Rimescola Immagini",
       "spacing": "Spaziatura"
@@ -1774,8 +1799,10 @@
       "descriptionWithCount_other": "Combina {{count}} immagini con diverse distanze di messa a fuoco in un'unica immagine perfettamente nitida.",
       "failed": "Focus Stacking non riuscito",
       "initializing": "Inizializzazione...",
+      "noSources": "Immagini sorgente per lo stacking di messa a fuoco non trovate.",
       "openInEditor": "Apri nell'editor",
       "result": "Risultato",
+      "retry": "Riprova",
       "save": "Salva",
       "savedSuccess": "Focus Stack salvato con successo!",
       "stacking": "Unione messa a fuoco in corso",
@@ -1793,6 +1820,7 @@
       "failed": "Unione HDR Fallita",
       "initializing": "Inizializzazione...",
       "merging": "Unione HDR in corso",
+      "noSources": "Immagini sorgente per la fusione HDR non trovate.",
       "openInEditor": "Apri nell'Editor",
       "retry": "Riprova",
       "save": "Salva",
@@ -1858,6 +1886,7 @@
       "descGeneric": "Unisci le tue immagini sovrapposte in un panorama perfetto.",
       "failed": "Panorama Fallito",
       "initializing": "Inizializzazione...",
+      "noSources": "Immagini sorgente per il panorama non trovate.",
       "openInEditor": "Apri nell'Editor",
       "retry": "Riprova",
       "save": "Salva",
@@ -2461,6 +2490,7 @@
     "watchedFolders": {
       "add": "Add Folder",
       "desc": "Automatically import new images that appear in these folders.",
+      "duplicate": "La cartella è già sotto osservazione: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
       "imported_one": "{{count}} new image imported from {{folder}}",

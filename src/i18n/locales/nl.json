@@ -50,7 +50,8 @@
         "global": "Globaal",
         "highlights": "Hooglichten",
         "midtones": "Middentonen",
-        "shadows": "Schaduwen"
+        "shadows": "Schaduwen",
+        "threeWay": "Drie-weg (schaduwen / middentonen / hooglichten)"
       },
       "hue": "Kleurtoon",
       "kelvinModeTooltip": "Temperatuur in Kelvin tonen",
@@ -368,9 +369,12 @@
       "virtualCopy": "Virtuele kopie"
     },
     "toasts": {
+      "aiDenoiseFailed": "AI-ruisonderdrukking mislukt: {{err}}",
+      "aiProcessingFailed": "AI-verwerking mislukt: {{err}}",
       "couldNotShowExplorer": "Kon bestand niet weergeven in Verkenner: {{err}}",
       "couldNotShowFolder": "Kon map niet weergeven: {{err}}",
       "failedAddToAlbum": "Kan niet aan album toevoegen: {{err}}",
+      "failedApplyAdjustments": "Toepassen van aanpassingen mislukt: {{err}}",
       "failedApplyAuto": "Automatische aanpassingen konden niet worden toegepast: {{err}}",
       "failedChangeIcon": "Pictogram kon niet worden gewijzigd: {{err}}",
       "failedCopy": "Bestanden kopiëren mislukt: {{err}}",
@@ -378,10 +382,15 @@
       "failedDelete": "Verwijderen mislukt: {{err}}",
       "failedDeleteFolder": "Map verwijderen mislukt: {{err}}",
       "failedDuplicate": "Bestand dupliceren mislukt: {{err}}",
+      "failedFlag": "Bijwerken van vlag mislukt: {{err}}",
+      "failedLensCorrection": "Toepassen van automatische lenscorrectie mislukt: {{err}}",
+      "failedLoadMetadataCopy": "Laden van metagegevens om te kopiëren mislukt: {{err}}",
       "failedMove": "Bestanden verplaatsen mislukt: {{err}}",
       "failedMoveError": "Verplaatsen mislukt: {{err}}",
       "failedMoveInvalid": "Verplaatsen mislukt: doelgroep niet gevonden of ongeldig.",
-      "failedRemoveImages": "Afbeeldingen verwijderen mislukt: {{err}}"
+      "failedPaste": "Plakken van aanpassingen mislukt: {{err}}",
+      "failedRemoveImages": "Afbeeldingen verwijderen mislukt: {{err}}",
+      "failedSyncAdjustments": "Synchroniseren van aanpassingen met geselecteerde afbeeldingen mislukt: {{err}}"
     }
   },
   "editor": {
@@ -823,6 +832,7 @@
       },
       "camera": {
         "aperture": "Diafragma",
+        "body": "Camerabody",
         "focalLength": "Brandpuntsafstand",
         "iso": "ISO",
         "lens": "Lens",
@@ -832,6 +842,7 @@
       "clickToEdit": "Klik om te bewerken",
       "copied": "Gekopieerd",
       "copy": "Kopiëren",
+      "copyFailed": "Kopiëren mislukt",
       "emptyClickToAdd": "Leeg (klik om toe te voegen)",
       "extendedExif": {
         "title": "Uitgebreide EXIF"
@@ -846,6 +857,8 @@
         "dimensions": "{{width}} × {{height}} px • {{megapixels}} MP",
         "dimensionsNoMp": "{{width}} × {{height}} px",
         "emptyDimensions": "- × - px",
+        "multiSelected_one": "{{count}} afbeelding geselecteerd",
+        "multiSelected_other": "{{count}} afbeeldingen geselecteerd",
         "title": "Bestandsinformatie",
         "virtualCopy": "Virtuele kopie"
       },
@@ -875,7 +888,13 @@
         "tags": "Tags",
         "title": "Organisatie"
       },
-      "title": "Metadata"
+      "title": "Metadata",
+      "toasts": {
+        "addTagFailed": "Toevoegen van tag mislukt: {{error}}",
+        "removeTagFailed": "Verwijderen van tag mislukt: {{error}}",
+        "setColorFailed": "Instellen van kleurlabel mislukt: {{error}}",
+        "updateFailed": "Bijwerken van metagegevens mislukt: {{error}}"
+      }
     },
     "presets": {
       "amount": "Hoeveelheid",
@@ -908,7 +927,8 @@
       "status": {
         "empty": "Nog geen voorinstellingen opgeslagen. Maak uw eigen, importeer uit een bestand of verken community-voorinstellingen.",
         "getCommunity": "Community-voorinstellingen ophalen",
-        "loading": "Voorinstellingen laden..."
+        "loading": "Voorinstellingen laden...",
+        "previewFailed": "Voorbeeld niet beschikbaar"
       },
       "supports": {
         "cropTransform": "Bijsnijden & transformeren",
@@ -1261,7 +1281,9 @@
       "syncZoomAndPan": "Zoom en pan synchroniseren",
       "tags": "Tags",
       "toggleFit": "1:1 / Passend aan/uit",
-      "vc": "VK"
+      "vc": "VK",
+      "zoomIn": "Inzoomen",
+      "zoomOut": "Uitzoomen"
     },
     "delete": {
       "confirmTitle": "Delete Image",
@@ -1281,6 +1303,7 @@
       "undo": "Ongedaan maken"
     },
     "filters": {
+      "clearFilters": "Filters wissen",
       "edited": {
         "all": "Alle afbeeldingen",
         "editedOnly": "Alleen bewerkte",
@@ -1614,6 +1637,7 @@
       "original": "Origineel",
       "saveButton": "Collage opslaan",
       "saved": "Collage opgeslagen!",
+      "saveFailed": "Kon de collage niet opslaan.",
       "saving": "Opslaan...",
       "shuffleTooltip": "Afbeeldingen door elkaar schudden",
       "spacing": "Tussenruimte"
@@ -1731,8 +1755,10 @@
       "descriptionWithCount_other": "Combineer {{count}} afbeeldingen met variërende focusafstanden tot één perfect scherpe afbeelding.",
       "failed": "Focusstapeling mislukt",
       "initializing": "Initialiseren...",
+      "noSources": "Bronafbeeldingen voor focus stacking niet gevonden.",
       "openInEditor": "Openen in editor",
       "result": "Resultaat",
+      "retry": "Opnieuw proberen",
       "save": "Opslaan",
       "savedSuccess": "Focusstapeling succesvol opgeslagen!",
       "stacking": "Focus stapelen",
@@ -1749,6 +1775,7 @@
       "failed": "HDR-samenvoeging mislukt",
       "initializing": "Initialiseren...",
       "merging": "HDR samenvoegen",
+      "noSources": "Bronafbeeldingen voor HDR-samenvoeging niet gevonden.",
       "openInEditor": "Openen in editor",
       "retry": "Opnieuw",
       "save": "Opslaan",
@@ -1813,6 +1840,7 @@
       "descGeneric": "Combineer uw overlappende afbeeldingen tot een naadloos panorama.",
       "failed": "Panorama mislukt",
       "initializing": "Initialiseren...",
+      "noSources": "Bronafbeeldingen voor panorama niet gevonden.",
       "openInEditor": "Openen in editor",
       "retry": "Opnieuw",
       "save": "Opslaan",
@@ -2411,6 +2439,7 @@
     "watchedFolders": {
       "add": "Add Folder",
       "desc": "Automatically import new images that appear in these folders.",
+      "duplicate": "Map wordt al gevolgd: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
       "imported_one": "{{count}} new image imported from {{folder}}",

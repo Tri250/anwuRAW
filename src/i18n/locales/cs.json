@@ -50,7 +50,8 @@
         "global": "Globální",
         "highlights": "Světla",
         "midtones": "Střední tóny",
-        "shadows": "Stíny"
+        "shadows": "Stíny",
+        "threeWay": "Trojcestná (stíny / polotóny / světla)"
       },
       "hue": "Odstín",
       "kelvinModeTooltip": "Zobrazit teplotu v Kelvinech",
@@ -408,9 +409,12 @@
       "virtualCopy": "Virtuální kopie"
     },
     "toasts": {
+      "aiDenoiseFailed": "AI odšumění selhalo: {{err}}",
+      "aiProcessingFailed": "AI zpracování selhalo: {{err}}",
       "couldNotShowExplorer": "Nelze zobrazit soubor v průzkumníku: {{err}}",
       "couldNotShowFolder": "Nelze zobrazit složku: {{err}}",
       "failedAddToAlbum": "Nepodařilo se přidat do alba: {{err}}",
+      "failedApplyAdjustments": "Aplikace úprav selhala: {{err}}",
       "failedApplyAuto": "Nepodařilo se použít automatické úpravy: {{err}}",
       "failedChangeIcon": "Ikonu se nepodařilo změnit: {{err}}",
       "failedCopy": "Kopírování souborů se nezdařilo: {{err}}",
@@ -418,10 +422,15 @@
       "failedDelete": "Smazání se nezdařilo: {{err}}",
       "failedDeleteFolder": "Nepodařilo se smazat složku: {{err}}",
       "failedDuplicate": "Nepodařilo se duplikovat soubor: {{err}}",
+      "failedFlag": "Aktualizace vlajky selhala: {{err}}",
+      "failedLensCorrection": "Aplikace automatické korekce objektivu selhala: {{err}}",
+      "failedLoadMetadataCopy": "Načtení metadat ke kopírování selhalo: {{err}}",
       "failedMove": "Nepodařilo se přesunout soubory: {{err}}",
       "failedMoveError": "Přesun se nezdařil: {{err}}",
       "failedMoveInvalid": "Přesun se nezdařil: Cílová skupina nebyla nalezena nebo je neplatná.",
-      "failedRemoveImages": "Nepodařilo se odstranit snímky: {{err}}"
+      "failedPaste": "Vložení úprav selhalo: {{err}}",
+      "failedRemoveImages": "Nepodařilo se odstranit snímky: {{err}}",
+      "failedSyncAdjustments": "Synchronizace úprav s vybranými obrázky selhala: {{err}}"
     }
   },
   "editor": {
@@ -877,6 +886,7 @@
       },
       "camera": {
         "aperture": "Clona",
+        "body": "Tělo fotoaparátu",
         "focalLength": "Ohnisková vzdálenost",
         "iso": "ISO",
         "lens": "Objektiv",
@@ -886,6 +896,7 @@
       "clickToEdit": "Klikněte pro úpravu",
       "copied": "Zkopírováno",
       "copy": "Kopírovat",
+      "copyFailed": "Kopírování selhalo",
       "emptyClickToAdd": "Prázdné (přidejte kliknutím)",
       "extendedExif": {
         "title": "Rozšířený EXIF"
@@ -900,6 +911,10 @@
         "dimensions": "{{width}} × {{height}} px • {{megapixels}} MP",
         "dimensionsNoMp": "{{width}} × {{height}} px",
         "emptyDimensions": "- × - px",
+        "multiSelected_one": "Vybrán {{count}} obrázek",
+        "multiSelected_few": "Vybrány {{count}} obrázky",
+        "multiSelected_many": "Vybráno {{count}} obrázků",
+        "multiSelected_other": "Vybráno {{count}} obrázků",
         "title": "Informace o souboru",
         "virtualCopy": "Virtuální kopie"
       },
@@ -929,7 +944,13 @@
         "tags": "Značky",
         "title": "Organizace"
       },
-      "title": "Metadata"
+      "title": "Metadata",
+      "toasts": {
+        "addTagFailed": "Přidání štítku selhalo: {{error}}",
+        "removeTagFailed": "Odebrání štítku selhalo: {{error}}",
+        "setColorFailed": "Nastavení barevného štítku selhalo: {{error}}",
+        "updateFailed": "Aktualizace metadat selhala: {{error}}"
+      }
     },
     "presets": {
       "amount": "Množství",
@@ -962,7 +983,8 @@
       "status": {
         "empty": "Zatím nejsou uloženy žádné presety. Vytvořte si vlastní, importujte ze souboru nebo prozkoumejte presety komunity.",
         "getCommunity": "Získejte presety komunity",
-        "loading": "Načítání presetů..."
+        "loading": "Načítání presetů...",
+        "previewFailed": "Náhled není k dispozici"
       },
       "supports": {
         "cropTransform": "Oříznout a transformovat",
@@ -1321,7 +1343,9 @@
       "syncZoomAndPan": "Synchronizovat přiblížení a posun",
       "tags": "Tagy",
       "toggleFit": "Přepnout 1:1 / Přizpůsobit",
-      "vc": "VC"
+      "vc": "VC",
+      "zoomIn": "Přiblížit",
+      "zoomOut": "Oddálit"
     },
     "delete": {
       "confirmTitle": "Delete Image",
@@ -1345,6 +1369,7 @@
       "undo": "Zpět"
     },
     "filters": {
+      "clearFilters": "Vymazat filtry",
       "edited": {
         "all": "Všechny snímky",
         "editedOnly": "Pouze upravené",
@@ -1694,6 +1719,7 @@
       "original": "Originál",
       "saveButton": "Uložit koláž",
       "saved": "Koláž byla uložena!",
+      "saveFailed": "Koláž se nepodařilo uložit.",
       "saving": "Ukládání...",
       "shuffleTooltip": "Zamíchat snímky",
       "spacing": "Mezery"
@@ -1817,8 +1843,10 @@
       "descriptionWithCount_other": "Zkombinujte {{count}} snímky s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
       "failed": "Skládání zaostření se nezdařilo",
       "initializing": "Inicializace...",
+      "noSources": "Zdrojové obrázky pro skládání zaostření nebyly nalezeny.",
       "openInEditor": "Otevřít v Editoru",
       "result": "Výsledek",
+      "retry": "Zkusit znovu",
       "save": "Uložit",
       "savedSuccess": "Složený snímek byl úspěšně uložen!",
       "stacking": "Skládání zaostření",
@@ -1837,6 +1865,7 @@
       "failed": "Sloučení HDR se nezdařilo",
       "initializing": "Inicializace...",
       "merging": "Sloučení HDR",
+      "noSources": "Zdrojové obrázky pro HDR sloučení nebyly nalezeny.",
       "openInEditor": "Otevřít v Editoru",
       "retry": "Zkuste to znovu",
       "save": "Uložit",
@@ -1903,6 +1932,7 @@
       "descGeneric": "Spojte své překrývající se snímky do plynulého panoramatu.",
       "failed": "Panorama se nezdařilo",
       "initializing": "Inicializace...",
+      "noSources": "Zdrojové obrázky pro panorama nebyly nalezeny.",
       "openInEditor": "Otevřít v Editoru",
       "retry": "Zkuste to znovu",
       "save": "Uložit",
@@ -2511,6 +2541,7 @@
     "watchedFolders": {
       "add": "Add Folder",
       "desc": "Automatically import new images that appear in these folders.",
+      "duplicate": "Složka je již sledována: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
       "imported_one": "{{count}} new image imported from {{folder}}",

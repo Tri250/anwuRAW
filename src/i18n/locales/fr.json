@@ -50,7 +50,8 @@
         "global": "Global",
         "highlights": "Hautes lumières",
         "midtones": "Tons moyens",
-        "shadows": "Ombres"
+        "shadows": "Ombres",
+        "threeWay": "Trois voies (ombres / tons moyens / hautes lumières)"
       },
       "hue": "Teinte",
       "kelvinModeTooltip": "Afficher la température en Kelvin",
@@ -388,9 +389,12 @@
       "virtualCopy": "Copie virtuelle"
     },
     "toasts": {
+      "aiDenoiseFailed": "Échec de la réduction du bruit par IA : {{err}}",
+      "aiProcessingFailed": "Échec du traitement par IA : {{err}}",
       "couldNotShowExplorer": "Impossible d'afficher le fichier dans l'explorateur : {{err}}",
       "couldNotShowFolder": "Impossible d'afficher le dossier : {{err}}",
       "failedAddToAlbum": "Échec de l'ajout à l'album : {{err}}",
+      "failedApplyAdjustments": "Échec de l'application des réglages : {{err}}",
       "failedApplyAuto": "Échec de l'ajustement automatique : {{err}}",
       "failedChangeIcon": "Échec de la modification de l'icône : {{err}}",
       "failedCopy": "Échec de la copie des fichiers : {{err}}",
@@ -398,10 +402,15 @@
       "failedDelete": "Échec de la suppression : {{err}}",
       "failedDeleteFolder": "Échec de la suppression du dossier : {{err}}",
       "failedDuplicate": "Échec de la duplication du fichier : {{err}}",
+      "failedFlag": "Échec de la mise à jour du flag : {{err}}",
+      "failedLensCorrection": "Échec de l'application de la correction automatique de l'objectif : {{err}}",
+      "failedLoadMetadataCopy": "Échec du chargement des métadonnées à copier : {{err}}",
       "failedMove": "Échec du déplacement des fichiers : {{err}}",
       "failedMoveError": "Échec du déplacement : {{err}}",
       "failedMoveInvalid": "Échec du déplacement : Groupe cible introuvable ou invalide.",
-      "failedRemoveImages": "Échec de la suppression des images : {{err}}"
+      "failedPaste": "Échec du collage des réglages : {{err}}",
+      "failedRemoveImages": "Échec de la suppression des images : {{err}}",
+      "failedSyncAdjustments": "Échec de la synchronisation des réglages avec les images sélectionnées : {{err}}"
     }
   },
   "editor": {
@@ -850,6 +859,7 @@
       },
       "camera": {
         "aperture": "Ouverture",
+        "body": "Boîtier de l'appareil",
         "focalLength": "Longueur focale",
         "iso": "ISO",
         "lens": "Objectif",
@@ -859,6 +869,7 @@
       "clickToEdit": "Cliquer pour modifier",
       "copied": "Copié",
       "copy": "Copier",
+      "copyFailed": "Échec de la copie",
       "emptyClickToAdd": "Vide (cliquer pour ajouter)",
       "extendedExif": {
         "title": "EXIF étendu"
@@ -873,6 +884,9 @@
         "dimensions": "{{width}} × {{height}} px • {{megapixels}} MP",
         "dimensionsNoMp": "{{width}} × {{height}} px",
         "emptyDimensions": "- × - px",
+        "multiSelected_one": "{{count}} image sélectionnée",
+        "multiSelected_many": "{{count}} images sélectionnées",
+        "multiSelected_other": "{{count}} images sélectionnées",
         "title": "Informations du fichier",
         "virtualCopy": "Copie virtuelle"
       },
@@ -902,7 +916,13 @@
         "tags": "Étiquettes",
         "title": "Organisation"
       },
-      "title": "Métadonnées"
+      "title": "Métadonnées",
+      "toasts": {
+        "addTagFailed": "Échec de l'ajout du tag : {{error}}",
+        "removeTagFailed": "Échec de la suppression du tag : {{error}}",
+        "setColorFailed": "Échec de la définition de l'étiquette de couleur : {{error}}",
+        "updateFailed": "Échec de la mise à jour des métadonnées : {{error}}"
+      }
     },
     "presets": {
       "amount": "Quantité",
@@ -935,7 +955,8 @@
       "status": {
         "empty": "Aucun paramètre prédéfini enregistré pour le moment. Créez les vôtres, importez-en à partir d'un fichier ou explorez ceux de la communauté.",
         "getCommunity": "Obtenir les paramètres de la communauté",
-        "loading": "Chargement des paramètres prédéfinis..."
+        "loading": "Chargement des paramètres prédéfinis...",
+        "previewFailed": "Aperçu non disponible"
       },
       "supports": {
         "cropTransform": "Recadrage & Transformation",
@@ -1292,7 +1313,9 @@
       "syncZoomAndPan": "Synchroniser le zoom et le panoramique",
       "tags": "Tags",
       "toggleFit": "Basculer 1:1 / Ajuster",
-      "vc": "CV"
+      "vc": "CV",
+      "zoomIn": "Zoom avant",
+      "zoomOut": "Zoom arrière"
     },
     "delete": {
       "confirmTitle": "Delete Image",
@@ -1314,6 +1337,7 @@
       "undo": "Annuler"
     },
     "filters": {
+      "clearFilters": "Effacer les filtres",
       "edited": {
         "all": "Toutes les images",
         "editedOnly": "Uniquement les images modifiées",
@@ -1655,6 +1679,7 @@
       "original": "Original",
       "saveButton": "Enregistrer le collage",
       "saved": "Collage enregistré !",
+      "saveFailed": "Impossible d'enregistrer le montage.",
       "saving": "Enregistrement...",
       "shuffleTooltip": "Mélanger les images",
       "spacing": "Espacement"
@@ -1775,8 +1800,10 @@
       "descriptionWithCount_other": "Combinez {{count}} images avec des distances de mise au point variables en une seule image parfaitement nette.",
       "failed": "L'empilement de mise au point a échoué",
       "initializing": "Initialisation...",
+      "noSources": "Images sources pour l'empilement de mise au point introuvables.",
       "openInEditor": "Ouvrir dans l'éditeur",
       "result": "Résultat",
+      "retry": "Réessayer",
       "save": "Enregistrer",
       "savedSuccess": "Empilement de mise au point enregistré avec succès !",
       "stacking": "Empilement de la mise au point",
@@ -1794,6 +1821,7 @@
       "failed": "Échec de la fusion HDR",
       "initializing": "Initialisation...",
       "merging": "Fusion HDR",
+      "noSources": "Images sources pour la fusion HDR introuvables.",
       "openInEditor": "Ouvrir dans l'éditeur",
       "retry": "Réessayer",
       "save": "Enregistrer",
@@ -1859,6 +1887,7 @@
       "descGeneric": "Combinez vos images superposées en un panorama parfait.",
       "failed": "Échec du panorama",
       "initializing": "Initialisation...",
+      "noSources": "Images sources pour le panorama introuvables.",
       "openInEditor": "Ouvrir dans l'éditeur",
       "retry": "Réessayer",
       "save": "Enregistrer",
@@ -2462,6 +2491,7 @@
     "watchedFolders": {
       "add": "Add Folder",
       "desc": "Automatically import new images that appear in these folders.",
+      "duplicate": "Le dossier est déjà surveillé : {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
       "imported_one": "{{count}} new image imported from {{folder}}",
