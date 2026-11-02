@@ -1,20 +1,35 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
+import { open, save } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import { Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Check, FileDown, FileUp, Loader2, Pencil, Plus, Save, Sparkles, Trash2, Wand2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { usePresets, UserPreset } from '../../hooks/usePresets';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { Adjustments, INITIAL_ADJUSTMENTS, applyStrength, getAiDenoiseEnablePatch } from '../../utils/adjustments';
+import {
+  Adjustments,
+  INITIAL_ADJUSTMENTS,
+  applyStrength,
+  getAiDenoiseEnablePatch,
+} from '../../utils/adjustments';
+import type { MaskContainer } from '../../utils/adjustments';
+import { hasAiSubMasks, mergeAiMaskResults, stripAiMaskResults } from '../../utils/maskUtils';
 import { Invokes, Preset } from '../ui/AppProperties';
+import ConfirmModal from '../modals/ConfirmModal';
+import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
 import { CxSliderRow, summarizeExif, useCrystalAdjust } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * Crystal 移动端预设 / 滤镜面板。
  * - presets 模式：用户预设库（LoadPresets）+ AI 推荐卡（AiAutoEnhance 真实调用
  *   + 仅基于真实 EXIF 的场景启发，不伪造置信度）+ 强度混合（applyStrength）。
+ *   v2.1.13 补齐管理闭环：保存当前为预设 / 导入（rrpreset/xmp/lrtemplate，
+ *   Android content URI 过滤）/ 导出（单个与全部，Android 落 Downloads/RapidRaw）/
+ *   长按动作面板（覆盖更新 / 重命名 / 删除）。含 AI 蒙版的预设与桌面同源：
+ *   先剥离结果占位，再异步按当前图重新解析（ApplyAdjustmentsToPaths → LoadMetadata）。
  * - filter 模式：内置风格滤镜矩阵，全部为真实管线参数组合。
  * 缩略图与桌面 PresetsPanel 同源：GeneratePresetPreview 渲染队列。
  * ------------------------------------------------------------------------- */
@@ -187,6 +202,19 @@ function usePresetPreviewQueue() {
     [processQueue],
   );
 
+  /** 单条失效（覆盖更新预设后旧缩略图不再可信）：撤销 URL 并清缓存，由调用方重新入队 */
+  const invalidate = useCallback((id: string) => {
+    const url = previewsRef.current[id];
+    if (url) URL.revokeObjectURL(url);
+    delete previewsRef.current[id];
+    setPreviews((prev) => {
+      if (prev[id] === undefined) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
+
   useEffect(
     () => () => {
       queueRef.current = [];
@@ -195,7 +223,7 @@ function usePresetPreviewQueue() {
     [],
   );
 
-  return { previews, enqueue, resetGeneration };
+  return { previews, enqueue, resetGeneration, invalidate };
 }
 
 /* ---------------------------- AI 推荐（真实像素场景识别 + 真实 AiAutoEnhance） ---------------------------- */
@@ -332,13 +360,33 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   const adjustments = useEditorStore((s) => s.adjustments);
   const selectedImagePath = useEditorStore((s) => s.selectedImage?.path);
   const { applyPresetObject, setAdjustments } = useCrystalAdjust();
-  const { presets, isLoading } = usePresets(adjustments);
-  const { previews, enqueue, resetGeneration } = usePresetPreviewQueue();
+  const {
+    presets,
+    isLoading,
+    addPreset,
+    importPresetsFromFiles,
+    exportPresetsToFile,
+    overwritePreset,
+    renameItem,
+    deleteItem,
+  } = usePresets(adjustments);
+  const { previews, enqueue, resetGeneration, invalidate } = usePresetPreviewQueue();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [intensity, setIntensity] = useState(100);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const baseRef = useRef<Adjustments | null>(null);
+  /** 强度 0 时暂存的蒙版（与桌面 hiddenPresetMasks 同语义），>0 时还原 */
+  const hiddenMasksRef = useRef<Array<MaskContainer> | null>(null);
+  /** 长按动作面板目标（仅 presets 模式） */
+  const [sheetSource, setSheetSource] = useState<PreviewSource | null>(null);
+  const [nameDialog, setNameDialog] = useState<{ kind: 'save' | 'rename'; presetId?: string; initial: string } | null>(
+    null,
+  );
+  const [deleteTarget, setDeleteTarget] = useState<PreviewSource | null>(null);
+  const pressTimer = useRef<number | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const longPressFired = useRef(false);
 
   // G5: 按文件夹分组（保持首次出现顺序），'' 为未分组。
   const presetGroups = useMemo(() => {
@@ -395,11 +443,55 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     resetGeneration();
   }, [selectedImagePath, resetGeneration]);
 
+  // v2.1.13: 切图后应用态一并复位，防止上一张图的 baseRef/强度/蒙版暂存泄漏到新图
+  useEffect(() => {
+    setActiveId(null);
+    setIntensity(100);
+    baseRef.current = null;
+    hiddenMasksRef.current = null;
+  }, [selectedImagePath]);
+
   useEffect(() => {
     enqueue(sources);
   }, [sources, enqueue, selectedImagePath]);
 
+  // Android 返回键：动作面板/命名对话框/删除确认打开时先关闭浮层
+  useEffect(() => {
+    if (!sheetSource && !nameDialog && !deleteTarget) return;
+    const handler = () => {
+      setSheetSource(null);
+      setNameDialog(null);
+      setDeleteTarget(null);
+    };
+    pushExitLayer(handler);
+    return () => removeExitLayer(handler);
+  }, [sheetSource, nameDialog, deleteTarget]);
+
   const activeSource = activeId ? (sources.find((s) => s.id === activeId) ?? null) : null;
+  const rawId = useCallback((sourceId: string) => sourceId.replace(/^preset:/, ''), []);
+
+  /** 与桌面 resolvePresetAiMasks 同源：按当前图重跑 AI 蒙版并合并结果（不进撤销栈） */
+  const resolvePresetAiMasks = useCallback(async (presetMasks: Array<MaskContainer>) => {
+    const path = useEditorStore.getState().selectedImage?.path;
+    if (!path) return;
+    try {
+      await invoke(Invokes.ApplyAdjustmentsToPaths, { paths: [path], adjustments: { masks: presetMasks } });
+      const meta = await invoke<{ adjustments?: { masks?: Array<MaskContainer> } | null } | null>(Invokes.LoadMetadata, {
+        path,
+      });
+      const resolved = meta?.adjustments?.masks;
+      if (!resolved || useEditorStore.getState().selectedImage?.path !== path) return;
+      const setEditor = useEditorStore.getState().setEditor;
+      setEditor((state) => ({
+        adjustments: {
+          ...state.adjustments,
+          masks: mergeAiMaskResults(state.adjustments.masks || [], resolved),
+        },
+      }));
+    } catch (e) {
+      console.error('Failed to resolve preset AI masks:', e);
+    }
+  }, []);
 
   const handleApply = useCallback(
     (source: PreviewSource) => {
@@ -407,6 +499,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         // 再次点击取消：恢复应用前状态
         const base = baseRef.current;
         baseRef.current = null;
+        hiddenMasksRef.current = null;
         setActiveId(null);
         setIntensity(100);
         if (base) setAdjustments(base);
@@ -415,19 +508,253 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
       baseRef.current = adjustments;
       setActiveId(source.id);
       setIntensity(100);
-      applyPresetObject(source.adjustments);
+      hiddenMasksRef.current = null;
+      // 含 AI 子蒙版的预设不能直接套用（结果属于创建时的图）：先剥离结果占位，
+      // 再按当前图异步重新解析（与桌面 handleApplyPreset 同链路）。
+      const presetMasks = (source.adjustments.masks ?? null) as Array<MaskContainer> | null;
+      const hasAi = Boolean(presetMasks && hasAiSubMasks(presetMasks));
+      if (hasAi && presetMasks) void resolvePresetAiMasks(presetMasks);
+      applyPresetObject(
+        hasAi && presetMasks ? { ...source.adjustments, masks: stripAiMaskResults(presetMasks) } : source.adjustments,
+      );
     },
-    [activeId, adjustments, applyPresetObject, setAdjustments],
+    [activeId, adjustments, applyPresetObject, resolvePresetAiMasks, setAdjustments],
   );
 
   const handleIntensity = useCallback(
     (val: number) => {
       setIntensity(val);
       if (!activeSource) return;
-      const mixed = applyStrength(activeSource.adjustments as Record<string, unknown>, val) as Partial<Adjustments>;
-      applyPresetObject(mixed as Record<string, unknown>);
+      // 蒙版不参与强度混合（与桌面一致）：仅 0% 时隐藏，回升时还原并重解析 AI 蒙版
+      const { masks: presetMasks, ...presetAdj } = activeSource.adjustments as Record<string, unknown>;
+      const mixed = applyStrength(presetAdj, val) as Record<string, unknown>;
+      if (presetMasks !== undefined) {
+        const currentMasks = useEditorStore.getState().adjustments.masks;
+        if (val === 0) {
+          if (currentMasks?.length) hiddenMasksRef.current = currentMasks;
+          mixed.masks = INITIAL_ADJUSTMENTS.masks;
+        } else if (hiddenMasksRef.current || !currentMasks?.length) {
+          const restored: Array<MaskContainer> = (
+            hiddenMasksRef.current ?? stripAiMaskResults((presetMasks ?? []) as Array<MaskContainer>)
+          ).map((container: MaskContainer) => ({
+            ...container,
+            adjustments: applyStrength(
+              (container?.adjustments ?? {}) as Record<string, unknown>,
+              val,
+            ) as MaskContainer['adjustments'],
+          }));
+          hiddenMasksRef.current = null;
+          if (
+            hasAiSubMasks(restored, true) &&
+            Array.isArray(presetMasks) &&
+            (presetMasks as Array<MaskContainer>).length > 0
+          ) {
+            void resolvePresetAiMasks(presetMasks as Array<MaskContainer>);
+          }
+          mixed.masks = restored;
+        }
+      }
+      applyPresetObject(mixed as Partial<Adjustments> as Record<string, unknown>);
     },
-    [activeSource, applyPresetObject],
+    [activeSource, applyPresetObject, resolvePresetAiMasks],
+  );
+
+  /* ---------------------------- 管理闭环（保存/导入/导出/覆盖/重命名/删除） ---------------------------- */
+
+  const handleSaveCurrent = useCallback(
+    (name: string) => {
+      // 与桌面 ConfigurePresetModal 默认不同：移动端样式预设携带蒙版（人像/局部是核心场景），不携带裁剪几何
+      const created = addPreset(name, null, true, false, 'style');
+      if (created) toast.success(t('crystal.presets.saved'));
+    },
+    [addPreset, t],
+  );
+
+  const handleImportPresets = useCallback(async () => {
+    try {
+      const { osPlatform } = useSettingsStore.getState();
+      const isAndroid = osPlatform === 'android';
+      const selected = await open({
+        multiple: true,
+        filters: isAndroid
+          ? []
+          : [
+              { name: t('editor.presets.dialog.allPresetFiles'), extensions: ['rrpreset', 'xmp', 'lrtemplate'] },
+              { name: t('editor.presets.dialog.rapidRawPreset'), extensions: ['rrpreset'] },
+              { name: t('editor.presets.dialog.legacyPreset'), extensions: ['xmp', 'lrtemplate'] },
+            ],
+      });
+      const paths = Array.isArray(selected) ? selected : selected ? [selected] : [];
+      if (paths.length === 0) return;
+      let validPaths = paths;
+      if (isAndroid) {
+        // SAF 返回 content:// URI：解析真实文件名按扩展名过滤（与 LUT 导入同链路）
+        const resolvedNames = await Promise.all(
+          paths.map(async (p) => {
+            try {
+              return await invoke<string>('resolve_android_content_uri_name', { uriStr: p });
+            } catch {
+              return p;
+            }
+          }),
+        );
+        const allowed = new Set(['rrpreset', 'xmp', 'lrtemplate']);
+        validPaths = paths.filter((_, i) => allowed.has(resolvedNames[i].split('.').pop()?.toLowerCase() || ''));
+        if (validPaths.length === 0) {
+          toast.error(t('crystal.presets.importFailed'));
+          return;
+        }
+      }
+      const { failures } = await importPresetsFromFiles(validPaths);
+      if (failures.length > 0) {
+        toast.error(t('editor.presets.toasts.importFailures', { num: failures.length }));
+      } else {
+        toast.success(t('crystal.presets.importSuccess'));
+      }
+      failures.forEach((failure) => console.error(`Failed to import ${failure.fileName}: ${failure.error}`));
+      resetGeneration();
+    } catch (e) {
+      console.error('Failed to import presets:', e);
+      toast.error(t('crystal.presets.importFailed'));
+    }
+  }, [importPresetsFromFiles, resetGeneration, t]);
+
+  const exportItem = useCallback(
+    async (item: UserPreset, fallbackName: string) => {
+      const { osPlatform } = useSettingsStore.getState();
+      const safeName = `${fallbackName}.rrpreset`.replace(/[<>:"/\\|?*]/g, '_');
+      const filePath =
+        osPlatform === 'android'
+          ? safeName
+          : await save({
+              defaultPath: safeName,
+              filters: [{ name: t('editor.presets.dialog.presetFile'), extensions: ['rrpreset'] }],
+              title: t('editor.presets.dialog.exportTitle', { type: t('editor.presets.types.preset') }),
+            });
+      if (filePath) {
+        await exportPresetsToFile([item], filePath);
+        toast.success(t('crystal.presets.exportSuccess'));
+      }
+    },
+    [exportPresetsToFile, t],
+  );
+
+  const handleExportAll = useCallback(async () => {
+    if (presets.length === 0) return;
+    try {
+      const { osPlatform } = useSettingsStore.getState();
+      const filePath =
+        osPlatform === 'android'
+          ? 'all_presets.rrpreset'
+          : await save({
+              defaultPath: 'all_presets.rrpreset',
+              filters: [{ name: t('editor.presets.dialog.presetFile'), extensions: ['rrpreset'] }],
+              title: t('editor.presets.dialog.exportAllTitle'),
+            });
+      if (filePath) {
+        await exportPresetsToFile(presets, filePath);
+        toast.success(t('crystal.presets.exportSuccess'));
+      }
+    } catch (e) {
+      console.error('Failed to export all presets:', e);
+      toast.error(t('crystal.presets.exportFailed'));
+    }
+  }, [exportPresetsToFile, presets, t]);
+
+  /** 从预设库中找原始条目（保留 includeMasks/folder 信息），供单条导出 */
+  const findUserPresetItem = useCallback(
+    (presetId: string): UserPreset | null => {
+      for (const item of presets as Array<UserPreset>) {
+        if (item.preset?.id === presetId) return item;
+        if (item.folder) {
+          const child = item.folder.children.find((c: Preset) => c.id === presetId);
+          if (child) return { preset: child };
+        }
+      }
+      return null;
+    },
+    [presets],
+  );
+
+  const handleExportSingle = useCallback(
+    async (source: PreviewSource) => {
+      try {
+        const item = findUserPresetItem(rawId(source.id));
+        if (!item?.preset) return;
+        await exportItem(item, source.name);
+      } catch (e) {
+        console.error('Failed to export preset:', e);
+        toast.error(t('crystal.presets.exportFailed'));
+      }
+    },
+    [exportItem, findUserPresetItem, rawId, t],
+  );
+
+  const handleOverwrite = useCallback(
+    async (source: PreviewSource) => {
+      try {
+        // hook 返回类型因闭包赋值被推断为 null，这里显式放宽
+        const updated = overwritePreset(rawId(source.id)) as Preset | null;
+        if (updated) {
+          invalidate(source.id);
+          enqueue([
+            { id: source.id, name: source.name, adjustments: (updated.adjustments ?? {}) as Record<string, unknown> },
+          ]);
+          toast.success(t('crystal.presets.overwritten'));
+        }
+      } catch (e) {
+        console.error('Failed to overwrite preset:', e);
+        toast.error(t('crystal.presets.exportFailed'));
+      }
+    },
+    [enqueue, invalidate, overwritePreset, rawId, t],
+  );
+
+  const handleDelete = useCallback(
+    (source: PreviewSource) => {
+      deleteItem(rawId(source.id));
+      invalidate(source.id);
+      if (activeId === source.id) {
+        // 删除正在应用的预设：仅退出应用态，不回滚已写入的编辑
+        setActiveId(null);
+        setIntensity(100);
+        baseRef.current = null;
+        hiddenMasksRef.current = null;
+      }
+    },
+    [activeId, deleteItem, invalidate, rawId],
+  );
+
+  /* 长按预设卡 → 管理动作面板（横滑超过阈值视为滚动，取消触发） */
+  const clearPress = useCallback(() => {
+    if (pressTimer.current !== null) {
+      window.clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+    pressStart.current = null;
+  }, []);
+
+  const startPress = useCallback(
+    (source: PreviewSource, e: React.PointerEvent) => {
+      if (mode !== 'presets') return;
+      longPressFired.current = false;
+      clearPress();
+      pressStart.current = { x: e.clientX, y: e.clientY };
+      pressTimer.current = window.setTimeout(() => {
+        pressTimer.current = null;
+        longPressFired.current = true;
+        setSheetSource(source);
+      }, 450);
+    },
+    [clearPress, mode],
+  );
+
+  const movePress = useCallback(
+    (e: React.PointerEvent) => {
+      const start = pressStart.current;
+      if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10) clearPress();
+    },
+    [clearPress],
   );
 
   if (mode === 'presets' && isLoading && totalPresetCount === 0) {
@@ -444,6 +771,28 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         <Wand2 size={13} className="inline mr-1.5 -mt-0.5" />
         {mode === 'filter' ? t('crystal.categories.filter') : t('crystal.categories.presets')}
       </div>
+
+      {/* v2.1.13 预设管理闭环：保存当前 / 导入 / 导出全部（仅预设模式） */}
+      {mode === 'presets' && (
+        <div className="cx-preset-actions">
+          <button className="cx-preset-act" onClick={() => setNameDialog({ kind: 'save', initial: '' })}>
+            <Plus size={13} />
+            {t('crystal.presets.saveCurrent')}
+          </button>
+          <button className="cx-preset-act" onClick={() => void handleImportPresets()}>
+            <FileUp size={13} />
+            {t('crystal.presets.import')}
+          </button>
+          <button
+            className="cx-preset-act"
+            disabled={totalPresetCount === 0}
+            onClick={() => void handleExportAll()}
+          >
+            <FileDown size={13} />
+            {t('crystal.presets.exportAll')}
+          </button>
+        </div>
+      )}
 
       {mode === 'presets' && <AiRecommendCard />}
 
@@ -496,7 +845,24 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
             <button
               key={source.id}
               className={`cx-thumb-card ${isActive ? 'is-active' : ''}`}
-              onClick={() => handleApply(source)}
+              onClick={() => {
+                // 长按弹出的动作面板会派生 click，此处吞掉避免误应用
+                if (longPressFired.current) {
+                  longPressFired.current = false;
+                  return;
+                }
+                handleApply(source);
+              }}
+              onPointerDown={(e) => startPress(source, e)}
+              onPointerMove={movePress}
+              onPointerUp={clearPress}
+              onPointerCancel={clearPress}
+              onContextMenu={(e) => {
+                if (mode !== 'presets') return;
+                e.preventDefault();
+                clearPress();
+                setSheetSource(source);
+              }}
             >
               <span className="cx-thumb-img flex items-center justify-center overflow-hidden">
                 {url ? (
@@ -535,6 +901,165 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
           />
         </div>
       )}
+
+      {/* 长按动作面板：单条预设管理（与国内主流修图 App 交互一致） */}
+      {sheetSource &&
+        createPortal(
+          <div className="cx-sheet-backdrop" onClick={() => setSheetSource(null)}>
+            <div className="cx-sheet" onClick={(e) => e.stopPropagation()}>
+              <div className="cx-sheet-title">{sheetSource.name}</div>
+              <button
+                className="cx-sheet-row"
+                onClick={() => {
+                  handleApply(sheetSource);
+                  setSheetSource(null);
+                }}
+              >
+                <Check size={15} />
+                {t('crystal.presets.menuApply')}
+              </button>
+              <button
+                className="cx-sheet-row"
+                onClick={() => {
+                  void handleOverwrite(sheetSource);
+                  setSheetSource(null);
+                }}
+              >
+                <Save size={15} />
+                {t('crystal.presets.menuOverwrite')}
+              </button>
+              <button
+                className="cx-sheet-row"
+                onClick={() => {
+                  setNameDialog({ kind: 'rename', presetId: rawId(sheetSource.id), initial: sheetSource.name });
+                  setSheetSource(null);
+                }}
+              >
+                <Pencil size={15} />
+                {t('crystal.presets.menuRename')}
+              </button>
+              <button
+                className="cx-sheet-row"
+                onClick={() => {
+                  void handleExportSingle(sheetSource);
+                  setSheetSource(null);
+                }}
+              >
+                <FileDown size={15} />
+                {t('crystal.presets.menuExport')}
+              </button>
+              <button
+                className="cx-sheet-row cx-danger"
+                onClick={() => {
+                  setDeleteTarget(sheetSource);
+                  setSheetSource(null);
+                }}
+              >
+                <Trash2 size={15} />
+                {t('crystal.presets.menuDelete')}
+              </button>
+              <button className="cx-sheet-row cx-sheet-cancel" onClick={() => setSheetSource(null)}>
+                {t('modals.confirm.cancel')}
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      <PresetNameDialog
+        isOpen={nameDialog !== null}
+        title={nameDialog?.kind === 'save' ? t('crystal.presets.saveTitle') : t('crystal.presets.renameTitle')}
+        initial={nameDialog?.initial ?? ''}
+        placeholder={t('crystal.presets.namePlaceholder')}
+        confirmText={nameDialog?.kind === 'save' ? t('crystal.presets.saveCurrent') : t('crystal.presets.menuRename')}
+        onClose={() => setNameDialog(null)}
+        onSubmit={(name) => {
+          if (!nameDialog) return;
+          if (nameDialog.kind === 'save') {
+            handleSaveCurrent(name);
+          } else if (nameDialog.presetId) {
+            renameItem(nameDialog.presetId, name);
+          }
+          setNameDialog(null);
+        }}
+      />
+
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        title={t('crystal.presets.deleteTitle')}
+        message={t('crystal.presets.deleteMessage', { name: deleteTarget?.name ?? '' })}
+        confirmVariant="danger"
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) handleDelete(deleteTarget);
+        }}
+      />
     </>
+  );
+}
+
+/* ---------------------------- 命名对话框（保存为预设 / 重命名） ---------------------------- */
+function PresetNameDialog({
+  isOpen,
+  title,
+  initial,
+  placeholder,
+  confirmText,
+  onClose,
+  onSubmit,
+}: {
+  isOpen: boolean;
+  title: string;
+  initial: string;
+  placeholder: string;
+  confirmText: string;
+  onClose: () => void;
+  onSubmit: (name: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [value, setValue] = useState(initial);
+
+  useEffect(() => {
+    if (isOpen) setValue(initial);
+  }, [isOpen, initial]);
+
+  if (!isOpen) return null;
+
+  const submit = () => {
+    const name = value.trim();
+    if (!name) return;
+    onSubmit(name);
+  };
+
+  return createPortal(
+    <div className="cx-sheet-backdrop cx-center" onClick={onClose}>
+      <div className="cx-sheet cx-sheet-dialog" onClick={(e) => e.stopPropagation()}>
+        <div className="cx-sheet-title cx-sheet-title-strong">{title}</div>
+        <input
+          className="cx-sheet-input"
+          value={value}
+          placeholder={placeholder}
+          maxLength={60}
+          autoFocus
+          enterKeyHint="done"
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              submit();
+            }
+          }}
+        />
+        <div className="cx-sheet-actions">
+          <button className="cx-sheet-btn" onClick={onClose}>
+            {t('modals.confirm.cancel')}
+          </button>
+          <button className="cx-sheet-btn cx-sheet-btn-primary" disabled={!value.trim()} onClick={submit}>
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }

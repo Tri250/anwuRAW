@@ -398,6 +398,163 @@
   color: var(--cx-cat-color, var(--cx-accent));
 }
 
+/* v2.1.13 预设管理操作行：保存当前 / 导入 / 导出全部 */
+.cx-preset-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cx-preset-act {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 10px;
+  background: var(--cx-card2);
+  border: 1px solid var(--cx-border);
+  color: var(--cx-ink);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 6px;
+}
+.cx-preset-act:disabled {
+  opacity: 0.4;
+}
+.cx-preset-act:active {
+  transform: scale(0.97);
+}
+
+/* v2.1.13 底部动作面板（长按预设）与命名对话框 */
+.cx-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: cx-fade-in 0.18s ease-out;
+}
+.cx-sheet-backdrop.cx-center {
+  align-items: center;
+}
+@keyframes cx-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.cx-sheet {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 18px 18px 0 0;
+  background: var(--cx-card);
+  border: 1px solid var(--cx-border);
+  padding: 6px 10px calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: cx-sheet-in 0.22s ease-out;
+}
+@keyframes cx-sheet-in {
+  from {
+    transform: translateY(40%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.cx-sheet-title {
+  font-size: 12px;
+  color: var(--cx-faint);
+  text-align: center;
+  padding: 6px 0 8px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cx-sheet-title-strong {
+  font-size: 14px;
+  color: var(--cx-ink);
+}
+.cx-sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  color: var(--cx-ink);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+}
+.cx-sheet-row:active {
+  background: var(--cx-card2);
+}
+.cx-sheet-row.cx-danger {
+  color: #ff6b6b;
+}
+.cx-sheet-cancel {
+  justify-content: center;
+  margin-top: 6px;
+  border-top: 1px solid var(--cx-border);
+  border-radius: 0;
+  color: var(--cx-muted);
+}
+.cx-sheet-dialog {
+  align-items: stretch;
+  border-radius: 18px;
+  margin: 0 16px;
+  gap: 10px;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+}
+.cx-sheet-input {
+  height: 42px;
+  border-radius: 10px;
+  background: var(--cx-card2);
+  border: 1px solid var(--cx-border);
+  color: var(--cx-ink);
+  padding: 0 12px;
+  font-size: 14px;
+  outline: none;
+}
+.cx-sheet-input:focus {
+  border-color: var(--cx-accent);
+}
+.cx-sheet-actions {
+  display: flex;
+  gap: 8px;
+}
+.cx-sheet-btn {
+  flex: 1;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--cx-border);
+  background: var(--cx-card2);
+  color: var(--cx-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.cx-sheet-btn-primary {
+  background: var(--cx-accent);
+  border-color: transparent;
+  color: #101014;
+}
+.cx-sheet-btn:disabled {
+  opacity: 0.4;
+}
+
 /* 面板内滑杆（复用全局 Slider，皮肤化） */
 .crystal-shell .cx-panel .slider-input {
   accent-color: var(--cx-accent);
