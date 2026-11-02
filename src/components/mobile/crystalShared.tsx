@@ -2,7 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
 import { v4 as uuidv4 } from 'uuid';
-import { Adjustments, getActiveTools, getToolOwnersForKeys, INITIAL_ADJUSTMENTS, INITIAL_MASK_CONTAINER } from '../../utils/adjustments';
+import {
+  Adjustments,
+  getActiveTools,
+  getToolOwnersForKeys,
+  INITIAL_ADJUSTMENTS,
+  INITIAL_MASK_CONTAINER,
+} from '../../utils/adjustments';
 import type { MaskContainer } from '../../utils/adjustments';
 import { createSubMask } from '../../utils/maskUtils';
 import { Mask } from '../panel/right/Masks';
@@ -85,12 +91,60 @@ export interface WatermarkTemplate {
 }
 
 export const WATERMARK_TEMPLATES: Array<WatermarkTemplate> = [
-  { id: 'pro', nameKey: 'crystal.templates.pro.name', subKey: 'crystal.templates.pro.sub', exifBar: true, frame: true, signatureAnchor: 'bottomRight', brand: 'CRYSTAL' },
-  { id: 'minimal', nameKey: 'crystal.templates.minimal.name', subKey: 'crystal.templates.minimal.sub', exifBar: false, frame: false, signatureAnchor: 'bottomRight', brand: 'CRYSTAL' },
-  { id: 'cinema', nameKey: 'crystal.templates.cinema.name', subKey: 'crystal.templates.cinema.sub', exifBar: true, frame: true, signatureAnchor: 'bottomCenter', brand: 'CRYSTAL' },
-  { id: 'landscape', nameKey: 'crystal.templates.landscape.name', subKey: 'crystal.templates.landscape.sub', exifBar: false, frame: true, signatureAnchor: 'bottomLeft', brand: 'CRYSTAL' },
-  { id: 'street', nameKey: 'crystal.templates.street.name', subKey: 'crystal.templates.street.sub', exifBar: false, frame: false, signatureAnchor: 'bottomLeft', brand: 'CRYSTAL' },
-  { id: 'mono', nameKey: 'crystal.templates.mono.name', subKey: 'crystal.templates.mono.sub', exifBar: true, frame: true, signatureAnchor: 'bottomRight', brand: 'CRYSTAL' },
+  {
+    id: 'pro',
+    nameKey: 'crystal.templates.pro.name',
+    subKey: 'crystal.templates.pro.sub',
+    exifBar: true,
+    frame: true,
+    signatureAnchor: 'bottomRight',
+    brand: 'CRYSTAL',
+  },
+  {
+    id: 'minimal',
+    nameKey: 'crystal.templates.minimal.name',
+    subKey: 'crystal.templates.minimal.sub',
+    exifBar: false,
+    frame: false,
+    signatureAnchor: 'bottomRight',
+    brand: 'CRYSTAL',
+  },
+  {
+    id: 'cinema',
+    nameKey: 'crystal.templates.cinema.name',
+    subKey: 'crystal.templates.cinema.sub',
+    exifBar: true,
+    frame: true,
+    signatureAnchor: 'bottomCenter',
+    brand: 'CRYSTAL',
+  },
+  {
+    id: 'landscape',
+    nameKey: 'crystal.templates.landscape.name',
+    subKey: 'crystal.templates.landscape.sub',
+    exifBar: false,
+    frame: true,
+    signatureAnchor: 'bottomLeft',
+    brand: 'CRYSTAL',
+  },
+  {
+    id: 'street',
+    nameKey: 'crystal.templates.street.name',
+    subKey: 'crystal.templates.street.sub',
+    exifBar: false,
+    frame: false,
+    signatureAnchor: 'bottomLeft',
+    brand: 'CRYSTAL',
+  },
+  {
+    id: 'mono',
+    nameKey: 'crystal.templates.mono.name',
+    subKey: 'crystal.templates.mono.sub',
+    exifBar: true,
+    frame: true,
+    signatureAnchor: 'bottomRight',
+    brand: 'CRYSTAL',
+  },
 ];
 
 /* --------------------------------------------------------------------------
@@ -242,7 +296,11 @@ export function CxSwitch({
   hint?: string;
 }) {
   return (
-    <button type="button" className="w-full flex items-center justify-between gap-3 bg-transparent border-none p-0" onClick={() => onChange(!checked)}>
+    <button
+      type="button"
+      className="w-full flex items-center justify-between gap-3 bg-transparent border-none p-0"
+      onClick={() => onChange(!checked)}
+    >
       <span className="text-left">
         <span className="cx-frame-label block">{label}</span>
         {hint && <span className="cx-frame-hint block">{hint}</span>}
@@ -285,9 +343,16 @@ export function CxSliderRow({
         <span className="text-[12.5px] font-medium" style={{ color: 'var(--cx-muted)' }}>
           {label}
         </span>
-        <span className="text-[12.5px] font-semibold flex items-center gap-1.5" style={{ color: changed ? 'var(--cx-accent)' : 'var(--cx-ink)' }}>
+        <span
+          className="text-[12.5px] font-semibold flex items-center gap-1.5"
+          style={{ color: changed ? 'var(--cx-accent)' : 'var(--cx-ink)' }}
+        >
           {Number(value).toFixed(step < 1 ? 2 : 0)}
-          {suffix ? <i className="not-italic text-[9px]" style={{ color: 'var(--cx-faint)' }}>{suffix}</i> : null}
+          {suffix ? (
+            <i className="not-italic text-[9px]" style={{ color: 'var(--cx-faint)' }}>
+              {suffix}
+            </i>
+          ) : null}
         </span>
       </div>
       <CrystalRangeSlider min={min} max={max} step={step} value={value} onChange={onChange} onCommit={onCommit} />
@@ -367,8 +432,7 @@ export function useCrystalAiMasks() {
   const findContainer = useCallback((type: Mask): AiContainer | null => {
     const { adjustments } = useEditorStore.getState();
     return (
-      (adjustments.masks || []).find((c: MaskContainer) => c.subMasks.some((sm: SubMask) => sm.type === type)) ||
-      null
+      (adjustments.masks || []).find((c: MaskContainer) => c.subMasks.some((sm: SubMask) => sm.type === type)) || null
     );
   }, []);
 

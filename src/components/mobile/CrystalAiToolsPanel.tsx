@@ -33,27 +33,34 @@ export default function CrystalAiToolsPanel() {
   const adjustments = useEditorStore((s) => s.adjustments);
   const aiProvider = useSettingsStore((s) => s.appSettings?.aiProvider);
   const { handleAutoAdjustments } = useEditorActions();
-  const { applyPatch } = useCrystalAdjust();
+  const { applyPatch, setAdjustments } = useCrystalAdjust();
 
   const [intensity, setIntensity] = useState<EnhanceIntensity>('standard');
   const [busy, setBusy] = useState<'enhance' | 'auto' | 'sky' | 'subject' | null>(null);
-  const { handleGenerateAiSkyMask, handleGenerateAiForegroundMask, ensureContainer, findContainer, setMaskAdjustments, maskReady } =
-    useCrystalAiMasks();
+  const {
+    handleGenerateAiSkyMask,
+    handleGenerateAiForegroundMask,
+    ensureContainer,
+    findContainer,
+    setMaskAdjustments,
+    maskReady,
+  } = useCrystalAiMasks();
 
   const runEnhance = useCallback(async () => {
     if (busy) return;
     setBusy('enhance');
     try {
       const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity });
-      const prev = useEditorStore.getState().adjustments;
-      useEditorStore.getState().setEditor({ adjustments: { ...prev, ...result } });
+      // 与桌面 EditorToolbar 同源：经 setAdjustments → debounced pushHistory，
+      // 保证 AI 增强结果进 50 步撤销栈（setEditor 直接写会绕过历史）。
+      setAdjustments((prev) => ({ ...prev, ...result }));
     } catch (e) {
       console.error('AI enhance failed:', e);
       toast.error(t('crystal.aiRecommend.failed'));
     } finally {
       setBusy(null);
     }
-  }, [busy, intensity, t]);
+  }, [busy, intensity, setAdjustments, t]);
 
   const runAuto = useCallback(async () => {
     if (busy) return;
@@ -77,7 +84,8 @@ export default function CrystalAiToolsPanel() {
       await handleGenerateAiSkyMask(container.subMasks[0].id);
       if (maskReady(Mask.AiSky)) {
         // 仅首次识别后写入默认强度；重复执行不覆盖用户已调值。
-        if (!Number(container.adjustments.clarity ?? 0)) setMaskAdjustments(container.id, { clarity: 10, dehaze: 8, saturation: 5 });
+        if (!Number(container.adjustments.clarity ?? 0))
+          setMaskAdjustments(container.id, { clarity: 10, dehaze: 8, saturation: 5 });
       } else {
         toast.error(t('crystal.ai.maskFailed'));
       }
@@ -118,19 +126,72 @@ export default function CrystalAiToolsPanel() {
   const subjectStrength = subjectContainer ? Math.round(Number(subjectContainer.adjustments.clarity ?? 0) / 0.2) : 0;
 
   const toggleDenoise = useCallback(() => {
-    const patch = denoiseOn
-      ? { aiDenoiseEnabled: false }
-      : getAiDenoiseEnablePatch(aiProvider);
+    const patch = denoiseOn ? { aiDenoiseEnabled: false } : getAiDenoiseEnablePatch(aiProvider);
     applyPatch(patch as Partial<Adjustments>);
   }, [aiProvider, applyPatch, denoiseOn]);
 
-  const tiles: Array<{ id: string; label: string; icon: typeof Sparkles; color: string; onClick: () => void; active?: boolean; busy?: boolean }> = [
-    { id: 'enhance', label: t('crystal.ai.tiles.enhance'), icon: Sparkles, color: 'var(--cx-cat-ai)', onClick: runEnhance, busy: busy === 'enhance' },
-    { id: 'auto', label: t('crystal.ai.tiles.auto'), icon: Wand2, color: 'var(--cx-cat-presets)', onClick: runAuto, busy: busy === 'auto' },
-    { id: 'denoise', label: t('crystal.ai.tiles.denoise'), icon: Eraser, color: 'var(--cx-cat-tone)', onClick: toggleDenoise, active: denoiseOn },
-    { id: 'lumaNr', label: t('crystal.ai.tiles.detail'), icon: Waves, color: 'var(--cx-cat-filter)', onClick: () => applyPatch({ structure: Math.max(Number(adjustments.structure ?? 0), 10), clarity: Math.max(Number(adjustments.clarity ?? 0), 10) }) },
-    { id: 'sky', label: t('crystal.ai.tiles.sky'), icon: CloudSun, color: 'var(--cx-cat-tone)', onClick: runSky, active: skyReady, busy: busy === 'sky' },
-    { id: 'subject', label: t('crystal.ai.tiles.subject'), icon: User, color: 'var(--cx-cat-ren)', onClick: runSubject, active: subjectReady, busy: busy === 'subject' },
+  const tiles: Array<{
+    id: string;
+    label: string;
+    icon: typeof Sparkles;
+    color: string;
+    onClick: () => void;
+    active?: boolean;
+    busy?: boolean;
+  }> = [
+    {
+      id: 'enhance',
+      label: t('crystal.ai.tiles.enhance'),
+      icon: Sparkles,
+      color: 'var(--cx-cat-ai)',
+      onClick: runEnhance,
+      busy: busy === 'enhance',
+    },
+    {
+      id: 'auto',
+      label: t('crystal.ai.tiles.auto'),
+      icon: Wand2,
+      color: 'var(--cx-cat-presets)',
+      onClick: runAuto,
+      busy: busy === 'auto',
+    },
+    {
+      id: 'denoise',
+      label: t('crystal.ai.tiles.denoise'),
+      icon: Eraser,
+      color: 'var(--cx-cat-tone)',
+      onClick: toggleDenoise,
+      active: denoiseOn,
+    },
+    {
+      id: 'lumaNr',
+      label: t('crystal.ai.tiles.detail'),
+      icon: Waves,
+      color: 'var(--cx-cat-filter)',
+      onClick: () =>
+        applyPatch({
+          structure: Math.max(Number(adjustments.structure ?? 0), 10),
+          clarity: Math.max(Number(adjustments.clarity ?? 0), 10),
+        }),
+    },
+    {
+      id: 'sky',
+      label: t('crystal.ai.tiles.sky'),
+      icon: CloudSun,
+      color: 'var(--cx-cat-tone)',
+      onClick: runSky,
+      active: skyReady,
+      busy: busy === 'sky',
+    },
+    {
+      id: 'subject',
+      label: t('crystal.ai.tiles.subject'),
+      icon: User,
+      color: 'var(--cx-cat-ren)',
+      onClick: runSubject,
+      active: subjectReady,
+      busy: busy === 'subject',
+    },
   ];
 
   return (
@@ -140,94 +201,131 @@ export default function CrystalAiToolsPanel() {
         {t('crystal.categories.ai')}
       </div>
 
-      <div className="cx-chip-row mb-3">
-        {INTENSITIES.map(({ id, labelKey }) => (
-          <button key={id} className={`cx-chip ${intensity === id ? 'is-active' : ''}`} onClick={() => setIntensity(id)}>
-            {t(labelKey)}
-          </button>
-        ))}
+      {/* G9：识别过程进度蒙层 —— busy 期间覆盖面板内容，失败 toast 后自动消失，不阻塞编辑 */}
+      <div className="relative">
+        <div className={busy ? 'cx-busy-dim' : ''}>
+          <div className="cx-chip-row mb-3">
+            {INTENSITIES.map(({ id, labelKey }) => (
+              <button
+                key={id}
+                className={`cx-chip ${intensity === id ? 'is-active' : ''}`}
+                onClick={() => setIntensity(id)}
+              >
+                {t(labelKey)}
+              </button>
+            ))}
+          </div>
+
+          <div className="cx-grid-tiles mb-2">
+            {tiles.map(({ id, label, icon: Icon, color, onClick, active, busy: isBusy }) => (
+              <button
+                key={id}
+                className={`cx-tile ${active ? 'is-active' : ''} ${isBusy ? 'is-busy' : ''}`}
+                onClick={onClick}
+                disabled={Boolean(busy)}
+              >
+                {isBusy ? (
+                  <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
+                ) : (
+                  <span
+                    className="cx-tile-color flex items-center justify-center"
+                    style={{ ['--cx-tile-color' as string]: color }}
+                  >
+                    <Icon size={13} />
+                  </span>
+                )}
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {skyReady && (
+            <CxSliderRow
+              label={t('crystal.ai.skyStrength')}
+              min={0}
+              max={100}
+              step={1}
+              value={Math.max(0, Math.min(100, skyStrength))}
+              onChange={(v) =>
+                skyContainer &&
+                setMaskAdjustments(skyContainer.id, {
+                  clarity: Math.round(v * 0.2),
+                  dehaze: Math.round(v * 0.15),
+                  saturation: Math.round(v * 0.1),
+                })
+              }
+            />
+          )}
+          {subjectReady && (
+            <CxSliderRow
+              label={t('crystal.ai.subjectStrength')}
+              min={0}
+              max={100}
+              step={1}
+              value={Math.max(0, Math.min(100, subjectStrength))}
+              onChange={(v) =>
+                subjectContainer && setMaskAdjustments(subjectContainer.id, { clarity: Math.round(v * 0.2) })
+              }
+            />
+          )}
+
+          {denoiseOn && (
+            <CxSliderRow
+              label={t('crystal.ai.denoiseAmount')}
+              min={0}
+              max={100}
+              step={1}
+              value={Number(adjustments.aiDenoiseAmount ?? 0)}
+              onChange={(v) => applyPatch({ aiDenoiseAmount: v })}
+            />
+          )}
+          <CxSliderRow
+            label={t('crystal.ai.lumaNr')}
+            min={0}
+            max={100}
+            step={1}
+            value={Number(adjustments.lumaNoiseReduction ?? 0)}
+            onChange={(v) => applyPatch({ lumaNoiseReduction: v })}
+          />
+          <CxSliderRow
+            label={t('crystal.ai.structure')}
+            min={-100}
+            max={100}
+            step={1}
+            value={Number(adjustments.structure ?? 0)}
+            onChange={(v) => applyPatch({ structure: v })}
+          />
+          <CxSliderRow
+            label={t('crystal.ai.texture')}
+            min={-100}
+            max={100}
+            step={1}
+            value={Number(adjustments.textureAmount ?? 0)}
+            onChange={(v) => applyPatch({ textureAmount: v })}
+          />
+          <CxSliderRow
+            label={t('crystal.ai.clarity')}
+            min={-100}
+            max={100}
+            step={1}
+            value={Number(adjustments.clarity ?? 0)}
+            onChange={(v) => applyPatch({ clarity: v })}
+          />
+          <CxSliderRow
+            label={t('crystal.ai.dehaze')}
+            min={-100}
+            max={100}
+            step={1}
+            value={Number(adjustments.dehaze ?? 0)}
+            onChange={(v) => applyPatch({ dehaze: v })}
+          />
+        </div>
+        {busy && (
+          <div className="cx-busy-overlay" role="status">
+            <Loader2 size={22} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
+          </div>
+        )}
       </div>
-
-      <div className="cx-grid-tiles mb-2">
-        {tiles.map(({ id, label, icon: Icon, color, onClick, active, busy: isBusy }) => (
-          <button key={id} className={`cx-tile ${active ? 'is-active' : ''} ${isBusy ? 'is-busy' : ''}`} onClick={onClick} disabled={Boolean(busy)}>
-            {isBusy ? <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} /> : <span className="cx-tile-color flex items-center justify-center" style={{ ['--cx-tile-color' as string]: color }}><Icon size={13} /></span>}
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {skyReady && (
-        <CxSliderRow
-          label={t('crystal.ai.skyStrength')}
-          min={0}
-          max={100}
-          step={1}
-          value={Math.max(0, Math.min(100, skyStrength))}
-          onChange={(v) => skyContainer && setMaskAdjustments(skyContainer.id, { clarity: Math.round(v * 0.2), dehaze: Math.round(v * 0.15), saturation: Math.round(v * 0.1) })}
-        />
-      )}
-      {subjectReady && (
-        <CxSliderRow
-          label={t('crystal.ai.subjectStrength')}
-          min={0}
-          max={100}
-          step={1}
-          value={Math.max(0, Math.min(100, subjectStrength))}
-          onChange={(v) => subjectContainer && setMaskAdjustments(subjectContainer.id, { clarity: Math.round(v * 0.2) })}
-        />
-      )}
-
-      {denoiseOn && (
-        <CxSliderRow
-          label={t('crystal.ai.denoiseAmount')}
-          min={0}
-          max={100}
-          step={1}
-          value={Number(adjustments.aiDenoiseAmount ?? 0)}
-          onChange={(v) => applyPatch({ aiDenoiseAmount: v })}
-        />
-      )}
-      <CxSliderRow
-        label={t('crystal.ai.lumaNr')}
-        min={0}
-        max={100}
-        step={1}
-        value={Number(adjustments.lumaNoiseReduction ?? 0)}
-        onChange={(v) => applyPatch({ lumaNoiseReduction: v })}
-      />
-      <CxSliderRow
-        label={t('crystal.ai.structure')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.structure ?? 0)}
-        onChange={(v) => applyPatch({ structure: v })}
-      />
-      <CxSliderRow
-        label={t('crystal.ai.texture')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.textureAmount ?? 0)}
-        onChange={(v) => applyPatch({ textureAmount: v })}
-      />
-      <CxSliderRow
-        label={t('crystal.ai.clarity')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.clarity ?? 0)}
-        onChange={(v) => applyPatch({ clarity: v })}
-      />
-      <CxSliderRow
-        label={t('crystal.ai.dehaze')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.dehaze ?? 0)}
-        onChange={(v) => applyPatch({ dehaze: v })}
-      />
     </>
   );
 }

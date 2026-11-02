@@ -43,7 +43,21 @@ function TonePanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
   const { applyPatch } = useCrystalAdjust();
-  const defaults = useMemo(() => ({ exposure: 0, contrast: 0, highlights: 0, shadows: 0, whites: 0, blacks: 0, temperature: 0, tint: 0, vibrance: 0, saturation: 0 }), []);
+  const defaults = useMemo(
+    () => ({
+      exposure: 0,
+      contrast: 0,
+      highlights: 0,
+      shadows: 0,
+      whites: 0,
+      blacks: 0,
+      temperature: 0,
+      tint: 0,
+      vibrance: 0,
+      saturation: 0,
+    }),
+    [],
+  );
 
   return (
     <PanelShell titleKey="crystal.categories.tone">
@@ -68,7 +82,8 @@ function PortraitPanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
   const { applyPatch } = useCrystalAdjust();
-  const { handleGenerateAiFaceMask, findContainer, ensureContainer, setMaskAdjustments, maskReady } = useCrystalAiMasks();
+  const { handleGenerateAiFaceMask, findContainer, ensureContainer, setMaskAdjustments, maskReady } =
+    useCrystalAiMasks();
 
   const [eyeBusy, setEyeBusy] = useState(false);
   const [blurBusy, setBlurBusy] = useState(false);
@@ -111,7 +126,8 @@ function PortraitPanel() {
   const eyeStrength = eyesContainer ? Math.round(Number(eyesContainer.adjustments.clarity ?? 0) / 0.4) : 0;
   const setEyeStrength = useCallback(
     (v: number) => {
-      if (eyesContainer) setMaskAdjustments(eyesContainer.id, { clarity: Math.round(v * 0.4), exposure: Math.round(v * 0.12) });
+      if (eyesContainer)
+        setMaskAdjustments(eyesContainer.id, { clarity: Math.round(v * 0.4), exposure: Math.round(v * 0.12) });
     },
     [eyesContainer, setMaskAdjustments],
   );
@@ -147,17 +163,27 @@ function PortraitPanel() {
           {eyeBusy ? (
             <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
           ) : (
-            <span className="cx-tile-color flex items-center justify-center" style={{ ['--cx-tile-color' as string]: 'var(--cx-cat-ren)' }}>
+            <span
+              className="cx-tile-color flex items-center justify-center"
+              style={{ ['--cx-tile-color' as string]: 'var(--cx-cat-ren)' }}
+            >
               <Eye size={13} />
             </span>
           )}
           {t('crystal.portrait.eyeEnhance')}
         </button>
-        <button className={`cx-tile ${adjustments.lensBlurEnabled ? 'is-active' : ''}`} onClick={runBgBlur} disabled={blurBusy}>
+        <button
+          className={`cx-tile ${adjustments.lensBlurEnabled ? 'is-active' : ''}`}
+          onClick={runBgBlur}
+          disabled={blurBusy}
+        >
           {blurBusy ? (
             <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
           ) : (
-            <span className="cx-tile-color flex items-center justify-center" style={{ ['--cx-tile-color' as string]: 'var(--cx-cat-comp)' }}>
+            <span
+              className="cx-tile-color flex items-center justify-center"
+              style={{ ['--cx-tile-color' as string]: 'var(--cx-cat-comp)' }}
+            >
               <Aperture size={13} />
             </span>
           )}

@@ -47,15 +47,7 @@ const CATEGORIES: Array<{ id: CrystalCategory; labelKey: ParseKeys; color: strin
 
 const LONG_PRESS_MS = CRYSTAL_LONG_PRESS_MS;
 
-function CrystalTopBar({
-  camera,
-  onBack,
-  onSave,
-}: {
-  camera: string;
-  onBack: () => void;
-  onSave: () => void;
-}) {
+function CrystalTopBar({ camera, onBack, onSave }: { camera: string; onBack: () => void; onSave: () => void }) {
   const { t } = useTranslation();
   const canUndo = useEditorStore((s) => s.historyIndex > 0);
   const canRedo = useEditorStore((s) => s.historyIndex < s.history.length - 1);
@@ -140,13 +132,7 @@ function CrystalCatNavBar({ active, onSelect }: { active: CrystalCategory; onSel
   );
 }
 
-function CrystalBottomBar({
-  onExport,
-  onReset,
-}: {
-  onExport: () => void;
-  onReset: () => void;
-}) {
+function CrystalBottomBar({ onExport, onReset }: { onExport: () => void; onReset: () => void }) {
   const { t } = useTranslation();
   const canUndo = useEditorStore((s) => s.historyIndex > 0);
   const canRedo = useEditorStore((s) => s.historyIndex < s.history.length - 1);
@@ -259,11 +245,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     <div className="crystal-shell" data-flow={flow}>
       {flow === 'edit' ? (
         <div className="cx-app">
-          <CrystalTopBar
-            camera={cameraSubtitle}
-            onBack={onBackToLibrary}
-            onSave={() => setFlow('export')}
-          />
+          <CrystalTopBar camera={cameraSubtitle} onBack={onBackToLibrary} onSave={() => setFlow('export')} />
           {modelDownloadStatus && (
             <div className="cx-dl-pill" role="status">
               <Loader2 size={11} className="animate-spin" />
@@ -284,7 +266,11 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
           />
         </div>
       ) : (
-        <WatermarkExportPage onBackToEdit={() => setFlow('edit')} onBackToLibrary={onBackToLibrary} isExporting={isExporting} />
+        <WatermarkExportPage
+          onBackToEdit={() => setFlow('edit')}
+          onBackToLibrary={onBackToLibrary}
+          isExporting={isExporting}
+        />
       )}
     </div>
   );

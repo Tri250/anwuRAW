@@ -438,15 +438,18 @@
       "enhance": "Miglioramento IA",
       "failed": "Miglioramento IA non riuscito",
       "noExif": "Nessun indizio EXIF — prova il miglioramento IA",
+      "noScene": "Nessuna scena certa — prova il miglioramento IA",
       "recipe": "Ricetta scena",
       "sceneBasis": "Sembra {{scene}} · in base a {{basis}}",
       "scenes": {
+        "food": "cibo",
         "landscape": "paesaggio",
         "night": "notte",
         "portrait": "ritratto",
         "tele": "teleobiettivo"
       },
       "tagExif": "EXIF",
+      "tagStats": "Analisi scena",
       "title": "Consiglio IA"
     },
     "backToLibrary": "Torna alla libreria",

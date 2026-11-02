@@ -7,12 +7,7 @@ import { toast } from 'react-toastify';
 import { usePresets, UserPreset } from '../../hooks/usePresets';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import {
-  Adjustments,
-  INITIAL_ADJUSTMENTS,
-  applyStrength,
-  getAiDenoiseEnablePatch,
-} from '../../utils/adjustments';
+import { Adjustments, INITIAL_ADJUSTMENTS, applyStrength, getAiDenoiseEnablePatch } from '../../utils/adjustments';
 import { Invokes, Preset } from '../ui/AppProperties';
 import { CxSliderRow, summarizeExif, useCrystalAdjust } from './crystalShared';
 
@@ -33,19 +28,84 @@ interface PreviewSource {
 }
 
 /* ---------------------------- 内置滤镜（真实参数组合） ---------------------------- */
-const BUILTIN_FILTERS: Array<{ id: string; labelKey: ParseKeys; group: 'landscape' | 'portrait' | 'film' | 'mono'; adjustments: Partial<Adjustments> }> = [
-  { id: 'vivid', labelKey: 'crystal.filters.vivid', group: 'landscape', adjustments: { vibrance: 30, saturation: 8, contrast: 12, blacks: -10 } },
-  { id: 'softMist', labelKey: 'crystal.filters.softMist', group: 'portrait', adjustments: { glowAmount: 30, highlights: 15, shadows: 12, dehaze: -8, contrast: -6 } },
-  { id: 'film', labelKey: 'crystal.filters.film', group: 'film', adjustments: { contrast: 8, saturation: -12, grainAmount: 22, temperature: 6, blacks: -6 } },
-  { id: 'mono', labelKey: 'crystal.filters.mono', group: 'mono', adjustments: { saturation: -100, contrast: 18, structure: 8, grainAmount: 14 } },
-  { id: 'goldBlack', labelKey: 'crystal.filters.goldBlack', group: 'film', adjustments: { temperature: 14, vibrance: 18, shadows: -12, blacks: -18, vignetteAmount: 24 } },
-  { id: 'cyber', labelKey: 'crystal.filters.cyber', group: 'film', adjustments: { tint: -18, temperature: -14, saturation: 22, contrast: 14, halationAmount: 16 } },
-  { id: 'airy', labelKey: 'crystal.filters.airy', group: 'portrait', adjustments: { exposure: 0.25, contrast: -8, saturation: -8, temperature: -4, highlights: -10 } },
-  { id: 'vintage', labelKey: 'crystal.filters.vintage', group: 'film', adjustments: { saturation: -18, temperature: 10, vignetteAmount: 20, grainAmount: 18, blacks: 12 } },
-  { id: 'coolBlue', labelKey: 'crystal.filters.coolBlue', group: 'landscape', adjustments: { temperature: -18, tint: 4, contrast: 8 } },
-  { id: 'goldenHour', labelKey: 'crystal.filters.goldenHour', group: 'landscape', adjustments: { temperature: 18, vibrance: 12, glowAmount: 10 } },
-  { id: 'hdrPunch', labelKey: 'crystal.filters.hdrPunch', group: 'landscape', adjustments: { clarity: 24, structure: 14, contrast: 10, vibrance: 16, dehaze: 8 } },
-  { id: 'faded', labelKey: 'crystal.filters.faded', group: 'film', adjustments: { contrast: -12, blacks: 16, saturation: -14, shadows: 10 } },
+const BUILTIN_FILTERS: Array<{
+  id: string;
+  labelKey: ParseKeys;
+  group: 'landscape' | 'portrait' | 'film' | 'mono';
+  adjustments: Partial<Adjustments>;
+}> = [
+  {
+    id: 'vivid',
+    labelKey: 'crystal.filters.vivid',
+    group: 'landscape',
+    adjustments: { vibrance: 30, saturation: 8, contrast: 12, blacks: -10 },
+  },
+  {
+    id: 'softMist',
+    labelKey: 'crystal.filters.softMist',
+    group: 'portrait',
+    adjustments: { glowAmount: 30, highlights: 15, shadows: 12, dehaze: -8, contrast: -6 },
+  },
+  {
+    id: 'film',
+    labelKey: 'crystal.filters.film',
+    group: 'film',
+    adjustments: { contrast: 8, saturation: -12, grainAmount: 22, temperature: 6, blacks: -6 },
+  },
+  {
+    id: 'mono',
+    labelKey: 'crystal.filters.mono',
+    group: 'mono',
+    adjustments: { saturation: -100, contrast: 18, structure: 8, grainAmount: 14 },
+  },
+  {
+    id: 'goldBlack',
+    labelKey: 'crystal.filters.goldBlack',
+    group: 'film',
+    adjustments: { temperature: 14, vibrance: 18, shadows: -12, blacks: -18, vignetteAmount: 24 },
+  },
+  {
+    id: 'cyber',
+    labelKey: 'crystal.filters.cyber',
+    group: 'film',
+    adjustments: { tint: -18, temperature: -14, saturation: 22, contrast: 14, halationAmount: 16 },
+  },
+  {
+    id: 'airy',
+    labelKey: 'crystal.filters.airy',
+    group: 'portrait',
+    adjustments: { exposure: 0.25, contrast: -8, saturation: -8, temperature: -4, highlights: -10 },
+  },
+  {
+    id: 'vintage',
+    labelKey: 'crystal.filters.vintage',
+    group: 'film',
+    adjustments: { saturation: -18, temperature: 10, vignetteAmount: 20, grainAmount: 18, blacks: 12 },
+  },
+  {
+    id: 'coolBlue',
+    labelKey: 'crystal.filters.coolBlue',
+    group: 'landscape',
+    adjustments: { temperature: -18, tint: 4, contrast: 8 },
+  },
+  {
+    id: 'goldenHour',
+    labelKey: 'crystal.filters.goldenHour',
+    group: 'landscape',
+    adjustments: { temperature: 18, vibrance: 12, glowAmount: 10 },
+  },
+  {
+    id: 'hdrPunch',
+    labelKey: 'crystal.filters.hdrPunch',
+    group: 'landscape',
+    adjustments: { clarity: 24, structure: 14, contrast: 10, vibrance: 16, dehaze: 8 },
+  },
+  {
+    id: 'faded',
+    labelKey: 'crystal.filters.faded',
+    group: 'film',
+    adjustments: { contrast: -12, blacks: 16, saturation: -14, shadows: 10 },
+  },
 ];
 
 /* §3.2 滤镜子标签（全部/风景/人像/胶片/黑白），按滤镜真实调性归类 */
@@ -122,34 +182,62 @@ function usePresetPreviewQueue() {
   return { previews, enqueue };
 }
 
-/* ---------------------------- AI 推荐（真实 EXIF 启发 + 真实 AiAutoEnhance） ---------------------------- */
+/* ---------------------------- AI 推荐（真实像素场景识别 + 真实 AiAutoEnhance） ---------------------------- */
 function firstNumber(v: string | undefined): number | null {
   if (!v) return null;
   const m = v.match(/\d+(\.\d+)?/);
   return m ? Number(m[0]) : null;
 }
 
+interface SceneClassification {
+  scene: string;
+  confidence: number;
+  tags: string[];
+}
+
+/* W3 边界：置信度 ≥0.75 才展示场景推荐（scene_classify 后端同门槛，前端二次门控） */
+const SCENE_CONFIDENCE_GATE = 0.75;
+type SceneKey = 'landscape' | 'portrait' | 'night' | 'food';
+
 function AiRecommendCard() {
   const { t } = useTranslation();
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const { applyPatch } = useCrystalAdjust();
+  const [scene, setScene] = useState<SceneClassification | null>(null);
+  const { applyPatch, setAdjustments } = useCrystalAdjust();
   const selectedImage = useEditorStore((s) => s.selectedImage);
   const aiProvider = useSettingsStore((s) => s.appSettings?.aiProvider);
 
   const exif = summarizeExif((selectedImage?.exif ?? null) as Record<string, unknown> | null);
-  const focal = firstNumber(exif.focal);
   const iso = firstNumber(exif.iso);
 
-  // 场景启发只陈述依据（EXIF 数值），不伪造置信度。
-  const sceneKey = iso !== null && iso > 1600 ? 'night' : focal === null ? null : focal > 60 ? 'tele' : focal > 35 ? 'portrait' : focal < 24 ? 'landscape' : null;
+  // 场景来自 scene_classify（真实像素统计）。识别失败/低于门槛 → 静默降级：
+  // 仅隐藏场景配方按钮，一键增强始终可用（原方案「AI 失败不阻塞」边界）。
+  useEffect(() => {
+    let cancelled = false;
+    setScene(null);
+    invoke<SceneClassification>(Invokes.SceneClassify)
+      .then((result) => {
+        if (!cancelled) setScene(result);
+      })
+      .catch(() => {
+        /* 识别失败：静默降级，不阻塞编辑 */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedImage?.path]);
+
+  const sceneKey: SceneKey | null =
+    scene && scene.confidence >= SCENE_CONFIDENCE_GATE ? (scene.scene as SceneKey) : null;
 
   const runAiEnhance = async () => {
     if (isEnhancing) return;
     setIsEnhancing(true);
     try {
       const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity: 'standard' });
-      const prev = useEditorStore.getState().adjustments;
-      useEditorStore.getState().setEditor({ adjustments: { ...prev, ...result } });
+      // 与桌面 EditorToolbar 同源：经 setAdjustments → debounced pushHistory，
+      // 保证 AI 增强结果进 50 步撤销栈（setEditor 直接写会绕过历史）。
+      setAdjustments((prev) => ({ ...prev, ...result }));
     } catch (e) {
       console.error('AI enhance failed:', e);
       toast.error(t('crystal.aiRecommend.failed'));
@@ -158,17 +246,30 @@ function AiRecommendCard() {
     }
   };
 
+  // W3-3 推荐映射规则库：scene → 真实管线参数包（与 ai_auto_enhance 同写入路径）。
   const applySceneRecipe = () => {
     if (sceneKey === 'portrait') {
-      applyPatch({ lumaNoiseReduction: Math.max(Number(useEditorStore.getState().adjustments.lumaNoiseReduction ?? 0), 18), clarity: 8, glowAmount: 20, vibrance: 8 });
+      applyPatch({
+        lumaNoiseReduction: Math.max(Number(useEditorStore.getState().adjustments.lumaNoiseReduction ?? 0), 18),
+        clarity: 8,
+        glowAmount: 20,
+        vibrance: 8,
+      });
     } else if (sceneKey === 'landscape') {
       applyPatch({ vibrance: 22, clarity: 14, dehaze: 10, contrast: 8 });
     } else if (sceneKey === 'night') {
-      applyPatch({ ...(aiProvider ? getAiDenoiseEnablePatch(aiProvider) : { lumaNoiseReduction: 30 }), shadows: 14, blacks: -8 });
-    } else {
-      applyPatch({ vibrance: 14, contrast: 8 });
+      applyPatch({
+        ...(aiProvider ? getAiDenoiseEnablePatch(aiProvider) : { lumaNoiseReduction: 30 }),
+        shadows: 14,
+        blacks: -8,
+      });
+    } else if (sceneKey === 'food') {
+      applyPatch({ vibrance: 16, saturation: 6, temperature: 6, contrast: 6, shadows: 8 });
     }
   };
+
+  // 依据标签只陈述真实数据：EXIF（ISO/焦距）或后端画面统计。
+  const basis = iso !== null ? `ISO ${iso}` : exif.focal || scene?.tags?.[0] || t('crystal.aiRecommend.tagStats');
 
   return (
     <div className="cx-ai-card">
@@ -178,21 +279,30 @@ function AiRecommendCard() {
           {sceneKey
             ? t('crystal.aiRecommend.sceneBasis', {
                 scene: t(`crystal.aiRecommend.scenes.${sceneKey}`),
-                basis: iso !== null && iso > 1600 ? `ISO ${iso}` : `${exif.focal || ''}`.trim(),
+                basis,
               })
-            : t('crystal.aiRecommend.noExif')}
+            : t('crystal.aiRecommend.noScene')}
         </div>
         <div className="cx-ai-tags">
           <span className="cx-ai-tag">AI</span>
+          {sceneKey && <span className="cx-ai-tag">{t('crystal.aiRecommend.tagStats')}</span>}
           <span className="cx-ai-tag">{t('crystal.aiRecommend.tagExif')}</span>
         </div>
       </div>
       <button className="cx-ai-apply" onClick={runAiEnhance} disabled={isEnhancing}>
-        {isEnhancing ? <Loader2 size={15} className="animate-spin inline" /> : <Sparkles size={15} className="inline -mt-0.5" />}
+        {isEnhancing ? (
+          <Loader2 size={15} className="animate-spin inline" />
+        ) : (
+          <Sparkles size={15} className="inline -mt-0.5" />
+        )}
         <span className="ml-1">{t('crystal.aiRecommend.enhance')}</span>
       </button>
       {sceneKey && (
-        <button className="cx-ai-apply" style={{ background: 'var(--cx-card2)', color: 'var(--cx-ink)', border: '1px solid var(--cx-border)' }} onClick={applySceneRecipe}>
+        <button
+          className="cx-ai-apply"
+          style={{ background: 'var(--cx-card2)', color: 'var(--cx-ink)', border: '1px solid var(--cx-border)' }}
+          onClick={applySceneRecipe}
+        >
           {t('crystal.aiRecommend.recipe')}
         </button>
       )}
@@ -247,17 +357,27 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   const sources: Array<PreviewSource> = useMemo(() => {
     if (mode === 'filter') {
       const list = selectedGroup ? BUILTIN_FILTERS.filter((f) => f.group === selectedGroup) : BUILTIN_FILTERS;
-      return list.map((f) => ({ id: `filter:${f.id}`, name: t(f.labelKey), adjustments: f.adjustments as Record<string, unknown> }));
+      return list.map((f) => ({
+        id: `filter:${f.id}`,
+        name: t(f.labelKey),
+        adjustments: f.adjustments as Record<string, unknown>,
+      }));
     }
-    const pool = selectedGroup ? (presetGroups.find((g) => g.name === selectedGroup)?.presets ?? []) : presetGroups.flatMap((g) => g.presets);
-    return pool.map((p) => ({ id: `preset:${p.id}`, name: p.name, adjustments: (p.adjustments ?? {}) as Record<string, unknown> }));
+    const pool = selectedGroup
+      ? (presetGroups.find((g) => g.name === selectedGroup)?.presets ?? [])
+      : presetGroups.flatMap((g) => g.presets);
+    return pool.map((p) => ({
+      id: `preset:${p.id}`,
+      name: p.name,
+      adjustments: (p.adjustments ?? {}) as Record<string, unknown>,
+    }));
   }, [mode, presetGroups, selectedGroup, t]);
 
   useEffect(() => {
     enqueue(sources);
   }, [sources, enqueue]);
 
-  const activeSource = activeId ? sources.find((s) => s.id === activeId) ?? null : null;
+  const activeSource = activeId ? (sources.find((s) => s.id === activeId) ?? null) : null;
 
   const handleApply = useCallback(
     (source: PreviewSource) => {
@@ -307,11 +427,18 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
 
       {mode === 'presets' && namedGroups.length > 0 && (
         <div className="cx-chip-row mt-3">
-          <button className={`cx-chip ${selectedGroup === null ? 'is-active' : ''}`} onClick={() => setSelectedGroup(null)}>
+          <button
+            className={`cx-chip ${selectedGroup === null ? 'is-active' : ''}`}
+            onClick={() => setSelectedGroup(null)}
+          >
             {t('crystal.presets.all')}
           </button>
           {namedGroups.map((g) => (
-            <button key={g.name} className={`cx-chip ${selectedGroup === g.name ? 'is-active' : ''}`} onClick={() => setSelectedGroup(g.name)}>
+            <button
+              key={g.name}
+              className={`cx-chip ${selectedGroup === g.name ? 'is-active' : ''}`}
+              onClick={() => setSelectedGroup(g.name)}
+            >
               {g.name}
             </button>
           ))}
@@ -321,11 +448,18 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
       {/* §3.2 滤镜子标签：全部/风景/人像/胶片/黑白 */}
       {mode === 'filter' && (
         <div className="cx-chip-row mt-3">
-          <button className={`cx-chip ${selectedGroup === null ? 'is-active' : ''}`} onClick={() => setSelectedGroup(null)}>
+          <button
+            className={`cx-chip ${selectedGroup === null ? 'is-active' : ''}`}
+            onClick={() => setSelectedGroup(null)}
+          >
             {t('crystal.presets.all')}
           </button>
           {FILTER_GROUPS.map((g) => (
-            <button key={g.id} className={`cx-chip ${selectedGroup === g.id ? 'is-active' : ''}`} onClick={() => setSelectedGroup(g.id)}>
+            <button
+              key={g.id}
+              className={`cx-chip ${selectedGroup === g.id ? 'is-active' : ''}`}
+              onClick={() => setSelectedGroup(g.id)}
+            >
               {t(g.labelKey)}
             </button>
           ))}
@@ -337,10 +471,19 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
           const url = previews[source.id];
           const isActive = activeId === source.id;
           return (
-            <button key={source.id} className={`cx-thumb-card ${isActive ? 'is-active' : ''}`} onClick={() => handleApply(source)}>
+            <button
+              key={source.id}
+              className={`cx-thumb-card ${isActive ? 'is-active' : ''}`}
+              onClick={() => handleApply(source)}
+            >
               <span className="cx-thumb-img flex items-center justify-center overflow-hidden">
                 {url ? (
-                  <img src={url} alt={source.name} draggable={false} className="w-full h-full object-cover rounded-[10px]" />
+                  <img
+                    src={url}
+                    alt={source.name}
+                    draggable={false}
+                    className="w-full h-full object-cover rounded-[10px]"
+                  />
                 ) : (
                   <Loader2 size={16} className="animate-spin" style={{ color: 'var(--cx-faint)' }} />
                 )}

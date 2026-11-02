@@ -418,15 +418,18 @@
       "enhance": "KI-Verbesserung",
       "failed": "KI-Verbesserung fehlgeschlagen",
       "noExif": "Keine EXIF-Hinweise — KI-Verbesserung testen",
+      "noScene": "Keine eindeutige Szene erkannt — KI-Verbesserung testen",
       "recipe": "Szenenrezept",
       "sceneBasis": "Wirkt wie {{scene}} · Grundlage {{basis}}",
       "scenes": {
+        "food": "Essen",
         "landscape": "Landschaft",
         "night": "Nacht",
         "portrait": "Porträt",
         "tele": "Tele"
       },
       "tagExif": "EXIF",
+      "tagStats": "Szenenanalyse",
       "title": "KI-Empfehlung"
     },
     "backToLibrary": "Zur Bibliothek",

@@ -458,15 +458,18 @@
       "enhance": "AI vylepšení",
       "failed": "AI vylepšení se nezdařilo",
       "noExif": "Bez stop v EXIF — zkuste AI vylepšení",
+      "noScene": "Žádná jednoznačná scéna — zkuste vylepšení AI",
       "recipe": "Recept scény",
       "sceneBasis": "Vypadá jako {{scene}} · podle {{basis}}",
       "scenes": {
+        "food": "jídlo",
         "landscape": "krajina",
         "night": "noc",
         "portrait": "portrét",
         "tele": "teleobjektiv"
       },
       "tagExif": "EXIF",
+      "tagStats": "Analýza scény",
       "title": "Doporučení AI"
     },
     "backToLibrary": "Zpět do knihovny",

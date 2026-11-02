@@ -930,3 +930,20 @@
   text-overflow: ellipsis;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
+
+/* ================= G9: AI 识别进度蒙层（busy 期间覆盖面板内容） ================= */
+.cx-busy-dim {
+  opacity: 0.45;
+  pointer-events: none;
+  filter: saturate(0.8);
+}
+.cx-busy-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--cx-page) 55%, transparent);
+  border-radius: 12px;
+}

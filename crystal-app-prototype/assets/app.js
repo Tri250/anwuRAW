@@ -9,7 +9,9 @@
     el.innerHTML = msg;
     el.classList.add('show');
     clearTimeout(el._t);
-    el._t = setTimeout(function () { el.classList.remove('show'); }, 2200);
+    el._t = setTimeout(function () {
+      el.classList.remove('show');
+    }, 2200);
   }
 
   /* ================= 手机 B：编辑界面 ================= */
@@ -78,7 +80,9 @@
   catnav.addEventListener('click', function (e) {
     var cat = e.target.closest('.cat');
     if (!cat) return;
-    catnav.querySelectorAll('.cat').forEach(function (c) { c.classList.remove('on'); });
+    catnav.querySelectorAll('.cat').forEach(function (c) {
+      c.classList.remove('on');
+    });
     cat.classList.add('on');
     document.querySelectorAll('#screen-edit .panel-page').forEach(function (p) {
       p.classList.toggle('show', p.dataset.page === cat.dataset.panel);
@@ -89,7 +93,9 @@
   document.querySelectorAll('.subtabs').forEach(function (group) {
     group.addEventListener('click', function (e) {
       if (e.target.tagName !== 'SPAN') return;
-      group.querySelectorAll('span').forEach(function (s) { s.classList.remove('on'); });
+      group.querySelectorAll('span').forEach(function (s) {
+        s.classList.remove('on');
+      });
       e.target.classList.add('on');
     });
   });
@@ -100,7 +106,9 @@
       var tool = e.target.closest('.tool');
       if (!tool) return;
       var wasOn = tool.classList.contains('on');
-      grid.querySelectorAll('.tool').forEach(function (t) { t.classList.remove('on'); });
+      grid.querySelectorAll('.tool').forEach(function (t) {
+        t.classList.remove('on');
+      });
       if (!wasOn) tool.classList.add('on');
     });
   });
@@ -149,7 +157,8 @@
     applyFilter(DEFAULT_FILTER);
     pushHistory(DEFAULT_FILTER);
     var intensity = document.getElementById('intensity');
-    intensity.value = 80; intensity.style.setProperty('--p', '80%');
+    intensity.value = 80;
+    intensity.style.setProperty('--p', '80%');
     document.getElementById('intensity-val').textContent = '80';
     toast(toastEdit, '<span class="em">AI 推荐</span> 已应用：日落金色 · 去雾 +12 · 饱和 +8（写入 50 步历史栈）');
   });
@@ -167,7 +176,12 @@
     holdBadge.classList.remove('show');
     applyFilter(hist[histIdx] === undefined ? DEFAULT_FILTER : hist[histIdx]);
   }
-  [['act-orig', '原图'], ['act-cmp', '对比'], ['ovl-orig', '原图'], ['ovl-cmp', '对比']].forEach(function (pair) {
+  [
+    ['act-orig', '原图'],
+    ['act-cmp', '对比'],
+    ['ovl-orig', '原图'],
+    ['ovl-cmp', '对比'],
+  ].forEach(function (pair) {
     var el = document.getElementById(pair[0]);
     if (!el) return;
     el.addEventListener('pointerdown', holdStart(pair[1]));
@@ -196,7 +210,9 @@
     toast(toastEdit, '<span class="em2">进入水印与导出域</span> · 强调色 金 → 青绿（data-flow 切换）');
     var phoneC = document.getElementById('phone-export');
     phoneC.classList.add('flash');
-    setTimeout(function () { phoneC.classList.remove('flash'); }, 1600);
+    setTimeout(function () {
+      phoneC.classList.remove('flash');
+    }, 1600);
     phoneC.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }
   document.querySelectorAll('[data-goto-export]').forEach(function (el) {
@@ -221,13 +237,15 @@
     film: 'sepia(0.32) contrast(1.06)',
     landscape: 'saturate(1.22) contrast(1.04)',
     street: 'contrast(1.14) saturate(0.96)',
-    bw: 'grayscale(1) contrast(1.08)'
+    bw: 'grayscale(1) contrast(1.08)',
   };
   var exportPhoto = document.getElementById('export-photo');
   document.getElementById('tpl-strip').addEventListener('click', function (e) {
     var tpl = e.target.closest('.tpl');
     if (!tpl) return;
-    document.querySelectorAll('.tpl').forEach(function (t) { t.classList.remove('on'); });
+    document.querySelectorAll('.tpl').forEach(function (t) {
+      t.classList.remove('on');
+    });
     tpl.classList.add('on');
     var f = tplFilters[tpl.dataset.tpl] || '';
     exportPhoto.style.filter = f;
@@ -252,13 +270,19 @@
   /* 导出格式分段 */
   document.getElementById('seg-format').addEventListener('click', function (e) {
     if (e.target.tagName !== 'SPAN') return;
-    this.querySelectorAll('span').forEach(function (s) { s.classList.remove('on'); });
+    this.querySelectorAll('span').forEach(function (s) {
+      s.classList.remove('on');
+    });
     e.target.classList.add('on');
     toast(toastExport, '导出格式：<span class="em2">' + e.target.textContent + '</span>（GPS 元数据默认剥离）');
   });
 
   /* 画质三档循环 */
-  var qualities = [['高质量', '100%'], ['标准', '90%'], ['兼容', '75%']];
+  var qualities = [
+    ['高质量', '100%'],
+    ['标准', '90%'],
+    ['兼容', '75%'],
+  ];
   var qIdx = 0;
   document.getElementById('quality-pick').addEventListener('click', function () {
     qIdx = (qIdx + 1) % qualities.length;
@@ -273,6 +297,9 @@
 
   /* 导出保存 */
   document.getElementById('w-save').addEventListener('click', function () {
-    toast(toastExport, '<span class="em2">已导出</span> IMG_20261102_150842.jpg · EXIF 信息栏已合成（golden 基线通过）');
+    toast(
+      toastExport,
+      '<span class="em2">已导出</span> IMG_20261102_150842.jpg · EXIF 信息栏已合成（golden 基线通过）',
+    );
   });
 })();

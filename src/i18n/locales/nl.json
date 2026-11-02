@@ -418,15 +418,18 @@
       "enhance": "AI-verbetering",
       "failed": "AI-verbetering mislukt",
       "noExif": "Geen EXIF-aanwijzingen — probeer AI-verbetering",
+      "noScene": "Geen duidelijke scène — probeer AI-verbetering",
       "recipe": "Scènerecept",
       "sceneBasis": "Lijkt op {{scene}} · op basis van {{basis}}",
       "scenes": {
+        "food": "eten",
         "landscape": "landschap",
         "night": "nacht",
         "portrait": "portret",
         "tele": "teleobjectief"
       },
       "tagExif": "EXIF",
+      "tagStats": "Scèneanalyse",
       "title": "AI-advies"
     },
     "backToLibrary": "Terug naar bibliotheek",

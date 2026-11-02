@@ -74,6 +74,7 @@ mod platform_features;
 mod preset_converter;
 mod raw_processing;
 mod relight;
+mod scene_classify;
 mod storage;
 mod tagging;
 mod tagging_utils;
@@ -1495,6 +1496,27 @@ async fn generate_preset_preview(
     .map_err(|e| e.to_string())?
 }
 
+/// Crystal 移动端（W3）：对当前已加载原图做场景识别（真实像素统计，
+/// 见 scene_classify 模块文档）。识别失败时返回错误，前端静默降级、
+/// 不阻塞编辑——原方案「AI 失败不阻塞」边界。
+#[tauri::command]
+async fn scene_classify(
+    app_handle: tauri::AppHandle,
+) -> Result<scene_classify::SceneClassification, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app_handle.state::<AppState>();
+        let loaded_image = state
+            .original_image
+            .lock()
+            .unwrap()
+            .clone()
+            .ok_or("No original image loaded")?;
+        Ok(scene_classify::classify(&loaded_image.image))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 async fn fetch_community_presets() -> Result<Vec<CommunityPreset>, String> {
     let client = crate::http_tls::base_builder()
@@ -2825,6 +2847,7 @@ pub fn run() {
             subscribe_analytics,
             generate_preview_for_path,
             generate_preset_preview,
+            scene_classify,
             generate_uncropped_preview,
             get_log_file_path,
             frontend_log,

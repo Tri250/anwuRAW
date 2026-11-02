@@ -1,4 +1,13 @@
-import { type PointerEvent as ReactPointerEvent, useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
+import {
+  type PointerEvent as ReactPointerEvent,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+  lazy,
+  Suspense,
+} from 'react';
 import { Loader2 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
@@ -973,30 +982,30 @@ function App() {
                         }
                       >
                         <EditorView
-                      transformWrapperRef={transformWrapperRef}
-                      isResizing={isResizing}
-                      layoutMode={layoutMode}
-                      isAndroid={isAndroid}
-                      compactEditorPanelHeight={compactEditorPanelHeight}
-                      compactEditorPanelCollapsedHeight={compactEditorPanelCollapsedHeight}
-                      thumbnailAspectRatio={thumbnailAspectRatio}
-                      sortedImageList={sortedImageList}
-                      createResizeHandler={createResizeHandler}
-                      createResizeResetHandler={createResizeResetHandler}
-                      handleBackToLibrary={handleBackToLibrary}
-                      handleEditorContextMenu={handleEditorContextMenu}
-                      handleThumbnailContextMenu={handleThumbnailContextMenu}
-                      handleMainLibraryContextMenu={handleMainLibraryContextMenu}
-                      handleImageClick={handleImageClick}
-                      handleClearSelection={handleClearSelection}
-                      handleCopyAdjustments={handleCopyAdjustments}
-                      handlePasteAdjustments={handlePasteAdjustments}
-                      handleRate={handleRate}
-                      handleZoomChange={handleZoomChange}
-                      handlePanelSelect={handlePanelSelect}
-                      requestThumbnails={requestThumbnails}
-                      renderAppPanel={renderAppPanel}
-                    />
+                          transformWrapperRef={transformWrapperRef}
+                          isResizing={isResizing}
+                          layoutMode={layoutMode}
+                          isAndroid={isAndroid}
+                          compactEditorPanelHeight={compactEditorPanelHeight}
+                          compactEditorPanelCollapsedHeight={compactEditorPanelCollapsedHeight}
+                          thumbnailAspectRatio={thumbnailAspectRatio}
+                          sortedImageList={sortedImageList}
+                          createResizeHandler={createResizeHandler}
+                          createResizeResetHandler={createResizeResetHandler}
+                          handleBackToLibrary={handleBackToLibrary}
+                          handleEditorContextMenu={handleEditorContextMenu}
+                          handleThumbnailContextMenu={handleThumbnailContextMenu}
+                          handleMainLibraryContextMenu={handleMainLibraryContextMenu}
+                          handleImageClick={handleImageClick}
+                          handleClearSelection={handleClearSelection}
+                          handleCopyAdjustments={handleCopyAdjustments}
+                          handlePasteAdjustments={handlePasteAdjustments}
+                          handleRate={handleRate}
+                          handleZoomChange={handleZoomChange}
+                          handlePanelSelect={handlePanelSelect}
+                          requestThumbnails={requestThumbnails}
+                          renderAppPanel={renderAppPanel}
+                        />
                       </Suspense>
                     ))}
                 </div>
