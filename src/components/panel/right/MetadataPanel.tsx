@@ -677,7 +677,7 @@ export default function MetadataPanel() {
                 <button
                   onClick={() => setIsAuthorExpanded(!isAuthorExpanded)}
                   aria-expanded={isAuthorExpanded}
-                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors duration-200 cursor-pointer"
                 >
                   <Text
                     as="span"
@@ -732,7 +732,7 @@ export default function MetadataPanel() {
                 <button
                   onClick={() => setIsOrganizationExpanded(!isOrganizationExpanded)}
                   aria-expanded={isOrganizationExpanded}
-                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors duration-200 cursor-pointer"
                 >
                   <Text
                     as="span"
@@ -1001,7 +1001,7 @@ export default function MetadataPanel() {
                 <button
                   onClick={() => setIsIptcExpanded(!isIptcExpanded)}
                   aria-expanded={isIptcExpanded}
-                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between p-3 hover:bg-card-active transition-colors duration-200 cursor-pointer"
                 >
                   <Text
                     as="span"
