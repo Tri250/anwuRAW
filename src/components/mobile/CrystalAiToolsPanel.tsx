@@ -76,7 +76,8 @@ export default function CrystalAiToolsPanel() {
       const container = ensureContainer(Mask.AiSky);
       await handleGenerateAiSkyMask(container.subMasks[0].id);
       if (maskReady(Mask.AiSky)) {
-        setMaskAdjustments(container.id, { clarity: 10, dehaze: 8, saturation: 5 }); // v=50 默认
+        // 仅首次识别后写入默认强度；重复执行不覆盖用户已调值。
+        if (!Number(container.adjustments.clarity ?? 0)) setMaskAdjustments(container.id, { clarity: 10, dehaze: 8, saturation: 5 });
       } else {
         toast.error(t('crystal.ai.maskFailed'));
       }
@@ -96,7 +97,8 @@ export default function CrystalAiToolsPanel() {
       const container = ensureContainer(Mask.AiForeground);
       await handleGenerateAiForegroundMask(container.subMasks[0].id);
       if (maskReady(Mask.AiForeground)) {
-        setMaskAdjustments(container.id, { clarity: 10 }); // v=50 默认
+        // 仅首次识别后写入默认强度；重复执行不覆盖用户已调值。
+        if (!Number(container.adjustments.clarity ?? 0)) setMaskAdjustments(container.id, { clarity: 10 });
       } else {
         toast.error(t('crystal.ai.maskFailed'));
       }

@@ -94,7 +94,8 @@ function PortraitPanel() {
       const container = ensureContainer(Mask.AiFace, { parts: ['iris', 'eyeWhites'] });
       await handleGenerateAiFaceMask(container.subMasks[0].id, ['iris', 'eyeWhites']);
       if (maskReady(Mask.AiFace)) {
-        setMaskAdjustments(container.id, { clarity: 20, exposure: 6 }); // v=50 默认
+        // 仅首次识别后写入默认强度；重复执行不覆盖用户已调值。
+        if (!Number(container.adjustments.clarity ?? 0)) setMaskAdjustments(container.id, { clarity: 20, exposure: 6 });
       } else {
         toast.error(t('crystal.ai.maskFailed'));
       }
