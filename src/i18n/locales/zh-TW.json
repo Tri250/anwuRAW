@@ -829,37 +829,51 @@
       "clickToEdit": "點選編輯",
       "copied": "已複製",
       "copy": "複製",
+      "copyFailed": "複製失敗",
       "emptyClickToAdd": "空（點選新增）",
       "extendedExif": {
         "title": "擴充 EXIF"
       },
       "fields": {
         "author": "作者",
+        "caption": "說明",
+        "city": "城市",
         "comments": "備註",
         "copyright": "版權",
-        "title": "標題"
+        "copyrightNotice": "版權聲明",
+        "country": "國家",
+        "credit": "署名資訊",
+        "headline": "標題",
+        "instructions": "處理指示",
+        "jobTitle": "創作者職務",
+        "provinceState": "省/州",
+        "source": "來源",
+        "title": "標題",
+        "transmissionReference": "傳輸參考",
+        "usageTerms": "使用條款"
       },
       "fileInfo": {
         "dimensions": "{{width}} × {{height}} 畫素 · {{megapixels}} MP",
         "dimensionsNoMp": "{{width}} × {{height}} 畫素",
         "emptyDimensions": "- × - 畫素",
+        "multiSelected": "已選取 {{count}} 張圖片",
         "title": "檔案資訊",
         "virtualCopy": "虛擬副本"
       },
       "gps": {
         "altitude": "海拔",
         "clickToOpenTooltip": "點選在新標籤頁中開啟地圖",
-        "googleMaps": "Open in Google Maps",
-        "invalidCoordinates": "Invalid coordinates",
+        "googleMaps": "在 Google 地圖中開啟",
+        "invalidCoordinates": "座標無效",
         "latitude": "緯度",
-        "location": "Location",
+        "location": "位置",
         "longitude": "經度",
-        "noData": "No GPS data. Enter coordinates below to add a location.",
-        "remove": "Remove GPS",
+        "noData": "沒有 GPS 資料。請在下方輸入座標以新增位置。",
+        "remove": "移除 GPS",
         "title": "GPS 位置"
       },
       "iptc": {
-        "subtitle": "Descriptive and rights metadata embedded on export",
+        "subtitle": "匯出時嵌入的描述與版權中繼資料",
         "title": "IPTC"
       },
       "organization": {

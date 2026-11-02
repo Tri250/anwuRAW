@@ -32,7 +32,7 @@ export default function FlagToggles({
         return (
           <button
             key={option}
-            className="focus:outline-hidden transition-transform active:scale-95 hover:scale-110 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="focus:outline-hidden transition-transform active:scale-95 hover:scale-110 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
             disabled={disabled}
             onClick={() => onToggle(option)}
             data-tooltip={t(FLAG_TOOLTIP_KEYS[option])}

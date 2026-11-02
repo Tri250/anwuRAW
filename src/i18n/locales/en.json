@@ -841,6 +841,7 @@
       "clickToEdit": "Click to edit",
       "copied": "Copied",
       "copy": "Copy",
+      "copyFailed": "Copy failed",
       "emptyClickToAdd": "Empty (Click to add)",
       "extendedExif": {
         "title": "Extended EXIF"
@@ -867,6 +868,7 @@
         "dimensions": "{{width}} × {{height}} px • {{megapixels}} MP",
         "dimensionsNoMp": "{{width}} × {{height}} px",
         "emptyDimensions": "- × - px",
+        "multiSelected": "{{count}} images selected",
         "title": "File Information",
         "virtualCopy": "Virtual Copy"
       },

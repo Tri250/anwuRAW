@@ -116,6 +116,7 @@ function MetadataItem({ label, value }: MetaDataItemProps) {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy', err);
+      toast.error(t('editor.metadata.copyFailed'));
     }
   };
 
@@ -224,7 +225,11 @@ function EditableMetadataItem({ label, value, onSave }: EditableMetadataItemProp
             className="text-xs px-2 py-0.5 min-h-[24px] flex items-center justify-end rounded-sm cursor-text border transition-colors text-right truncate w-full text-text-primary bg-bg-secondary/40 border-surface/50 hover:bg-bg-secondary/80 hover:border-text-tertiary/40"
             data-tooltip={value ? t('editor.metadata.clickToEdit') : t('editor.metadata.emptyClickToAdd')}
           >
-            {value}
+            {value ? (
+              value
+            ) : (
+              <span className="italic text-text-tertiary">{t('editor.metadata.emptyClickToAdd')}</span>
+            )}
           </div>
         )}
       </div>
@@ -537,6 +542,14 @@ export default function MetadataPanel() {
                     {fileName || '-'}
                   </Text>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {multiSelectedPaths?.length > 1 && (
+                      <div
+                        className="bg-accent/90 backdrop-blur-md text-button-text font-bold text-[10px] rounded-md px-2 py-1 tracking-wider uppercase shadow-sm border border-surface/50"
+                        data-tooltip={t('editor.metadata.fileInfo.multiSelected', { count: multiSelectedPaths.length })}
+                      >
+                        {multiSelectedPaths.length}
+                      </div>
+                    )}
                     {isVirtualCopy && (
                       <div
                         className="bg-bg-primary/80 backdrop-blur-md text-text-secondary font-bold text-[10px] rounded-md px-2 py-1 tracking-wider uppercase shadow-sm border border-surface/50"
@@ -723,7 +736,7 @@ export default function MetadataPanel() {
                               <button
                                 key={star}
                                 onClick={() => handleRate(star, targetPaths)}
-                                className="focus:outline-hidden transition-transform active:scale-95 hover:scale-110"
+                                className="focus:outline-hidden transition-transform active:scale-95 hover:scale-110 cursor-pointer"
                               >
                                 <Star
                                   size={20}
@@ -758,7 +771,7 @@ export default function MetadataPanel() {
                             <button
                               onClick={() => handleSetColorLabel(null, targetPaths)}
                               className={clsx(
-                                'w-5 h-5 rounded-full flex items-center justify-center transition-all hover:scale-110',
+                                'w-5 h-5 rounded-full flex items-center justify-center transition-all hover:scale-110 cursor-pointer',
                                 currentColor === null
                                   ? 'ring-2 ring-text-secondary ring-offset-1 ring-offset-bg-primary'
                                   : 'opacity-50 hover:opacity-100 hover:ring-2 hover:ring-text-secondary/20',
@@ -772,7 +785,7 @@ export default function MetadataPanel() {
                                 key={color.name}
                                 onClick={() => handleSetColorLabel(color.name, targetPaths)}
                                 className={clsx(
-                                  'w-5 h-5 rounded-full transition-all hover:scale-110',
+                                  'w-5 h-5 rounded-full transition-all hover:scale-110 cursor-pointer',
                                   currentColor === color.name
                                     ? 'ring-2 ring-white ring-offset-1 ring-offset-bg-primary'
                                     : 'hover:ring-2 hover:ring-white/20',
@@ -845,7 +858,7 @@ export default function MetadataPanel() {
                             <button
                               onClick={() => handleAddTag(tagInputValue)}
                               disabled={!tagInputValue.trim()}
-                              className="text-text-secondary hover:text-accent disabled:opacity-30 transition-colors"
+                              className="text-text-secondary hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                             >
                               <Plus size={14} />
                             </button>
@@ -856,7 +869,7 @@ export default function MetadataPanel() {
                                 <button
                                   key={shortcut}
                                   onClick={() => handleAddTag(shortcut)}
-                                  className="text-xs font-medium bg-bg-secondary hover:bg-card-active text-text-secondary px-1.5 py-0.5 rounded-sm border border-transparent hover:border-border-color transition-all"
+                                  className="text-xs font-medium bg-bg-secondary hover:bg-card-active text-text-secondary px-1.5 py-0.5 rounded-sm border border-transparent hover:border-border-color transition-all cursor-pointer"
                                 >
                                   {shortcut}
                                 </button>
@@ -913,7 +926,7 @@ export default function MetadataPanel() {
                       </a>
                       <button
                         onClick={handleRemoveGps}
-                        className="text-xs font-medium text-text-secondary hover:text-red-400 py-1.5 px-2 rounded-md hover:bg-card-active transition-colors"
+                        className="text-xs font-medium text-text-secondary hover:text-red-400 py-1.5 px-2 rounded-md hover:bg-card-active transition-colors cursor-pointer"
                         data-tooltip={t('editor.metadata.gps.remove')}
                       >
                         {t('editor.metadata.gps.remove')}
