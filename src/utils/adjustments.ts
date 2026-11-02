@@ -1184,6 +1184,122 @@ export const getAdjustmentToolOrder = (section: string, toolOrder?: Record<strin
   reconcileOrder(getAdjustmentSectionToolIds(section), toolOrder?.[section]);
 
 // ---------------------------------------------------------------------------
+// Adjustment key → owning tool(s)
+// ---------------------------------------------------------------------------
+
+/**
+ * Maps each tool-gated adjustment key to the tool(s) that must be active for
+ * the value to reach the GPU. Mirrors the is_tool_active/get_val gating in
+ * src-tauri/src/image_processing.rs (get_global_adjustments_from_json).
+ * Keys the backend consumes unconditionally (geometry, toneMapper,
+ * showClipping, noiseIso, masks, …) are intentionally absent.
+ */
+export const ADJUSTMENT_TOOL_OWNERS: Record<string, string[]> = {
+  // basic
+  [BasicAdjustment.Exposure]: ['basic'],
+  [BasicAdjustment.Brightness]: ['basic'],
+  [BasicAdjustment.Contrast]: ['basic'],
+  [BasicAdjustment.Highlights]: ['basic'],
+  [BasicAdjustment.Shadows]: ['basic'],
+  [BasicAdjustment.Whites]: ['basic'],
+  [BasicAdjustment.Blacks]: ['basic'],
+  curves: ['curves'],
+  pointCurves: ['curves'],
+  parametricCurve: ['curves'],
+  curveMode: ['curves'],
+  // color
+  [ColorAdjustment.Temperature]: ['whiteBalance'],
+  [ColorAdjustment.Tint]: ['whiteBalance'],
+  [ColorAdjustment.WhiteBalance]: ['whiteBalance'],
+  [ColorAdjustment.Saturation]: ['colorPresence'],
+  [ColorAdjustment.Vibrance]: ['colorPresence'],
+  [ColorAdjustment.Hue]: ['hue'],
+  [ColorAdjustment.ColorGrading]: ['colorGrading'],
+  [ColorAdjustment.Hsl]: ['colorMixer'],
+  colorCalibration: ['colorCalibration'],
+  cameraProfile: ['colorCalibration', 'colorPresence', 'colorMixer'],
+  // details
+  [DetailsAdjustment.Clarity]: ['presence'],
+  [DetailsAdjustment.Dehaze]: ['presence'],
+  [DetailsAdjustment.Structure]: ['presence'],
+  [DetailsAdjustment.Texture]: ['presence'],
+  [DetailsAdjustment.Centré]: ['presence'],
+  [DetailsAdjustment.CentréX]: ['presence'],
+  [DetailsAdjustment.CentréY]: ['presence'],
+  [DetailsAdjustment.Sharpness]: ['sharpening'],
+  [DetailsAdjustment.SharpnessThreshold]: ['sharpening'],
+  [DetailsAdjustment.SharpenRadius]: ['sharpening'],
+  [DetailsAdjustment.LumaNoiseReduction]: ['noiseReduction'],
+  [DetailsAdjustment.ColorNoiseReduction]: ['noiseReduction'],
+  [DetailsAdjustment.ColorNrDetail]: ['noiseReduction'],
+  [DetailsAdjustment.ColorNrSmoothness]: ['noiseReduction'],
+  [DetailsAdjustment.AiDenoiseEnabled]: ['noiseReduction'],
+  [DetailsAdjustment.AiDenoiseMethod]: ['noiseReduction'],
+  [DetailsAdjustment.AiDenoiseAmount]: ['noiseReduction'],
+  [DetailsAdjustment.AiDenoiseDetail]: ['noiseReduction'],
+  [DetailsAdjustment.ChromaticAberrationRedCyan]: ['chromaticAberration'],
+  [DetailsAdjustment.ChromaticAberrationBlueYellow]: ['chromaticAberration'],
+  [DetailsAdjustment.NegativeConversionEnabled]: ['negativeConversion'],
+  [DetailsAdjustment.NegativeRedWeight]: ['negativeConversion'],
+  [DetailsAdjustment.NegativeGreenWeight]: ['negativeConversion'],
+  [DetailsAdjustment.NegativeBlueWeight]: ['negativeConversion'],
+  [DetailsAdjustment.NegativeExposure]: ['negativeConversion'],
+  [DetailsAdjustment.NegativeContrast]: ['negativeConversion'],
+  // effects
+  [Effect.VignetteAmount]: ['vignette'],
+  [Effect.VignetteMidpoint]: ['vignette'],
+  [Effect.VignetteRoundness]: ['vignette'],
+  [Effect.VignetteFeather]: ['vignette'],
+  [Effect.VignetteCenterX]: ['vignette'],
+  [Effect.VignetteCenterY]: ['vignette'],
+  [Effect.GrainAmount]: ['grain'],
+  [Effect.GrainSize]: ['grain'],
+  [Effect.GrainRoughness]: ['grain'],
+  [CreativeAdjustment.GlowAmount]: ['creative'],
+  [CreativeAdjustment.HalationAmount]: ['creative'],
+  [CreativeAdjustment.FlareAmount]: ['creative'],
+  [Effect.LutIntensity]: ['lut'],
+  [Effect.LutName]: ['lut'],
+  [Effect.LutPath]: ['lut'],
+  [Effect.LutSize]: ['lut'],
+  [Effect.LutData]: ['lut'],
+  [Effect.LutIsSceneReferred]: ['lut'],
+  [Effect.LensBlurEnabled]: ['lensBlur'],
+  [Effect.LensBlurAmount]: ['lensBlur'],
+  [Effect.lensBlurDiffusion]: ['lensBlur'],
+  [Effect.LensBlurShape]: ['lensBlur'],
+  [Effect.LensBlurMinDepth]: ['lensBlur'],
+  [Effect.LensBlurMaxDepth]: ['lensBlur'],
+  [Effect.LensBlurMinFade]: ['lensBlur'],
+  [Effect.LensBlurMaxFade]: ['lensBlur'],
+  [Effect.RelightEnabled]: ['relight'],
+  [Effect.RelightLights]: ['relight'],
+  [Effect.RelightAmbient]: ['relight'],
+  [Effect.RelightSoftness]: ['relight'],
+  [Effect.RelightShine]: ['relight'],
+  [Effect.RelightShadows]: ['relight'],
+  [Effect.RelightShadowSoftness]: ['relight'],
+  [Effect.FogEnabled]: ['fog'],
+  [Effect.FogAmount]: ['fog'],
+  [Effect.FogStart]: ['fog'],
+  [Effect.FogDensity]: ['fog'],
+  [Effect.FogHeight]: ['fog'],
+  [Effect.FogVariation]: ['fog'],
+  [Effect.FogGlow]: ['fog'],
+  [Effect.FogTemperature]: ['fog'],
+  [Effect.FogTint]: ['fog'],
+};
+
+/** Returns the tool ids that must be active for any of the given keys to take effect. */
+export const getToolOwnersForKeys = (keys: Array<string>): Array<string> => {
+  const tools = new Set<string>();
+  for (const key of keys) {
+    for (const tool of ADJUSTMENT_TOOL_OWNERS[key] ?? []) tools.add(tool);
+  }
+  return [...tools];
+};
+
+// ---------------------------------------------------------------------------
 // Preset strength (0–200%)
 // ---------------------------------------------------------------------------
 

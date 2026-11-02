@@ -18,6 +18,7 @@ import {
   PasteMode,
   LensAdjustment,
   getActiveTools,
+  getToolOwnersForKeys,
   mergeActiveTools,
   normalizeLoadedAdjustments,
   setToolActive,
@@ -458,6 +459,20 @@ export function useEditorActions() {
       if (Object.keys(adjustmentsToApply).length === 0) {
         setProcess({ isPasted: true });
         return;
+      }
+
+      // 粘贴值在 GPU 端受 owning tool 门控（is_tool_active）：为非默认值键显式
+      // 启用对应工具，避免目标图工具被关闭时粘贴值被静默吞掉。后端
+      // apply_adjustments_to_paths 会将 activeTools 逐工具合并进已有状态。
+      const toolsToEnable = getToolOwnersForKeys(
+        Object.keys(adjustmentsToApply).filter(
+          (key) =>
+            JSON.stringify(adjustmentsToApply[key as keyof Adjustments]) !==
+            JSON.stringify(INITIAL_ADJUSTMENTS[key as keyof Adjustments]),
+        ),
+      );
+      if (toolsToEnable.length > 0) {
+        adjustmentsToApply.activeTools = Object.fromEntries(toolsToEnable.map((id) => [id, true]));
       }
 
       const pathsToUpdate =

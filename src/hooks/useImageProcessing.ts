@@ -6,7 +6,7 @@ import { useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useLibraryStore } from '../store/useLibraryStore';
-import { Adjustments, COPYABLE_ADJUSTMENT_KEYS } from '../utils/adjustments';
+import { Adjustments, COPYABLE_ADJUSTMENT_KEYS, getToolOwnersForKeys } from '../utils/adjustments';
 import { Invokes, Panel } from '../components/ui/AppProperties';
 import { debouncedSave, getOriginalAdjustments } from './useEditorActions';
 import { globalImageCache } from '../utils/ImageLRUCache';
@@ -527,8 +527,14 @@ export function useImageProcessing(
               }
             }
             if (Object.keys(delta).length > 0) {
+              // 同步值同样受 owning tool 门控：为变化键启用对应工具，
+              // 避免多选图中工具被关闭时同步值被后端静默吞掉。
+              const toolsToEnable = getToolOwnersForKeys(Object.keys(delta));
+              const syncPatch: Partial<Adjustments> = toolsToEnable.length
+                ? { ...delta, activeTools: Object.fromEntries(toolsToEnable.map((id) => [id, true])) }
+                : delta;
               otherPaths.forEach((p) => globalImageCache.delete(p));
-              invoke(Invokes.ApplyAdjustmentsToPaths, { paths: otherPaths, adjustments: delta }).catch((err) => {
+              invoke(Invokes.ApplyAdjustmentsToPaths, { paths: otherPaths, adjustments: syncPatch }).catch((err) => {
                 console.error('Failed to apply adjustments to multi-selection:', err);
               });
             }

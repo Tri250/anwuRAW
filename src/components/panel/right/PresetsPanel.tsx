@@ -50,6 +50,8 @@ import {
   INITIAL_ADJUSTMENTS,
   ADJUSTMENT_GROUPS,
   applyStrength,
+  getActiveTools,
+  getToolOwnersForKeys,
   MaskContainer,
 } from '../../../utils/adjustments';
 import { hasAiSubMasks, mergeAiMaskResults, stripAiMaskResults } from '../../../utils/maskUtils';
@@ -854,9 +856,29 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
       resolvePresetAiMasks(presetMasks);
     }
 
+    // 预设只携带调整值（不含 activeTools）：为非默认值键启用 owning tools，
+    // 防止用户已关闭的工具在 GPU 端把预设效果静默吞掉（与 Color.tsx 中
+    // cameraProfile 主动启用 owning tools 的范式一致）。
+    const toolsToEnable = getToolOwnersForKeys(
+      Object.keys(preset.adjustments).filter(
+        (key) =>
+          key !== 'masks' &&
+          JSON.stringify((preset.adjustments as Record<string, unknown>)[key]) !==
+            JSON.stringify(INITIAL_ADJUSTMENTS[key as keyof Adjustments]),
+      ),
+    );
+
     setAdjustments((prevAdjustments: Adjustments) => ({
       ...prevAdjustments,
       ...preset.adjustments,
+      ...(toolsToEnable.length
+        ? {
+            activeTools: {
+              ...getActiveTools(prevAdjustments),
+              ...Object.fromEntries(toolsToEnable.map((id) => [id, true])),
+            },
+          }
+        : {}),
       ...(hasAiMasks ? { masks: stripAiMaskResults(presetMasks) } : {}),
     }));
   };
@@ -885,9 +907,28 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
         }
       }
 
+      // 强度混合值同样需要启用 owning tools（强度 0 时全部回落默认值，
+      // 过滤结果为空，不会强开任何工具）。
+      const toolsToEnable = getToolOwnersForKeys(
+        Object.keys(mixed).filter(
+          (key) =>
+            key !== 'masks' &&
+            JSON.stringify((mixed as Record<string, unknown>)[key]) !==
+              JSON.stringify(INITIAL_ADJUSTMENTS[key as keyof Adjustments]),
+        ),
+      );
+
       setAdjustments((prev: Adjustments) => ({
         ...prev,
         ...mixed,
+        ...(toolsToEnable.length
+          ? {
+              activeTools: {
+                ...getActiveTools(prev),
+                ...Object.fromEntries(toolsToEnable.map((id) => [id, true])),
+              },
+            }
+          : {}),
       }));
     },
     [setAdjustments, resolvePresetAiMasks],
