@@ -1358,13 +1358,20 @@ fn apply_export_geometry_and_watermark(
     export_settings: &ExportSettings,
     source_path: Option<&str>,
 ) -> Result<(DynamicImage, ExportGeometry), String> {
+    // 导出闭环修复：文字水印先于几何合成绘制，锚点基准 = 照片本身，与前端
+    // 预览叠加（照片显示区）一致。否则「白色相框 + 白色签名」会把签名画进
+    // 相框区域（白字白底不可见）。几何步骤仅做等比 resize 与 pad/border 合成、
+    // 不裁剪，百分比字号与短边 2.5% 间距在缩放后语义不变。
+    // 图片水印与 EXIF 信息栏仍绘制在合成后画布上（保持既有行为）。
+    let mut image = image;
+    if let Some(text_watermark_settings) = &export_settings.text_watermark {
+        apply_text_watermark(&mut image, text_watermark_settings)?;
+    }
+
     let (mut image, geometry) = apply_export_geometry(image, export_settings)?;
 
     if let Some(watermark_settings) = &export_settings.watermark {
         apply_watermark(&mut image, watermark_settings)?;
-    }
-    if let Some(text_watermark_settings) = &export_settings.text_watermark {
-        apply_text_watermark(&mut image, text_watermark_settings)?;
     }
     // Crystal 移动端白底 EXIF 信息栏：仅主图导出（source_path = Some），
     // 蒙版导出走 None 路径跳过。

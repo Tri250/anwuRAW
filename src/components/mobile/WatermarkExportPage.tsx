@@ -143,16 +143,14 @@ export default function WatermarkExportPage({
     };
   }, [finalPreviewUrl]);
 
-  // F9: 导出成功一次性全局 toast（inline 状态条已存在；防止状态滞留重复弹）。
-  const successToastShownRef = useRef(false);
+  // F9: 导出成功全局 toast —— 仅对「非 Success → Success」的状态迁移弹一次；
+  // 重挂载时（如成功后 5 秒窗口内重进导出页，store 仍滞留 Success）不会误判为新成功。
+  const prevExportStatusRef = useRef<Status | null>(null);
   useEffect(() => {
-    if (exportState.status === Status.Success) {
-      if (!successToastShownRef.current) {
-        successToastShownRef.current = true;
-        toast.success(t('crystal.export.done'));
-      }
-    } else {
-      successToastShownRef.current = false;
+    const prev = prevExportStatusRef.current;
+    prevExportStatusRef.current = exportState.status;
+    if (exportState.status === Status.Success && prev !== null && prev !== Status.Success) {
+      toast.success(t('crystal.export.done'));
     }
   }, [exportState.status, t]);
 

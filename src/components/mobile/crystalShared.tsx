@@ -203,6 +203,12 @@ export function useShowOriginalHold(showDelayMs = 0) {
   useEffect(
     () => () => {
       if (holdTimer.current !== null) clearTimeout(holdTimer.current);
+      // 卸载时若长按已生效（如多点触控切换流程导致卸载），需复位 showOriginal，
+      // 避免 store 残留 true 使预览误显原图。
+      if (holdActive.current) {
+        holdActive.current = false;
+        useEditorStore.getState().setEditor({ showOriginal: false });
+      }
     },
     [],
   );
