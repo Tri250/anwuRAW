@@ -83,7 +83,7 @@ const PresetTypeSwitch = ({ selectedType, onChange }: PresetTypeSwitchProps) => 
               onChange(option.id);
             }}
             className={clsx(
-              'relative flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+              'relative flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer',
               {
                 'text-text-primary hover:bg-surface': selectedType !== option.id,
                 'text-button-text': selectedType === option.id,
@@ -207,13 +207,13 @@ export default function ConfigurePresetModal({ isOpen, onClose, onSave, initialP
 
         <div className="flex justify-end gap-3 mt-6">
           <button
-            className="px-4 py-2 rounded-md text-text-secondary hover:bg-surface transition-colors"
+            className="px-4 py-2 rounded-md text-text-secondary hover:bg-surface transition-colors cursor-pointer"
             onClick={onClose}
           >
             {t('modals.configurePreset.cancel')}
           </button>
           <button
-            className="px-4 py-2 rounded-md bg-accent text-button-text font-semibold hover:bg-accent-hover disabled:bg-gray-500 disabled:text-white disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 rounded-md bg-accent text-button-text font-semibold hover:bg-accent-hover disabled:bg-gray-500 disabled:text-white disabled:cursor-not-allowed transition-colors cursor-pointer"
             disabled={!name.trim()}
             onClick={handleSave}
           >

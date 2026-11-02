@@ -23,6 +23,7 @@ import {
   Folder as FolderIcon,
   FolderOpen,
   FolderPlus,
+  ImageOff,
   Loader2,
   Plus,
   SortAsc,
@@ -37,6 +38,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import clsx from 'clsx';
 import ConfigurePresetModal from '../../modals/ConfigurePresetModal';
 import MasterRecipesModal from '../../modals/MasterRecipesModal';
 import CreateFolderModal from '../../modals/CreateFolderModal';
@@ -73,7 +75,7 @@ interface DraggablePresetItemProps {
   onApply(preset: any): void;
   onContextMenu(event: any, preset: any): void;
   preset: any;
-  previewUrl: string;
+  previewUrl: string | null;
   isActive?: boolean;
   intensity?: number;
   onIntensityChange?: (val: number) => void;
@@ -97,7 +99,7 @@ interface ModalState {
 interface PresetItemDisplayProps {
   isGeneratingPreviews: boolean;
   preset: Preset;
-  previewUrl: string;
+  previewUrl: string | null;
   isActive?: boolean;
   intensity?: number;
   onIntensityChange?: (val: number) => void;
@@ -206,14 +208,21 @@ function PresetItemDisplay({
   }, [supportsMasks, supportsGeometry, t]);
 
   return (
-    <div className="flex flex-col p-2 rounded-lg bg-surface cursor-grabbing">
+    <div
+      className={clsx(
+        'flex flex-col p-2 rounded-lg bg-surface hover:bg-card-active transition-colors cursor-grabbing',
+        isActive && 'ring-1 ring-primary',
+      )}
+    >
       <div className="flex items-center gap-3">
         <div
           className="w-20 h-14 bg-bg-tertiary rounded-md flex items-center justify-center shrink-0 relative overflow-hidden"
-          data-tooltip={tooltipContent}
+          data-tooltip={previewUrl === null ? t('editor.presets.status.previewFailed') : tooltipContent}
         >
           {previewUrl ? (
             <PreviewImage src={previewUrl} alt={`${preset.name} preview`} />
+          ) : previewUrl === null ? (
+            <ImageOff size={18} className="text-text-secondary" />
           ) : (
             <Loader2 size={20} className="animate-spin text-text-secondary" />
           )}
@@ -343,6 +352,12 @@ function DraggablePresetItem({
     <div
       onClick={() => onApply(preset)}
       onContextMenu={(e: any) => onContextMenu(e, { preset })}
+      onKeyDown={(e: any) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onApply(preset);
+        }
+      }}
       ref={setCombinedRef}
       style={style}
     >
@@ -397,28 +412,23 @@ function DroppableFolderItem({ folder, onContextMenu, children, onToggle, isExpa
       style={style}
     >
       <div
-        className="flex items-center gap-2 p-2 rounded-lg bg-surface cursor-pointer"
+        className="flex items-center gap-2 p-2 rounded-lg bg-surface hover:bg-bg-primary cursor-pointer transition-colors"
         onContextMenu={(e: any) => onContextMenu(e, { folder })}
       >
-        <div className="p-1 cursor-grab" ref={setDraggableNodeRef} {...listeners} {...attributes}>
+        <div
+          className="p-1 cursor-grab"
+          ref={setDraggableNodeRef}
+          {...listeners}
+          {...attributes}
+          onClick={(e: any) => {
+            e.stopPropagation();
+            onToggle(folder.id);
+          }}
+        >
           {isExpanded ? (
-            <FolderOpen
-              className="text-primary"
-              onClick={(e: any) => {
-                e.stopPropagation();
-                onToggle(folder.id);
-              }}
-              size={18}
-            />
+            <FolderOpen className="text-primary" size={18} />
           ) : (
-            <FolderIcon
-              className="text-text-secondary"
-              onClick={(e: any) => {
-                e.stopPropagation();
-                onToggle(folder.id);
-              }}
-              size={18}
-            />
+            <FolderIcon className="text-text-secondary" size={18} />
           )}
         </div>
         <Text
@@ -1312,21 +1322,21 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
           <Text variant={TextVariants.title}>{t('editor.presets.title')}</Text>
           <div className="flex items-center gap-1">
             <button
-              className="p-2 rounded-full text-accent hover:bg-surface transition-colors"
+              className="p-2 rounded-full text-accent hover:bg-surface transition-colors cursor-pointer"
               onClick={() => setIsMasterRecipesOpen(true)}
               data-tooltip={t('editor.masterRecipes.openTooltip')}
             >
               <Sparkles size={18} />
             </button>
             <button
-              className="p-2 rounded-full hover:bg-surface transition-colors"
+              className="p-2 rounded-full hover:bg-surface transition-colors cursor-pointer"
               onClick={onNavigateToCommunity}
               data-tooltip={t('editor.presets.tooltips.explore')}
             >
               <Users size={18} />
             </button>
             <button
-              className="p-2 rounded-full hover:bg-surface transition-colors"
+              className="p-2 rounded-full hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               disabled={isLoading}
               onClick={handleImportPresets}
               data-tooltip={t('editor.presets.tooltips.import')}
@@ -1334,7 +1344,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
               <FileUp size={18} />
             </button>
             <button
-              className="p-2 rounded-full hover:bg-surface transition-colors"
+              className="p-2 rounded-full hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               disabled={presets.length === 0 || isLoading}
               onClick={handleExportAllPresets}
               data-tooltip={t('editor.presets.tooltips.export')}
@@ -1342,7 +1352,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
               <FileDown size={18} />
             </button>
             <button
-              className="p-2 rounded-full hover:bg-surface transition-colors"
+              className="p-2 rounded-full hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
               disabled={isLoading}
               onClick={() => setConfigureModalState({ isOpen: true, preset: null })}
               data-tooltip={t('editor.presets.tooltips.saveNew')}
@@ -1417,7 +1427,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
                                   onApply={handleApplyPreset}
                                   onContextMenu={(e: any) => handleContextMenu(e, { preset })}
                                   preset={preset}
-                                  previewUrl={previews[preset.id] || ''}
+                                  previewUrl={previews[preset.id] ?? null}
                                   isActive={preset.id === activePresetId}
                                   intensity={preset.id === activePresetId ? presetIntensity : 100}
                                   onIntensityChange={(val) => handleIntensityChange(preset, val)}
@@ -1448,10 +1458,11 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
                         onApply={handleApplyPreset}
                         onContextMenu={(e: any) => handleContextMenu(e, item)}
                         preset={item.preset}
-                        previewUrl={(item.preset?.id ? previews[item.preset.id] : '') || ''}
+                        previewUrl={(item.preset?.id ? previews[item.preset.id] : undefined) ?? null}
                         isActive={item.preset?.id === activePresetId}
                         intensity={item.preset?.id === activePresetId ? presetIntensity : 100}
                         onIntensityChange={(val) => handleIntensityChange(item.preset as Preset, val)}
+                        onDragStateChange={handleDragStateChange}
                       />
                     </motion.div>
                   ))}
@@ -1485,7 +1496,7 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
             <PresetItemDisplay
               isGeneratingPreviews={false}
               preset={activeItem.data}
-              previewUrl={previews[activeItem.data.id] || ''}
+              previewUrl={previews[activeItem.data.id] ?? null}
             />
           ) : (
             <FolderItemDisplay folder={activeItem.data} />

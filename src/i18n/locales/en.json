@@ -929,7 +929,8 @@
       "status": {
         "empty": "No presets saved yet. Create your own, import from a file, or explore community presets.",
         "getCommunity": "Get Community Presets",
-        "loading": "Loading Presets..."
+        "loading": "Loading Presets...",
+        "previewFailed": "Preview unavailable"
       },
       "supports": {
         "cropTransform": "Crop & Transform",

@@ -114,7 +114,7 @@ export default function ExportPresetsList({
 
           <button
             onClick={() => setIsCreating(true)}
-            className="p-2 bg-surface hover:bg-card-active rounded-md text-text-primary transition-colors"
+            className="p-2 bg-surface hover:bg-card-active rounded-md text-text-primary transition-colors cursor-pointer"
             data-tooltip={t('ui.exportPresets.saveAsNewTooltip')}
           >
             <Plus size={18} />
@@ -125,7 +125,7 @@ export default function ExportPresetsList({
               <button
                 onClick={handleOverwritePreset}
                 disabled={isSaved}
-                className={`p-2 bg-surface hover:bg-card-active rounded-md transition-colors ${
+                className={`p-2 bg-surface hover:bg-card-active rounded-md transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 ${
                   isSaved ? 'text-green-500' : 'text-text-secondary'
                 }`}
                 data-tooltip={isSaved ? t('ui.exportPresets.savedTooltip') : t('ui.exportPresets.overwriteTooltip')}
@@ -134,7 +134,7 @@ export default function ExportPresetsList({
               </button>
               <button
                 onClick={handleDeletePreset}
-                className="p-2 bg-surface hover:bg-red-500/20 hover:text-red-500 rounded-md text-text-secondary transition-colors"
+                className="p-2 bg-surface hover:bg-red-500/20 hover:text-red-500 rounded-md text-text-secondary transition-colors cursor-pointer"
                 data-tooltip={t('ui.exportPresets.deleteTooltip')}
               >
                 <Trash2 size={18} />
@@ -156,13 +156,13 @@ export default function ExportPresetsList({
           <button
             onClick={handleSavePreset}
             disabled={!newPresetName.trim()}
-            className="p-2 bg-accent text-button-text rounded-md hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 bg-accent text-button-text rounded-md hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <Save size={18} />
           </button>
           <button
             onClick={() => setIsCreating(false)}
-            className="p-2 bg-surface text-text-secondary rounded-md hover:bg-card-active"
+            className="p-2 bg-surface text-text-secondary rounded-md hover:bg-card-active cursor-pointer"
           >
             <X size={18} />
           </button>

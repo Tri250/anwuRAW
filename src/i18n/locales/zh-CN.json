@@ -925,7 +925,8 @@
       "status": {
         "empty": "尚未保存预设。创建您自己的预设、从文件导入或探索社区预设。",
         "getCommunity": "获取社区预设",
-        "loading": "加载预设中..."
+        "loading": "加载预设中...",
+        "previewFailed": "预览不可用"
       },
       "supports": {
         "cropTransform": "裁剪与变换",

@@ -905,7 +905,8 @@
       "status": {
         "empty": "尚未儲存預設。建立您自己的預設、從檔案匯入或探索社群預設。",
         "getCommunity": "取得社群預設",
-        "loading": "載入預設中..."
+        "loading": "載入預設中...",
+        "previewFailed": "預覽無法使用"
       },
       "supports": {
         "cropTransform": "裁剪與變換",
