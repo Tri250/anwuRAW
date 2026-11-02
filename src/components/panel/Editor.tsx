@@ -808,14 +808,14 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
 
   const activeSubMask = useMemo(() => {
     if (isMasking && activeMaskId) {
-      const container = adjustments.masks.find((c: MaskContainer) =>
-        c.subMasks.some((sm: SubMask) => sm.id === activeMaskId),
+      const container = adjustments.masks?.find((c: MaskContainer) =>
+        c.subMasks?.some((sm: SubMask) => sm.id === activeMaskId),
       );
-      return container?.subMasks.find((sm) => sm.id === activeMaskId);
+      return container?.subMasks?.find((sm) => sm.id === activeMaskId);
     }
     if (isAiEditing && activeAiSubMaskId) {
-      const container = adjustments.aiPatches.find((c: AiPatch) =>
-        c.subMasks.some((sm: SubMask) => sm.id === activeAiSubMaskId),
+      const container = adjustments.aiPatches?.find((c: AiPatch) =>
+        c.subMasks?.some((sm: SubMask) => sm.id === activeAiSubMaskId),
       );
       return container?.subMasks?.find((sm: SubMask) => sm.id === activeAiSubMaskId);
     }
@@ -1879,6 +1879,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     return JSON.stringify({
       id: activeMaskDef.id,
       invert: activeMaskDef.invert,
+      visible: activeMaskDef.visible,
       ...('opacity' in activeMaskDef ? { opacity: activeMaskDef.opacity } : {}),
       subMasks,
       geometry,

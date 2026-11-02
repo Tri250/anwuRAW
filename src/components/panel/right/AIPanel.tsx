@@ -497,9 +497,12 @@ export default function AIPanel() {
   };
 
   const handleResetAllAiEdits = () => {
+    const { patchesSentToBackend } = useEditorStore.getState();
     adjustments.aiPatches?.forEach((p) => {
+      patchesSentToBackend.delete(p.id);
       if (activeAiTasks[p.id]) handleCancelAiTask(p.id);
-      p.subMasks.forEach((sm) => {
+      p.subMasks?.forEach((sm) => {
+        patchesSentToBackend.delete(sm.id);
         if (activeAiTasks[sm.id]) handleCancelAiTask(sm.id);
       });
     });
@@ -736,6 +739,7 @@ export default function AIPanel() {
     if (activeAiTasks[subMaskId]) {
       handleCancelAiTask(subMaskId);
     }
+    useEditorStore.getState().patchesSentToBackend.delete(subMaskId);
     if (activeSubMaskId === subMaskId) onSelectSubMask(null);
     setAdjustments((prev: Adjustments) => ({
       ...prev,
@@ -751,8 +755,8 @@ export default function AIPanel() {
     clonedContainer.id = uuidv4();
     clonedContainer.invert = options.invert ? !clonedContainer.invert : clonedContainer.invert;
     clonedContainer.isLoading = false;
-    clonedContainer.name = options.rename === false ? clonedContainer.name : `${container.name} Copy`;
-    clonedContainer.patchData = null;
+    clonedContainer.name =
+      options.rename === false ? clonedContainer.name : t('editor.masks.patches.copyName', { name: container.name });
     clonedContainer.subMasks = clonedContainer.subMasks.map((subMask: SubMask) => ({
       ...subMask,
       id: uuidv4(),
@@ -766,7 +770,8 @@ export default function AIPanel() {
 
     clonedSubMask.id = uuidv4();
     clonedSubMask.invert = options.invert ? !clonedSubMask.invert : clonedSubMask.invert;
-    clonedSubMask.name = options.rename === false ? clonedSubMask.name : `${getSubMaskName(subMask)} Copy`;
+    clonedSubMask.name =
+      options.rename === false ? clonedSubMask.name : t('editor.masks.patches.copyName', { name: getSubMaskName(subMask) });
 
     return clonedSubMask;
   };
@@ -996,7 +1001,7 @@ export default function AIPanel() {
 
     if (dragData.type === 'SubMask') {
       const sourceContainerId = dragData.parentId;
-      if (!sourceContainerId) return;
+      if (!sourceContainerId || !over || active.id === over.id) return;
 
       let targetContainerId: string | null = null;
       if (overData?.type === 'Container') targetContainerId = overData.item!.id;

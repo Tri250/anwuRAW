@@ -171,9 +171,17 @@ pub async fn generate_manual_cleanup_patch(
     patch_definition: AiPatchDefinition,
     current_adjustments: Value,
     source_point: (f64, f64),
-    _task_id: Option<String>,
+    task_id: Option<String>,
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
+    let _guard = task_id
+        .as_ref()
+        .map(|id| crate::app_state::AiTaskGuard::new(&state.active_ai_tasks, id.clone()));
+    let cancel_flag = _guard.as_ref().map(|g| &g.token);
+    if cancel_flag.is_some_and(|t| t.is_cancelled()) {
+        return Err("Task cancelled".to_string());
+    }
+
     let (source_image, is_raw) =
         prepare_source_image(&patch_definition.id, &current_adjustments, &state)?;
     let (img_w, img_h) = source_image.dimensions();
@@ -221,6 +229,10 @@ pub async fn generate_manual_cleanup_patch(
 
     let center_x = (min_x + max_x) as f64 / 2.0;
     let center_y = (min_y + max_y) as f64 / 2.0;
+
+    if cancel_flag.is_some_and(|t| t.is_cancelled()) {
+        return Err("Task cancelled".to_string());
+    }
 
     let source_point_untransformed = crate::image_processing::inverse_transform_point(
         source_point.0,
@@ -332,7 +344,10 @@ pub async fn generate_manual_cleanup_patch(
         let omega = 1.6f32;
         let iterations = 400;
 
-        for _ in 0..iterations {
+        for iteration in 0..iterations {
+            if iteration % 64 == 0 && cancel_flag.is_some_and(|t| t.is_cancelled()) {
+                return Err("Task cancelled".to_string());
+            }
             for &(x, y) in &omega_coords {
                 let idx = y * bw + x;
                 let sum_r = v_r[idx - bw] + v_r[idx + bw] + v_r[idx - 1] + v_r[idx + 1];
@@ -745,9 +760,17 @@ pub async fn generate_liquify_patch(
     patch_definition: AiPatchDefinition,
     current_adjustments: Value,
     _source_point: (f64, f64),
-    _task_id: Option<String>,
+    task_id: Option<String>,
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
+    let _guard = task_id
+        .as_ref()
+        .map(|id| crate::app_state::AiTaskGuard::new(&state.active_ai_tasks, id.clone()));
+    let cancel_flag = _guard.as_ref().map(|g| &g.token);
+    if cancel_flag.is_some_and(|t| t.is_cancelled()) {
+        return Err("Task cancelled".to_string());
+    }
+
     let (source_dynamic, is_raw) =
         prepare_source_image(&patch_definition.id, &current_adjustments, &state)?;
     let (img_w, img_h) = source_dynamic.dimensions();
@@ -1060,6 +1083,12 @@ pub async fn generate_liquify_patch(
 
     let color_image = RgbImage::from_raw(crop_w, crop_h, color_pixels).unwrap();
     let mask_image = image::GrayImage::from_raw(crop_w, crop_h, mask_pixels).unwrap();
+
+    // A cancelled task must not hand back a freshly baked patch; the caller
+    // treats this as "cancelled" and leaves the previous patch untouched.
+    if cancel_flag.is_some_and(|t| t.is_cancelled()) {
+        return Err("Task cancelled".to_string());
+    }
 
     encode_patch_result(
         &color_image,
@@ -1386,9 +1415,17 @@ fn draw_stroke_to_mask(
 pub async fn generate_retouch_patch(
     patch_definition: AiPatchDefinition,
     current_adjustments: Value,
-    _task_id: Option<String>,
+    task_id: Option<String>,
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
+    let _guard = task_id
+        .as_ref()
+        .map(|id| crate::app_state::AiTaskGuard::new(&state.active_ai_tasks, id.clone()));
+    let cancel_flag = _guard.as_ref().map(|g| &g.token);
+    if cancel_flag.is_some_and(|t| t.is_cancelled()) {
+        return Err("Task cancelled".to_string());
+    }
+
     let (source_dynamic, is_raw) =
         prepare_source_image(&patch_definition.id, &current_adjustments, &state)?;
     let (img_w, img_h) = source_dynamic.dimensions();
@@ -1623,6 +1660,10 @@ pub async fn generate_retouch_patch(
 
     let color_image = RgbImage::from_raw(crop_w, crop_h, color_pixels).unwrap();
     let mask_image = image::GrayImage::from_raw(crop_w, crop_h, mask_pixels).unwrap();
+
+    if cancel_flag.is_some_and(|t| t.is_cancelled()) {
+        return Err("Task cancelled".to_string());
+    }
 
     encode_patch_result(
         &color_image,

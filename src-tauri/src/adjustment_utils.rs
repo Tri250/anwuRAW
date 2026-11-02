@@ -35,7 +35,13 @@ pub fn hydrate_sub_masks(
                 if params.contains_key(key) {
                     let val = params.get(key).unwrap();
                     if !val.is_null() {
-                        cache.insert(id.clone(), val.clone());
+                        // An explicit empty string means "clear the cached bitmap";
+                        // don't let a later null payload resurrect stale data.
+                        if val.as_str() == Some("") {
+                            cache.remove(&id);
+                        } else {
+                            cache.insert(id.clone(), val.clone());
+                        }
                     } else {
                         if let Some(cached_data) = cache.get(&id) {
                             params.insert(key.to_string(), cached_data.clone());

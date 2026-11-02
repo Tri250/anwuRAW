@@ -464,8 +464,10 @@ export default function MasksPanel() {
   };
 
   const handleResetAllMasks = () => {
+    const { patchesSentToBackend } = useEditorStore.getState();
     adjustments.masks?.forEach((m) => {
-      m.subMasks.forEach((sm) => {
+      m.subMasks?.forEach((sm) => {
+        patchesSentToBackend.delete(sm.id);
         if (activeAiTasks[sm.id]) handleCancelAiTask(sm.id);
       });
     });
@@ -655,8 +657,10 @@ export default function MasksPanel() {
 
   const handleDeleteContainer = (id: string) => {
     const container = adjustments.masks?.find((m) => m.id === id);
+    const { patchesSentToBackend } = useEditorStore.getState();
     if (container) {
-      container.subMasks.forEach((sm: SubMask) => {
+      container.subMasks?.forEach((sm: SubMask) => {
+        patchesSentToBackend.delete(sm.id);
         if (activeAiTasks[sm.id]) {
           handleCancelAiTask(sm.id);
         }
@@ -668,6 +672,7 @@ export default function MasksPanel() {
   };
 
   const handleDeleteSubMask = (containerId: string, subMaskId: string) => {
+    useEditorStore.getState().patchesSentToBackend.delete(subMaskId);
     if (activeAiTasks[subMaskId]) {
       handleCancelAiTask(subMaskId);
     }
@@ -893,7 +898,7 @@ export default function MasksPanel() {
 
     if (dragData.type === 'SubMask') {
       const sourceContainerId = dragData.parentId;
-      if (!sourceContainerId) return;
+      if (!sourceContainerId || !over || active.id === over.id) return;
 
       if (over?.id === 'mask-list-root' || !over) {
         setAdjustments((prev: Adjustments) => {
@@ -907,7 +912,7 @@ export default function MasksPanel() {
           const newContainer = {
             ...INITIAL_MASK_CONTAINER,
             id: uuidv4(),
-            name: `Mask ${newMasks.length + 1}`,
+            name: t('editor.masks.patches.maskName', { count: newMasks.length + 1 }),
             subMasks: [movedSubMask],
           };
           newMasks.push(newContainer);
@@ -1902,7 +1907,7 @@ function SubMaskRow({
         </button>
         <button
           className="p-1 hover:text-red-500 text-text-secondary"
-          data-tooltip={t('editor.ai.actions.deleteComponent')}
+          data-tooltip={t('editor.masks.actions.deleteComponent')}
           onClick={(e) => {
             e.stopPropagation();
             handleDelete();
@@ -2072,8 +2077,12 @@ function SettingsPanel({
     if (!isActive || !isFaceMask) return;
     const subMaskId = activeSubMask.id;
     const parts = FACE_PARTS.filter((p) => (p === part ? !faceParts.includes(p) : faceParts.includes(p)));
+    // Invalidate the cached bitmap before regenerating: an empty string is
+    // forwarded to the backend so it overwrites the previous cached mask
+    // instead of resurrecting a stale result when the data is marked as sent.
+    useEditorStore.getState().patchesSentToBackend.delete(subMaskId);
     updateSubMask(subMaskId, {
-      parameters: { ...activeSubMask.parameters, parts, ...(parts.length === 0 && { maskDataBase64: null }) },
+      parameters: { ...activeSubMask.parameters, parts, maskDataBase64: '' },
     });
     clearTimeout(faceMaskTimeoutRef.current);
     if (parts.length > 0) {
@@ -2129,6 +2138,11 @@ function SettingsPanel({
     );
     if (value <= 0) {
       if (existing) {
+        const subMaskId = existing.subMasks?.[0]?.id;
+        if (subMaskId) {
+          useEditorStore.getState().patchesSentToBackend.delete(subMaskId);
+          handleCancelAiTask(subMaskId);
+        }
         setAdjustments((prev: Adjustments) => ({
           ...prev,
           masks: prev.masks.filter((m: MaskContainer) => m.id !== existing.id),
@@ -2190,6 +2204,9 @@ function SettingsPanel({
   };
 
   const [unifySkinState, setUnifySkinState] = useState<'idle' | 'running' | 'done' | 'failed'>('idle');
+  useEffect(() => {
+    setUnifySkinState('idle');
+  }, [activeSubMask?.id]);
   const canUnifySkin = isFaceMask && faceParts.includes('faceSkin') && faceParts.includes('bodySkin');
   const handleUnifySkin = async () => {
     if (!isActive || !selectedImage) return;
@@ -2248,6 +2265,12 @@ function SettingsPanel({
     const existing = patches.find((p: AiPatch) => p.id === patchId);
 
     if (slimFace <= 0 && jawline <= 0) {
+      faceLiquifyGenRef.current++;
+      const subMaskId = existing?.subMasks?.[0]?.id;
+      if (subMaskId) {
+        main.patchesSentToBackend.delete(subMaskId);
+        handleCancelAiTask(subMaskId);
+      }
       if (existing) {
         setAdjustments((prev: Adjustments) => ({
           ...prev,
@@ -2306,6 +2329,7 @@ function SettingsPanel({
       }));
     } catch (e) {
       console.error('Face liquify failed:', e);
+      if (gen !== faceLiquifyGenRef.current) return;
       setAdjustments((prev: Adjustments) => ({
         ...prev,
         aiPatches: (prev.aiPatches || []).map((p: AiPatch) => (p.id === patchId ? { ...p, isLoading: false } : p)),
@@ -2706,7 +2730,7 @@ function SettingsPanel({
                   max={param.max}
                   step={param.step}
                   defaultValue={param.defaultValue}
-                  value={(activeSubMask.parameters[param.key] || 0) * (param.multiplier || 1)}
+                  value={(activeSubMask.parameters?.[param.key] || 0) * (param.multiplier || 1)}
                   onChange={(e: any) =>
                     handleSubMaskParametersChange({ [param.key]: parseFloat(e.target.value) / (param.multiplier || 1) })
                   }

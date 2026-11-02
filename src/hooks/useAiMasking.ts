@@ -88,20 +88,23 @@ export function useAiMasking() {
         aiPatches: prev.aiPatches?.map((p: AiPatch) => (p.id === patchId ? { ...p, isLoading: true } : p)),
       }));
 
-      try {
-        const patchDefinitionForBackend = adjustments.aiPatches?.find((p: AiPatch) => p.id === patchId);
-        const isLiquify = patchDefinitionForBackend?.subMasks.some((sm: SubMask) => sm.type === 'liquify');
-        const isRetouch = patchDefinitionForBackend?.subMasks.some((sm: SubMask) => sm.type === 'retouch');
-        const command = isLiquify
-          ? 'generate_liquify_patch'
-          : isRetouch
-            ? 'generate_retouch_patch'
-            : 'generate_manual_cleanup_patch';
+      const patchDefinitionForBackend = adjustments.aiPatches?.find((p: AiPatch) => p.id === patchId);
+      const isLiquify = patchDefinitionForBackend?.subMasks.some((sm: SubMask) => sm.type === 'liquify');
+      const isRetouch = patchDefinitionForBackend?.subMasks.some((sm: SubMask) => sm.type === 'retouch');
+      const command = isLiquify
+        ? 'generate_liquify_patch'
+        : isRetouch
+          ? 'generate_retouch_patch'
+          : 'generate_manual_cleanup_patch';
 
+      registerAiTask(patchId, 'inpaint');
+
+      try {
         const newPatchDataJson: any = await invoke(command, {
           currentAdjustments: adjustments,
           patchDefinition: patchDefinitionForBackend,
           sourcePoint: [sourceX, sourceY],
+          taskId: patchId,
         });
 
         const newPatchData = JSON.parse(newPatchDataJson);
@@ -123,9 +126,11 @@ export function useAiMasking() {
           ...prev,
           aiPatches: prev.aiPatches?.map((p: AiPatch) => (p.id === patchId ? { ...p, isLoading: false } : p)),
         }));
+      } finally {
+        unregisterAiTask(patchId);
       }
     },
-    [setAdjustments],
+    [setAdjustments, registerAiTask, unregisterAiTask],
   );
 
   const handleGenerativeReplace = useCallback(
@@ -286,7 +291,12 @@ export function useAiMasking() {
 
   const handleDeleteMaskContainer = useCallback(
     (containerId: string) => {
-      const { activeMaskContainerId } = useEditorStore.getState();
+      const { activeMaskContainerId, adjustments, patchesSentToBackend } = useEditorStore.getState();
+      const container = (adjustments.masks || []).find((c: MaskContainer) => c.id === containerId);
+      container?.subMasks?.forEach((sm: SubMask) => {
+        handleCancelAiTask(sm.id);
+        patchesSentToBackend.delete(sm.id);
+      });
       setAdjustments((prev: Adjustments) => ({
         ...prev,
         masks: (prev.masks || []).filter((c) => c.id !== containerId),
@@ -295,12 +305,19 @@ export function useAiMasking() {
         setEditor({ activeMaskContainerId: null, activeMaskId: null });
       }
     },
-    [setAdjustments, setEditor],
+    [setAdjustments, setEditor, handleCancelAiTask],
   );
 
   const handleDeleteAiPatch = useCallback(
     (patchId: string) => {
-      const { activeAiPatchContainerId } = useEditorStore.getState();
+      const { activeAiPatchContainerId, adjustments, patchesSentToBackend } = useEditorStore.getState();
+      const patch = (adjustments.aiPatches || []).find((p: AiPatch) => p.id === patchId);
+      handleCancelAiTask(patchId);
+      patchesSentToBackend.delete(patchId);
+      patch?.subMasks?.forEach((sm: SubMask) => {
+        handleCancelAiTask(sm.id);
+        patchesSentToBackend.delete(sm.id);
+      });
       setAdjustments((prev: Adjustments) => ({
         ...prev,
         aiPatches: (prev.aiPatches || []).filter((p) => p.id !== patchId),
@@ -309,7 +326,7 @@ export function useAiMasking() {
         setEditor({ activeAiPatchContainerId: null, activeAiSubMaskId: null });
       }
     },
-    [setAdjustments, setEditor],
+    [setAdjustments, setEditor, handleCancelAiTask],
   );
 
   const handleToggleAiPatchVisibility = useCallback(
@@ -538,24 +555,31 @@ export function useAiMasking() {
     }
   };
 
+  const activeMaskId = useEditorStore((s) => s.activeMaskId);
+  const activeAiSubMaskId = useEditorStore((s) => s.activeAiSubMaskId);
+  const selectedImagePath = useEditorStore((s) => s.selectedImage?.path);
+
   useEffect(() => {
-    const { activeMaskId, activeAiSubMaskId, adjustments, selectedImage } = useEditorStore.getState();
+    if (!selectedImagePath) return;
+    const { adjustments } = useEditorStore.getState();
     const activeSubMask =
       adjustments?.masks?.flatMap((m: MaskContainer) => m.subMasks).find((sm: SubMask) => sm.id === activeMaskId) ||
       adjustments?.aiPatches?.flatMap((p: AiPatch) => p.subMasks).find((sm: SubMask) => sm.id === activeAiSubMaskId);
 
-    if (activeSubMask?.type === 'ai-subject' && selectedImage?.path) {
-      const transformAdjustments = getTransformAdjustments(adjustments);
-      invoke('precompute_ai_subject_mask', {
-        jsAdjustments: transformAdjustments,
-        path: selectedImage.path,
-      }).catch((err) => console.error('Failed to precompute AI subject mask:', err));
-    }
-  }, [
-    useEditorStore.getState().activeMaskId,
-    useEditorStore.getState().activeAiSubMaskId,
-    useEditorStore.getState().selectedImage?.path,
-  ]);
+    if (activeSubMask?.type !== 'ai-subject') return;
+
+    const transformAdjustments = getTransformAdjustments(adjustments);
+    let cancelled = false;
+    invoke('precompute_ai_subject_mask', {
+      jsAdjustments: transformAdjustments,
+      path: selectedImagePath,
+    }).catch((err) => {
+      if (!cancelled) console.error('Failed to precompute AI subject mask:', err);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeMaskId, activeAiSubMaskId, selectedImagePath]);
 
   return {
     updateSubMask,

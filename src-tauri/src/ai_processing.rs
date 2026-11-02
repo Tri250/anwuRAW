@@ -3121,9 +3121,13 @@ pub fn run_normal_model(
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct AiSubjectMaskParameters {
+    #[serde(default)]
     pub start_x: f64,
+    #[serde(default)]
     pub start_y: f64,
+    #[serde(default)]
     pub end_x: f64,
+    #[serde(default)]
     pub end_y: f64,
     #[serde(default)]
     pub mask_data_base64: Option<String>,

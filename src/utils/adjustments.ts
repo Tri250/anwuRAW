@@ -620,7 +620,7 @@ export const INITIAL_MASK_ADJUSTMENTS: MaskAdjustments = {
 };
 
 export const INITIAL_MASK_CONTAINER: MaskContainer = {
-  adjustments: INITIAL_MASK_ADJUSTMENTS,
+  adjustments: structuredClone(INITIAL_MASK_ADJUSTMENTS),
   invert: false,
   name: 'New Mask',
   opacity: 100,
@@ -693,6 +693,7 @@ export const normalizeLoadedAdjustments = (loadedAdjustments: Adjustments): any 
       invert: false,
       opacity: 100,
       ...subMask,
+      parameters: subMask?.parameters ?? {},
     }));
   };
 
@@ -730,7 +731,14 @@ export const normalizeLoadedAdjustments = (loadedAdjustments: Adjustments): any 
   });
 
   const normalizedAiPatches = (loadedAdjustments.aiPatches || []).map((patch: any) => ({
+    id: patch.id || uuidv4(),
+    name: patch.name ?? '',
     visible: true,
+    invert: false,
+    opacity: 100,
+    prompt: '',
+    patchData: null,
+    isLoading: false,
     ...patch,
     subMasks: normalizeSubMasks(patch.subMasks),
   }));

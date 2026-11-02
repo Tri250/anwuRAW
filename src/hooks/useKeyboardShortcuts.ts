@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'react-toastify';
-import { ImageFile, ImageFlag, Panel, ExifOverlay, LibraryViewMode } from '../components/ui/AppProperties';
+import { ImageFile, ImageFlag, Panel, ExifOverlay, LibraryViewMode, Invokes } from '../components/ui/AppProperties';
 import { KEYBIND_DEFINITIONS, getDefaultCombo, normalizeCombo } from '../utils/keyboardUtils';
 import { useEditorStore } from '../store/useEditorStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useUIStore } from '../store/useUIStore';
 import { useProcessStore } from '../store/useProcessStore';
-import { useEditorActions } from './useEditorActions';
+import { useEditorActions, debouncedSetHistory } from './useEditorActions';
 import { useLibraryActions } from './useLibraryActions';
 
 const getParentFolder = (path: string) => {
@@ -631,24 +632,47 @@ export const useKeyboardShortcuts = ({
         },
         execute: (e: KeyboardEvent, s: any) => {
           e.preventDefault();
+          const { activeAiTasks, unregisterAiTask } = useProcessStore.getState();
+          const cancelTask = (taskId: string) => {
+            if (activeAiTasks[taskId]) {
+              invoke(Invokes.CancelAiTask, { taskId }).catch(() => {});
+              unregisterAiTask(taskId);
+            }
+            s.editor.patchesSentToBackend.delete(taskId);
+          };
           if (s.editor.activeMaskContainerId) {
-            s.editor.setEditor((state: any) => ({
-              adjustments: {
-                ...state.adjustments,
-                masks: state.adjustments.masks.filter((c: any) => c.id !== s.editor.activeMaskContainerId),
-              },
+            const container = s.editor.adjustments.masks?.find(
+              (c: any) => c.id === s.editor.activeMaskContainerId,
+            );
+            container?.subMasks?.forEach((sm: any) => cancelTask(sm.id));
+            const current = useEditorStore.getState().adjustments;
+            const nextAdjustments = {
+              ...current,
+              masks: current.masks.filter((c: any) => c.id !== s.editor.activeMaskContainerId),
+            };
+            debouncedSetHistory(nextAdjustments);
+            s.editor.setEditor({
+              adjustments: nextAdjustments,
               activeMaskContainerId: null,
               activeMaskId: null,
-            }));
+            });
           } else if (s.editor.activeAiPatchContainerId) {
-            s.editor.setEditor((state: any) => ({
-              adjustments: {
-                ...state.adjustments,
-                aiPatches: state.adjustments.aiPatches.filter((c: any) => c.id !== s.editor.activeAiPatchContainerId),
-              },
+            const patch = s.editor.adjustments.aiPatches?.find(
+              (p: any) => p.id === s.editor.activeAiPatchContainerId,
+            );
+            cancelTask(s.editor.activeAiPatchContainerId);
+            patch?.subMasks?.forEach((sm: any) => cancelTask(sm.id));
+            const current = useEditorStore.getState().adjustments;
+            const nextAdjustments = {
+              ...current,
+              aiPatches: current.aiPatches.filter((c: any) => c.id !== s.editor.activeAiPatchContainerId),
+            };
+            debouncedSetHistory(nextAdjustments);
+            s.editor.setEditor({
+              adjustments: nextAdjustments,
               activeAiPatchContainerId: null,
               activeAiSubMaskId: null,
-            }));
+            });
           }
         },
       },

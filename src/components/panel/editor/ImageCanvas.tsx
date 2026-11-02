@@ -1754,10 +1754,10 @@ const ImageCanvas = memo(
 
     const activeContainer = useMemo(() => {
       if (isMasking) {
-        return adjustments.masks.find((c: MaskContainer) => c.id === activeMaskContainerId);
+        return adjustments.masks?.find((c: MaskContainer) => c.id === activeMaskContainerId);
       }
       if (isAiEditing) {
-        return adjustments.aiPatches.find((p: AiPatch) => p.id === activeAiPatchContainerId);
+        return adjustments.aiPatches?.find((p: AiPatch) => p.id === activeAiPatchContainerId);
       }
       return null;
     }, [
@@ -1774,10 +1774,10 @@ const ImageCanvas = memo(
         return null;
       }
       if (isMasking) {
-        return activeContainer.subMasks.find((m: SubMask) => m.id === activeMaskId);
+        return activeContainer.subMasks?.find((m: SubMask) => m.id === activeMaskId);
       }
       if (isAiEditing) {
-        return activeContainer.subMasks.find((m: SubMask) => m.id === activeAiSubMaskId);
+        return activeContainer.subMasks?.find((m: SubMask) => m.id === activeAiSubMaskId);
       }
       return null;
     }, [activeContainer, activeMaskId, activeAiSubMaskId, isMasking, isAiEditing]);
@@ -1948,7 +1948,7 @@ const ImageCanvas = memo(
 
       const processContainers = (containers: any[], isAi: boolean) => {
         containers.forEach((container) => {
-          container.subMasks.forEach((sm: SubMask) => {
+          container.subMasks?.forEach((sm: SubMask) => {
             if (sm.type !== Mask.Clone && sm.type !== Mask.Heal && sm.type !== Mask.Liquify && sm.type !== Mask.Retouch)
               return;
             const lines = sm.parameters?.lines || [];
@@ -1959,7 +1959,7 @@ const ImageCanvas = memo(
               maxX = -Infinity,
               maxY = -Infinity;
             for (const line of lines) {
-              for (const pt of line.points) {
+              for (const pt of line.points || []) {
                 if (pt.x < minX) minX = pt.x;
                 if (pt.x > maxX) maxX = pt.x;
                 if (pt.y < minY) minY = pt.y;
@@ -2547,10 +2547,16 @@ const ImageCanvas = memo(
         }
 
         if (isInitialDrawing && activeSubMask) {
-          isDrawing.current = true;
           drawingStageRef.current = e.target.getStage();
           const pos = getCanvasPointer(e.target.getStage());
-          if (!pos) return;
+          if (!pos) {
+            isDrawing.current = false;
+            drawingStageRef.current = null;
+            dragStartPointer.current = null;
+            setLocalInitialDrawParams(null);
+            return;
+          }
+          isDrawing.current = true;
 
           const { scale } = imageRenderSize;
           const x = pos.x / scale + cropX;
@@ -3115,6 +3121,13 @@ const ImageCanvas = memo(
         isDrawing.current = false;
         const activeId = isMasking ? activeMaskId : activeAiSubMaskId;
 
+        if (!localInitialDrawParams || !dragStartPointer.current || !activeId) {
+          setLocalInitialDrawParams(null);
+          dragStartPointer.current = null;
+          drawingStageRef.current = null;
+          return;
+        }
+
         const newParams = { ...localInitialDrawParams };
         delete newParams.isInitialDraw;
 
@@ -3124,10 +3137,10 @@ const ImageCanvas = memo(
         } else if (activeSubMask.type === Mask.Linear) {
           if (!newParams.range || newParams.range < 10) {
             const handleDist = Math.min(effectiveImageDimensions.width, effectiveImageDimensions.height) * 0.2;
-            newParams.startX = dragStartPointer.current!.x + handleDist;
-            newParams.startY = dragStartPointer.current!.y;
-            newParams.endX = dragStartPointer.current!.x - handleDist;
-            newParams.endY = dragStartPointer.current!.y;
+            newParams.startX = dragStartPointer.current.x + handleDist;
+            newParams.startY = dragStartPointer.current.y;
+            newParams.endX = dragStartPointer.current.x - handleDist;
+            newParams.endY = dragStartPointer.current.y;
             newParams.range = 100;
           }
         }
@@ -3135,6 +3148,7 @@ const ImageCanvas = memo(
         updateSubMask(activeId, { parameters: newParams });
         setLocalInitialDrawParams(null);
         dragStartPointer.current = null;
+        drawingStageRef.current = null;
         return;
       }
 

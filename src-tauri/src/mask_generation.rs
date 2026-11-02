@@ -1564,6 +1564,20 @@ pub fn get_cached_or_generate_masks(
         path.hash(&mut hasher);
         if def.requires_warped_image() {
             crate::cache_utils::calculate_geometry_hash(adjustments).hash(&mut hasher);
+            // Color/luminance masks sample the warped image, so orientation,
+            // flips and the final crop rectangle must invalidate the cache too.
+            for key in [
+                "orientationSteps",
+                "rotation",
+                "flipHorizontal",
+                "flipVertical",
+                "crop",
+            ] {
+                if let Some(value) = adjustments.get(key) {
+                    key.hash(&mut hasher);
+                    value.to_string().hash(&mut hasher);
+                }
+            }
         }
         width.hash(&mut hasher);
         height.hash(&mut hasher);
