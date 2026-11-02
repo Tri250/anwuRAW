@@ -197,10 +197,10 @@ export function useEditorActions() {
           activeTools: mergeActiveTools(prev, autoAdjustments),
         }));
       } catch (err) {
-        toast.error(`Failed to apply auto adjustments: ${err}`);
+        toast.error(t('contextMenus.toasts.failedApplyAuto', { err: String(err) }));
       }
     },
-    [setAdjustments],
+    [setAdjustments, t],
   );
 
   const handleAutoStraighten = useCallback(async () => {

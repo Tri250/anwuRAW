@@ -1661,6 +1661,7 @@
       "original": "原始",
       "saveButton": "保存拼贴画",
       "saved": "拼贴画已保存！",
+      "saveFailed": "无法保存拼贴画。",
       "saving": "保存中...",
       "shuffleTooltip": "随机排列图像",
       "spacing": "间距"

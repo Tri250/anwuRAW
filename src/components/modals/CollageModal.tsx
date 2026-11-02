@@ -430,7 +430,7 @@ export default function CollageModal({ isOpen, onClose, onSave, sourceImages }: 
       const path = await onSave(base64Data, sourceImages[0].path);
       setSavedPath(path);
     } catch (err: any) {
-      setError(err.message || 'Could not save the collage.');
+      setError(err.message || t('modals.collage.saveFailed'));
     } finally {
       setIsSaving(false);
     }

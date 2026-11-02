@@ -1670,6 +1670,7 @@
       "original": "Original",
       "saveButton": "Save Collage",
       "saved": "Collage Saved!",
+      "saveFailed": "Could not save the collage.",
       "saving": "Saving...",
       "shuffleTooltip": "Shuffle Images",
       "spacing": "Spacing"
