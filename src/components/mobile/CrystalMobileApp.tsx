@@ -286,11 +286,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
           />
         </div>
       ) : (
-        <WatermarkExportPage
-          onBackToEdit={() => setFlow('edit')}
-          onBackToLibrary={onBackToLibrary}
-          isExporting={isExporting}
-        />
+        <WatermarkExportPage onBackToEdit={() => setFlow('edit')} onBackToLibrary={onBackToLibrary} />
       )}
     </div>
   );

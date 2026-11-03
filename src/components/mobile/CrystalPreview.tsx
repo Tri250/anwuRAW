@@ -95,6 +95,8 @@ export default function CrystalPreview({
   const [gesturing, setGesturing] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [cropHintVisible, setCropHintVisible] = useState(false);
+  /* v2.1.13 审计 F-网格：三分网格对齐图像实际显示区（contain 留白不画线） */
+  const [imgRect, setImgRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const transformRef = useRef(transform);
   transformRef.current = transform;
   const compareRef = useRef(compare);
@@ -119,6 +121,31 @@ export default function CrystalPreview({
   useEffect(() => {
     setShowGrid(activeCategory === 'compose');
   }, [activeCategory]);
+
+  /* 网格对齐图像显示区：img 元素在 contain 下即实际显示矩形（缩放 >1 时网格无意义，跳过） */
+  const measureImgRect = useCallback(() => {
+    const img = imgRef.current;
+    const container = containerRef.current;
+    if (!img || !container || !img.naturalWidth || transformRef.current.scale > 1.01) return;
+    const ir = img.getBoundingClientRect();
+    const cr = container.getBoundingClientRect();
+    if (!ir.width || !ir.height) return;
+    setImgRect({ left: ir.left - cr.left, top: ir.top - cr.top, width: ir.width, height: ir.height });
+  }, []);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => measureImgRect());
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [measureImgRect]);
+  useEffect(() => {
+    measureImgRect();
+  }, [url, measureImgRect]);
+  /* 缩放复位回 1x 后重测（放大期间网格隐藏） */
+  useEffect(() => {
+    if (showGrid && transform.scale <= 1.01) measureImgRect();
+  }, [showGrid, transform.scale, measureImgRect]);
   useEffect(() => {
     if (!cropActive || compare) {
       setCropHintVisible(false);
@@ -349,7 +376,14 @@ export default function CrystalPreview({
         }}
       >
         {url ? (
-          <img ref={imgRef} className="cx-preview-img" src={url} alt={t('crystal.previewAlt')} draggable={false} />
+          <img
+            ref={imgRef}
+            className="cx-preview-img"
+            src={url}
+            alt={t('crystal.previewAlt')}
+            draggable={false}
+            onLoad={measureImgRect}
+          />
         ) : (
           <div className="cx-preview-empty">
             <Loader2 size={18} className="animate-spin" />
@@ -358,9 +392,17 @@ export default function CrystalPreview({
         )}
       </div>
 
-      {/* 构图三分网格（与裁剪框边缘对齐的取景辅助） */}
-      {showGrid && !compare && url && (
-        <div className="cx-preview-grid" aria-hidden>
+      {/* 构图三分网格（对齐图像实际显示区，取景辅助；放大时隐藏） */}
+      {showGrid && !compare && url && transform.scale <= 1.01 && (
+        <div
+          className="cx-preview-grid"
+          aria-hidden
+          style={
+            imgRect
+              ? { left: imgRect.left, top: imgRect.top, width: imgRect.width, height: imgRect.height, right: 'auto', bottom: 'auto' }
+              : undefined
+          }
+        >
           <span className="cx-grid-line cx-grid-v" style={{ left: '33.333%' }} />
           <span className="cx-grid-line cx-grid-v" style={{ left: '66.666%' }} />
           <span className="cx-grid-line cx-grid-h" style={{ top: '33.333%' }} />

@@ -37,8 +37,11 @@ function TemplateDemo({ tpl }: { tpl: WatermarkTemplate }) {
       )}
       {tpl.exifBar && (
         <span className="block h-[14px] w-full bg-white flex items-center gap-1 px-1">
-          <span className="rounded-[1px]" style={{ width: 8, height: 4, background: '#B4443C' }} />
-          <span className="rounded-[1px]" style={{ width: 22, height: 3, background: '#1C1C18', opacity: 0.75 }} />
+          <span className="rounded-[1px]" style={{ width: 8, height: 4, background: 'var(--cx-exif-brand)' }} />
+          <span
+            className="rounded-[1px]"
+            style={{ width: 22, height: 3, background: 'var(--cx-exif-text)', opacity: 0.75 }}
+          />
         </span>
       )}
       {tpl.signatureAnchor && (
@@ -63,7 +66,6 @@ export default function WatermarkExportPage({
 }: {
   onBackToEdit: () => void;
   onBackToLibrary: () => void;
-  isExporting: boolean;
 }) {
   const { t } = useTranslation();
   const [prefs, updatePrefs] = useWmPrefs();
@@ -325,6 +327,7 @@ export default function WatermarkExportPage({
               checked={showInfoBarFrame}
               onChange={setShowInfoBarFrame}
               label={t('crystal.export.infoFrameLabel')}
+              labelHidden
             />
           </div>
         </div>
@@ -470,7 +473,7 @@ export default function WatermarkExportPage({
           </div>
         )}
         {exportState.status === Status.Error && (
-          <div className="cx-export-progress" style={{ color: '#ff8d80' }}>
+          <div className="cx-export-progress" style={{ color: 'var(--cx-danger)' }}>
             {exportState.errorMessage || t('export.status.failed')}
           </div>
         )}

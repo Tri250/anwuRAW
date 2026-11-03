@@ -10,6 +10,8 @@
   --cx-screen: #0e0e0c;
   --cx-card: #1b1b17;
   --cx-card2: #232320;
+  /* 内嵌凹面（曲线卡/HSL 色带/缩略图井），与分段控件轨同色系 */
+  --cx-elev: var(--cx-card2);
   --cx-border: #2e2e28;
   /* 文字 */
   --cx-ink: #f2f2ec;
@@ -20,6 +22,8 @@
   --cx-teal: #2fd6bf;
   --cx-accent: var(--cx-gold);
   --cx-accent-soft: rgba(245, 200, 66, 0.14);
+  /* 危险/错误（删除确认、导出失败）统一红 */
+  --cx-danger: #ff6b6b;
   /* 分类专属色（滤镜与预设原同为金色 #f5c842，审计 UX-7 后改为琥珀橙以区分） */
   --cx-cat-presets: #f5c842;
   --cx-cat-portrait: #b39dff;
@@ -33,8 +37,18 @@
   --cx-exif-text: #1c1c18;
   --cx-exif-brand: #b4443c;
 
-  font-family:
-    -apple-system, 'PingFang SC', 'HarmonyOS Sans SC', 'MiSans', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  /* 审计 F-字体：与图库/启动页共用 :root --font-family（Poppins/系统栈），
+     避免同机链路「图库 Poppins ↔ 编辑器系统字体」跳变；var 回退保底 CJK 栈。 */
+  font-family: var(
+    --font-family,
+    -apple-system,
+    'PingFang SC',
+    'HarmonyOS Sans SC',
+    'MiSans',
+    'Noto Sans SC',
+    'Microsoft YaHei',
+    sans-serif
+  );
   color: var(--cx-ink);
   background: var(--cx-page);
   -webkit-tap-highlight-color: transparent;
@@ -517,7 +531,7 @@
   background: var(--cx-card2);
 }
 .cx-sheet-row.cx-danger {
-  color: #ff6b6b;
+  color: var(--cx-danger);
 }
 .cx-sheet-cancel {
   justify-content: center;
@@ -563,7 +577,8 @@
 .cx-sheet-btn-primary {
   background: var(--cx-accent);
   border-color: transparent;
-  color: #101014;
+  /* on-gold 墨色与 .cx-save-pill/.cx-seg/.cx-ai-apply 统一 */
+  color: #171503;
 }
 .cx-sheet-btn:disabled {
   opacity: 0.4;

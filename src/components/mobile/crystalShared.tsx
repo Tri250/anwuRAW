@@ -303,12 +303,15 @@ export function CxSwitch({
   label,
   hint,
   disabled,
+  labelHidden,
 }: {
   checked: boolean;
   onChange: (next: boolean) => void;
   label: string;
   hint?: string;
   disabled?: boolean;
+  /** 行容器已自带 label/hint 时隐藏开关内部文案（aria-label 仍保留），避免重复 */
+  labelHidden?: boolean;
 }) {
   return (
     <button
@@ -317,10 +320,12 @@ export function CxSwitch({
       onClick={() => onChange(!checked)}
       disabled={disabled}
     >
-      <span className="text-left">
-        <span className="cx-frame-label block">{label}</span>
-        {hint && <span className="cx-frame-hint block">{hint}</span>}
-      </span>
+      {!labelHidden && (
+        <span className="text-left">
+          <span className="cx-frame-label block">{label}</span>
+          {hint && <span className="cx-frame-hint block">{hint}</span>}
+        </span>
+      )}
       <span className={`cx-switch ${checked ? 'is-on' : ''}`} role="switch" aria-checked={checked} aria-label={label}>
         <span className="cx-switch-knob" />
       </span>
