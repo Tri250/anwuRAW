@@ -43,7 +43,7 @@ import {
   setToolActive,
 } from '../../utils/adjustments';
 import { calculateCenteredCrop, calculateAutoCropForRotation } from '../../utils/cropUtils';
-import { buildParametricPoints } from '../../utils/parametricCurve';
+import { buildParametricPoints, isDefaultParametricCurve } from '../../utils/parametricCurve';
 import { createSubMask } from '../../utils/maskUtils';
 import { getTransformAdjustments } from '../../hooks/useAiMasking';
 import { useEditorActions } from '../../hooks/useEditorActions';
@@ -137,7 +137,13 @@ function TonePanel() {
       red: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
     } as ParametricCurve);
   const curveSettings = adjustments.parametricCurve?.[curveChannel] ?? DEFAULT_PARAMETRIC_CURVE_SETTINGS;
-  const curvePoints = buildParametricPoints(curveSettings);
+  /* 曲线通道辅助：点位序列 + 是否被修改过（激活 isDefaultParametricCurve：
+   * 未激活但已修改的通道在图上淡显，与桌面 Curves 的 inactive 通道叠加一致） */
+  const channelPoints = (ch: CurveChannel) =>
+    buildParametricPoints(adjustments.parametricCurve?.[ch] ?? DEFAULT_PARAMETRIC_CURVE_SETTINGS).map(
+      (p) => `${(p.x / 255) * 100},${100 - (p.y / 255) * 100}`,
+    );
+  const channelModified = (ch: CurveChannel) => !isDefaultParametricCurve(adjustments.parametricCurve?.[ch]);
 
   const setHsl = (key: 'hue' | 'saturation' | 'luminance', value: number) =>
     applyPatch({ hsl: { ...(adjustments.hsl ?? {}), [band]: { ...bandHsl, [key]: value } } });
@@ -154,8 +160,14 @@ function TonePanel() {
     applyPatch({ colorCalibration: { ...calibration, [key]: value } });
 
   /* 分级/校准整节重置（移动端闭环补充；桌面经由全局重置入口） */
-  const resetGrading = () => applyPatch({ colorGrading: { ...INITIAL_ADJUSTMENTS.colorGrading } });
-  const resetCalibration = () => applyPatch({ colorCalibration: { ...INITIAL_ADJUSTMENTS.colorCalibration } });
+  const resetGrading = () => {
+    haptic(6);
+    applyPatch({ colorGrading: { ...INITIAL_ADJUSTMENTS.colorGrading } });
+  };
+  const resetCalibration = () => {
+    haptic(6);
+    applyPatch({ colorCalibration: { ...INITIAL_ADJUSTMENTS.colorCalibration } });
+  };
 
   /* 色彩匹配（AI 追色）：拾取样片 → ComputeColorMatch → 合并 colorGrading/curves 补丁。
    * 与桌面 handleColorMatch 同链路；Android 样片为 content:// URI，由后端 ContentResolver 读取。 */
@@ -224,7 +236,8 @@ function TonePanel() {
     });
   };
 
-  const resetCurve = () =>
+  const resetCurve = () => {
+    haptic(6);
     applyPatch({
       parametricCurve: { ...parametricBase, [curveChannel]: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS } },
       curveMode: 'parametric',
@@ -233,6 +246,7 @@ function TonePanel() {
         [curveChannel]: buildParametricPoints(DEFAULT_PARAMETRIC_CURVE_SETTINGS),
       },
     });
+  };
 
   return (
     <PanelShell titleKey="crystal.categories.tone">
@@ -243,7 +257,10 @@ function TonePanel() {
             role="tab"
             aria-selected={tab === tabDef.id}
             className={`cx-tone-tab${tab === tabDef.id ? ' active' : ''}`}
-            onClick={() => setTab(tabDef.id)}
+            onClick={() => {
+              haptic(6);
+              setTab(tabDef.id);
+            }}
           >
             {t(tabDef.labelKey)}
           </button>
@@ -365,7 +382,10 @@ function TonePanel() {
                   key={bandDef.id}
                   className={`cx-hsl-band${band === bandDef.id ? ' active' : ''}`}
                   style={{ '--band-color': bandDef.swatch } as React.CSSProperties}
-                  onClick={() => setBand(bandDef.id)}
+                  onClick={() => {
+                    haptic(6);
+                    setBand(bandDef.id);
+                  }}
                   aria-pressed={band === bandDef.id}
                 >
                   <span className="cx-hswatch" />
@@ -409,7 +429,10 @@ function TonePanel() {
                   key={region.id}
                   className={`cx-hsl-band${gradingRegion === region.id ? ' active' : ''}`}
                   style={{ '--band-color': region.swatch } as React.CSSProperties}
-                  onClick={() => setGradingRegion(region.id)}
+                  onClick={() => {
+                    haptic(6);
+                    setGradingRegion(region.id);
+                  }}
                   aria-pressed={gradingRegion === region.id}
                 >
                   <span className="cx-hswatch" />
@@ -420,7 +443,10 @@ function TonePanel() {
             <button
               className="cx-ai-apply mb-2 w-full"
               style={{ width: '100%' }}
-              onClick={() => void handleColorMatch()}
+              onClick={() => {
+                haptic(6);
+                void handleColorMatch();
+              }}
               disabled={matchBusy}
             >
               {matchBusy ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
@@ -484,7 +510,10 @@ function TonePanel() {
                   key={prim.id}
                   className={`cx-hsl-band${primary === prim.id ? ' active' : ''}`}
                   style={{ '--band-color': prim.swatch } as React.CSSProperties}
-                  onClick={() => setPrimary(prim.id)}
+                  onClick={() => {
+                    haptic(6);
+                    setPrimary(prim.id);
+                  }}
                   aria-pressed={primary === prim.id}
                 >
                   <span className="cx-hswatch" />
@@ -535,7 +564,10 @@ function TonePanel() {
                 key={ch.id}
                 className={`cx-hsl-band${curveChannel === ch.id ? ' active' : ''}`}
                 style={{ '--band-color': ch.swatch } as React.CSSProperties}
-                onClick={() => setCurveChannel(ch.id)}
+                onClick={() => {
+                  haptic(6);
+                  setCurveChannel(ch.id);
+                }}
                 aria-pressed={curveChannel === ch.id}
               >
                 <span className="cx-hswatch" />
@@ -546,12 +578,24 @@ function TonePanel() {
           <div className="cx-curve-card">
             <svg className="cx-curve-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
               <line x1="0" y1="100" x2="100" y2="0" stroke="rgba(255,255,255,0.18)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              {/* 未激活但已修改的通道淡显（与桌面 Curves.tsx inactive 通道叠加同构） */}
+              {CURVE_CHANNELS.filter((ch) => ch.id !== curveChannel && channelModified(ch.id)).map((ch) => (
+                <polyline
+                  key={ch.id}
+                  fill="none"
+                  stroke={ch.swatch}
+                  strokeWidth="1.5"
+                  strokeOpacity="0.5"
+                  vectorEffect="non-scaling-stroke"
+                  points={channelPoints(ch.id).join(' ')}
+                />
+              ))}
               <polyline
                 fill="none"
                 stroke={CURVE_CHANNELS.find((ch) => ch.id === curveChannel)?.swatch ?? 'var(--color-accent)'}
                 strokeWidth="2"
                 vectorEffect="non-scaling-stroke"
-                points={curvePoints.map((p) => `${(p.x / 255) * 100},${100 - (p.y / 255) * 100}`).join(' ')}
+                points={channelPoints(curveChannel).join(' ')}
               />
             </svg>
             <button className="cx-curve-reset" onClick={resetCurve}>
