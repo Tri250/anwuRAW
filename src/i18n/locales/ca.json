@@ -413,6 +413,9 @@
       "failedSyncAdjustments": "Ha fallat la sincronització dels ajustos amb les imatges seleccionades: {{err}}"
     }
   },
+  "aiMask": {
+    "faceMaskFailed": "La màscara facial d’IA ha fallat: {{error}}"
+  },
   "crystal": {
     "ai": {
       "clarity": "Nitidesa",

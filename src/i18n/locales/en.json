@@ -396,6 +396,9 @@
       "failedSyncAdjustments": "Failed to sync adjustments to selected images: {{err}}"
     }
   },
+  "aiMask": {
+    "faceMaskFailed": "AI face mask failed: {{error}}"
+  },
   "crystal": {
     "ai": {
       "clarity": "Clarity",

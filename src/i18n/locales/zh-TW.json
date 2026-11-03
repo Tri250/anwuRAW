@@ -390,6 +390,9 @@
       "failedSyncAdjustments": "同步調整到選中影像失敗：{{err}}"
     }
   },
+  "aiMask": {
+    "faceMaskFailed": "人臉辨識失敗：{{error}}"
+  },
   "crystal": {
     "ai": {
       "clarity": "清晰度",

@@ -433,6 +433,9 @@
       "failedSyncAdjustments": "Synchronizace úprav s vybranými obrázky selhala: {{err}}"
     }
   },
+  "aiMask": {
+    "faceMaskFailed": "Maska obličeje AI se nezdařila: {{error}}"
+  },
   "crystal": {
     "ai": {
       "clarity": "Jasnost",

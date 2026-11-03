@@ -390,6 +390,9 @@
       "failedSyncAdjustments": "選択した画像への調整の同期に失敗しました：{{err}}"
     }
   },
+  "aiMask": {
+    "faceMaskFailed": "顔認識に失敗しました：{{error}}"
+  },
   "crystal": {
     "ai": {
       "clarity": "明瞭度",

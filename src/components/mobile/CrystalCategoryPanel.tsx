@@ -670,8 +670,8 @@ function PortraitPanel() {
   const { applyPatch, setAdjustments } = useCrystalAdjust();
   const {
     handleGenerateAiFaceMask,
-    findContainer,
-    ensureContainer,
+    findLiquifyHost,
+    createLiquifyHost,
     findContainerByKind,
     removeContainerByKind,
     updateSubMaskParameters,
@@ -695,7 +695,6 @@ function PortraitPanel() {
     // 一键人像：柔肤降噪 + 轻微通透 + 暖调，全部为真实管线参数。
     applyPatch({
       lumaNoiseReduction: Math.max(Number(adjustments.lumaNoiseReduction ?? 0), 22),
-      clarity: Number(adjustments.clarity ?? 0),
       dehaze: Number(adjustments.dehaze ?? 0) + 6,
       temperature: Number(adjustments.temperature ?? 0) + 4,
       vibrance: Number(adjustments.vibrance ?? 0) + 8,
@@ -832,7 +831,8 @@ function PortraitPanel() {
    * 防抖 600ms 调 GenerateFaceLiquifyPatch → aiPatches upsert；双 0 自动移除补丁。 */
   const runFaceLiquify = useCallback(async () => {
     const main = useEditorStore.getState();
-    const host = (main.adjustments.masks || []).find((c) => c.subMasks.some((sm) => sm.type === Mask.AiFace));
+    // 专用宿主（与算子容器隔离）：先取已承载 liquify 值的 AiFace 容器
+    const host = findLiquifyHost();
     if (!host || !main.selectedImage) return;
     const liq = (host.subMasks[0]?.parameters?.liquify ?? {}) as { slimFace?: number; jawline?: number };
     const slim = liq.slimFace ?? 0;
@@ -906,18 +906,19 @@ function PortraitPanel() {
       }));
       toast.error(t('crystal.portrait.liquifyFailed'));
     }
-  }, [setAdjustments, t]);
+  }, [findLiquifyHost, setAdjustments, t]);
 
   const setLiquify = useCallback(
     (key: 'slimFace' | 'jawline', v: number) => {
-      let host = findContainer(Mask.AiFace);
-      if (!host) host = ensureContainer(Mask.AiFace, { parts: ['faceSkin'] });
+      // 美型值存专用宿主（非算子容器）：移除磨皮/牙齿/眼部不会连带清掉美型
+      let host = findLiquifyHost();
+      if (!host) host = createLiquifyHost();
       const liq = (host.subMasks[0]?.parameters?.liquify ?? {}) as { slimFace?: number; jawline?: number };
       updateSubMaskParameters(host.id, host.subMasks[0].id, { liquify: { ...liq, [key]: v } });
       if (liquifyTimerRef.current) window.clearTimeout(liquifyTimerRef.current);
       liquifyTimerRef.current = window.setTimeout(() => void runFaceLiquify(), 600);
     },
-    [ensureContainer, findContainer, runFaceLiquify, updateSubMaskParameters],
+    [createLiquifyHost, findLiquifyHost, runFaceLiquify, updateSubMaskParameters],
   );
 
   /* 背景虚化 —— 复用桌面 Effects 链路（generate_full_image_depth_map
@@ -931,7 +932,7 @@ function PortraitPanel() {
     }
     // 已识别过深度图：直接复用它开启，避免重复调用重推理
     if (adj.lensBlurDepthMap) {
-      applyPatch({ lensBlurEnabled: true, lensBlurAmount: adj.lensBlurAmount || 50 });
+      applyPatch({ lensBlurEnabled: true, lensBlurAmount: adj.lensBlurAmount ?? 50 });
       return;
     }
     setBlurBusy(true);
@@ -945,7 +946,7 @@ function PortraitPanel() {
     }
   }, [applyPatch, blurBusy, t]);
 
-  const liquifyHost = findContainer(Mask.AiFace);
+  const liquifyHost = findLiquifyHost();
   const liquifyValues = (liquifyHost?.subMasks[0]?.parameters?.liquify ?? {}) as {
     slimFace?: number;
     jawline?: number;
@@ -953,7 +954,14 @@ function PortraitPanel() {
 
   return (
     <PanelShell titleKey="crystal.categories.portrait">
-      <button className="cx-ai-apply mb-3 w-full" onClick={oneTapPortrait} style={{ width: '100%' }}>
+      <button
+        className="cx-ai-apply mb-3 w-full"
+        onClick={() => {
+          haptic(8);
+          oneTapPortrait();
+        }}
+        style={{ width: '100%' }}
+      >
         {t('crystal.portrait.oneTap')}
       </button>
 
@@ -965,7 +973,10 @@ function PortraitPanel() {
             <button
               key={op.kind}
               className={`cx-tile ${active ? 'is-active' : ''}`}
-              onClick={() => void runOperator(op)}
+              onClick={() => {
+                haptic(6);
+                void runOperator(op);
+              }}
               disabled={Boolean(opBusy) && !busy}
             >
               {busy ? (
@@ -990,7 +1001,10 @@ function PortraitPanel() {
         })}
         <button
           className={`cx-tile ${adjustments.lensBlurEnabled ? 'is-active' : ''}`}
-          onClick={runBgBlur}
+          onClick={() => {
+            haptic(6);
+            runBgBlur();
+          }}
           disabled={blurBusy}
         >
           {blurBusy ? (
@@ -1029,12 +1043,25 @@ function PortraitPanel() {
               }}
             />
             {op.kind === 'smoothing' && ready && (
-              <button className="cx-mask-remove" onClick={() => void handleUnifySkin()} disabled={unifyBusy}>
+              <button
+                className="cx-mask-remove"
+                onClick={() => {
+                  haptic(6);
+                  void handleUnifySkin();
+                }}
+                disabled={unifyBusy}
+              >
                 {unifyBusy ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
                 {t('crystal.portrait.unifySkin')}
               </button>
             )}
-            <button className="cx-mask-remove" onClick={() => removeOperator(op)}>
+            <button
+              className="cx-mask-remove"
+              onClick={() => {
+                haptic(6);
+                removeOperator(op);
+              }}
+            >
               <X size={11} />
               {t('crystal.portrait.removeMask')}
             </button>

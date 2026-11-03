@@ -413,6 +413,9 @@
       "failedSyncAdjustments": "Falha ao sincronizar os ajustes com as imagens selecionadas: {{err}}"
     }
   },
+  "aiMask": {
+    "faceMaskFailed": "Falha na máscara facial de IA: {{error}}"
+  },
   "crystal": {
     "ai": {
       "clarity": "Nitidez",

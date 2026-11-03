@@ -566,6 +566,42 @@ export function useCrystalAiMasks() {
     [findContainer, setAdjustments],
   );
 
+  /* 美型（liquify）专用宿主：与磨皮/牙齿/眼部算子容器隔离。
+   * 若挂在算子容器上，移除该算子会连带清掉美型值与补丁（滑杆静默归零、效果消失）。
+   * 选取顺序：已承载 liquify 值的 AiFace 容器（兼容旧数据）→ 无 retouchKind 的
+   * AiFace 容器 → null（由 createLiquifyHost 新建独立容器）。 */
+  const findLiquifyHost = useCallback((): AiContainer | null => {
+    const { adjustments } = useEditorStore.getState();
+    const aiFaces = (adjustments.masks || []).filter((c: MaskContainer) =>
+      c.subMasks.some((sm: SubMask) => sm.type === Mask.AiFace),
+    );
+    const holder = aiFaces.find((c: MaskContainer) => {
+      const liq = c.subMasks[0]?.parameters?.liquify as { slimFace?: number; jawline?: number } | undefined;
+      return Boolean(liq && ((liq.slimFace ?? 0) > 0 || (liq.jawline ?? 0) > 0));
+    });
+    if (holder) return holder;
+    return aiFaces.find((c: MaskContainer) => !c.subMasks[0]?.parameters?.retouchKind) ?? null;
+  }, []);
+
+  /* 新建独立美型宿主：parts=faceSkin，不参与任何算子开关，也不触发表情识别
+   * （人脸液化补丁由后端 generate_face_liquify_patch 自行定位人脸，不依赖蒙版数据）。 */
+  const createLiquifyHost = useCallback((): AiContainer => {
+    const { selectedImage } = useEditorStore.getState();
+    const subMask = createSubMask(Mask.AiFace, {
+      width: selectedImage?.width ?? 1000,
+      height: selectedImage?.height ?? 1000,
+    });
+    subMask.parameters = { ...subMask.parameters, parts: ['faceSkin'] };
+    const container: AiContainer = {
+      ...INITIAL_MASK_CONTAINER,
+      id: uuidv4(),
+      name: subMask.name || Mask.AiFace,
+      subMasks: [subMask],
+    };
+    setAdjustments((prev) => ({ ...prev, masks: [...(prev.masks || []), container] }));
+    return container;
+  }, [setAdjustments]);
+
   return {
     handleGenerateAiFaceMask,
     handleGenerateAiSkyMask,
@@ -578,5 +614,7 @@ export function useCrystalAiMasks() {
     setMaskAdjustments,
     maskReady,
     removeContainer,
+    findLiquifyHost,
+    createLiquifyHost,
   };
 }

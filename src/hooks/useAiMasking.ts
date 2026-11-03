@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../store/useEditorStore';
 import { useProcessStore } from '../store/useProcessStore';
 import { useEditorActions } from './useEditorActions';
@@ -40,6 +41,7 @@ const beginAiMaskRequest = (subMaskId: string) => {
 const isStaleAiMaskRequest = (subMaskId: string, epoch: number) => aiMaskRequestEpochs.get(subMaskId) !== epoch;
 
 export function useAiMasking() {
+  const { t } = useTranslation();
   const { setAdjustments } = useEditorActions();
   const setEditor = useEditorStore((state) => state.setEditor);
   const getToken = useCloudStore((s) => s.getToken);
@@ -589,11 +591,11 @@ export function useAiMasking() {
       const mergedParameters = { ...subMask.parameters, ...newParameters };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
-      if (noResult) toast.error(`AI Face Mask Failed: ${noResult}`);
+      if (noResult) toast.error(t('aiMask.faceMaskFailed', { error: String(noResult) }));
     } catch (error) {
       if (isStaleAiMaskRequest(subMaskId, epoch)) return;
       if (!String(error).includes('cancelled')) {
-        toast.error(`AI Face Mask Failed: ${error}`);
+        toast.error(t('aiMask.faceMaskFailed', { error: String(error) }));
       }
     } finally {
       if (!isStaleAiMaskRequest(subMaskId, epoch)) {

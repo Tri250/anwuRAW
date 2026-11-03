@@ -393,6 +393,9 @@
       "failedSyncAdjustments": "Synchroniseren van aanpassingen met geselecteerde afbeeldingen mislukt: {{err}}"
     }
   },
+  "aiMask": {
+    "faceMaskFailed": "AI-gezichtsmasker mislukt: {{error}}"
+  },
   "crystal": {
     "ai": {
       "clarity": "Helderheid",

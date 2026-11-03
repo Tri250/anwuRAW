@@ -393,6 +393,9 @@
       "failedSyncAdjustments": "Synchronisieren der Anpassungen mit den ausgewählten Bildern fehlgeschlagen: {{err}}"
     }
   },
+  "aiMask": {
+    "faceMaskFailed": "KI-Gesichtsmaske fehlgeschlagen: {{error}}"
+  },
   "crystal": {
     "ai": {
       "clarity": "Klarheit",

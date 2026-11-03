@@ -390,6 +390,9 @@
       "failedSyncAdjustments": "선택한 이미지에 보정 동기화 실패: {{err}}"
     }
   },
+  "aiMask": {
+    "faceMaskFailed": "얼굴 인식 실패: {{error}}"
+  },
   "crystal": {
     "ai": {
       "clarity": "선명도",
