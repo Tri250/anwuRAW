@@ -6,7 +6,9 @@ import type { ParseKeys } from 'i18next';
 import {
   Aperture,
   Circle,
+  Contrast,
   CopyPlus,
+  Crop,
   Eye,
   FlipHorizontal,
   FlipVertical,
@@ -22,7 +24,9 @@ import {
   Sparkles,
   Trash2,
   Upload,
+  User,
   Wand2,
+  Waves,
   X,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -58,12 +62,26 @@ import CrystalAiToolsPanel from './CrystalAiToolsPanel';
 
 /* ---------------------------------------------------------------------------
  * 参数面板骨架：标题 + 滑杆组。所有值读写真实 store.adjustments。
+ * 布局统一（以预设/滤镜/AI 工具面板为标准）：标题行与标准面板同规格——
+ * 13px 分类图标 + 文案（预设/滤镜 = Wand2、AI = Sparkles，此处按分类导航
+ * 同源图标），面板容器由路由层统一挂 .cx-panel（定高滚动卡片）。
  * ------------------------------------------------------------------------- */
-function PanelShell({ titleKey, children }: { titleKey: ParseKeys; children: React.ReactNode }) {
+function PanelShell({
+  titleKey,
+  icon: Icon,
+  children,
+}: {
+  titleKey: ParseKeys;
+  icon: typeof User;
+  children: React.ReactNode;
+}) {
   const { t } = useTranslation();
   return (
     <>
-      <div className="cx-panel-title">{t(titleKey)}</div>
+      <div className="cx-panel-title">
+        <Icon size={13} className="inline mr-1.5 -mt-0.5" />
+        {t(titleKey)}
+      </div>
       {children}
     </>
   );
@@ -275,7 +293,7 @@ function TonePanel() {
   };
 
   return (
-    <PanelShell titleKey="crystal.categories.tone">
+    <PanelShell titleKey="crystal.categories.tone" icon={Waves}>
       <div className="cx-tone-tabs" role="tablist">
         {TONE_TABS.map((tabDef) => (
           <button
@@ -1053,7 +1071,7 @@ function PortraitPanel() {
   };
 
   return (
-    <PanelShell titleKey="crystal.categories.portrait">
+    <PanelShell titleKey="crystal.categories.portrait" icon={User}>
       <button
         className="cx-ai-apply mb-3 w-full"
         onClick={() => {
@@ -1361,7 +1379,7 @@ function ComposePanel() {
   }, [applyPatch]);
 
   return (
-    <PanelShell titleKey="crystal.categories.compose">
+    <PanelShell titleKey="crystal.categories.compose" icon={Crop}>
       <div className="cx-chip-row mb-3">
         {ASPECT_CHIPS.map(({ labelKey, value }) => (
           <button
@@ -1794,7 +1812,7 @@ function FxPanel() {
   const grainOn = Number(adjustments.grainAmount ?? 0) > 0;
 
   return (
-    <PanelShell titleKey="crystal.categories.fx">
+    <PanelShell titleKey="crystal.categories.fx" icon={Contrast}>
       <div className="cx-lut">
         <div className="cx-lut-head">
           <span className="cx-lut-title">{t('crystal.fx.lut')}</span>
@@ -2421,7 +2439,12 @@ function FxPanel() {
   );
 }
 
-/* ---------------------------- 路由容器 ---------------------------- */
+/* ---------------------------- 路由容器 ----------------------------
+ * 布局统一（以预设/滤镜/AI 工具面板为标准）：七个分类一律挂同一个
+ * .cx-panel 容器——定高滚动卡片（clamp 216-268px）、统一内边距与卡片
+ * 背景/边框、横屏左栏 grid 布局。此前人像/调色/构图/特效四面板为裸
+ * fragment 直入 flex column，无定高无滚动无卡片视觉，与标准面板比例
+ * 完全脱节（预览被挤压、内容贴边、横屏 grid-area 丢失）。 */
 export default function CrystalCategoryPanel({ category }: { category: CrystalCategory }) {
   switch (category) {
     case 'presets':
@@ -2443,13 +2466,29 @@ export default function CrystalCategoryPanel({ category }: { category: CrystalCa
         </div>
       );
     case 'tone':
-      return <TonePanel />;
+      return (
+        <div className="cx-panel">
+          <TonePanel />
+        </div>
+      );
     case 'portrait':
-      return <PortraitPanel />;
+      return (
+        <div className="cx-panel">
+          <PortraitPanel />
+        </div>
+      );
     case 'compose':
-      return <ComposePanel />;
+      return (
+        <div className="cx-panel">
+          <ComposePanel />
+        </div>
+      );
     case 'fx':
-      return <FxPanel />;
+      return (
+        <div className="cx-panel">
+          <FxPanel />
+        </div>
+      );
     default:
       return null;
   }
