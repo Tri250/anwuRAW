@@ -695,6 +695,9 @@ function PortraitPanel() {
     // 一键人像：柔肤降噪 + 轻微通透 + 暖调，全部为真实管线参数。
     applyPatch({
       lumaNoiseReduction: Math.max(Number(adjustments.lumaNoiseReduction ?? 0), 22),
+      // 通透：clarity 增量提升（原为自写当前值的无操作行，本轮激活为 +8，
+      // 与 AI 推荐人像配方 crystal.aiRecommend.recipe 的 clarity: 8 对齐）
+      clarity: Number(adjustments.clarity ?? 0) + 8,
       dehaze: Number(adjustments.dehaze ?? 0) + 6,
       temperature: Number(adjustments.temperature ?? 0) + 4,
       vibrance: Number(adjustments.vibrance ?? 0) + 8,
