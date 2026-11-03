@@ -770,52 +770,6 @@ function PortraitPanel() {
     return at;
   };
 
-  /* 算子开关：未开启 → 建独立 AiFace 容器（parts 限定作用域）并识别；已开启 → 移除。 */
-  const runOperator = useCallback(
-    async (op: RetouchOp) => {
-      if (opBusy) return;
-      if (findContainerByKind(op.kind)) {
-        removeContainerByKind(op.kind);
-        return;
-      }
-      setOpBusy(op.kind);
-      try {
-        const { selectedImage: img } = useEditorStore.getState();
-        const subMask = createSubMask(Mask.AiFace, { width: img?.width ?? 1000, height: img?.height ?? 1000 });
-        subMask.parameters = {
-          ...subMask.parameters,
-          parts: [...op.parts],
-          retouchKind: op.kind,
-          retouch: { [op.kind]: RETOUCH_DEFAULT },
-        };
-        const containerId = uuidv4();
-        const container = {
-          ...INITIAL_MASK_CONTAINER,
-          id: containerId,
-          name: t(`editor.masks.retouch.${op.kind}Container`),
-          subMasks: [subMask],
-          adjustments: {
-            ...INITIAL_MASK_CONTAINER.adjustments,
-            ...op.map(RETOUCH_DEFAULT),
-            activeTools: activateSections(op.sections),
-          },
-        };
-        setAdjustments((prev) => ({ ...prev, masks: [...(prev.masks || []), container] }));
-        await handleGenerateAiFaceMask(subMask.id, op.parts);
-        const latest = useEditorStore.getState().adjustments;
-        const created = (latest.masks || []).find((c) => c.id === containerId);
-        if (!created?.subMasks[0]?.parameters?.maskDataBase64) {
-          toast.error(t('crystal.ai.maskFailed'));
-        }
-      } catch {
-        toast.error(t('crystal.ai.maskFailed'));
-      } finally {
-        setOpBusy(null);
-      }
-    },
-    [findContainerByKind, handleGenerateAiFaceMask, opBusy, removeContainerByKind, setAdjustments, t],
-  );
-
   /* 移除算子容器；若其承载美型（liquify）值，则同步清掉对应 aiPatch。 */
   const removeOperator = useCallback(
     (op: RetouchOp) => {
@@ -832,6 +786,60 @@ function PortraitPanel() {
       }
     },
     [findContainerByKind, removeContainerByKind, setAdjustments],
+  );
+
+  /* 算子开关：未开启 → 建独立 AiFace 容器（parts 限定作用域）并识别；已开启 → 移除。
+   * 识别失败/取消时移除刚建的容器：避免 tile 显示激活却无任何效果的死状态。 */
+  const runOperator = useCallback(
+    async (op: RetouchOp) => {
+      if (opBusy) return;
+      if (findContainerByKind(op.kind)) {
+        removeOperator(op);
+        return;
+      }
+      setOpBusy(op.kind);
+      let containerId: string | null = null;
+      try {
+        const { selectedImage: img } = useEditorStore.getState();
+        const subMask = createSubMask(Mask.AiFace, { width: img?.width ?? 1000, height: img?.height ?? 1000 });
+        subMask.parameters = {
+          ...subMask.parameters,
+          parts: [...op.parts],
+          retouchKind: op.kind,
+          retouch: { [op.kind]: RETOUCH_DEFAULT },
+        };
+        containerId = uuidv4();
+        const container = {
+          ...INITIAL_MASK_CONTAINER,
+          id: containerId,
+          name: t(`editor.masks.retouch.${op.kind}Container`),
+          subMasks: [subMask],
+          adjustments: {
+            ...INITIAL_MASK_CONTAINER.adjustments,
+            ...op.map(RETOUCH_DEFAULT),
+            activeTools: activateSections(op.sections),
+          },
+        };
+        setAdjustments((prev) => ({ ...prev, masks: [...(prev.masks || []), container] }));
+        await handleGenerateAiFaceMask(subMask.id, op.parts);
+        const latest = useEditorStore.getState().adjustments;
+        const created = (latest.masks || []).find((c) => c.id === containerId);
+        if (!created?.subMasks[0]?.parameters?.maskDataBase64) {
+          throw new Error('face mask not ready');
+        }
+      } catch {
+        if (containerId) {
+          setAdjustments((prev) => ({
+            ...prev,
+            masks: (prev.masks || []).filter((c) => c.id !== containerId),
+          }));
+        }
+        toast.error(t('crystal.ai.maskFailed'));
+      } finally {
+        setOpBusy(null);
+      }
+    },
+    [findContainerByKind, handleGenerateAiFaceMask, opBusy, removeOperator, setAdjustments, t],
   );
 
   /* 统一肤色：复用桌面 ComputeSkinUnify，结果写入磨皮容器 colorGrading.global。 */

@@ -1067,6 +1067,10 @@ html.android body > .global-tooltip {
 .cx-bottom-btn:disabled {
   color: var(--cx-faint);
 }
+/* 对比等toggle态：点亮当前激活键（与 cx-chip is-active 同语义） */
+.cx-bottom-btn.is-active {
+  color: var(--cx-accent);
+}
 .cx-bottom-btn.cx-gold {
   color: var(--cx-gold);
 }

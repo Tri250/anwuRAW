@@ -30,6 +30,7 @@ import { Status } from '../ui/ExportImportProperties';
 import ConfirmModal from '../modals/ConfirmModal';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
 import { haptic, summarizeExif, useShowOriginalHold } from './crystalShared';
+import { debouncedSave, debouncedSetHistory } from '../../hooks/useEditorActions';
 import { selectAiModelDownloadStatus } from '../../store/useProcessStore';
 import CrystalCategoryPanel from './CrystalCategoryPanel';
 import CrystalPreview from './CrystalPreview';
@@ -96,10 +97,13 @@ function CrystalBottomBar({
   onExport,
   onReset,
   onCompare,
+  compareActive,
 }: {
   onExport: () => void;
   onReset: () => void;
   onCompare: () => void;
+  /** 对比分屏视图开启中：按钮点亮，与预览层关闭按钮形成双向闭环 */
+  compareActive: boolean;
 }) {
   const { t } = useTranslation();
   const canUndo = useEditorStore((s) => s.historyIndex > 0);
@@ -121,6 +125,9 @@ function CrystalBottomBar({
         className="cx-bottom-btn"
         onClick={() => {
           haptic(6);
+          // 撤销前拦截在途的防抖历史提交：否则 500ms 内拖完滑杆点撤销，
+          // 待推送会把撤销前的状态重新压回栈顶，污染撤销栈并错乱重做边界。
+          debouncedSetHistory.cancel();
           undo();
         }}
         disabled={!canUndo}
@@ -134,6 +141,7 @@ function CrystalBottomBar({
         className="cx-bottom-btn"
         onClick={() => {
           haptic(6);
+          debouncedSetHistory.cancel();
           redo();
         }}
         disabled={!canRedo}
@@ -143,9 +151,9 @@ function CrystalBottomBar({
         </span>
         {t('crystal.bottom.redo')}
       </button>
-      {/* 对比：进入前后对比分割视图，再点退出 */}
+      {/* 对比：进入前后对比分割视图，再点退出；开启中按钮点亮反馈状态 */}
       <button
-        className="cx-bottom-btn"
+        className={`cx-bottom-btn${compareActive ? ' is-active' : ''}`}
         onClick={() => {
           haptic(6);
           onCompare();
@@ -295,6 +303,10 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
   const handleReset = useCallback(() => {
     const sel = useEditorStore.getState().selectedImage;
     // 与桌面重置语义一致：恢复初始参数、清 AI patch、重建历史栈，并持久化到 sidecar。
+    // 先拦截在途防抖任务：否则 500ms 内的编辑在重置后把旧状态推回历史栈、
+    // 300ms 内的编辑把旧参数写回 sidecar，重置闭环被回滚。
+    debouncedSetHistory.cancel();
+    debouncedSave.cancel();
     const resetData = { ...INITIAL_ADJUSTMENTS, aiPatches: [] } as Adjustments;
     resetHistory(resetData);
     setEditor({ adjustments: resetData, showOriginal: false, previewOverride: null });
@@ -328,6 +340,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
             onExport={goExport}
             onReset={() => setIsResetConfirmOpen(true)}
             onCompare={() => setIsCompareOpen((v) => !v)}
+            compareActive={isCompareOpen}
           />
           <ConfirmModal
             isOpen={isResetConfirmOpen}
