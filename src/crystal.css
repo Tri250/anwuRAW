@@ -1149,6 +1149,10 @@
   color: var(--cx-accent);
   background: var(--cx-accent-soft);
 }
+/* 审计 AI-反馈：chip 作 CTA 时（文本蒙版生成键）禁用态需可见降级 */
+.cx-chip:disabled {
+  opacity: 0.45;
+}
 
 /* 子标签页 */
 .cx-subtabs {

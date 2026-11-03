@@ -23,7 +23,7 @@ import { Invokes } from '../ui/AppProperties';
 import { Mask } from '../panel/right/Masks';
 import { useEditorActions } from '../../hooks/useEditorActions';
 import { useAiMasking } from '../../hooks/useAiMasking';
-import { CxSliderRow, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
+import { CxSliderRow, haptic, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * Crystal AI 工具面板：全部为真实管线能力。
@@ -308,6 +308,8 @@ export default function CrystalAiToolsPanel() {
           structure: Math.max(Number(adjustments.structure ?? 0), 10),
           clarity: Math.max(Number(adjustments.clarity ?? 0), 10),
         }),
+      /* 审计 AI-反馈：值已达标时点击无变化，补激活态给到视觉闭环 */
+      active: Number(adjustments.structure ?? 0) >= 10 || Number(adjustments.clarity ?? 0) >= 10,
     },
     {
       id: 'sky',
@@ -322,7 +324,8 @@ export default function CrystalAiToolsPanel() {
       id: 'subject',
       label: t('crystal.ai.tiles.subject'),
       icon: User,
-      color: 'var(--cx-cat-ren)',
+      /* 审计 AI-色：原 --cx-cat-ren 未定义（回退金色），改人像紫贴合主体识别语义 */
+      color: 'var(--cx-cat-portrait)',
       onClick: runSubject,
       active: subjectReady,
       busy: busy === 'subject',
@@ -362,7 +365,10 @@ export default function CrystalAiToolsPanel() {
               <button
                 key={id}
                 className={`cx-chip ${intensity === id ? 'is-active' : ''}`}
-                onClick={() => setIntensity(id)}
+                onClick={() => {
+                  haptic(6);
+                  setIntensity(id);
+                }}
               >
                 {t(labelKey)}
               </button>
@@ -374,7 +380,10 @@ export default function CrystalAiToolsPanel() {
               <button
                 key={id}
                 className={`cx-tile ${active ? 'is-active' : ''} ${isBusy ? 'is-busy' : ''}`}
-                onClick={onClick}
+                onClick={() => {
+                  haptic(6);
+                  onClick();
+                }}
                 disabled={Boolean(busy)}
               >
                 {isBusy ? (
@@ -401,6 +410,9 @@ export default function CrystalAiToolsPanel() {
                 value={textPrompt}
                 placeholder={t('editor.masks.settings.textPromptPlaceholder')}
                 disabled={Boolean(busy)}
+                /* 审计 AI-输入：出现即聚焦拉起软键盘，免二次点按 */
+                autoFocus
+                enterKeyHint="go"
                 onChange={(e) => setTextPrompt(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !busy) void runText();
@@ -409,7 +421,10 @@ export default function CrystalAiToolsPanel() {
               <button
                 className="cx-chip is-active shrink-0"
                 disabled={Boolean(busy) || !textPrompt.trim()}
-                onClick={() => void runText()}
+                onClick={() => {
+                  haptic(6);
+                  void runText();
+                }}
               >
                 {t('editor.masks.settings.generateTextMask')}
               </button>
@@ -433,7 +448,13 @@ export default function CrystalAiToolsPanel() {
                   })
                 }
               />
-              <button className="cx-mask-remove" onClick={() => removeContainer(Mask.AiSky)}>
+              <button
+                className="cx-mask-remove"
+                onClick={() => {
+                  haptic(6);
+                  removeContainer(Mask.AiSky);
+                }}
+              >
                 <X size={11} />
                 {t('crystal.ai.removeMask')}
               </button>
@@ -451,7 +472,13 @@ export default function CrystalAiToolsPanel() {
                   subjectContainer && setMaskAdjustments(subjectContainer.id, { clarity: Math.round(v * 0.2) })
                 }
               />
-              <button className="cx-mask-remove" onClick={() => removeContainer(Mask.AiForeground)}>
+              <button
+                className="cx-mask-remove"
+                onClick={() => {
+                  haptic(6);
+                  removeContainer(Mask.AiForeground);
+                }}
+              >
                 <X size={11} />
                 {t('crystal.ai.removeMask')}
               </button>
@@ -469,7 +496,13 @@ export default function CrystalAiToolsPanel() {
                   textContainer && setMaskAdjustments(textContainer.id, { clarity: Math.round(v * 0.2) })
                 }
               />
-              <button className="cx-mask-remove" onClick={() => removeContainer(Mask.AiText)}>
+              <button
+                className="cx-mask-remove"
+                onClick={() => {
+                  haptic(6);
+                  removeContainer(Mask.AiText);
+                }}
+              >
                 <X size={11} />
                 {t('crystal.ai.removeMask')}
               </button>
@@ -516,7 +549,13 @@ export default function CrystalAiToolsPanel() {
                   updateSubMaskParameters(depthContainer.id, depthContainer.subMasks[0].id, { feather: v })
                 }
               />
-              <button className="cx-mask-remove" onClick={() => removeContainer(Mask.AiDepth)}>
+              <button
+                className="cx-mask-remove"
+                onClick={() => {
+                  haptic(6);
+                  removeContainer(Mask.AiDepth);
+                }}
+              >
                 <X size={11} />
                 {t('crystal.ai.removeMask')}
               </button>
@@ -593,7 +632,13 @@ export default function CrystalAiToolsPanel() {
               </span>
             )}
             {busyTaskId && (
-              <button className="cx-chip" onClick={handleCancelBusy}>
+              <button
+                className="cx-chip"
+                onClick={() => {
+                  haptic(6);
+                  handleCancelBusy();
+                }}
+              >
                 <X size={11} className="inline mr-1" />
                 {t('editor.ai.settings.cancelGeneration')}
               </button>
