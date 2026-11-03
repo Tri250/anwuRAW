@@ -333,7 +333,10 @@ function AiRecommendCard() {
           <span className="cx-ai-tag">{t('crystal.aiRecommend.tagExif')}</span>
         </div>
       </div>
-      <button className="cx-ai-apply" onClick={runAiEnhance} disabled={isEnhancing}>
+      <button className="cx-ai-apply" onClick={() => {
+        haptic(6);
+        runAiEnhance();
+      }} disabled={isEnhancing}>
         {isEnhancing ? (
           <Loader2 size={15} className="animate-spin inline" />
         ) : (
@@ -345,7 +348,10 @@ function AiRecommendCard() {
         <button
           className="cx-ai-apply"
           style={{ background: 'var(--cx-card2)', color: 'var(--cx-ink)', border: '1px solid var(--cx-border)' }}
-          onClick={applySceneRecipe}
+          onClick={() => {
+            haptic(6);
+            applySceneRecipe();
+          }}
         >
           {t('crystal.aiRecommend.recipe')}
         </button>
@@ -386,6 +392,8 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     null,
   );
   const [deleteTarget, setDeleteTarget] = useState<PreviewSource | null>(null);
+  /* 审计 P-可行性：多选 lrtemplate/xmp 转换可秒级，导入期间按钮忙碌防重复触发 */
+  const [importing, setImporting] = useState(false);
   const pressTimer = useRef<number | null>(null);
   const pressStart = useRef<{ x: number; y: number } | null>(null);
   const longPressFired = useRef(false);
@@ -604,6 +612,8 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   );
 
   const handleImportPresets = useCallback(async () => {
+    if (importing) return;
+    setImporting(true);
     try {
       const { osPlatform } = useSettingsStore.getState();
       const isAndroid = osPlatform === 'android';
@@ -649,8 +659,10 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     } catch (e) {
       console.error('Failed to import presets:', e);
       toast.error(t('crystal.presets.importFailed'));
+    } finally {
+      setImporting(false);
     }
-  }, [importPresetsFromFiles, resetGeneration, t]);
+  }, [importing, importPresetsFromFiles, resetGeneration, t]);
 
   const exportItem = useCallback(
     async (item: UserPreset, fallbackName: string) => {
@@ -813,14 +825,24 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
             <Plus size={13} />
             {t('crystal.presets.saveCurrent')}
           </button>
-          <button className="cx-preset-act" onClick={() => void handleImportPresets()}>
-            <FileUp size={13} />
+          <button
+            className="cx-preset-act"
+            disabled={importing}
+            onClick={() => {
+              haptic(6);
+              void handleImportPresets();
+            }}
+          >
+            {importing ? <Loader2 size={13} className="animate-spin" /> : <FileUp size={13} />}
             {t('crystal.presets.import')}
           </button>
           <button
             className="cx-preset-act"
             disabled={totalPresetCount === 0}
-            onClick={() => void handleExportAll()}
+            onClick={() => {
+              haptic(6);
+              void handleExportAll();
+            }}
           >
             <FileDown size={13} />
             {t('crystal.presets.exportAll')}
@@ -834,7 +856,10 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         <div className="cx-chip-row mt-3">
           <button
             className={`cx-chip ${selectedGroup === null ? 'is-active' : ''}`}
-            onClick={() => setSelectedGroup(null)}
+            onClick={() => {
+              haptic(6);
+              setSelectedGroup(null);
+            }}
           >
             {t('crystal.presets.all')}
           </button>
@@ -842,7 +867,10 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
             <button
               key={g.name}
               className={`cx-chip ${selectedGroup === g.name ? 'is-active' : ''}`}
-              onClick={() => setSelectedGroup(g.name)}
+              onClick={() => {
+                haptic(6);
+                setSelectedGroup(g.name);
+              }}
             >
               {g.name}
             </button>
@@ -855,7 +883,10 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         <div className="cx-chip-row mt-3">
           <button
             className={`cx-chip ${selectedGroup === null ? 'is-active' : ''}`}
-            onClick={() => setSelectedGroup(null)}
+            onClick={() => {
+              haptic(6);
+              setSelectedGroup(null);
+            }}
           >
             {t('crystal.presets.all')}
           </button>
@@ -863,7 +894,10 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
             <button
               key={g.id}
               className={`cx-chip ${selectedGroup === g.id ? 'is-active' : ''}`}
-              onClick={() => setSelectedGroup(g.id)}
+              onClick={() => {
+                haptic(6);
+                setSelectedGroup(g.id);
+              }}
             >
               {t(g.labelKey)}
             </button>
@@ -965,6 +999,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
               <button
                 className="cx-sheet-row"
                 onClick={() => {
+                  haptic(6);
                   void handleOverwrite(sheetSource);
                   setSheetSource(null);
                 }}
@@ -975,6 +1010,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
               <button
                 className="cx-sheet-row"
                 onClick={() => {
+                  haptic(6);
                   setNameDialog({ kind: 'rename', presetId: rawId(sheetSource.id), initial: sheetSource.name });
                   setSheetSource(null);
                 }}
@@ -985,6 +1021,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
               <button
                 className="cx-sheet-row"
                 onClick={() => {
+                  haptic(6);
                   void handleExportSingle(sheetSource);
                   setSheetSource(null);
                 }}
@@ -995,6 +1032,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
               <button
                 className="cx-sheet-row cx-danger"
                 onClick={() => {
+                  haptic(6);
                   setDeleteTarget(sheetSource);
                   setSheetSource(null);
                 }}
