@@ -398,7 +398,7 @@ export function useAiMasking() {
     }
   };
 
-  const handleGenerateAiDepthMask = async (subMaskId: string, parameters: any) => {
+  const handleGenerateAiDepthMask = async (subMaskId: string, parameters: any, options?: { silent?: boolean }) => {
     const { selectedImage, adjustments, patchesSentToBackend } = useEditorStore.getState();
     if (!selectedImage?.path) return;
     registerAiTask(subMaskId, 'depth');
@@ -432,7 +432,7 @@ export function useAiMasking() {
       updateSubMask(subMaskId, { parameters: mergedParameters });
     } catch (error) {
       if (isStaleAiMaskRequest(subMaskId, epoch)) return;
-      if (!String(error).includes('cancelled')) {
+      if (!String(error).includes('cancelled') && !options?.silent) {
         toast.error(t('aiMask.depthMaskFailed', { error: String(error) }));
       }
     } finally {
@@ -442,7 +442,7 @@ export function useAiMasking() {
     }
   };
 
-  const handleGenerateAiForegroundMask = async (subMaskId: string) => {
+  const handleGenerateAiForegroundMask = async (subMaskId: string, options?: { silent?: boolean }) => {
     const { selectedImage, adjustments, patchesSentToBackend } = useEditorStore.getState();
     if (!selectedImage?.path) return;
     registerAiTask(subMaskId, 'foreground');
@@ -468,10 +468,10 @@ export function useAiMasking() {
       const mergedParameters = { ...(subMask?.parameters || {}), ...newParameters };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
-      if (noResult) toast.error(t('aiMask.foregroundMaskFailed', { error: String(noResult) }));
+      if (noResult && !options?.silent) toast.error(t('aiMask.foregroundMaskFailed', { error: String(noResult) }));
     } catch (error) {
       if (isStaleAiMaskRequest(subMaskId, epoch)) return;
-      if (!String(error).includes('cancelled')) {
+      if (!String(error).includes('cancelled') && !options?.silent) {
         toast.error(t('aiMask.foregroundMaskFailed', { error: String(error) }));
       }
     } finally {
@@ -481,7 +481,7 @@ export function useAiMasking() {
     }
   };
 
-  const handleGenerateAiSkyMask = async (subMaskId: string) => {
+  const handleGenerateAiSkyMask = async (subMaskId: string, options?: { silent?: boolean }) => {
     const { selectedImage, adjustments, patchesSentToBackend } = useEditorStore.getState();
     if (!selectedImage?.path) return;
     registerAiTask(subMaskId, 'sky');
@@ -508,10 +508,10 @@ export function useAiMasking() {
       const mergedParameters = { ...(subMask?.parameters || {}), ...newParameters };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
-      if (noResult) toast.error(t('aiMask.skyMaskFailed', { error: String(noResult) }));
+      if (noResult && !options?.silent) toast.error(t('aiMask.skyMaskFailed', { error: String(noResult) }));
     } catch (error) {
       if (isStaleAiMaskRequest(subMaskId, epoch)) return;
-      if (!String(error).includes('cancelled')) {
+      if (!String(error).includes('cancelled') && !options?.silent) {
         toast.error(t('aiMask.skyMaskFailed', { error: String(error) }));
       }
     } finally {
@@ -521,7 +521,7 @@ export function useAiMasking() {
     }
   };
 
-  const handleGenerateAiTextMask = async (subMaskId: string, prompt: string) => {
+  const handleGenerateAiTextMask = async (subMaskId: string, prompt: string, options?: { silent?: boolean }) => {
     const { selectedImage, adjustments, patchesSentToBackend } = useEditorStore.getState();
     if (!selectedImage?.path || !prompt.trim()) return;
     registerAiTask(subMaskId, 'text');
@@ -549,10 +549,10 @@ export function useAiMasking() {
       const mergedParameters = { ...(subMask?.parameters || {}), ...newParameters };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
-      if (noResult) toast.error(t('aiMask.textMaskFailed', { error: String(noResult) }));
+      if (noResult && !options?.silent) toast.error(t('aiMask.textMaskFailed', { error: String(noResult) }));
     } catch (error) {
       if (isStaleAiMaskRequest(subMaskId, epoch)) return;
-      if (!String(error).includes('cancelled')) {
+      if (!String(error).includes('cancelled') && !options?.silent) {
         toast.error(t('aiMask.textMaskFailed', { error: String(error) }));
       }
     } finally {
@@ -562,7 +562,7 @@ export function useAiMasking() {
     }
   };
 
-  const handleGenerateAiFaceMask = async (subMaskId: string, parts: Array<string>) => {
+  const handleGenerateAiFaceMask = async (subMaskId: string, parts: Array<string>, options?: { silent?: boolean }) => {
     const { selectedImage, adjustments, patchesSentToBackend } = useEditorStore.getState();
     if (!selectedImage?.path || parts.length === 0) return;
     registerAiTask(subMaskId, 'face');
@@ -591,10 +591,10 @@ export function useAiMasking() {
       const mergedParameters = { ...subMask.parameters, ...newParameters };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
-      if (noResult) toast.error(t('aiMask.faceMaskFailed', { error: String(noResult) }));
+      if (noResult && !options?.silent) toast.error(t('aiMask.faceMaskFailed', { error: String(noResult) }));
     } catch (error) {
       if (isStaleAiMaskRequest(subMaskId, epoch)) return;
-      if (!String(error).includes('cancelled')) {
+      if (!String(error).includes('cancelled') && !options?.silent) {
         toast.error(t('aiMask.faceMaskFailed', { error: String(error) }));
       }
     } finally {

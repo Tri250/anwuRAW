@@ -159,7 +159,7 @@ export default function CrystalAiToolsPanel() {
       const container = ensureContainer(Mask.AiSky);
       const subMaskId = container.subMasks[0].id;
       setBusyTaskId(subMaskId);
-      await handleGenerateAiSkyMask(subMaskId);
+      await handleGenerateAiSkyMask(subMaskId, { silent: true });
       if (cancelRef.current) return;
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (maskReady(Mask.AiSky)) {
@@ -191,7 +191,7 @@ export default function CrystalAiToolsPanel() {
       const container = ensureContainer(Mask.AiForeground);
       const subMaskId = container.subMasks[0].id;
       setBusyTaskId(subMaskId);
-      await handleGenerateAiForegroundMask(subMaskId);
+      await handleGenerateAiForegroundMask(subMaskId, { silent: true });
       if (cancelRef.current) return;
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (maskReady(Mask.AiForeground)) {
@@ -249,7 +249,7 @@ export default function CrystalAiToolsPanel() {
       // 桌面语义：生成前把 prompt 写入 subMask.parameters（getSubMaskName 亦用它命名）。
       updateSubMaskParameters(container.id, subMaskId, { prompt });
       setBusyTaskId(subMaskId);
-      await handleGenerateAiTextMask(subMaskId, prompt);
+      await handleGenerateAiTextMask(subMaskId, prompt, { silent: true });
       if (cancelRef.current) return;
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (maskReady(Mask.AiText)) {
@@ -300,13 +300,17 @@ export default function CrystalAiToolsPanel() {
       const subMaskId = container.subMasks[0].id;
       const p = container.subMasks[0].parameters || {};
       setBusyTaskId(subMaskId);
-      await handleGenerateAiDepthMask(subMaskId, {
-        minDepth: p.minDepth ?? DEPTH_DEFAULTS.minDepth,
-        maxDepth: p.maxDepth ?? DEPTH_DEFAULTS.maxDepth,
-        minFade: p.minFade ?? DEPTH_DEFAULTS.minFade,
-        maxFade: p.maxFade ?? DEPTH_DEFAULTS.maxFade,
-        feather: p.feather ?? DEPTH_DEFAULTS.feather,
-      });
+      await handleGenerateAiDepthMask(
+        subMaskId,
+        {
+          minDepth: p.minDepth ?? DEPTH_DEFAULTS.minDepth,
+          maxDepth: p.maxDepth ?? DEPTH_DEFAULTS.maxDepth,
+          minFade: p.minFade ?? DEPTH_DEFAULTS.minFade,
+          maxFade: p.maxFade ?? DEPTH_DEFAULTS.maxFade,
+          feather: p.feather ?? DEPTH_DEFAULTS.feather,
+        },
+        { silent: true },
+      );
       if (cancelRef.current) return;
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (!maskReady(Mask.AiDepth)) {

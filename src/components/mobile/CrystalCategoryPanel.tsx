@@ -54,7 +54,7 @@ import { useEditorActions } from '../../hooks/useEditorActions';
 import { Invokes } from '../ui/AppProperties';
 import { DepthRangePicker } from '../ui/DepthRangePicker';
 import { selectAiModelDownloadStatus, useProcessStore } from '../../store/useProcessStore';
-import { CxSliderRow, CxSubSection, CxSwitch, haptic, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
+import { CxSliderRow, CxSubSection, CxSwitch, awaitImageReady, haptic, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
 import { Mask } from '../panel/right/Masks';
 import type { CrystalCategory } from './CrystalMobileApp';
 import CrystalPresetsPanel from './CrystalPresetsPanel';
@@ -824,6 +824,12 @@ function PortraitPanel() {
       }
       setOpBusy(op.kind);
       try {
+        // 闭环修复（人像-激活）：人脸识别依赖后端已加载原图，图片未就绪时点击
+        // 会立即失败并闪断激活态。先等待就绪（busy 转圈反馈），超时/切图则放弃。
+        const startPath = useEditorStore.getState().selectedImage?.path;
+        if (!startPath) return;
+        if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+        if (useEditorStore.getState().selectedImage?.path !== startPath) return;
         const { selectedImage: img } = useEditorStore.getState();
         const subMask = createSubMask(Mask.AiFace, { width: img?.width ?? 1000, height: img?.height ?? 1000 });
         subMask.parameters = {
@@ -845,7 +851,9 @@ function PortraitPanel() {
           },
         };
         setAdjustments((prev) => ({ ...prev, masks: [...(prev.masks || []), container] }));
-        await handleGenerateAiFaceMask(subMask.id, op.parts);
+        // silent：hook 不再自带错误提示，统一由下方「无 maskDataBase64」判定后
+        // 单源提示（此前 hook + 面板双 toast，用户一次点击看到两条错误）。
+        await handleGenerateAiFaceMask(subMask.id, op.parts, { silent: true });
         const latest = useEditorStore.getState().adjustments;
         const created = (latest.masks || []).find((c) => c.id === containerId);
         if (created && !created.subMasks[0]?.parameters?.maskDataBase64) {
@@ -901,6 +909,10 @@ function PortraitPanel() {
     if (!container || !img) return;
     setUnifyBusy(true);
     try {
+      // 闭环修复（人像-激活）：统一肤色读原图像素，图片未就绪时先等待，
+      // 超时/切图放弃（与算子/虚化链路同一守卫）。
+      if (!img.isReady && !(await awaitImageReady(img.path))) return;
+      if (useEditorStore.getState().selectedImage?.path !== img.path) return;
       const main = useEditorStore.getState();
       const result: { colorGrading?: { global?: Record<string, unknown> } } | null = await invoke(
         Invokes.ComputeSkinUnify,
@@ -990,6 +1002,11 @@ function PortraitPanel() {
     // 专用宿主（与算子容器隔离）：先取已承载 liquify 值的 AiFace 容器
     const host = findLiquifyHost();
     if (!host || !main.selectedImage) return;
+    const imgPath = main.selectedImage.path;
+    // 闭环修复（人像-激活）：液化补丁读原图，未就绪时先等待；跨图守卫与
+    // 其它 AI 链路一致（生成期间切图则丢弃，避免补丁写错图上下文）。
+    if (!main.selectedImage.isReady && !(await awaitImageReady(imgPath))) return;
+    if (useEditorStore.getState().selectedImage?.path !== imgPath) return;
     const liq = (host.subMasks[0]?.parameters?.liquify ?? {}) as { slimFace?: number; jawline?: number };
     const slim = liq.slimFace ?? 0;
     const jaw = liq.jawline ?? 0;
@@ -1045,6 +1062,9 @@ function PortraitPanel() {
         jawline: jaw,
       });
       if (gen !== liquifyGenRef.current) return;
+      // 生成期间切图：补丁按 patchId upsert 到新图 adjustments 会静默丢失，
+      // 且旧图补丁的 isLoading 残留无意义——直接放弃本次写入。
+      if (useEditorStore.getState().selectedImage?.path !== imgPath) return;
       const patchData = JSON.parse(patchJson);
       // 同 id 补丁内容已变化：清掉已发送标记，让下一次渲染载荷把新 patchData 发给后端
       useEditorStore.getState().patchesSentToBackend.delete(patchId);
@@ -1084,16 +1104,21 @@ function PortraitPanel() {
       applyPatch({ lensBlurEnabled: false });
       return;
     }
-    // 已识别过深度图：直接复用它开启，避免重复调用重推理
+    // 已识别过深度图：直接复用它开启，避免重复调用重推理。
+    // amount 为 0 时回落默认 50：否则「开关已激活但强度 0」——激活态无任何效果。
     if (adj.lensBlurDepthMap) {
-      applyPatch({ lensBlurEnabled: true, lensBlurAmount: adj.lensBlurAmount ?? 50 });
+      applyPatch({ lensBlurEnabled: true, lensBlurAmount: adj.lensBlurAmount || 50 });
       return;
     }
     setBlurBusy(true);
     // 审计修复（人像-跨图）：深度图生成期间切图则丢弃结果，避免旧图的深度图
     // 写入新图 adjustments 后被「复用已识别深度图」路径误用（与特效面板同守卫）。
     const startPath = useEditorStore.getState().selectedImage?.path;
+    if (!startPath) return;
     try {
+      // 闭环修复（人像-激活）：深度图推理依赖后端原图，未就绪时先等待。
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       const b64: string = await invoke('generate_full_image_depth_map', { jsAdjustments: adj });
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       applyPatch({ lensBlurDepthMap: b64, lensBlurEnabled: true, lensBlurAmount: 50 });
