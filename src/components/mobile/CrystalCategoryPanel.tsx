@@ -796,6 +796,7 @@ function PortraitPanel() {
   const [opBusy, setOpBusy] = useState<string | null>(null);
   const [unifyBusy, setUnifyBusy] = useState(false);
   const [blurBusy, setBlurBusy] = useState(false);
+  const [oneTapBusy, setOneTapBusy] = useState(false);
   const liquifyTimerRef = useRef<number | null>(null);
   const liquifyGenRef = useRef(0);
 
@@ -805,22 +806,6 @@ function PortraitPanel() {
     },
     [],
   );
-
-  const oneTapPortrait = useCallback(() => {
-    // 一键人像：柔肤降噪 + 轻微通透 + 暖调，全部为真实管线参数。
-    // 审计修复（人像）：增量基准从 store 实时读取——快速连点时渲染闭包还是旧值，
-    // 第二次点击会把第一次的 +8/+6/+4 增量整个回滚。
-    const adj = useEditorStore.getState().adjustments;
-    applyPatch({
-      lumaNoiseReduction: Math.max(Number(adj.lumaNoiseReduction ?? 0), 22),
-      // 通透：clarity 增量提升（与 AI 推荐人像配方 crystal.aiRecommend.recipe 的 clarity: 8 对齐）
-      clarity: Number(adj.clarity ?? 0) + 8,
-      dehaze: Number(adj.dehaze ?? 0) + 6,
-      temperature: Number(adj.temperature ?? 0) + 4,
-      vibrance: Number(adj.vibrance ?? 0) + 8,
-      glowAmount: Math.max(Number(adj.glowAmount ?? 0), 18),
-    });
-  }, [applyPatch]);
 
   const activateSections = (sections: [string, string]): Record<string, boolean> => {
     const at = { ...getActiveTools(INITIAL_MASK_CONTAINER.adjustments) } as Record<string, boolean>;
@@ -966,6 +951,38 @@ function PortraitPanel() {
     }
   }, [findContainerByKind, setAdjustments, t]);
 
+  /* 一键人像完整链路（三层，失败层级回退——全局参数始终生效）：
+   * 1) 全局柔肤/通透/暖调：增量基准实时读 + clamp ±100（用户已调高值时
+   *    一键不再把参数推出滑杆可表示域，避免滑杆饱和与导出域不一致）；
+   * 2) AI 磨皮：未开启则自动识别人脸并建立磨皮容器（复用 runOperator 全链路）；
+   * 3) 统一肤色：磨皮就绪后自动执行（复用 handleUnifySkin）。
+   * 无人脸/识别失败时容器被清理并提示，全局层仍有效；美型/背景虚化属强主观
+   * 与构图选择，不默认开启。 */
+  const oneTapPortrait = useCallback(async () => {
+    if (oneTapBusy) return;
+    setOneTapBusy(true);
+    try {
+      const adj = useEditorStore.getState().adjustments;
+      applyPatch({
+        lumaNoiseReduction: Math.max(Number(adj.lumaNoiseReduction ?? 0), 22),
+        clarity: Math.max(-100, Math.min(100, Number(adj.clarity ?? 0) + 8)),
+        dehaze: Math.max(-100, Math.min(100, Number(adj.dehaze ?? 0) + 6)),
+        temperature: Math.max(-100, Math.min(100, Number(adj.temperature ?? 0) + 4)),
+        vibrance: Math.max(-100, Math.min(100, Number(adj.vibrance ?? 0) + 8)),
+        glowAmount: Math.max(Number(adj.glowAmount ?? 0), 18),
+      });
+      const smoothingOp = RETOUCH_OPS.find((op) => op.kind === 'smoothing');
+      if (smoothingOp && !findContainerByKind('smoothing')) {
+        await runOperator(smoothingOp);
+      }
+      if (findContainerByKind('smoothing')?.subMasks[0]?.parameters?.maskDataBase64) {
+        await handleUnifySkin();
+      }
+    } finally {
+      setOneTapBusy(false);
+    }
+  }, [applyPatch, findContainerByKind, handleUnifySkin, oneTapBusy, runOperator]);
+
   /* 美型（瘦脸/下颌线）：值存宿主 AiFace 容器 submask.parameters.liquify（与桌面一致），
    * 防抖 600ms 调 GenerateFaceLiquifyPatch → aiPatches upsert；双 0 自动移除补丁。 */
   const runFaceLiquify = useCallback(async () => {
@@ -1101,10 +1118,12 @@ function PortraitPanel() {
         className="cx-ai-apply mb-3 w-full"
         onClick={() => {
           haptic(8);
-          oneTapPortrait();
+          void oneTapPortrait();
         }}
+        disabled={oneTapBusy || Boolean(opBusy) || unifyBusy || blurBusy}
         style={{ width: '100%' }}
       >
+        {oneTapBusy && <Loader2 size={13} className="animate-spin inline mr-1.5 -mt-0.5" />}
         {t('crystal.portrait.oneTap')}
       </button>
 
@@ -1120,7 +1139,7 @@ function PortraitPanel() {
                 haptic(6);
                 void runOperator(op);
               }}
-              disabled={Boolean(opBusy) && !busy}
+              disabled={Boolean(opBusy) || oneTapBusy}
             >
               {busy ? (
                 <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />

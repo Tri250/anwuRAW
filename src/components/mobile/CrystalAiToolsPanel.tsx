@@ -90,8 +90,12 @@ export default function CrystalAiToolsPanel() {
   const runEnhance = useCallback(async () => {
     if (busy) return;
     setBusy('enhance');
+    /* 闭环修复：AI 增强对发起时图片计算，完成后已切图则丢弃结果，
+     * 避免旧图增强参数合并进新图 adjustments（与天空/主体/文本/景深同守卫）。 */
+    const startPath = useEditorStore.getState().selectedImage?.path;
     try {
       const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity });
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       // 与桌面 EditorToolbar 同源：经 setAdjustments → debounced pushHistory，
       // 保证 AI 增强结果进 50 步撤销栈（setEditor 直接写会绕过历史）。
       setAdjustments((prev) => ({ ...prev, ...result }));
@@ -136,15 +140,18 @@ export default function CrystalAiToolsPanel() {
         if (!Number(container.adjustments.clarity ?? 0))
           setMaskAdjustments(container.id, { clarity: 10, dehaze: 8, saturation: 5 });
       } else {
+        // 闭环修复：识别失败清理空容器，tile 状态回归「未开启」，下次点击干净重试。
+        removeContainer(Mask.AiSky);
         toast.error(t('crystal.ai.maskFailed'));
       }
     } catch {
+      removeContainer(Mask.AiSky);
       toast.error(t('crystal.ai.maskFailed'));
     } finally {
       setBusy(null);
       setBusyTaskId(null);
     }
-  }, [busy, ensureContainer, handleGenerateAiSkyMask, maskReady, setMaskAdjustments, t]);
+  }, [busy, ensureContainer, handleGenerateAiSkyMask, maskReady, removeContainer, setMaskAdjustments, t]);
 
   /* 主体识别 —— AiForeground 前景分割（桌面语义同为主体识别，
    * 且无需框选坐标，适合移动端一键交互）。 */
@@ -164,15 +171,18 @@ export default function CrystalAiToolsPanel() {
         // 仅首次识别后写入默认强度；重复执行不覆盖用户已调值。
         if (!Number(container.adjustments.clarity ?? 0)) setMaskAdjustments(container.id, { clarity: 10 });
       } else {
+        // 闭环修复：识别失败清理空容器（与天空同模式）。
+        removeContainer(Mask.AiForeground);
         toast.error(t('crystal.ai.maskFailed'));
       }
     } catch {
+      removeContainer(Mask.AiForeground);
       toast.error(t('crystal.ai.maskFailed'));
     } finally {
       setBusy(null);
       setBusyTaskId(null);
     }
-  }, [busy, ensureContainer, handleGenerateAiForegroundMask, maskReady, setMaskAdjustments, t]);
+  }, [busy, ensureContainer, handleGenerateAiForegroundMask, maskReady, removeContainer, setMaskAdjustments, t]);
 
   const skyContainer = findContainer(Mask.AiSky);
   const skyReady = maskReady(Mask.AiSky);
@@ -220,9 +230,12 @@ export default function CrystalAiToolsPanel() {
         if (!Number(container.adjustments.clarity ?? 0)) setMaskAdjustments(container.id, { clarity: 10 });
         setShowTextInput(false);
       } else {
+        // 闭环修复：识别失败清理空容器；输入与持久化 prompt 保留供直接重试。
+        removeContainer(Mask.AiText);
         toast.error(t('crystal.ai.maskFailed'));
       }
     } catch {
+      removeContainer(Mask.AiText);
       toast.error(t('crystal.ai.maskFailed'));
     } finally {
       setBusy(null);
@@ -235,6 +248,7 @@ export default function CrystalAiToolsPanel() {
     updateSubMaskParameters,
     handleGenerateAiTextMask,
     maskReady,
+    removeContainer,
     setMaskAdjustments,
     t,
   ]);
@@ -269,6 +283,8 @@ export default function CrystalAiToolsPanel() {
       if (cancelRef.current) return;
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (!maskReady(Mask.AiDepth)) {
+        // 闭环修复：识别失败清理空容器（与天空/主体/文本同模式）。
+        removeContainer(Mask.AiDepth);
         toast.error(t('crystal.ai.maskFailed'));
       } else if (!Number(container.adjustments.clarity ?? 0)) {
         // 死代码激活：深度强度（容器级 clarity，与天空/主体/文本同模式）。
@@ -277,12 +293,13 @@ export default function CrystalAiToolsPanel() {
         setMaskAdjustments(container.id, { clarity: 10 });
       }
     } catch {
+      removeContainer(Mask.AiDepth);
       toast.error(t('crystal.ai.maskFailed'));
     } finally {
       setBusy(null);
       setBusyTaskId(null);
     }
-  }, [busy, ensureContainer, handleGenerateAiDepthMask, maskReady, setMaskAdjustments, t]);
+  }, [busy, ensureContainer, handleGenerateAiDepthMask, maskReady, removeContainer, setMaskAdjustments, t]);
 
   /** 生成中取消：与桌面 MasksPanel.handleCancelAiTask 同源（CancelAiTask + 任务注销）。 */
   const handleCancelBusy = useCallback(() => {
