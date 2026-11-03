@@ -591,6 +591,7 @@
       "menuRename": "이름 변경",
       "namePlaceholder": "프리셋 이름",
       "overwritten": "프리셋이 업데이트되었습니다",
+      "overwriteFailed": "프리셋 업데이트 실패",
       "renameTitle": "프리셋 이름 변경",
       "saveCurrent": "현재 상태 저장",
       "saved": "프리셋이 저장되었습니다",

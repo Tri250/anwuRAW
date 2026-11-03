@@ -597,6 +597,7 @@
       "menuRename": "Rename",
       "namePlaceholder": "Preset name",
       "overwritten": "Preset updated",
+      "overwriteFailed": "Preset update failed",
       "renameTitle": "Rename preset",
       "saveCurrent": "Save current",
       "saved": "Preset saved",

@@ -591,6 +591,7 @@
       "menuRename": "重新命名",
       "namePlaceholder": "預設名稱",
       "overwritten": "預設已更新",
+      "overwriteFailed": "預設更新失敗",
       "renameTitle": "重新命名預設",
       "saveCurrent": "儲存目前",
       "saved": "預設已儲存",

@@ -614,6 +614,7 @@
       "menuRename": "Renombrar",
       "namePlaceholder": "Nombre del preajuste",
       "overwritten": "Preajuste actualizado",
+      "overwriteFailed": "Error al actualizar el preajuste",
       "renameTitle": "Renombrar preajuste",
       "saveCurrent": "Guardar actual",
       "saved": "Preajuste guardado",

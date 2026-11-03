@@ -634,6 +634,7 @@
       "menuRename": "Zmień nazwę",
       "namePlaceholder": "Nazwa presetu",
       "overwritten": "Zaktualizowano preset",
+      "overwriteFailed": "Nie udało się zaktualizować presetu",
       "renameTitle": "Zmień nazwę presetu",
       "saveCurrent": "Zapisz bieżące",
       "saved": "Zapisano preset",

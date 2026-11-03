@@ -594,6 +594,7 @@
       "menuRename": "Umbenennen",
       "namePlaceholder": "Name der Voreinstellung",
       "overwritten": "Voreinstellung aktualisiert",
+      "overwriteFailed": "Aktualisierung der Voreinstellung fehlgeschlagen",
       "renameTitle": "Voreinstellung umbenennen",
       "saveCurrent": "Aktuelles speichern",
       "saved": "Voreinstellung gespeichert",

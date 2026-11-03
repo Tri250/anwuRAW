@@ -614,6 +614,7 @@
       "menuRename": "Renomear",
       "namePlaceholder": "Nome da predefinição",
       "overwritten": "Predefinição atualizada",
+      "overwriteFailed": "Falha ao atualizar a predefinição",
       "renameTitle": "Renomear predefinição",
       "saveCurrent": "Guardar atual",
       "saved": "Predefinição guardada",

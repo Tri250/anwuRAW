@@ -591,6 +591,7 @@
       "menuRename": "名前を変更",
       "namePlaceholder": "プリセット名",
       "overwritten": "プリセットを更新しました",
+      "overwriteFailed": "プリセットの更新に失敗しました",
       "renameTitle": "プリセット名を変更",
       "saveCurrent": "現在の状態を保存",
       "saved": "プリセットを保存しました",

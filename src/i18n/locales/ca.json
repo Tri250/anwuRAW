@@ -614,6 +614,7 @@
       "menuRename": "Canvia el nom",
       "namePlaceholder": "Nom del preajust",
       "overwritten": "Preajust actualitzat",
+      "overwriteFailed": "No s'ha pogut actualitzar el preajust",
       "renameTitle": "Canvia el nom del preajust",
       "saveCurrent": "Desa l'actual",
       "saved": "Preajust desat",

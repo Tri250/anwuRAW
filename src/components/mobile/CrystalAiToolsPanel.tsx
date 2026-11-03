@@ -12,7 +12,7 @@ import { Invokes } from '../ui/AppProperties';
 import { Mask } from '../panel/right/Masks';
 import { useEditorActions } from '../../hooks/useEditorActions';
 import { useAiMasking } from '../../hooks/useAiMasking';
-import { CxSliderRow, haptic, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
+import { CxSliderRow, awaitImageReady, haptic, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * Crystal AI 工具面板：全部为真实管线能力。
@@ -55,33 +55,6 @@ const storeTextPrompt = (value: string) => {
     /* storage 不可用：仅保留内存态 */
   }
 };
-
-/* 审计修复（AI 增强/自动色调）：ai_auto_enhance 与 calculate_auto_adjustments
- * 均以后端 state.original_image（图片加载完成后才存在）为输入。此前两入口
- * 无 isReady 守卫——打开图片未加载完即点击，增强直接抛
- * "No image loaded for AI enhance"，色调则被 handleAutoAdjustments 内部
- * 静默 return（无 toast 无效果，移动端 tile 是唯一入口，感知为死键）。
- * 与 useEditorActions.waitForImageReady 同模式（subscribe 等待），
- * 补 10s 超时防止加载失败时 busy 蒙层永久挂起。 */
-const awaitImageReady = (path: string, timeoutMs = 10_000) =>
-  new Promise<boolean>((resolve) => {
-    let settled = false;
-    const finish = (ok: boolean) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      unsubscribe();
-      resolve(ok);
-    };
-    const timer = setTimeout(() => finish(false), timeoutMs);
-    const unsubscribe = useEditorStore.subscribe((state) => {
-      if (state.selectedImage?.path !== path) {
-        finish(false);
-      } else if (state.selectedImage.isReady) {
-        finish(true);
-      }
-    });
-  });
 
 export default function CrystalAiToolsPanel() {
   const { t } = useTranslation();

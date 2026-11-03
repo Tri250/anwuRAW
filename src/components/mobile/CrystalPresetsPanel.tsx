@@ -15,7 +15,7 @@ import { hasAiSubMasks, mergeAiMaskResults, stripAiMaskResults } from '../../uti
 import { Invokes, Preset } from '../ui/AppProperties';
 import ConfirmModal from '../modals/ConfirmModal';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
-import { CxSliderRow, haptic, summarizeExif, useCrystalAdjust } from './crystalShared';
+import { CxSliderRow, awaitImageReady, haptic, summarizeExif, useCrystalAdjust } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * Crystal 移动端预设 / 滤镜面板。
@@ -281,11 +281,31 @@ function AiRecommendCard() {
   const runAiEnhance = async () => {
     if (isEnhancing) return;
     setIsEnhancing(true);
+    /* 闭环修复（预设-AI推荐）：与 AI 工具面板同款守卫——
+     * 1) isReady 等待：后端 ai_auto_enhance 依赖 state.original_image，
+     *    图片未加载完即点击会抛 "No image loaded for AI enhance"；
+     * 2) 跨图守卫：切图后丢弃旧图增强结果，不合并进新图 adjustments；
+     * 3) activeTools 合并：后端返回全 true，直接覆盖会把用户手动关掉的
+     *    工具重新打开（桌面 handleAutoAdjustments mergeActiveTools 语义）。 */
+    const startPath = useEditorStore.getState().selectedImage?.path;
+    if (!startPath) {
+      setIsEnhancing(false);
+      return;
+    }
     try {
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity: 'standard' });
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       // 与桌面 EditorToolbar 同源：经 setAdjustments → debounced pushHistory，
       // 保证 AI 增强结果进 50 步撤销栈（setEditor 直接写会绕过历史）。
-      setAdjustments((prev) => ({ ...prev, ...result }));
+      setAdjustments((prev) => ({
+        ...prev,
+        ...result,
+        ...(result.activeTools
+          ? { activeTools: { ...prev.activeTools, ...result.activeTools } }
+          : {}),
+      }));
     } catch (e) {
       console.error('AI enhance failed:', e);
       toast.error(t('crystal.aiRecommend.failed'));
@@ -764,17 +784,28 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         const updated = overwritePreset(rawId(source.id)) as Preset | null;
         if (updated) {
           invalidate(source.id);
-          enqueue([
-            { id: source.id, name: source.name, adjustments: (updated.adjustments ?? {}) as Record<string, unknown> },
-          ]);
+          const nextSource: PreviewSource = {
+            id: source.id,
+            name: updated.name ?? source.name,
+            adjustments: (updated.adjustments ?? {}) as Record<string, unknown>,
+            group: source.group,
+          };
+          enqueue([nextSource]);
+          // 若该预设正在应用中：刷新 activeSourceRef 快照，使强度滑杆/取消入口
+          // 按覆写后的新参数键工作（否则旧快照与卡片显示不符）。
+          if (activeId === source.id) activeSourceRef.current = nextSource;
           toast.success(t('crystal.presets.overwritten'));
+        } else {
+          // 目标不存在（已被删/库未加载）——此前静默无反馈，用户以为更新成功
+          toast.error(t('crystal.presets.overwriteFailed'));
         }
       } catch (e) {
         console.error('Failed to overwrite preset:', e);
-        toast.error(t('crystal.presets.exportFailed'));
+        // 此前误用 exportFailed（"导出预设失败"）文案，覆写失败被报成导出失败
+        toast.error(t('crystal.presets.overwriteFailed'));
       }
     },
-    [enqueue, invalidate, overwritePreset, rawId, t],
+    [activeId, enqueue, invalidate, overwritePreset, rawId, t],
   );
 
   const handleDelete = useCallback(
@@ -1011,6 +1042,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
               <div className="cx-sheet-title">{sheetSource.name}</div>
               <button
                 className="cx-sheet-row"
+                style={sheetSource.id === activeId ? { color: 'var(--cx-accent)' } : undefined}
                 onClick={() => {
                   handleApply(sheetSource);
                   setSheetSource(null);

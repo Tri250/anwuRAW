@@ -594,6 +594,7 @@
       "menuRename": "Hernoemen",
       "namePlaceholder": "Naam voorinstelling",
       "overwritten": "Voorinstelling bijgewerkt",
+      "overwriteFailed": "Bijwerken van voorinstelling mislukt",
       "renameTitle": "Voorinstelling hernoemen",
       "saveCurrent": "Huidige opslaan",
       "saved": "Voorinstelling opgeslagen",

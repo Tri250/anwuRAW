@@ -634,6 +634,7 @@
       "menuRename": "Переименовать",
       "namePlaceholder": "Название пресета",
       "overwritten": "Пресет обновлён",
+      "overwriteFailed": "Не удалось обновить пресет",
       "renameTitle": "Переименовать пресет",
       "saveCurrent": "Сохранить тек.",
       "saved": "Пресет сохранён",

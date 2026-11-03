@@ -614,6 +614,7 @@
       "menuRename": "Rinomina",
       "namePlaceholder": "Nome preimpostazione",
       "overwritten": "Preimpostazione aggiornata",
+      "overwriteFailed": "Aggiornamento della preimpostazione non riuscito",
       "renameTitle": "Rinomina preimpostazione",
       "saveCurrent": "Salva attuale",
       "saved": "Preimpostazione salvata",

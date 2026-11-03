@@ -194,6 +194,32 @@ export function summarizeExif(exif: Record<string, unknown> | null | undefined):
 }
 
 /* --------------------------------------------------------------------------
+ * 等待后端图片加载完成（isReady）：ai_auto_enhance / calculate_auto_adjustments
+ * 均以 state.original_image 为输入，未就绪时调用会抛 "No image loaded"
+ * （或由 hook 内 isReady 守卫静默 return）。与 useEditorActions.waitForImageReady
+ * 同模式（subscribe 等待），补 10s 超时防加载失败时 busy 蒙层永久挂起。
+ * ------------------------------------------------------------------------ */
+export const awaitImageReady = (path: string, timeoutMs = 10_000) =>
+  new Promise<boolean>((resolve) => {
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      unsubscribe();
+      resolve(ok);
+    };
+    const timer = setTimeout(() => finish(false), timeoutMs);
+    const unsubscribe = useEditorStore.subscribe((state) => {
+      if (state.selectedImage?.path !== path) {
+        finish(false);
+      } else if (state.selectedImage.isReady) {
+        finish(true);
+      }
+    });
+  });
+
+/* --------------------------------------------------------------------------
  * 调整写入工具：所有移动面板统一走这里，保证 pushHistory（50步撤销栈）
  * 与 owning tools 激活语义与桌面面板一致。
  * ------------------------------------------------------------------------ */

@@ -634,6 +634,7 @@
       "menuRename": "Přejmenovat",
       "namePlaceholder": "Název přednastavení",
       "overwritten": "Přednastavení aktualizováno",
+      "overwriteFailed": "Aktualizace přednastavení se nezdařila",
       "renameTitle": "Přejmenovat přednastavení",
       "saveCurrent": "Uložit aktuální",
       "saved": "Přednastavení uloženo",
