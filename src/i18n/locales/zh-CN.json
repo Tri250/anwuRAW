@@ -540,7 +540,8 @@
       "vignette": "暗角",
       "vignetteFeather": "羽化",
       "vignetteMidpoint": "中点",
-      "vignetteRoundness": "圆度"
+      "vignetteRoundness": "圆度",
+      "lutImported": "已导入 {{n}} 个 LUT"
     },
     "originalBadge": "原图",
     "portrait": {
@@ -2941,7 +2942,8 @@
       "removeLut": "移除 LUT",
       "select": "选择",
       "selectLutFile": "选择 LUT 文件",
-      "unsupportedFormat": "检测到不支持的文件格式：.{{ext}}"
+      "unsupportedFormat": "检测到不支持的文件格式：.{{ext}}",
+      "loadFailed": "LUT 加载失败"
     },
     "slider": {
       "clickToEdit": "点击编辑",

@@ -537,7 +537,8 @@
       "vignette": "비네트",
       "vignetteFeather": "페더",
       "vignetteMidpoint": "중심점",
-      "vignetteRoundness": "원형도"
+      "vignetteRoundness": "원형도",
+      "lutImported": "LUT {{n}}개를 가져왔습니다"
     },
     "originalBadge": "원본",
     "portrait": {
@@ -2867,7 +2868,8 @@
       "removeLut": "LUT 제거",
       "select": "선택",
       "selectLutFile": "LUT 파일 선택",
-      "unsupportedFormat": "지원되지 않는 파일 형식이 감지되었습니다: .{{ext}}"
+      "unsupportedFormat": "지원되지 않는 파일 형식이 감지되었습니다: .{{ext}}",
+      "loadFailed": "LUT 로드 실패"
     },
     "slider": {
       "clickToEdit": "클릭하여 편집",

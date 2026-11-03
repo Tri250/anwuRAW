@@ -560,7 +560,8 @@
       "vignette": "Vignettage",
       "vignetteFeather": "Adoucissement",
       "vignetteMidpoint": "Milieu",
-      "vignetteRoundness": "Rondeur"
+      "vignetteRoundness": "Rondeur",
+      "lutImported": "{{n}} LUT importé(s)"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {
@@ -2936,7 +2937,8 @@
       "removeLut": "Supprimer la LUT",
       "select": "Sélectionner",
       "selectLutFile": "Sélectionner un fichier LUT",
-      "unsupportedFormat": "Format(s) de fichier non pris en charge détecté(s) : .{{ext}}"
+      "unsupportedFormat": "Format(s) de fichier non pris en charge détecté(s) : .{{ext}}",
+      "loadFailed": "Échec du chargement du LUT"
     },
     "slider": {
       "clickToEdit": "Cliquer pour modifier",

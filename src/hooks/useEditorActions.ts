@@ -265,10 +265,10 @@ export function useEditorActions() {
           activeTools: setToolActive(getActiveTools(prev), 'lut', true),
         }));
       } catch (err) {
-        toast.error(`Failed to load LUT: ${err}`);
+        toast.error(`${t('ui.lut.loadFailed')}: ${err}`);
       }
     },
-    [setAdjustments],
+    [setAdjustments, t],
   );
 
   const setLutPreviewOverride = useCallback(

@@ -37,6 +37,13 @@
   --cx-exif-text: #1c1c18;
   --cx-exif-brand: #b4443c;
 
+  /* 审计 FX-色：壳内带入的桌面共享组件（DepthRangePicker 的 Text/把手、
+     text-accent 类等）重映射到黑金主题，与全局 Light 主题解耦——
+     否则 Light 主题下黑底深字不可读、强调色白/紫与金色跳变。 */
+  --app-text-primary: var(--cx-ink);
+  --app-text-secondary: var(--cx-muted);
+  --app-accent: var(--cx-gold);
+
   /* 审计 F-字体：与图库/启动页共用 :root --font-family（Poppins/系统栈），
      避免同机链路「图库 Poppins ↔ 编辑器系统字体」跳变；var 回退保底 CJK 栈。 */
   font-family: var(

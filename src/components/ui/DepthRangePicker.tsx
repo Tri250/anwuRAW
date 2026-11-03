@@ -36,7 +36,10 @@ export function DepthRangePicker({
     maxFade: number;
   } | null>(null);
   const rafRef = useRef<number>(0);
-  const [isLabelHovered, setIsLabelHovered] = useState(false);
+  /* 触屏无 hover：常显「重置」提示（点击标题即重置）；桌面保持悬停切换原交互。 */
+  const [isLabelHovered, setIsLabelHovered] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches,
+  );
 
   const vals = dragValues ?? { minDepth, maxDepth, minFade, maxFade };
   const fadeLeftEdge = Math.max(0, vals.minDepth - vals.minFade);
@@ -196,6 +199,8 @@ export function DepthRangePicker({
       <div
         className="grid w-fit cursor-pointer"
         onClick={handleReset}
+        role="button"
+        aria-label={t('editor.masks.depthRange.reset')}
         onMouseEnter={() => setIsLabelHovered(true)}
         onMouseLeave={() => setIsLabelHovered(false)}
       >

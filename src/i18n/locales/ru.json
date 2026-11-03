@@ -580,7 +580,8 @@
       "vignette": "Виньетка",
       "vignetteFeather": "Размытие края",
       "vignetteMidpoint": "Середина",
-      "vignetteRoundness": "Округлость"
+      "vignetteRoundness": "Округлость",
+      "lutImported": "Импортировано LUT: {{n}}"
     },
     "originalBadge": "ОРИГИНАЛ",
     "portrait": {
@@ -2990,7 +2991,8 @@
       "removeLut": "Удалить LUT",
       "select": "Выбрать",
       "selectLutFile": "Выберите файл таблицы цветов LUT",
-      "unsupportedFormat": "Обнаружены неподдерживаемые форматы файлов: .{{ext}}"
+      "unsupportedFormat": "Обнаружены неподдерживаемые форматы файлов: .{{ext}}",
+      "loadFailed": "Не удалось загрузить LUT"
     },
     "slider": {
       "clickToEdit": "Нажмите для точного ввода",

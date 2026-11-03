@@ -540,7 +540,8 @@
       "vignette": "Vignet",
       "vignetteFeather": "Zachtheid",
       "vignetteMidpoint": "Midden",
-      "vignetteRoundness": "Rondheid"
+      "vignetteRoundness": "Rondheid",
+      "lutImported": "{{n}} LUT('s) geïmporteerd"
     },
     "originalBadge": "ORIGINEEL",
     "portrait": {
@@ -2880,7 +2881,8 @@
       "removeLut": "LUT verwijderen",
       "select": "Selecteren",
       "selectLutFile": "Selecteer een LUT-bestand",
-      "unsupportedFormat": "Niet-ondersteund(e) bestandsformaat(en) gedetecteerd: .{{ext}}"
+      "unsupportedFormat": "Niet-ondersteund(e) bestandsformaat(en) gedetecteerd: .{{ext}}",
+      "loadFailed": "LUT kon niet worden geladen"
     },
     "slider": {
       "clickToEdit": "Klik om te bewerken",

@@ -560,7 +560,8 @@
       "vignette": "Vinyeta",
       "vignetteFeather": "Difuminat",
       "vignetteMidpoint": "Punt mitjà",
-      "vignetteRoundness": "Rodonesa"
+      "vignetteRoundness": "Rodonesa",
+      "lutImported": "{{n}} LUT importats"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {
@@ -2935,7 +2936,8 @@
       "removeLut": "Eliminar LUT",
       "select": "Seleccionar",
       "selectLutFile": "Seleccionar un fitxer LUT",
-      "unsupportedFormat": "S'ha(n) detectat format(s) de fitxer no compatible(s): .{{ext}}"
+      "unsupportedFormat": "S'ha(n) detectat format(s) de fitxer no compatible(s): .{{ext}}",
+      "loadFailed": "No s'ha pogut carregar el LUT"
     },
     "slider": {
       "clickToEdit": "Feu clic per editar",

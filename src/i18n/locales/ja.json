@@ -537,7 +537,8 @@
       "vignette": "周辺減光",
       "vignetteFeather": "ぼかし",
       "vignetteMidpoint": "中心",
-      "vignetteRoundness": "丸み"
+      "vignetteRoundness": "丸み",
+      "lutImported": "{{n}} 個のLUTを読み込みました"
     },
     "originalBadge": "原画像",
     "portrait": {
@@ -2867,7 +2868,8 @@
       "removeLut": "LUTを削除",
       "select": "選択",
       "selectLutFile": "LUTファイルを選択",
-      "unsupportedFormat": "未対応のファイル形式が検出されました: .{{ext}}"
+      "unsupportedFormat": "未対応のファイル形式が検出されました: .{{ext}}",
+      "loadFailed": "LUTの読み込みに失敗しました"
     },
     "slider": {
       "clickToEdit": "クリックして編集",

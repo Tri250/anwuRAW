@@ -317,7 +317,10 @@ export function CxSwitch({
     <button
       type="button"
       className={`w-full flex items-center justify-between gap-3 bg-transparent border-none p-0${disabled ? ' opacity-50' : ''}`}
-      onClick={() => onChange(!checked)}
+      onClick={() => {
+        haptic(6);
+        onChange(!checked);
+      }}
       disabled={disabled}
     >
       {!labelHidden && (

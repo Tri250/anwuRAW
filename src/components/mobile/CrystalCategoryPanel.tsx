@@ -50,7 +50,7 @@ import { useEditorActions } from '../../hooks/useEditorActions';
 import { Invokes } from '../ui/AppProperties';
 import { DepthRangePicker } from '../ui/DepthRangePicker';
 import { selectAiModelDownloadStatus, useProcessStore } from '../../store/useProcessStore';
-import { CxSliderRow, CxSubSection, CxSwitch, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
+import { CxSliderRow, CxSubSection, CxSwitch, haptic, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
 import { Mask } from '../panel/right/Masks';
 import type { CrystalCategory } from './CrystalMobileApp';
 import CrystalPresetsPanel from './CrystalPresetsPanel';
@@ -1447,6 +1447,11 @@ function FxPanel() {
           map[r.path] = r.thumb;
         });
         lutCache.current.set(cacheKey, map);
+        /* 审计 FX-内存：缩略图缓存按图累积，限制保留最近 6 组，防长会话内存增长 */
+        if (lutCache.current.size > 6) {
+          const oldest = lutCache.current.keys().next().value;
+          if (oldest !== undefined) lutCache.current.delete(oldest);
+        }
         setLutPreviews(map);
       })
       .catch((e) => console.error('Failed to generate LUT previews:', e));
@@ -1455,8 +1460,12 @@ function FxPanel() {
     };
   }, [selectedPath, isImageReady, lutEntries]);
 
-  /* LUT 导入：Android content URI 需解析名称并按扩展名过滤（与桌面同链路） */
+  /* LUT 导入：Android content URI 需解析名称并按扩展名过滤（与桌面同链路）。
+     审计 FX-反馈：导入期间按钮忙碌态防重复触发，成功后给出数量反馈。 */
+  const [lutImporting, setLutImporting] = useState(false);
   const importLuts = async () => {
+    if (lutImporting) return;
+    setLutImporting(true);
     try {
       const { osPlatform } = useSettingsStore.getState();
       const isAndroid = osPlatform === 'android';
@@ -1500,13 +1509,17 @@ function FxPanel() {
       lutCache.current.clear();
       setLutEntries(list);
       setLutPreviews({});
+      toast.success(t('crystal.fx.lutImported', { n: list.length }));
     } catch (e) {
       console.error('Failed to import LUTs:', e);
       toast.error(t('ui.lut.importFailed'));
+    } finally {
+      setLutImporting(false);
     }
   };
 
-  const clearLut = () =>
+  const clearLut = () => {
+    haptic(6);
     applyPatch({
       lutPath: null,
       lutName: null,
@@ -1515,6 +1528,7 @@ function FxPanel() {
       lutIntensity: 100,
       lutIsSceneReferred: false,
     });
+  };
 
   /* ---------------- Spatial AI 三件套（与桌面 Effects 同链路） ----------------
    * 镜头模糊/雾化共用 generate_full_image_depth_map，重打光走 generate_relight_normal_map；
@@ -1527,26 +1541,33 @@ function FxPanel() {
   const generateEffectMap = useCallback(
     async (kind: 'lensBlur' | 'fog' | 'relight') => {
       if (genBusy) return;
+      /* 审计 FX-串扰：记录生成发起时的图片，完成后若已切图则丢弃结果，
+         避免旧图深度/法线图写入新图 adjustments（再次开启会误用错误数据）。 */
+      const startPath = useEditorStore.getState().selectedImage?.path;
       setGenBusy(kind);
       try {
         const { adjustments: adj } = useEditorStore.getState();
         if (kind === 'relight') {
           const b64 = await invoke<string>('generate_relight_normal_map', { jsAdjustments: adj });
+          if (useEditorStore.getState().selectedImage?.path !== startPath) return;
           applyPatch({ relightNormalMap: b64 });
         } else {
           const b64 = await invoke<string>('generate_full_image_depth_map', { jsAdjustments: adj });
+          if (useEditorStore.getState().selectedImage?.path !== startPath) return;
           applyPatch(kind === 'lensBlur' ? { lensBlurDepthMap: b64 } : { fogDepthMap: b64 });
         }
       } catch (e) {
         console.error('Effect map generation failed:', e);
         toast.error(t(kind === 'relight' ? 'crystal.fx.normalFailed' : 'crystal.fx.depthFailed'));
-        applyPatch(
-          kind === 'lensBlur'
-            ? { lensBlurEnabled: false }
-            : kind === 'fog'
-              ? { fogEnabled: false }
-              : { relightEnabled: false },
-        );
+        if (useEditorStore.getState().selectedImage?.path === startPath) {
+          applyPatch(
+            kind === 'lensBlur'
+              ? { lensBlurEnabled: false }
+              : kind === 'fog'
+                ? { fogEnabled: false }
+                : { relightEnabled: false },
+          );
+        }
       } finally {
         setGenBusy(null);
       }
@@ -1606,8 +1627,15 @@ function FxPanel() {
       <div className="cx-lut">
         <div className="cx-lut-head">
           <span className="cx-lut-title">{t('crystal.fx.lut')}</span>
-          <button className="cx-lut-import" onClick={() => void importLuts()}>
-            <Upload size={11} />
+          <button
+            className="cx-lut-import"
+            disabled={lutImporting}
+            onClick={() => {
+              haptic(6);
+              void importLuts();
+            }}
+          >
+            {lutImporting ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
             {t('crystal.fx.lutImport')}
           </button>
         </div>
@@ -1617,6 +1645,7 @@ function FxPanel() {
               key={entry.path}
               className={`cx-lut-thumb${adjustments.lutPath === entry.path ? ' active' : ''}`}
               onClick={() => {
+                haptic(6);
                 if (entry.path === adjustments.lutPath) clearLut();
                 else void handleLutSelect(entry.path, entry.isSceneReferred);
               }}
@@ -1820,7 +1849,10 @@ function FxPanel() {
                     <button
                       key={shape.id}
                       className={`cx-tile${(adjustments.lensBlurShape || 'circle') === shape.id ? ' is-active' : ''}`}
-                      onClick={() => applyPatch({ lensBlurShape: shape.id })}
+                      onClick={() => {
+                        haptic(6);
+                        applyPatch({ lensBlurShape: shape.id });
+                      }}
                     >
                       <span className="cx-tile-color flex items-center justify-center">
                         <shape.Icon size={13} />
@@ -1916,24 +1948,46 @@ function FxPanel() {
                       key={light.id}
                       className={`cx-light-swatch${light.id === activeLightId ? ' is-active' : ''}`}
                       style={{ background: getRelightLightColor(light) }}
-                      onClick={() => setActiveLightId(light.id === activeLightId ? null : light.id)}
+                      onClick={() => {
+                        haptic(6);
+                        setActiveLightId(light.id === activeLightId ? null : light.id);
+                      }}
                       aria-label={t('adjustments.effects.relightLight', {
                         index: relightLights.indexOf(light) + 1,
                       })}
                     />
                   ))}
-                  <button className="cx-light-add" onClick={addLight} aria-label={t('adjustments.effects.relightAddLight')}>
+                  <button
+                    className="cx-light-add"
+                    onClick={() => {
+                      haptic(6);
+                      addLight();
+                    }}
+                    aria-label={t('adjustments.effects.relightAddLight')}
+                  >
                     <Plus size={13} />
                   </button>
                 </div>
                 {activeLight ? (
                   <>
                     <div className="cx-light-actions">
-                      <button className="cx-mask-remove" onClick={() => duplicateLight(activeLight.id)}>
+                      <button
+                        className="cx-mask-remove"
+                        onClick={() => {
+                          haptic(6);
+                          duplicateLight(activeLight.id);
+                        }}
+                      >
                         <CopyPlus size={11} />
                         {t('adjustments.effects.relightDuplicateLight')}
                       </button>
-                      <button className="cx-mask-remove" onClick={() => removeLight(activeLight.id)}>
+                      <button
+                        className="cx-mask-remove"
+                        onClick={() => {
+                          haptic(6);
+                          removeLight(activeLight.id);
+                        }}
+                      >
                         <Trash2 size={11} />
                         {t('adjustments.effects.relightRemoveLight')}
                       </button>
@@ -1946,7 +2000,10 @@ function FxPanel() {
                           role="tab"
                           aria-selected={activeLight.type === tp.id}
                           className={`cx-tone-tab${activeLight.type === tp.id ? ' active' : ''}`}
-                          onClick={() => updateLight(activeLight.id, { type: tp.id })}
+                          onClick={() => {
+                            haptic(6);
+                            updateLight(activeLight.id, { type: tp.id });
+                          }}
                         >
                           {t(tp.labelKey)}
                         </button>
