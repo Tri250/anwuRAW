@@ -434,7 +434,11 @@
     }
   },
   "aiMask": {
-    "faceMaskFailed": "Не удалось создать маску лица: {{error}}"
+    "faceMaskFailed": "Не удалось создать маску лица: {{error}}",
+    "depthMaskFailed": "Сбой маски глубины ИИ: {{error}}",
+    "foregroundMaskFailed": "Сбой маски объекта ИИ: {{error}}",
+    "skyMaskFailed": "Сбой маски неба ИИ: {{error}}",
+    "textMaskFailed": "Сбой маски текста ИИ: {{error}}"
   },
   "crystal": {
     "ai": {

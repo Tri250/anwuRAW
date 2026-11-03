@@ -397,7 +397,11 @@
     }
   },
   "aiMask": {
-    "faceMaskFailed": "AI face mask failed: {{error}}"
+    "faceMaskFailed": "AI face mask failed: {{error}}",
+    "depthMaskFailed": "AI depth mask failed: {{error}}",
+    "foregroundMaskFailed": "AI foreground mask failed: {{error}}",
+    "skyMaskFailed": "AI sky mask failed: {{error}}",
+    "textMaskFailed": "AI text mask failed: {{error}}"
   },
   "crystal": {
     "ai": {

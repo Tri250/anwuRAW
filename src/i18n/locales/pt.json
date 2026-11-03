@@ -414,7 +414,11 @@
     }
   },
   "aiMask": {
-    "faceMaskFailed": "Falha na máscara facial de IA: {{error}}"
+    "faceMaskFailed": "Falha na máscara facial de IA: {{error}}",
+    "depthMaskFailed": "Falha na máscara de profundidade IA: {{error}}",
+    "foregroundMaskFailed": "Falha na máscara de assunto IA: {{error}}",
+    "skyMaskFailed": "Falha na máscara de céu IA: {{error}}",
+    "textMaskFailed": "Falha na máscara de texto IA: {{error}}"
   },
   "crystal": {
     "ai": {

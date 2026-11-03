@@ -245,14 +245,21 @@ export default function CrystalAiToolsPanel() {
         feather: p.feather ?? DEPTH_DEFAULTS.feather,
       });
       if (cancelRef.current) return;
-      if (!maskReady(Mask.AiDepth)) toast.error(t('crystal.ai.maskFailed'));
+      if (!maskReady(Mask.AiDepth)) {
+        toast.error(t('crystal.ai.maskFailed'));
+      } else if (!Number(container.adjustments.clarity ?? 0)) {
+        // 死代码激活：深度强度（容器级 clarity，与天空/主体/文本同模式）。
+        // crystal.ai.depthStrength 键 15 语言齐备但从未接线；深度蒙版遮罩内
+        // 若无局部调整量，选中后画面零变化（仅范围参数可调、无任何效果）。
+        setMaskAdjustments(container.id, { clarity: 10 });
+      }
     } catch {
       toast.error(t('crystal.ai.maskFailed'));
     } finally {
       setBusy(null);
       setBusyTaskId(null);
     }
-  }, [busy, ensureContainer, handleGenerateAiDepthMask, maskReady, t]);
+  }, [busy, ensureContainer, handleGenerateAiDepthMask, maskReady, setMaskAdjustments, t]);
 
   /** 生成中取消：与桌面 MasksPanel.handleCancelAiTask 同源（CancelAiTask + 任务注销）。 */
   const handleCancelBusy = useCallback(() => {
@@ -510,6 +517,18 @@ export default function CrystalAiToolsPanel() {
           )}
           {depthReady && (
             <>
+              {/* 死代码激活：深度强度（容器级 clarity ×0.2，反读与天空/主体/文本一致）。
+                  遮罩内默认 clarity:10 由 runDepth 首识别后写入。 */}
+              <CxSliderRow
+                label={t('crystal.ai.depthStrength')}
+                min={0}
+                max={100}
+                step={1}
+                value={Math.max(0, Math.min(100, Math.round(Number(depthContainer?.adjustments.clarity ?? 0) / 0.2)))}
+                onChange={(v) =>
+                  depthContainer && setMaskAdjustments(depthContainer.id, { clarity: Math.round(v * 0.2) })
+                }
+              />
               {/* 与桌面 DepthRangePicker 同构：近端显示值 = 100 - maxDepth，
                   远端显示值 = 100 - minDepth，双向钳制保证带通区间有效。 */}
               <CxSliderRow

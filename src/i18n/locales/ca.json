@@ -414,7 +414,11 @@
     }
   },
   "aiMask": {
-    "faceMaskFailed": "La màscara facial d’IA ha fallat: {{error}}"
+    "faceMaskFailed": "La màscara facial d’IA ha fallat: {{error}}",
+    "depthMaskFailed": "Error de màscara de profunditat IA: {{error}}",
+    "foregroundMaskFailed": "Error de màscara d'objecte IA: {{error}}",
+    "skyMaskFailed": "Error de màscara de cel IA: {{error}}",
+    "textMaskFailed": "Error de màscara de text IA: {{error}}"
   },
   "crystal": {
     "ai": {

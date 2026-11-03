@@ -391,7 +391,11 @@
     }
   },
   "aiMask": {
-    "faceMaskFailed": "얼굴 인식 실패: {{error}}"
+    "faceMaskFailed": "얼굴 인식 실패: {{error}}",
+    "depthMaskFailed": "AI 깊이 마스크 실패: {{error}}",
+    "foregroundMaskFailed": "AI 피사체 마스크 실패: {{error}}",
+    "skyMaskFailed": "AI 하늘 마스크 실패: {{error}}",
+    "textMaskFailed": "AI 텍스트 마스크 실패: {{error}}"
   },
   "crystal": {
     "ai": {

@@ -434,7 +434,11 @@
     }
   },
   "aiMask": {
-    "faceMaskFailed": "Maska obličeje AI se nezdařila: {{error}}"
+    "faceMaskFailed": "Maska obličeje AI se nezdařila: {{error}}",
+    "depthMaskFailed": "Maska hloubky AI selhala: {{error}}",
+    "foregroundMaskFailed": "Maska objektu AI selhala: {{error}}",
+    "skyMaskFailed": "Maska nebe AI selhala: {{error}}",
+    "textMaskFailed": "Maska textu AI selhala: {{error}}"
   },
   "crystal": {
     "ai": {

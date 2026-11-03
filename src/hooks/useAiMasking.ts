@@ -433,7 +433,7 @@ export function useAiMasking() {
     } catch (error) {
       if (isStaleAiMaskRequest(subMaskId, epoch)) return;
       if (!String(error).includes('cancelled')) {
-        toast.error(`AI Depth Mask Failed: ${error}`);
+        toast.error(t('aiMask.depthMaskFailed', { error: String(error) }));
       }
     } finally {
       if (!isStaleAiMaskRequest(subMaskId, epoch)) {
@@ -468,11 +468,11 @@ export function useAiMasking() {
       const mergedParameters = { ...(subMask?.parameters || {}), ...newParameters };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
-      if (noResult) toast.error(`AI Foreground Mask Failed: ${noResult}`);
+      if (noResult) toast.error(t('aiMask.foregroundMaskFailed', { error: String(noResult) }));
     } catch (error) {
       if (isStaleAiMaskRequest(subMaskId, epoch)) return;
       if (!String(error).includes('cancelled')) {
-        toast.error(`AI Foreground Mask Failed: ${error}`);
+        toast.error(t('aiMask.foregroundMaskFailed', { error: String(error) }));
       }
     } finally {
       if (!isStaleAiMaskRequest(subMaskId, epoch)) {
@@ -508,11 +508,11 @@ export function useAiMasking() {
       const mergedParameters = { ...(subMask?.parameters || {}), ...newParameters };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
-      if (noResult) toast.error(`AI Sky Mask Failed: ${noResult}`);
+      if (noResult) toast.error(t('aiMask.skyMaskFailed', { error: String(noResult) }));
     } catch (error) {
       if (isStaleAiMaskRequest(subMaskId, epoch)) return;
       if (!String(error).includes('cancelled')) {
-        toast.error(`AI Sky Mask Failed: ${error}`);
+        toast.error(t('aiMask.skyMaskFailed', { error: String(error) }));
       }
     } finally {
       if (!isStaleAiMaskRequest(subMaskId, epoch)) {
@@ -549,11 +549,11 @@ export function useAiMasking() {
       const mergedParameters = { ...(subMask?.parameters || {}), ...newParameters };
       patchesSentToBackend.delete(subMaskId);
       updateSubMask(subMaskId, { parameters: mergedParameters });
-      if (noResult) toast.error(`AI Text Mask Failed: ${noResult}`);
+      if (noResult) toast.error(t('aiMask.textMaskFailed', { error: String(noResult) }));
     } catch (error) {
       if (isStaleAiMaskRequest(subMaskId, epoch)) return;
       if (!String(error).includes('cancelled')) {
-        toast.error(`AI Text Mask Failed: ${error}`);
+        toast.error(t('aiMask.textMaskFailed', { error: String(error) }));
       }
     } finally {
       if (!isStaleAiMaskRequest(subMaskId, epoch)) {

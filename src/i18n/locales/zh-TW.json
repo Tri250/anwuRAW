@@ -391,7 +391,11 @@
     }
   },
   "aiMask": {
-    "faceMaskFailed": "人臉辨識失敗：{{error}}"
+    "faceMaskFailed": "人臉辨識失敗：{{error}}",
+    "depthMaskFailed": "AI 深度蒙版失敗：{{error}}",
+    "foregroundMaskFailed": "AI 主體蒙版失敗：{{error}}",
+    "skyMaskFailed": "AI 天空蒙版失敗：{{error}}",
+    "textMaskFailed": "AI 文字蒙版失敗：{{error}}"
   },
   "crystal": {
     "ai": {
