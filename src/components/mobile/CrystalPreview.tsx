@@ -386,11 +386,23 @@ export default function CrystalPreview({
             onLoad={measureImgRect}
           />
         ) : (
-          <div className="cx-preview-empty">
-            <Loader2 size={18} className="animate-spin" />
-            {/* 审计 P-反馈：冷启动首帧未渲染时仅 spinner 无文案，补「加载中」区分「渲染中」 */}
-            <span>{t(hasRenderedFirstFrame ? 'crystal.previewRendering' : 'crystal.previewLoading')}</span>
-          </div>
+          <>
+            {/* 审计 FD-9：首帧渲染前以原图模糊放大占位，避免纯黑/空白闪烁 */}
+            {originalPreview && (
+              <img
+                src={originalPreview}
+                alt=""
+                aria-hidden
+                draggable={false}
+                className="cx-preview-skeleton"
+              />
+            )}
+            <div className="cx-preview-empty">
+              <Loader2 size={18} className="animate-spin" />
+              {/* 审计 P-反馈：冷启动首帧未渲染时仅 spinner 无文案，补「加载中」区分「渲染中」 */}
+              <span>{t(hasRenderedFirstFrame ? 'crystal.previewRendering' : 'crystal.previewLoading')}</span>
+            </div>
+          </>
         )}
       </div>
 

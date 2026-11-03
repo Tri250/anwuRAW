@@ -49,6 +49,18 @@ const INTENSITIES: ReadonlyArray<{ id: EnhanceIntensity; labelKey: ParseKeys }> 
 /** 深度蒙版默认参数（与桌面 MasksPanel.createMaskLogic 同源） */
 const DEPTH_DEFAULTS = { minDepth: 20, maxDepth: 80, minFade: 15, maxFade: 15, feather: 10 } as const;
 
+/* 审计 UX-1/FD-2：ONNX Runtime（libonnxruntime.so）可用性探测。
+ * AI 降噪/天空/主体/文本/景深识别均依赖该库；库缺失时（如某 ABI 未随包分发）
+ * 前端置灰入口并给出「本设备暂不支持」，避免点击后才报错的死路交互。
+ * 探测为文件级检查，结果按应用会话缓存，切分类不重复探测。 */
+let onnxProbePromise: Promise<boolean> | null = null;
+function probeOnnxRuntime(): Promise<boolean> {
+  if (!onnxProbePromise) {
+    onnxProbePromise = invoke<boolean>(Invokes.ProbeOnnxRuntime).catch(() => false);
+  }
+  return onnxProbePromise;
+}
+
 export default function CrystalAiToolsPanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
@@ -75,6 +87,18 @@ export default function CrystalAiToolsPanel() {
   const cancelRef = useRef(false);
   const [textPrompt, setTextPrompt] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
+  /* ONNX Runtime 可用性：默认 true（探测完成前不置灰，避免闪跳） */
+  const [onnxAvailable, setOnnxAvailable] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    void probeOnnxRuntime().then((ok) => {
+      if (alive) setOnnxAvailable(ok);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const runEnhance = useCallback(async () => {
     if (busy) return;
@@ -280,6 +304,8 @@ export default function CrystalAiToolsPanel() {
     onClick: () => void;
     active?: boolean;
     busy?: boolean;
+    /** 依赖 ONNX Runtime 模型推理（库缺失时置灰） */
+    needsOnnx?: boolean;
   }> = [
     {
       id: 'enhance',
@@ -304,6 +330,7 @@ export default function CrystalAiToolsPanel() {
       color: 'var(--cx-cat-tone)',
       onClick: toggleDenoise,
       active: denoiseOn,
+      needsOnnx: true,
     },
     {
       id: 'lumaNr',
@@ -326,6 +353,7 @@ export default function CrystalAiToolsPanel() {
       onClick: runSky,
       active: skyReady,
       busy: busy === 'sky',
+      needsOnnx: true,
     },
     {
       id: 'subject',
@@ -336,6 +364,7 @@ export default function CrystalAiToolsPanel() {
       onClick: runSubject,
       active: subjectReady,
       busy: busy === 'subject',
+      needsOnnx: true,
     },
     {
       id: 'text',
@@ -345,6 +374,7 @@ export default function CrystalAiToolsPanel() {
       onClick: () => (textPrompt.trim() ? void runText() : setShowTextInput(true)),
       active: textReady,
       busy: busy === 'text',
+      needsOnnx: true,
     },
     {
       id: 'depth',
@@ -354,6 +384,7 @@ export default function CrystalAiToolsPanel() {
       onClick: runDepth,
       active: depthReady,
       busy: busy === 'depth',
+      needsOnnx: true,
     },
   ];
 
@@ -383,7 +414,11 @@ export default function CrystalAiToolsPanel() {
           </div>
 
           <div className="cx-grid-tiles mb-2">
-            {tiles.map(({ id, label, icon: Icon, color, onClick, active, busy: isBusy }) => (
+            {tiles.map(({ id, label, icon: Icon, color, onClick, active, busy: isBusy, needsOnnx }) => {
+              /* ONNX Runtime 缺失时置灰识别类入口（disabled 按钮不触发点击，
+                 降级原因由下方 cx-ai-unsupported 说明条给出） */
+              const onnxBlocked = Boolean(needsOnnx) && !onnxAvailable;
+              return (
               <button
                 key={id}
                 className={`cx-tile ${active ? 'is-active' : ''} ${isBusy ? 'is-busy' : ''}`}
@@ -391,7 +426,7 @@ export default function CrystalAiToolsPanel() {
                   haptic(6);
                   onClick();
                 }}
-                disabled={Boolean(busy)}
+                disabled={Boolean(busy) || onnxBlocked}
               >
                 {isBusy ? (
                   <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
@@ -405,8 +440,16 @@ export default function CrystalAiToolsPanel() {
                 )}
                 {label}
               </button>
-            ))}
+              );
+            })}
           </div>
+
+          {/* 审计 UX-1/FD-2：ONNX Runtime 不可用时的降级说明 */}
+          {!onnxAvailable && (
+            <div className="cx-ai-unsupported" role="status">
+              {t('crystal.ai.onnxUnavailableHint')}
+            </div>
+          )}
 
           {/* 文本识别：提示词输入 + 生成（桌面 MasksPanel isTextMask 区块同构） */}
           {(showTextInput || (textContainer && !textReady)) && (

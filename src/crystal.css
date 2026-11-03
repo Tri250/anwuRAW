@@ -128,6 +128,73 @@ html.android body > .global-tooltip {
   z-index: 60;
 }
 
+/* ================= OC-5: 移动端新手引导（一次性浮层） ================= */
+.cx-onboarding {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(8, 8, 6, 0.72);
+  backdrop-filter: blur(6px);
+  animation: cx-fade-in 0.25s ease-out;
+}
+.cx-onboarding-card {
+  width: 100%;
+  max-width: 300px;
+  border-radius: var(--cx-radius-lg);
+  border: 1px solid var(--cx-border);
+  background: var(--cx-card);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  padding: 20px 18px 16px;
+}
+.cx-onboarding-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--cx-ink);
+  text-align: center;
+  margin-bottom: 14px;
+}
+.cx-onboarding-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.cx-onboarding-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--cx-muted);
+}
+.cx-onboarding-item .cx-b-icon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--cx-card2);
+  color: var(--cx-accent);
+}
+.cx-onboarding-cta {
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: var(--cx-radius-sm);
+  background: var(--cx-accent);
+  color: #141208;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cx-onboarding-cta:active {
+  opacity: 0.85;
+}
+/* cx-fade-in 关键帧见下方 .cx-sheet-backdrop 动画定义处（同一淡入） */
+
 /* ================= 顶栏 ================= */
 .cx-topbar {
   flex: none;
@@ -216,6 +283,19 @@ html.android body > .global-tooltip {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+/* 审计 FD-9：首帧模糊骨架——原图放大模糊占位，首帧渲染完成即被替换 */
+.cx-preview-skeleton {
+  position: absolute;
+  inset: -6%;
+  width: 112%;
+  height: 112%;
+  object-fit: cover;
+  filter: blur(16px) brightness(0.55) saturate(0.9);
+  transform: scale(1.08);
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
@@ -1105,6 +1185,17 @@ html.android body > .global-tooltip {
 .cx-tile.is-busy {
   color: var(--cx-accent);
 }
+/* 审计 UX-1/FD-2：ONNX Runtime 不可用时识别类入口置灰说明条 */
+.cx-ai-unsupported {
+  margin: -2px 0 10px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--cx-border);
+  background: var(--cx-card2);
+  color: var(--cx-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
 .cx-tile .cx-tile-color {
   width: 22px;
   height: 22px;
@@ -1225,6 +1316,10 @@ html.android body > .global-tooltip {
   overscroll-behavior: contain;
   padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
   -webkit-overflow-scrolling: touch;
+}
+/* 竖屏：设置区不参与布局（子元素直接流布）；横屏分栏见 @media (orientation: landscape) */
+.cx-export-settings {
+  display: contents;
 }
 .cx-export-body::-webkit-scrollbar {
   width: 0;
@@ -1501,6 +1596,41 @@ html.android body > .global-tooltip {
   }
   .cx-app:not([data-flow='export']) .cx-bottombar {
     grid-area: bottombar;
+  }
+  /* FD-8: 导出域横屏适配 —— 预览卡与设置区左右分栏（编辑域同标准） */
+  .cx-app[data-flow='export'] {
+    display: grid;
+    grid-template-areas: 'top' 'body';
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+  }
+  .cx-app[data-flow='export'] .cx-back-capsules {
+    grid-area: top;
+  }
+  .cx-app[data-flow='export'] .cx-export-body {
+    grid-area: body;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 46%);
+    column-gap: 14px;
+    align-content: start;
+    overflow: hidden;
+  }
+  .cx-app[data-flow='export'] .cx-export-card {
+    align-self: start;
+    min-width: 0;
+  }
+  .cx-app[data-flow='export'] .cx-frame-preview img {
+    max-height: 46vh;
+  }
+  .cx-app[data-flow='export'] .cx-export-settings {
+    display: block;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+  .cx-app[data-flow='export'] .cx-export-settings::-webkit-scrollbar {
+    width: 0;
   }
 }
 

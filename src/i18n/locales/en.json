@@ -413,6 +413,7 @@
       "lumaNr": "Luma NR",
       "maskFailed": "Recognition failed",
       "modelDownloading": "Downloading AI model",
+      "onnxUnavailableHint": "This device is missing the AI inference runtime, so recognition features are unavailable. AI enhance and auto tone still work.",
       "removeMask": "Remove selection",
       "skyStrength": "Sky strength",
       "structure": "Structure",
@@ -552,6 +553,13 @@
       "vignetteMidpoint": "Midpoint",
       "vignetteRoundness": "Roundness",
       "lutImported": "Imported {{n}} LUT(s)"
+    },
+    "onboarding": {
+      "compareSplit": "Compare · split view",
+      "gotIt": "Got it",
+      "holdOriginal": "Hold preview · see original",
+      "pinchZoom": "Pinch · zoom & pan",
+      "title": "Three touch gestures"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {

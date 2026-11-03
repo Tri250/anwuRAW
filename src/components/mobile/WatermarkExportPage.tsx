@@ -332,6 +332,8 @@ export default function WatermarkExportPage({
           </div>
         </div>
 
+        {/* 设置区（横屏时与预览卡左右分栏；竖屏 display:contents 保持原纵向流） */}
+        <div className="cx-export-settings">
         {/* 模板横滑 */}
         <div className="cx-export-section">
           <div className="cx-export-label">{t('crystal.export.templates')}</div>
@@ -482,6 +484,7 @@ export default function WatermarkExportPage({
             {t('crystal.export.done')}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

@@ -410,6 +410,7 @@
       "lumaNr": "明度降噪",
       "maskFailed": "识别失败",
       "modelDownloading": "AI 模型下载中",
+      "onnxUnavailableHint": "当前设备缺少 AI 推理运行时，识别类功能不可用；AI 增强、自动色调等仍可正常使用。",
       "removeMask": "移除识别",
       "skyStrength": "天空强度",
       "structure": "结构",
@@ -549,6 +550,13 @@
       "vignetteMidpoint": "中点",
       "vignetteRoundness": "圆度",
       "lutImported": "已导入 {{n}} 个 LUT"
+    },
+    "onboarding": {
+      "compareSplit": "底部「对比」· 分屏对照",
+      "gotIt": "知道了",
+      "holdOriginal": "长按预览区 · 查看原图",
+      "pinchZoom": "双指捏合 · 缩放平移",
+      "title": "三个触屏手势"
     },
     "originalBadge": "原图",
     "portrait": {

@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   Contrast,
   Crop,
+  Eye,
   ImageIcon,
   Layers,
   Loader2,
@@ -17,6 +18,7 @@ import {
   User,
   Wand2,
   Waves,
+  ZoomIn,
 } from 'lucide-react';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useProcessStore } from '../../store/useProcessStore';
@@ -183,6 +185,40 @@ function CrystalBottomBar({
 }
 
 /**
+ * OC-5：移动端新手引导（一次性）。
+ * 触屏手势与桌面差异大（长按看原图/双指缩放/分屏对比），首次进入
+ * 编辑器时以轻量浮层告知；localStorage 记住已读，隐私模式下失败可忽略。
+ */
+function CrystalOnboarding({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const items = [
+    { icon: Eye, label: t('crystal.onboarding.holdOriginal') },
+    { icon: ZoomIn, label: t('crystal.onboarding.pinchZoom') },
+    { icon: Contrast, label: t('crystal.onboarding.compareSplit') },
+  ];
+  return (
+    <div className="cx-onboarding" role="dialog" aria-modal="true">
+      <div className="cx-onboarding-card">
+        <div className="cx-onboarding-title">{t('crystal.onboarding.title')}</div>
+        <div className="cx-onboarding-list">
+          {items.map(({ icon: Icon, label }) => (
+            <div className="cx-onboarding-item" key={label}>
+              <span className="cx-b-icon">
+                <Icon size={17} />
+              </span>
+              {label}
+            </div>
+          ))}
+        </div>
+        <button className="cx-onboarding-cta" onClick={onClose}>
+          {t('crystal.onboarding.gotIt')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * 透影 Crystal 移动视图层主壳。
  * 编辑域（黑金）/ 导出域（青绿）双流程；复用全局 ImageProcessingManager
  * 渲染管线与 50 步撤销栈，仅 UI 全新。
@@ -193,6 +229,18 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
   const [activeCategory, setActiveCategory] = useState<CrystalCategory>('presets');
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  /* OC-5: 移动端新手引导，首次进入显示一次 */
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => localStorage.getItem('crystal.mobileOnboardingSeen') !== '1',
+  );
+  const dismissOnboarding = useCallback(() => {
+    setShowOnboarding(false);
+    try {
+      localStorage.setItem('crystal.mobileOnboardingSeen', '1');
+    } catch {
+      /* 隐私模式下 localStorage 不可写：仅本次会话不重复展示 */
+    }
+  }, []);
 
   const selectedImage = useEditorStore((s) => s.selectedImage);
   const resetHistory = useEditorStore((s) => s.resetHistory);
@@ -216,6 +264,11 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
         setIsResetConfirmOpen(false);
         return;
       }
+      // OC-5: 新手引导打开时，返回键优先关闭引导
+      if (showOnboarding) {
+        dismissOnboarding();
+        return;
+      }
       if (isCompareOpen) {
         setIsCompareOpen(false);
         return;
@@ -237,7 +290,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     };
     pushExitLayer(handler);
     return () => removeExitLayer(handler);
-  }, [flow, isCompareOpen, isExporting, isResetConfirmOpen, onBackToLibrary, osPlatform, t]);
+  }, [flow, isCompareOpen, isExporting, isResetConfirmOpen, onBackToLibrary, osPlatform, showOnboarding, dismissOnboarding, t]);
 
   const handleReset = useCallback(() => {
     const sel = useEditorStore.getState().selectedImage;
@@ -284,6 +337,8 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
             onClose={() => setIsResetConfirmOpen(false)}
             onConfirm={handleReset}
           />
+          {/* OC-5: 移动端新手引导（一次性，覆盖在编辑域之上） */}
+          {showOnboarding && <CrystalOnboarding onClose={dismissOnboarding} />}
         </div>
       ) : (
         <WatermarkExportPage onBackToEdit={() => setFlow('edit')} onBackToLibrary={onBackToLibrary} />

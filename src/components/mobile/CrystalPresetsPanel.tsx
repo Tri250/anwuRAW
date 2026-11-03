@@ -20,7 +20,7 @@ import { hasAiSubMasks, mergeAiMaskResults, stripAiMaskResults } from '../../uti
 import { Invokes, Preset } from '../ui/AppProperties';
 import ConfirmModal from '../modals/ConfirmModal';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
-import { CxSliderRow, haptic, summarizeExif, useCrystalAdjust } from './crystalShared';
+import { CxSliderRow, haptic, summarizeExif, useCrystalAdjust, useDragHistoryMerge } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * Crystal 移动端预设 / 滤镜面板。
@@ -368,6 +368,8 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   const adjustments = useEditorStore((s) => s.adjustments);
   const selectedImagePath = useEditorStore((s) => s.selectedImage?.path);
   const { applyPresetObject, setAdjustments } = useCrystalAdjust();
+  /* FD-4: 强度拖动态合并为一次历史（撤销一步回到拖动前） */
+  const dragHistory = useDragHistoryMerge();
   const {
     presets,
     isLoading,
@@ -980,6 +982,8 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
             defaultValue={100}
             suffix="%"
             onChange={handleIntensity}
+            onDragStart={dragHistory.onDragStart}
+            onCommit={dragHistory.onCommit}
           />
           {/* 显式取消入口：分组过滤隐藏激活卡时，「再点同卡取消」不可达，此处兜底闭环
               （activeSource 按全量列表解析，切分组后本按钮与强度滑杆保持可见） */}

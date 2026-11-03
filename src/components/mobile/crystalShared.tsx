@@ -15,7 +15,7 @@ import { Mask } from '../panel/right/Masks';
 import type { SubMask } from '../panel/right/Masks';
 import { useAiMasking } from '../../hooks/useAiMasking';
 import { useEditorStore } from '../../store/useEditorStore';
-import { useEditorActions } from '../../hooks/useEditorActions';
+import { debouncedSetHistory, useEditorActions } from '../../hooks/useEditorActions';
 
 /** 长按阈值（G10：原图按下即看 / 对比稍延迟区分两种手势） */
 export const CRYSTAL_LONG_PRESS_MS = 450;
@@ -362,6 +362,7 @@ export function CxSliderRow({
   suffix,
   onChange,
   onCommit,
+  onDragStart,
 }: {
   label: string;
   min: number;
@@ -372,6 +373,7 @@ export function CxSliderRow({
   suffix?: string;
   onChange: (v: number) => void;
   onCommit?: () => void;
+  onDragStart?: () => void;
 }) {
   const changed = Math.abs(value - defaultValue) > 1e-9;
   return (
@@ -393,9 +395,46 @@ export function CxSliderRow({
           ) : null}
         </span>
       </div>
-      <CrystalRangeSlider min={min} max={max} step={step} value={value} onChange={onChange} onCommit={onCommit} />
+      <CrystalRangeSlider
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={onChange}
+        onCommit={onCommit}
+        onDragStart={onDragStart}
+      />
     </div>
   );
+}
+
+/* --------------------------------------------------------------------------
+ * 审计 FD-4：滑杆拖动态历史合并。
+ * setAdjustments 内部走 500ms 防抖 pushHistory，缓慢拖动（步间隔 >500ms）
+ * 会残留多条历史，撤销需连点多次。这里在按下时记录 historyIndex，
+ * 松手时把拖动态产生的历史段截断为「一次提交」——与桌面/泼拉一致。
+ * ------------------------------------------------------------------------ */
+export function useDragHistoryMerge() {
+  const startIndex = useRef<number | null>(null);
+
+  const onDragStart = useCallback(() => {
+    startIndex.current = useEditorStore.getState().historyIndex;
+  }, []);
+
+  const onCommit = useCallback(() => {
+    const start = startIndex.current;
+    startIndex.current = null;
+    if (start === null) return;
+    // 丢弃拖动态排队的防抖提交，避免截断后又被旧值污染历史栈
+    debouncedSetHistory.cancel();
+    const st = useEditorStore.getState();
+    if (st.historyIndex === start) return; // 拖动态未产生任何新历史条目
+    const merged = [...st.history.slice(0, start + 1), st.adjustments];
+    if (merged.length > 50) merged.shift();
+    useEditorStore.setState({ history: merged, historyIndex: merged.length - 1 });
+  }, []);
+
+  return { onDragStart, onCommit };
 }
 
 /**
@@ -409,6 +448,7 @@ function CrystalRangeSlider({
   value,
   onChange,
   onCommit,
+  onDragStart,
 }: {
   min: number;
   max: number;
@@ -416,6 +456,7 @@ function CrystalRangeSlider({
   value: number;
   onChange: (v: number) => void;
   onCommit?: () => void;
+  onDragStart?: () => void;
 }) {
   const { t } = useTranslation();
   const frac = max !== min ? (value - min) / (max - min) : 0;
@@ -447,6 +488,7 @@ function CrystalRangeSlider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
+        onPointerDown={onDragStart}
         onPointerUp={onCommit}
         className="absolute inset-0 w-full opacity-0 cursor-pointer"
         style={{ height: 36, touchAction: 'none' }}

@@ -1517,6 +1517,28 @@ async fn scene_classify(
     .map_err(|e| e.to_string())?
 }
 
+/// 审计 UX-1/FD-2：探测 ONNX Runtime 动态库（libonnxruntime.so）是否可用。
+/// AI 识别/分割/景深/降噪均依赖该库；库缺失时（如某 ABI 未随包分发），
+/// 前端据此置灰入口并给出「本设备暂不支持」，避免点击后才报错的死路交互。
+#[tauri::command]
+fn probe_onnx_runtime() -> bool {
+    if let Ok(path) = std::env::var("ORT_DYLIB_PATH") {
+        return std::path::Path::new(&path).exists();
+    }
+    #[cfg(target_os = "android")]
+    {
+        // ORT_DYLIB_PATH 尚未设置时兜底：扫描 LD_LIBRARY_PATH
+        // （应用 nativeLibraryDir 在其中）。
+        if let Ok(ld_path) = std::env::var("LD_LIBRARY_PATH") {
+            return ld_path
+                .split(':')
+                .filter(|dir| !dir.is_empty())
+                .any(|dir| std::path::Path::new(dir).join("libonnxruntime.so").exists());
+        }
+    }
+    false
+}
+
 #[tauri::command]
 async fn fetch_community_presets() -> Result<Vec<CommunityPreset>, String> {
     let client = crate::http_tls::base_builder()
@@ -2532,6 +2554,24 @@ pub fn run() {
                     std::env::set_var("ORT_DYLIB_PATH", &ort_library_path);
                     cli_println!("Set ORT_DYLIB_PATH to: {}", ort_library_path.display());
                 }
+
+                #[cfg(target_os = "android")]
+                {
+                    // 审计 UX-1/FD-2：Android 侧 libonnxruntime.so 由 Gradle 依赖
+                    // （onnxruntime-android AAR）解压到应用 nativeLibraryDir，
+                    // 该目录位于进程 LD_LIBRARY_PATH 中；此前 Android 完全跳过
+                    // ORT_DYLIB_PATH 设置且库未打包，所有 ONNX 能力 100% 不可用。
+                    if let Ok(ld_path) = std::env::var("LD_LIBRARY_PATH") {
+                        for dir in ld_path.split(':').filter(|d| !d.is_empty()) {
+                            let candidate = std::path::Path::new(dir).join("libonnxruntime.so");
+                            if candidate.exists() {
+                                std::env::set_var("ORT_DYLIB_PATH", &candidate);
+                                cli_println!("Android: Set ORT_DYLIB_PATH to: {}", candidate.display());
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
             setup_logging(&app_handle);
@@ -2848,6 +2888,7 @@ pub fn run() {
             generate_preview_for_path,
             generate_preset_preview,
             scene_classify,
+            probe_onnx_runtime,
             generate_uncropped_preview,
             get_log_file_path,
             frontend_log,

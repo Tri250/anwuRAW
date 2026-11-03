@@ -148,6 +148,11 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("com.google.android.material:material:1.12.0")
     implementation("rustls:rustls-platform-verifier:0.1.1")
+    // 审计 UX-1/FD-2：AI 识别/分割/降噪依赖 ONNX Runtime（ort crate, load-dynamic）。
+    // 桌面端由 resources/libonnxruntime.so + ORT_DYLIB_PATH 提供；Android 侧此前
+    // 完全未打包，导致所有 ONNX 能力 100% 不可用。通过 AAR 依赖让 Gradle 将
+    // libonnxruntime.so 解压进 APK lib/ 目录（版本与 ort 2.0.0-rc.10 对齐 = 1.22.0）。
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.4")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")
