@@ -2,18 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import {
-  BringToFront,
-  CloudSun,
-  Loader2,
-  Sparkles,
-  TextSearch,
-  User,
-  Wand2,
-  Waves,
-  Eraser,
-  X,
-} from 'lucide-react';
+import { BringToFront, CloudSun, Loader2, Sparkles, TextSearch, User, Wand2, Waves, Eraser, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useEditorStore } from '../../store/useEditorStore';
 import { selectAiModelDownloadStatus, useProcessStore } from '../../store/useProcessStore';

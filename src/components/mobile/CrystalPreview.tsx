@@ -404,7 +404,14 @@ export default function CrystalPreview({
           aria-hidden
           style={
             imgRect
-              ? { left: imgRect.left, top: imgRect.top, width: imgRect.width, height: imgRect.height, right: 'auto', bottom: 'auto' }
+              ? {
+                  left: imgRect.left,
+                  top: imgRect.top,
+                  width: imgRect.width,
+                  height: imgRect.height,
+                  right: 'auto',
+                  bottom: 'auto',
+                }
               : undefined
           }
         >

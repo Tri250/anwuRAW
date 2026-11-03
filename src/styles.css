@@ -31,8 +31,9 @@
    * YaHei/Noto）平台字体，避免中文字形在两域间跳变。
    */
   :root {
-    --font-family: 'Poppins', system-ui, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'HarmonyOS Sans SC',
-      'MiSans', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+    --font-family:
+      'Poppins', system-ui, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'HarmonyOS Sans SC', 'MiSans',
+      'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
   }
 
   *,

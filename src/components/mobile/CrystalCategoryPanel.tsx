@@ -217,8 +217,23 @@ function TonePanel() {
                 {
                   name: 'Images',
                   extensions: [
-                    'jpg', 'jpeg', 'png', 'tif', 'tiff', 'webp', 'avif', 'jxl', 'heic',
-                    'dng', 'cr2', 'cr3', 'nef', 'arw', 'raf', 'orf', 'rw2',
+                    'jpg',
+                    'jpeg',
+                    'png',
+                    'tif',
+                    'tiff',
+                    'webp',
+                    'avif',
+                    'jxl',
+                    'heic',
+                    'dng',
+                    'cr2',
+                    'cr3',
+                    'nef',
+                    'arw',
+                    'raf',
+                    'orf',
+                    'rw2',
                   ],
                 },
               ],
@@ -247,7 +262,9 @@ function TonePanel() {
         } as Adjustments['curves'];
       }
       if (Object.keys(next).length > 0) applyPatch(next);
-      toast.success(t('adjustments.color.colorMatchDone', { reduction: Math.round(result.metrics?.deltaEReduction ?? 0) }));
+      toast.success(
+        t('adjustments.color.colorMatchDone', { reduction: Math.round(result.metrics?.deltaEReduction ?? 0) }),
+      );
     } catch (e) {
       console.error('Color match failed:', e);
       toast.error(t('adjustments.color.colorMatchFailed'));
@@ -261,12 +278,14 @@ function TonePanel() {
    * 会把上一事件的曲线段回滚（与 HSL/分级/校准修复同类竞态）。 */
   const setParametric = (key: keyof typeof DEFAULT_PARAMETRIC_CURVE_SETTINGS, value: number) => {
     const fresh = useEditorStore.getState().adjustments;
-    const base: ParametricCurve = fresh.parametricCurve ?? ({
-      blue: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
-      green: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
-      luma: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
-      red: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
-    } as ParametricCurve);
+    const base: ParametricCurve =
+      fresh.parametricCurve ??
+      ({
+        blue: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
+        green: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
+        luma: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
+        red: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
+      } as ParametricCurve);
     const cur = fresh.parametricCurve?.[curveChannel] ?? DEFAULT_PARAMETRIC_CURVE_SETTINGS;
     const next = { ...cur, [key]: value };
     applyPatch({
@@ -621,7 +640,15 @@ function TonePanel() {
           </div>
           <div className="cx-curve-card">
             <svg className="cx-curve-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
-              <line x1="0" y1="100" x2="100" y2="0" stroke="rgba(255,255,255,0.18)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              <line
+                x1="0"
+                y1="100"
+                x2="100"
+                y2="0"
+                stroke="rgba(255,255,255,0.18)"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+              />
               {/* 未激活但已修改的通道淡显（与桌面 Curves.tsx inactive 通道叠加同构） */}
               {CURVE_CHANNELS.filter((ch) => ch.id !== curveChannel && channelModified(ch.id)).map((ch) => (
                 <polyline
@@ -1006,9 +1033,7 @@ function PortraitPanel() {
       useEditorStore.getState().patchesSentToBackend.delete(patchId);
       setAdjustments((prev) => ({
         ...prev,
-        aiPatches: (prev.aiPatches || []).map((p) =>
-          p.id === patchId ? { ...p, patchData, isLoading: false } : p,
-        ),
+        aiPatches: (prev.aiPatches || []).map((p) => (p.id === patchId ? { ...p, patchData, isLoading: false } : p)),
       }));
     } catch (e) {
       console.error('Face liquify failed:', e);
@@ -1662,10 +1687,7 @@ function FxPanel() {
               {
                 name: t('ui.lut.filterLabel'),
                 // 与桌面 LUTControl 一致：附带大写扩展名，.CUBE 等文件不被过滤
-                extensions: [
-                  'cube', '3dl', 'png', 'jpg', 'jpeg', 'tiff',
-                  'CUBE', '3DL', 'PNG', 'JPG', 'JPEG', 'TIFF',
-                ],
+                extensions: ['cube', '3dl', 'png', 'jpg', 'jpeg', 'tiff', 'CUBE', '3DL', 'PNG', 'JPG', 'JPEG', 'TIFF'],
               },
             ],
       });

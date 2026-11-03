@@ -9,12 +9,7 @@ import { toast } from 'react-toastify';
 import { usePresets, UserPreset } from '../../hooks/usePresets';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import {
-  Adjustments,
-  INITIAL_ADJUSTMENTS,
-  applyStrength,
-  getAiDenoiseEnablePatch,
-} from '../../utils/adjustments';
+import { Adjustments, INITIAL_ADJUSTMENTS, applyStrength, getAiDenoiseEnablePatch } from '../../utils/adjustments';
 import type { MaskContainer } from '../../utils/adjustments';
 import { hasAiSubMasks, mergeAiMaskResults, stripAiMaskResults } from '../../utils/maskUtils';
 import { Invokes, Preset } from '../ui/AppProperties';
@@ -264,9 +259,10 @@ function AiRecommendCard() {
   useEffect(() => {
     let cancelled = false;
     setScene(null);
-    if (!selectedImage?.isReady) return () => {
-      cancelled = true;
-    };
+    if (!selectedImage?.isReady)
+      return () => {
+        cancelled = true;
+      };
     invoke<SceneClassification>(Invokes.SceneClassify)
       .then((result) => {
         if (!cancelled) setScene(result);
@@ -341,10 +337,14 @@ function AiRecommendCard() {
           <span className="cx-ai-tag">{t('crystal.aiRecommend.tagExif')}</span>
         </div>
       </div>
-      <button className="cx-ai-apply" onClick={() => {
-        haptic(6);
-        runAiEnhance();
-      }} disabled={isEnhancing}>
+      <button
+        className="cx-ai-apply"
+        onClick={() => {
+          haptic(6);
+          runAiEnhance();
+        }}
+        disabled={isEnhancing}
+      >
         {isEnhancing ? (
           <Loader2 size={15} className="animate-spin inline" />
         ) : (
@@ -506,9 +506,12 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     if (!path) return;
     try {
       await invoke(Invokes.ApplyAdjustmentsToPaths, { paths: [path], adjustments: { masks: presetMasks } });
-      const meta = await invoke<{ adjustments?: { masks?: Array<MaskContainer> } | null } | null>(Invokes.LoadMetadata, {
-        path,
-      });
+      const meta = await invoke<{ adjustments?: { masks?: Array<MaskContainer> } | null } | null>(
+        Invokes.LoadMetadata,
+        {
+          path,
+        },
+      );
       const resolved = meta?.adjustments?.masks;
       if (!resolved || useEditorStore.getState().selectedImage?.path !== path) return;
       const setEditor = useEditorStore.getState().setEditor;

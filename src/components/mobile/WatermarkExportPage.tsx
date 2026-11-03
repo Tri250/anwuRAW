@@ -77,7 +77,11 @@ export default function WatermarkExportPage({
   const [signatureDraft, setSignatureDraft] = useState(prefs.signature);
 
   const { finalPreviewUrl, originalPreview, adjustments } = useEditorStore(
-    useShallow((s) => ({ finalPreviewUrl: s.finalPreviewUrl, originalPreview: s.originalPreview?.url, adjustments: s.adjustments })),
+    useShallow((s) => ({
+      finalPreviewUrl: s.finalPreviewUrl,
+      originalPreview: s.originalPreview?.url,
+      adjustments: s.adjustments,
+    })),
   );
   const selectedImage = useEditorStore((s) => s.selectedImage);
   const setExportState = useProcessStore((s) => s.setExportState);
@@ -299,7 +303,12 @@ export default function WatermarkExportPage({
             </span>
             {/* OC-2: 按住预览图时叠加原图对照层 */}
             {holdOriginal && originalPreview && (
-              <img className="cx-export-origin" src={originalPreview} alt={t('crystal.originalBadge')} draggable={false} />
+              <img
+                className="cx-export-origin"
+                src={originalPreview}
+                alt={t('crystal.originalBadge')}
+                draggable={false}
+              />
             )}
             <span className="cx-preview-badge" style={{ top: 10, right: 10 }}>
               {t(tpl.nameKey)}

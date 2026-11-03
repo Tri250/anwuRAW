@@ -656,7 +656,9 @@ html.android body > .global-tooltip {
   color: var(--cx-muted);
   font-size: 12px;
   font-weight: 600;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .cx-tone-tab.active {
   background: color-mix(in srgb, var(--cx-accent) 24%, transparent);
@@ -914,7 +916,9 @@ html.android body > .global-tooltip {
   border: 2px solid var(--cx-border);
   padding: 0;
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 .cx-light-swatch.is-active {
   border-color: var(--cx-accent);

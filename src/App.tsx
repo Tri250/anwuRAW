@@ -1095,50 +1095,50 @@ function App() {
             导入选项等）同挂 Crystal 作用域，避免亮色主题下暗色图库上弹出亮色弹窗。 */}
         <div className={clsx(isAndroid && 'crystal-scope', 'contents')}>
           <AppModals
-          handleImageSelect={handleImageSelect}
-          handleSavePanorama={handleSavePanorama}
-          handleStartPanorama={handleStartPanorama}
-          handleStartFocusStack={handleStartFocusStack}
-          handleSaveFocusStack={handleSaveFocusStack}
-          handleSaveHdr={handleSaveHdr}
-          handleStartHdr={handleStartHdr}
-          handleCreateFolder={handleCreateFolder}
-          handleRenameFolder={handleRenameFolder}
-          handleSaveRename={handleSaveRename}
-          handleStartImport={handleStartImport}
-          handleSetFlag={handleSetFlag}
-          handleRate={handleRate}
-          executeDelete={executeDelete}
-          handleSaveCollage={handleSaveCollage}
-          handleCreateAlbumItem={handleCreateAlbumItem}
-          handleRenameAlbumItem={handleRenameAlbumItem}
-        />
-        <SurveyView
-          requestThumbnails={requestThumbnails}
-          onImageSelect={handleImageSelect}
-          onSetFlag={handleSetFlag}
-          onRate={handleRate}
-        />
-        {activeView === 'editor' && <TaskCapsule />}
-        <ToastContainer
-          position="bottom-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable={false}
-          pauseOnHover
-          theme={isAndroid || !isLightTheme ? 'dark' : 'light'}
-          transition={Slide}
-          toastClassName={() =>
-            clsx(
-              'relative flex min-h-16 p-4 rounded-lg justify-between overflow-hidden cursor-pointer mb-4',
-              'bg-surface! text-text-primary! border! border-border-color! shadow-2xl! max-w-[420px]!',
-            )
-          }
-        />
+            handleImageSelect={handleImageSelect}
+            handleSavePanorama={handleSavePanorama}
+            handleStartPanorama={handleStartPanorama}
+            handleStartFocusStack={handleStartFocusStack}
+            handleSaveFocusStack={handleSaveFocusStack}
+            handleSaveHdr={handleSaveHdr}
+            handleStartHdr={handleStartHdr}
+            handleCreateFolder={handleCreateFolder}
+            handleRenameFolder={handleRenameFolder}
+            handleSaveRename={handleSaveRename}
+            handleStartImport={handleStartImport}
+            handleSetFlag={handleSetFlag}
+            handleRate={handleRate}
+            executeDelete={executeDelete}
+            handleSaveCollage={handleSaveCollage}
+            handleCreateAlbumItem={handleCreateAlbumItem}
+            handleRenameAlbumItem={handleRenameAlbumItem}
+          />
+          <SurveyView
+            requestThumbnails={requestThumbnails}
+            onImageSelect={handleImageSelect}
+            onSetFlag={handleSetFlag}
+            onRate={handleRate}
+          />
+          {activeView === 'editor' && <TaskCapsule />}
+          <ToastContainer
+            position="bottom-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable={false}
+            pauseOnHover
+            theme={isAndroid || !isLightTheme ? 'dark' : 'light'}
+            transition={Slide}
+            toastClassName={() =>
+              clsx(
+                'relative flex min-h-16 p-4 rounded-lg justify-between overflow-hidden cursor-pointer mb-4',
+                'bg-surface! text-text-primary! border! border-border-color! shadow-2xl! max-w-[420px]!',
+              )
+            }
+          />
         </div>
       </div>
     </>
