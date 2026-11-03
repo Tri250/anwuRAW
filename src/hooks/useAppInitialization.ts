@@ -498,7 +498,10 @@ export const useAppInitialization = ({
     // Poppins has no CJK glyphs — Chinese/Japanese/Korean text always falls
     // through to the next family, so name the platform fonts explicitly for a
     // consistent look instead of leaving it to the browser default.
-    const cjkFallback = `'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif`;
+    // R20-字体统一：CJK 回退与 styles.css :root 规范栈逐字一致（iOS PingFang/
+    // Hiragino + Android HarmonyOS/MiSans/YaHei/Noto 全覆盖），确保图库与
+    // 编辑器（.crystal-shell 消费同一 var）中文字形不跳变。
+    const cjkFallback = `'PingFang SC', 'Hiragino Sans GB', 'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif`;
     const fontStack =
       fontFamily === 'system'
         ? `-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', ${cjkFallback}`

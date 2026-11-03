@@ -10,7 +10,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : TauriActivity() {
-  private val safeMarginBackgroundColor = Color.rgb(24, 24, 24)
+  // R20-主题统一：与 Crystal 移动域页面底色 --cx-page (#0b0b09) 一致，
+  // 消除状态栏/WebView 衬底 (#181818) 与编辑域之间的极淡色差带。
+  private val safeMarginBackgroundColor = Color.rgb(11, 11, 9)
   private var webView: WebView? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {

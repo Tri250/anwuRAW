@@ -186,6 +186,7 @@ export default function GlobalTooltip() {
           transition={{ duration: 0.15, ease: 'easeOut' }}
           style={{ top: tooltip.y, left }}
           className={clsx(
+            'global-tooltip',
             'fixed z-10000 pointer-events-none',
             'bg-surface/80 backdrop-blur-xs',
             'border border-text-secondary/10 shadow-xl rounded-md',

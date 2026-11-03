@@ -35,6 +35,7 @@ import {
   EditedStatus,
   FlagStatus,
   LibraryDisplayMode,
+  Theme,
 } from '../ui/AppProperties';
 import { GroupBadgeInfo, GroupId } from '../../utils/imageGrouping';
 import { ImportState, Status } from '../ui/ExportImportProperties';
@@ -363,7 +364,10 @@ export default function MainLibrary(props: MainLibraryProps) {
       return null;
     }
     const hasLastPath = !!props.appSettings.lastRootPath || !!props.appSettings.rootFolders?.length;
-    const currentThemeId = props.theme || DEFAULT_THEME_ID;
+    // R20-主题统一：Android 图库域整体挂入 Crystal 黑金作用域（App.tsx
+    // .crystal-scope），启动页背景图同步取暗色资产，避免亮色 splash 照片
+    // 在暗色 UI 下形成亮度跳变；桌面端仍跟随用户主题。
+    const currentThemeId = (props.isAndroid ? Theme.Dark : props.theme) || DEFAULT_THEME_ID;
     const selectedTheme: ThemeProps | undefined =
       THEMES.find((t: ThemeProps) => t.id === currentThemeId) ||
       THEMES.find((t: ThemeProps) => t.id === DEFAULT_THEME_ID);

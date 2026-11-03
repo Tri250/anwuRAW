@@ -1018,6 +1018,10 @@ function App() {
                   className={clsx(
                     'flex-1 flex flex-col min-w-0 h-full',
                     activeView === 'editor' && selectedImage ? 'hidden' : 'flex',
+                    // R20-主题统一：Android 图库域（启动页/图库网格/底栏）挂入
+                    // Crystal 黑金作用域，与编辑壳 .crystal-shell 同令牌同字体；
+                    // 桌面端图库不受影响，仍跟随全局主题。
+                    isAndroid && 'crystal-scope',
                   )}
                 >
                   <LibraryView
@@ -1087,7 +1091,10 @@ function App() {
             </DragOverlay>
           </DndContext>
         </div>
-        <AppModals
+        {/* R20-主题统一：Android 下图库/编辑器触发的模态（删除确认、重命名、
+            导入选项等）同挂 Crystal 作用域，避免亮色主题下暗色图库上弹出亮色弹窗。 */}
+        <div className={clsx(isAndroid && 'crystal-scope', 'contents')}>
+          <AppModals
           handleImageSelect={handleImageSelect}
           handleSavePanorama={handleSavePanorama}
           handleStartPanorama={handleStartPanorama}
@@ -1123,7 +1130,7 @@ function App() {
           pauseOnFocusLoss
           draggable={false}
           pauseOnHover
-          theme={isLightTheme ? 'light' : 'dark'}
+          theme={isAndroid || !isLightTheme ? 'dark' : 'light'}
           transition={Slide}
           toastClassName={() =>
             clsx(
@@ -1132,6 +1139,7 @@ function App() {
             )
           }
         />
+        </div>
       </div>
     </>
   );

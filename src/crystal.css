@@ -2,9 +2,14 @@
    透影 Crystal 移动视图层（Android）
    Design Tokens 转译自《透影Crystal-APP实现交付方案》§2.1/§2.2
    作用域：.crystal-shell（由 CrystalMobileApp 挂载），不影响桌面视图。
+
+   R20-主题统一：令牌定义上沉 :root —— 编辑壳 .crystal-shell 与图库作用域
+   .crystal-scope 共用同一套 Crystal 黑金令牌（仅 crystal 组件消费，
+   桌面视图零影响）；字体单一来源 = :root --font-family（styles.css 定义
+   规范栈，useAppInitialization 按设置覆盖），图库/启动页/编辑器完全同源。
    ========================================================================== */
 
-.crystal-shell {
+:root {
   /* 基底 */
   --cx-page: #0b0b09;
   --cx-screen: #0e0e0c;
@@ -36,7 +41,9 @@
   --cx-exif-bar: #f4f4f0;
   --cx-exif-text: #1c1c18;
   --cx-exif-brand: #b4443c;
+}
 
+.crystal-shell {
   /* 审计 FX-色：壳内带入的桌面共享组件（DepthRangePicker 的 Text/把手、
      text-accent 类等）重映射到黑金主题，与全局 Light 主题解耦——
      否则 Light 主题下黑底深字不可读、强调色白/紫与金色跳变。 */
@@ -44,22 +51,50 @@
   --app-text-secondary: var(--cx-muted);
   --app-accent: var(--cx-gold);
 
-  /* 审计 F-字体：与图库/启动页共用 :root --font-family（Poppins/系统栈），
-     避免同机链路「图库 Poppins ↔ 编辑器系统字体」跳变；var 回退保底 CJK 栈。 */
-  font-family: var(
-    --font-family,
-    -apple-system,
-    'PingFang SC',
-    'HarmonyOS Sans SC',
-    'MiSans',
-    'Noto Sans SC',
-    'Microsoft YaHei',
-    sans-serif
-  );
+  /* 审计 F-字体：单一来源 :root --font-family，与图库/启动页完全同源 */
+  font-family: var(--font-family);
   color: var(--cx-ink);
   background: var(--cx-page);
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+}
+
+/* ==========================================================================
+   R20-主题统一：Android 图库域作用域（启动页/图库网格/底栏，由 App.tsx 挂载）。
+   桌面端图库继续跟随全局主题（Dark/Light/Grey）；Android 端图库与编辑壳统一
+   为 Crystal 黑金域，消除「图库中性灰 ↔ 编辑器暖黑金」的主题色与字体跳变。
+   仅重映射 --app-* 消费变量（运行时 JS 写入 :root 的行内值被本类选择器覆盖），
+   库组件零改动；设置面板在图库作用域之外，仍跟随用户主题选择。
+   ========================================================================== */
+.crystal-scope {
+  --app-bg-primary: var(--cx-page);
+  --app-bg-secondary: var(--cx-screen);
+  --app-surface: var(--cx-card);
+  --app-card-active: var(--cx-card2);
+  --app-button-text: #171503;
+  --app-text-primary: var(--cx-ink);
+  --app-text-secondary: var(--cx-muted);
+  --app-accent: var(--cx-gold);
+  --app-border-color: var(--cx-border);
+  --app-hover-color: var(--cx-gold);
+}
+
+/* R20-主题统一（portal 逃逸）：ConfirmModal / GlobalTooltip 经 createPortal 挂到
+   document.body，脱离 .crystal-shell 与 .crystal-scope 的 DOM 子树，令牌回退到
+   全局主题——亮色主题下编辑区内会弹出亮色确认框与亮色 tooltip。按 html.android
+   直接子级标记重映射（#root 内联树含设置面板，仍跟随用户主题，不受影响）。 */
+html.android body > [role='dialog'],
+html.android body > .global-tooltip {
+  --app-bg-primary: var(--cx-page);
+  --app-bg-secondary: var(--cx-screen);
+  --app-surface: var(--cx-card);
+  --app-card-active: var(--cx-card2);
+  --app-button-text: #171503;
+  --app-text-primary: var(--cx-ink);
+  --app-text-secondary: var(--cx-muted);
+  --app-accent: var(--cx-gold);
+  --app-border-color: var(--cx-border);
+  --app-hover-color: var(--cx-gold);
 }
 
 .crystal-shell[data-flow='export'] {

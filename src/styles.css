@@ -22,6 +22,19 @@
 }
 
 @layer base {
+  /*
+   * R20-字体统一：--font-family 规范栈的 CSS 单一来源。
+   * useAppInitialization 按用户设置（poppins/system）在 :root 行内覆盖；
+   * 此处默认值与 'poppins' 档一致，消除 JS effect 执行前 html 字体回退到
+   * 浏览器默认字体的窗口，并保证图库/启动页/编辑器三域字体完全同源。
+   * CJK 回退同时覆盖 iOS（PingFang/Hiragino）与 Android（HarmonyOS/MiSans/
+   * YaHei/Noto）平台字体，避免中文字形在两域间跳变。
+   */
+  :root {
+    --font-family: 'Poppins', system-ui, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'HarmonyOS Sans SC',
+      'MiSans', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+  }
+
   *,
   ::after,
   ::before,
