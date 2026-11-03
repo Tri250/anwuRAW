@@ -20,7 +20,7 @@ import { hasAiSubMasks, mergeAiMaskResults, stripAiMaskResults } from '../../uti
 import { Invokes, Preset } from '../ui/AppProperties';
 import ConfirmModal from '../modals/ConfirmModal';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
-import { CxSliderRow, summarizeExif, useCrystalAdjust } from './crystalShared';
+import { CxSliderRow, haptic, summarizeExif, useCrystalAdjust } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * Crystal 移动端预设 / 滤镜面板。
@@ -517,6 +517,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
 
   const handleApply = useCallback(
     (source: PreviewSource) => {
+      haptic(8);
       if (activeId === source.id) {
         // 再次点击取消：按参数键还原（见 cancelActive）
         cancelActive();
@@ -922,6 +923,11 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
 
       {activeSource && (
         <div className="mt-2">
+          {/* OC-6: 已应用预设状态条（卡位滚出视口时仍可见当前预设与强度） */}
+          <div className="cx-applied-bar" role="status">
+            <Check size={12} />
+            {t('crystal.presets.appliedBar', { name: activeSource.name })} · {intensity}%
+          </div>
           <CxSliderRow
             label={t('crystal.presets.intensity')}
             min={0}

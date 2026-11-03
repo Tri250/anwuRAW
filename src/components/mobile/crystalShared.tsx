@@ -32,6 +32,8 @@ export interface CrystalWatermarkPrefs {
   /** G19 字体族：builtin = 内嵌 DejaVu；system = 系统字体（后端加载失败回落 builtin） */
   fontFamily: 'builtin' | 'system';
   savedTemplateId: string | null;
+  /** 导出文件名后缀（默认 _crystal，可编辑；非法字符在导出时清洗） */
+  filenameSuffix: string;
 }
 
 const PREFS_KEY = 'crystal.watermark.prefs.v1';
@@ -43,6 +45,16 @@ export const DEFAULT_WM_PREFS: CrystalWatermarkPrefs = {
   fontScale: 4,
   fontFamily: 'builtin',
   savedTemplateId: null,
+  filenameSuffix: '_crystal',
+};
+
+/** 轻量触觉反馈（Android WebView 支持 navigator.vibrate；其余平台静默忽略） */
+export const haptic = (pattern: number | number[] = 8) => {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* 不支持触觉的设备：静默 */
+  }
 };
 
 export function loadWmPrefs(): CrystalWatermarkPrefs {
@@ -245,6 +257,7 @@ export function useShowOriginalHold(showDelayMs = 0) {
   const start = useCallback(() => {
     holdTimer.current = window.setTimeout(() => {
       holdActive.current = true;
+      haptic(5);
       setEditor({ showOriginal: true });
     }, showDelayMs);
   }, [setEditor, showDelayMs]);

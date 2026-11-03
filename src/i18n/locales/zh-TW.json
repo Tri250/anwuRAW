@@ -439,7 +439,7 @@
       "original": "原圖",
       "redo": "重做",
       "reset": "重設",
-      "save": "儲存",
+      "save": "匯出",
       "undo": "復原"
     },
     "categories": {
@@ -469,9 +469,9 @@
     "export": {
       "backToEdit": "返回編輯",
       "backToLibrary": "圖庫",
-      "cta": "儲存到相簿",
-      "done": "已儲存到相簿",
-      "exporting": "儲存中…",
+      "cta": "匯出到相簿",
+      "done": "已匯出到相簿",
+      "exporting": "匯出中…",
       "favorite": "收藏",
       "fontBuiltin": "經典",
       "fontFamily": "字體",
@@ -488,7 +488,9 @@
       "setDefault": "設為預設",
       "signature": "簽名文案",
       "signaturePlaceholder": "CRYSTAL · 專業攝影",
-      "templates": "浮水印範本"
+      "templates": "浮水印範本",
+      "filenameSuffix": "檔名後綴",
+      "pngLossless": "PNG 為無損格式，畫質壓縮不適用"
     },
     "filters": {
       "airy": "日系",
@@ -584,7 +586,8 @@
       "renameTitle": "重新命名預設",
       "saveCurrent": "儲存目前",
       "saved": "預設已儲存",
-      "saveTitle": "另存為預設"
+      "saveTitle": "另存為預設",
+      "appliedBar": "已套用：{{name}}"
     },
     "previewAlt": "編輯預覽",
     "previewCloseCompare": "退出對比",
@@ -596,7 +599,7 @@
       "message": "將恢復原始畫面，並重建復原歷史。",
       "title": "重設所有編輯？"
     },
-    "save": "儲存",
+    "save": "匯出",
     "subtitleFallback": "照片",
     "templates": {
       "cinema": {

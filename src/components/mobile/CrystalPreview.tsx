@@ -5,7 +5,7 @@ import { ChevronsLeftRight, Loader2, Move, RotateCcw, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useEditorStore } from '../../store/useEditorStore';
 import { getOrientedDimensions, moveCropInsideBounds } from '../../utils/cropUtils';
-import { useShowOriginalHold, useCrystalAdjust } from './crystalShared';
+import { useCrystalAdjust } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * P2 预览区升级：双指缩放 + 平移 + 双击缩放 + 前后对比分割滑杆。
@@ -330,9 +330,6 @@ export default function CrystalPreview({
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
   }, []);
 
-  const originalHold = useShowOriginalHold(0);
-  const compareAvailable = Boolean(originalPreview);
-
   return (
     <div
       className="cx-preview"
@@ -378,21 +375,8 @@ export default function CrystalPreview({
         </button>
       )}
 
-      {/* G11 原图按住快捷键（对比模式交由分割滑杆接管） */}
-      {!compare && (
-        <div className="cx-float-pills">
-          <button className="cx-float-pill" {...originalHold}>
-            {t('crystal.bottom.original')}
-          </button>
-          <button
-            className="cx-float-pill"
-            onClick={() => compareAvailable && onCompareChange(true)}
-            disabled={!compareAvailable}
-          >
-            {t('crystal.bottom.compare')}
-          </button>
-        </div>
-      )}
+      {/* 审计 UX-3/FD-3: 「原图｜对比」浮层已移除（与底栏重复且遮挡画面），
+          原图长按与分屏对比统一收敛到底栏。 */}
 
       {/* 构图模式：拖动画面移动裁剪窗口的发现性提示 */}
       {cropHintVisible && !compare && (

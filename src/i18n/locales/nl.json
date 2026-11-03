@@ -442,7 +442,7 @@
       "original": "Origineel",
       "redo": "Opnieuw",
       "reset": "Herstellen",
-      "save": "Opslaan",
+      "save": "Exporteren",
       "undo": "Ongedaan maken"
     },
     "categories": {
@@ -472,9 +472,9 @@
     "export": {
       "backToEdit": "Terug naar bewerken",
       "backToLibrary": "Bibliotheek",
-      "cta": "Opslaan op toestel",
-      "done": "Opgeslagen op toestel",
-      "exporting": "Opslaan…",
+      "cta": "Exporteren naar galerij",
+      "done": "Geëxporteerd naar de galerij",
+      "exporting": "Exporteren…",
       "favorite": "Favoriet",
       "fontBuiltin": "Klassiek",
       "fontFamily": "Lettertype",
@@ -491,7 +491,9 @@
       "setDefault": "Standaard",
       "signature": "Handtekening",
       "signaturePlaceholder": "CRYSTAL · Pro Fotografie",
-      "templates": "Watermerksjablonen"
+      "templates": "Watermerksjablonen",
+      "filenameSuffix": "Bestandsnaamachtervoegsel",
+      "pngLossless": "PNG is verliesvrij — kwaliteitscompressie is niet van toepassing"
     },
     "filters": {
       "airy": "Luchtig",
@@ -587,7 +589,8 @@
       "renameTitle": "Voorinstelling hernoemen",
       "saveCurrent": "Huidige opslaan",
       "saved": "Voorinstelling opgeslagen",
-      "saveTitle": "Opslaan als voorinstelling"
+      "saveTitle": "Opslaan als voorinstelling",
+      "appliedBar": "Toegepast: {{name}}"
     },
     "previewAlt": "Bewerkte voorvertoning",
     "previewCloseCompare": "Vergelijken sluiten",
@@ -599,7 +602,7 @@
       "message": "Herstelt het origineel en bouwt de geschiedenis opnieuw op.",
       "title": "Alle bewerkingen herstellen?"
     },
-    "save": "Opslaan",
+    "save": "Exporteren",
     "subtitleFallback": "Foto",
     "templates": {
       "cinema": {

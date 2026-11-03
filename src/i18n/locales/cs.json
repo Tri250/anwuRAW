@@ -482,7 +482,7 @@
       "original": "Originál",
       "redo": "Znovu",
       "reset": "Obnovit",
-      "save": "Uložit",
+      "save": "Exportovat",
       "undo": "Zpět"
     },
     "categories": {
@@ -512,9 +512,9 @@
     "export": {
       "backToEdit": "Zpět na úpravy",
       "backToLibrary": "Knihovna",
-      "cta": "Uložit do zařízení",
-      "done": "Uloženo do zařízení",
-      "exporting": "Ukládání…",
+      "cta": "Exportovat do galerie",
+      "done": "Exportováno do galerie",
+      "exporting": "Probíhá export…",
       "favorite": "Oblíbené",
       "fontBuiltin": "Klasické",
       "fontFamily": "Písmo",
@@ -531,7 +531,9 @@
       "setDefault": "Výchozí",
       "signature": "Podpis",
       "signaturePlaceholder": "CRYSTAL · Pro fotografie",
-      "templates": "Šablony vodoznaků"
+      "templates": "Šablony vodoznaků",
+      "filenameSuffix": "Přípona názvu souboru",
+      "pngLossless": "PNG je bezztrátové – komprese kvality se nepoužije"
     },
     "filters": {
       "airy": "Vzdušný",
@@ -627,7 +629,8 @@
       "renameTitle": "Přejmenovat přednastavení",
       "saveCurrent": "Uložit aktuální",
       "saved": "Přednastavení uloženo",
-      "saveTitle": "Uložit jako přednastavení"
+      "saveTitle": "Uložit jako přednastavení",
+      "appliedBar": "Použito: {{name}}"
     },
     "previewAlt": "Náhled úprav",
     "previewCloseCompare": "Ukončit porovnání",
@@ -639,7 +642,7 @@
       "message": "Obnoví původní vzhled a znovu sestaví historii.",
       "title": "Obnovit všechny úpravy?"
     },
-    "save": "Uložit",
+    "save": "Exportovat",
     "subtitleFallback": "Foto",
     "templates": {
       "cinema": {

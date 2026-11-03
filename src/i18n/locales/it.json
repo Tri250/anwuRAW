@@ -462,7 +462,7 @@
       "original": "Originale",
       "redo": "Ripeti",
       "reset": "Reimposta",
-      "save": "Salva",
+      "save": "Esporta",
       "undo": "Annulla"
     },
     "categories": {
@@ -492,9 +492,9 @@
     "export": {
       "backToEdit": "Torna all'editor",
       "backToLibrary": "Libreria",
-      "cta": "Salva sul dispositivo",
-      "done": "Salvato sul dispositivo",
-      "exporting": "Salvataggio…",
+      "cta": "Esporta nella galleria",
+      "done": "Esportato nella galleria",
+      "exporting": "Esportazione…",
       "favorite": "Preferito",
       "fontBuiltin": "Classica",
       "fontFamily": "Carattere",
@@ -511,7 +511,9 @@
       "setDefault": "Predefinito",
       "signature": "Firma",
       "signaturePlaceholder": "CRYSTAL · Fotografia Pro",
-      "templates": "Modelli filigrana"
+      "templates": "Modelli filigrana",
+      "filenameSuffix": "Suffisso del nome file",
+      "pngLossless": "PNG è lossless: la compressione qualità non si applica"
     },
     "filters": {
       "airy": "Arioso",
@@ -607,7 +609,8 @@
       "renameTitle": "Rinomina preimpostazione",
       "saveCurrent": "Salva attuale",
       "saved": "Preimpostazione salvata",
-      "saveTitle": "Salva come preimpostazione"
+      "saveTitle": "Salva come preimpostazione",
+      "appliedBar": "Applicato: {{name}}"
     },
     "previewAlt": "Anteprima modificata",
     "previewCloseCompare": "Esci dal confronto",
@@ -619,7 +622,7 @@
       "message": "Ripristina l'aspetto originale e ricostruisce la cronologia.",
       "title": "Reimpostare tutte le modifiche?"
     },
-    "save": "Salva",
+    "save": "Esporta",
     "subtitleFallback": "Foto",
     "templates": {
       "cinema": {

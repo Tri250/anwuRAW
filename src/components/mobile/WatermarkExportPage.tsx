@@ -9,7 +9,7 @@ import { useLibraryStore } from '../../store/useLibraryStore';
 import { useShallow } from 'zustand/react/shallow';
 import { BorderBasis, ExportSettings, Status, WatermarkAnchor } from '../ui/ExportImportProperties';
 import { Invokes } from '../ui/AppProperties';
-import { WATERMARK_TEMPLATES, WatermarkTemplate, summarizeExif, useWmPrefs, CxSwitch } from './crystalShared';
+import { WATERMARK_TEMPLATES, WatermarkTemplate, haptic, summarizeExif, useWmPrefs, CxSwitch } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * Crystal 水印导出域（青绿主题，图4）。
@@ -73,8 +73,8 @@ export default function WatermarkExportPage({
   const [quality, setQuality] = useState(100);
   const [signatureDraft, setSignatureDraft] = useState(prefs.signature);
 
-  const { finalPreviewUrl, adjustments } = useEditorStore(
-    useShallow((s) => ({ finalPreviewUrl: s.finalPreviewUrl, adjustments: s.adjustments })),
+  const { finalPreviewUrl, originalPreview, adjustments } = useEditorStore(
+    useShallow((s) => ({ finalPreviewUrl: s.finalPreviewUrl, originalPreview: s.originalPreview?.url, adjustments: s.adjustments })),
   );
   const selectedImage = useEditorStore((s) => s.selectedImage);
   const setExportState = useProcessStore((s) => s.setExportState);
@@ -132,9 +132,13 @@ export default function WatermarkExportPage({
     const prev = prevExportStatusRef.current;
     prevExportStatusRef.current = exportState.status;
     if (exportState.status === Status.Success && prev !== null && prev !== Status.Success) {
+      haptic([10, 40, 10]);
       toast.success(t('crystal.export.done'));
     }
   }, [exportState.status, t]);
+
+  // OC-2: 按住预览图对照原图（松开恢复效果图）
+  const [holdOriginal, setHoldOriginal] = useState(false);
 
   const handleSelectTemplate = (id: string) => {
     setSelectedTemplateId(id);
@@ -152,8 +156,10 @@ export default function WatermarkExportPage({
     if (!selectedImage || isExporting) return;
 
     const signature = (signatureDraft || prefs.signature).trim();
+    // FD-6: 后缀可编辑（清洗文件名非法字符；允许为空 = 保持原名导出到相册目录，不覆盖源文件）
+    const suffix = (prefs.filenameSuffix ?? '_crystal').replace(/[\\/:*?"<>|]/g, '');
     const exportSettings: CrystalExportSettings = {
-      filenameTemplate: '{original_filename}_crystal',
+      filenameTemplate: `{original_filename}${suffix}`,
       jpegQuality: quality,
       tiffBitDepth: 16,
       keepMetadata: true,
@@ -188,7 +194,7 @@ export default function WatermarkExportPage({
 
     const originalFilename = selectedImage.path.split(/[\\/]/).pop() || '';
     const stem = originalFilename.substring(0, originalFilename.lastIndexOf('.')) || originalFilename;
-    const outputFileName = `${stem}_crystal.${format === 'jpeg' ? 'jpg' : 'png'}`;
+    const outputFileName = `${stem}${suffix}.${format === 'jpeg' ? 'jpg' : 'png'}`;
 
     try {
       setExportState({
@@ -233,9 +239,23 @@ export default function WatermarkExportPage({
       <div className="cx-export-body">
         {/* 预览 + 徽章 + EXIF 白条 */}
         <div className="cx-export-card mt-1">
-          <div className="cx-frame-preview">
+          <div
+            className="cx-frame-preview"
+            onPointerDown={(e) => {
+              if ((e.target as HTMLElement).closest('button')) return;
+              if (originalPreview && finalPreviewUrl) setHoldOriginal(true);
+            }}
+            onPointerUp={() => setHoldOriginal(false)}
+            onPointerLeave={() => setHoldOriginal(false)}
+            onPointerCancel={() => setHoldOriginal(false)}
+          >
             {finalPreviewUrl ? (
-              <img ref={previewImgRef} src={finalPreviewUrl} alt={t('crystal.previewAlt')} draggable={false} />
+              <img
+                ref={previewImgRef}
+                src={holdOriginal && originalPreview ? originalPreview : finalPreviewUrl}
+                alt={t('crystal.previewAlt')}
+                draggable={false}
+              />
             ) : (
               <div
                 className="h-[38vh] w-full flex items-center justify-center text-xs"
@@ -246,13 +266,17 @@ export default function WatermarkExportPage({
             )}
             <span className="cx-preview-badge" style={{ top: 10, left: 10 }}>
               <span className="cx-dot" />
-              {t('crystal.export.livePreview')}
+              {holdOriginal ? t('crystal.originalBadge') : t('crystal.export.livePreview')}
             </span>
+            {/* OC-2: 按住预览图时叠加原图对照层 */}
+            {holdOriginal && originalPreview && (
+              <img className="cx-export-origin" src={originalPreview} alt={t('crystal.originalBadge')} draggable={false} />
+            )}
             <span className="cx-preview-badge" style={{ top: 10, right: 10 }}>
               {t(tpl.nameKey)}
             </span>
             {/* F12: 签名实时叠加（与 Rust 绘制次序一致：信息栏 DOM 在后、覆盖底部签名） */}
-            {tpl.signatureAnchor && signatureText && imgRect && (
+            {tpl.signatureAnchor && signatureText && imgRect && !holdOriginal && (
               <span
                 className="cx-wm-signature"
                 style={{
@@ -278,7 +302,7 @@ export default function WatermarkExportPage({
                 </span>
               </span>
             )}
-            {showInfoBarFrame && tpl.exifBar && (
+            {showInfoBarFrame && tpl.exifBar && !holdOriginal && (
               <div className="cx-exif-bar" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
                 <span className="truncate">{exif.camera || exif.taken || t('crystal.export.noExif')}</span>
                 <span className="cx-exif-sep" />
@@ -402,20 +426,34 @@ export default function WatermarkExportPage({
               PNG
             </button>
           </div>
+          <div className="mt-2">
+            <div className="cx-export-label">{t('crystal.export.filenameSuffix')}</div>
+            <input
+              className="cx-input mt-1"
+              value={prefs.filenameSuffix}
+              onChange={(e) => updatePrefs({ filenameSuffix: e.target.value })}
+              placeholder="_crystal"
+              maxLength={24}
+              aria-label={t('crystal.export.filenameSuffix')}
+            />
+          </div>
         </div>
         <div className="cx-export-section">
           <div className="cx-export-label">{t('crystal.export.quality')}</div>
-          <div className="cx-quality-row">
+          {/* FD-6: PNG 为无损格式，画质档不参与压缩 —— 视觉降禁用 + 说明 */}
+          <div className={`cx-quality-row ${format === 'png' ? 'is-disabled' : ''}`}>
             {QUALITIES.map((q) => (
               <button
                 key={q}
                 className={`cx-quality-btn ${quality === q ? 'is-active' : ''}`}
                 onClick={() => setQuality(q)}
+                aria-disabled={format === 'png'}
               >
                 {q}
               </button>
             ))}
           </div>
+          {format === 'png' && <div className="cx-frame-hint mt-1">{t('crystal.export.pngLossless')}</div>}
         </div>
 
         {/* 导出 CTA */}

@@ -21,12 +21,13 @@ import {
 import { useEditorStore } from '../../store/useEditorStore';
 import { useProcessStore } from '../../store/useProcessStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { toast } from 'react-toastify';
 import { Adjustments, INITIAL_ADJUSTMENTS } from '../../utils/adjustments';
 import { Invokes } from '../ui/AppProperties';
 import { Status } from '../ui/ExportImportProperties';
 import ConfirmModal from '../modals/ConfirmModal';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
-import { summarizeExif, useShowOriginalHold } from './crystalShared';
+import { haptic, summarizeExif, useShowOriginalHold } from './crystalShared';
 import { selectAiModelDownloadStatus } from '../../store/useProcessStore';
 import CrystalCategoryPanel from './CrystalCategoryPanel';
 import CrystalPreview from './CrystalPreview';
@@ -47,22 +48,13 @@ const CATEGORIES: Array<{ id: CrystalCategory; labelKey: ParseKeys; color: strin
 
 function CrystalTopBar({ camera, onBack, onSave }: { camera: string; onBack: () => void; onSave: () => void }) {
   const { t } = useTranslation();
-  const canUndo = useEditorStore((s) => s.historyIndex > 0);
-  const canRedo = useEditorStore((s) => s.historyIndex < s.history.length - 1);
-  const undo = useEditorStore((s) => s.undo);
-  const redo = useEditorStore((s) => s.redo);
 
   return (
     <div className="cx-topbar">
       <button className="cx-icon-btn" onClick={onBack} aria-label={t('crystal.backToLibrary')}>
         <ChevronLeft size={22} />
       </button>
-      <button className="cx-icon-btn" onClick={undo} disabled={!canUndo} aria-label={t('crystal.undo')}>
-        <Undo2 size={19} />
-      </button>
-      <button className="cx-icon-btn" onClick={redo} disabled={!canRedo} aria-label={t('crystal.redo')}>
-        <Redo2 size={19} />
-      </button>
+      {/* 审计 UX-4: 撤销/重做仅保留底栏一组（拇指可达），顶栏不再重复 */}
       <div className="cx-topbar-title">
         <div className="cx-title">{t('crystal.title')}</div>
         <div className="cx-subtitle">{camera || t('crystal.subtitleFallback')}</div>
@@ -83,7 +75,10 @@ function CrystalCatNavBar({ active, onSelect }: { active: CrystalCategory; onSel
           key={id}
           className={`cx-cat-item ${active === id ? 'is-active' : ''}`}
           style={{ ['--cx-cat-color' as string]: color }}
-          onClick={() => onSelect(id)}
+          onClick={() => {
+            haptic(6);
+            onSelect(id);
+          }}
         >
           <span className="cx-cat-icon">
             <Icon size={20} />
@@ -120,32 +115,64 @@ function CrystalBottomBar({
         </span>
         {t('crystal.bottom.original')}
       </button>
-      <button className="cx-bottom-btn" onClick={undo} disabled={!canUndo}>
+      <button
+        className="cx-bottom-btn"
+        onClick={() => {
+          haptic(6);
+          undo();
+        }}
+        disabled={!canUndo}
+      >
         <span className="cx-b-icon">
           <Undo2 size={19} />
         </span>
         {t('crystal.bottom.undo')}
       </button>
-      <button className="cx-bottom-btn" onClick={redo} disabled={!canRedo}>
+      <button
+        className="cx-bottom-btn"
+        onClick={() => {
+          haptic(6);
+          redo();
+        }}
+        disabled={!canRedo}
+      >
         <span className="cx-b-icon">
           <Redo2 size={19} />
         </span>
         {t('crystal.bottom.redo')}
       </button>
       {/* 对比：进入前后对比分割视图，再点退出 */}
-      <button className="cx-bottom-btn" onClick={onCompare}>
+      <button
+        className="cx-bottom-btn"
+        onClick={() => {
+          haptic(6);
+          onCompare();
+        }}
+      >
         <span className="cx-b-icon">
           <Contrast size={19} />
         </span>
         {t('crystal.bottom.compare')}
       </button>
-      <button className="cx-bottom-btn" onClick={onReset}>
+      <button
+        className="cx-bottom-btn"
+        onClick={() => {
+          haptic(6);
+          onReset();
+        }}
+      >
         <span className="cx-b-icon">
           <RotateCcw size={19} />
         </span>
         {t('crystal.bottom.reset')}
       </button>
-      <button className="cx-bottom-btn cx-gold" onClick={onExport}>
+      <button
+        className="cx-bottom-btn cx-gold"
+        onClick={() => {
+          haptic([10, 30, 10]);
+          onExport();
+        }}
+      >
         <span className="cx-b-icon">
           <Save size={19} />
         </span>
@@ -184,6 +211,11 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
   useEffect(() => {
     if (osPlatform !== 'android') return;
     const handler = () => {
+      // FD-1: 确认弹窗打开时，返回键优先关闭弹窗，而非穿透到流程切换/退出图库
+      if (isResetConfirmOpen) {
+        setIsResetConfirmOpen(false);
+        return;
+      }
       if (isCompareOpen) {
         setIsCompareOpen(false);
         return;
@@ -193,7 +225,11 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
         return;
       }
       if (flow === 'export') {
-        if (isExporting) return;
+        if (isExporting) {
+          // FD-7: 导出进行中不静默吞掉返回事件，给出进度提示（复用 CTA 文案键）
+          toast.info(t('crystal.export.exporting'));
+          return;
+        }
         setFlow('edit');
         return;
       }
@@ -201,7 +237,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     };
     pushExitLayer(handler);
     return () => removeExitLayer(handler);
-  }, [flow, isCompareOpen, isExporting, onBackToLibrary, osPlatform]);
+  }, [flow, isCompareOpen, isExporting, isResetConfirmOpen, onBackToLibrary, osPlatform, t]);
 
   const handleReset = useCallback(() => {
     const sel = useEditorStore.getState().selectedImage;

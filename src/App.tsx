@@ -498,7 +498,12 @@ function App() {
   useAndroidBackHandler();
 
   // E10: first-run onboarding, shown exactly once per installation.
+  // 审计 OC-5: 桌面键盘快捷键引导不适用于手机 —— 移动端跳过弹窗并直接标记已读。
   useEffect(() => {
+    if (useSettingsStore.getState().osPlatform === 'android') {
+      saveUserData(ONBOARDING_SEEN_KEY, true);
+      return;
+    }
     if (!loadUserData(ONBOARDING_SEEN_KEY, false)) {
       saveUserData(ONBOARDING_SEEN_KEY, true);
       useUIStore.getState().setUI({ isOnboardingModalOpen: true });

@@ -442,7 +442,7 @@
       "original": "Original",
       "redo": "Wiederholen",
       "reset": "Zurücksetzen",
-      "save": "Speichern",
+      "save": "Exportieren",
       "undo": "Rückgängig"
     },
     "categories": {
@@ -472,9 +472,9 @@
     "export": {
       "backToEdit": "Zur Bearbeitung",
       "backToLibrary": "Bibliothek",
-      "cta": "Auf Gerät speichern",
-      "done": "Auf Gerät gespeichert",
-      "exporting": "Speichern…",
+      "cta": "In Galerie exportieren",
+      "done": "In die Galerie exportiert",
+      "exporting": "Exportieren…",
       "favorite": "Favorit",
       "fontBuiltin": "Klassisch",
       "fontFamily": "Schriftart",
@@ -491,7 +491,9 @@
       "setDefault": "Standard",
       "signature": "Signatur",
       "signaturePlaceholder": "CRYSTAL · Pro Fotografie",
-      "templates": "Wasserzeichen-Vorlagen"
+      "templates": "Wasserzeichen-Vorlagen",
+      "filenameSuffix": "Dateinamen-Suffix",
+      "pngLossless": "PNG ist verlustfrei – Qualitätskomprimierung ist nicht anwendbar"
     },
     "filters": {
       "airy": "Luftig",
@@ -587,7 +589,8 @@
       "renameTitle": "Voreinstellung umbenennen",
       "saveCurrent": "Aktuelles speichern",
       "saved": "Voreinstellung gespeichert",
-      "saveTitle": "Als Voreinstellung speichern"
+      "saveTitle": "Als Voreinstellung speichern",
+      "appliedBar": "Angewendet: {{name}}"
     },
     "previewAlt": "Bearbeitungsvorschau",
     "previewCloseCompare": "Vergleich beenden",
@@ -599,7 +602,7 @@
       "message": "Stellt das Original wieder her und baut den Verlauf neu auf.",
       "title": "Alle Bearbeitungen zurücksetzen?"
     },
-    "save": "Speichern",
+    "save": "Exportieren",
     "subtitleFallback": "Foto",
     "templates": {
       "cinema": {

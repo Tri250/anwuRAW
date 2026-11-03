@@ -482,7 +482,7 @@
       "original": "Oryginał",
       "redo": "Ponów",
       "reset": "Resetuj",
-      "save": "Zapisz",
+      "save": "Eksportuj",
       "undo": "Cofnij"
     },
     "categories": {
@@ -512,9 +512,9 @@
     "export": {
       "backToEdit": "Powrót do edycji",
       "backToLibrary": "Biblioteka",
-      "cta": "Zapisz na urządzeniu",
-      "done": "Zapisano na urządzeniu",
-      "exporting": "Zapisywanie…",
+      "cta": "Eksportuj do galerii",
+      "done": "Wyeksportowano do galerii",
+      "exporting": "Eksportowanie…",
       "favorite": "Ulubiony",
       "fontBuiltin": "Klasyczny",
       "fontFamily": "Czcionka",
@@ -531,7 +531,9 @@
       "setDefault": "Domyślny",
       "signature": "Podpis",
       "signaturePlaceholder": "CRYSTAL · Pro Fotografia",
-      "templates": "Szablony znaków wodnych"
+      "templates": "Szablony znaków wodnych",
+      "filenameSuffix": "Sufiks nazwy pliku",
+      "pngLossless": "PNG jest bezstratne — kompresja jakości nie ma zastosowania"
     },
     "filters": {
       "airy": "Lekki",
@@ -627,7 +629,8 @@
       "renameTitle": "Zmień nazwę presetu",
       "saveCurrent": "Zapisz bieżące",
       "saved": "Zapisano preset",
-      "saveTitle": "Zapisz jako preset"
+      "saveTitle": "Zapisz jako preset",
+      "appliedBar": "Zastosowano: {{name}}"
     },
     "previewAlt": "Podgląd edycji",
     "previewCloseCompare": "Zakończ porównanie",
@@ -639,7 +642,7 @@
       "message": "Przywróci oryginalny wygląd i odbuduje historię.",
       "title": "Zresetować wszystkie edycje?"
     },
-    "save": "Zapisz",
+    "save": "Eksportuj",
     "subtitleFallback": "Zdjęcie",
     "templates": {
       "cinema": {

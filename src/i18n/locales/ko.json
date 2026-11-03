@@ -439,7 +439,7 @@
       "original": "원본",
       "redo": "다시 실행",
       "reset": "초기화",
-      "save": "저장",
+      "save": "내보내기",
       "undo": "되돌리기"
     },
     "categories": {
@@ -469,9 +469,9 @@
     "export": {
       "backToEdit": "편집으로",
       "backToLibrary": "라이브러리",
-      "cta": "기기에 저장",
-      "done": "기기에 저장됨",
-      "exporting": "저장 중…",
+      "cta": "갤러리로 내보내기",
+      "done": "갤러리에 내보냈습니다",
+      "exporting": "내보내는 중…",
       "favorite": "즐겨찾기",
       "fontBuiltin": "클래식",
       "fontFamily": "서체",
@@ -488,7 +488,9 @@
       "setDefault": "기본으로",
       "signature": "서명",
       "signaturePlaceholder": "CRYSTAL · 프로 포토그래피",
-      "templates": "워터마크 템플릿"
+      "templates": "워터마크 템플릿",
+      "filenameSuffix": "파일 이름 접미사",
+      "pngLossless": "PNG는 무손실 형식이므로 화질 압축이 적용되지 않습니다"
     },
     "filters": {
       "airy": "에어리",
@@ -584,7 +586,8 @@
       "renameTitle": "프리셋 이름 변경",
       "saveCurrent": "현재 상태 저장",
       "saved": "프리셋이 저장되었습니다",
-      "saveTitle": "프리셋으로 저장"
+      "saveTitle": "프리셋으로 저장",
+      "appliedBar": "적용됨: {{name}}"
     },
     "previewAlt": "편집 미리보기",
     "previewCloseCompare": "비교 종료",
@@ -596,7 +599,7 @@
       "message": "원본 상태로 되돌리고 기록을 다시 만듭니다.",
       "title": "모든 편집을 초기화할까요?"
     },
-    "save": "저장",
+    "save": "내보내기",
     "subtitleFallback": "사진",
     "templates": {
       "cinema": {

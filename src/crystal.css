@@ -14,16 +14,16 @@
   /* 文字 */
   --cx-ink: #f2f2ec;
   --cx-muted: #a6a698;
-  --cx-faint: #6f6f64;
+  --cx-faint: #8b8b7e;
   /* 双流程强调色：编辑=黑金，导出=青绿 */
   --cx-gold: #f5c842;
   --cx-teal: #2fd6bf;
   --cx-accent: var(--cx-gold);
   --cx-accent-soft: rgba(245, 200, 66, 0.14);
-  /* 分类专属色 */
+  /* 分类专属色（滤镜与预设原同为金色 #f5c842，审计 UX-7 后改为琥珀橙以区分） */
   --cx-cat-presets: #f5c842;
   --cx-cat-portrait: #b39dff;
-  --cx-cat-filter: #f5c842;
+  --cx-cat-filter: #ffa94d;
   --cx-cat-tone: #6ec1ff;
   --cx-cat-compose: #7ed97e;
   --cx-cat-ai: #5fd4e8;
@@ -55,6 +55,18 @@
   flex-direction: column;
   background: var(--cx-page);
   user-select: none;
+  /* 审计 UX-10: 编辑域 ↔ 导出域切换（data-flow 条件重挂 .cx-app）淡入过渡 */
+  animation: cx-flow-in 0.24s ease-out;
+}
+@keyframes cx-flow-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .cx-app.is-fullscreen-crop {
   z-index: 60;
@@ -165,6 +177,8 @@
   position: absolute;
   top: 10px;
   left: 10px;
+  /* OC-2: 保持徽章在「按住对照原图」叠加层（z-index:2）之上 */
+  z-index: 3;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1429,34 +1443,51 @@
   }
 }
 
-/* ================= F6/G11: 预览左下「原图｜对比」浮层 ================= */
-.cx-float-pills {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
+/* ================= 预览浮层去重（审计 UX-3/FD-3） =================
+   原「原图｜对比」浮层（F6/G11）与底栏重复且遮挡画面，已移除；
+   原图长按与分屏对比统一收敛到底栏，预览区仅保留缩放复位 chip。 */
+
+/* OC-6: 已应用预设状态条 */
+.cx-applied-bar {
   display: flex;
-  gap: 6px;
-  z-index: 3;
-}
-.cx-float-pill {
-  display: inline-flex;
   align-items: center;
-  height: 26px;
-  padding: 0 11px;
+  gap: 6px;
+  padding: 6px 10px;
+  margin-top: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 200, 66, 0.35);
+  background: rgba(245, 200, 66, 0.08);
+  color: var(--cx-gold);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* OC-2: 导出页按住对照原图 */
+.cx-export-origin {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  object-fit: contain;
+  pointer-events: none;
+}
+.cx-export-origin-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  padding: 3px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(212, 175, 55, 0.5);
-  background: rgba(20, 17, 6, 0.66);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.62);
   color: var(--cx-ink);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
+  letter-spacing: 0.08em;
 }
-.cx-float-pill:active {
-  background: rgba(212, 175, 55, 0.28);
-}
-.cx-float-pill:disabled {
-  opacity: 0.45;
+
+/* FD-6: PNG 无损时画质档禁用态 */
+.cx-quality-row.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 /* P2: 前后对比分割视图（原图 | 效果，整层拖动） */

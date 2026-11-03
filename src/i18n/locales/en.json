@@ -445,7 +445,7 @@
       "original": "Original",
       "redo": "Redo",
       "reset": "Reset",
-      "save": "Save",
+      "save": "Export",
       "undo": "Undo"
     },
     "categories": {
@@ -475,9 +475,9 @@
     "export": {
       "backToEdit": "Back to edit",
       "backToLibrary": "Library",
-      "cta": "Save to device",
-      "done": "Saved to device",
-      "exporting": "Saving…",
+      "cta": "Export to gallery",
+      "done": "Exported to gallery",
+      "exporting": "Exporting…",
       "favorite": "Favorite",
       "fontBuiltin": "Classic",
       "fontFamily": "Font",
@@ -494,7 +494,9 @@
       "setDefault": "Default",
       "signature": "Signature",
       "signaturePlaceholder": "CRYSTAL · Pro Photography",
-      "templates": "Watermark templates"
+      "templates": "Watermark templates",
+      "filenameSuffix": "Filename suffix",
+      "pngLossless": "PNG is lossless — quality compression does not apply"
     },
     "filters": {
       "airy": "Airy",
@@ -590,7 +592,8 @@
       "renameTitle": "Rename preset",
       "saveCurrent": "Save current",
       "saved": "Preset saved",
-      "saveTitle": "Save as preset"
+      "saveTitle": "Save as preset",
+      "appliedBar": "Applied: {{name}}"
     },
     "previewAlt": "Edited preview",
     "previewCloseCompare": "Exit compare",
@@ -602,7 +605,7 @@
       "message": "This restores the original look and rebuilds the undo history.",
       "title": "Reset all edits?"
     },
-    "save": "Save",
+    "save": "Export",
     "subtitleFallback": "Photo",
     "templates": {
       "cinema": {

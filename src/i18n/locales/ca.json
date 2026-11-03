@@ -462,7 +462,7 @@
       "original": "Original",
       "redo": "Refés",
       "reset": "Restableix",
-      "save": "Desa",
+      "save": "Exporta",
       "undo": "Desfés"
     },
     "categories": {
@@ -492,9 +492,9 @@
     "export": {
       "backToEdit": "Torna a l'edició",
       "backToLibrary": "Biblioteca",
-      "cta": "Desa al dispositiu",
-      "done": "Desat al dispositiu",
-      "exporting": "Desant…",
+      "cta": "Exporta a la galeria",
+      "done": "Exportat a la galeria",
+      "exporting": "Exportant…",
       "favorite": "Preferit",
       "fontBuiltin": "Clàssica",
       "fontFamily": "Font",
@@ -511,7 +511,9 @@
       "setDefault": "Per defecte",
       "signature": "Signatura",
       "signaturePlaceholder": "CRYSTAL · Fotografia Pro",
-      "templates": "Plantilles de marca d'aigua"
+      "templates": "Plantilles de marca d'aigua",
+      "filenameSuffix": "Sufix del nom del fitxer",
+      "pngLossless": "PNG és sense pèrdues; la compressió de qualitat no s'hi aplica"
     },
     "filters": {
       "airy": "Aeri",
@@ -607,7 +609,8 @@
       "renameTitle": "Canvia el nom del preajust",
       "saveCurrent": "Desa l'actual",
       "saved": "Preajust desat",
-      "saveTitle": "Desa com a preajust"
+      "saveTitle": "Desa com a preajust",
+      "appliedBar": "Aplicat: {{name}}"
     },
     "previewAlt": "Vista prèvia editada",
     "previewCloseCompare": "Surt de la comparació",
@@ -619,7 +622,7 @@
       "message": "Recupera l'aspecte original i reconstrueix l'historial.",
       "title": "Restableir totes les edicions?"
     },
-    "save": "Desa",
+    "save": "Exporta",
     "subtitleFallback": "Foto",
     "templates": {
       "cinema": {

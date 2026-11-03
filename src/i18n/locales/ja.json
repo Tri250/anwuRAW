@@ -439,7 +439,7 @@
       "original": "原画像",
       "redo": "やり直す",
       "reset": "リセット",
-      "save": "保存",
+      "save": "書き出す",
       "undo": "元に戻す"
     },
     "categories": {
@@ -469,9 +469,9 @@
     "export": {
       "backToEdit": "編集に戻る",
       "backToLibrary": "ライブラリ",
-      "cta": "端末に保存",
-      "done": "端末に保存しました",
-      "exporting": "保存中…",
+      "cta": "ギャラリーに書き出す",
+      "done": "ギャラリーに書き出しました",
+      "exporting": "書き出し中…",
       "favorite": "お気に入り",
       "fontBuiltin": "クラシック",
       "fontFamily": "フォント",
@@ -488,7 +488,9 @@
       "setDefault": "既定に設定",
       "signature": "署名",
       "signaturePlaceholder": "CRYSTAL · プロフォトグラフィー",
-      "templates": "ウォーターマーク"
+      "templates": "ウォーターマーク",
+      "filenameSuffix": "ファイル名の接尾辞",
+      "pngLossless": "PNG は可逆圧縮のため画質設定は適用されません"
     },
     "filters": {
       "airy": "エアリー",
@@ -584,7 +586,8 @@
       "renameTitle": "プリセット名を変更",
       "saveCurrent": "現在の状態を保存",
       "saved": "プリセットを保存しました",
-      "saveTitle": "プリセットとして保存"
+      "saveTitle": "プリセットとして保存",
+      "appliedBar": "適用済み：{{name}}"
     },
     "previewAlt": "編集プレビュー",
     "previewCloseCompare": "比較を終了",
@@ -596,7 +599,7 @@
       "message": "元の見た目に戻し、履歴を再構築します。",
       "title": "すべての編集をリセット？"
     },
-    "save": "保存",
+    "save": "書き出す",
     "subtitleFallback": "写真",
     "templates": {
       "cinema": {

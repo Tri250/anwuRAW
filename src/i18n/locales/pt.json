@@ -462,7 +462,7 @@
       "original": "Original",
       "redo": "Refazer",
       "reset": "Repor",
-      "save": "Guardar",
+      "save": "Exportar",
       "undo": "Desfazer"
     },
     "categories": {
@@ -492,9 +492,9 @@
     "export": {
       "backToEdit": "Voltar à edição",
       "backToLibrary": "Biblioteca",
-      "cta": "Guardar no dispositivo",
-      "done": "Guardado no dispositivo",
-      "exporting": "A guardar…",
+      "cta": "Exportar para a galeria",
+      "done": "Exportado para a galeria",
+      "exporting": "A exportar…",
       "favorite": "Favorito",
       "fontBuiltin": "Clássica",
       "fontFamily": "Font",
@@ -511,7 +511,9 @@
       "setDefault": "Predefinido",
       "signature": "Assinatura",
       "signaturePlaceholder": "CRYSTAL · Fotografia Pro",
-      "templates": "Modelos de marca de água"
+      "templates": "Modelos de marca de água",
+      "filenameSuffix": "Sufixo do nome do arquivo",
+      "pngLossless": "PNG é sem perdas — a compressão de qualidade não se aplica"
     },
     "filters": {
       "airy": "Arejado",
@@ -607,7 +609,8 @@
       "renameTitle": "Renomear predefinição",
       "saveCurrent": "Guardar atual",
       "saved": "Predefinição guardada",
-      "saveTitle": "Guardar como predefinição"
+      "saveTitle": "Guardar como predefinição",
+      "appliedBar": "Aplicado: {{name}}"
     },
     "previewAlt": "Pré-visualização editada",
     "previewCloseCompare": "Sair da comparação",
@@ -619,7 +622,7 @@
       "message": "Restaura o aspeto original e reconstrói o histórico.",
       "title": "Repor todas as edições?"
     },
-    "save": "Guardar",
+    "save": "Exportar",
     "subtitleFallback": "Foto",
     "templates": {
       "cinema": {

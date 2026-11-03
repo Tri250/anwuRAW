@@ -462,7 +462,7 @@
       "original": "Original",
       "redo": "Rétablir",
       "reset": "Réinitialiser",
-      "save": "Enregistrer",
+      "save": "Exporter",
       "undo": "Annuler"
     },
     "categories": {
@@ -492,9 +492,9 @@
     "export": {
       "backToEdit": "Retour édition",
       "backToLibrary": "Bibliothèque",
-      "cta": "Enregistrer sur l'appareil",
-      "done": "Enregistré sur l'appareil",
-      "exporting": "Enregistrement…",
+      "cta": "Exporter vers la galerie",
+      "done": "Exporté vers la galerie",
+      "exporting": "Exportation…",
       "favorite": "Favori",
       "fontBuiltin": "Classique",
       "fontFamily": "Police",
@@ -511,7 +511,9 @@
       "setDefault": "Par défaut",
       "signature": "Signature",
       "signaturePlaceholder": "CRYSTAL · Photographie Pro",
-      "templates": "Modèles de filigrane"
+      "templates": "Modèles de filigrane",
+      "filenameSuffix": "Suffixe de nom de fichier",
+      "pngLossless": "Le PNG est sans perte — la compression qualité ne s'applique pas"
     },
     "filters": {
       "airy": "Aérien",
@@ -607,7 +609,8 @@
       "renameTitle": "Renommer le préréglage",
       "saveCurrent": "Enregistrer l'actuel",
       "saved": "Préréglage enregistré",
-      "saveTitle": "Enregistrer comme préréglage"
+      "saveTitle": "Enregistrer comme préréglage",
+      "appliedBar": "Appliqué : {{name}}"
     },
     "previewAlt": "Aperçu retouché",
     "previewCloseCompare": "Quitter la comparaison",
@@ -619,7 +622,7 @@
       "message": "Restaure l'aspect d'origine et reconstruit l'historique.",
       "title": "Réinitialiser toutes les retouches ?"
     },
-    "save": "Enregistrer",
+    "save": "Exporter",
     "subtitleFallback": "Photo",
     "templates": {
       "cinema": {
