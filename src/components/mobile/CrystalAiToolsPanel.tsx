@@ -49,6 +49,24 @@ const INTENSITIES: ReadonlyArray<{ id: EnhanceIntensity; labelKey: ParseKeys }> 
 /** 深度蒙版默认参数（与桌面 MasksPanel.createMaskLogic 同源） */
 const DEPTH_DEFAULTS = { minDepth: 20, maxDepth: 80, minFade: 15, maxFade: 15, feather: 10 } as const;
 
+/* 审计修复（AI-提示词）：移动端切分类即卸载面板，未生成的提示词随之丢失。
+ * localStorage 持久化（容器内已有 prompt 时以容器为准），跨分类/重启均保留。 */
+const TEXT_PROMPT_STORAGE_KEY = 'crystal.ai.textPrompt';
+const loadStoredTextPrompt = (): string => {
+  try {
+    return localStorage.getItem(TEXT_PROMPT_STORAGE_KEY) ?? '';
+  } catch {
+    return '';
+  }
+};
+const storeTextPrompt = (value: string) => {
+  try {
+    localStorage.setItem(TEXT_PROMPT_STORAGE_KEY, value);
+  } catch {
+    /* storage 不可用：仅保留内存态 */
+  }
+};
+
 export default function CrystalAiToolsPanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
@@ -73,8 +91,12 @@ export default function CrystalAiToolsPanel() {
   const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
   /** 用户主动取消后抑制「识别失败」toast（取消不是失败） */
   const cancelRef = useRef(false);
-  const [textPrompt, setTextPrompt] = useState('');
+  const [textPrompt, setTextPrompt] = useState(loadStoredTextPrompt);
   const [showTextInput, setShowTextInput] = useState(false);
+  const updateTextPrompt = useCallback((value: string) => {
+    setTextPrompt(value);
+    storeTextPrompt(value);
+  }, []);
 
   const runEnhance = useCallback(async () => {
     if (busy) return;
@@ -110,12 +132,16 @@ export default function CrystalAiToolsPanel() {
     if (busy) return;
     setBusy('sky');
     cancelRef.current = false;
+    /* 审计修复（AI-跨图）：记录发起时图片，完成后已切图则静默丢弃，
+     * 避免在新图上下文里误报「识别失败」或写入默认强度。 */
+    const startPath = useEditorStore.getState().selectedImage?.path;
     try {
       const container = ensureContainer(Mask.AiSky);
       const subMaskId = container.subMasks[0].id;
       setBusyTaskId(subMaskId);
       await handleGenerateAiSkyMask(subMaskId);
       if (cancelRef.current) return;
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (maskReady(Mask.AiSky)) {
         // 仅首次识别后写入默认强度；重复执行不覆盖用户已调值。
         if (!Number(container.adjustments.clarity ?? 0))
@@ -137,12 +163,14 @@ export default function CrystalAiToolsPanel() {
     if (busy) return;
     setBusy('subject');
     cancelRef.current = false;
+    const startPath = useEditorStore.getState().selectedImage?.path;
     try {
       const container = ensureContainer(Mask.AiForeground);
       const subMaskId = container.subMasks[0].id;
       setBusyTaskId(subMaskId);
       await handleGenerateAiForegroundMask(subMaskId);
       if (cancelRef.current) return;
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (maskReady(Mask.AiForeground)) {
         // 仅首次识别后写入默认强度；重复执行不覆盖用户已调值。
         if (!Number(container.adjustments.clarity ?? 0)) setMaskAdjustments(container.id, { clarity: 10 });
@@ -171,11 +199,13 @@ export default function CrystalAiToolsPanel() {
   const textReady = maskReady(Mask.AiText);
   const textStrength = textContainer ? Math.round(Number(textContainer.adjustments.clarity ?? 0) / 0.2) : 0;
 
-  // 容器已存在（重进面板/切换分类回来）时回填提示词，与桌面 textPrompt 状态同构。
+  // 容器已存在（重进面板/切换分类回来）时回填提示词并同步持久化；
+  // 无容器时保留上次输入（持久化恢复），不再清空。仅在容器身份变化时同步，
+  // 避免生成过程中覆盖用户输入。
   useEffect(() => {
-    setTextPrompt(textContainer?.subMasks[0]?.parameters?.prompt || '');
-    // 仅在容器身份变化时同步，避免生成过程中覆盖用户输入。
-  }, [textContainer?.id]);
+    const saved = textContainer?.subMasks[0]?.parameters?.prompt;
+    if (saved) updateTextPrompt(saved);
+  }, [textContainer?.id, updateTextPrompt]);
 
   const runText = useCallback(async () => {
     if (busy) return;
@@ -186,6 +216,7 @@ export default function CrystalAiToolsPanel() {
     }
     setBusy('text');
     cancelRef.current = false;
+    const startPath = useEditorStore.getState().selectedImage?.path;
     try {
       const container = ensureContainer(Mask.AiText);
       const subMaskId = container.subMasks[0].id;
@@ -194,6 +225,7 @@ export default function CrystalAiToolsPanel() {
       setBusyTaskId(subMaskId);
       await handleGenerateAiTextMask(subMaskId, prompt);
       if (cancelRef.current) return;
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (maskReady(Mask.AiText)) {
         // 仅首次识别后写入默认强度；重复执行不覆盖用户已调值。
         if (!Number(container.adjustments.clarity ?? 0)) setMaskAdjustments(container.id, { clarity: 10 });
@@ -232,6 +264,7 @@ export default function CrystalAiToolsPanel() {
     if (busy) return;
     setBusy('depth');
     cancelRef.current = false;
+    const startPath = useEditorStore.getState().selectedImage?.path;
     try {
       const container = ensureContainer(Mask.AiDepth, { ...DEPTH_DEFAULTS });
       const subMaskId = container.subMasks[0].id;
@@ -245,6 +278,7 @@ export default function CrystalAiToolsPanel() {
         feather: p.feather ?? DEPTH_DEFAULTS.feather,
       });
       if (cancelRef.current) return;
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (!maskReady(Mask.AiDepth)) {
         toast.error(t('crystal.ai.maskFailed'));
       } else if (!Number(container.adjustments.clarity ?? 0)) {
@@ -420,7 +454,7 @@ export default function CrystalAiToolsPanel() {
                 /* 审计 AI-输入：出现即聚焦拉起软键盘，免二次点按 */
                 autoFocus
                 enterKeyHint="go"
-                onChange={(e) => setTextPrompt(e.target.value)}
+                onChange={(e) => updateTextPrompt(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !busy) void runText();
                 }}

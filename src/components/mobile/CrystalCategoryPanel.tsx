@@ -238,23 +238,37 @@ function TonePanel() {
     }
   }, [applyPatch, matchBusy, t]);
 
-  /* 参数化曲线：按通道滑杆实时换算为点曲线（后端渲染 curves[channel]），与桌面 Curves 同一套数学 */
+  /* 参数化曲线：按通道滑杆实时换算为点曲线（后端渲染 curves[channel]），与桌面 Curves 同一套数学。
+   * 审计修复（调色-曲线）：嵌套 patch 一律从 store 实时读取——闭包旧值在快速拖动时
+   * 会把上一事件的曲线段回滚（与 HSL/分级/校准修复同类竞态）。 */
   const setParametric = (key: keyof typeof DEFAULT_PARAMETRIC_CURVE_SETTINGS, value: number) => {
-    const next = { ...curveSettings, [key]: value };
+    const fresh = useEditorStore.getState().adjustments;
+    const base: ParametricCurve = fresh.parametricCurve ?? ({
+      blue: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
+      green: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
+      luma: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
+      red: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
+    } as ParametricCurve);
+    const cur = fresh.parametricCurve?.[curveChannel] ?? DEFAULT_PARAMETRIC_CURVE_SETTINGS;
+    const next = { ...cur, [key]: value };
     applyPatch({
-      parametricCurve: { ...parametricBase, [curveChannel]: next },
+      parametricCurve: { ...base, [curveChannel]: next },
       curveMode: 'parametric',
-      curves: { ...(adjustments.curves ?? {}), [curveChannel]: buildParametricPoints(next) },
+      curves: { ...(fresh.curves ?? {}), [curveChannel]: buildParametricPoints(next) },
     });
   };
 
   const resetCurve = () => {
     haptic(6);
+    const fresh = useEditorStore.getState().adjustments;
     applyPatch({
-      parametricCurve: { ...parametricBase, [curveChannel]: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS } },
+      parametricCurve: {
+        ...(fresh.parametricCurve ?? parametricBase),
+        [curveChannel]: { ...DEFAULT_PARAMETRIC_CURVE_SETTINGS },
+      },
       curveMode: 'parametric',
       curves: {
-        ...(adjustments.curves ?? {}),
+        ...(fresh.curves ?? {}),
         [curveChannel]: buildParametricPoints(DEFAULT_PARAMETRIC_CURVE_SETTINGS),
       },
     });
@@ -749,17 +763,19 @@ function PortraitPanel() {
 
   const oneTapPortrait = useCallback(() => {
     // 一键人像：柔肤降噪 + 轻微通透 + 暖调，全部为真实管线参数。
+    // 审计修复（人像）：增量基准从 store 实时读取——快速连点时渲染闭包还是旧值，
+    // 第二次点击会把第一次的 +8/+6/+4 增量整个回滚。
+    const adj = useEditorStore.getState().adjustments;
     applyPatch({
-      lumaNoiseReduction: Math.max(Number(adjustments.lumaNoiseReduction ?? 0), 22),
-      // 通透：clarity 增量提升（原为自写当前值的无操作行，本轮激活为 +8，
-      // 与 AI 推荐人像配方 crystal.aiRecommend.recipe 的 clarity: 8 对齐）
-      clarity: Number(adjustments.clarity ?? 0) + 8,
-      dehaze: Number(adjustments.dehaze ?? 0) + 6,
-      temperature: Number(adjustments.temperature ?? 0) + 4,
-      vibrance: Number(adjustments.vibrance ?? 0) + 8,
-      glowAmount: Math.max(Number(adjustments.glowAmount ?? 0), 18),
+      lumaNoiseReduction: Math.max(Number(adj.lumaNoiseReduction ?? 0), 22),
+      // 通透：clarity 增量提升（与 AI 推荐人像配方 crystal.aiRecommend.recipe 的 clarity: 8 对齐）
+      clarity: Number(adj.clarity ?? 0) + 8,
+      dehaze: Number(adj.dehaze ?? 0) + 6,
+      temperature: Number(adj.temperature ?? 0) + 4,
+      vibrance: Number(adj.vibrance ?? 0) + 8,
+      glowAmount: Math.max(Number(adj.glowAmount ?? 0), 18),
     });
-  }, [adjustments, applyPatch]);
+  }, [applyPatch]);
 
   const activateSections = (sections: [string, string]): Record<string, boolean> => {
     const at = { ...getActiveTools(INITIAL_MASK_CONTAINER.adjustments) } as Record<string, boolean>;
@@ -802,9 +818,10 @@ function PortraitPanel() {
         await handleGenerateAiFaceMask(subMask.id, op.parts);
         const latest = useEditorStore.getState().adjustments;
         const created = (latest.masks || []).find((c) => c.id === containerId);
-        if (!created?.subMasks[0]?.parameters?.maskDataBase64) {
+        if (created && !created.subMasks[0]?.parameters?.maskDataBase64) {
           // 审计修复（人像）：识别失败（无人脸/模型缺失/取消）时移除刚建的空容器，
           // 否则面板残留一个"无蒙版"的算子开关——开关看似生效、强度滑杆可拖但毫无效果。
+          // 二轮补充：容器已被用户在生成期间手动移除（或已切图）时不误报失败、不重复清理。
           setAdjustments((prev) => ({
             ...prev,
             masks: (prev.masks || []).filter((c) => c.id !== containerId),
@@ -868,6 +885,9 @@ function PortraitPanel() {
       );
       const global = result?.colorGrading?.global;
       if (global) {
+        // 审计修复（人像-跨图）：统一肤色计算期间切图则丢弃结果，避免把旧图的
+        // 肤色结果写进新图上下文并误报成功（容器 by-id 写入本身是 no-op，提示是错的）。
+        if (useEditorStore.getState().selectedImage?.path !== img.path) return;
         setAdjustments((prev) => ({
           ...prev,
           masks: (prev.masks || []).map((c) =>
@@ -1010,11 +1030,17 @@ function PortraitPanel() {
       return;
     }
     setBlurBusy(true);
+    // 审计修复（人像-跨图）：深度图生成期间切图则丢弃结果，避免旧图的深度图
+    // 写入新图 adjustments 后被「复用已识别深度图」路径误用（与特效面板同守卫）。
+    const startPath = useEditorStore.getState().selectedImage?.path;
     try {
       const b64: string = await invoke('generate_full_image_depth_map', { jsAdjustments: adj });
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       applyPatch({ lensBlurDepthMap: b64, lensBlurEnabled: true, lensBlurAmount: 50 });
     } catch {
-      toast.error(t('crystal.portrait.blurFailed'));
+      if (useEditorStore.getState().selectedImage?.path === startPath) {
+        toast.error(t('crystal.portrait.blurFailed'));
+      }
     } finally {
       setBlurBusy(false);
     }
@@ -1737,8 +1763,12 @@ function FxPanel() {
   const [activeLightId, setActiveLightId] = useState<string | null>(null);
   const activeLight = relightLights.find((l) => l.id === activeLightId) ?? null;
 
-  const updateLight = (id: string, patch: Partial<RelightLight>) =>
-    applyPatch({ relightLights: relightLights.map((l) => (l.id === id ? { ...l, ...patch } : l)) });
+  /* 审计修复（特效-重打光）：光源参数从 store 实时读取后合并——闭包旧数组在快速拖动时
+   * 会让两个滑杆事件落在同一次重渲染前互相覆盖（如 intensity 与 temperature 丢一方）。 */
+  const updateLight = (id: string, patch: Partial<RelightLight>) => {
+    const lights = useEditorStore.getState().adjustments.relightLights || [];
+    applyPatch({ relightLights: lights.map((l) => (l.id === id ? { ...l, ...patch } : l)) });
+  };
 
   const addLight = () => {
     const light = createRelightLight(0.5, 0.5);

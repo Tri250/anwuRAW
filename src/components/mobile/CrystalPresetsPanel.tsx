@@ -256,11 +256,17 @@ function AiRecommendCard() {
   const exif = summarizeExif((selectedImage?.exif ?? null) as Record<string, unknown> | null);
   const iso = firstNumber(exif.iso);
 
-  // 场景来自 scene_classify（真实像素统计）。识别失败/低于门槛 → 静默降级：
-  // 仅隐藏场景配方按钮，一键增强始终可用（原方案「AI 失败不阻塞」边界）。
+  // 场景来自 scene_classify（真实像素统计，后端对「当前已加载原图」分类）。
+  // 识别失败/低于门槛 → 静默降级：仅隐藏场景配方按钮，一键增强始终可用。
+  // 审计修复（预设-AI推荐）：切图瞬间发起的 classify 会命中后端仍在解码的
+  // 上一张图（或 No original image loaded），把旧图场景配方挂到新图——
+  // 切图立即失效旧场景，并等 isReady（后端完成新图加载）后再识别。
   useEffect(() => {
     let cancelled = false;
     setScene(null);
+    if (!selectedImage?.isReady) return () => {
+      cancelled = true;
+    };
     invoke<SceneClassification>(Invokes.SceneClassify)
       .then((result) => {
         if (!cancelled) setScene(result);
@@ -271,7 +277,7 @@ function AiRecommendCard() {
     return () => {
       cancelled = true;
     };
-  }, [selectedImage?.path]);
+  }, [selectedImage?.path, selectedImage?.isReady]);
 
   const sceneKey: SceneKey | null =
     scene && scene.confidence >= SCENE_CONFIDENCE_GATE ? (scene.scene as SceneKey) : null;
