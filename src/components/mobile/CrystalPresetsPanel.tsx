@@ -40,6 +40,8 @@ interface PreviewSource {
   id: string;
   name: string;
   adjustments: Record<string, unknown>;
+  /** 所属分组：滤镜为 FilterGroup id，预设为文件夹名（分组过滤 + 全量解析共用） */
+  group?: string;
 }
 
 /* ---------------------------- 内置滤镜（真实参数组合） ---------------------------- */
@@ -429,24 +431,30 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     setSelectedGroup(null);
   }, [mode]);
 
-  const sources: Array<PreviewSource> = useMemo(() => {
+  // 全量列表（含 group）：已应用源按它解析，分组过滤隐藏激活卡时状态条/强度/取消入口仍可达
+  const allSources: Array<PreviewSource> = useMemo(() => {
     if (mode === 'filter') {
-      const list = selectedGroup ? BUILTIN_FILTERS.filter((f) => f.group === selectedGroup) : BUILTIN_FILTERS;
-      return list.map((f) => ({
+      return BUILTIN_FILTERS.map((f) => ({
         id: `filter:${f.id}`,
         name: t(f.labelKey),
         adjustments: f.adjustments as Record<string, unknown>,
+        group: f.group,
       }));
     }
-    const pool = selectedGroup
-      ? (presetGroups.find((g) => g.name === selectedGroup)?.presets ?? [])
-      : presetGroups.flatMap((g) => g.presets);
-    return pool.map((p) => ({
-      id: `preset:${p.id}`,
-      name: p.name,
-      adjustments: (p.adjustments ?? {}) as Record<string, unknown>,
-    }));
-  }, [mode, presetGroups, selectedGroup, t]);
+    return presetGroups.flatMap((g) =>
+      g.presets.map((p) => ({
+        id: `preset:${p.id}`,
+        name: p.name,
+        adjustments: (p.adjustments ?? {}) as Record<string, unknown>,
+        group: g.name,
+      })),
+    );
+  }, [mode, presetGroups, t]);
+
+  const sources: Array<PreviewSource> = useMemo(
+    () => (selectedGroup ? allSources.filter((s) => s.group === selectedGroup) : allSources),
+    [allSources, selectedGroup],
+  );
 
   // v2.1.13: 切图后缩略图队列整体作废并按新图重建（必须在 enqueue 效果之前声明）
   useEffect(() => {
@@ -478,7 +486,8 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     return () => removeExitLayer(handler);
   }, [sheetSource, nameDialog, deleteTarget]);
 
-  const activeSource = activeId ? (sources.find((s) => s.id === activeId) ?? null) : null;
+  // 已应用源按全量列表解析：分组过滤/卡片滚出视口时不丢状态条、强度滑杆与取消入口
+  const activeSource = activeId ? (allSources.find((s) => s.id === activeId) ?? null) : null;
   const rawId = useCallback((sourceId: string) => sourceId.replace(/^preset:/, ''), []);
 
   /** 与桌面 resolvePresetAiMasks 同源：按当前图重跑 AI 蒙版并合并结果（不进撤销栈） */
@@ -972,7 +981,8 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
             suffix="%"
             onChange={handleIntensity}
           />
-          {/* 显式取消入口：分组过滤隐藏激活卡时，「再点同卡取消」不可达，此处兜底闭环 */}
+          {/* 显式取消入口：分组过滤隐藏激活卡时，「再点同卡取消」不可达，此处兜底闭环
+              （activeSource 按全量列表解析，切分组后本按钮与强度滑杆保持可见） */}
           <button className="cx-mask-remove mt-2 w-full" onClick={cancelActive}>
             <X size={11} />
             {t('modals.confirm.cancel')}
