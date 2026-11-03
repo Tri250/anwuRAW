@@ -687,7 +687,8 @@
       "vibrance": "Éclat",
       "whites": "Blancs"
     },
-    "undo": "Annuler"
+    "undo": "Annuler",
+    "previewLoading": "Chargement…"
   },
   "editor": {
     "adjustments": {

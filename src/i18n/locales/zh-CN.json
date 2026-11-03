@@ -667,7 +667,8 @@
       "vibrance": "自然饱和度",
       "whites": "白色色阶"
     },
-    "undo": "撤销"
+    "undo": "撤销",
+    "previewLoading": "加载中…"
   },
   "editor": {
     "adjustments": {

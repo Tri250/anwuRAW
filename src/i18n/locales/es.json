@@ -687,7 +687,8 @@
       "vibrance": "Vibrancia",
       "whites": "Blancos"
     },
-    "undo": "Deshacer"
+    "undo": "Deshacer",
+    "previewLoading": "Cargando…"
   },
   "editor": {
     "adjustments": {

@@ -687,7 +687,8 @@
       "vibrance": "Vibrància",
       "whites": "Blancs"
     },
-    "undo": "Desfés"
+    "undo": "Desfés",
+    "previewLoading": "Carregant…"
   },
   "editor": {
     "adjustments": {

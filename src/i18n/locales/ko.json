@@ -664,7 +664,8 @@
       "vibrance": "자연 채도",
       "whites": "화이트"
     },
-    "undo": "되돌리기"
+    "undo": "되돌리기",
+    "previewLoading": "불러오는 중…"
   },
   "editor": {
     "adjustments": {

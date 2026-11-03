@@ -667,7 +667,8 @@
       "vibrance": "Levendigheid",
       "whites": "Witten"
     },
-    "undo": "Ongedaan maken"
+    "undo": "Ongedaan maken",
+    "previewLoading": "Laden…"
   },
   "editor": {
     "adjustments": {

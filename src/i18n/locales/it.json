@@ -687,7 +687,8 @@
       "vibrance": "Vividezza",
       "whites": "Bianchi"
     },
-    "undo": "Annulla"
+    "undo": "Annulla",
+    "previewLoading": "Caricamento…"
   },
   "editor": {
     "adjustments": {

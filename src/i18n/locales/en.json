@@ -670,7 +670,8 @@
       "vibrance": "Vibrance",
       "whites": "Whites"
     },
-    "undo": "Undo"
+    "undo": "Undo",
+    "previewLoading": "Loading…"
   },
   "editor": {
     "adjustments": {

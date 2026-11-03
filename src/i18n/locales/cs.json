@@ -707,7 +707,8 @@
       "vibrance": "Sytost tónů",
       "whites": "Bílé"
     },
-    "undo": "Zpět"
+    "undo": "Zpět",
+    "previewLoading": "Načítání…"
   },
   "editor": {
     "adjustments": {

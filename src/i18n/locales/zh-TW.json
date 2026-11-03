@@ -664,7 +664,8 @@
       "vibrance": "自然飽和度",
       "whites": "白色"
     },
-    "undo": "復原"
+    "undo": "復原",
+    "previewLoading": "載入中…"
   },
   "editor": {
     "adjustments": {

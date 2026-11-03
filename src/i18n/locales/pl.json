@@ -707,7 +707,8 @@
       "vibrance": "Żywość",
       "whites": "Biele"
     },
-    "undo": "Cofnij"
+    "undo": "Cofnij",
+    "previewLoading": "Wczytywanie…"
   },
   "editor": {
     "adjustments": {

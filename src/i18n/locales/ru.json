@@ -707,7 +707,8 @@
       "vibrance": "Красочность",
       "whites": "Белые"
     },
-    "undo": "Отменить"
+    "undo": "Отменить",
+    "previewLoading": "Загрузка…"
   },
   "editor": {
     "adjustments": {

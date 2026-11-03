@@ -687,7 +687,8 @@
       "vibrance": "Vibração",
       "whites": "Brancos"
     },
-    "undo": "Desfazer"
+    "undo": "Desfazer",
+    "previewLoading": "Carregando…"
   },
   "editor": {
     "adjustments": {

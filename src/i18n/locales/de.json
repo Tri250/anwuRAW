@@ -667,7 +667,8 @@
       "vibrance": "Dynamik",
       "whites": "Weiß"
     },
-    "undo": "Rückgängig"
+    "undo": "Rückgängig",
+    "previewLoading": "Wird geladen…"
   },
   "editor": {
     "adjustments": {

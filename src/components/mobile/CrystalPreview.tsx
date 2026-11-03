@@ -5,7 +5,7 @@ import { ChevronsLeftRight, Loader2, Move, RotateCcw, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useEditorStore } from '../../store/useEditorStore';
 import { getOrientedDimensions, moveCropInsideBounds } from '../../utils/cropUtils';
-import { useCrystalAdjust } from './crystalShared';
+import { useCrystalAdjust, haptic } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * P2 预览区升级：双指缩放 + 平移 + 双击缩放 + 前后对比分割滑杆。
@@ -325,6 +325,7 @@ export default function CrystalPreview({
           const prev = lastTap.current;
           if (prev && now - prev.t < DOUBLE_TAP_MS && dist(prev, { x: e.clientX, y: e.clientY }) < TAP_SLOP * 2) {
             lastTap.current = null;
+            haptic(8);
             if (transformRef.current.scale > 1.01) {
               resetZoom();
             } else {
@@ -387,7 +388,8 @@ export default function CrystalPreview({
         ) : (
           <div className="cx-preview-empty">
             <Loader2 size={18} className="animate-spin" />
-            {hasRenderedFirstFrame && <span>{t('crystal.previewRendering')}</span>}
+            {/* 审计 P-反馈：冷启动首帧未渲染时仅 spinner 无文案，补「加载中」区分「渲染中」 */}
+            <span>{t(hasRenderedFirstFrame ? 'crystal.previewRendering' : 'crystal.previewLoading')}</span>
           </div>
         )}
       </div>
@@ -411,7 +413,14 @@ export default function CrystalPreview({
       )}
 
       {transform.scale > 1.01 && !compare && (
-        <button className="cx-zoom-chip" onClick={resetZoom} aria-label={t('crystal.previewResetZoom')}>
+        <button
+          className="cx-zoom-chip"
+          onClick={() => {
+            haptic(6);
+            resetZoom();
+          }}
+          aria-label={t('crystal.previewResetZoom')}
+        >
           <RotateCcw size={11} />
           {transform.scale.toFixed(1)}×
         </button>
@@ -454,7 +463,10 @@ export default function CrystalPreview({
           <span className="cx-compare-tag cx-compare-tag-r">{t('crystal.previewEdited')}</span>
           <button
             className="cx-compare-close"
-            onClick={() => onCompareChange(false)}
+            onClick={() => {
+              haptic(6);
+              onCompareChange(false);
+            }}
             aria-label={t('crystal.previewCloseCompare')}
           >
             <X size={14} />
