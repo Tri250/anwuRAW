@@ -409,6 +409,8 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [intensity, setIntensity] = useState(100);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  /** 图片是否就绪：缩略图渲染依赖后端已加载原图，未就绪时的入队会整体失败 */
+  const selectedImageIsReady = useEditorStore((s) => s.selectedImage?.isReady);
   const baseRef = useRef<Adjustments | null>(null);
   /** 当前应用中的滤镜/预设源：取消/换卡时用于取参数键集（activeId 的伴生 ref，二者同生命周期） */
   const activeSourceRef = useRef<PreviewSource | null>(null);
@@ -452,11 +454,6 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   const namedGroups = useMemo(() => presetGroups.filter((g) => g.name), [presetGroups]);
   const totalPresetCount = useMemo(() => presetGroups.reduce((n, g) => n + g.presets.length, 0), [presetGroups]);
 
-  // 模式切换时复位分组，避免预设分组名泄漏到滤镜过滤
-  useEffect(() => {
-    setSelectedGroup(null);
-  }, [mode]);
-
   // 全量列表（含 group）：已应用源按它解析，分组过滤隐藏激活卡时状态条/强度/取消入口仍可达
   const allSources: Array<PreviewSource> = useMemo(() => {
     if (mode === 'filter') {
@@ -496,9 +493,14 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     hiddenMasksRef.current = null;
   }, [selectedImagePath]);
 
+  // 缩略图入队。审计修复（滤镜-缩略图死队列）：GeneratePresetPreview 依赖后端
+  // original_image，图片未 ready 时入队的请求全部抛 "No original image loaded"
+  // 并清空队列；此前 effect 不依赖 isReady，图片加载完成后不会重新入队——
+  // 12 个滤镜卡永远停在 Loader2（点击虽能应用，但面板看似卡死）。
+  // 依赖 isReady：false→true 转换时重新入队，previewsRef 保持 undefined 可重试。
   useEffect(() => {
     enqueue(sources);
-  }, [sources, enqueue, selectedImagePath]);
+  }, [sources, enqueue, selectedImagePath, selectedImageIsReady]);
 
   // Android 返回键：动作面板/命名对话框/删除确认打开时先关闭浮层
   useEffect(() => {
@@ -564,6 +566,17 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
       setAdjustments({ ...useEditorStore.getState().adjustments, ...patch } as Adjustments);
     }
   }, [setAdjustments]);
+
+  // 模式切换（滤镜↔预设）：复位分组 + 完整复位应用态。
+  // 审计修复（滤镜-激活态泄漏）：两库独立，共用组件实例但 mode 切换不重挂载。
+  // 此前 activeId 属于另一模式 id 前缀（filter:/preset:）解析不到时回落 ref 快照
+  // ——切到预设模式后状态条仍显示「已应用 <滤镜> · 100%」。此处按 base 快照还原
+  // 参数（cancelActive）并清空应用态，同时避免随后在预设模式应用新预设时
+  // 两套参数叠加污染。cancelActive 读 ref 快照、不依赖渲染态。
+  useEffect(() => {
+    cancelActive();
+    setSelectedGroup(null);
+  }, [mode]);
 
   const handleApply = useCallback(
     (source: PreviewSource) => {
