@@ -1320,7 +1320,7 @@ function ComposePanel() {
           </button>
         ))}
       </div>
-      <div className="flex flex-wrap gap-8 mb-1" style={{ color: 'var(--cx-muted)' }}>
+      <div className="cx-chip-row mb-3" style={{ color: 'var(--cx-muted)' }}>
         <button
           className="cx-chip"
           onClick={() => {
@@ -2383,13 +2383,29 @@ export default function CrystalCategoryPanel({ category }: { category: CrystalCa
         </div>
       );
     case 'tone':
-      return <TonePanel />;
+      return (
+        <div className="cx-panel">
+          <TonePanel />
+        </div>
+      );
     case 'portrait':
-      return <PortraitPanel />;
+      return (
+        <div className="cx-panel">
+          <PortraitPanel />
+        </div>
+      );
     case 'compose':
-      return <ComposePanel />;
+      return (
+        <div className="cx-panel">
+          <ComposePanel />
+        </div>
+      );
     case 'fx':
-      return <FxPanel />;
+      return (
+        <div className="cx-panel">
+          <FxPanel />
+        </div>
+      );
     default:
       return null;
   }
