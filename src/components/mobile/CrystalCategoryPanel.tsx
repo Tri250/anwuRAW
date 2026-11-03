@@ -1151,7 +1151,10 @@ function ComposePanel() {
   const activeAspect = useMemo(() => {
     const ratio = adjustments.aspectRatio;
     if (!ratio) return null;
-    const hit = ASPECT_CHIPS.find((c) => c.value && Math.abs(c.value - ratio) < 0.01);
+    /* 审计 C-状态：旋转 90° 后比例取逆（4:3 → 3:4），chip 高亮按用户所选宽比做正/逆双向匹配 */
+    const hit = ASPECT_CHIPS.find(
+      (c) => c.value && (Math.abs(c.value - ratio) < 0.01 || Math.abs(1 / c.value - ratio) < 0.01),
+    );
     return hit ? hit.value : ratio;
   }, [adjustments.aspectRatio]);
 
@@ -1234,33 +1237,55 @@ function ComposePanel() {
           <button
             key={labelKey}
             className={`cx-chip ${activeAspect === value ? 'is-active' : ''}`}
-            onClick={() => rotateChip(value)}
+            onClick={() => {
+              haptic(6);
+              rotateChip(value);
+            }}
           >
             {t(labelKey)}
           </button>
         ))}
       </div>
       <div className="flex flex-wrap gap-8 mb-1" style={{ color: 'var(--cx-muted)' }}>
-        <button className="cx-chip" onClick={rotate90}>
+        <button
+          className="cx-chip"
+          onClick={() => {
+            haptic(6);
+            rotate90();
+          }}
+        >
           <RotateCw size={14} className="inline mr-1 -mt-0.5" />
           {t('crystal.compose.rotate90')}
         </button>
         <button
           className={`cx-chip ${adjustments.flipHorizontal ? 'is-active' : ''}`}
-          onClick={() => applyPatch({ flipHorizontal: !adjustments.flipHorizontal }, { enableTools: false })}
+          onClick={() => {
+            haptic(6);
+            applyPatch({ flipHorizontal: !adjustments.flipHorizontal }, { enableTools: false });
+          }}
         >
           <FlipHorizontal size={14} className="inline mr-1 -mt-0.5" />
           {t('crystal.compose.flipH')}
         </button>
         <button
           className={`cx-chip ${adjustments.flipVertical ? 'is-active' : ''}`}
-          onClick={() => applyPatch({ flipVertical: !adjustments.flipVertical }, { enableTools: false })}
+          onClick={() => {
+            haptic(6);
+            applyPatch({ flipVertical: !adjustments.flipVertical }, { enableTools: false });
+          }}
         >
           <FlipVertical size={14} className="inline mr-1 -mt-0.5" />
           {t('crystal.compose.flipV')}
         </button>
         {/* 自动拉直：与桌面旋转区同链路（CalculateAutoStraighten + 面积保持裁剪） */}
-        <button className="cx-chip" disabled={isAutoStraightening} onClick={() => void handleAutoStraighten()}>
+        <button
+          className="cx-chip"
+          disabled={isAutoStraightening}
+          onClick={() => {
+            haptic(6);
+            void handleAutoStraighten();
+          }}
+        >
           {isAutoStraightening ? (
             <Loader2 size={14} className="inline mr-1 -mt-0.5 animate-spin" />
           ) : (
@@ -1269,7 +1294,13 @@ function ComposePanel() {
           {t('contextMenus.editor.autoStraighten')}
         </button>
         {/* 自动镜头校正：与桌面工具栏同链路（EXIF → 镜头档案 → ApplyAutoLensCorrectionToPaths） */}
-        <button className="cx-chip" onClick={() => handleAutoLensCorrection()}>
+        <button
+          className="cx-chip"
+          onClick={() => {
+            haptic(6);
+            handleAutoLensCorrection();
+          }}
+        >
           <Aperture size={14} className="inline mr-1 -mt-0.5" />
           {t('contextMenus.editor.autoLensCorrection')}
         </button>
@@ -1354,7 +1385,13 @@ function ComposePanel() {
         defaultValue={0}
         onChange={(v) => applyPatch({ transformYOffset: v }, { enableTools: false })}
       />
-      <button className="cx-mask-remove mt-2 w-full" onClick={resetCompose}>
+      <button
+        className="cx-mask-remove mt-2 w-full"
+        onClick={() => {
+          haptic(6);
+          resetCompose();
+        }}
+      >
         <RotateCcw size={11} />
         {t('adjustments.basic.reset')}
       </button>

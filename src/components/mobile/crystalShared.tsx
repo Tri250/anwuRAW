@@ -384,7 +384,8 @@ export function CxSliderRow({
           className="text-[12.5px] font-semibold flex items-center gap-1.5"
           style={{ color: changed ? 'var(--cx-accent)' : 'var(--cx-ink)' }}
         >
-          {Number(value).toFixed(step < 1 ? 2 : 0)}
+          {/* 审计 C-精度：小数位随步进收敛——0.5 步进显示 3.5 而非 3.50，0.05 步进保留 2 位 */}
+          {Number(value).toFixed(step >= 1 ? 0 : step >= 0.1 ? 1 : 2)}
           {suffix ? (
             <i className="not-italic text-[9px]" style={{ color: 'var(--cx-faint)' }}>
               {suffix}
