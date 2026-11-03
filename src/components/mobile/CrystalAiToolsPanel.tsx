@@ -56,6 +56,33 @@ const storeTextPrompt = (value: string) => {
   }
 };
 
+/* 审计修复（AI 增强/自动色调）：ai_auto_enhance 与 calculate_auto_adjustments
+ * 均以后端 state.original_image（图片加载完成后才存在）为输入。此前两入口
+ * 无 isReady 守卫——打开图片未加载完即点击，增强直接抛
+ * "No image loaded for AI enhance"，色调则被 handleAutoAdjustments 内部
+ * 静默 return（无 toast 无效果，移动端 tile 是唯一入口，感知为死键）。
+ * 与 useEditorActions.waitForImageReady 同模式（subscribe 等待），
+ * 补 10s 超时防止加载失败时 busy 蒙层永久挂起。 */
+const awaitImageReady = (path: string, timeoutMs = 10_000) =>
+  new Promise<boolean>((resolve) => {
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      unsubscribe();
+      resolve(ok);
+    };
+    const timer = setTimeout(() => finish(false), timeoutMs);
+    const unsubscribe = useEditorStore.subscribe((state) => {
+      if (state.selectedImage?.path !== path) {
+        finish(false);
+      } else if (state.selectedImage.isReady) {
+        finish(true);
+      }
+    });
+  });
+
 export default function CrystalAiToolsPanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
@@ -90,15 +117,33 @@ export default function CrystalAiToolsPanel() {
   const runEnhance = useCallback(async () => {
     if (busy) return;
     setBusy('enhance');
-    /* 闭环修复：AI 增强对发起时图片计算，完成后已切图则丢弃结果，
-     * 避免旧图增强参数合并进新图 adjustments（与天空/主体/文本/景深同守卫）。 */
+    /* 闭环修复：
+     * 1) 跨图守卫：AI 增强对发起时图片计算，完成后已切图则丢弃结果，
+     *    避免旧图增强参数合并进新图 adjustments（与天空/主体/文本/景深同守卫）；
+     * 2) isReady 等待：后端 ai_auto_enhance 依赖 state.original_image，
+     *    图片未加载完即点击会抛 "No image loaded for AI enhance"——先等待就绪；
+     * 3) activeTools 合并：后端返回 {basic/colorPresence/presence/vignette: true}，
+     *    直接覆盖会把用户手动关掉的工具重新打开；按桌面 handleAutoAdjustments
+     *    的 mergeActiveTools 语义只置 true 不关 false。 */
     const startPath = useEditorStore.getState().selectedImage?.path;
+    if (!startPath) {
+      setBusy(null);
+      return;
+    }
     try {
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity });
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       // 与桌面 EditorToolbar 同源：经 setAdjustments → debounced pushHistory，
       // 保证 AI 增强结果进 50 步撤销栈（setEditor 直接写会绕过历史）。
-      setAdjustments((prev) => ({ ...prev, ...result }));
+      setAdjustments((prev) => ({
+        ...prev,
+        ...result,
+        ...(result.activeTools
+          ? { activeTools: { ...prev.activeTools, ...result.activeTools } }
+          : {}),
+      }));
     } catch (e) {
       console.error('AI enhance failed:', e);
       toast.error(t('crystal.aiRecommend.failed'));
@@ -110,7 +155,16 @@ export default function CrystalAiToolsPanel() {
   const runAuto = useCallback(async () => {
     if (busy) return;
     setBusy('auto');
+    /* 闭环修复：handleAutoAdjustments 内部 isReady 不满足时静默 return
+     * （无 toast 无效果，移动端 tile 为唯一入口，感知为死键）——面板层先
+     * 等待图片就绪再调用；跨图/超时由 hook 与 awaitImageReady 处理。 */
+    const startPath = useEditorStore.getState().selectedImage?.path;
+    if (!startPath) {
+      setBusy(null);
+      return;
+    }
     try {
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
       await handleAutoAdjustments();
     } finally {
       setBusy(null);
@@ -412,6 +466,7 @@ export default function CrystalAiToolsPanel() {
               <button
                 key={id}
                 className={`cx-chip ${intensity === id ? 'is-active' : ''}`}
+                disabled={Boolean(busy)}
                 onClick={() => {
                   haptic(6);
                   setIntensity(id);
