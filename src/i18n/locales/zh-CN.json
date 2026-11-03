@@ -581,6 +581,7 @@
       "deleteTitle": "删除预设",
       "empty": "还没有预设 — 点击上方「保存当前」创建，或导入预设文件。",
       "exportAll": "导出全部",
+      "exportEmpty": "暂无预设可导出",
       "exportFailed": "预设导出失败",
       "exportSuccess": "预设已导出",
       "import": "导入",
