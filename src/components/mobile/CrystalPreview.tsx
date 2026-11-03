@@ -80,7 +80,10 @@ export default function CrystalPreview({
       hasRenderedFirstFrame: s.hasRenderedFirstFrame,
     })),
   );
-  const url = showOriginal ? (originalPreview ?? null) : finalPreviewUrl;
+  // 审计修复（底栏-原图）：showOriginal 时 originalPreview 可能尚未渲染完成，
+  // 回落到 finalPreviewUrl（配合 previewOverride，松开前主管线已把原图渲染进该 url），
+  // 避免出现"长按原图却显示加载动画"的死区。
+  const url = showOriginal ? (originalPreview ?? finalPreviewUrl) : finalPreviewUrl;
   const selectedPath = useEditorStore((s) => s.selectedImage?.path);
   const selectedImage = useEditorStore((s) => s.selectedImage);
   const crop = useEditorStore((s) => s.adjustments.crop ?? null);

@@ -15,7 +15,7 @@ import { Mask } from '../panel/right/Masks';
 import type { SubMask } from '../panel/right/Masks';
 import { useAiMasking } from '../../hooks/useAiMasking';
 import { useEditorStore } from '../../store/useEditorStore';
-import { useEditorActions } from '../../hooks/useEditorActions';
+import { useEditorActions, getOriginalAdjustments } from '../../hooks/useEditorActions';
 
 /** 长按阈值（G10：原图按下即看 / 对比稍延迟区分两种手势） */
 export const CRYSTAL_LONG_PRESS_MS = 450;
@@ -248,6 +248,12 @@ export function useCrystalAdjust() {
 /* --------------------------------------------------------------------------
  * 按住看原图手势（G10/G11）：底栏原图/对比键与预览浮层共用。
  * showDelayMs=0 立即显示（原图键），>0 用于区分点击与按住（对比键）。
+ *
+ * 审计修复（底栏-原图）：仅置 showOriginal=true 时 CrystalPreview 依赖的
+ * originalPreview 恒为 null（renderOriginal 仅在 compareView!=='off' 时产出），
+ * 长按只会得到空 url + 加载动画。此处与桌面 toggle 对比一致：同时写入
+ * previewOverride=getOriginalAdjustments，让主管线把"原图参数"渲染进
+ * finalPreviewUrl（保留裁剪/旋转几何以对齐取景），松手即还原。
  * ------------------------------------------------------------------------ */
 export function useShowOriginalHold(showDelayMs = 0) {
   const setEditor = useEditorStore((s) => s.setEditor);
@@ -258,7 +264,10 @@ export function useShowOriginalHold(showDelayMs = 0) {
     holdTimer.current = window.setTimeout(() => {
       holdActive.current = true;
       haptic(5);
-      setEditor({ showOriginal: true });
+      setEditor({
+        showOriginal: true,
+        previewOverride: getOriginalAdjustments(useEditorStore.getState().adjustments),
+      });
     }, showDelayMs);
   }, [setEditor, showDelayMs]);
 
@@ -269,7 +278,7 @@ export function useShowOriginalHold(showDelayMs = 0) {
     }
     if (holdActive.current) {
       holdActive.current = false;
-      setEditor({ showOriginal: false });
+      setEditor({ showOriginal: false, previewOverride: null });
     }
   }, [setEditor]);
 
@@ -280,7 +289,7 @@ export function useShowOriginalHold(showDelayMs = 0) {
       // 避免 store 残留 true 使预览误显原图。
       if (holdActive.current) {
         holdActive.current = false;
-        useEditorStore.getState().setEditor({ showOriginal: false });
+        useEditorStore.getState().setEditor({ showOriginal: false, previewOverride: null });
       }
     },
     [],

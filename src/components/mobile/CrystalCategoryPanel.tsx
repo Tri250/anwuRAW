@@ -145,19 +145,31 @@ function TonePanel() {
     );
   const channelModified = (ch: CurveChannel) => !isDefaultParametricCurve(adjustments.parametricCurve?.[ch]);
 
-  const setHsl = (key: 'hue' | 'saturation' | 'luminance', value: number) =>
-    applyPatch({ hsl: { ...(adjustments.hsl ?? {}), [band]: { ...bandHsl, [key]: value } } });
+  /* 审计修复（调色）：嵌套对象 patch 一律从 store 实时读取（而非渲染闭包），
+   * 消除快速拖动时两个滑杆事件落在同一次重渲染前导致彼此覆盖的竞态。 */
+  const setHsl = (key: 'hue' | 'saturation' | 'luminance', value: number) => {
+    const hsl = useEditorStore.getState().adjustments.hsl ?? {};
+    const cur = hsl[band] ?? { hue: 0, saturation: 0, luminance: 0 };
+    applyPatch({ hsl: { ...hsl, [band]: { ...cur, [key]: value } } });
+  };
 
   /* 分级调色：区域 hue/sat/lum + blending/balance（与桌面 ColorGradingPanel 同数据结构） */
-  const setGradingHsl = (key: 'hue' | 'saturation' | 'luminance', value: number) =>
-    applyPatch({ colorGrading: { ...grading, [gradingRegion]: { ...gradingRegionHsl, [key]: value } } });
+  const setGradingHsl = (key: 'hue' | 'saturation' | 'luminance', value: number) => {
+    const g = useEditorStore.getState().adjustments.colorGrading ?? INITIAL_ADJUSTMENTS.colorGrading;
+    const region = g[gradingRegion] ?? { hue: 0, saturation: 0, luminance: 0 };
+    applyPatch({ colorGrading: { ...g, [gradingRegion]: { ...region, [key]: value } } });
+  };
 
-  const setGradingMix = (key: 'blending' | 'balance', value: number) =>
-    applyPatch({ colorGrading: { ...grading, [key]: value } });
+  const setGradingMix = (key: 'blending' | 'balance', value: number) => {
+    const g = useEditorStore.getState().adjustments.colorGrading ?? INITIAL_ADJUSTMENTS.colorGrading;
+    applyPatch({ colorGrading: { ...g, [key]: value } });
+  };
 
   /* 相机校准：红/绿/蓝原色 hue/sat + 阴影色调（与桌面 ColorCalibrationPanel 同源） */
-  const setCalibration = (key: keyof ColorCalibration, value: number) =>
-    applyPatch({ colorCalibration: { ...calibration, [key]: value } });
+  const setCalibration = (key: keyof ColorCalibration, value: number) => {
+    const cal = useEditorStore.getState().adjustments.colorCalibration ?? INITIAL_ADJUSTMENTS.colorCalibration;
+    applyPatch({ colorCalibration: { ...cal, [key]: value } });
+  };
 
   /* 分级/校准整节重置（移动端闭环补充；桌面经由全局重置入口） */
   const resetGrading = () => {
@@ -791,9 +803,24 @@ function PortraitPanel() {
         const latest = useEditorStore.getState().adjustments;
         const created = (latest.masks || []).find((c) => c.id === containerId);
         if (!created?.subMasks[0]?.parameters?.maskDataBase64) {
+          // 审计修复（人像）：识别失败（无人脸/模型缺失/取消）时移除刚建的空容器，
+          // 否则面板残留一个"无蒙版"的算子开关——开关看似生效、强度滑杆可拖但毫无效果。
+          setAdjustments((prev) => ({
+            ...prev,
+            masks: (prev.masks || []).filter((c) => c.id !== containerId),
+          }));
           toast.error(t('crystal.ai.maskFailed'));
         }
       } catch {
+        // 异常路径同样清理可能已入库的容器（识别调用抛错时机不固定）
+        const latest = useEditorStore.getState().adjustments;
+        const created = (latest.masks || []).find((c) => c.subMasks?.[0]?.parameters?.retouchKind === op.kind);
+        if (created) {
+          setAdjustments((prev) => ({
+            ...prev,
+            masks: (prev.masks || []).filter((c) => c.id !== created.id),
+          }));
+        }
         toast.error(t('crystal.ai.maskFailed'));
       } finally {
         setOpBusy(null);
@@ -1250,24 +1277,27 @@ function ComposePanel() {
     [adjustments.orientationSteps, adjustments.rotation, applyPatch, selectedImage],
   );
 
-  /* 拉直：裁剪窗口跟随旋转（calculateAutoCropForRotation 面积保持），无裁剪时仅改角度 */
+  /* 拉直：裁剪窗口跟随旋转（calculateAutoCropForRotation 面积保持），无裁剪时仅改角度。
+   * 审计修复（构图）：从 store 实时读取 rotation/crop 计算面积保持增量，
+   * 避免快速拖动时闭包里的旧 rotation 使 delta 计算错位、裁剪窗抖动。 */
   const setRotation = useCallback(
     (v: number) => {
+      const fresh = useEditorStore.getState().adjustments;
       const patch: Record<string, unknown> = { rotation: v };
-      if (selectedImage?.width && selectedImage?.height && adjustments.crop) {
+      if (selectedImage?.width && selectedImage?.height && fresh.crop) {
         patch.crop = calculateAutoCropForRotation(
           selectedImage.width,
           selectedImage.height,
-          adjustments.orientationSteps || 0,
-          adjustments.aspectRatio,
+          fresh.orientationSteps || 0,
+          fresh.aspectRatio,
           v,
-          adjustments.crop,
-          v - (adjustments.rotation || 0),
+          fresh.crop,
+          v - (fresh.rotation || 0),
         );
       }
       applyPatch(patch, { enableTools: false });
     },
-    [adjustments.aspectRatio, adjustments.crop, adjustments.orientationSteps, adjustments.rotation, applyPatch, selectedImage],
+    [applyPatch, selectedImage],
   );
 
   /* 重置构图：与桌面 CropPanel.handleReset 同键集（几何变换 + 镜头校正档案/参数一并还原） */

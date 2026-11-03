@@ -28,6 +28,7 @@ import { Status } from '../ui/ExportImportProperties';
 import ConfirmModal from '../modals/ConfirmModal';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
 import { haptic, summarizeExif, useShowOriginalHold } from './crystalShared';
+import { debouncedSetHistory } from '../../hooks/useEditorActions';
 import { selectAiModelDownloadStatus } from '../../store/useProcessStore';
 import CrystalCategoryPanel from './CrystalCategoryPanel';
 import CrystalPreview from './CrystalPreview';
@@ -206,6 +207,28 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
   // 副标题：机型（截断）；无 EXIF 时回退画幅
   const cameraSubtitle = exif.camera || (selectedImage?.width ? `${selectedImage.width}×${selectedImage.height}` : '');
 
+  // 审计修复（底栏-对比）：对比分割层依赖 originalPreview，而 originalPreview
+  // 仅在 compareView !== 'off' 时由主管线 renderOriginal 产出。此前移动端只翻
+  // 本地 isCompareOpen，从未写 compareView → 分割视图永远不渲染（死键）。
+  // 现与桌面同源：开启时置 compareView='horizontal' 触发 renderOriginal；
+  // 关闭/离开时复位 'off'，由 useImageProcessing 清理 effect 统一释放
+  // originalPreview 并调用 ReleaseOriginalPreview，保证链路完整闭环。
+  const setCompareOpen = useCallback(
+    (open: boolean) => {
+      setIsCompareOpen(open);
+      setEditor({ compareView: open ? 'horizontal' : 'off' });
+    },
+    [setEditor],
+  );
+
+  // 离开编辑域（切导出/回图库/卸载）时强制退出对比态，防 store 残留。
+  useEffect(
+    () => () => {
+      useEditorStore.getState().setEditor({ compareView: 'off', showOriginal: false, previewOverride: null });
+    },
+    [],
+  );
+
   // Android 返回键闭环：对比视图 → 回编辑；导出域 → 回编辑域；编辑域 → 回图库。
   // UX：导出进行中消费返回事件但不切域——进度反馈在导出页内，离开即丢失。
   useEffect(() => {
@@ -217,11 +240,11 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
         return;
       }
       if (isCompareOpen) {
-        setIsCompareOpen(false);
+        setCompareOpen(false);
         return;
       }
       if (useEditorStore.getState().showOriginal) {
-        useEditorStore.getState().setEditor({ showOriginal: false });
+        useEditorStore.getState().setEditor({ showOriginal: false, previewOverride: null });
         return;
       }
       if (flow === 'export') {
@@ -237,11 +260,14 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     };
     pushExitLayer(handler);
     return () => removeExitLayer(handler);
-  }, [flow, isCompareOpen, isExporting, isResetConfirmOpen, onBackToLibrary, osPlatform, t]);
+  }, [flow, isCompareOpen, isExporting, isResetConfirmOpen, onBackToLibrary, osPlatform, setCompareOpen, t]);
 
   const handleReset = useCallback(() => {
     const sel = useEditorStore.getState().selectedImage;
     // 与桌面重置语义一致：恢复初始参数、清 AI patch、重建历史栈，并持久化到 sidecar。
+    // 审计修复：先取消待写入的历史推送（500ms 防抖），否则重置后旧参数会被
+    // 补推进撤销栈——重置后撤销键可用且"撤销"会复活重置前的编辑。
+    debouncedSetHistory.cancel();
     const resetData = { ...INITIAL_ADJUSTMENTS, aiPatches: [] } as Adjustments;
     resetHistory(resetData);
     setEditor({ adjustments: resetData, showOriginal: false, previewOverride: null });
@@ -251,9 +277,9 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
   }, [resetHistory, setEditor]);
 
   const goExport = useCallback(() => {
-    setIsCompareOpen(false);
+    setCompareOpen(false);
     setFlow('export');
-  }, []);
+  }, [setCompareOpen]);
 
   if (!selectedImage) return null;
 
@@ -268,13 +294,13 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
               {t('crystal.ai.modelDownloading')} · {modelDownloadStatus}
             </div>
           )}
-          <CrystalPreview compare={isCompareOpen} onCompareChange={setIsCompareOpen} activeCategory={activeCategory} />
+          <CrystalPreview compare={isCompareOpen} onCompareChange={setCompareOpen} activeCategory={activeCategory} />
           <CrystalCatNavBar active={activeCategory} onSelect={setActiveCategory} />
           <CrystalCategoryPanel category={activeCategory} />
           <CrystalBottomBar
             onExport={goExport}
             onReset={() => setIsResetConfirmOpen(true)}
-            onCompare={() => setIsCompareOpen((v) => !v)}
+            onCompare={() => setCompareOpen(!isCompareOpen)}
           />
           <ConfirmModal
             isOpen={isResetConfirmOpen}

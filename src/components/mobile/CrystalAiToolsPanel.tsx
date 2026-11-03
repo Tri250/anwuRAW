@@ -530,19 +530,23 @@ export default function CrystalAiToolsPanel() {
                 }
               />
               {/* 与桌面 DepthRangePicker 同构：近端显示值 = 100 - maxDepth，
-                  远端显示值 = 100 - minDepth，双向钳制保证带通区间有效。 */}
+                  远端显示值 = 100 - minDepth，双向钳制保证带通区间有效。
+                  审计修复：钳制边界从 store 实时读取，防止快速拖动时闭包旧值
+                  导致近/远端互相穿越（minDepth > maxDepth）。 */}
               <CxSliderRow
                 label={t('editor.masks.depthRange.near')}
                 min={0}
                 max={100}
                 step={1}
                 value={Math.max(0, Math.min(100, 100 - depthMaxDepth))}
-                onChange={(v) =>
-                  depthContainer &&
+                onChange={(v) => {
+                  if (!depthContainer) return;
+                  const fresh = useEditorStore.getState().adjustments.masks?.find((c) => c.id === depthContainer.id);
+                  const minDepth = Number(fresh?.subMasks[0]?.parameters?.minDepth ?? DEPTH_DEFAULTS.minDepth);
                   updateSubMaskParameters(depthContainer.id, depthContainer.subMasks[0].id, {
-                    maxDepth: Math.max(100 - v, depthMinDepth),
-                  })
-                }
+                    maxDepth: Math.max(100 - v, minDepth),
+                  });
+                }}
               />
               <CxSliderRow
                 label={t('editor.masks.depthRange.far')}
@@ -550,12 +554,14 @@ export default function CrystalAiToolsPanel() {
                 max={100}
                 step={1}
                 value={Math.max(0, Math.min(100, 100 - depthMinDepth))}
-                onChange={(v) =>
-                  depthContainer &&
+                onChange={(v) => {
+                  if (!depthContainer) return;
+                  const fresh = useEditorStore.getState().adjustments.masks?.find((c) => c.id === depthContainer.id);
+                  const maxDepth = Number(fresh?.subMasks[0]?.parameters?.maxDepth ?? DEPTH_DEFAULTS.maxDepth);
                   updateSubMaskParameters(depthContainer.id, depthContainer.subMasks[0].id, {
-                    minDepth: Math.min(100 - v, depthMaxDepth),
-                  })
-                }
+                    minDepth: Math.min(100 - v, maxDepth),
+                  });
+                }}
               />
               <CxSliderRow
                 label={t('editor.masks.params.globalFeather')}

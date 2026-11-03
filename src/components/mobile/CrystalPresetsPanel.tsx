@@ -486,8 +486,12 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     return () => removeExitLayer(handler);
   }, [sheetSource, nameDialog, deleteTarget]);
 
-  // 已应用源按全量列表解析：分组过滤/卡片滚出视口时不丢状态条、强度滑杆与取消入口
-  const activeSource = activeId ? (allSources.find((s) => s.id === activeId) ?? null) : null;
+  // 已应用源按全量列表解析：分组过滤/卡片滚出视口时不丢状态条、强度滑杆与取消入口。
+  // 审计修复（预设↔滤镜）：两模式共用本组件实例，mode 切换不重挂载；此时 activeId
+  // 属于另一模式的 id 前缀（preset: / filter:），在全量列表中解析不到 → 状态条与
+  // 取消入口整体消失，而滤镜参数仍在生效。回落到 activeSourceRef 快照，保证跨模式
+  // 切换后仍可调强度/取消，链路闭环。
+  const activeSource = activeId ? (allSources.find((s) => s.id === activeId) ?? activeSourceRef.current) : null;
   const rawId = useCallback((sourceId: string) => sourceId.replace(/^preset:/, ''), []);
 
   /** 与桌面 resolvePresetAiMasks 同源：按当前图重跑 AI 蒙版并合并结果（不进撤销栈） */

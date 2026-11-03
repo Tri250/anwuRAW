@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
-import { BookmarkPlus, ChevronLeft, Heart, Images, Loader2, Star } from 'lucide-react';
+import { BookmarkPlus, ChevronLeft, Heart, Images, Loader2, Star, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useProcessStore } from '../../store/useProcessStore';
@@ -10,6 +10,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { BorderBasis, ExportSettings, Status, WatermarkAnchor } from '../ui/ExportImportProperties';
 import { Invokes } from '../ui/AppProperties';
 import { WATERMARK_TEMPLATES, WatermarkTemplate, haptic, summarizeExif, useWmPrefs, CxSwitch } from './crystalShared';
+import { getOriginalAdjustments } from '../../hooks/useEditorActions';
 
 /* ---------------------------------------------------------------------------
  * Crystal 水印导出域（青绿主题，图4）。
@@ -139,8 +140,34 @@ export default function WatermarkExportPage({
     }
   }, [exportState.status, t]);
 
-  // OC-2: 按住预览图对照原图（松开恢复效果图）
+  // OC-2: 按住预览图对照原图（松开恢复效果图）。
+  // 审计修复：此前仅翻本地 holdOriginal，而 originalPreview 在移动端恒为 null
+  // （renderOriginal 依赖 compareView!=='off'），按住时徽章变「原图」但画面仍是
+  // 效果图。现与底栏原图键同机制：按住写 previewOverride=getOriginalAdjustments，
+  // 主管线把原图参数渲染进 finalPreviewUrl；松手清除并恢复效果图渲染。
   const [holdOriginal, setHoldOriginal] = useState(false);
+  const setEditor = useEditorStore((s) => s.setEditor);
+
+  const startHoldOriginal = () => {
+    if (!finalPreviewUrl) return;
+    setHoldOriginal(true);
+    setEditor({
+      showOriginal: true,
+      previewOverride: getOriginalAdjustments(useEditorStore.getState().adjustments),
+    });
+  };
+  const endHoldOriginal = () => {
+    if (!holdOriginal) return;
+    setHoldOriginal(false);
+    setEditor({ showOriginal: false, previewOverride: null });
+  };
+  // 卸载兜底：防止多点触控切换流程导致 store 残留 previewOverride
+  useEffect(
+    () => () => {
+      useEditorStore.getState().setEditor({ showOriginal: false, previewOverride: null });
+    },
+    [],
+  );
 
   const handleSelectTemplate = (id: string) => {
     setSelectedTemplateId(id);
@@ -245,16 +272,16 @@ export default function WatermarkExportPage({
             className="cx-frame-preview"
             onPointerDown={(e) => {
               if ((e.target as HTMLElement).closest('button')) return;
-              if (originalPreview && finalPreviewUrl) setHoldOriginal(true);
+              startHoldOriginal();
             }}
-            onPointerUp={() => setHoldOriginal(false)}
-            onPointerLeave={() => setHoldOriginal(false)}
-            onPointerCancel={() => setHoldOriginal(false)}
+            onPointerUp={endHoldOriginal}
+            onPointerLeave={endHoldOriginal}
+            onPointerCancel={endHoldOriginal}
           >
             {finalPreviewUrl ? (
               <img
                 ref={previewImgRef}
-                src={holdOriginal && originalPreview ? originalPreview : finalPreviewUrl}
+                src={holdOriginal ? (originalPreview ?? finalPreviewUrl) : finalPreviewUrl}
                 alt={t('crystal.previewAlt')}
                 draggable={false}
               />
@@ -472,9 +499,30 @@ export default function WatermarkExportPage({
             })}
           </div>
         )}
+        {/* 审计自检（导出闭环）：移动端导出期间返回被消费（防丢进度），若无取消出口，
+            大图/低端机上导出一旦卡住用户将被锁死。对齐桌面 StudioPage：提供
+            CancelExport 出口，取消后后端以 cancelled 状态收敛，CTA 与导航自动恢复。 */}
+        {isExporting && (
+          <button
+            className="cx-mask-remove"
+            style={{ display: 'flex', margin: '8px auto 0' }}
+            onClick={() => {
+              haptic(8);
+              void invoke(Invokes.CancelExport).catch((e) => console.error('Cancel export failed:', e));
+            }}
+          >
+            <X size={11} />
+            {t('export.status.cancelExport')}
+          </button>
+        )}
         {exportState.status === Status.Error && (
           <div className="cx-export-progress" style={{ color: 'var(--cx-danger)' }}>
             {exportState.errorMessage || t('export.status.failed')}
+          </div>
+        )}
+        {exportState.status === Status.Cancelled && (
+          <div className="cx-export-progress" style={{ color: 'var(--cx-muted)' }}>
+            {t('export.status.cancelled')}
           </div>
         )}
         {exportState.status === Status.Success && (
