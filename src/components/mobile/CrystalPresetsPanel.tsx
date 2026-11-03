@@ -128,6 +128,33 @@ const FILTER_GROUPS: ReadonlyArray<{ id: 'landscape' | 'portrait' | 'film' | 'mo
   { id: 'mono', labelKey: 'crystal.filters.groupMono' },
 ];
 
+/* ---------------------------- 应用态跨分类持久化 ---------------------------- */
+/* 审计修复（预设-激活态跨分类丢失）：CrystalCategoryPanel 按 category 条件渲染，
+ * 预设↔滤镜↔人像等分类切换会卸载并重挂载本面板（两分类是两个独立实例）。
+ * 应用态若只存实例 state/ref，重挂载后全部丢失：tile 不高亮、状态条/强度滑杆/
+ * 取消入口整体消失，而 preset 参数仍在画面生效；此时再点原卡会走「新应用」路径，
+ * base 快照缺失使旧参数键无法还原——两套预设参数叠加污染。
+ * 提升为模块级快照跨重挂载保留；按 mode 隔离，避免滤镜激活态泄漏到预设面板
+ * （反之亦然）。切图时随应用态一并清空。 */
+interface PersistedApplyState {
+  mode: PanelMode;
+  activeId: string | null;
+  intensity: number;
+  base: Adjustments | null;
+  source: PreviewSource | null;
+  hiddenMasks: Array<MaskContainer> | null;
+}
+
+const EMPTY_APPLY_STATE: Omit<PersistedApplyState, 'mode'> = {
+  activeId: null,
+  intensity: 100,
+  base: null,
+  source: null,
+  hiddenMasks: null,
+};
+
+let persistedApply: PersistedApplyState = { mode: 'presets', ...EMPTY_APPLY_STATE };
+
 /* ---------------------------- 缩略图渲染队列（同桌面 PresetsPanel） ---------------------------- */
 function usePresetPreviewQueue() {
   const [previews, setPreviews] = useState<Record<string, string | null>>({});
@@ -406,16 +433,26 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   } = usePresets(adjustments);
   const { previews, enqueue, resetGeneration, invalidate } = usePresetPreviewQueue();
 
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [intensity, setIntensity] = useState(100);
+  /* 应用态从模块级快照恢复（跨分类重挂载保留）；mode 不匹配时干净启动，
+   * 防止滤镜激活态泄漏到预设面板（反之亦然）。 */
+  const initialApply = persistedApply.mode === mode ? persistedApply : { ...EMPTY_APPLY_STATE };
+  const [activeId, setActiveId] = useState<string | null>(initialApply.activeId);
+  const [intensity, setIntensity] = useState(initialApply.intensity);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   /** 图片是否就绪：缩略图渲染依赖后端已加载原图，未就绪时的入队会整体失败 */
   const selectedImageIsReady = useEditorStore((s) => s.selectedImage?.isReady);
-  const baseRef = useRef<Adjustments | null>(null);
+  const baseRef = useRef<Adjustments | null>(initialApply.base);
   /** 当前应用中的滤镜/预设源：取消/换卡时用于取参数键集（activeId 的伴生 ref，二者同生命周期） */
-  const activeSourceRef = useRef<PreviewSource | null>(null);
+  const activeSourceRef = useRef<PreviewSource | null>(initialApply.source);
   /** 强度 0 时暂存的蒙版（与桌面 hiddenPresetMasks 同语义），>0 时还原 */
-  const hiddenMasksRef = useRef<Array<MaskContainer> | null>(null);
+  const hiddenMasksRef = useRef<Array<MaskContainer> | null>(initialApply.hiddenMasks);
+  /** 应用态写穿到模块级快照：所有赋值点经此同步，供分类切换重挂载后恢复 */
+  const persistApply = useCallback(
+    (patch: Partial<Omit<PersistedApplyState, 'mode'>>) => {
+      persistedApply = { ...persistedApply, mode, ...patch };
+    },
+    [mode],
+  );
   /** 长按动作面板目标（仅 presets 模式） */
   const [sheetSource, setSheetSource] = useState<PreviewSource | null>(null);
   const [nameDialog, setNameDialog] = useState<{ kind: 'save' | 'rename'; presetId?: string; initial: string } | null>(
@@ -491,7 +528,8 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     baseRef.current = null;
     activeSourceRef.current = null;
     hiddenMasksRef.current = null;
-  }, [selectedImagePath]);
+    persistApply({ ...EMPTY_APPLY_STATE });
+  }, [selectedImagePath, persistApply]);
 
   // 缩略图入队。审计修复（滤镜-缩略图死队列）：GeneratePresetPreview 依赖后端
   // original_image，图片未 ready 时入队的请求全部抛 "No original image loaded"
@@ -558,6 +596,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     hiddenMasksRef.current = null;
     setActiveId(null);
     setIntensity(100);
+    persistApply({ ...EMPTY_APPLY_STATE });
     if (base && source) {
       const patch: Record<string, unknown> = {};
       for (const key of Object.keys(source.adjustments)) {
@@ -565,16 +604,12 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
       }
       setAdjustments({ ...useEditorStore.getState().adjustments, ...patch } as Adjustments);
     }
-  }, [setAdjustments]);
+  }, [persistApply, setAdjustments]);
 
-  // 模式切换（滤镜↔预设）：复位分组 + 完整复位应用态。
-  // 审计修复（滤镜-激活态泄漏）：两库独立，共用组件实例但 mode 切换不重挂载。
-  // 此前 activeId 属于另一模式 id 前缀（filter:/preset:）解析不到时回落 ref 快照
-  // ——切到预设模式后状态条仍显示「已应用 <滤镜> · 100%」。此处按 base 快照还原
-  // 参数（cancelActive）并清空应用态，同时避免随后在预设模式应用新预设时
-  // 两套参数叠加污染。cancelActive 读 ref 快照、不依赖渲染态。
+  // 预设/滤镜分属两个 category（CrystalCategoryPanel 条件渲染为两个独立实例），
+  // mode 对单实例恒定、不存在同实例内切换；跨 category 切换即卸载重挂载，
+  // 激活态经模块级快照按 mode 隔离恢复（见 persistedApply），无需在此复位。
   useEffect(() => {
-    cancelActive();
     setSelectedGroup(null);
   }, [mode]);
 
@@ -613,13 +648,23 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
       applyPresetObject(
         hasAi && presetMasks ? { ...source.adjustments, masks: stripAiMaskResults(presetMasks) } : source.adjustments,
       );
+      // 应用态写穿模块级快照：分类切换（预设→人像→预设）会卸载重挂载本面板，
+      // 快照使激活高亮/状态条/强度/取消入口与 base 基线在重挂载后完整恢复。
+      persistApply({
+        activeId: source.id,
+        intensity: 100,
+        base: baseRef.current,
+        source: activeSourceRef.current,
+        hiddenMasks: null,
+      });
     },
-    [activeId, applyPresetObject, cancelActive, resolvePresetAiMasks, setAdjustments],
+    [activeId, applyPresetObject, cancelActive, persistApply, resolvePresetAiMasks, setAdjustments],
   );
 
   const handleIntensity = useCallback(
     (val: number) => {
       setIntensity(val);
+      persistApply({ intensity: val, hiddenMasks: hiddenMasksRef.current });
       if (!activeSource) return;
       // 蒙版不参与强度混合（与桌面一致）：仅 0% 时隐藏，回升时还原并重解析 AI 蒙版
       const { masks: presetMasks, ...presetAdj } = activeSource.adjustments as Record<string, unknown>;
@@ -652,7 +697,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
       }
       applyPresetObject(mixed as Partial<Adjustments> as Record<string, unknown>);
     },
-    [activeSource, applyPresetObject, resolvePresetAiMasks],
+    [activeSource, applyPresetObject, persistApply, resolvePresetAiMasks],
   );
 
   /* ---------------------------- 管理闭环（保存/导入/导出/覆盖/重命名/删除） ---------------------------- */
@@ -806,7 +851,10 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
           enqueue([nextSource]);
           // 若该预设正在应用中：刷新 activeSourceRef 快照，使强度滑杆/取消入口
           // 按覆写后的新参数键工作（否则旧快照与卡片显示不符）。
-          if (activeId === source.id) activeSourceRef.current = nextSource;
+          if (activeId === source.id) {
+            activeSourceRef.current = nextSource;
+            persistApply({ source: nextSource });
+          }
           toast.success(t('crystal.presets.overwritten'));
         } else {
           // 目标不存在（已被删/库未加载）——此前静默无反馈，用户以为更新成功
@@ -818,7 +866,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         toast.error(t('crystal.presets.overwriteFailed'));
       }
     },
-    [activeId, enqueue, invalidate, overwritePreset, rawId, t],
+    [activeId, enqueue, invalidate, overwritePreset, persistApply, rawId, t],
   );
 
   const handleDelete = useCallback(
@@ -832,9 +880,10 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         baseRef.current = null;
         activeSourceRef.current = null;
         hiddenMasksRef.current = null;
+        persistApply({ ...EMPTY_APPLY_STATE });
       }
     },
-    [activeId, deleteItem, invalidate, rawId],
+    [activeId, deleteItem, invalidate, persistApply, rawId],
   );
 
   /* 长按预设卡 → 管理动作面板（横滑超过阈值视为滚动，取消触发） */
