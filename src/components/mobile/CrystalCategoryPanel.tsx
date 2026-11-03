@@ -6,7 +6,9 @@ import type { ParseKeys } from 'i18next';
 import {
   Aperture,
   Circle,
+  Contrast,
   CopyPlus,
+  Crop,
   Eye,
   FlipHorizontal,
   FlipVertical,
@@ -22,7 +24,9 @@ import {
   Sparkles,
   Trash2,
   Upload,
+  User,
   Wand2,
+  Waves,
   X,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -58,12 +62,25 @@ import CrystalAiToolsPanel from './CrystalAiToolsPanel';
 
 /* ---------------------------------------------------------------------------
  * 参数面板骨架：标题 + 滑杆组。所有值读写真实 store.adjustments。
+ * 标题行与预设/滤镜/AI工具面板同构：分类型图标(13px) + 文案，
+ * 由各 Panel 传入其分类导航同名图标，保持七大面板标题一致。
  * ------------------------------------------------------------------------- */
-function PanelShell({ titleKey, children }: { titleKey: ParseKeys; children: React.ReactNode }) {
+function PanelShell({
+  titleKey,
+  icon: TitleIcon,
+  children,
+}: {
+  titleKey: ParseKeys;
+  icon: typeof User;
+  children: React.ReactNode;
+}) {
   const { t } = useTranslation();
   return (
     <>
-      <div className="cx-panel-title">{t(titleKey)}</div>
+      <div className="cx-panel-title">
+        <TitleIcon size={13} className="inline mr-1.5 -mt-0.5" />
+        {t(titleKey)}
+      </div>
       {children}
     </>
   );
@@ -187,8 +204,23 @@ function TonePanel() {
                 {
                   name: 'Images',
                   extensions: [
-                    'jpg', 'jpeg', 'png', 'tif', 'tiff', 'webp', 'avif', 'jxl', 'heic',
-                    'dng', 'cr2', 'cr3', 'nef', 'arw', 'raf', 'orf', 'rw2',
+                    'jpg',
+                    'jpeg',
+                    'png',
+                    'tif',
+                    'tiff',
+                    'webp',
+                    'avif',
+                    'jxl',
+                    'heic',
+                    'dng',
+                    'cr2',
+                    'cr3',
+                    'nef',
+                    'arw',
+                    'raf',
+                    'orf',
+                    'rw2',
                   ],
                 },
               ],
@@ -217,7 +249,9 @@ function TonePanel() {
         } as Adjustments['curves'];
       }
       if (Object.keys(next).length > 0) applyPatch(next);
-      toast.success(t('adjustments.color.colorMatchDone', { reduction: Math.round(result.metrics?.deltaEReduction ?? 0) }));
+      toast.success(
+        t('adjustments.color.colorMatchDone', { reduction: Math.round(result.metrics?.deltaEReduction ?? 0) }),
+      );
     } catch (e) {
       console.error('Color match failed:', e);
       toast.error(t('adjustments.color.colorMatchFailed'));
@@ -249,7 +283,7 @@ function TonePanel() {
   };
 
   return (
-    <PanelShell titleKey="crystal.categories.tone">
+    <PanelShell titleKey="crystal.categories.tone" icon={Waves}>
       <div className="cx-tone-tabs" role="tablist">
         {TONE_TABS.map((tabDef) => (
           <button
@@ -577,7 +611,15 @@ function TonePanel() {
           </div>
           <div className="cx-curve-card">
             <svg className="cx-curve-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
-              <line x1="0" y1="100" x2="100" y2="0" stroke="rgba(255,255,255,0.18)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              <line
+                x1="0"
+                y1="100"
+                x2="100"
+                y2="0"
+                stroke="rgba(255,255,255,0.18)"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+              />
               {/* 未激活但已修改的通道淡显（与桌面 Curves.tsx inactive 通道叠加同构） */}
               {CURVE_CHANNELS.filter((ch) => ch.id !== curveChannel && channelModified(ch.id)).map((ch) => (
                 <polyline
@@ -941,9 +983,7 @@ function PortraitPanel() {
       useEditorStore.getState().patchesSentToBackend.delete(patchId);
       setAdjustments((prev) => ({
         ...prev,
-        aiPatches: (prev.aiPatches || []).map((p) =>
-          p.id === patchId ? { ...p, patchData, isLoading: false } : p,
-        ),
+        aiPatches: (prev.aiPatches || []).map((p) => (p.id === patchId ? { ...p, patchData, isLoading: false } : p)),
       }));
     } catch (e) {
       console.error('Face liquify failed:', e);
@@ -1000,7 +1040,7 @@ function PortraitPanel() {
   };
 
   return (
-    <PanelShell titleKey="crystal.categories.portrait">
+    <PanelShell titleKey="crystal.categories.portrait" icon={User}>
       <button
         className="cx-ai-apply mb-3 w-full"
         onClick={() => {
@@ -1267,7 +1307,14 @@ function ComposePanel() {
       }
       applyPatch(patch, { enableTools: false });
     },
-    [adjustments.aspectRatio, adjustments.crop, adjustments.orientationSteps, adjustments.rotation, applyPatch, selectedImage],
+    [
+      adjustments.aspectRatio,
+      adjustments.crop,
+      adjustments.orientationSteps,
+      adjustments.rotation,
+      applyPatch,
+      selectedImage,
+    ],
   );
 
   /* 重置构图：与桌面 CropPanel.handleReset 同键集（几何变换 + 镜头校正档案/参数一并还原） */
@@ -1305,7 +1352,7 @@ function ComposePanel() {
   }, [applyPatch]);
 
   return (
-    <PanelShell titleKey="crystal.categories.compose">
+    <PanelShell titleKey="crystal.categories.compose" icon={Crop}>
       <div className="cx-chip-row mb-3">
         {ASPECT_CHIPS.map(({ labelKey, value }) => (
           <button
@@ -1588,10 +1635,7 @@ function FxPanel() {
               {
                 name: t('ui.lut.filterLabel'),
                 // 与桌面 LUTControl 一致：附带大写扩展名，.CUBE 等文件不被过滤
-                extensions: [
-                  'cube', '3dl', 'png', 'jpg', 'jpeg', 'tiff',
-                  'CUBE', '3DL', 'PNG', 'JPG', 'JPEG', 'TIFF',
-                ],
+                extensions: ['cube', '3dl', 'png', 'jpg', 'jpeg', 'tiff', 'CUBE', '3DL', 'PNG', 'JPG', 'JPEG', 'TIFF'],
               },
             ],
       });
@@ -1734,7 +1778,7 @@ function FxPanel() {
   const grainOn = Number(adjustments.grainAmount ?? 0) > 0;
 
   return (
-    <PanelShell titleKey="crystal.categories.fx">
+    <PanelShell titleKey="crystal.categories.fx" icon={Contrast}>
       <div className="cx-lut">
         <div className="cx-lut-head">
           <span className="cx-lut-title">{t('crystal.fx.lut')}</span>
@@ -2382,14 +2426,34 @@ export default function CrystalCategoryPanel({ category }: { category: CrystalCa
           <CrystalAiToolsPanel />
         </div>
       );
+    /* 审计 L-比例统一：七大分类面板统一由 .cx-panel 标准容器承载
+     * （定高 clamp(216px,27vh,268px) + 卡片底 + 上边线 + 内滚动），
+     * 人像/调色/构图/特效与预设/滤镜/AI工具面板布局比例完全一致，
+     * 横屏 grid-area: panel 分区亦随类名自动生效。 */
     case 'tone':
-      return <TonePanel />;
+      return (
+        <div className="cx-panel">
+          <TonePanel />
+        </div>
+      );
     case 'portrait':
-      return <PortraitPanel />;
+      return (
+        <div className="cx-panel">
+          <PortraitPanel />
+        </div>
+      );
     case 'compose':
-      return <ComposePanel />;
+      return (
+        <div className="cx-panel">
+          <ComposePanel />
+        </div>
+      );
     case 'fx':
-      return <FxPanel />;
+      return (
+        <div className="cx-panel">
+          <FxPanel />
+        </div>
+      );
     default:
       return null;
   }
