@@ -584,6 +584,7 @@
       "deleteTitle": "Delete preset",
       "empty": "No presets yet — tap \"Save current\" to create one, or import preset files.",
       "exportAll": "Export all",
+      "exportEmpty": "No presets to export yet",
       "exportFailed": "Preset export failed",
       "exportSuccess": "Preset exported",
       "import": "Import",

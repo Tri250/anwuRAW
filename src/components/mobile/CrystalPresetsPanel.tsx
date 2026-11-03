@@ -740,7 +740,11 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   );
 
   const handleExportAll = useCallback(async () => {
-    if (presets.length === 0) return;
+    if (presets.length === 0) {
+      // 空库不静默返回：给出闭环反馈，保持按钮始终可激活（无「置灰死控件」）。
+      toast.info(t('crystal.presets.exportEmpty'));
+      return;
+    }
     try {
       const { osPlatform } = useSettingsStore.getState();
       const filePath =
@@ -904,7 +908,6 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
           </button>
           <button
             className="cx-preset-act"
-            disabled={totalPresetCount === 0}
             onClick={() => {
               haptic(6);
               void handleExportAll();
