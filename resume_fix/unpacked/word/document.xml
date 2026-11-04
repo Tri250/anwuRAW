@@ -43,7 +43,7 @@
           </w:tblCellMar>
         </w:tblPrEx>
         <w:trPr>
-          <w:trHeight w:val="16820" w:hRule="atLeast"/>
+          <w:trHeight w:val="16800" w:hRule="atLeast"/>
         </w:trPr>
         <w:tc>
           <w:tcPr>
