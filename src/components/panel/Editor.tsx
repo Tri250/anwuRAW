@@ -139,6 +139,8 @@ interface WgpuRenderState {
   useWgpuRenderer: boolean | undefined;
   isReady: boolean;
   hasRenderedFirstFrame: boolean;
+  /** v2.1.16 灰屏自检修复：显示失效降级标记（true 时隐藏原生渲染） */
+  wgpuDisplayFailed: boolean;
   isCropping: boolean;
   uncroppedAdjustedPreviewUrl: string | null;
   showOriginal: boolean;
@@ -191,6 +193,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   const activeAiSubMaskId = useEditorStore((s) => s.activeAiSubMaskId);
   const isMaskControlHovered = useEditorStore((s) => s.isMaskControlHovered);
   const hasRenderedFirstFrame = useEditorStore((s) => s.hasRenderedFirstFrame);
+  // v2.1.16 灰屏自检修复：wgpu 显示失效降级标记
+  const wgpuDisplayFailed = useEditorStore((s) => s.wgpuDisplayFailed);
 
   const setEditor = useEditorStore((s) => s.setEditor);
   const toggleFullScreen = useUIStore((s) => s.toggleFullScreen);
@@ -1573,6 +1577,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     useWgpuRenderer: appSettings?.useWgpuRenderer,
     isReady: selectedImage?.isReady ?? false,
     hasRenderedFirstFrame,
+    wgpuDisplayFailed,
     isCropping,
     uncroppedAdjustedPreviewUrl,
     showOriginal,
@@ -1593,6 +1598,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
       useWgpuRenderer: appSettings?.useWgpuRenderer,
       isReady: selectedImage?.isReady ?? false,
       hasRenderedFirstFrame,
+      wgpuDisplayFailed,
       isCropping,
       uncroppedAdjustedPreviewUrl,
       showOriginal,
@@ -1606,6 +1612,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     appSettings?.editorNeutralGreyBg,
     selectedImage?.isReady,
     hasRenderedFirstFrame,
+    wgpuDisplayFailed,
     isCropping,
     uncroppedAdjustedPreviewUrl,
     showOriginal,
@@ -1622,6 +1629,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     appSettings?.editorNeutralGreyBg,
     selectedImage?.isReady,
     hasRenderedFirstFrame,
+    wgpuDisplayFailed,
     isCropping,
     uncroppedAdjustedPreviewUrl,
     showOriginal,
@@ -1674,6 +1682,8 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
         state.useWgpuRenderer === false ||
         !state.isReady ||
         !state.hasRenderedFirstFrame ||
+        // v2.1.16 灰屏自检修复：显示被判定失效后隐藏原生渲染，JPEG 预览接管。
+        state.wgpuDisplayFailed ||
         irs.width === 0 ||
         irs.height === 0
       ) {
@@ -2488,7 +2498,9 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
     }
   }
 
-  const isWgpuActive = appSettings?.useWgpuRenderer !== false && hasRenderedFirstFrame;
+  // v2.1.16 灰屏自检修复：wgpu 显示被看门狗判定失效后回退 JPEG 预览。
+  const isWgpuActive =
+    appSettings?.useWgpuRenderer !== false && hasRenderedFirstFrame && !wgpuDisplayFailed;
   const isSplitActive = activeCompareView === 'vertical' || activeCompareView === 'horizontal';
   const contentTransform = `translate(${transformStateRef.current.positionX}px, ${transformStateRef.current.positionY}px) scale(${transformStateRef.current.scale})`;
   const originalLayer = originalPreview?.url && (

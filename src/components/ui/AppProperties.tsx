@@ -161,6 +161,7 @@ export enum Invokes {
   SetWatchedFolders = 'set_watched_folders',
   GetWatchedFolderStatus = 'get_watched_folder_status',
   GetGpuAdapterInfo = 'get_gpu_adapter_info',
+  ReportWgpuDisplayFailure = 'report_wgpu_display_failure',
 }
 
 export enum ExifOverlay {

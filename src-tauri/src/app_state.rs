@@ -267,6 +267,13 @@ pub struct AppState {
     pub lens_db: Mutex<Option<Arc<LensDatabase>>>,
     pub load_image_generation: Arc<AtomicUsize>,
     pub wgpu_presented_generation: AtomicUsize,
+    /// v2.1.16 Windows 灰屏自检修复：surface 呈现失败次数（每次 skipped frame
+    /// +1）。仅用于诊断日志；真正的降级由 wgpu_force_cpu_preview 驱动。
+    pub wgpu_display_failures: AtomicU64,
+    /// v2.1.16 Windows 灰屏自检修复：前端看门狗上报显示失效后会话级强制
+    /// CPU 预览。resolve_wgpu_rendering 读到此标志后所有渲染走 JPEG 读回
+    /// 路径，预览立即恢复；重启应用后复位，允许 wgpu 重新尝试。
+    pub wgpu_force_cpu_preview: AtomicBool,
     pub full_warped_cache: Mutex<Option<(u64, Arc<DynamicImage>)>>,
     pub full_warped_build_lock: Mutex<()>,
     pub patched_cache: Mutex<Option<(u64, Arc<DynamicImage>)>>,

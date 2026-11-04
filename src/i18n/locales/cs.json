@@ -2676,6 +2676,7 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "wgpuDisplayFallbackNotice": "Zjištěn problém se zobrazením náhledu — pro toto sezení bylo přepnuto na vykreslování pomocí CPU. Pro opětovné povolení vykreslování GPU restartujte aplikaci.",
       "highDpi": "High-DPI rendering",
       "highDpiDesc": "Vykreslovat náhledy v nativním {{dpr}}x fyzickém rozlišení pixelů obrazovky. Poskytuje nejostřejší možný náhled, ale spotřebovává výrazně více paměti.",
       "highDpiDescStandard": "Toto nastavení ovlivňuje pouze displeje s vysokým DPI. Váš aktuální displej má standardní rozlišení.",

@@ -577,7 +577,7 @@ async fn update_wgpu_transform(
         None => return Ok(()),
     };
 
-    tokio::task::spawn_blocking(move || {
+    let presented = tokio::task::spawn_blocking(move || {
         let mut display_lock = context.display.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(display) = display_lock.as_mut() {
             display.latest_transform.rect = [payload.x, payload.y, payload.width, payload.height];
@@ -600,11 +600,24 @@ async fn update_wgpu_transform(
                 0,
                 bytemuck::bytes_of(&display.latest_transform),
             );
-            display.render(&context.device, &context.queue);
+            display.render(&context.device, &context.queue)
+        } else {
+            false
         }
     })
     .await
     .map_err(|e| format!("Task panicked: {}", e))?;
+
+    // v2.1.16 Windows 灰屏自检修复：连续呈现失败纳入诊断计数（成功清零）。
+    if presented {
+        state.wgpu_display_failures.store(0, Ordering::Relaxed);
+    } else {
+        let failures = state
+            .wgpu_display_failures
+            .fetch_add(1, Ordering::Relaxed)
+            + 1;
+        log::warn!("update_wgpu_transform did not present a frame (consecutive failures: {failures})");
+    }
 
     Ok(())
 }
@@ -2405,7 +2418,15 @@ pub fn run() {
                         display.config.width = size.width.max(1);
                         display.config.height = size.height.max(1);
                         display.surface.configure(&ctx.device, &display.config);
-                        display.render(&ctx.device, &ctx.queue);
+                        if !display.render(&ctx.device, &ctx.queue) {
+                            let failures = state
+                                .wgpu_display_failures
+                                .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+                                + 1;
+                            log::warn!(
+                                "resized-surface frame not presented (consecutive failures: {failures})"
+                            );
+                        }
                     }
         })
         .setup(move |app| {
@@ -2824,6 +2845,8 @@ pub fn run() {
             full_warped_cache: Mutex::new(None),
             full_warped_build_lock: Mutex::new(()),
             wgpu_presented_generation: AtomicUsize::new(usize::MAX),
+            wgpu_display_failures: AtomicU64::new(0),
+            wgpu_force_cpu_preview: AtomicBool::new(false),
             patched_cache: Mutex::new(None),
             warped_cache: Mutex::new(None),
             working_cache: Mutex::new(None),
@@ -2993,6 +3016,7 @@ pub fn run() {
             camera_tethering::tether_start_interval_capture,
             camera_tethering::tether_stop_interval_capture,
             platform_features::get_gpu_adapter_info,
+            platform_features::report_wgpu_display_failure,
             platform_features::export_xmp_sidecar,
             platform_features::import_xmp_sidecar,
             platform_features::set_watched_folders,

@@ -249,6 +249,12 @@ pub fn resolve_wgpu_rendering(
     state: &AppState,
     settings: &crate::app_settings::AppSettings,
 ) -> bool {
+    // v2.1.16 Windows 灰屏自检修复：前端看门狗上报显示失效后，会话内所有
+    // 预览强制走 CPU 渲染 + JPEG 读回路径。用户重启应用后标志复位，wgpu
+    // 路径可重新尝试。
+    if state.wgpu_force_cpu_preview.load(std::sync::atomic::Ordering::Acquire) {
+        return false;
+    }
     let probe = get_or_probe_adapter(state);
     let (active, reason) = wgpu_rendering_decision(&probe, settings);
     if !active {
@@ -264,6 +270,28 @@ pub fn get_gpu_adapter_info(app_handle: AppHandle) -> Result<GpuAdapterReport, S
     let settings = crate::app_settings::load_settings(app_handle.clone())?;
     let (active, reason) = wgpu_rendering_decision(&probe, &settings);
     Ok(report_from_probe(&probe, active, reason))
+}
+
+/// v2.1.16 Windows 灰屏自检修复：前端 wgpu 显示看门狗的上报入口。前端在
+/// 发起一次 wgpu 渲染请求后启动定时器，若超时未收到该图的 `wgpu-frame-ready`
+/// 事件（D3D12 surface 合成层丢失、GPU error 等后端无法自感知的场景），
+/// 即调用本命令。收到上报后会话级强制 CPU 预览并记录错误日志用于诊断。
+#[tauri::command]
+pub fn report_wgpu_display_failure(
+    reason: String,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    let state = app_handle.state::<AppState>();
+    state
+        .wgpu_force_cpu_preview
+        .store(true, std::sync::atomic::Ordering::Release);
+    state
+        .wgpu_display_failures
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    log::error!(
+        "Frontend wgpu display watchdog fired; forcing CPU preview for this session. Reason: {reason}"
+    );
+    Ok(())
 }
 
 /// Startup probe + one-shot user-facing report. Runs off the setup thread so
