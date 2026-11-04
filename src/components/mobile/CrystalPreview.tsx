@@ -30,7 +30,7 @@ interface Transform {
 const IDENTITY: Transform = { scale: 1, x: 0, y: 0 };
 
 interface GestureState {
-  mode: 'none' | 'pan' | 'pinch' | 'crop';
+  mode: 'none' | 'pan' | 'pinch' | 'crop' | 'cropDraw';
   startT: Transform;
   startPt: { x: number; y: number };
   startDist: number;
@@ -236,6 +236,45 @@ export default function CrystalPreview({
     [applyPatch, orientationSteps, rotation],
   );
 
+  /* 裁剪绘制（自由裁剪闭环）：构图分类下无裁剪时，单指拖拽直接画框。
+   * 此前「自由」比例将 crop 置 null 后无任何起框手段（拖动落入 pan 且 1x 下
+   * no-op），自由裁剪链路为死端；此处以屏幕两点映射定向坐标源像素矩形。 */
+  const drawCropTo = useCallback(
+    (clientX: number, clientY: number) => {
+      const img = imgRef.current;
+      const sel = useEditorStore.getState().selectedImage;
+      if (!img || !sel?.width || !sel?.height) return;
+      const rect = img.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return;
+      const { width: W, height: H } = getOrientedDimensions(sel.width, sel.height, orientationSteps);
+      const sx = W / rect.width;
+      const sy = H / rect.height;
+      const x0 = clamp((gesture.current.startPt.x - rect.left) * sx, 0, W);
+      const y0 = clamp((gesture.current.startPt.y - rect.top) * sy, 0, H);
+      const x1 = clamp((clientX - rect.left) * sx, 0, W);
+      const y1 = clamp((clientY - rect.top) * sy, 0, H);
+      /* 最小尺寸：24px 或 5% 取大，避免误触产生碎片裁剪 */
+      const minW = Math.min(Math.max(24, W * 0.05), W);
+      const minH = Math.min(Math.max(24, H * 0.05), H);
+      const next = moveCropInsideBounds(
+        {
+          unit: 'px',
+          x: Math.round(Math.min(x0, x1)),
+          y: Math.round(Math.min(y0, y1)),
+          width: Math.round(Math.max(Math.abs(x1 - x0), minW)),
+          height: Math.round(Math.max(Math.abs(y1 - y0), minH)),
+        },
+        0,
+        0,
+        W,
+        H,
+        rotation,
+      );
+      applyPatch({ crop: next }, { enableTools: false });
+    },
+    [applyPatch, orientationSteps, rotation],
+  );
+
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (compareRef.current || !urlRef.current) return;
@@ -244,8 +283,10 @@ export default function CrystalPreview({
       e.currentTarget.setPointerCapture(e.pointerId);
       const g = gesture.current;
       if (pointers.current.size === 1) {
-        const canCropDrag = activeCategory === 'compose' && transformRef.current.scale <= 1 && Boolean(crop);
-        g.mode = canCropDrag ? 'crop' : 'pan';
+        const atOneX = transformRef.current.scale <= 1;
+        const canCropDrag = activeCategory === 'compose' && atOneX && Boolean(crop);
+        const canCropDraw = activeCategory === 'compose' && atOneX && !crop;
+        g.mode = canCropDrag ? 'crop' : canCropDraw ? 'cropDraw' : 'pan';
         g.startPt = { x: e.clientX, y: e.clientY };
         g.startT = transformRef.current;
         g.startCrop = canCropDrag
@@ -276,6 +317,11 @@ export default function CrystalPreview({
         const dy = e.clientY - g.startPt.y;
         if (Math.hypot(dx, dy) > TAP_SLOP) g.moved = true;
         moveCropBy(g.startCrop, dx, dy);
+      } else if (g.mode === 'cropDraw' && pointers.current.size === 1) {
+        /* 自由裁剪绘制：超过点击阈值才开始画框，保留双击缩放语义 */
+        if (Math.hypot(e.clientX - g.startPt.x, e.clientY - g.startPt.y) > TAP_SLOP) g.moved = true;
+        if (!g.moved) return;
+        drawCropTo(e.clientX, e.clientY);
       } else if (g.mode === 'pan' && pointers.current.size === 1) {
         if (cur.scale <= 1) return;
         const dx = e.clientX - g.startPt.x;
@@ -302,14 +348,14 @@ export default function CrystalPreview({
         );
       }
     },
-    [clampPan, moveCropBy],
+    [clampPan, moveCropBy, drawCropTo],
   );
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       const g = gesture.current;
-      // 静止点击即视为 tap（含缩放状态），双击可在 1x ↔ 2x 间切换
-      const wasSingleTap = g.mode === 'pan' && !g.moved;
+      // 静止点击即视为 tap（含缩放状态；cropDraw 未动也算 tap），双击可在 1x ↔ 2x 间切换
+      const wasSingleTap = (g.mode === 'pan' || g.mode === 'cropDraw') && !g.moved;
       pointers.current.delete(e.pointerId);
       if (pointers.current.size === 1 && g.mode === 'pinch') {
         // 双指收单指：以剩余指为基准重置平移起点，禁止随后触发双击
