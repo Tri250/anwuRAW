@@ -121,7 +121,8 @@ type CurveChannel = 'luma' | 'red' | 'green' | 'blue';
 
 const GRADING_REGIONS: Array<{ id: GradingRegion; labelKey: ParseKeys; swatch: string }> = [
   { id: 'shadows', labelKey: 'adjustments.color.grading.shadows', swatch: '#4dabf7' },
-  { id: 'midtones', labelKey: 'adjustments.color.grading.midtones', swatch: '#b197fc' },
+  /* 自检优化：中间调色点遵循三向调色通用配色（达芬奇/LR：阴影蓝·中间调绿·高光橙），原紫色易误导为紫色调 */
+  { id: 'midtones', labelKey: 'adjustments.color.grading.midtones', swatch: '#69db7c' },
   { id: 'highlights', labelKey: 'adjustments.color.grading.highlights', swatch: '#ffa94d' },
   { id: 'global', labelKey: 'adjustments.color.grading.global', swatch: '#868e96' },
 ];
@@ -269,7 +270,16 @@ function TonePanel() {
           ...patch.curves,
         } as Adjustments['curves'];
       }
-      if (Object.keys(next).length > 0) applyPatch(next);
+      /* 自检修复（调色-AI 追色）：与桌面 Color.tsx handleColorMatch 同源——追色只写
+       * colorGrading/curves 两节，必须同时激活对应工具；否则 activeTools 中这两节
+       * 为 false 时渲染端 is_tool_active 门控会忽略追色结果（按钮看似无效）。 */
+      if (Object.keys(next).length > 0) {
+        const activeTools = Object.keys(next).reduce(
+          (tools, id) => setToolActive(tools, id, true),
+          getActiveTools(cur),
+        );
+        applyPatch({ ...next, activeTools });
+      }
       toast.success(
         t('adjustments.color.colorMatchDone', { reduction: Math.round(result.metrics?.deltaEReduction ?? 0) }),
       );
