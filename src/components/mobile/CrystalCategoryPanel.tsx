@@ -1128,11 +1128,12 @@ function PortraitPanel() {
       applyPatch({ lensBlurEnabled: true, lensBlurAmount: adj.lensBlurAmount || 50 });
       return;
     }
-    setBlurBusy(true);
     // 审计修复（人像-跨图）：深度图生成期间切图则丢弃结果，避免旧图的深度图
     // 写入新图 adjustments 后被「复用已识别深度图」路径误用（与特效面板同守卫）。
+    // 守卫置于 busy 置位之前：早退不得跳过 finally 复位（否则瓦片永久禁用）。
     const startPath = useEditorStore.getState().selectedImage?.path;
     if (!startPath) return;
+    setBlurBusy(true);
     try {
       // 闭环修复（人像-激活）：深度图推理依赖后端原图，未就绪时先等待。
       if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
