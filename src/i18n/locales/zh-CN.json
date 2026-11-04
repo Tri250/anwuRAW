@@ -192,6 +192,13 @@
       "vignette": "暗角"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "AI 深度蒙版失败：{{error}}",
+    "faceMaskFailed": "人脸识别失败：{{error}}",
+    "foregroundMaskFailed": "AI 主体蒙版失败：{{error}}",
+    "skyMaskFailed": "AI 天空蒙版失败：{{error}}",
+    "textMaskFailed": "AI 文本蒙版失败：{{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "（空组）"
@@ -393,13 +400,6 @@
       "failedSyncAdjustments": "同步调整到选中图像失败：{{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "人脸识别失败：{{error}}",
-    "depthMaskFailed": "AI 深度蒙版失败：{{error}}",
-    "foregroundMaskFailed": "AI 主体蒙版失败：{{error}}",
-    "skyMaskFailed": "AI 天空蒙版失败：{{error}}",
-    "textMaskFailed": "AI 文本蒙版失败：{{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "清晰度",
@@ -426,10 +426,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "AI 增强已应用",
       "enhance": "AI 增强",
       "failed": "AI 增强失败",
       "noExif": "无 EXIF 场景线索 — 试试 AI 增强",
       "noScene": "暂无高置信度场景 — 试试 AI 增强",
+      "notReady": "图片仍在加载中，请稍后再试",
       "recipe": "场景配方",
       "sceneBasis": "疑似{{scene}} · 依据 {{basis}}",
       "scenes": {
@@ -483,6 +485,7 @@
       "done": "已导出到相册",
       "exporting": "导出中…",
       "favorite": "收藏",
+      "filenameSuffix": "文件名后缀",
       "fontBuiltin": "经典",
       "fontFamily": "字体",
       "fontScale": "字体大小",
@@ -492,15 +495,14 @@
       "infoFrameLabel": "在成片中显示信息栏与相框",
       "livePreview": "实时预览",
       "noExif": "无 EXIF",
+      "pngLossless": "PNG 为无损格式，画质压缩不适用",
       "progress": "正在保存 {{current}}/{{total}}",
       "quality": "画质",
       "saveTemplate": "保存模板",
       "setDefault": "设为默认",
       "signature": "签名文案",
       "signaturePlaceholder": "CRYSTAL · 专业摄影",
-      "templates": "水印模板",
-      "filenameSuffix": "文件名后缀",
-      "pngLossless": "PNG 为无损格式，画质压缩不适用"
+      "templates": "水印模板"
     },
     "filters": {
       "airy": "日系",
@@ -523,8 +525,8 @@
     "fx": {
       "centerX": "中心 X",
       "centerY": "中心 Y",
-      "depthFailed": "深度图生成失败",
       "dehaze": "去雾",
+      "depthFailed": "深度图生成失败",
       "flare": "眩光",
       "glow": "柔光",
       "grain": "颗粒",
@@ -541,14 +543,14 @@
       "lutClear": "清除 LUT",
       "lutEmpty": "暂无 LUT，点击导入",
       "lutImport": "导入",
+      "lutImported": "已导入 {{n}} 个 LUT",
       "lutIntensity": "LUT 强度",
       "normalFailed": "法线图生成失败",
       "relightHint": "添加或选择一个光源，然后在下方调整位置与参数",
       "vignette": "暗角",
       "vignetteFeather": "羽化",
       "vignetteMidpoint": "中点",
-      "vignetteRoundness": "圆度",
-      "lutImported": "已导入 {{n}} 个 LUT"
+      "vignetteRoundness": "圆度"
     },
     "originalBadge": "原图",
     "portrait": {
@@ -577,6 +579,7 @@
     },
     "presets": {
       "all": "全部",
+      "appliedBar": "已应用：{{name}}",
       "deleteMessage": "确定删除预设「{{name}}」吗？此操作不可撤销。",
       "deleteTitle": "删除预设",
       "empty": "还没有预设 — 点击上方「保存当前」创建，或导入预设文件。",
@@ -594,17 +597,17 @@
       "menuOverwrite": "覆盖更新",
       "menuRename": "重命名",
       "namePlaceholder": "预设名称",
-      "overwritten": "预设已更新",
       "overwriteFailed": "预设更新失败",
+      "overwritten": "预设已更新",
       "renameTitle": "重命名预设",
       "saveCurrent": "保存当前",
       "saved": "预设已保存",
-      "saveTitle": "保存为预设",
-      "appliedBar": "已应用：{{name}}"
+      "saveTitle": "保存为预设"
     },
     "previewAlt": "编辑预览",
     "previewCloseCompare": "退出对比",
     "previewEdited": "效果",
+    "previewLoading": "加载中…",
     "previewRendering": "渲染中…",
     "previewResetZoom": "复位缩放",
     "redo": "重做",
@@ -676,8 +679,7 @@
       "vibrance": "自然饱和度",
       "whites": "白色色阶"
     },
-    "undo": "撤销",
-    "previewLoading": "加载中…"
+    "undo": "撤销"
   },
   "editor": {
     "adjustments": {
@@ -2949,11 +2951,11 @@
       "importFailed": "导入 LUT 失败",
       "intensity": "强度",
       "label": "LUT",
+      "loadFailed": "LUT 加载失败",
       "removeLut": "移除 LUT",
       "select": "选择",
       "selectLutFile": "选择 LUT 文件",
-      "unsupportedFormat": "检测到不支持的文件格式：.{{ext}}",
-      "loadFailed": "LUT 加载失败"
+      "unsupportedFormat": "检测到不支持的文件格式：.{{ext}}"
     },
     "slider": {
       "clickToEdit": "点击编辑",

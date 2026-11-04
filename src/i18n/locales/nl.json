@@ -192,6 +192,13 @@
       "vignette": "Vignet"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "AI-dieptemasker mislukt: {{error}}",
+    "faceMaskFailed": "AI-gezichtsmasker mislukt: {{error}}",
+    "foregroundMaskFailed": "AI-onderwerpmasker mislukt: {{error}}",
+    "skyMaskFailed": "AI-hemelmasker mislukt: {{error}}",
+    "textMaskFailed": "AI-tekstmasker mislukt: {{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Lege groep)"
@@ -393,13 +400,6 @@
       "failedSyncAdjustments": "Synchroniseren van aanpassingen met geselecteerde afbeeldingen mislukt: {{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "AI-gezichtsmasker mislukt: {{error}}",
-    "depthMaskFailed": "AI-dieptemasker mislukt: {{error}}",
-    "foregroundMaskFailed": "AI-onderwerpmasker mislukt: {{error}}",
-    "skyMaskFailed": "AI-hemelmasker mislukt: {{error}}",
-    "textMaskFailed": "AI-tekstmasker mislukt: {{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "Helderheid",
@@ -426,10 +426,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "AI-verbetering toegepast",
       "enhance": "AI-verbetering",
       "failed": "AI-verbetering mislukt",
       "noExif": "Geen EXIF-aanwijzingen — probeer AI-verbetering",
       "noScene": "Geen duidelijke scène — probeer AI-verbetering",
+      "notReady": "Afbeelding wordt nog geladen — probeer het zo opnieuw",
       "recipe": "Scènerecept",
       "sceneBasis": "Lijkt op {{scene}} · op basis van {{basis}}",
       "scenes": {
@@ -483,6 +485,7 @@
       "done": "Geëxporteerd naar de galerij",
       "exporting": "Exporteren…",
       "favorite": "Favoriet",
+      "filenameSuffix": "Bestandsnaamachtervoegsel",
       "fontBuiltin": "Klassiek",
       "fontFamily": "Lettertype",
       "fontScale": "Tekengrootte",
@@ -492,15 +495,14 @@
       "infoFrameLabel": "Infolbalk & kader tonen",
       "livePreview": "Live voorvertoning",
       "noExif": "Geen EXIF",
+      "pngLossless": "PNG is verliesvrij — kwaliteitscompressie is niet van toepassing",
       "progress": "Opslaan {{current}}/{{total}}",
       "quality": "Kwaliteit",
       "saveTemplate": "Opslaan",
       "setDefault": "Standaard",
       "signature": "Handtekening",
       "signaturePlaceholder": "CRYSTAL · Pro Fotografie",
-      "templates": "Watermerksjablonen",
-      "filenameSuffix": "Bestandsnaamachtervoegsel",
-      "pngLossless": "PNG is verliesvrij — kwaliteitscompressie is niet van toepassing"
+      "templates": "Watermerksjablonen"
     },
     "filters": {
       "airy": "Luchtig",
@@ -523,8 +525,8 @@
     "fx": {
       "centerX": "Midden X",
       "centerY": "Midden Y",
-      "depthFailed": "Dieptekaart genereren mislukt",
       "dehaze": "Nevel verwijderen",
+      "depthFailed": "Dieptekaart genereren mislukt",
       "flare": "Stralenkrans",
       "glow": "Gloed",
       "grain": "Korrel",
@@ -541,14 +543,14 @@
       "lutClear": "LUT wissen",
       "lutEmpty": "Geen LUT, tik om te importeren",
       "lutImport": "Importeren",
+      "lutImported": "{{n}} LUT('s) geïmporteerd",
       "lutIntensity": "LUT-intensiteit",
       "normalFailed": "Normaalkaart genereren mislukt",
       "relightHint": "Voeg een licht toe of selecteer er een en pas positie en parameters aan",
       "vignette": "Vignet",
       "vignetteFeather": "Zachtheid",
       "vignetteMidpoint": "Midden",
-      "vignetteRoundness": "Rondheid",
-      "lutImported": "{{n}} LUT('s) geïmporteerd"
+      "vignetteRoundness": "Rondheid"
     },
     "originalBadge": "ORIGINEEL",
     "portrait": {
@@ -577,10 +579,12 @@
     },
     "presets": {
       "all": "Alles",
+      "appliedBar": "Toegepast: {{name}}",
       "deleteMessage": "Voorinstelling \"{{name}}\" verwijderen? Dit kan niet ongedaan worden gemaakt.",
       "deleteTitle": "Voorinstelling verwijderen",
       "empty": "Nog geen voorinstellingen — tik hierboven op \"Huidige opslaan\" of importeer bestanden.",
       "exportAll": "Alles exporteren",
+      "exportEmpty": "Nog geen voorinstellingen om te exporteren",
       "exportFailed": "Exporteren van voorinstelling mislukt",
       "exportSuccess": "Voorinstelling geëxporteerd",
       "import": "Importeren",
@@ -593,17 +597,17 @@
       "menuOverwrite": "Bijwerken met huidige",
       "menuRename": "Hernoemen",
       "namePlaceholder": "Naam voorinstelling",
-      "overwritten": "Voorinstelling bijgewerkt",
       "overwriteFailed": "Bijwerken van voorinstelling mislukt",
+      "overwritten": "Voorinstelling bijgewerkt",
       "renameTitle": "Voorinstelling hernoemen",
       "saveCurrent": "Huidige opslaan",
       "saved": "Voorinstelling opgeslagen",
-      "saveTitle": "Opslaan als voorinstelling",
-      "appliedBar": "Toegepast: {{name}}"
+      "saveTitle": "Opslaan als voorinstelling"
     },
     "previewAlt": "Bewerkte voorvertoning",
     "previewCloseCompare": "Vergelijken sluiten",
     "previewEdited": "Bewerkt",
+    "previewLoading": "Laden…",
     "previewRendering": "Renderen…",
     "previewResetZoom": "Zoom herstellen",
     "redo": "Opnieuw",
@@ -675,8 +679,7 @@
       "vibrance": "Levendigheid",
       "whites": "Witten"
     },
-    "undo": "Ongedaan maken",
-    "previewLoading": "Laden…"
+    "undo": "Ongedaan maken"
   },
   "editor": {
     "adjustments": {
@@ -2887,11 +2890,11 @@
       "importFailed": "LUT's importeren mislukt",
       "intensity": "Intensiteit",
       "label": "LUT",
+      "loadFailed": "LUT kon niet worden geladen",
       "removeLut": "LUT verwijderen",
       "select": "Selecteren",
       "selectLutFile": "Selecteer een LUT-bestand",
-      "unsupportedFormat": "Niet-ondersteund(e) bestandsformaat(en) gedetecteerd: .{{ext}}",
-      "loadFailed": "LUT kon niet worden geladen"
+      "unsupportedFormat": "Niet-ondersteund(e) bestandsformaat(en) gedetecteerd: .{{ext}}"
     },
     "slider": {
       "clickToEdit": "Klik om te bewerken",

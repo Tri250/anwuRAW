@@ -192,6 +192,13 @@
       "vignette": "Viñeteado"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "Error de máscara de profundidad IA: {{error}}",
+    "faceMaskFailed": "Error de máscara facial IA: {{error}}",
+    "foregroundMaskFailed": "Error de máscara de sujeto IA: {{error}}",
+    "skyMaskFailed": "Error de máscara de cielo IA: {{error}}",
+    "textMaskFailed": "Error de máscara de texto IA: {{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Grupo vacío)"
@@ -413,13 +420,6 @@
       "failedSyncAdjustments": "Error al sincronizar los ajustes con las imágenes seleccionadas: {{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "Error de máscara facial IA: {{error}}",
-    "depthMaskFailed": "Error de máscara de profundidad IA: {{error}}",
-    "foregroundMaskFailed": "Error de máscara de sujeto IA: {{error}}",
-    "skyMaskFailed": "Error de máscara de cielo IA: {{error}}",
-    "textMaskFailed": "Error de máscara de texto IA: {{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "Claridad",
@@ -446,10 +446,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "Mejora IA aplicada",
       "enhance": "Mejora IA",
       "failed": "Falló la mejora IA",
       "noExif": "Sin pistas EXIF — prueba la mejora IA",
       "noScene": "Sin escena concluyente — prueba la mejora IA",
+      "notReady": "La imagen aún se está cargando — inténtalo de nuevo en un momento",
       "recipe": "Receta de escena",
       "sceneBasis": "Parece {{scene}} · según {{basis}}",
       "scenes": {
@@ -503,6 +505,7 @@
       "done": "Exportado a la galería",
       "exporting": "Exportando…",
       "favorite": "Favorita",
+      "filenameSuffix": "Sufijo del nombre de archivo",
       "fontBuiltin": "Clásica",
       "fontFamily": "Fuente",
       "fontScale": "Tamaño de fuente",
@@ -512,15 +515,14 @@
       "infoFrameLabel": "Mostrar barra y marco",
       "livePreview": "Vista en vivo",
       "noExif": "Sin EXIF",
+      "pngLossless": "PNG es sin pérdida; la compresión de calidad no aplica",
       "progress": "Guardando {{current}}/{{total}}",
       "quality": "Calidad",
       "saveTemplate": "Guardar",
       "setDefault": "Predeterminada",
       "signature": "Firma",
       "signaturePlaceholder": "CRYSTAL · Fotografía Pro",
-      "templates": "Plantillas de marca",
-      "filenameSuffix": "Sufijo del nombre de archivo",
-      "pngLossless": "PNG es sin pérdida; la compresión de calidad no aplica"
+      "templates": "Plantillas de marca"
     },
     "filters": {
       "airy": "Etéreo",
@@ -543,8 +545,8 @@
     "fx": {
       "centerX": "Centro X",
       "centerY": "Centro Y",
-      "depthFailed": "Error al generar el mapa de profundidad",
       "dehaze": "Quitar bruma",
+      "depthFailed": "Error al generar el mapa de profundidad",
       "flare": "Destello",
       "glow": "Brillo",
       "grain": "Grano",
@@ -561,14 +563,14 @@
       "lutClear": "Borrar LUT",
       "lutEmpty": "Sin LUT, toca para importar",
       "lutImport": "Importar",
+      "lutImported": "{{n}} LUT importados",
       "lutIntensity": "Intensidad LUT",
       "normalFailed": "Error al generar el mapa normal",
       "relightHint": "Añade o selecciona una luz y ajusta su posición y parámetros",
       "vignette": "Viñeta",
       "vignetteFeather": "Difuminado",
       "vignetteMidpoint": "Punto medio",
-      "vignetteRoundness": "Redondez",
-      "lutImported": "{{n}} LUT importados"
+      "vignetteRoundness": "Redondez"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {
@@ -597,10 +599,12 @@
     },
     "presets": {
       "all": "Todas",
+      "appliedBar": "Aplicado: {{name}}",
       "deleteMessage": "¿Eliminar el preajuste \"{{name}}\"? No se puede deshacer.",
       "deleteTitle": "Eliminar preajuste",
       "empty": "Aún no hay preajustes — toca «Guardar actual» arriba o importa archivos.",
       "exportAll": "Exportar todo",
+      "exportEmpty": "Aún no hay ajustes preestablecidos para exportar",
       "exportFailed": "Error al exportar preajustes",
       "exportSuccess": "Preajuste exportado",
       "import": "Importar",
@@ -613,17 +617,17 @@
       "menuOverwrite": "Actualizar con el actual",
       "menuRename": "Renombrar",
       "namePlaceholder": "Nombre del preajuste",
-      "overwritten": "Preajuste actualizado",
       "overwriteFailed": "Error al actualizar el preajuste",
+      "overwritten": "Preajuste actualizado",
       "renameTitle": "Renombrar preajuste",
       "saveCurrent": "Guardar actual",
       "saved": "Preajuste guardado",
-      "saveTitle": "Guardar como preajuste",
-      "appliedBar": "Aplicado: {{name}}"
+      "saveTitle": "Guardar como preajuste"
     },
     "previewAlt": "Vista previa editada",
     "previewCloseCompare": "Salir de comparar",
     "previewEdited": "Editado",
+    "previewLoading": "Cargando…",
     "previewRendering": "Renderizando…",
     "previewResetZoom": "Restablecer zoom",
     "redo": "Rehacer",
@@ -695,8 +699,7 @@
       "vibrance": "Vibrancia",
       "whites": "Blancos"
     },
-    "undo": "Deshacer",
-    "previewLoading": "Cargando…"
+    "undo": "Deshacer"
   },
   "editor": {
     "adjustments": {
@@ -2942,11 +2945,11 @@
       "importFailed": "Error al importar LUTs",
       "intensity": "Intensidad",
       "label": "LUT",
+      "loadFailed": "Error al cargar el LUT",
       "removeLut": "Eliminar LUT",
       "select": "Seleccionar",
       "selectLutFile": "Seleccionar un archivo LUT",
-      "unsupportedFormat": "Formato(s) de archivo no compatible(s) detectado(s): .{{ext}}",
-      "loadFailed": "Error al cargar el LUT"
+      "unsupportedFormat": "Formato(s) de archivo no compatible(s) detectado(s): .{{ext}}"
     },
     "slider": {
       "clickToEdit": "Haz clic para editar",

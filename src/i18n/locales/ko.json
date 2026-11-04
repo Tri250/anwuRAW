@@ -192,6 +192,13 @@
       "vignette": "비네트"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "AI 깊이 마스크 실패: {{error}}",
+    "faceMaskFailed": "얼굴 인식 실패: {{error}}",
+    "foregroundMaskFailed": "AI 피사체 마스크 실패: {{error}}",
+    "skyMaskFailed": "AI 하늘 마스크 실패: {{error}}",
+    "textMaskFailed": "AI 텍스트 마스크 실패: {{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(빈 그룹)"
@@ -390,13 +397,6 @@
       "failedSyncAdjustments": "선택한 이미지에 보정 동기화 실패: {{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "얼굴 인식 실패: {{error}}",
-    "depthMaskFailed": "AI 깊이 마스크 실패: {{error}}",
-    "foregroundMaskFailed": "AI 피사체 마스크 실패: {{error}}",
-    "skyMaskFailed": "AI 하늘 마스크 실패: {{error}}",
-    "textMaskFailed": "AI 텍스트 마스크 실패: {{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "선명도",
@@ -423,10 +423,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "AI 강화가 적용되었습니다",
       "enhance": "AI 강화",
       "failed": "AI 강화 실패",
       "noExif": "EXIF 단서 없음 — AI 강화를 사용해 보세요",
       "noScene": "확실한 장면 없음 — AI 강화를 시도해 보세요",
+      "notReady": "이미지를 불러오는 중입니다 — 잠시 후 다시 시도해 주세요",
       "recipe": "장면 레시피",
       "sceneBasis": "{{scene}} 추정 · 근거 {{basis}}",
       "scenes": {
@@ -480,6 +482,7 @@
       "done": "갤러리에 내보냈습니다",
       "exporting": "내보내는 중…",
       "favorite": "즐겨찾기",
+      "filenameSuffix": "파일 이름 접미사",
       "fontBuiltin": "클래식",
       "fontFamily": "서체",
       "fontScale": "글꼴 크기",
@@ -489,15 +492,14 @@
       "infoFrameLabel": "정보바와 프레임 표시",
       "livePreview": "실시간 미리보기",
       "noExif": "EXIF 없음",
+      "pngLossless": "PNG는 무손실 형식이므로 화질 압축이 적용되지 않습니다",
       "progress": "저장 중 {{current}}/{{total}}",
       "quality": "품질",
       "saveTemplate": "저장",
       "setDefault": "기본으로",
       "signature": "서명",
       "signaturePlaceholder": "CRYSTAL · 프로 포토그래피",
-      "templates": "워터마크 템플릿",
-      "filenameSuffix": "파일 이름 접미사",
-      "pngLossless": "PNG는 무손실 형식이므로 화질 압축이 적용되지 않습니다"
+      "templates": "워터마크 템플릿"
     },
     "filters": {
       "airy": "에어리",
@@ -520,8 +522,8 @@
     "fx": {
       "centerX": "중심 X",
       "centerY": "중심 Y",
-      "depthFailed": "깊이 맵 생성 실패",
       "dehaze": "안개 제거",
+      "depthFailed": "깊이 맵 생성 실패",
       "flare": "플레어",
       "glow": "글로우",
       "grain": "그레인",
@@ -538,14 +540,14 @@
       "lutClear": "LUT 지우기",
       "lutEmpty": "LUT 없음, 탭하여 가져오기",
       "lutImport": "가져오기",
+      "lutImported": "LUT {{n}}개를 가져왔습니다",
       "lutIntensity": "LUT 강도",
       "normalFailed": "노멀 맵 생성 실패",
       "relightHint": "조명을 추가하거나 선택한 후 위치와 매개변수를 조정하세요",
       "vignette": "비네트",
       "vignetteFeather": "페더",
       "vignetteMidpoint": "중심점",
-      "vignetteRoundness": "원형도",
-      "lutImported": "LUT {{n}}개를 가져왔습니다"
+      "vignetteRoundness": "원형도"
     },
     "originalBadge": "원본",
     "portrait": {
@@ -574,10 +576,12 @@
     },
     "presets": {
       "all": "전체",
+      "appliedBar": "적용됨: {{name}}",
       "deleteMessage": "\"{{name}}\" 프리셋을 삭제할까요? 되돌릴 수 없습니다.",
       "deleteTitle": "프리셋 삭제",
       "empty": "아직 프리셋이 없습니다 — 상단의 \"현재 상태 저장\"으로 만들거나 프리셋 파일을 가져오세요.",
       "exportAll": "모두 내보내기",
+      "exportEmpty": "내보낼 프리셋이 아직 없습니다",
       "exportFailed": "프리셋 내보내기 실패",
       "exportSuccess": "프리셋을 내보냈습니다",
       "import": "가져오기",
@@ -590,17 +594,17 @@
       "menuOverwrite": "현재 상태로 업데이트",
       "menuRename": "이름 변경",
       "namePlaceholder": "프리셋 이름",
-      "overwritten": "프리셋이 업데이트되었습니다",
       "overwriteFailed": "프리셋 업데이트 실패",
+      "overwritten": "프리셋이 업데이트되었습니다",
       "renameTitle": "프리셋 이름 변경",
       "saveCurrent": "현재 상태 저장",
       "saved": "프리셋이 저장되었습니다",
-      "saveTitle": "프리셋으로 저장",
-      "appliedBar": "적용됨: {{name}}"
+      "saveTitle": "프리셋으로 저장"
     },
     "previewAlt": "편집 미리보기",
     "previewCloseCompare": "비교 종료",
     "previewEdited": "편집됨",
+    "previewLoading": "불러오는 중…",
     "previewRendering": "렌더링 중…",
     "previewResetZoom": "확대 초기화",
     "redo": "다시 실행",
@@ -672,8 +676,7 @@
       "vibrance": "자연 채도",
       "whites": "화이트"
     },
-    "undo": "되돌리기",
-    "previewLoading": "불러오는 중…"
+    "undo": "되돌리기"
   },
   "editor": {
     "adjustments": {
@@ -2874,11 +2877,11 @@
       "importFailed": "LUT 가져오기 실패",
       "intensity": "강도",
       "label": "LUT",
+      "loadFailed": "LUT 로드 실패",
       "removeLut": "LUT 제거",
       "select": "선택",
       "selectLutFile": "LUT 파일 선택",
-      "unsupportedFormat": "지원되지 않는 파일 형식이 감지되었습니다: .{{ext}}",
-      "loadFailed": "LUT 로드 실패"
+      "unsupportedFormat": "지원되지 않는 파일 형식이 감지되었습니다: .{{ext}}"
     },
     "slider": {
       "clickToEdit": "클릭하여 편집",

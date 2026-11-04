@@ -104,7 +104,11 @@ export default function CrystalAiToolsPanel() {
       return;
     }
     try {
-      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) {
+        // 图片未就绪（仍在解码或加载失败）：静默 return 会被感知为死键
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity });
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
@@ -113,10 +117,10 @@ export default function CrystalAiToolsPanel() {
       setAdjustments((prev) => ({
         ...prev,
         ...result,
-        ...(result.activeTools
-          ? { activeTools: { ...prev.activeTools, ...result.activeTools } }
-          : {}),
+        ...(result.activeTools ? { activeTools: { ...prev.activeTools, ...result.activeTools } } : {}),
       }));
+      // 成功反馈：直方图增强在曝光良好的图上幅度小，无提示会被误读为无响应
+      toast.success(t('crystal.aiRecommend.applied'));
     } catch (e) {
       console.error('AI enhance failed:', e);
       toast.error(t('crystal.aiRecommend.failed'));
@@ -137,12 +141,16 @@ export default function CrystalAiToolsPanel() {
       return;
     }
     try {
-      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) {
+        // 图片未就绪（仍在解码或加载失败）：静默 return 会被感知为死键
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       await handleAutoAdjustments();
     } finally {
       setBusy(null);
     }
-  }, [busy, handleAutoAdjustments]);
+  }, [busy, handleAutoAdjustments, t]);
 
   const denoiseOn = Boolean(adjustments.aiDenoiseEnabled);
 
@@ -438,6 +446,8 @@ export default function CrystalAiToolsPanel() {
       {/* G9：识别过程进度蒙层 —— busy 期间覆盖面板内容，失败 toast 后自动消失，不阻塞编辑 */}
       <div className="relative">
         <div className={busy ? 'cx-busy-dim' : ''}>
+          {/* UX：标注强度档仅作用于 AI 增强，避免误读为全局强度 */}
+          <div className="cx-fx-label mb-1.5">{t('editor.aiEnhance.title')}</div>
           <div className="cx-chip-row mb-3">
             {INTENSITIES.map(({ id, labelKey }) => (
               <button
@@ -517,6 +527,7 @@ export default function CrystalAiToolsPanel() {
                 min={0}
                 max={100}
                 step={1}
+                defaultValue={50}
                 value={Math.max(0, Math.min(100, skyStrength))}
                 onChange={(v) =>
                   skyContainer &&
@@ -546,6 +557,7 @@ export default function CrystalAiToolsPanel() {
                 min={0}
                 max={100}
                 step={1}
+                defaultValue={50}
                 value={Math.max(0, Math.min(100, subjectStrength))}
                 onChange={(v) =>
                   subjectContainer && setMaskAdjustments(subjectContainer.id, { clarity: Math.round(v * 0.2) })
@@ -570,6 +582,7 @@ export default function CrystalAiToolsPanel() {
                 min={0}
                 max={100}
                 step={1}
+                defaultValue={50}
                 value={Math.max(0, Math.min(100, textStrength))}
                 onChange={(v) =>
                   textContainer && setMaskAdjustments(textContainer.id, { clarity: Math.round(v * 0.2) })
@@ -596,6 +609,7 @@ export default function CrystalAiToolsPanel() {
                 min={0}
                 max={100}
                 step={1}
+                defaultValue={50}
                 value={Math.max(0, Math.min(100, Math.round(Number(depthContainer?.adjustments.clarity ?? 0) / 0.2)))}
                 onChange={(v) =>
                   depthContainer && setMaskAdjustments(depthContainer.id, { clarity: Math.round(v * 0.2) })
@@ -610,6 +624,7 @@ export default function CrystalAiToolsPanel() {
                 min={0}
                 max={100}
                 step={1}
+                defaultValue={20}
                 value={Math.max(0, Math.min(100, 100 - depthMaxDepth))}
                 onChange={(v) => {
                   if (!depthContainer) return;
@@ -625,6 +640,7 @@ export default function CrystalAiToolsPanel() {
                 min={0}
                 max={100}
                 step={1}
+                defaultValue={80}
                 value={Math.max(0, Math.min(100, 100 - depthMinDepth))}
                 onChange={(v) => {
                   if (!depthContainer) return;
@@ -640,6 +656,7 @@ export default function CrystalAiToolsPanel() {
                 min={0}
                 max={100}
                 step={1}
+                defaultValue={10}
                 value={Math.max(0, Math.min(100, depthFeather))}
                 onChange={(v) =>
                   depthContainer &&
@@ -666,7 +683,11 @@ export default function CrystalAiToolsPanel() {
                 min={0}
                 max={100}
                 step={1}
-                value={Number(adjustments.aiDenoiseAmount ?? 0)}
+                defaultValue={100}
+                /* 自检修复（AI 降噪强度）：后端缺省按 100% 应用（ai_denoise.rs
+                 * unwrap_or(100)），桌面 Details.tsx 显示 ?? 100；移动端此前 ?? 0
+                 * 导致开启降噪后滑杆显示 0、实际满强度，拖动方向感知完全颠倒。 */
+                value={Number(adjustments.aiDenoiseAmount ?? 100)}
                 onChange={(v) => applyPatch({ aiDenoiseAmount: v })}
               />
               <CxSliderRow

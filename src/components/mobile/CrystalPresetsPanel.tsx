@@ -74,13 +74,20 @@ const BUILTIN_FILTERS: Array<{
     id: 'goldBlack',
     labelKey: 'crystal.filters.goldBlack',
     group: 'film',
-    adjustments: { temperature: 14, vibrance: 18, shadows: -12, blacks: -18, vignetteAmount: 24 },
+    // 自检修复（v2.1.15 滤镜名实一致性）：shader.wgsl 中 vignetteAmount<0 才是
+    // 压暗四角（乘法衰减），>0 是 mix 到白色的白边泛光——黑金需要「黑」角，
+    // 原 +24 实际渲染成白边，与名称相反，改为 -24。
+    adjustments: { temperature: 14, vibrance: 18, shadows: -12, blacks: -18, vignetteAmount: -24 },
   },
   {
     id: 'cyber',
     labelKey: 'crystal.filters.cyber',
     group: 'film',
-    adjustments: { tint: -18, temperature: -14, saturation: 22, contrast: 14, halationAmount: 16 },
+    // 自检修复：white_balance.rs 中 tint 正值经白点相除后渲染为洋红偏移（与
+    // Lightroom 一致），负值为绿偏移——赛博朋克标志色是青蓝底+品红霓虹，
+    // 原 tint:-18 渲染成「黑客帝国」式绿调，改为 +14 与 temp:-14 组成蓝紫霓虹；
+    // halationAmount 在高光处加暖色光晕，正对霓虹灯管泛光。
+    adjustments: { tint: 14, temperature: -14, saturation: 22, contrast: 14, halationAmount: 16 },
   },
   {
     id: 'airy',
@@ -92,7 +99,8 @@ const BUILTIN_FILTERS: Array<{
     id: 'vintage',
     labelKey: 'crystal.filters.vintage',
     group: 'film',
-    adjustments: { saturation: -18, temperature: 10, vignetteAmount: 20, grainAmount: 18, blacks: 12 },
+    // 自检修复：同 goldBlack——vignetteAmount 正值是白边泛光，复古暗角应为负值。
+    adjustments: { saturation: -18, temperature: 10, vignetteAmount: -20, grainAmount: 18, blacks: 12 },
   },
   {
     id: 'coolBlue',
@@ -286,14 +294,21 @@ function AiRecommendCard() {
      *    图片未加载完即点击会抛 "No image loaded for AI enhance"；
      * 2) 跨图守卫：切图后丢弃旧图增强结果，不合并进新图 adjustments；
      * 3) activeTools 合并：后端返回全 true，直接覆盖会把用户手动关掉的
-     *    工具重新打开（桌面 handleAutoAdjustments mergeActiveTools 语义）。 */
+     *    工具重新打开（桌面 handleAutoAdjustments mergeActiveTools 语义）。
+     * v2.1.15 反馈闭环：此前所有提前 return 均为静默（加载超时/失败无任何
+     * 提示，成功也无反馈，低幅度增强视觉变化细微）——用户感知为「点击无
+     * 任何反应」。现除跨图丢弃外全路径给出 toast 反馈。 */
     const startPath = useEditorStore.getState().selectedImage?.path;
     if (!startPath) {
       setIsEnhancing(false);
       return;
     }
     try {
-      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) {
+        // 图片未就绪（仍在解码或加载失败）：静默 return 会被感知为死键
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity: 'standard' });
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
@@ -302,10 +317,10 @@ function AiRecommendCard() {
       setAdjustments((prev) => ({
         ...prev,
         ...result,
-        ...(result.activeTools
-          ? { activeTools: { ...prev.activeTools, ...result.activeTools } }
-          : {}),
+        ...(result.activeTools ? { activeTools: { ...prev.activeTools, ...result.activeTools } } : {}),
       }));
+      // 成功反馈：直方图增强在曝光良好的图上幅度小，无提示会被误读为无响应
+      toast.success(t('crystal.aiRecommend.applied'));
     } catch (e) {
       console.error('AI enhance failed:', e);
       toast.error(t('crystal.aiRecommend.failed'));

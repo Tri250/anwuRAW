@@ -192,6 +192,13 @@
       "vignette": "Vignettierung"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "AI-Tiefenmaske fehlgeschlagen: {{error}}",
+    "faceMaskFailed": "KI-Gesichtsmaske fehlgeschlagen: {{error}}",
+    "foregroundMaskFailed": "AI-Vordergrundmaske fehlgeschlagen: {{error}}",
+    "skyMaskFailed": "AI-Himmelsmaske fehlgeschlagen: {{error}}",
+    "textMaskFailed": "AI-Textmaske fehlgeschlagen: {{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Leere Gruppe)"
@@ -393,13 +400,6 @@
       "failedSyncAdjustments": "Synchronisieren der Anpassungen mit den ausgewählten Bildern fehlgeschlagen: {{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "KI-Gesichtsmaske fehlgeschlagen: {{error}}",
-    "depthMaskFailed": "AI-Tiefenmaske fehlgeschlagen: {{error}}",
-    "foregroundMaskFailed": "AI-Vordergrundmaske fehlgeschlagen: {{error}}",
-    "skyMaskFailed": "AI-Himmelsmaske fehlgeschlagen: {{error}}",
-    "textMaskFailed": "AI-Textmaske fehlgeschlagen: {{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "Klarheit",
@@ -426,10 +426,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "KI-Verbesserung angewendet",
       "enhance": "KI-Verbesserung",
       "failed": "KI-Verbesserung fehlgeschlagen",
       "noExif": "Keine EXIF-Hinweise — KI-Verbesserung testen",
       "noScene": "Keine eindeutige Szene erkannt — KI-Verbesserung testen",
+      "notReady": "Bild wird noch geladen — bitte gleich erneut versuchen",
       "recipe": "Szenenrezept",
       "sceneBasis": "Wirkt wie {{scene}} · Grundlage {{basis}}",
       "scenes": {
@@ -483,6 +485,7 @@
       "done": "In die Galerie exportiert",
       "exporting": "Exportieren…",
       "favorite": "Favorit",
+      "filenameSuffix": "Dateinamen-Suffix",
       "fontBuiltin": "Klassisch",
       "fontFamily": "Schriftart",
       "fontScale": "Schriftgröße",
@@ -492,15 +495,14 @@
       "infoFrameLabel": "Infoleiste & Rahmen anzeigen",
       "livePreview": "Live-Vorschau",
       "noExif": "Kein EXIF",
+      "pngLossless": "PNG ist verlustfrei – Qualitätskomprimierung ist nicht anwendbar",
       "progress": "Speichere {{current}}/{{total}}",
       "quality": "Qualität",
       "saveTemplate": "Sichern",
       "setDefault": "Standard",
       "signature": "Signatur",
       "signaturePlaceholder": "CRYSTAL · Pro Fotografie",
-      "templates": "Wasserzeichen-Vorlagen",
-      "filenameSuffix": "Dateinamen-Suffix",
-      "pngLossless": "PNG ist verlustfrei – Qualitätskomprimierung ist nicht anwendbar"
+      "templates": "Wasserzeichen-Vorlagen"
     },
     "filters": {
       "airy": "Luftig",
@@ -523,8 +525,8 @@
     "fx": {
       "centerX": "Mitte X",
       "centerY": "Mitte Y",
-      "depthFailed": "Tiefenkarte konnte nicht erstellt werden",
       "dehaze": "Dunst entfernen",
+      "depthFailed": "Tiefenkarte konnte nicht erstellt werden",
       "flare": "Blendlaterne",
       "glow": "Glanz",
       "grain": "Korn",
@@ -541,14 +543,14 @@
       "lutClear": "LUT entfernen",
       "lutEmpty": "Kein LUT, zum Import tippen",
       "lutImport": "Import",
+      "lutImported": "{{n}} LUT(s) importiert",
       "lutIntensity": "LUT-Intensität",
       "normalFailed": "Normalenkarte konnte nicht erstellt werden",
       "relightHint": "Licht hinzufügen oder auswählen, dann Position und Parameter anpassen",
       "vignette": "Vignette",
       "vignetteFeather": "Weichheit",
       "vignetteMidpoint": "Mittelpunkt",
-      "vignetteRoundness": "Rundung",
-      "lutImported": "{{n}} LUT(s) importiert"
+      "vignetteRoundness": "Rundung"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {
@@ -577,10 +579,12 @@
     },
     "presets": {
       "all": "Alle",
+      "appliedBar": "Angewendet: {{name}}",
       "deleteMessage": "Voreinstellung „{{name}}\" löschen? Dies kann nicht rückgängig gemacht werden.",
       "deleteTitle": "Voreinstellung löschen",
       "empty": "Noch keine Voreinstellungen — tippe oben auf „Aktuelles speichern\" oder importiere Dateien.",
       "exportAll": "Alle exportieren",
+      "exportEmpty": "Noch keine Voreinstellungen zum Exportieren",
       "exportFailed": "Export fehlgeschlagen",
       "exportSuccess": "Voreinstellung exportiert",
       "import": "Importieren",
@@ -593,17 +597,17 @@
       "menuOverwrite": "Mit aktuellem Stand aktualisieren",
       "menuRename": "Umbenennen",
       "namePlaceholder": "Name der Voreinstellung",
-      "overwritten": "Voreinstellung aktualisiert",
       "overwriteFailed": "Aktualisierung der Voreinstellung fehlgeschlagen",
+      "overwritten": "Voreinstellung aktualisiert",
       "renameTitle": "Voreinstellung umbenennen",
       "saveCurrent": "Aktuelles speichern",
       "saved": "Voreinstellung gespeichert",
-      "saveTitle": "Als Voreinstellung speichern",
-      "appliedBar": "Angewendet: {{name}}"
+      "saveTitle": "Als Voreinstellung speichern"
     },
     "previewAlt": "Bearbeitungsvorschau",
     "previewCloseCompare": "Vergleich beenden",
     "previewEdited": "Bearbeitet",
+    "previewLoading": "Wird geladen…",
     "previewRendering": "Rendern…",
     "previewResetZoom": "Zoom zurücksetzen",
     "redo": "Wiederholen",
@@ -675,8 +679,7 @@
       "vibrance": "Dynamik",
       "whites": "Weiß"
     },
-    "undo": "Rückgängig",
-    "previewLoading": "Wird geladen…"
+    "undo": "Rückgängig"
   },
   "editor": {
     "adjustments": {
@@ -2887,11 +2890,11 @@
       "importFailed": "LUTs konnten nicht importiert werden",
       "intensity": "Intensität",
       "label": "LUT",
+      "loadFailed": "LUT konnte nicht geladen werden",
       "removeLut": "LUT entfernen",
       "select": "Auswählen",
       "selectLutFile": "Eine LUT-Datei auswählen",
-      "unsupportedFormat": "Nicht unterstützte Dateiformate erkannt: .{{ext}}",
-      "loadFailed": "LUT konnte nicht geladen werden"
+      "unsupportedFormat": "Nicht unterstützte Dateiformate erkannt: .{{ext}}"
     },
     "slider": {
       "clickToEdit": "Zum Bearbeiten klicken",

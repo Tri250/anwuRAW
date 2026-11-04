@@ -54,7 +54,15 @@ import { useEditorActions } from '../../hooks/useEditorActions';
 import { Invokes } from '../ui/AppProperties';
 import { DepthRangePicker } from '../ui/DepthRangePicker';
 import { selectAiModelDownloadStatus, useProcessStore } from '../../store/useProcessStore';
-import { CxSliderRow, CxSubSection, CxSwitch, awaitImageReady, haptic, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
+import {
+  CxSliderRow,
+  CxSubSection,
+  CxSwitch,
+  awaitImageReady,
+  haptic,
+  useCrystalAdjust,
+  useCrystalAiMasks,
+} from './crystalShared';
 import { Mask } from '../panel/right/Masks';
 import type { CrystalCategory } from './CrystalMobileApp';
 import CrystalPresetsPanel from './CrystalPresetsPanel';
@@ -113,7 +121,8 @@ type CurveChannel = 'luma' | 'red' | 'green' | 'blue';
 
 const GRADING_REGIONS: Array<{ id: GradingRegion; labelKey: ParseKeys; swatch: string }> = [
   { id: 'shadows', labelKey: 'adjustments.color.grading.shadows', swatch: '#4dabf7' },
-  { id: 'midtones', labelKey: 'adjustments.color.grading.midtones', swatch: '#b197fc' },
+  /* 自检优化：中间调色点遵循三向调色通用配色（达芬奇/LR：阴影蓝·中间调绿·高光橙），原紫色易误导为紫色调 */
+  { id: 'midtones', labelKey: 'adjustments.color.grading.midtones', swatch: '#69db7c' },
   { id: 'highlights', labelKey: 'adjustments.color.grading.highlights', swatch: '#ffa94d' },
   { id: 'global', labelKey: 'adjustments.color.grading.global', swatch: '#868e96' },
 ];
@@ -261,7 +270,16 @@ function TonePanel() {
           ...patch.curves,
         } as Adjustments['curves'];
       }
-      if (Object.keys(next).length > 0) applyPatch(next);
+      /* 自检修复（调色-AI 追色）：与桌面 Color.tsx handleColorMatch 同源——追色只写
+       * colorGrading/curves 两节，必须同时激活对应工具；否则 activeTools 中这两节
+       * 为 false 时渲染端 is_tool_active 门控会忽略追色结果（按钮看似无效）。 */
+      if (Object.keys(next).length > 0) {
+        const activeTools = Object.keys(next).reduce(
+          (tools, id) => setToolActive(tools, id, true),
+          getActiveTools(cur),
+        );
+        applyPatch({ ...next, activeTools });
+      }
       toast.success(
         t('adjustments.color.colorMatchDone', { reduction: Math.round(result.metrics?.deltaEReduction ?? 0) }),
       );
@@ -1110,11 +1128,12 @@ function PortraitPanel() {
       applyPatch({ lensBlurEnabled: true, lensBlurAmount: adj.lensBlurAmount || 50 });
       return;
     }
-    setBlurBusy(true);
     // 审计修复（人像-跨图）：深度图生成期间切图则丢弃结果，避免旧图的深度图
     // 写入新图 adjustments 后被「复用已识别深度图」路径误用（与特效面板同守卫）。
+    // 守卫置于 busy 置位之前：早退不得跳过 finally 复位（否则瓦片永久禁用）。
     const startPath = useEditorStore.getState().selectedImage?.path;
     if (!startPath) return;
+    setBlurBusy(true);
     try {
       // 闭环修复（人像-激活）：深度图推理依赖后端原图，未就绪时先等待。
       if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
@@ -1915,7 +1934,20 @@ function FxPanel() {
               <span className="cx-lut-name">{entry.name}</span>
             </button>
           ))}
-          {lutEntries.length === 0 && <span className="cx-lut-empty">{t('crystal.fx.lutEmpty')}</span>}
+          {lutEntries.length === 0 && (
+            /* UX：文案为「点击导入」，空态本身须可点，与导入按钮等价 */
+            <button
+              type="button"
+              className="cx-lut-empty"
+              disabled={lutImporting}
+              onClick={() => {
+                haptic(6);
+                void importLuts();
+              }}
+            >
+              {t('crystal.fx.lutEmpty')}
+            </button>
+          )}
         </div>
         {adjustments.lutPath && (
           <>
@@ -1981,6 +2013,7 @@ function FxPanel() {
               min={0}
               max={100}
               step={1}
+              suffix="%"
               value={Math.round(Number(adjustments.vignetteCenterX ?? 0.5) * 100)}
               defaultValue={50}
               onChange={(v) => applyPatch({ vignetteCenterX: v / 100 })}
@@ -1990,6 +2023,7 @@ function FxPanel() {
               min={0}
               max={100}
               step={1}
+              suffix="%"
               value={Math.round(Number(adjustments.vignetteCenterY ?? 0.5) * 100)}
               defaultValue={50}
               onChange={(v) => applyPatch({ vignetteCenterY: v / 100 })}
@@ -2375,6 +2409,7 @@ function FxPanel() {
                       min={0}
                       max={100}
                       step={1}
+                      suffix="%"
                       value={Math.round(activeLight.x * 100)}
                       defaultValue={50}
                       onChange={(v) => updateLight(activeLight.id, { x: v / 100 })}
@@ -2384,6 +2419,7 @@ function FxPanel() {
                       min={0}
                       max={100}
                       step={1}
+                      suffix="%"
                       value={Math.round(activeLight.y * 100)}
                       defaultValue={50}
                       onChange={(v) => updateLight(activeLight.id, { y: v / 100 })}

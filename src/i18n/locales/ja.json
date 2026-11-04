@@ -192,6 +192,13 @@
       "vignette": "周辺光量補正"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "AI 深度マスク失敗：{{error}}",
+    "faceMaskFailed": "顔認識に失敗しました：{{error}}",
+    "foregroundMaskFailed": "AI 被写体マスク失敗：{{error}}",
+    "skyMaskFailed": "AI 空マスク失敗：{{error}}",
+    "textMaskFailed": "AI テキストマスク失敗：{{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(空のグループ)"
@@ -390,13 +397,6 @@
       "failedSyncAdjustments": "選択した画像への調整の同期に失敗しました：{{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "顔認識に失敗しました：{{error}}",
-    "depthMaskFailed": "AI 深度マスク失敗：{{error}}",
-    "foregroundMaskFailed": "AI 被写体マスク失敗：{{error}}",
-    "skyMaskFailed": "AI 空マスク失敗：{{error}}",
-    "textMaskFailed": "AI テキストマスク失敗：{{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "明瞭度",
@@ -423,10 +423,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "AI強化を適用しました",
       "enhance": "AI 強化",
       "failed": "AI 強化に失敗しました",
       "noExif": "EXIF 手がかりなし — AI強化を試してください",
       "noScene": "確度の高いシーンなし — AI強化を試してください",
+      "notReady": "画像を読み込み中です — しばらくしてからお試しください",
       "recipe": "シーンレシピ",
       "sceneBasis": "{{scene}}の可能性 · 根拠 {{basis}}",
       "scenes": {
@@ -480,6 +482,7 @@
       "done": "ギャラリーに書き出しました",
       "exporting": "書き出し中…",
       "favorite": "お気に入り",
+      "filenameSuffix": "ファイル名の接尾辞",
       "fontBuiltin": "クラシック",
       "fontFamily": "フォント",
       "fontScale": "フォントサイズ",
@@ -489,15 +492,14 @@
       "infoFrameLabel": "情報バーと枠を表示",
       "livePreview": "ライブプレビュー",
       "noExif": "EXIF なし",
+      "pngLossless": "PNG は可逆圧縮のため画質設定は適用されません",
       "progress": "保存中 {{current}}/{{total}}",
       "quality": "品質",
       "saveTemplate": "保存",
       "setDefault": "既定に設定",
       "signature": "署名",
       "signaturePlaceholder": "CRYSTAL · プロフォトグラフィー",
-      "templates": "ウォーターマーク",
-      "filenameSuffix": "ファイル名の接尾辞",
-      "pngLossless": "PNG は可逆圧縮のため画質設定は適用されません"
+      "templates": "ウォーターマーク"
     },
     "filters": {
       "airy": "エアリー",
@@ -520,8 +522,8 @@
     "fx": {
       "centerX": "中心 X",
       "centerY": "中心 Y",
-      "depthFailed": "深度マップの生成に失敗しました",
       "dehaze": "かすみ除去",
+      "depthFailed": "深度マップの生成に失敗しました",
       "flare": "フレア",
       "glow": "グロー",
       "grain": "グレイン",
@@ -538,14 +540,14 @@
       "lutClear": "LUT を解除",
       "lutEmpty": "LUT がありません。タップで読み込み",
       "lutImport": "読み込み",
+      "lutImported": "{{n}} 個のLUTを読み込みました",
       "lutIntensity": "LUT 強度",
       "normalFailed": "法線マップの生成に失敗しました",
       "relightHint": "ライトを追加または選択し、位置とパラメーターを調整してください",
       "vignette": "周辺減光",
       "vignetteFeather": "ぼかし",
       "vignetteMidpoint": "中心",
-      "vignetteRoundness": "丸み",
-      "lutImported": "{{n}} 個のLUTを読み込みました"
+      "vignetteRoundness": "丸み"
     },
     "originalBadge": "原画像",
     "portrait": {
@@ -574,10 +576,12 @@
     },
     "presets": {
       "all": "すべて",
+      "appliedBar": "適用済み：{{name}}",
       "deleteMessage": "プリセット「{{name}}」を削除しますか？元に戻せません。",
       "deleteTitle": "プリセットを削除",
       "empty": "プリセットはまだありません — 上の「現在の状態を保存」で作成するか、プリセットファイルを読み込んでください。",
       "exportAll": "すべて書き出し",
+      "exportEmpty": "エクスポートできるプリセットはまだありません",
       "exportFailed": "プリセットの書き出しに失敗しました",
       "exportSuccess": "プリセットを書き出しました",
       "import": "インポート",
@@ -590,17 +594,17 @@
       "menuOverwrite": "現在の状態で更新",
       "menuRename": "名前を変更",
       "namePlaceholder": "プリセット名",
-      "overwritten": "プリセットを更新しました",
       "overwriteFailed": "プリセットの更新に失敗しました",
+      "overwritten": "プリセットを更新しました",
       "renameTitle": "プリセット名を変更",
       "saveCurrent": "現在の状態を保存",
       "saved": "プリセットを保存しました",
-      "saveTitle": "プリセットとして保存",
-      "appliedBar": "適用済み：{{name}}"
+      "saveTitle": "プリセットとして保存"
     },
     "previewAlt": "編集プレビュー",
     "previewCloseCompare": "比較を終了",
     "previewEdited": "処理後",
+    "previewLoading": "読み込み中…",
     "previewRendering": "レンダリング中…",
     "previewResetZoom": "ズームをリセット",
     "redo": "やり直す",
@@ -672,8 +676,7 @@
       "vibrance": "自然な彩度",
       "whites": "白"
     },
-    "undo": "元に戻す",
-    "previewLoading": "読み込み中…"
+    "undo": "元に戻す"
   },
   "editor": {
     "adjustments": {
@@ -2874,11 +2877,11 @@
       "importFailed": "LUTのインポートに失敗しました",
       "intensity": "適用度",
       "label": "LUT",
+      "loadFailed": "LUTの読み込みに失敗しました",
       "removeLut": "LUTを削除",
       "select": "選択",
       "selectLutFile": "LUTファイルを選択",
-      "unsupportedFormat": "未対応のファイル形式が検出されました: .{{ext}}",
-      "loadFailed": "LUTの読み込みに失敗しました"
+      "unsupportedFormat": "未対応のファイル形式が検出されました: .{{ext}}"
     },
     "slider": {
       "clickToEdit": "クリックして編集",

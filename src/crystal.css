@@ -870,6 +870,12 @@ html.android body > .global-tooltip {
   font-size: 11px;
   color: var(--cx-muted);
   padding: 16px 0;
+  /* UX：空态为可点按钮（触发导入），重置原生 button 外观 */
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
 }
 
 /* v2.1.13: 特效 Spatial AI（镜头模糊散景/重打光光源/雾化生成态） */

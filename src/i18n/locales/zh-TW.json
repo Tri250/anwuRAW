@@ -192,6 +192,13 @@
       "vignette": "暗角"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "AI 深度蒙版失敗：{{error}}",
+    "faceMaskFailed": "人臉辨識失敗：{{error}}",
+    "foregroundMaskFailed": "AI 主體蒙版失敗：{{error}}",
+    "skyMaskFailed": "AI 天空蒙版失敗：{{error}}",
+    "textMaskFailed": "AI 文字蒙版失敗：{{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "（空組）"
@@ -390,13 +397,6 @@
       "failedSyncAdjustments": "同步調整到選中影像失敗：{{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "人臉辨識失敗：{{error}}",
-    "depthMaskFailed": "AI 深度蒙版失敗：{{error}}",
-    "foregroundMaskFailed": "AI 主體蒙版失敗：{{error}}",
-    "skyMaskFailed": "AI 天空蒙版失敗：{{error}}",
-    "textMaskFailed": "AI 文字蒙版失敗：{{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "清晰度",
@@ -423,10 +423,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "AI 強化已套用",
       "enhance": "AI 強化",
       "failed": "AI 強化失敗",
       "noExif": "無 EXIF 場景線索 — 試試 AI 強化",
       "noScene": "暫無高信心場景 — 試試 AI 強化",
+      "notReady": "圖片仍在載入中，請稍後再試",
       "recipe": "場景配方",
       "sceneBasis": "疑似{{scene}} · 依據 {{basis}}",
       "scenes": {
@@ -480,6 +482,7 @@
       "done": "已匯出到相簿",
       "exporting": "匯出中…",
       "favorite": "收藏",
+      "filenameSuffix": "檔名後綴",
       "fontBuiltin": "經典",
       "fontFamily": "字體",
       "fontScale": "字體大小",
@@ -489,15 +492,14 @@
       "infoFrameLabel": "在成片中顯示資訊欄與相框",
       "livePreview": "即時預覽",
       "noExif": "無 EXIF",
+      "pngLossless": "PNG 為無損格式，畫質壓縮不適用",
       "progress": "正在儲存 {{current}}/{{total}}",
       "quality": "畫質",
       "saveTemplate": "儲存範本",
       "setDefault": "設為預設",
       "signature": "簽名文案",
       "signaturePlaceholder": "CRYSTAL · 專業攝影",
-      "templates": "浮水印範本",
-      "filenameSuffix": "檔名後綴",
-      "pngLossless": "PNG 為無損格式，畫質壓縮不適用"
+      "templates": "浮水印範本"
     },
     "filters": {
       "airy": "日系",
@@ -520,8 +522,8 @@
     "fx": {
       "centerX": "中心 X",
       "centerY": "中心 Y",
-      "depthFailed": "深度圖產生失敗",
       "dehaze": "去霧",
+      "depthFailed": "深度圖產生失敗",
       "flare": "眩光",
       "glow": "柔光",
       "grain": "顆粒",
@@ -538,14 +540,14 @@
       "lutClear": "清除 LUT",
       "lutEmpty": "暫無 LUT，點擊導入",
       "lutImport": "导入",
+      "lutImported": "已匯入 {{n}} 個 LUT",
       "lutIntensity": "LUT 强度",
       "normalFailed": "法線圖產生失敗",
       "relightHint": "新增或選擇光源，然後在下方調整位置與參數",
       "vignette": "暗角",
       "vignetteFeather": "羽化",
       "vignetteMidpoint": "中点",
-      "vignetteRoundness": "圆度",
-      "lutImported": "已匯入 {{n}} 個 LUT"
+      "vignetteRoundness": "圆度"
     },
     "originalBadge": "原圖",
     "portrait": {
@@ -574,10 +576,12 @@
     },
     "presets": {
       "all": "全部",
+      "appliedBar": "已套用：{{name}}",
       "deleteMessage": "確定刪除預設「{{name}}」嗎？此操作無法復原。",
       "deleteTitle": "刪除預設",
       "empty": "還沒有預設 — 點選上方「儲存目前」建立，或匯入預設檔。",
       "exportAll": "匯出全部",
+      "exportEmpty": "暫無預設可匯出",
       "exportFailed": "預設匯出失敗",
       "exportSuccess": "預設已匯出",
       "import": "匯入",
@@ -590,17 +594,17 @@
       "menuOverwrite": "覆蓋更新",
       "menuRename": "重新命名",
       "namePlaceholder": "預設名稱",
-      "overwritten": "預設已更新",
       "overwriteFailed": "預設更新失敗",
+      "overwritten": "預設已更新",
       "renameTitle": "重新命名預設",
       "saveCurrent": "儲存目前",
       "saved": "預設已儲存",
-      "saveTitle": "另存為預設",
-      "appliedBar": "已套用：{{name}}"
+      "saveTitle": "另存為預設"
     },
     "previewAlt": "編輯預覽",
     "previewCloseCompare": "退出對比",
     "previewEdited": "效果",
+    "previewLoading": "載入中…",
     "previewRendering": "算繪中…",
     "previewResetZoom": "重設縮放",
     "redo": "重做",
@@ -672,8 +676,7 @@
       "vibrance": "自然飽和度",
       "whites": "白色"
     },
-    "undo": "復原",
-    "previewLoading": "載入中…"
+    "undo": "復原"
   },
   "editor": {
     "adjustments": {
@@ -2904,11 +2907,11 @@
       "importFailed": "匯入 LUT 失敗",
       "intensity": "強度",
       "label": "LUT",
+      "loadFailed": "LUT 載入失敗",
       "removeLut": "移除 LUT",
       "select": "選擇",
       "selectLutFile": "選擇 LUT 檔案",
-      "unsupportedFormat": "檢測到不支援的檔案格式：.{{ext}}",
-      "loadFailed": "LUT 載入失敗"
+      "unsupportedFormat": "檢測到不支援的檔案格式：.{{ext}}"
     },
     "slider": {
       "clickToEdit": "點選編輯",

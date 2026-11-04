@@ -192,6 +192,13 @@
       "vignette": "Viněta"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "Maska hloubky AI selhala: {{error}}",
+    "faceMaskFailed": "Maska obličeje AI se nezdařila: {{error}}",
+    "foregroundMaskFailed": "Maska objektu AI selhala: {{error}}",
+    "skyMaskFailed": "Maska nebe AI selhala: {{error}}",
+    "textMaskFailed": "Maska textu AI selhala: {{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Prázdná skupina)"
@@ -433,13 +440,6 @@
       "failedSyncAdjustments": "Synchronizace úprav s vybranými obrázky selhala: {{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "Maska obličeje AI se nezdařila: {{error}}",
-    "depthMaskFailed": "Maska hloubky AI selhala: {{error}}",
-    "foregroundMaskFailed": "Maska objektu AI selhala: {{error}}",
-    "skyMaskFailed": "Maska nebe AI selhala: {{error}}",
-    "textMaskFailed": "Maska textu AI selhala: {{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "Jasnost",
@@ -466,10 +466,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "Vylepšení AI bylo aplikováno",
       "enhance": "AI vylepšení",
       "failed": "AI vylepšení se nezdařilo",
       "noExif": "Bez stop v EXIF — zkuste AI vylepšení",
       "noScene": "Žádná jednoznačná scéna — zkuste vylepšení AI",
+      "notReady": "Obrázek se stále načítá — zkuste to znovu za chvíli",
       "recipe": "Recept scény",
       "sceneBasis": "Vypadá jako {{scene}} · podle {{basis}}",
       "scenes": {
@@ -523,6 +525,7 @@
       "done": "Exportováno do galerie",
       "exporting": "Probíhá export…",
       "favorite": "Oblíbené",
+      "filenameSuffix": "Přípona názvu souboru",
       "fontBuiltin": "Klasické",
       "fontFamily": "Písmo",
       "fontScale": "Velikost písma",
@@ -532,15 +535,14 @@
       "infoFrameLabel": "Zobrazit lištu a rám",
       "livePreview": "Živý náhled",
       "noExif": "Bez EXIF",
+      "pngLossless": "PNG je bezztrátové – komprese kvality se nepoužije",
       "progress": "Ukládání {{current}}/{{total}}",
       "quality": "Kvalita",
       "saveTemplate": "Uložit",
       "setDefault": "Výchozí",
       "signature": "Podpis",
       "signaturePlaceholder": "CRYSTAL · Pro fotografie",
-      "templates": "Šablony vodoznaků",
-      "filenameSuffix": "Přípona názvu souboru",
-      "pngLossless": "PNG je bezztrátové – komprese kvality se nepoužije"
+      "templates": "Šablony vodoznaků"
     },
     "filters": {
       "airy": "Vzdušný",
@@ -563,8 +565,8 @@
     "fx": {
       "centerX": "Střed X",
       "centerY": "Střed Y",
-      "depthFailed": "Generování mapy hloubky selhalo",
       "dehaze": "Odstranit opar",
+      "depthFailed": "Generování mapy hloubky selhalo",
       "flare": "Odlesk",
       "glow": "Záře",
       "grain": "Zrno",
@@ -581,14 +583,14 @@
       "lutClear": "Smazat LUT",
       "lutEmpty": "Zatím žádný LUT, klepnutím importujete",
       "lutImport": "Import",
+      "lutImported": "Importováno LUT: {{n}}",
       "lutIntensity": "Intenzita LUT",
       "normalFailed": "Generování mapy normál selhalo",
       "relightHint": "Přidejte nebo vyberte světlo a upravte jeho polohu a parametry",
       "vignette": "Vinětace",
       "vignetteFeather": "Měkkost",
       "vignetteMidpoint": "Střed",
-      "vignetteRoundness": "Zaoblení",
-      "lutImported": "Importováno LUT: {{n}}"
+      "vignetteRoundness": "Zaoblení"
     },
     "originalBadge": "ORIGINÁL",
     "portrait": {
@@ -617,10 +619,12 @@
     },
     "presets": {
       "all": "Vše",
+      "appliedBar": "Použito: {{name}}",
       "deleteMessage": "Odstranit přednastavení \"{{name}}\"? Akci nelze vrátit.",
       "deleteTitle": "Odstranit přednastavení",
       "empty": "Zatím žádná přednastavení — klepněte nahoře na „Uložit aktuální\" nebo importujte soubory.",
       "exportAll": "Exportovat vše",
+      "exportEmpty": "Zatím nejsou žádné předvolby k exportu",
       "exportFailed": "Export přednastavení se nezdařil",
       "exportSuccess": "Přednastavení exportováno",
       "import": "Importovat",
@@ -633,17 +637,17 @@
       "menuOverwrite": "Aktualizovat aktuálním",
       "menuRename": "Přejmenovat",
       "namePlaceholder": "Název přednastavení",
-      "overwritten": "Přednastavení aktualizováno",
       "overwriteFailed": "Aktualizace přednastavení se nezdařila",
+      "overwritten": "Přednastavení aktualizováno",
       "renameTitle": "Přejmenovat přednastavení",
       "saveCurrent": "Uložit aktuální",
       "saved": "Přednastavení uloženo",
-      "saveTitle": "Uložit jako přednastavení",
-      "appliedBar": "Použito: {{name}}"
+      "saveTitle": "Uložit jako přednastavení"
     },
     "previewAlt": "Náhled úprav",
     "previewCloseCompare": "Ukončit porovnání",
     "previewEdited": "Upraveno",
+    "previewLoading": "Načítání…",
     "previewRendering": "Vykreslování…",
     "previewResetZoom": "Obnovit přiblížení",
     "redo": "Znovu",
@@ -715,8 +719,7 @@
       "vibrance": "Sytost tónů",
       "whites": "Bílé"
     },
-    "undo": "Zpět",
-    "previewLoading": "Načítání…"
+    "undo": "Zpět"
   },
   "editor": {
     "adjustments": {
@@ -2997,11 +3000,11 @@
       "importFailed": "Import LUT se nezdařil",
       "intensity": "Intenzita",
       "label": "LUT",
+      "loadFailed": "Načtení LUT se nezdařilo",
       "removeLut": "Odebrat LUT",
       "select": "Vybrat",
       "selectLutFile": "Vyberte soubor LUT",
-      "unsupportedFormat": "Byly zjištěny nepodporované formáty souborů: .{{ext}}",
-      "loadFailed": "Načtení LUT se nezdařilo"
+      "unsupportedFormat": "Byly zjištěny nepodporované formáty souborů: .{{ext}}"
     },
     "slider": {
       "clickToEdit": "Klikněte pro úpravu",

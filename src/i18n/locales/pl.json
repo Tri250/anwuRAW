@@ -192,6 +192,13 @@
       "vignette": "Winieta"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "Niepowodzenie maski głębi AI: {{error}}",
+    "faceMaskFailed": "Nie udało się utworzyć maski twarzy AI: {{error}}",
+    "foregroundMaskFailed": "Niepowodzenie masky obiektu AI: {{error}}",
+    "skyMaskFailed": "Niepowodzenie maski nieba AI: {{error}}",
+    "textMaskFailed": "Niepowodzenie maski tekstu AI: {{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Pusta grupa)"
@@ -433,13 +440,6 @@
       "failedSyncAdjustments": "Synchronizacja korekt z wybranymi obrazami nie powiodła się: {{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "Nie udało się utworzyć maski twarzy AI: {{error}}",
-    "depthMaskFailed": "Niepowodzenie maski głębi AI: {{error}}",
-    "foregroundMaskFailed": "Niepowodzenie masky obiektu AI: {{error}}",
-    "skyMaskFailed": "Niepowodzenie maski nieba AI: {{error}}",
-    "textMaskFailed": "Niepowodzenie maski tekstu AI: {{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "Wyrazistość",
@@ -466,10 +466,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "Ulepszenie AI zastosowane",
       "enhance": "Ulepszenie AI",
       "failed": "Ulepszenie AI nie powiodło się",
       "noExif": "Brak wskazówek EXIF — wypróbuj ulepszanie AI",
       "noScene": "Brak jednoznacznej sceny — wypróbuj ulepszanie AI",
+      "notReady": "Obraz jest jeszcze wczytywany — spróbuj ponownie za chwilę",
       "recipe": "Recepta sceny",
       "sceneBasis": "Wygląda jak {{scene}} · na podstawie {{basis}}",
       "scenes": {
@@ -523,6 +525,7 @@
       "done": "Wyeksportowano do galerii",
       "exporting": "Eksportowanie…",
       "favorite": "Ulubiony",
+      "filenameSuffix": "Sufiks nazwy pliku",
       "fontBuiltin": "Klasyczny",
       "fontFamily": "Czcionka",
       "fontScale": "Rozmiar czcionki",
@@ -532,15 +535,14 @@
       "infoFrameLabel": "Pokaż pasek i ramkę",
       "livePreview": "Podgląd na żywo",
       "noExif": "Brak EXIF",
+      "pngLossless": "PNG jest bezstratne — kompresja jakości nie ma zastosowania",
       "progress": "Zapisywanie {{current}}/{{total}}",
       "quality": "Jakość",
       "saveTemplate": "Zapisz",
       "setDefault": "Domyślny",
       "signature": "Podpis",
       "signaturePlaceholder": "CRYSTAL · Pro Fotografia",
-      "templates": "Szablony znaków wodnych",
-      "filenameSuffix": "Sufiks nazwy pliku",
-      "pngLossless": "PNG jest bezstratne — kompresja jakości nie ma zastosowania"
+      "templates": "Szablony znaków wodnych"
     },
     "filters": {
       "airy": "Lekki",
@@ -563,8 +565,8 @@
     "fx": {
       "centerX": "Środek X",
       "centerY": "Środek Y",
-      "depthFailed": "Nie udało się wygenerować mapy głębi",
       "dehaze": "Usuń zamglenie",
+      "depthFailed": "Nie udało się wygenerować mapy głębi",
       "flare": "Refleks",
       "glow": "Poświata",
       "grain": "Ziarno",
@@ -581,14 +583,14 @@
       "lutClear": "Wyczyść LUT",
       "lutEmpty": "Brak LUT, dotknij, aby zaimportować",
       "lutImport": "Importuj",
+      "lutImported": "Zaimportowano LUT: {{n}}",
       "lutIntensity": "Intensywność LUT",
       "normalFailed": "Nie udało się wygenerować mapy normalnych",
       "relightHint": "Dodaj lub wybierz światło, a następnie dostosuj jego pozycję i parametry",
       "vignette": "Winieta",
       "vignetteFeather": "Miękkość",
       "vignetteMidpoint": "Środek",
-      "vignetteRoundness": "Zaokrąglenie",
-      "lutImported": "Zaimportowano LUT: {{n}}"
+      "vignetteRoundness": "Zaokrąglenie"
     },
     "originalBadge": "ORYGINAŁ",
     "portrait": {
@@ -617,10 +619,12 @@
     },
     "presets": {
       "all": "Wszystkie",
+      "appliedBar": "Zastosowano: {{name}}",
       "deleteMessage": "Usunąć preset „{{name}}\"? Tej operacji nie można cofnąć.",
       "deleteTitle": "Usuń preset",
       "empty": "Brak presetów — dotknij „Zapisz bieżące\" powyżej lub zaimportuj pliki.",
       "exportAll": "Eksportuj wszystkie",
+      "exportEmpty": "Brak presetów do wyeksportowania",
       "exportFailed": "Eksportowanie presetu nie powiodło się",
       "exportSuccess": "Wyeksportowano preset",
       "import": "Importuj",
@@ -633,17 +637,17 @@
       "menuOverwrite": "Aktualizuj bieżącym",
       "menuRename": "Zmień nazwę",
       "namePlaceholder": "Nazwa presetu",
-      "overwritten": "Zaktualizowano preset",
       "overwriteFailed": "Nie udało się zaktualizować presetu",
+      "overwritten": "Zaktualizowano preset",
       "renameTitle": "Zmień nazwę presetu",
       "saveCurrent": "Zapisz bieżące",
       "saved": "Zapisano preset",
-      "saveTitle": "Zapisz jako preset",
-      "appliedBar": "Zastosowano: {{name}}"
+      "saveTitle": "Zapisz jako preset"
     },
     "previewAlt": "Podgląd edycji",
     "previewCloseCompare": "Zakończ porównanie",
     "previewEdited": "Po edycji",
+    "previewLoading": "Wczytywanie…",
     "previewRendering": "Renderowanie…",
     "previewResetZoom": "Resetuj powiększenie",
     "redo": "Ponów",
@@ -715,8 +719,7 @@
       "vibrance": "Żywość",
       "whites": "Biele"
     },
-    "undo": "Cofnij",
-    "previewLoading": "Wczytywanie…"
+    "undo": "Cofnij"
   },
   "editor": {
     "adjustments": {
@@ -2997,11 +3000,11 @@
       "importFailed": "Nie udało się zaimportować LUT",
       "intensity": "Intensywność",
       "label": "LUT",
+      "loadFailed": "Nie udało się załadować LUT",
       "removeLut": "Usuń LUT",
       "select": "Wybierz",
       "selectLutFile": "Wybierz plik LUT",
-      "unsupportedFormat": "Wykryto nieobsługiwany format pliku: .{{ext}}",
-      "loadFailed": "Nie udało się załadować LUT"
+      "unsupportedFormat": "Wykryto nieobsługiwany format pliku: .{{ext}}"
     },
     "slider": {
       "clickToEdit": "Kliknij, aby edytować",
