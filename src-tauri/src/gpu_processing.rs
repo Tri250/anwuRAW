@@ -147,32 +147,39 @@ impl WgpuDisplay {
         }));
     }
 
-    pub fn render(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) {
-        if let Some(bind_group) = &self.current_bind_group {
-            let output = match self.surface.get_current_texture() {
-                wgpu::CurrentSurfaceTexture::Success(tex)
-                | wgpu::CurrentSurfaceTexture::Suboptimal(tex) => tex,
-                wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
-                    self.surface.configure(device, &self.config);
-                    match self.surface.get_current_texture() {
-                        wgpu::CurrentSurfaceTexture::Success(tex)
-                        | wgpu::CurrentSurfaceTexture::Suboptimal(tex) => tex,
-                        // Surface acquisition can fail at runtime (GPU reset,
-                        // driver update, occlusion). Callers such as the window
-                        // Resized handler run on the main thread with no panic
-                        // guard — skipping the frame keeps the app alive; the
-                        // next render call re-acquires against the reconfigured
-                        // surface.
-                        _ => {
-                            log::warn!(
-                                "Surface texture acquisition failed after reconfigure; skipping frame"
-                            );
-                            return;
-                        }
+    /// v2.1.16 Windows 灰屏自检修复：`true` = 本帧技术层面成功提交并呈现
+    /// （surface 获取、命令提交、present 全部成功）。`false` = 未呈现（无
+    /// 内容绑定或 surface 获取失败）。技术失败必须可观测 —— 此前这里仅
+    /// `log::warn` 后静默 return，前端永远不知情，Windows 上一旦 D3D12 合成
+    /// 出错用户就会面对一片灰色且永不自愈。
+    pub fn render(&mut self, device: &wgpu::Device, queue: &wgpu::Queue) -> bool {
+        let Some(bind_group) = &self.current_bind_group else {
+            return false;
+        };
+        let output = match self.surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(tex)
+            | wgpu::CurrentSurfaceTexture::Suboptimal(tex) => tex,
+            wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
+                self.surface.configure(device, &self.config);
+                match self.surface.get_current_texture() {
+                    wgpu::CurrentSurfaceTexture::Success(tex)
+                    | wgpu::CurrentSurfaceTexture::Suboptimal(tex) => tex,
+                    // Surface acquisition can fail at runtime (GPU reset,
+                    // driver update, occlusion). Callers such as the window
+                    // Resized handler run on the main thread with no panic
+                    // guard — skipping the frame keeps the app alive; the
+                    // next render call re-acquires against the reconfigured
+                    // surface.
+                    _ => {
+                        log::warn!(
+                            "Surface texture acquisition failed after reconfigure; skipping frame"
+                        );
+                        return false;
                     }
                 }
-                _ => return,
-            };
+            }
+            _ => return false,
+        };
             let view = output
                 .texture
                 .create_view(&wgpu::TextureViewDescriptor::default());
@@ -233,9 +240,9 @@ impl WgpuDisplay {
                     }
                 }
             }
-            queue.submit(Some(encoder.finish()));
-            output.present();
-        }
+        queue.submit(Some(encoder.finish()));
+        output.present();
+        true
     }
 }
 
@@ -3939,7 +3946,17 @@ fn process_and_get_dynamic_image_inner(
             bytemuck::bytes_of(&display.latest_transform),
         );
         display.rebind(device);
-        display.render(device, queue);
+        if display.render(device, queue) {
+            state.wgpu_display_failures.store(0, std::sync::atomic::Ordering::Relaxed);
+        } else {
+            let failures = state
+                .wgpu_display_failures
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+                + 1;
+            log::warn!(
+                "wgpu display frame not presented (consecutive failures: {failures})"
+            );
+        }
     }
 
     if skip_readback {

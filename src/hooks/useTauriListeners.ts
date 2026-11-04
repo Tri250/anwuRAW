@@ -11,6 +11,7 @@ import { useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
+import { notifyWgpuFrameReady } from './useImageProcessing';
 
 const parseAnalyticsPacket = async (buffer: ArrayBuffer) => {
   const view = new DataView(buffer);
@@ -462,6 +463,8 @@ export function useTauriListeners({
       ),
       listen('wgpu-frame-ready', (event: any) => {
         const editorState = useEditorStore.getState();
+        // v2.1.16 Windows 灰屏自检修复：无论首帧与否都通知看门狗消除计时器
+        notifyWgpuFrameReady(event.payload?.path);
         if (
           isEffectActive &&
           !editorState.hasRenderedFirstFrame &&

@@ -2625,6 +2625,7 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "wgpuDisplayFallbackNotice": "Problema de exibição da pré-visualização detetado — mudou para renderização por CPU nesta sessão. Reinicie a aplicação para reativar a renderização por GPU.",
       "highDpi": "Renderização de Alto DPI",
       "highDpiDesc": "Renderizar visualizações na resolução de pixel físico nativa {{dpr}}x da tela. Produz a visualização mais nítida possível, mas usa significativamente mais memória.",
       "highDpiDescStandard": "Esta configuração afeta apenas telas de alto DPI. Sua tela atual tem resolução padrão.",

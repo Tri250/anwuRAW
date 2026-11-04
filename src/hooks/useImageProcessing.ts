@@ -16,6 +16,29 @@ import { prepareAdjustmentsPayload } from '../utils/backendPayload';
 
 const isWgpuRender = (buffer: ArrayBuffer) => new TextDecoder().decode(buffer.slice(0, 11)) === 'WGPU_RENDER';
 
+// ---------------------------------------------------------------------------
+// v2.1.16 Windows 灰屏自检修复：wgpu 显示看门狗。
+// 后端 apply_adjustments 走 wgpu 路径时只返回 "WGPU_RENDER" 标记（前端不再
+// 持有 JPEG），画面完全依赖原生 surface 呈现。Windows 上 D3D12 合成层丢失、
+// GPU error、surface 获取失败等场景会让 surface 停留在清除色（编辑器深灰），
+// 而前端无从得知 —— 用户面对一片灰色且永不自愈。
+// 看门狗：每次非交互 wgpu 渲染请求后对 path 启动计时器，收到该 path 的
+// `wgpu-frame-ready` 事件即消除；超时未收到即判定显示失效，上报后端强制
+// CPU 预览（会话级）并恢复 JPEG 渲染。后端 present 失败（surface 层）另由
+// 后端计数日志诊断；本看门狗兜底所有后端无法自感知的显示失效。
+// ---------------------------------------------------------------------------
+const WGPU_WATCHDOG_TIMEOUT_MS = 8000;
+const wgpuWatchdogTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+export function notifyWgpuFrameReady(path?: string) {
+  if (!path) return;
+  const timer = wgpuWatchdogTimers.get(path);
+  if (timer) {
+    clearTimeout(timer);
+    wgpuWatchdogTimers.delete(path);
+  }
+}
+
 const releasePreviewUrl = (url: string | null | undefined) => {
   if (url && url.startsWith('blob:') && !globalImageCache.isProtected(url)) {
     setTimeout(() => {
@@ -69,8 +92,32 @@ export function useImageProcessing(
 
   const selectedImagePathRef = useRef<string | null>(null);
   useEffect(() => {
-    selectedImagePathRef.current = selectedImage?.path ?? null;
+    const path = selectedImage?.path ?? null;
+    selectedImagePathRef.current = path;
+    // v2.1.16 灰屏自检修复：切图后旧图的渲染结果会被丢弃（不会再有
+    // wgpu-frame-ready），清掉非当前图的看门狗计时器避免误报降级。
+    for (const key of [...wgpuWatchdogTimers.keys()]) {
+      if (key !== path) {
+        const timer = wgpuWatchdogTimers.get(key);
+        if (timer) clearTimeout(timer);
+        wgpuWatchdogTimers.delete(key);
+      }
+    }
   }, [selectedImage?.path]);
+
+  // v2.1.16 灰屏自检修复：降级处理函数经 ref 传递给看门狗回调，避免闭包过期。
+  const wgpuFailureHandlerRef = useRef<(path: string) => void>(() => {});
+  const armWgpuDisplayWatchdog = useCallback((path: string | undefined) => {
+    if (!path) return;
+    notifyWgpuFrameReady(path); // 重置同 path 的旧计时器
+    wgpuWatchdogTimers.set(
+      path,
+      setTimeout(() => {
+        wgpuWatchdogTimers.delete(path);
+        wgpuFailureHandlerRef.current(path);
+      }, WGPU_WATCHDOG_TIMEOUT_MS),
+    );
+  }, []);
 
   const calculateROI = useCallback(() => {
     if (!transformWrapperRef.current) return null;
@@ -191,6 +238,9 @@ export function useImageProcessing(
           activeWaveformChannel: activeWaveformChannelRef.current || null,
         });
         if (!dragging) renderOriginal(targetRes);
+        // v2.1.16 灰屏自检修复：wgpu 请求一发出即启动显示看门狗，收到
+        // wgpu-frame-ready 即消除；超时判定显示失效并自动降级 CPU 渲染。
+        armWgpuDisplayWatchdog(currentPath);
         const buffer = await request;
 
         markSent();
@@ -268,6 +318,9 @@ export function useImageProcessing(
           }
         }
       } catch (err) {
+        // v2.1.16 灰屏自检修复：渲染请求失败时解除看门狗（本次请求不会再有
+        // frame-ready；surface 仍显示旧帧，不算显示失效）。
+        notifyWgpuFrameReady(currentPath);
         if (err !== 'Superseded or worker failed') {
           console.error('Failed to apply adjustments:', err);
         }
@@ -325,6 +378,30 @@ export function useImageProcessing(
     },
     [selectedImage?.isReady, flushPipeline, executeApplyAdjustments],
   );
+
+  // v2.1.16 Windows 灰屏自检修复：看门狗超时 → 判定 wgpu 显示失效。
+  // 上报后端（会话级强制 CPU 预览）+ 前端降级标记（isWgpuActive 视为 false，
+  // JPEG 预览恢复显示）+ 立即触发一次重渲染（此时后端 resolve_wgpu_rendering
+  // 已强制 false，返回 JPEG，finalPreviewUrl 重新建立）。
+  const handleWgpuDisplayFailure = useCallback(
+    (path: string) => {
+      const store = useEditorStore.getState();
+      if (!store.wgpuDisplayFailed) {
+        invoke(Invokes.ReportWgpuDisplayFailure, {
+          reason: `no wgpu-frame-ready for ${path} within ${WGPU_WATCHDOG_TIMEOUT_MS}ms`,
+        }).catch(() => {});
+        store.setEditor({ wgpuDisplayFailed: true });
+        toast.warn(i18n.t('settings.processing.wgpuDisplayFallbackNotice'));
+      }
+      if (store.selectedImage?.isReady) {
+        applyAdjustments(store.adjustments, false);
+      }
+    },
+    [applyAdjustments],
+  );
+  useEffect(() => {
+    wgpuFailureHandlerRef.current = handleWgpuDisplayFailure;
+  }, [handleWgpuDisplayFailure]);
 
   const throttledUncroppedPreview = useMemo(
     () =>

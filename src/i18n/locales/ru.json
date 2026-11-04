@@ -2676,6 +2676,7 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "wgpuDisplayFallbackNotice": "Обнаружена проблема отображения предпросмотра — для текущего сеанса включён рендеринг на CPU. Перезапустите приложение, чтобы снова включить рендеринг на GPU.",
       "highDpi": "Рендеринг High-DPI",
       "highDpiDesc": "Рендерить изображение в родном физическом разрешении вашего экрана (коэффициент масштабирования {{dpr}}x). Обеспечивает максимально детализированную картинку, но расходует значительно больше видеопамяти.",
       "highDpiDescStandard": "Этот параметр влияет только на экраны высокого разрешения (High-DPI / Retina). Ваш текущий дисплей имеет стандартное разрешение.",

@@ -2594,6 +2594,7 @@
       "gpuAdapterStatus": "{{name}}（{{backend}}）· {{status}}",
       "gpuAdapterUnknown": "無法取得轉接器資訊",
       "gpuFallbackNotice": "GPU 渲染無法使用：{{name}} — {{reason}}",
+      "wgpuDisplayFallbackNotice": "偵測到預覽顯示異常 —— 本次工作階段已切換為 CPU 渲染。重新啟動應用程式後可恢復 GPU 渲染。",
       "highDpi": "高 DPI 渲染",
       "highDpiDesc": "以螢幕原生 {{dpr}}x 物理畫素解析度渲染預覽。產生最清晰的預覽，但會顯著增加記憶體使用。",
       "highDpiDescStandard": "此設定僅影響高 DPI 顯示器。您當前的顯示器為標準解析度。",

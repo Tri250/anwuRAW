@@ -118,6 +118,10 @@ interface EditorState {
   aiDenoiseProgress: Record<string, number>;
   isAIConnectorConnected: boolean;
   hasRenderedFirstFrame: boolean;
+  /** v2.1.16 Windows 灰屏自检修复：wgpu 显示看门狗判定显示失效后的会话级
+   *  降级标记。为 true 时前端恢复渲染 JPEG 预览（isWgpuActive 视为 false），
+   *  重启应用后复位（后端 force_cpu_preview 同步复位）。 */
+  wgpuDisplayFailed: boolean;
   patchesSentToBackend: Set<string>;
 
   // Clipboard
@@ -192,6 +196,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   aiDenoiseProgress: {},
   isMaskControlHovered: false,
   hasRenderedFirstFrame: false,
+  wgpuDisplayFailed: false,
   patchesSentToBackend: new Set<string>(),
 
   setEditor: (updater) => set((state) => (typeof updater === 'function' ? updater(state) : updater)),
