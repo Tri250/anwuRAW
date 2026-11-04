@@ -1,0 +1,1560 @@
+<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:wpsCustomData="http://www.wps.cn/officeDocument/2013/wpsCustomData" mc:Ignorable="w14 w15 wp14">
+  <w:body>
+    <w:tbl>
+      <w:tblPr>
+        <w:tblStyle w:val="15"/>
+        <w:tblW w:w="11906" w:type="dxa"/>
+        <w:tblInd w:w="0" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+          <w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+          <w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+          <w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+          <w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+          <w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+        </w:tblBorders>
+        <w:tblLayout w:type="autofit"/>
+        <w:tblCellMar>
+          <w:top w:w="0" w:type="dxa"/>
+          <w:left w:w="108" w:type="dxa"/>
+          <w:bottom w:w="0" w:type="dxa"/>
+          <w:right w:w="108" w:type="dxa"/>
+        </w:tblCellMar>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="3590"/>
+        <w:gridCol w:w="8316"/>
+      </w:tblGrid>
+      <w:tr w14:paraId="06BD2331">
+        <w:tblPrEx>
+          <w:tblBorders>
+            <w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+            <w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+            <w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+            <w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+            <w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+            <w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+          </w:tblBorders>
+          <w:tblCellMar>
+            <w:top w:w="0" w:type="dxa"/>
+            <w:left w:w="108" w:type="dxa"/>
+            <w:bottom w:w="0" w:type="dxa"/>
+            <w:right w:w="108" w:type="dxa"/>
+          </w:tblCellMar>
+        </w:tblPrEx>
+        <w:trPr>
+          <w:trHeight w:val="16820" w:hRule="atLeast"/>
+        </w:trPr>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="3600" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="nil"/>
+              <w:left w:val="nil"/>
+              <w:bottom w:val="nil"/>
+              <w:right w:val="nil"/>
+            </w:tcBorders>
+            <w:shd w:val="clear" w:color="auto" w:fill="1B3B6F"/>
+            <w:tcMar>
+              <w:top w:w="520" w:type="dxa"/>
+              <w:left w:w="420" w:type="dxa"/>
+              <w:bottom w:w="480" w:type="dxa"/>
+              <w:right w:w="340" w:type="dxa"/>
+            </w:tcMar>
+          </w:tcPr>
+          <w:tbl>
+            <w:tblPr>
+              <w:tblStyle w:val="15"/>
+              <w:tblW w:w="1580" w:type="dxa"/>
+              <w:jc w:val="center"/>
+              <w:tblBorders>
+                <w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+              </w:tblBorders>
+              <w:tblLayout w:type="autofit"/>
+              <w:tblCellMar>
+                <w:top w:w="0" w:type="dxa"/>
+                <w:left w:w="108" w:type="dxa"/>
+                <w:bottom w:w="0" w:type="dxa"/>
+                <w:right w:w="108" w:type="dxa"/>
+              </w:tblCellMar>
+            </w:tblPr>
+            <w:tblGrid>
+              <w:gridCol w:w="1660"/>
+            </w:tblGrid>
+            <w:tr w14:paraId="D2488DE6">
+              <w:tblPrEx>
+                <w:tblBorders>
+                  <w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                </w:tblBorders>
+                <w:tblCellMar>
+                  <w:top w:w="0" w:type="dxa"/>
+                  <w:left w:w="108" w:type="dxa"/>
+                  <w:bottom w:w="0" w:type="dxa"/>
+                  <w:right w:w="108" w:type="dxa"/>
+                </w:tblCellMar>
+              </w:tblPrEx>
+              <w:trPr>
+                <w:jc w:val="center"/>
+              </w:trPr>
+              <w:tc>
+                <w:tcPr>
+                  <w:tcW w:w="1580" w:type="dxa"/>
+                  <w:tcBorders>
+                    <w:top w:val="single" w:color="FFFFFF" w:sz="16" w:space="0"/>
+                    <w:left w:val="single" w:color="FFFFFF" w:sz="16" w:space="0"/>
+                    <w:bottom w:val="single" w:color="FFFFFF" w:sz="16" w:space="0"/>
+                    <w:right w:val="single" w:color="FFFFFF" w:sz="16" w:space="0"/>
+                  </w:tcBorders>
+                  <w:tcMar>
+                    <w:top w:w="0" w:type="dxa"/>
+                    <w:left w:w="0" w:type="dxa"/>
+                    <w:bottom w:w="0" w:type="dxa"/>
+                    <w:right w:w="0" w:type="dxa"/>
+                  </w:tcMar>
+                </w:tcPr>
+                <w:p w14:paraId="A0CE2383">
+                  <w:pPr>
+                    <w:spacing w:before="0" w:after="0"/>
+                    <w:jc w:val="center"/>
+                  </w:pPr>
+                  <w:r>
+                    <w:drawing>
+                      <wp:inline distT="0" distB="0" distL="0" distR="0">
+                        <wp:extent cx="1028700" cy="1438275"/>
+                        <wp:effectExtent l="0" t="0" r="0" b="0"/>
+                        <wp:docPr id="1028" name="photo" descr="覃日丽证件照"/>
+                        <wp:cNvGraphicFramePr/>
+                        <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+                          <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                            <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                              <pic:nvPicPr>
+                                <pic:cNvPr id="1028" name="photo" descr="覃日丽证件照"/>
+                                <pic:cNvPicPr/>
+                              </pic:nvPicPr>
+                              <pic:blipFill>
+                                <a:blip r:embed="rId4" cstate="print"/>
+                                <a:srcRect/>
+                                <a:stretch>
+                                  <a:fillRect/>
+                                </a:stretch>
+                              </pic:blipFill>
+                              <pic:spPr>
+                                <a:xfrm>
+                                  <a:off x="0" y="0"/>
+                                  <a:ext cx="1028700" cy="1438275"/>
+                                </a:xfrm>
+                                <a:prstGeom prst="rect">
+                                  <a:avLst/>
+                                </a:prstGeom>
+                              </pic:spPr>
+                            </pic:pic>
+                          </a:graphicData>
+                        </a:graphic>
+                      </wp:inline>
+                    </w:drawing>
+                  </w:r>
+                </w:p>
+              </w:tc>
+            </w:tr>
+          </w:tbl>
+          <w:p w14:paraId="8A943E50">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="400"/>
+            </w:pPr>
+          </w:p>
+          <w:p w14:paraId="4D2A1DB5">
+            <w:pPr>
+              <w:pBdr>
+                <w:bottom w:val="single" w:color="3D5C8F" w:sz="8" w:space="4"/>
+              </w:pBdr>
+              <w:spacing w:before="0" w:after="190"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:spacing w:val="20"/>
+                <w:sz w:val="21"/>
+                <w:szCs w:val="21"/>
+              </w:rPr>
+              <w:t>联系方式</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="22202599">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="2840"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="130"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="9DB4D6"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>手机</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>15813387768</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="3A506D9F">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="2840"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="130"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="9DB4D6"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>邮箱</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>1048590214@qq.com</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="26615A31">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="2840"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="130"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="9DB4D6"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>现居</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>广东·广州</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="6CEC8892">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="440"/>
+            </w:pPr>
+          </w:p>
+          <w:p w14:paraId="3C098021">
+            <w:pPr>
+              <w:pBdr>
+                <w:bottom w:val="single" w:color="3D5C8F" w:sz="8" w:space="4"/>
+              </w:pBdr>
+              <w:spacing w:before="0" w:after="190"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:spacing w:val="20"/>
+                <w:sz w:val="21"/>
+                <w:szCs w:val="21"/>
+              </w:rPr>
+              <w:t>个人资料</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="C1BAD14C">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="2840"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="130"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="9DB4D6"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>性别</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>女</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="565F3729">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="2840"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="130"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="9DB4D6"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>年龄</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>33 岁</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="DB9A0D7F">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="2840"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="130"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="9DB4D6"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>籍贯</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>广西</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="20B31D05">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="2840"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="130"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="9DB4D6"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>身高</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>160cm</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="A7641286">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="440"/>
+            </w:pPr>
+          </w:p>
+          <w:p w14:paraId="02391B16">
+            <w:pPr>
+              <w:pBdr>
+                <w:bottom w:val="single" w:color="3D5C8F" w:sz="8" w:space="4"/>
+              </w:pBdr>
+              <w:spacing w:before="0" w:after="190"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:spacing w:val="20"/>
+                <w:sz w:val="21"/>
+                <w:szCs w:val="21"/>
+              </w:rPr>
+              <w:t>专业技能</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="8B962EE2">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="1"/>
+              </w:numPr>
+              <w:spacing w:before="0" w:after="150" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="EAF0F8"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>门店体验式销售与成交促成</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="3824D2C4">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="1"/>
+              </w:numPr>
+              <w:spacing w:before="0" w:after="150" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="EAF0F8"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>顾客需求挖掘与异议处理</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="4F094FF8">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="1"/>
+              </w:numPr>
+              <w:spacing w:before="0" w:after="150" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="EAF0F8"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>店员培训、带教与督导</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="3FC01D5D">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="1"/>
+              </w:numPr>
+              <w:spacing w:before="0" w:after="150" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="EAF0F8"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>Word / Excel / PPT 熟练</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="E12495EF">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="1"/>
+              </w:numPr>
+              <w:spacing w:before="0" w:after="150" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="EAF0F8"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>普通话标准，英语基础</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="477100A3">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="440"/>
+            </w:pPr>
+          </w:p>
+          <w:p w14:paraId="29150C80">
+            <w:pPr>
+              <w:pBdr>
+                <w:bottom w:val="single" w:color="3D5C8F" w:sz="8" w:space="4"/>
+              </w:pBdr>
+              <w:spacing w:before="0" w:after="190"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="FFFFFF"/>
+                <w:spacing w:val="20"/>
+                <w:sz w:val="21"/>
+                <w:szCs w:val="21"/>
+              </w:rPr>
+              <w:t>个人荣誉</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="28264DFC">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="1"/>
+              </w:numPr>
+              <w:spacing w:before="0" w:after="150" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="EAF0F8"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>玩机达人（2018 年）</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="F0D3DFF2">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="1"/>
+              </w:numPr>
+              <w:spacing w:before="0" w:after="150" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="EAF0F8"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>高端机达人大使</w:t>
+            </w:r>
+          </w:p>
+        </w:tc>
+        <w:tc>
+          <w:tcPr>
+            <w:tcW w:w="8306" w:type="dxa"/>
+            <w:tcBorders>
+              <w:top w:val="nil"/>
+              <w:left w:val="nil"/>
+              <w:bottom w:val="nil"/>
+              <w:right w:val="nil"/>
+            </w:tcBorders>
+            <w:tcMar>
+              <w:top w:w="480" w:type="dxa"/>
+              <w:left w:w="400" w:type="dxa"/>
+              <w:bottom w:w="420" w:type="dxa"/>
+              <w:right w:w="320" w:type="dxa"/>
+            </w:tcMar>
+          </w:tcPr>
+          <w:p w14:paraId="C152AD7C">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="80"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="1F2937"/>
+                <w:spacing w:val="40"/>
+                <w:sz w:val="56"/>
+                <w:szCs w:val="56"/>
+              </w:rPr>
+              <w:t>覃日丽</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="F23AC435">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="120"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="595959"/>
+                <w:sz w:val="20"/>
+                <w:szCs w:val="20"/>
+              </w:rPr>
+              <w:t>求职意向　</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:hint="eastAsia"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="1A56DB"/>
+                <w:sz w:val="24"/>
+                <w:szCs w:val="24"/>
+                <w:lang w:val="en-US" w:eastAsia="zh-CN"/>
+              </w:rPr>
+              <w:t>中国移动驻店销售顾问</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="5ED746F6">
+            <w:pPr>
+              <w:pBdr>
+                <w:bottom w:val="single" w:color="E1E6EF" w:sz="8" w:space="1"/>
+              </w:pBdr>
+              <w:spacing w:before="0" w:after="180"/>
+            </w:pPr>
+          </w:p>
+          <w:tbl>
+            <w:tblPr>
+              <w:tblStyle w:val="15"/>
+              <w:tblW w:w="7586" w:type="dxa"/>
+              <w:tblInd w:w="0" w:type="dxa"/>
+              <w:tblBorders>
+                <w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+              </w:tblBorders>
+              <w:tblLayout w:type="autofit"/>
+              <w:tblCellMar>
+                <w:top w:w="0" w:type="dxa"/>
+                <w:left w:w="108" w:type="dxa"/>
+                <w:bottom w:w="0" w:type="dxa"/>
+                <w:right w:w="108" w:type="dxa"/>
+              </w:tblCellMar>
+            </w:tblPr>
+            <w:tblGrid>
+              <w:gridCol w:w="150"/>
+              <w:gridCol w:w="7436"/>
+            </w:tblGrid>
+            <w:tr w14:paraId="D9C2C36E">
+              <w:tblPrEx>
+                <w:tblBorders>
+                  <w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                </w:tblBorders>
+                <w:tblCellMar>
+                  <w:top w:w="0" w:type="dxa"/>
+                  <w:left w:w="108" w:type="dxa"/>
+                  <w:bottom w:w="0" w:type="dxa"/>
+                  <w:right w:w="108" w:type="dxa"/>
+                </w:tblCellMar>
+              </w:tblPrEx>
+              <w:tc>
+                <w:tcPr>
+                  <w:tcW w:w="150" w:type="dxa"/>
+                  <w:tcBorders>
+                    <w:top w:val="nil"/>
+                    <w:left w:val="nil"/>
+                    <w:bottom w:val="nil"/>
+                    <w:right w:val="nil"/>
+                  </w:tcBorders>
+                  <w:shd w:val="clear" w:color="auto" w:fill="1A56DB"/>
+                  <w:tcMar>
+                    <w:top w:w="0" w:type="dxa"/>
+                    <w:left w:w="0" w:type="dxa"/>
+                    <w:bottom w:w="0" w:type="dxa"/>
+                    <w:right w:w="0" w:type="dxa"/>
+                  </w:tcMar>
+                  <w:vAlign w:val="center"/>
+                </w:tcPr>
+                <w:p w14:paraId="EEACE2D4">
+                  <w:pPr>
+                    <w:spacing w:before="0" w:after="0"/>
+                  </w:pPr>
+                  <w:r>
+                    <w:rPr>
+                      <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                      <w:sz w:val="18"/>
+                      <w:szCs w:val="18"/>
+                    </w:rPr>
+                    <w:t xml:space="preserve"> </w:t>
+                  </w:r>
+                </w:p>
+              </w:tc>
+              <w:tc>
+                <w:tcPr>
+                  <w:tcW w:w="7436" w:type="dxa"/>
+                  <w:tcBorders>
+                    <w:top w:val="nil"/>
+                    <w:left w:val="nil"/>
+                    <w:bottom w:val="single" w:color="E1E6EF" w:sz="8" w:space="0"/>
+                    <w:right w:val="nil"/>
+                  </w:tcBorders>
+                  <w:tcMar>
+                    <w:top w:w="0" w:type="dxa"/>
+                    <w:left w:w="120" w:type="dxa"/>
+                    <w:bottom w:w="60" w:type="dxa"/>
+                    <w:right w:w="60" w:type="dxa"/>
+                  </w:tcMar>
+                  <w:vAlign w:val="bottom"/>
+                </w:tcPr>
+                <w:p w14:paraId="1A09F6DF">
+                  <w:pPr>
+                    <w:spacing w:before="0" w:after="0"/>
+                  </w:pPr>
+                  <w:r>
+                    <w:rPr>
+                      <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                      <w:b/>
+                      <w:bCs/>
+                      <w:color w:val="1F2937"/>
+                      <w:spacing w:val="20"/>
+                      <w:sz w:val="22"/>
+                      <w:szCs w:val="22"/>
+                    </w:rPr>
+                    <w:t>工作经历</w:t>
+                  </w:r>
+                  <w:r>
+                    <w:rPr>
+                      <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                      <w:b/>
+                      <w:bCs/>
+                      <w:color w:val="1A56DB"/>
+                      <w:sz w:val="14"/>
+                      <w:szCs w:val="14"/>
+                    </w:rPr>
+                    <w:t>　WORK EXPERIENCE</w:t>
+                  </w:r>
+                </w:p>
+              </w:tc>
+            </w:tr>
+          </w:tbl>
+          <w:p w14:paraId="52D2CB4D">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="120"/>
+            </w:pPr>
+          </w:p>
+          <w:p w14:paraId="0304BE04">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="7586"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="30"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="1F2937"/>
+                <w:sz w:val="21"/>
+                <w:szCs w:val="21"/>
+              </w:rPr>
+              <w:t>广州智云通讯有限公司</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="595959"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>2025.08 – 2026.06</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="8712C22A">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="50"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="1A56DB"/>
+                <w:sz w:val="20"/>
+                <w:szCs w:val="20"/>
+              </w:rPr>
+              <w:t>直营渠道运营操盘（移动业务）</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="91C2F25C">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>负责广州区域直营渠道移动业务引入与运营，对接运营商完成业务准入、政策落地与佣金结算，实现直营门店移动业务全覆盖；</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="0D4F40D2">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>搭建直营团队培训体系，覆盖开卡、套餐、宽带、融合业务实操与合规，累计培训 72 场次、店员通过率 ≥95%，沉淀标准化销售话术与带教方法；</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="5B8545F0">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>制定门店运营 SOP 与业绩考核机制，围绕进店量、办理量、渗透率等指标推动落地，提升单店办理量与渠道综合收益；</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="F4BBDCB1">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>统筹渠道日常运营与业务督导，善于通过销量、库存等数据诊断销售问题并输出改进方案，保障流程规范、合规可控。</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="0C54ECE7">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="200"/>
+            </w:pPr>
+          </w:p>
+          <w:p w14:paraId="36683869">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="7586"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="30"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="1F2937"/>
+                <w:sz w:val="21"/>
+                <w:szCs w:val="21"/>
+              </w:rPr>
+              <w:t>广州民企人力资源有限公司</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="595959"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>2023.11 – 2025.07</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="B57800AB">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="50"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="1A56DB"/>
+                <w:sz w:val="20"/>
+                <w:szCs w:val="20"/>
+              </w:rPr>
+              <w:t>中国移动网格销售助理</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="9C527D77">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>渠道拓展：负责区域移动合作网点引入与检查、政策传达与支撑辅导，定期网点拜访与产量数据收集，提升网点活跃度与产出；</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="013AEEA6">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>渠道管理：开展渠道走访、业务培训、营销检查与信息摸查，落实指标排产与销售指导，辅助渠道达成任务并协同复盘提升；</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="9F0CE94C">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>社区营销：面向片区社区、商圈组织外场营销活动，直接触达家庭与家长客群，锻炼面对面接待、需求挖掘与成交转化能力。</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="C1EB14DC">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="200"/>
+            </w:pPr>
+          </w:p>
+          <w:p w14:paraId="3261045E">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="7586"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="30"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="1F2937"/>
+                <w:sz w:val="21"/>
+                <w:szCs w:val="21"/>
+              </w:rPr>
+              <w:t>OPPO 运营商门店</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="595959"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>2016.03 – 2023.05</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="9D0FE4D6">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="50"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="1A56DB"/>
+                <w:sz w:val="20"/>
+                <w:szCs w:val="20"/>
+              </w:rPr>
+              <w:t>销售助理（政企）</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="8154EE40">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>负责门店终端日常销售与集团客户维护跟进，覆盖售前讲解、体验演示、成交办理与售后协调的完整服务链路；</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="2336319B">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>深刻理解运营商业务与门店客户运营流程、服务标准，有效维护并拓展集团客户资源，多次支撑门店达成促销活动销售目标。</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="C8BC911B">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="220"/>
+            </w:pPr>
+          </w:p>
+          <w:tbl>
+            <w:tblPr>
+              <w:tblStyle w:val="15"/>
+              <w:tblW w:w="7586" w:type="dxa"/>
+              <w:tblInd w:w="0" w:type="dxa"/>
+              <w:tblBorders>
+                <w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+              </w:tblBorders>
+              <w:tblLayout w:type="autofit"/>
+              <w:tblCellMar>
+                <w:top w:w="0" w:type="dxa"/>
+                <w:left w:w="108" w:type="dxa"/>
+                <w:bottom w:w="0" w:type="dxa"/>
+                <w:right w:w="108" w:type="dxa"/>
+              </w:tblCellMar>
+            </w:tblPr>
+            <w:tblGrid>
+              <w:gridCol w:w="150"/>
+              <w:gridCol w:w="7436"/>
+            </w:tblGrid>
+            <w:tr w14:paraId="877815C0">
+              <w:tblPrEx>
+                <w:tblBorders>
+                  <w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                </w:tblBorders>
+                <w:tblCellMar>
+                  <w:top w:w="0" w:type="dxa"/>
+                  <w:left w:w="108" w:type="dxa"/>
+                  <w:bottom w:w="0" w:type="dxa"/>
+                  <w:right w:w="108" w:type="dxa"/>
+                </w:tblCellMar>
+              </w:tblPrEx>
+              <w:tc>
+                <w:tcPr>
+                  <w:tcW w:w="150" w:type="dxa"/>
+                  <w:tcBorders>
+                    <w:top w:val="nil"/>
+                    <w:left w:val="nil"/>
+                    <w:bottom w:val="nil"/>
+                    <w:right w:val="nil"/>
+                  </w:tcBorders>
+                  <w:shd w:val="clear" w:color="auto" w:fill="1A56DB"/>
+                  <w:tcMar>
+                    <w:top w:w="0" w:type="dxa"/>
+                    <w:left w:w="0" w:type="dxa"/>
+                    <w:bottom w:w="0" w:type="dxa"/>
+                    <w:right w:w="0" w:type="dxa"/>
+                  </w:tcMar>
+                  <w:vAlign w:val="center"/>
+                </w:tcPr>
+                <w:p w14:paraId="39E1C6E9">
+                  <w:pPr>
+                    <w:spacing w:before="0" w:after="0"/>
+                  </w:pPr>
+                  <w:r>
+                    <w:rPr>
+                      <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                      <w:sz w:val="18"/>
+                      <w:szCs w:val="18"/>
+                    </w:rPr>
+                    <w:t xml:space="preserve"> </w:t>
+                  </w:r>
+                </w:p>
+              </w:tc>
+              <w:tc>
+                <w:tcPr>
+                  <w:tcW w:w="7436" w:type="dxa"/>
+                  <w:tcBorders>
+                    <w:top w:val="nil"/>
+                    <w:left w:val="nil"/>
+                    <w:bottom w:val="single" w:color="E1E6EF" w:sz="8" w:space="0"/>
+                    <w:right w:val="nil"/>
+                  </w:tcBorders>
+                  <w:tcMar>
+                    <w:top w:w="0" w:type="dxa"/>
+                    <w:left w:w="120" w:type="dxa"/>
+                    <w:bottom w:w="60" w:type="dxa"/>
+                    <w:right w:w="60" w:type="dxa"/>
+                  </w:tcMar>
+                  <w:vAlign w:val="bottom"/>
+                </w:tcPr>
+                <w:p w14:paraId="68A78588">
+                  <w:pPr>
+                    <w:spacing w:before="0" w:after="0"/>
+                  </w:pPr>
+                  <w:r>
+                    <w:rPr>
+                      <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                      <w:b/>
+                      <w:bCs/>
+                      <w:color w:val="1F2937"/>
+                      <w:spacing w:val="20"/>
+                      <w:sz w:val="22"/>
+                      <w:szCs w:val="22"/>
+                    </w:rPr>
+                    <w:t>教育背景</w:t>
+                  </w:r>
+                  <w:r>
+                    <w:rPr>
+                      <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                      <w:b/>
+                      <w:bCs/>
+                      <w:color w:val="1A56DB"/>
+                      <w:sz w:val="14"/>
+                      <w:szCs w:val="14"/>
+                    </w:rPr>
+                    <w:t>　EDUCATION</w:t>
+                  </w:r>
+                </w:p>
+              </w:tc>
+            </w:tr>
+          </w:tbl>
+          <w:p w14:paraId="C236F03A">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="120"/>
+            </w:pPr>
+          </w:p>
+          <w:p w14:paraId="DF55BCF3">
+            <w:pPr>
+              <w:tabs>
+                <w:tab w:val="right" w:pos="7586"/>
+              </w:tabs>
+              <w:spacing w:before="0" w:after="30"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="1F2937"/>
+                <w:sz w:val="21"/>
+                <w:szCs w:val="21"/>
+              </w:rPr>
+              <w:t>广东工业大学</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+              </w:rPr>
+              <w:tab/>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="595959"/>
+                <w:sz w:val="17"/>
+                <w:szCs w:val="17"/>
+              </w:rPr>
+              <w:t>2021.03 – 2023.07</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="29DA2599">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="50"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:b/>
+                <w:bCs/>
+                <w:color w:val="1A56DB"/>
+                <w:sz w:val="20"/>
+                <w:szCs w:val="20"/>
+              </w:rPr>
+              <w:t>大专（函授）</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="E926260C">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="220"/>
+            </w:pPr>
+          </w:p>
+          <w:tbl>
+            <w:tblPr>
+              <w:tblStyle w:val="15"/>
+              <w:tblW w:w="7586" w:type="dxa"/>
+              <w:tblInd w:w="0" w:type="dxa"/>
+              <w:tblBorders>
+                <w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                <w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+              </w:tblBorders>
+              <w:tblLayout w:type="autofit"/>
+              <w:tblCellMar>
+                <w:top w:w="0" w:type="dxa"/>
+                <w:left w:w="108" w:type="dxa"/>
+                <w:bottom w:w="0" w:type="dxa"/>
+                <w:right w:w="108" w:type="dxa"/>
+              </w:tblCellMar>
+            </w:tblPr>
+            <w:tblGrid>
+              <w:gridCol w:w="150"/>
+              <w:gridCol w:w="7436"/>
+            </w:tblGrid>
+            <w:tr w14:paraId="BA1D8208">
+              <w:tblPrEx>
+                <w:tblBorders>
+                  <w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                  <w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/>
+                </w:tblBorders>
+                <w:tblCellMar>
+                  <w:top w:w="0" w:type="dxa"/>
+                  <w:left w:w="108" w:type="dxa"/>
+                  <w:bottom w:w="0" w:type="dxa"/>
+                  <w:right w:w="108" w:type="dxa"/>
+                </w:tblCellMar>
+              </w:tblPrEx>
+              <w:tc>
+                <w:tcPr>
+                  <w:tcW w:w="150" w:type="dxa"/>
+                  <w:tcBorders>
+                    <w:top w:val="nil"/>
+                    <w:left w:val="nil"/>
+                    <w:bottom w:val="nil"/>
+                    <w:right w:val="nil"/>
+                  </w:tcBorders>
+                  <w:shd w:val="clear" w:color="auto" w:fill="1A56DB"/>
+                  <w:tcMar>
+                    <w:top w:w="0" w:type="dxa"/>
+                    <w:left w:w="0" w:type="dxa"/>
+                    <w:bottom w:w="0" w:type="dxa"/>
+                    <w:right w:w="0" w:type="dxa"/>
+                  </w:tcMar>
+                  <w:vAlign w:val="center"/>
+                </w:tcPr>
+                <w:p w14:paraId="1AFA9643">
+                  <w:pPr>
+                    <w:spacing w:before="0" w:after="0"/>
+                  </w:pPr>
+                  <w:r>
+                    <w:rPr>
+                      <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                      <w:sz w:val="18"/>
+                      <w:szCs w:val="18"/>
+                    </w:rPr>
+                    <w:t xml:space="preserve"> </w:t>
+                  </w:r>
+                </w:p>
+              </w:tc>
+              <w:tc>
+                <w:tcPr>
+                  <w:tcW w:w="7436" w:type="dxa"/>
+                  <w:tcBorders>
+                    <w:top w:val="nil"/>
+                    <w:left w:val="nil"/>
+                    <w:bottom w:val="single" w:color="E1E6EF" w:sz="8" w:space="0"/>
+                    <w:right w:val="nil"/>
+                  </w:tcBorders>
+                  <w:tcMar>
+                    <w:top w:w="0" w:type="dxa"/>
+                    <w:left w:w="120" w:type="dxa"/>
+                    <w:bottom w:w="60" w:type="dxa"/>
+                    <w:right w:w="60" w:type="dxa"/>
+                  </w:tcMar>
+                  <w:vAlign w:val="bottom"/>
+                </w:tcPr>
+                <w:p w14:paraId="DBD20B40">
+                  <w:pPr>
+                    <w:spacing w:before="0" w:after="0"/>
+                  </w:pPr>
+                  <w:r>
+                    <w:rPr>
+                      <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                      <w:b/>
+                      <w:bCs/>
+                      <w:color w:val="1F2937"/>
+                      <w:spacing w:val="20"/>
+                      <w:sz w:val="22"/>
+                      <w:szCs w:val="22"/>
+                    </w:rPr>
+                    <w:t>自我评价</w:t>
+                  </w:r>
+                  <w:r>
+                    <w:rPr>
+                      <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                      <w:b/>
+                      <w:bCs/>
+                      <w:color w:val="1A56DB"/>
+                      <w:sz w:val="14"/>
+                      <w:szCs w:val="14"/>
+                    </w:rPr>
+                    <w:t>　SELF EVALUATION</w:t>
+                  </w:r>
+                </w:p>
+              </w:tc>
+            </w:tr>
+          </w:tbl>
+          <w:p w14:paraId="A70EE5B7">
+            <w:pPr>
+              <w:spacing w:before="0" w:after="120"/>
+            </w:pPr>
+          </w:p>
+          <w:p w14:paraId="CFDB302C">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>深耕终端零售与渠道运营 10 年，熟悉 3C 门店销售全流程，擅长与客群沟通、洞察</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:hint="eastAsia"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+                <w:lang w:val="en-US" w:eastAsia="zh-CN"/>
+              </w:rPr>
+              <w:t>客群</w:t>
+            </w:r>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>需求并推动成交；</w:t>
+            </w:r>
+          </w:p>
+          <w:p w14:paraId="AA346C87">
+            <w:pPr>
+              <w:pStyle w:val="28"/>
+              <w:numPr>
+                <w:ilvl w:val="0"/>
+                <w:numId w:val="2"/>
+              </w:numPr>
+              <w:spacing w:before="16" w:after="16" w:line="264" w:lineRule="auto"/>
+            </w:pPr>
+            <w:r>
+              <w:rPr>
+                <w:rFonts w:ascii="微软雅黑" w:hAnsi="微软雅黑" w:eastAsia="微软雅黑"/>
+                <w:color w:val="3F3F3F"/>
+                <w:sz w:val="18"/>
+                <w:szCs w:val="18"/>
+              </w:rPr>
+              <w:t>具备跨部门协作与客户谈判能力，善于挖掘经营痛点，目标导向强、抗压性好，能适应门店轮班与外场营销节奏。</w:t>
+            </w:r>
+            <w:bookmarkStart w:id="0" w:name="_GoBack"/>
+            <w:bookmarkEnd w:id="0"/>
+          </w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+    <w:p w14:paraId="6FE36DAF">
+      <w:pPr>
+        <w:spacing w:before="0" w:after="0" w:line="14" w:lineRule="exact"/>
+        <w:rPr>
+          <w:vanish/>
+          <w:sz w:val="2"/>
+          <w:szCs w:val="2"/>
+        </w:rPr>
+      </w:pPr>
+    </w:p>
+    <w:sectPr>
+      <w:pgSz w:w="11906" w:h="16838"/>
+      <w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="708" w:footer="708" w:gutter="0"/>
+      <w:cols w:space="720" w:num="1"/>
+      <w:docGrid w:linePitch="360" w:charSpace="0"/>
+    </w:sectPr>
+  </w:body>
+</w:document>
