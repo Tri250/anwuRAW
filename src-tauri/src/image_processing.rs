@@ -4464,26 +4464,34 @@ pub fn auto_results_to_json(
     })
 }
 
+/// Async + spawn_blocking (v2.1.15 fix, 预设-AI增强点击无任何反应): sync
+/// commands run on the main thread (the Android UI thread), so the histogram
+/// analysis below would freeze the whole WebView on large images and every
+/// tap would appear dead. Same pattern as scene_classify / ai_auto_enhance.
 #[tauri::command]
-pub fn calculate_auto_adjustments(
+pub async fn calculate_auto_adjustments(
     js_adjustments: serde_json::Value,
     mode: Option<AutoAdjustMode>,
-    state: tauri::State<AppState>,
     app_handle: tauri::AppHandle,
 ) -> Result<serde_json::Value, String> {
-    let loaded_image = state
-        .original_image
-        .lock()
-        .unwrap()
-        .clone()
-        .ok_or("No image loaded for auto adjustments")?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = tauri::Manager::state::<AppState>(&app_handle);
+        let loaded_image = state
+            .original_image
+            .lock()
+            .unwrap()
+            .clone()
+            .ok_or("No image loaded for auto adjustments")?;
 
-    let render = resolve_render_options_from_handle(&app_handle, loaded_image.is_raw);
-    let exposure =
-        effective_baseline_exposure(&js_adjustments, loaded_image.as_shot, render.baseline);
-    let results = perform_auto_analysis(&loaded_image.image, exposure);
+        let render = resolve_render_options_from_handle(&app_handle, loaded_image.is_raw);
+        let exposure =
+            effective_baseline_exposure(&js_adjustments, loaded_image.as_shot, render.baseline);
+        let results = perform_auto_analysis(&loaded_image.image, exposure);
 
-    Ok(auto_results_to_json(&results, mode.unwrap_or_default()))
+        Ok(auto_results_to_json(&results, mode.unwrap_or_default()))
+    })
+    .await
+    .map_err(|e| format!("Task panicked: {}", e))?
 }
 
 #[derive(Deserialize, Clone, Copy)]

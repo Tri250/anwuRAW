@@ -192,6 +192,13 @@
       "vignette": "Vinyetatge"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "Error de màscara de profunditat IA: {{error}}",
+    "faceMaskFailed": "La màscara facial d’IA ha fallat: {{error}}",
+    "foregroundMaskFailed": "Error de màscara d'objecte IA: {{error}}",
+    "skyMaskFailed": "Error de màscara de cel IA: {{error}}",
+    "textMaskFailed": "Error de màscara de text IA: {{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Grup buit)"
@@ -413,13 +420,6 @@
       "failedSyncAdjustments": "Ha fallat la sincronització dels ajustos amb les imatges seleccionades: {{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "La màscara facial d’IA ha fallat: {{error}}",
-    "depthMaskFailed": "Error de màscara de profunditat IA: {{error}}",
-    "foregroundMaskFailed": "Error de màscara d'objecte IA: {{error}}",
-    "skyMaskFailed": "Error de màscara de cel IA: {{error}}",
-    "textMaskFailed": "Error de màscara de text IA: {{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "Nitidesa",
@@ -446,10 +446,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "Millora IA aplicada",
       "enhance": "Millora IA",
       "failed": "Ha fallat la millora IA",
       "noExif": "Sense pistes EXIF — prova la millora IA",
       "noScene": "Cap escena concloent — prova la millora IA",
+      "notReady": "La imatge encara s'està carregant — torna-ho a provar en un moment",
       "recipe": "Recepta d'escena",
       "sceneBasis": "Sembla {{scene}} · segons {{basis}}",
       "scenes": {
@@ -503,6 +505,7 @@
       "done": "Exportat a la galeria",
       "exporting": "Exportant…",
       "favorite": "Preferit",
+      "filenameSuffix": "Sufix del nom del fitxer",
       "fontBuiltin": "Clàssica",
       "fontFamily": "Font",
       "fontScale": "Mida de la lletra",
@@ -512,15 +515,14 @@
       "infoFrameLabel": "Mostra barra i marc",
       "livePreview": "Vista en directe",
       "noExif": "Sense EXIF",
+      "pngLossless": "PNG és sense pèrdues; la compressió de qualitat no s'hi aplica",
       "progress": "Desant {{current}}/{{total}}",
       "quality": "Qualitat",
       "saveTemplate": "Desa",
       "setDefault": "Per defecte",
       "signature": "Signatura",
       "signaturePlaceholder": "CRYSTAL · Fotografia Pro",
-      "templates": "Plantilles de marca d'aigua",
-      "filenameSuffix": "Sufix del nom del fitxer",
-      "pngLossless": "PNG és sense pèrdues; la compressió de qualitat no s'hi aplica"
+      "templates": "Plantilles de marca d'aigua"
     },
     "filters": {
       "airy": "Aeri",
@@ -543,8 +545,8 @@
     "fx": {
       "centerX": "Centre X",
       "centerY": "Centre Y",
-      "depthFailed": "Error en generar el mapa de profunditat",
       "dehaze": "Treu la boira",
+      "depthFailed": "Error en generar el mapa de profunditat",
       "flare": "Enlluernament",
       "glow": "Lluentor",
       "grain": "Gra",
@@ -561,14 +563,14 @@
       "lutClear": "Esborra LUT",
       "lutEmpty": "Encara no hi ha LUT, toca per importar",
       "lutImport": "Importa",
+      "lutImported": "{{n}} LUT importats",
       "lutIntensity": "Intensitat LUT",
       "normalFailed": "Error en generar el mapa de normals",
       "relightHint": "Afegeix o selecciona una llum i ajusta'n la posició i els paràmetres",
       "vignette": "Vinyeta",
       "vignetteFeather": "Difuminat",
       "vignetteMidpoint": "Punt mitjà",
-      "vignetteRoundness": "Rodonesa",
-      "lutImported": "{{n}} LUT importats"
+      "vignetteRoundness": "Rodonesa"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {
@@ -597,10 +599,12 @@
     },
     "presets": {
       "all": "Totes",
+      "appliedBar": "Aplicat: {{name}}",
       "deleteMessage": "Suprimir el preajust \"{{name}}\"? No es pot desfer.",
       "deleteTitle": "Suprimeix el preajust",
       "empty": "Encara no hi ha preajustos — toca «Desa l'actual» a dalt o importa fitxers.",
       "exportAll": "Exporta-ho tot",
+      "exportEmpty": "Encara no hi ha preajustos per exportar",
       "exportFailed": "Error en exportar preajust",
       "exportSuccess": "Preajust exportat",
       "import": "Importa",
@@ -613,17 +617,17 @@
       "menuOverwrite": "Actualitza amb l'actual",
       "menuRename": "Canvia el nom",
       "namePlaceholder": "Nom del preajust",
-      "overwritten": "Preajust actualitzat",
       "overwriteFailed": "No s'ha pogut actualitzar el preajust",
+      "overwritten": "Preajust actualitzat",
       "renameTitle": "Canvia el nom del preajust",
       "saveCurrent": "Desa l'actual",
       "saved": "Preajust desat",
-      "saveTitle": "Desa com a preajust",
-      "appliedBar": "Aplicat: {{name}}"
+      "saveTitle": "Desa com a preajust"
     },
     "previewAlt": "Vista prèvia editada",
     "previewCloseCompare": "Surt de la comparació",
     "previewEdited": "Editat",
+    "previewLoading": "Carregant…",
     "previewRendering": "Renderitzant…",
     "previewResetZoom": "Restableix el zoom",
     "redo": "Refés",
@@ -695,8 +699,7 @@
       "vibrance": "Vibrància",
       "whites": "Blancs"
     },
-    "undo": "Desfés",
-    "previewLoading": "Carregant…"
+    "undo": "Desfés"
   },
   "editor": {
     "adjustments": {
@@ -2942,11 +2945,11 @@
       "importFailed": "Error en importar LUTs",
       "intensity": "Intensitat",
       "label": "LUT",
+      "loadFailed": "No s'ha pogut carregar el LUT",
       "removeLut": "Eliminar LUT",
       "select": "Seleccionar",
       "selectLutFile": "Seleccionar un fitxer LUT",
-      "unsupportedFormat": "S'ha(n) detectat format(s) de fitxer no compatible(s): .{{ext}}",
-      "loadFailed": "No s'ha pogut carregar el LUT"
+      "unsupportedFormat": "S'ha(n) detectat format(s) de fitxer no compatible(s): .{{ext}}"
     },
     "slider": {
       "clickToEdit": "Feu clic per editar",

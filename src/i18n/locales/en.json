@@ -192,6 +192,13 @@
       "vignette": "Vignette"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "AI depth mask failed: {{error}}",
+    "faceMaskFailed": "AI face mask failed: {{error}}",
+    "foregroundMaskFailed": "AI foreground mask failed: {{error}}",
+    "skyMaskFailed": "AI sky mask failed: {{error}}",
+    "textMaskFailed": "AI text mask failed: {{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Empty Group)"
@@ -396,13 +403,6 @@
       "failedSyncAdjustments": "Failed to sync adjustments to selected images: {{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "AI face mask failed: {{error}}",
-    "depthMaskFailed": "AI depth mask failed: {{error}}",
-    "foregroundMaskFailed": "AI foreground mask failed: {{error}}",
-    "skyMaskFailed": "AI sky mask failed: {{error}}",
-    "textMaskFailed": "AI text mask failed: {{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "Clarity",
@@ -429,10 +429,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "AI enhance applied",
       "enhance": "AI Enhance",
       "failed": "AI enhance failed",
       "noExif": "No EXIF scene hints — try AI enhance",
       "noScene": "No confident scene match — try AI enhance",
+      "notReady": "Image is still loading — try again shortly",
       "recipe": "Scene recipe",
       "sceneBasis": "Looks like {{scene}} · based on {{basis}}",
       "scenes": {
@@ -486,6 +488,7 @@
       "done": "Exported to gallery",
       "exporting": "Exporting…",
       "favorite": "Favorite",
+      "filenameSuffix": "Filename suffix",
       "fontBuiltin": "Classic",
       "fontFamily": "Font",
       "fontScale": "Font size",
@@ -495,15 +498,14 @@
       "infoFrameLabel": "Show info bar & frame",
       "livePreview": "Live preview",
       "noExif": "No EXIF",
+      "pngLossless": "PNG is lossless — quality compression does not apply",
       "progress": "Saving {{current}}/{{total}}",
       "quality": "Quality",
       "saveTemplate": "Save",
       "setDefault": "Default",
       "signature": "Signature",
       "signaturePlaceholder": "CRYSTAL · Pro Photography",
-      "templates": "Watermark templates",
-      "filenameSuffix": "Filename suffix",
-      "pngLossless": "PNG is lossless — quality compression does not apply"
+      "templates": "Watermark templates"
     },
     "filters": {
       "airy": "Airy",
@@ -526,8 +528,8 @@
     "fx": {
       "centerX": "Center X",
       "centerY": "Center Y",
-      "depthFailed": "Depth map generation failed",
       "dehaze": "Dehaze",
+      "depthFailed": "Depth map generation failed",
       "flare": "Flare",
       "glow": "Glow",
       "grain": "Grain",
@@ -544,14 +546,14 @@
       "lutClear": "Clear LUT",
       "lutEmpty": "No LUT yet, tap to import",
       "lutImport": "Import",
+      "lutImported": "Imported {{n}} LUT(s)",
       "lutIntensity": "LUT intensity",
       "normalFailed": "Normal map generation failed",
       "relightHint": "Add or select a light, then adjust its position and parameters",
       "vignette": "Vignette",
       "vignetteFeather": "Feather",
       "vignetteMidpoint": "Midpoint",
-      "vignetteRoundness": "Roundness",
-      "lutImported": "Imported {{n}} LUT(s)"
+      "vignetteRoundness": "Roundness"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {
@@ -580,6 +582,7 @@
     },
     "presets": {
       "all": "All",
+      "appliedBar": "Applied: {{name}}",
       "deleteMessage": "Delete preset \"{{name}}\"? This cannot be undone.",
       "deleteTitle": "Delete preset",
       "empty": "No presets yet — tap \"Save current\" to create one, or import preset files.",
@@ -597,17 +600,17 @@
       "menuOverwrite": "Update with current",
       "menuRename": "Rename",
       "namePlaceholder": "Preset name",
-      "overwritten": "Preset updated",
       "overwriteFailed": "Preset update failed",
+      "overwritten": "Preset updated",
       "renameTitle": "Rename preset",
       "saveCurrent": "Save current",
       "saved": "Preset saved",
-      "saveTitle": "Save as preset",
-      "appliedBar": "Applied: {{name}}"
+      "saveTitle": "Save as preset"
     },
     "previewAlt": "Edited preview",
     "previewCloseCompare": "Exit compare",
     "previewEdited": "Edited",
+    "previewLoading": "Loading…",
     "previewRendering": "Rendering…",
     "previewResetZoom": "Reset zoom",
     "redo": "Redo",
@@ -679,8 +682,7 @@
       "vibrance": "Vibrance",
       "whites": "Whites"
     },
-    "undo": "Undo",
-    "previewLoading": "Loading…"
+    "undo": "Undo"
   },
   "editor": {
     "adjustments": {
@@ -2965,11 +2967,11 @@
       "importFailed": "Failed to import LUTs",
       "intensity": "Intensity",
       "label": "LUT",
+      "loadFailed": "Failed to load LUT",
       "removeLut": "Remove LUT",
       "select": "Select",
       "selectLutFile": "Select a LUT file",
-      "unsupportedFormat": "Unsupported file format(s) detected: .{{ext}}",
-      "loadFailed": "Failed to load LUT"
+      "unsupportedFormat": "Unsupported file format(s) detected: .{{ext}}"
     },
     "slider": {
       "clickToEdit": "Click to edit",

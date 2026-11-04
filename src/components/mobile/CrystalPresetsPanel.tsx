@@ -286,14 +286,21 @@ function AiRecommendCard() {
      *    图片未加载完即点击会抛 "No image loaded for AI enhance"；
      * 2) 跨图守卫：切图后丢弃旧图增强结果，不合并进新图 adjustments；
      * 3) activeTools 合并：后端返回全 true，直接覆盖会把用户手动关掉的
-     *    工具重新打开（桌面 handleAutoAdjustments mergeActiveTools 语义）。 */
+     *    工具重新打开（桌面 handleAutoAdjustments mergeActiveTools 语义）。
+     * v2.1.15 反馈闭环：此前所有提前 return 均为静默（加载超时/失败无任何
+     * 提示，成功也无反馈，低幅度增强视觉变化细微）——用户感知为「点击无
+     * 任何反应」。现除跨图丢弃外全路径给出 toast 反馈。 */
     const startPath = useEditorStore.getState().selectedImage?.path;
     if (!startPath) {
       setIsEnhancing(false);
       return;
     }
     try {
-      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) {
+        // 图片未就绪（仍在解码或加载失败）：静默 return 会被感知为死键
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity: 'standard' });
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
@@ -302,10 +309,10 @@ function AiRecommendCard() {
       setAdjustments((prev) => ({
         ...prev,
         ...result,
-        ...(result.activeTools
-          ? { activeTools: { ...prev.activeTools, ...result.activeTools } }
-          : {}),
+        ...(result.activeTools ? { activeTools: { ...prev.activeTools, ...result.activeTools } } : {}),
       }));
+      // 成功反馈：直方图增强在曝光良好的图上幅度小，无提示会被误读为无响应
+      toast.success(t('crystal.aiRecommend.applied'));
     } catch (e) {
       console.error('AI enhance failed:', e);
       toast.error(t('crystal.aiRecommend.failed'));

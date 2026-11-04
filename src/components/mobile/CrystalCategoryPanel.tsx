@@ -54,7 +54,15 @@ import { useEditorActions } from '../../hooks/useEditorActions';
 import { Invokes } from '../ui/AppProperties';
 import { DepthRangePicker } from '../ui/DepthRangePicker';
 import { selectAiModelDownloadStatus, useProcessStore } from '../../store/useProcessStore';
-import { CxSliderRow, CxSubSection, CxSwitch, awaitImageReady, haptic, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
+import {
+  CxSliderRow,
+  CxSubSection,
+  CxSwitch,
+  awaitImageReady,
+  haptic,
+  useCrystalAdjust,
+  useCrystalAiMasks,
+} from './crystalShared';
 import { Mask } from '../panel/right/Masks';
 import type { CrystalCategory } from './CrystalMobileApp';
 import CrystalPresetsPanel from './CrystalPresetsPanel';

@@ -659,10 +659,28 @@ pub enum EnhanceIntensity {
 /// Computes a one-click enhancement suggestion for the currently loaded image
 /// from the existing histogram-driven auto analysis, scaled by the requested
 /// intensity tier and finished with a conservative texture polish.
+///
+/// Async + spawn_blocking (v2.1.15 fix, 预设-AI增强点击无任何反应): plain sync
+/// commands execute on the main thread, which on Android is the UI thread —
+/// `perform_auto_analysis` (full-image F32 downscale + per-pixel stats) then
+/// freezes the whole WebView for large images/RAW and every tap "does
+/// nothing". Same pattern as `scene_classify` / `ai_upscale_export`.
 #[tauri::command]
-pub fn ai_auto_enhance(
-    state: tauri::State<AppState>,
+pub async fn ai_auto_enhance(
     app_handle: AppHandle,
+    intensity: Option<EnhanceIntensity>,
+) -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app_handle.state::<AppState>();
+        run_ai_auto_enhance(&state, &app_handle, intensity)
+    })
+    .await
+    .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+fn run_ai_auto_enhance(
+    state: &AppState,
+    app_handle: &AppHandle,
     intensity: Option<EnhanceIntensity>,
 ) -> Result<Value, String> {
     let loaded_image = state
@@ -673,7 +691,7 @@ pub fn ai_auto_enhance(
         .ok_or("No image loaded for AI enhance")?;
 
     let render = crate::image_processing::resolve_render_options_from_handle(
-        &app_handle,
+        app_handle,
         loaded_image.is_raw,
     );
     let exposure = crate::image_processing::effective_baseline_exposure(

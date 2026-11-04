@@ -104,7 +104,11 @@ export default function CrystalAiToolsPanel() {
       return;
     }
     try {
-      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) {
+        // 图片未就绪（仍在解码或加载失败）：静默 return 会被感知为死键
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity });
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
@@ -113,10 +117,10 @@ export default function CrystalAiToolsPanel() {
       setAdjustments((prev) => ({
         ...prev,
         ...result,
-        ...(result.activeTools
-          ? { activeTools: { ...prev.activeTools, ...result.activeTools } }
-          : {}),
+        ...(result.activeTools ? { activeTools: { ...prev.activeTools, ...result.activeTools } } : {}),
       }));
+      // 成功反馈：直方图增强在曝光良好的图上幅度小，无提示会被误读为无响应
+      toast.success(t('crystal.aiRecommend.applied'));
     } catch (e) {
       console.error('AI enhance failed:', e);
       toast.error(t('crystal.aiRecommend.failed'));
@@ -137,12 +141,16 @@ export default function CrystalAiToolsPanel() {
       return;
     }
     try {
-      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) {
+        // 图片未就绪（仍在解码或加载失败）：静默 return 会被感知为死键
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       await handleAutoAdjustments();
     } finally {
       setBusy(null);
     }
-  }, [busy, handleAutoAdjustments]);
+  }, [busy, handleAutoAdjustments, t]);
 
   const denoiseOn = Boolean(adjustments.aiDenoiseEnabled);
 

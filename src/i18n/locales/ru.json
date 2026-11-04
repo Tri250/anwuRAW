@@ -192,6 +192,13 @@
       "vignette": "Виньетирование"
     }
   },
+  "aiMask": {
+    "depthMaskFailed": "Сбой маски глубины ИИ: {{error}}",
+    "faceMaskFailed": "Не удалось создать маску лица: {{error}}",
+    "foregroundMaskFailed": "Сбой маски объекта ИИ: {{error}}",
+    "skyMaskFailed": "Сбой маски неба ИИ: {{error}}",
+    "textMaskFailed": "Сбой маски текста ИИ: {{error}}"
+  },
   "contextMenus": {
     "album": {
       "emptyGroup": "(Пустая группа)"
@@ -433,13 +440,6 @@
       "failedSyncAdjustments": "Не удалось синхронизировать коррекции с выбранными изображениями: {{err}}"
     }
   },
-  "aiMask": {
-    "faceMaskFailed": "Не удалось создать маску лица: {{error}}",
-    "depthMaskFailed": "Сбой маски глубины ИИ: {{error}}",
-    "foregroundMaskFailed": "Сбой маски объекта ИИ: {{error}}",
-    "skyMaskFailed": "Сбой маски неба ИИ: {{error}}",
-    "textMaskFailed": "Сбой маски текста ИИ: {{error}}"
-  },
   "crystal": {
     "ai": {
       "clarity": "Чёткость",
@@ -466,10 +466,12 @@
       }
     },
     "aiRecommend": {
+      "applied": "ИИ-улучшение применено",
       "enhance": "ИИ-улучшение",
       "failed": "Ошибка ИИ-улучшения",
       "noExif": "Нет подсказок EXIF — попробуйте ИИ-улучшение",
       "noScene": "Нет уверенной сцены — попробуйте ИИ-улучшение",
+      "notReady": "Изображение ещё загружается — повторите попытку чуть позже",
       "recipe": "Рецепт сцены",
       "sceneBasis": "Похоже на {{scene}} · по данным {{basis}}",
       "scenes": {
@@ -523,6 +525,7 @@
       "done": "Экспортировано в галерею",
       "exporting": "Экспорт…",
       "favorite": "В избранное",
+      "filenameSuffix": "Суффикс имени файла",
       "fontBuiltin": "Классический",
       "fontFamily": "Шрифт",
       "fontScale": "Размер шрифта",
@@ -532,15 +535,14 @@
       "infoFrameLabel": "Плашка и рамка на фото",
       "livePreview": "Живой предпросмотр",
       "noExif": "Нет EXIF",
+      "pngLossless": "PNG — формат без потерь, сжатие качества не применяется",
       "progress": "Сохранение {{current}}/{{total}}",
       "quality": "Качество",
       "saveTemplate": "Сохранить",
       "setDefault": "По умолчанию",
       "signature": "Подпись",
       "signaturePlaceholder": "CRYSTAL · Про фотография",
-      "templates": "Шаблоны водяных знаков",
-      "filenameSuffix": "Суффикс имени файла",
-      "pngLossless": "PNG — формат без потерь, сжатие качества не применяется"
+      "templates": "Шаблоны водяных знаков"
     },
     "filters": {
       "airy": "Воздушный",
@@ -563,8 +565,8 @@
     "fx": {
       "centerX": "Центр X",
       "centerY": "Центр Y",
-      "depthFailed": "Не удалось создать карту глубины",
       "dehaze": "Убрать дымку",
+      "depthFailed": "Не удалось создать карту глубины",
       "flare": "Блик",
       "glow": "Свечение",
       "grain": "Зерно",
@@ -581,14 +583,14 @@
       "lutClear": "Убрать LUT",
       "lutEmpty": "Нет LUT, нажмите для импорта",
       "lutImport": "Импорт",
+      "lutImported": "Импортировано LUT: {{n}}",
       "lutIntensity": "Интенсивность LUT",
       "normalFailed": "Не удалось создать карту нормалей",
       "relightHint": "Добавьте или выберите источник света, затем настройте его положение и параметры",
       "vignette": "Виньетка",
       "vignetteFeather": "Размытие края",
       "vignetteMidpoint": "Середина",
-      "vignetteRoundness": "Округлость",
-      "lutImported": "Импортировано LUT: {{n}}"
+      "vignetteRoundness": "Округлость"
     },
     "originalBadge": "ОРИГИНАЛ",
     "portrait": {
@@ -617,10 +619,12 @@
     },
     "presets": {
       "all": "Все",
+      "appliedBar": "Применено: {{name}}",
       "deleteMessage": "Удалить пресет «{{name}}»? Действие необратимо.",
       "deleteTitle": "Удалить пресет",
       "empty": "Пресетов пока нет — нажмите «Сохранить тек.» выше или импортируйте файлы.",
       "exportAll": "Экспорт всех",
+      "exportEmpty": "Пока нет пресетов для экспорта",
       "exportFailed": "Не удалось экспортировать пресет",
       "exportSuccess": "Пресет экспортирован",
       "import": "Импорт",
@@ -633,17 +637,17 @@
       "menuOverwrite": "Обновить текущим",
       "menuRename": "Переименовать",
       "namePlaceholder": "Название пресета",
-      "overwritten": "Пресет обновлён",
       "overwriteFailed": "Не удалось обновить пресет",
+      "overwritten": "Пресет обновлён",
       "renameTitle": "Переименовать пресет",
       "saveCurrent": "Сохранить тек.",
       "saved": "Пресет сохранён",
-      "saveTitle": "Сохранить как пресет",
-      "appliedBar": "Применено: {{name}}"
+      "saveTitle": "Сохранить как пресет"
     },
     "previewAlt": "Предпросмотр",
     "previewCloseCompare": "Выйти из сравнения",
     "previewEdited": "После обработки",
+    "previewLoading": "Загрузка…",
     "previewRendering": "Рендеринг…",
     "previewResetZoom": "Сбросить масштаб",
     "redo": "Повторить",
@@ -715,8 +719,7 @@
       "vibrance": "Красочность",
       "whites": "Белые"
     },
-    "undo": "Отменить",
-    "previewLoading": "Загрузка…"
+    "undo": "Отменить"
   },
   "editor": {
     "adjustments": {
@@ -2997,11 +3000,11 @@
       "importFailed": "Не удалось импортировать LUT",
       "intensity": "Интенсивность",
       "label": "LUT",
+      "loadFailed": "Не удалось загрузить LUT",
       "removeLut": "Удалить LUT",
       "select": "Выбрать",
       "selectLutFile": "Выберите файл таблицы цветов LUT",
-      "unsupportedFormat": "Обнаружены неподдерживаемые форматы файлов: .{{ext}}",
-      "loadFailed": "Не удалось загрузить LUT"
+      "unsupportedFormat": "Обнаружены неподдерживаемые форматы файлов: .{{ext}}"
     },
     "slider": {
       "clickToEdit": "Нажмите для точного ввода",
