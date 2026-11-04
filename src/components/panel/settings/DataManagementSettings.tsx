@@ -219,9 +219,15 @@ function Row({
 }) {
   return (
     <div className="py-3.5 first:pt-0 last:pb-0">
-      <div className="flex items-center gap-3">
+      {/* 移动端窄容器修复（v2.1.15 设置-处理-数据管理）：右侧 size 文本
+       * shrink-0 不换行 + 操作按钮容器 min-w-24 固定宽，会把 flex-1 的
+       * 标题/描述列挤到 ~1 字宽，CJK 按字断行渲染成竖排（截图中「缩略图/
+       * 浏览时会自动重新生成。」竖排一列）。改为可换行行布局：文字列保底
+       * basis-52，右侧 size+操作打包成一组 ml-auto，窄屏时整体换到第二行
+       * 右对齐；桌面端一行内放得下，视觉不变。 */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {color && <span className={clsx('w-2.5 h-2.5 rounded-full shrink-0', color)} />}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 basis-52">
           <Text variant={TextVariants.label} color={TextColors.primary} weight={TextWeights.medium}>
             {title}
           </Text>
@@ -229,17 +235,21 @@ function Row({
             {description}
           </Text>
         </div>
-        {size !== undefined && (
-          <Text
-            variant={TextVariants.label}
-            color={TextColors.primary}
-            weight={TextWeights.medium}
-            className="tabular-nums text-right shrink-0"
-          >
-            {size}
-          </Text>
+        {(size !== undefined || action) && (
+          <div className="flex items-center gap-3 ml-auto">
+            {size !== undefined && (
+              <Text
+                variant={TextVariants.label}
+                color={TextColors.primary}
+                weight={TextWeights.medium}
+                className="tabular-nums text-right shrink-0"
+              >
+                {size}
+              </Text>
+            )}
+            {size !== undefined ? <div className="flex justify-end min-w-24 shrink-0">{action}</div> : action}
+          </div>
         )}
-        {size !== undefined ? <div className="flex justify-end min-w-24 shrink-0">{action}</div> : action}
       </div>
       {children}
       {status && (
