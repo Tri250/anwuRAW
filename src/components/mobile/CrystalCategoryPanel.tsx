@@ -1933,7 +1933,20 @@ function FxPanel() {
               <span className="cx-lut-name">{entry.name}</span>
             </button>
           ))}
-          {lutEntries.length === 0 && <span className="cx-lut-empty">{t('crystal.fx.lutEmpty')}</span>}
+          {lutEntries.length === 0 && (
+            /* UX：文案为「点击导入」，空态本身须可点，与导入按钮等价 */
+            <button
+              type="button"
+              className="cx-lut-empty"
+              disabled={lutImporting}
+              onClick={() => {
+                haptic(6);
+                void importLuts();
+              }}
+            >
+              {t('crystal.fx.lutEmpty')}
+            </button>
+          )}
         </div>
         {adjustments.lutPath && (
           <>
@@ -1999,6 +2012,7 @@ function FxPanel() {
               min={0}
               max={100}
               step={1}
+              suffix="%"
               value={Math.round(Number(adjustments.vignetteCenterX ?? 0.5) * 100)}
               defaultValue={50}
               onChange={(v) => applyPatch({ vignetteCenterX: v / 100 })}
@@ -2008,6 +2022,7 @@ function FxPanel() {
               min={0}
               max={100}
               step={1}
+              suffix="%"
               value={Math.round(Number(adjustments.vignetteCenterY ?? 0.5) * 100)}
               defaultValue={50}
               onChange={(v) => applyPatch({ vignetteCenterY: v / 100 })}
@@ -2393,6 +2408,7 @@ function FxPanel() {
                       min={0}
                       max={100}
                       step={1}
+                      suffix="%"
                       value={Math.round(activeLight.x * 100)}
                       defaultValue={50}
                       onChange={(v) => updateLight(activeLight.id, { x: v / 100 })}
@@ -2402,6 +2418,7 @@ function FxPanel() {
                       min={0}
                       max={100}
                       step={1}
+                      suffix="%"
                       value={Math.round(activeLight.y * 100)}
                       defaultValue={50}
                       onChange={(v) => updateLight(activeLight.id, { y: v / 100 })}
