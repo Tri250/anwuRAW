@@ -433,6 +433,7 @@
       "noScene": "Geen duidelijke scène — probeer AI-verbetering",
       "notReady": "Afbeelding wordt nog geladen — probeer het zo opnieuw",
       "recipe": "Scènerecept",
+      "recipeApplied": "{{scene}}-recept toegepast",
       "sceneBasis": "Lijkt op {{scene}} · op basis van {{basis}}",
       "scenes": {
         "food": "eten",

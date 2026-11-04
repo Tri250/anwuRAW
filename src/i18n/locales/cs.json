@@ -473,6 +473,7 @@
       "noScene": "Žádná jednoznačná scéna — zkuste vylepšení AI",
       "notReady": "Obrázek se stále načítá — zkuste to znovu za chvíli",
       "recipe": "Recept scény",
+      "recipeApplied": "Recept {{scene}} byl aplikován",
       "sceneBasis": "Vypadá jako {{scene}} · podle {{basis}}",
       "scenes": {
         "food": "jídlo",

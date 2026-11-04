@@ -330,6 +330,14 @@ function AiRecommendCard() {
   };
 
   // W3-3 推荐映射规则库：scene → 真实管线参数包（与 ai_auto_enhance 同写入路径）。
+  // 反馈闭环修复（v2.1.16 Android：场景配方点击无反应）：
+  // 1) 夜景分支原三元 `aiProvider ? AI降噪 : 经典降噪30` 恒走 AI——后端默认
+  //    ai_provider 即 'cpu'（恒真），经典降噪是死代码；Android 上 NIND 需先
+  //    下载模型（网络不通时静默失败）+ 端侧 CPU 推理可达分钟级，期间配方
+  //    仅剩 shadows/blacks 微调，夜景暗部几乎不可感知 → 感知为点击无反应。
+  //    现经典 NR 恒定生效（真实管线全平台立即可见），AI 降噪保留为可用时增量。
+  // 2) 此前应用成功/未知场景均无任何提示（v2.1.15 一键增强同类问题），
+  //    全路径补 toast 反馈；未知 sceneKey（按钮已渲染但无分支命中）不再静默。
   const applySceneRecipe = () => {
     if (sceneKey === 'portrait') {
       applyPatch({
@@ -338,16 +346,24 @@ function AiRecommendCard() {
         glowAmount: 20,
         vibrance: 8,
       });
+      toast.success(t('crystal.aiRecommend.recipeApplied', { scene: t('crystal.aiRecommend.scenes.portrait') }));
     } else if (sceneKey === 'landscape') {
       applyPatch({ vibrance: 22, clarity: 14, dehaze: 10, contrast: 8 });
+      toast.success(t('crystal.aiRecommend.recipeApplied', { scene: t('crystal.aiRecommend.scenes.landscape') }));
     } else if (sceneKey === 'night') {
       applyPatch({
-        ...(aiProvider ? getAiDenoiseEnablePatch(aiProvider) : { lumaNoiseReduction: 30 }),
+        lumaNoiseReduction: Math.max(Number(useEditorStore.getState().adjustments.lumaNoiseReduction ?? 0), 30),
+        ...(aiProvider ? getAiDenoiseEnablePatch(aiProvider) : {}),
         shadows: 14,
         blacks: -8,
       });
+      toast.success(t('crystal.aiRecommend.recipeApplied', { scene: t('crystal.aiRecommend.scenes.night') }));
     } else if (sceneKey === 'food') {
       applyPatch({ vibrance: 16, saturation: 6, temperature: 6, contrast: 6, shadows: 8 });
+      toast.success(t('crystal.aiRecommend.recipeApplied', { scene: t('crystal.aiRecommend.scenes.food') }));
+    } else {
+      // 防御：后端返回未映射场景时按钮仍会渲染（sceneKey 非空），不得静默
+      toast.info(t('crystal.aiRecommend.noScene'));
     }
   };
 

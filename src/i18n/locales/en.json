@@ -436,6 +436,7 @@
       "noScene": "No confident scene match — try AI enhance",
       "notReady": "Image is still loading — try again shortly",
       "recipe": "Scene recipe",
+      "recipeApplied": "{{scene}} recipe applied",
       "sceneBasis": "Looks like {{scene}} · based on {{basis}}",
       "scenes": {
         "food": "food",

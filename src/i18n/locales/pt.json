@@ -453,6 +453,7 @@
       "noScene": "Sem cena conclusiva — experimente a melhoria IA",
       "notReady": "A imagem ainda está carregando — tente novamente em instantes",
       "recipe": "Receita de cena",
+      "recipeApplied": "Receita {{scene}} aplicada",
       "sceneBasis": "Parece {{scene}} · com base em {{basis}}",
       "scenes": {
         "food": "comida",

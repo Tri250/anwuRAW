@@ -433,6 +433,7 @@
       "noScene": "暂无高置信度场景 — 试试 AI 增强",
       "notReady": "图片仍在加载中，请稍后再试",
       "recipe": "场景配方",
+      "recipeApplied": "已应用{{scene}}配方",
       "sceneBasis": "疑似{{scene}} · 依据 {{basis}}",
       "scenes": {
         "food": "美食",

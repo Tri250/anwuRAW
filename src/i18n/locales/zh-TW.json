@@ -430,6 +430,7 @@
       "noScene": "暫無高信心場景 — 試試 AI 強化",
       "notReady": "圖片仍在載入中，請稍後再試",
       "recipe": "場景配方",
+      "recipeApplied": "已套用{{scene}}配方",
       "sceneBasis": "疑似{{scene}} · 依據 {{basis}}",
       "scenes": {
         "food": "美食",

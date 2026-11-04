@@ -453,6 +453,7 @@
       "noScene": "Aucune scène certaine — essayez l'amélioration IA",
       "notReady": "L'image est encore en cours de chargement — réessayez dans un instant",
       "recipe": "Recette scène",
+      "recipeApplied": "Recette {{scene}} appliquée",
       "sceneBasis": "Ressemble à {{scene}} · d'après {{basis}}",
       "scenes": {
         "food": "nourriture",

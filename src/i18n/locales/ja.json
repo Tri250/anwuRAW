@@ -430,6 +430,7 @@
       "noScene": "確度の高いシーンなし — AI強化を試してください",
       "notReady": "画像を読み込み中です — しばらくしてからお試しください",
       "recipe": "シーンレシピ",
+      "recipeApplied": "{{scene}}レシピを適用しました",
       "sceneBasis": "{{scene}}の可能性 · 根拠 {{basis}}",
       "scenes": {
         "food": "料理",

@@ -453,6 +453,7 @@
       "noScene": "Cap escena concloent — prova la millora IA",
       "notReady": "La imatge encara s'està carregant — torna-ho a provar en un moment",
       "recipe": "Recepta d'escena",
+      "recipeApplied": "Recepta {{scene}} aplicada",
       "sceneBasis": "Sembla {{scene}} · segons {{basis}}",
       "scenes": {
         "food": "menjar",

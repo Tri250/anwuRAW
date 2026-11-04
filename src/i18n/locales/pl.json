@@ -473,6 +473,7 @@
       "noScene": "Brak jednoznacznej sceny — wypróbuj ulepszanie AI",
       "notReady": "Obraz jest jeszcze wczytywany — spróbuj ponownie za chwilę",
       "recipe": "Recepta sceny",
+      "recipeApplied": "Zastosowano przepis {{scene}}",
       "sceneBasis": "Wygląda jak {{scene}} · na podstawie {{basis}}",
       "scenes": {
         "food": "jedzenie",

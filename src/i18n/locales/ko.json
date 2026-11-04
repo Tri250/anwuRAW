@@ -430,6 +430,7 @@
       "noScene": "확실한 장면 없음 — AI 강화를 시도해 보세요",
       "notReady": "이미지를 불러오는 중입니다 — 잠시 후 다시 시도해 주세요",
       "recipe": "장면 레시피",
+      "recipeApplied": "{{scene}} 레시피를 적용했습니다",
       "sceneBasis": "{{scene}} 추정 · 근거 {{basis}}",
       "scenes": {
         "food": "음식",

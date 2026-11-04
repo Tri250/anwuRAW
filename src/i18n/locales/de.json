@@ -433,6 +433,7 @@
       "noScene": "Keine eindeutige Szene erkannt — KI-Verbesserung testen",
       "notReady": "Bild wird noch geladen — bitte gleich erneut versuchen",
       "recipe": "Szenenrezept",
+      "recipeApplied": "{{scene}}-Rezept angewendet",
       "sceneBasis": "Wirkt wie {{scene}} · Grundlage {{basis}}",
       "scenes": {
         "food": "Essen",
