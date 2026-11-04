@@ -674,7 +674,10 @@ export default function CrystalAiToolsPanel() {
                 min={0}
                 max={100}
                 step={1}
-                value={Number(adjustments.aiDenoiseAmount ?? 0)}
+                /* 自检修复（AI 降噪强度）：后端缺省按 100% 应用（ai_denoise.rs
+                 * unwrap_or(100)），桌面 Details.tsx 显示 ?? 100；移动端此前 ?? 0
+                 * 导致开启降噪后滑杆显示 0、实际满强度，拖动方向感知完全颠倒。 */
+                value={Number(adjustments.aiDenoiseAmount ?? 100)}
                 onChange={(v) => applyPatch({ aiDenoiseAmount: v })}
               />
               <CxSliderRow
