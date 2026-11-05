@@ -414,7 +414,7 @@ export default function MainLibrary(props: MainLibraryProps) {
               ) : (
                 <>
                   <div className="my-auto text-left relative z-10">
-                    <Text variant={TextVariants.displayLarge}>{t('library.splash.brand')}</Text>
+                    {/* v2.1.16：按产品要求移除首页封面上的“RapidRAW”品牌大字，仅保留欢迎语与操作入口 */}
                     <Text
                       variant={TextVariants.heading}
                       color={TextColors.secondary}
