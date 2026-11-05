@@ -67,7 +67,7 @@
         "reds": "红色",
         "yellows": "黄色"
       },
-      "presence": "质感",
+      "presence": "色彩强度",
       "profileDefault": "默认",
       "saturation": "饱和度",
       "targetedTooltip": "目标调整：在画布上取样颜色并拖动，调整该颜色的色相/饱和度（Ctrl+Alt+H）",
@@ -2003,7 +2003,7 @@
         "masks": "蒙版",
         "negativeConversion": "负片转换",
         "noiseReduction": "降噪",
-        "presence": "质感",
+        "presence": "色彩强度",
         "relight": "重新打光",
         "sharpness": "锐度",
         "transformRotation": "变换与旋转",

@@ -67,7 +67,7 @@
         "reds": "紅色",
         "yellows": "黃色"
       },
-      "presence": "質感",
+      "presence": "色彩強度",
       "profileDefault": "預設",
       "saturation": "飽和度",
       "targetedTooltip": "目標調整：在畫布上取樣顏色並拖動，調整該顏色的色相/飽和度（Ctrl+Alt+H）",
@@ -1995,7 +1995,7 @@
         "masks": "遮色片",
         "negativeConversion": "負片轉換",
         "noiseReduction": "降噪",
-        "presence": "質感",
+        "presence": "色彩強度",
         "relight": "重新打光",
         "sharpness": "銳度",
         "transformRotation": "變換與旋轉",
