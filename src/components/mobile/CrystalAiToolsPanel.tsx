@@ -179,8 +179,7 @@ export default function CrystalAiToolsPanel() {
         // 名实一致（自检修复 3）：ESAM3 未下载时后端自动降级程序化天空
         // 识别（颜色+地平线，aiSource="procedural"）——名称仍是「天空识别」，
         // 但必须如实告知用户当前走的是哪条路线，不能静默冒充 AI。
-        const usedProcedural =
-          String(container.subMasks[0]?.parameters?.aiSource ?? '') === 'procedural';
+        const usedProcedural = String(container.subMasks[0]?.parameters?.aiSource ?? '') === 'procedural';
         if (usedProcedural && !proceduralNotified.current) {
           proceduralNotified.current = true;
           toast.info(t('crystal.ai.proceduralSky'));

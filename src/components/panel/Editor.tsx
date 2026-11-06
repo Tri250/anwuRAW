@@ -2499,8 +2499,7 @@ export default function Editor({ onBackToLibrary, onContextMenu, onImageSelect, 
   }
 
   // v2.1.16 灰屏自检修复：wgpu 显示被看门狗判定失效后回退 JPEG 预览。
-  const isWgpuActive =
-    appSettings?.useWgpuRenderer !== false && hasRenderedFirstFrame && !wgpuDisplayFailed;
+  const isWgpuActive = appSettings?.useWgpuRenderer !== false && hasRenderedFirstFrame && !wgpuDisplayFailed;
   const isSplitActive = activeCompareView === 'vertical' || activeCompareView === 'horizontal';
   const contentTransform = `translate(${transformStateRef.current.positionX}px, ${transformStateRef.current.positionY}px) scale(${transformStateRef.current.scale})`;
   const originalLayer = originalPreview?.url && (

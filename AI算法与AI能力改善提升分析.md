@@ -1,40 +1,40 @@
 # 透影 Crystal · AI 算法与 AI 能力改善提升分析
 
-> 基于已产出的《ZhaJinWenQianCake与透影Crystal·AI算法推理引擎全面对比》核心结论，逐项评估「哪些可以落到本项目、怎么落、值不值得落」。基线：v2.1.16（前轮 P0-1~P0-3、P1-1~P1-5 已全部落地，本报告不再重复）。2026-11-06
+> 基于已产出的《ZhaJinWenQianCake与透影Crystal·AI算法推理引擎全面对比》核心结论，逐项评估「哪些可以落到本项目、怎么落、值不值得落」。基线：v2.1.16（前轮 P0-1~~P0-3、P1-1~~P1-5 已全部落地，本报告不再重复）。2026-11-06
 
 ---
 
 ## 0. 本轮现状核对结论（先校准事实，再谈改善）
 
-| 核对项 | 结论 | 证据 |
-|---|---|---|
-| 神经超分 | **无**。`ai_upscale_export` 是 Lanczos3 + GPU 细节/锐化链，非 NN 超分 | [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs#L772-L792) |
-| 降噪 tile 混合窗口 | **已是 smoothstep（t²(3−2t)）**，与参照仓库 raised-cosine 等价量级，**无需改** | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs#L1824-L1833) |
-| 降噪 strength 语义 | 无「强度→噪声水平先验」映射（UTNet 为单域模型，见 C3） | ai_denoise.rs 无 strength |
-| 语义分割模型 | selfie_multiclass ONNX **已在模型清单**（face segmenter 用途） | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs#L117-L118) |
-| 挑图打分 | tagging 走 CLIP 文本+图像；批内相对分校准**待核对** | tagging.rs |
-| 下载防护 | 有 Content-Length 读取；**无域名白名单/路径穿越防护** | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs#L1314) |
-| 日志轮转 | **无**轮转/截断机制 | 全仓 grep 无命中 |
+| 核对项             | 结论                                                                           | 证据                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| 神经超分           | **无**。`ai_upscale_export` 是 Lanczos3 + GPU 细节/锐化链，非 NN 超分          | [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs#L772-L792) |
+| 降噪 tile 混合窗口 | **已是 smoothstep（t²(3−2t)）**，与参照仓库 raised-cosine 等价量级，**无需改** | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs#L1824-L1833)       |
+| 降噪 strength 语义 | 无「强度→噪声水平先验」映射（UTNet 为单域模型，见 C3）                         | ai_denoise.rs 无 strength                                                              |
+| 语义分割模型       | selfie_multiclass ONNX **已在模型清单**（face segmenter 用途）                 | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs#L117-L118)         |
+| 挑图打分           | tagging 走 CLIP 文本+图像；批内相对分校准**待核对**                            | tagging.rs                                                                             |
+| 下载防护           | 有 Content-Length 读取；**无域名白名单/路径穿越防护**                          | [ai_processing.rs](file:///workspace/src-tauri/src/ai_processing.rs#L1314)             |
+| 日志轮转           | **无**轮转/截断机制                                                            | 全仓 grep 无命中                                                                       |
 
 ---
 
 ## 1. 候选改善项总表
 
-| # | 改善项 | 类型 | 收益 | 成本 | 风险 | 优先级 |
-|---|---|---|---|---|---|---|
-| A1 | 像素级 locality + 参数单调性回归测试 | 测试方法论 | 抓静默质量退化（参照仓库一次抓 7 缺陷） | 低 | 无 | **P0** |
-| A2 | 模型下载安全加固 | 工程加固 | 防清单篡改/SSRF/穿越/假进度 | 低 | 无 | **P0** |
-| A3 | 程序化天空「无模型降级」路线 | 算法 | 模型未下载/低端机天空替换仍可用 | 中 | 低 | **P0** |
-| B1 | 神经超分 RealESRGAN ONNX（valid-center tile） | 新 AI 能力 | 放大画质显著优于 Lanczos | 中高 | 中 | **P1** |
-| B2 | 双掩膜 max 融合（BiRefNet ∪ selfie subject） | 算法 | 抠图互补兜底（配饰/边缘） | 中 | 中 | **P1** |
-| B3 | 蒙版工程三细节（小区域禁羽化/overlap 用 raw 值/union 先合并后归一） | 算法细节 | 消除三类静默蒙版失效 | 低 | 低 | **P1** |
-| B4 | LaMa native-res 窗口 A/B | 算法取舍 | 中端机以上消除纹理颗粒感 | 中 | 中 | **P1** |
-| B5 | 挑图批内相对分校准 | 算法 | 连拍挑图稳定性 | 低 | 低 | **P1** |
-| A4 | AI 错误日志轮转与截断 | 工程 | 防日志灌爆 | 低 | 无 | P2 |
-| C1 | 姿态/手部 landmarker（形体液化前置） | 新能力 | 形体修型结构先验 | 高 | 中 | 远期 |
-| C2 | 五官级编辑（ESAM3 face prompt 路线） | 新能力 | 嘴唇/眼睛/眉毛局部编辑 | 高 | 中 | 远期 |
-| C3 | 自训练多噪声水平降噪模型 | 模型训练 | 强度滑杆→噪声水平先验语义 | 很高 | 高 | 远期 |
-| C4 | 生成式填充 | 新能力 | 桌面端可行/Android 不可行 | 很高 | 高 | 远期(仅桌面) |
+| #   | 改善项                                                              | 类型       | 收益                                    | 成本 | 风险 | 优先级       |
+| --- | ------------------------------------------------------------------- | ---------- | --------------------------------------- | ---- | ---- | ------------ |
+| A1  | 像素级 locality + 参数单调性回归测试                                | 测试方法论 | 抓静默质量退化（参照仓库一次抓 7 缺陷） | 低   | 无   | **P0**       |
+| A2  | 模型下载安全加固                                                    | 工程加固   | 防清单篡改/SSRF/穿越/假进度             | 低   | 无   | **P0**       |
+| A3  | 程序化天空「无模型降级」路线                                        | 算法       | 模型未下载/低端机天空替换仍可用         | 中   | 低   | **P0**       |
+| B1  | 神经超分 RealESRGAN ONNX（valid-center tile）                       | 新 AI 能力 | 放大画质显著优于 Lanczos                | 中高 | 中   | **P1**       |
+| B2  | 双掩膜 max 融合（BiRefNet ∪ selfie subject）                        | 算法       | 抠图互补兜底（配饰/边缘）               | 中   | 中   | **P1**       |
+| B3  | 蒙版工程三细节（小区域禁羽化/overlap 用 raw 值/union 先合并后归一） | 算法细节   | 消除三类静默蒙版失效                    | 低   | 低   | **P1**       |
+| B4  | LaMa native-res 窗口 A/B                                            | 算法取舍   | 中端机以上消除纹理颗粒感                | 中   | 中   | **P1**       |
+| B5  | 挑图批内相对分校准                                                  | 算法       | 连拍挑图稳定性                          | 低   | 低   | **P1**       |
+| A4  | AI 错误日志轮转与截断                                               | 工程       | 防日志灌爆                              | 低   | 无   | P2           |
+| C1  | 姿态/手部 landmarker（形体液化前置）                                | 新能力     | 形体修型结构先验                        | 高   | 中   | 远期         |
+| C2  | 五官级编辑（ESAM3 face prompt 路线）                                | 新能力     | 嘴唇/眼睛/眉毛局部编辑                  | 高   | 中   | 远期         |
+| C3  | 自训练多噪声水平降噪模型                                            | 模型训练   | 强度滑杆→噪声水平先验语义               | 很高 | 高   | 远期         |
+| C4  | 生成式填充                                                          | 新能力     | 桌面端可行/Android 不可行               | 很高 | 高   | 远期(仅桌面) |
 
 ---
 
@@ -47,6 +47,7 @@
 **透影现状**：79 个 cargo 单测全部是**逻辑级**断言（量程函数、解剖比例、tile 权重形状），没有任何「喂已知图→跑掩膜/降噪/消除链→assert 窗外像素逐位相等」的整图级测试。
 
 **改善方案**（Rust 侧完全可行，无需真机）：
+
 1. `#[cfg(test)]` 构造 64×64 已知渐变图 + 已知圆形掩膜，跑 `fast_guided_filter` / 头区保护扣除 / LaMa 合成回贴路径，assert：掩膜外（含羽化带宽补偿后）像素与输入**逐位相等**（`bit_eq`，不用近似容差——参照仓库的教训正是 1e-7 级泄漏也会被用户看出）；
 2. 参数单调性：对天空替换强度、降噪档位、增强三档，assert「强度增大→输出与原图差异度（L1 距离）单调不减」；
 3. 接口约定：被测函数返回 `touched` 有效区（LaMa 路径已有），测试只断言 touched 外逐位不变——这与参照仓库「locality 断言必须知道羽化实际到达范围」的契约一致。
@@ -60,6 +61,7 @@
 **透影现状**：镜像回退（自定义镜像→官方→hf-mirror）+ Range 续传 + sha256 + Content-Length 读取；但**自定义镜像 URL 无域名校验**（用户填什么下什么——这本身是功能，但清单内 URL 应钉域）、**落盘路径无穿越防护**、下载前无 size 对账。
 
 **改善方案**：
+
 1. manifest 内置 URL 钉死 huggingface.co 域；自定义镜像仅允许换 host、路径段由本地拼装（参照仓库 `_asset_name` 思路：URL 由 base_url + 文件名合成，不接受清单外完整 URL）；
 2. 写盘前 `realpath` 前缀校验（模型目录内），拒绝 `..`；
 3. 下载前 Content-Length 与 manifest size 对账，不符立即切镜像（提前于 sha256 失败约一个文件长度的流量）。
@@ -91,6 +93,7 @@
 **透影现状**：`ai_upscale_export` = Lanczos3 + 锐化——边缘干净但**不重建纹理**，放大后涂抹感明显，这是与竞品拉差距的可见点。
 
 **改善方案**（Android CPU 可行性已核算）：
+
 1. 模型：RealESRGAN x4plus 导出 **fp16 ONNX**（67MB pth → ~34MB，走现有 RapidRAW-Models 源 + manifest + sha256 链路）；注册进 model_registry 与 ai_perf 分档（预算：旗舰 512² tile、中端 384²、低端 256²，全部 ≤256 的倍数）；
 2. tile 策略**直接采用 valid-center**（只写中心、边缘丢弃、overlap=32 下限）——这是参照仓库用网格伪影换来的实测参数，不要用我们降噪的 smoothstep 全混合（两种策略按网络感受野分用，降噪网络感受野窄可混合，RRDBNet 23 稠密块感受野宽必须丢弃）；
 3. 入口：`ai_upscale_export` 加 `engine: "lanczos" | "ai"` 参数，AI 档不可用（模型未下载/低端机）时**诚实回落** Lanczos 并在结果标注；
@@ -139,31 +142,36 @@
 ## 4. C 级：远期评估（如实给出前置条件）
 
 ### C1. 姿态/手部 landmarker（形体液化前置）
+
 参照用 MediaPipe pose/hand .task 做 rigfix 结构先验（液化变形有骨架约束，背景不撕裂）。**前置条件**：透影需先有形体液化功能本身。landmarker 有官方 Android 形态（pose_lite 5.7MB + hand 7.8MB），可移植性高——**建议作为「形体修型」新功能的立项调研项**，而非当前债务。
 
 ### C2. 五官级编辑（ESAM3 face prompt 路线）
+
 参照的 SegFormer-B2 五官解析 338MB + 106 点，移动端体积不友好。**透影更省的路线**：ESAM3 face prompt bin 已内置（头区保护在用），face 特征一次编码后按解剖比例（眼距/脸高，参照 face.py 的几何推导公式可直接借用）派生眼/唇/眉 ROI，再做局部调色——不需要第二个大模型。**前置**：五官编辑的产品需求成立。
 
 ### C3. 自训练多噪声水平降噪模型
+
 参照「strength→训练噪声水平映射」（read σ=0.03k/shot k=0.05k）的前提是**多噪声水平训练**的模型；NIND UTNet 是单域模型，直接套用不可行。远期若自训（FlatFieldLoss=L1+梯度差惩罚 0.08 的配方在 training/ 内可参考），可获得连续强度语义 + 训练侧抑制斑块。**投入很高，仅在降噪质量成为用户痛点时启动。**
 
 ### C4. 生成式填充
+
 Android 纯 CPU 不可行（SD1.5 单次数十秒）。参照仓库的 ComfyUI 外挂 + 15min 空闲看护模式**只对桌面版有意义**。列为桌面版远期选项，Android 不投入。
 
 ### C5. tflite 原生形态
+
 selfie_multiclass 的 MediaPipe 发布形态（tflite 16MB）在 Android 上可走 NNAPI/NPU 加速，理论收益可观；但 ort 加载 tflite 与模型治理链路需评估。**仅在 Android 性能基线表（P0-2）填充后发现语义分割成为瓶颈时再立项。**
 
 ---
 
 ## 5. 明确不建议移植的（反向结论）
 
-| 项 | 理由 |
-|---|---|
-| torch 双栈（.pt 模型） | 4GB 依赖、启动 2-4s、版本漂移——参照仓库自己是受害者（CLIP 被迫 ONNX 化甩掉 4.2GB），我们无 torch，不要引入 |
-| basicsr 等训练框架依赖 | 参照仓库正是为甩掉它才源码重建 RRDBNet；B1 落地时同样只导出 ONNX |
-| MODNet 模型 | 能力被 BiRefNet+ESAM3 覆盖；B2 融合用的是已有 selfie 模型，无需新增 24.7MB |
-| YuNet+106 点+SegFormer 全家桶 | 三模型 ~346MB 换五官编辑，移动端收益比低；C2 的 ESAM3 路线更省 |
-| CPU 路径生成式 | 病理耗时（参照仓库 CPU 烧 1000s+ 的教训同类） |
+| 项                            | 理由                                                                                                       |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| torch 双栈（.pt 模型）        | 4GB 依赖、启动 2-4s、版本漂移——参照仓库自己是受害者（CLIP 被迫 ONNX 化甩掉 4.2GB），我们无 torch，不要引入 |
+| basicsr 等训练框架依赖        | 参照仓库正是为甩掉它才源码重建 RRDBNet；B1 落地时同样只导出 ONNX                                           |
+| MODNet 模型                   | 能力被 BiRefNet+ESAM3 覆盖；B2 融合用的是已有 selfie 模型，无需新增 24.7MB                                 |
+| YuNet+106 点+SegFormer 全家桶 | 三模型 ~346MB 换五官编辑，移动端收益比低；C2 的 ESAM3 路线更省                                             |
+| CPU 路径生成式                | 病理耗时（参照仓库 CPU 烧 1000s+ 的教训同类）                                                              |
 
 ---
 

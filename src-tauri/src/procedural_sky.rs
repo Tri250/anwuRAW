@@ -20,15 +20,23 @@ use image::{DynamicImage, GrayImage};
 /// 覆盖率守卫阈值：超过即认为颜色判据把非天空主体判了进去。
 const MAX_COVERAGE: f32 = 0.85;
 
-/// 单像素天空似然：`h` 度（0-360）、`s`/`v` 0-1。
-fn sky_likelihood_pixel(h: f32, s: f32, v: f32) -> f32 {
+/// 单像素天空证据：`h` 度（0-360）、`s`/`v` 0-1。
+///
+/// 返回 `(似然, 是否由过曝白主导)`。主检测循环与单元测试共用这一处判据，
+/// 避免蓝色带/高光公式在两处漂移；`bright` 主导的检出会被覆盖率与高光
+/// 占比守卫进一步约束（该路径没有分割模型，不能凭颜色猜整片天空）。
+fn sky_likelihood_pixel(h: f32, s: f32, v: f32) -> (f32, bool) {
     // 蓝天：190..250° 色相带，饱和适中、有一定亮度
     let blue = (1.0 - (h - 220.0).abs() / 40.0).clamp(0.0, 1.0)
         * ((s - 0.08) / 0.25).clamp(0.0, 1.0)
         * (v / 0.5).clamp(0.0, 1.0);
     // 过曝/阴天：极亮 + 极低饱和（白墙场景由覆盖率守卫兜底）
     let bright = ((v - 0.72) / 0.2).clamp(0.0, 1.0) * ((0.18 - s) / 0.18).clamp(0.0, 1.0);
-    blue.max(bright).clamp(0.0, 1.0)
+    if blue >= bright {
+        (blue.clamp(0.0, 1.0), false)
+    } else {
+        (bright.clamp(0.0, 1.0), true)
+    }
 }
 
 /// 逐行似然 → 地平线行号（该行以下视为非天空）。
@@ -141,12 +149,9 @@ pub fn detect_procedural_sky(img: &DynamicImage) -> Result<ProceduralSky, String
             60.0 * ((r - g) / (max - min) + 4.0)
         };
         let hh = if hh < 0.0 { hh + 360.0 } else { hh };
-        let blue = (1.0 - (hh - 220.0).abs() / 40.0).clamp(0.0, 1.0)
-            * ((s - 0.08) / 0.25).clamp(0.0, 1.0)
-            * (v / 0.5).clamp(0.0, 1.0);
-        let bright = ((v - 0.72) / 0.2).clamp(0.0, 1.0) * ((0.18 - s) / 0.18).clamp(0.0, 1.0);
-        let (l, is_bright) = if blue >= bright { (blue, false) } else { (bright, true) };
-        like[i] = l.clamp(0.0, 1.0);
+        // 单一真源：检测循环与单元测试共用同一个像素判据函数。
+        let (l, is_bright) = sky_likelihood_pixel(hh, s, v);
+        like[i] = l;
         from_bright[i] = is_bright;
         row_sums[i / w] += like[i];
     }
@@ -285,11 +290,11 @@ mod tests {
     /// 单调性：同一画面加大天空信号强度（更饱和的蓝），检出似然不降低。
     #[test]
     fn likelihood_is_monotonic_in_signal_strength() {
-        let weak = sky_likelihood_pixel(220.0, 0.12, 0.6);
-        let strong = sky_likelihood_pixel(220.0, 0.30, 0.8);
+        let (weak, _) = sky_likelihood_pixel(220.0, 0.12, 0.6);
+        let (strong, _) = sky_likelihood_pixel(220.0, 0.30, 0.8);
         assert!(strong >= weak, "stronger sky signal must not score lower");
         // 色相偏离中心带时似然下降
-        let offband = sky_likelihood_pixel(300.0, 0.30, 0.8);
+        let (offband, _) = sky_likelihood_pixel(300.0, 0.30, 0.8);
         assert!(offband < strong);
     }
 }

@@ -1,39 +1,136 @@
 name: 'Release: Build & Package App'
 
+# 触发链（2026-11-06 全面自检修复）：
+#  1. push tag v*        -> 推送即触发：prepare 建/复用 draft -> 全平台矩阵构建
+#                           -> verify 断言资产齐全 -> publish 发布正式 Release
+#  2. release published  -> 兼容手动发布与旧流程；precheck 发现资产已齐全则跳过重建
+#  3. workflow_dispatch  -> 指定 tag / release-id 重跑，用于补齐失败的平台
+#
+# 修复要点（相对旧版）：
+#  - 旧版仅在 release:published / dispatch 触发，push tag 不会触发；且 release job
+#    的 if 排除 push 事件，即使加了 push 触发也会整条矩阵被跳过。
+#  - 旧版矩阵与 verify 直接取 github.event.release.id / inputs.release-id，
+#    push tag 事件下两者皆空，资产无处上传、verify 必然失败。
+#  - 新增 prepare 统一解析 tag/ref/release-id 并保证 draft release 存在；
+#    新增 publish 在 verify 通过后把 draft 发布为正式版，形成闭环。
+#  - 用 GITHUB_TOKEN 发布 draft 不会二次触发 release 事件（GitHub 事件防环），
+#    因此不会产生重复的矩阵构建。
 on:
+  push:
+    tags:
+      - 'v*'
   release:
     types: [published]
-  # Allows (re)building a release on demand, e.g. when the `release` event did
-  # not fire or a single platform needs to be retried.
   workflow_dispatch:
     inputs:
       release-id:
-        description: 'Release ID to upload the bundles to (draft releases are supported)'
+        description: '已有 Release ID（重试用；留空则按 tag 解析/创建）'
         required: false
         type: string
       tag:
-        description: 'Tag to build from and upload to (e.g. v1.6.7)'
+        description: '要构建并上传到的 tag（如 v2.1.17）'
         required: false
         type: string
+      publish:
+        description: '校验通过后把 draft 发布为正式 Release'
+        required: false
+        type: boolean
+        default: true
 
 concurrency:
   group: release-${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
+# 全流程需要写 Release 资产；各 job 再显式声明，避免继承默认只读令牌。
+permissions:
+  contents: write
+
 jobs:
-  # Publishing a draft that was already built (e.g. toggling draft off/on, or
-  # publishing after a manual dispatch) must not rebuild every platform. Manual
-  # dispatches always build, so a partially failed matrix can be retried.
+  # 统一解析构建目标：tag -> ref -> release id，并保证一个 draft release 存在。
+  # 走 /releases 列表而非 /releases/tags/{tag}，因为后者对 draft release 不可靠。
+  prepare:
+    name: Resolve / create target release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      release-id: ${{ steps.resolve.outputs.release-id }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      ref: ${{ steps.resolve.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Resolve tag, ref and release id
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          EVENT_ID: ${{ github.event.release.id }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_ID: ${{ inputs.release-id }}
+          REF_NAME: ${{ github.ref_name }}
+          REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          tag="${EVENT_TAG:-}"
+          rid="${EVENT_ID:-}"
+          ref="${REF:-}"
+
+          if [ -n "${INPUT_TAG:-}" ]; then
+            tag="${INPUT_TAG}"
+            ref="refs/tags/${INPUT_TAG}"
+          fi
+          if [ -n "${INPUT_ID:-}" ]; then
+            rid="${INPUT_ID}"
+          fi
+          if [ -z "${tag}" ] && [[ "${ref}" == refs/tags/* ]]; then
+            tag="${REF_NAME}"
+          fi
+          if [ -z "${tag}" ] && [ -n "${rid}" ]; then
+            tag="$(gh api "repos/${REPOSITORY}/releases/${rid}" --jq '.tag_name')"
+            ref="refs/tags/${tag}"
+          fi
+          if [ -z "${tag}" ]; then
+            echo "::error::无法解析目标 tag：请在 v* tag 推送上运行，或在 dispatch 时提供 tag / release-id。"
+            exit 1
+          fi
+          if [ -z "${ref}" ] || [[ "${ref}" != refs/* ]]; then
+            ref="refs/tags/${tag}"
+          fi
+
+          existing="$(GH_RELEASE_TAG="${tag}" gh api --paginate \
+            "repos/${REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.tag_name == env.GH_RELEASE_TAG) | .id' | head -n 1 || true)"
+          if [ -n "${existing}" ]; then
+            rid="${existing}"
+            echo "复用已有 Release #${rid} (${tag})"
+          else
+            body="Automated release for ${tag}. Built and verified by .github/workflows/release.yml; see the audit report in docs/contracts/."
+            rid="$(gh api "repos/${REPOSITORY}/releases" \
+              -f tag_name="${tag}" \
+              -f name="anwuRAW ${tag}" \
+              -F draft=true \
+              -F prerelease=false \
+              -f body="${body}" --jq '.id')"
+            echo "已创建 draft Release #${rid} (${tag})"
+          fi
+
+          echo "release-id=${rid}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "ref=${ref}" >> "${GITHUB_OUTPUT}"
+
+  # 已完整的 release 不重复构建；dispatch 事件总是重建以便补跑失败平台。
   precheck:
     name: Precheck release assets
-    if: github.event_name == 'release'
+    needs: prepare
     runs-on: ubuntu-latest
     outputs:
       complete: ${{ steps.check.outputs.complete }}
     permissions:
-      # contents:write is required to *see* draft releases: the assets API
-      # answers "Resource not accessible by integration" for read-only tokens
-      # while the release is still a draft. The job only reads.
+      # draft release 的资产 API 对只读令牌不可见，需要 contents: write。
       contents: write
     steps:
       - uses: actions/checkout@v5
@@ -43,19 +140,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
-          RELEASE_ID: ${{ github.event.release.id }}
-          TAG: ${{ github.event.release.tag_name }}
-        # The helper verifies the *names* every platform must produce instead of
-        # a hard-coded asset count, which had drifted out of date (it still
-        # expected the pre-tethering 30-asset matrix).
+          RELEASE_ID: ${{ needs.prepare.outputs.release-id }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          REQUIRE_SIGNATURES: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' && 'true' || 'false' }}
         run: bash .github/scripts/check-release-assets.sh precheck
 
   release:
-    needs: precheck
-    # `!cancelled()` drops the implicit success() check so that the
-    # workflow_dispatch path still runs when `precheck` is skipped (it only
-    # executes for `release` events).
-    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || (needs.precheck.result == 'success' && needs.precheck.outputs.complete != 'true')) }}
+    needs: [prepare, precheck]
+    # 只有 precheck 成功且资产不完整（或手动 dispatch）才构建：
+    # 发布已构建好的 draft 不应重新跑 13 个平台。
+    if: ${{ !cancelled() && needs.precheck.result == 'success' && (github.event_name == 'workflow_dispatch' || needs.precheck.outputs.complete != 'true') }}
     strategy:
       fail-fast: false
       matrix:
@@ -68,9 +162,8 @@ jobs:
             args: '--bundles nsis'
             target: 'aarch64-pc-windows-msvc'
             asset-prefix: '01'
-          # macos-15 is the arm64 runner since the macOS 14 image retired
-          # (brownout cancellations from 2026-11-02, see
-          # https://github.com/actions/runner-images/issues/13518).
+          # macos-15 是 arm64 runner（macOS 14 镜像已退役，见
+          # actions/runner-images#13518 的 brownout 说明）。
           - platform: 'macos-15'
             target: aarch64-apple-darwin
             asset-prefix: '02'
@@ -93,9 +186,7 @@ jobs:
           - platform: 'ubuntu-22.04-arm'
             target: ''
             asset-prefix: '03'
-          # The 24.04 builds target glibc 2.39 and would break older distributions
-          # if promoted as the update. Only the 22.04 builds may write latest.json
-          # for the linux-x86_64 key.
+          # 24.04 面向 glibc 2.39，不能作为 updater 的 linux-x86_64 目标。
           - platform: 'ubuntu-24.04'
             target: ''
             asset-prefix: '03'
@@ -114,9 +205,8 @@ jobs:
             args: '--features tethering'
             asset-prefix: '03_tethering'
             updater-json: 'false'
-          # Android (arm64-v8a). build.rs downloads and bundles the ONNX Runtime
-          # library for this ABI, and the APK is signed with the ANDROID_KEY_*
-          # secrets when configured, otherwise with a generated debug keystore.
+          # Android arm64-v8a：build.rs 打包 ONNX Runtime，APK 用仓库内
+          # keystore 或 ANDROID_KEY_* secrets 签名。
           - platform: 'ubuntu-latest'
             target: ''
             args: ''
@@ -124,9 +214,9 @@ jobs:
             asset-prefix: '04'
     uses: ./.github/workflows/build.yml
     with:
-      release-id: ${{ github.event.release.id || inputs.release-id }}
-      ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
-      tag-name: ${{ github.event.release.tag_name || inputs.tag }}
+      release-id: ${{ needs.prepare.outputs.release-id }}
+      ref: ${{ needs.prepare.outputs.ref }}
+      tag-name: ${{ needs.prepare.outputs.tag }}
       platform: ${{ matrix.platform }}
       target: ${{ matrix.target }}
       build-args: ${{ matrix.args }}
@@ -138,19 +228,13 @@ jobs:
     permissions:
       contents: write
 
-  # Closed-loop guard: a matrix run is only useful when every platform bundle
-  # reached the release page. Fails loudly instead of leaving users with a
-  # release that silently misses some installers.
+  # 闭环闸门：所有平台产物（含签名与 latest.json）到达 release 页才放行发布。
   verify:
     name: Verify release assets
-    needs: [precheck, release]
-    # Runs after a full matrix build, or when the precheck skipped the matrix
-    # because the release already had every artifact — the published release
-    # always gets a final gate either way.
+    needs: [prepare, precheck, release]
     if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
-      # Same as precheck: draft-release assets are invisible to read-only tokens.
       contents: write
     steps:
       - uses: actions/checkout@v5
@@ -159,8 +243,27 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
-          RELEASE_ID: ${{ github.event.release.id || inputs.release-id }}
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        # Same helper as the precheck job: fails loudly when a platform bundle,
-        # an updater signature or latest.json never reached the release page.
+          RELEASE_ID: ${{ needs.prepare.outputs.release-id }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          REQUIRE_SIGNATURES: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' && 'true' || 'false' }}
         run: bash .github/scripts/check-release-assets.sh verify
+
+  # 只有通过资产闸门才把 draft 发布为正式版，避免"半成品 Release"。
+  publish:
+    name: Publish verified release
+    needs: [prepare, verify]
+    if: ${{ !cancelled() && needs.verify.result == 'success' && (github.event_name == 'push' || inputs.publish == true) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release-id }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          set -euo pipefail
+          url="$(gh api -X PATCH "repos/${REPOSITORY}/releases/${RELEASE_ID}" -F draft=false --jq '.html_url')"
+          echo "::notice::Release ${TAG} 已发布：${url}"

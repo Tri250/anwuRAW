@@ -12,6 +12,9 @@
 #   check-release-assets.sh verify     # exits 1 when anything is missing
 #
 # Environment: REPOSITORY, GH_TOKEN, and either RELEASE_ID or TAG.
+# Optional: REQUIRE_SIGNATURES=false skips the .sig / latest.json assertions
+# when TAURI_SIGNING_PRIVATE_KEY is not configured (build.yml then strips the
+# updater config, so those artifacts legitimately do not exist).
 set -uo pipefail
 
 mode="${1:-verify}"
@@ -73,12 +76,11 @@ fi
 # Every platform in release.yml's matrix must contribute its primary bundle,
 # and the desktop bundles that the updater consumes must be signed
 # (`.sig` files only exist when TAURI_SIGNING_PRIVATE_KEY is configured).
+# Primary installers: required regardless of whether signing is configured.
 required_patterns=(
   # Windows x64 + arm64 (NSIS installers)
   '^01_RapidRAW_v[0-9.]+_windows_x64\.exe$'
-  '^01_RapidRAW_v[0-9.]+_windows_x64\.exe\.sig$'
   '^01_RapidRAW_v[0-9.]+_windows-11-arm_arm64\.exe$'
-  '^01_RapidRAW_v[0-9.]+_windows-11-arm_arm64\.exe\.sig$'
   # macOS arm64 + x64, standard and tethering. arm64 assets keep matching the
   # historical macos-14 label (releases built before the image retired) and the
   # macos-15 runner that replaced it.
@@ -86,8 +88,6 @@ required_patterns=(
   '^02_RapidRAW_v[0-9.]+_macos-15-intel_x64\.dmg$'
   '^02_tethering_RapidRAW_v[0-9.]+_macos-(14|15)_aarch64\.dmg$'
   '^02_tethering_RapidRAW_v[0-9.]+_macos-15-intel_x64\.dmg$'
-  '^02_RapidRAW_v[0-9.]+_macos-(14|15)_aarch64\.app\.tar\.gz\.sig$'
-  '^02_RapidRAW_v[0-9.]+_macos-15-intel_x64\.app\.tar\.gz\.sig$'
   # Linux: glibc 2.35 (ubuntu-22.04) and 2.39 (ubuntu-24.04), amd64 + arm64
   '^03_RapidRAW_v[0-9.]+_ubuntu-22.04_amd64\.AppImage$'
   '^03_RapidRAW_v[0-9.]+_ubuntu-22.04-arm_aarch64\.AppImage$'
@@ -97,9 +97,23 @@ required_patterns=(
   '^03_tethering_RapidRAW_v[0-9.]+_ubuntu-24.04_amd64\.AppImage$'
   # Android arm64-v8a (APK is the sideloadable bundle; .aab is for the store)
   '^04_RapidRAW_v[0-9.]+_android_arm64-v8a\.apk$'
-  # Updater manifest served from releases/latest/download/latest.json
+)
+
+# Updater signatures + manifest. build.yml strips the updater config when
+# TAURI_SIGNING_PRIVATE_KEY is absent, so these only exist on signed builds.
+signature_patterns=(
+  '^01_RapidRAW_v[0-9.]+_windows_x64\.exe\.sig$'
+  '^01_RapidRAW_v[0-9.]+_windows-11-arm_arm64\.exe\.sig$'
+  '^02_RapidRAW_v[0-9.]+_macos-(14|15)_aarch64\.app\.tar\.gz\.sig$'
+  '^02_RapidRAW_v[0-9.]+_macos-15-intel_x64\.app\.tar\.gz\.sig$'
   '^latest\.json$'
 )
+
+if [ "${REQUIRE_SIGNATURES:-true}" = "true" ]; then
+  required_patterns+=("${signature_patterns[@]}")
+else
+  echo "::warning::Signing key not configured: skipping .sig / latest.json checks (builds have no auto-update capability)."
+fi
 
 missing=()
 for pattern in "${required_patterns[@]}"; do

@@ -735,11 +735,7 @@ export default function DataManagementSettings({
                             : t('settings.data.storage.aiDiagnostics.deep')}
                         </ActionButton>
                       </span>
-                      <ActionButton
-                        disabled={diagnosticBusy}
-                        icon={<Copy size={13} />}
-                        onClick={copyDiagnosticReport}
-                      >
+                      <ActionButton disabled={diagnosticBusy} icon={<Copy size={13} />} onClick={copyDiagnosticReport}>
                         {t('settings.data.storage.aiDiagnostics.copy')}
                       </ActionButton>
                     </div>
@@ -755,13 +751,10 @@ export default function DataManagementSettings({
                       <Text variant={TextVariants.small} className="text-text-secondary">
                         {t('settings.data.storage.aiDiagnostics.hashSummary', {
                           ok: diagnostic.models.filter((model) => model.sha256Status === 'ok').length,
-                          bad: diagnostic.models.filter((model) => model.sha256Status === 'mismatch')
-                            .length,
+                          bad: diagnostic.models.filter((model) => model.sha256Status === 'mismatch').length,
                         })}
                         {(() => {
-                          const probe = diagnostic.models.find(
-                            (model) => model.probeInferenceMs !== undefined,
-                          );
+                          const probe = diagnostic.models.find((model) => model.probeInferenceMs !== undefined);
                           return probe
                             ? ` · ${t('settings.data.storage.aiDiagnostics.probeResult', { ms: probe.probeInferenceMs })}`
                             : '';

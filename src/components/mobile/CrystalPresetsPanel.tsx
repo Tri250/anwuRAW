@@ -388,9 +388,7 @@ function AiRecommendCard() {
           {/* 名实一致（自检修复 4）：「AI」标签不再无条件硬编码——后端
               scene.source 如实区分 CLIP 零样本（AI）与统计启发式（非 AI），
               启发式结果标注为像素统计，不冒充 AI 识别。 */}
-          <span className="cx-ai-tag">
-            {scene?.source === 'heuristic' ? t('crystal.aiRecommend.tagStats') : 'AI'}
-          </span>
+          <span className="cx-ai-tag">{scene?.source === 'heuristic' ? t('crystal.aiRecommend.tagStats') : 'AI'}</span>
           {sceneKey && scene?.source !== 'heuristic' && (
             <span className="cx-ai-tag">{t('crystal.aiRecommend.tagStats')}</span>
           )}

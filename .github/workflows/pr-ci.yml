@@ -12,6 +12,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # 与 ci.yml 对齐：只保留两个代表性目标做跨平台编译覆盖。
+        # macOS runner 按 10x 计费，账户包含的 macOS 分钟耗尽后排队 leg
+        # 会被取消，而 run 级取消会让整条 PR 检查变红（continue-on-error
+        # 无法屏蔽）；macOS 编译覆盖由 release 工作流的 4 个 macOS leg 保证。
         include:
           - platform: 'ubuntu-22.04'
             target: ''
@@ -20,15 +24,15 @@ jobs:
             args: '--bundles nsis'
             target: ''
             asset-prefix: '01'
-          # macos-15 is the arm64 runner since the macOS 14 image retired
-          # (brownout cancellations, actions/runner-images#13518); release.yml
-          # made the same switch.
-          - platform: 'macos-15'
-            target: aarch64-apple-darwin
-            asset-prefix: '02'
     uses: ./.github/workflows/build.yml
     with:
       platform: ${{ matrix.platform }}
       target: ${{ matrix.target }}
       build-args: ${{ matrix.args }}
       asset-prefix: ${{ matrix.asset-prefix }}
+    secrets: inherit
+    # 修复：build.yml 的 build job 声明 permissions.contents=write，
+    # reusable workflow 的调用方不能授予更少权限，否则整个 run 直接
+    # startup_failure。此前本文件缺少该声明。
+    permissions:
+      contents: write

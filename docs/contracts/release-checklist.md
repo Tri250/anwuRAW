@@ -2,6 +2,10 @@
 
 > 发布正式版（tag → GitHub Release）前逐项打勾。带 ⚙ 的项已由 CI 自动化，
 > 带 👤 的项需人工执行。本清单与 `.github/workflows/release.yml` / `build.yml` 对应。
+>
+> 2026-11-06 更新：release 工作流现由 **push `v*` tag** 直接触发，
+> 链路为 `prepare → precheck → release(13 平台矩阵) → verify → publish`。
+> 详见 `.github/workflows/release.yml` 与 `docs/contracts/full-audit-report.md`。
 
 ---
 
@@ -67,9 +71,16 @@ anwuRAW export sample.arw --output /tmp/smoke.jpg --long-edge 256
 `release.yml` 的 13 job 矩阵（Windows x64/arm64、macOS arm64/intel、macOS tethering ×2、
 Ubuntu 22.04/24.04 ×64/arm64、Ubuntu tethering ×2、Android arm64）：
 
-- ⚙ **precheck**：release 事件触发时统计已有资产，≥30 则跳过重建（防止 draft 重复构建）；
-- ⚙ **verify**：矩阵全部成功后断言 **资产数 ≥ 30**，不足则 release 工作流红——
-  这是"半成品 release 静默发布"的最终防线；
+- ⚙ **prepare**：解析 `tag` / `ref` / `release-id`，复用或创建 draft release；
+  push tag 与 `workflow_dispatch` 共用同一套解析逻辑；
+- ⚙ **precheck**：所有事件均生效，按 `.github/scripts/check-release-assets.sh` 的
+  **产物名称**逐项核对（不再使用已过时的"资产数 ≥ 30"硬编码计数），
+  齐全则跳过矩阵，避免重复构建；
+- ⚙ **release**：13 平台矩阵，新增/修改的功能（tethering 变体、Android arm64、
+  updater 签名、`latest.json`）全部纳入；
+- ⚙ **verify**：矩阵成功后断言全部主产物 + `.sig` + `latest.json` 到位；
+  未配置签名密钥时按 `REQUIRE_SIGNATURES=false` 自动降级并给出 warning；
+- ⚙ **publish**：仅 `verify` 通过后把 draft 发布为正式 Release，形成闭环；
 - [ ] 👤 发布后肉眼核对资产命名前缀（01/02/02_tethering/03/03_tethering/04）与 `latest.json`。
 
 ## 5. Updater 链路 dry-run（👤 首次及签名相关变更时必做）
@@ -90,7 +101,7 @@ Ubuntu 22.04/24.04 ×64/arm64、Ubuntu tethering ×2、Android arm64）：
 
 ## 6. 发布后观察（👤）
 
-- [ ] verify job 绿灯（30/30 资产）；
+- [ ] `prepare` / `precheck` / `release` / `verify` / `publish` 全绿，资产按名称逐项齐全；
 - [ ] 从旧版本客户端触发一次真实更新（若本次含 updater 变更）；
 - [ ] 新版本 issue 观察 48h，RAW 解码崩溃第一时间对照样张表定位格式。
 

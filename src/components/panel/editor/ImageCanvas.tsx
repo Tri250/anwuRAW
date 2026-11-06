@@ -1552,10 +1552,7 @@ const ImageCanvas = memo(
     // v2.1.16 灰屏自检修复：wgpu 显示被看门狗判定失效后回退 JPEG 预览。
     const wgpuDisplayFailed = useEditorStore((s) => s.wgpuDisplayFailed);
     const isWgpuActive =
-      appSettings?.useWgpuRenderer !== false &&
-      selectedImage?.isReady &&
-      hasRenderedFirstFrame &&
-      !wgpuDisplayFailed;
+      appSettings?.useWgpuRenderer !== false && selectedImage?.isReady && hasRenderedFirstFrame && !wgpuDisplayFailed;
 
     const softProofing = useEditorStore((s) => s.softProofing);
     const softProofFilter = useMemo(() => getSoftProofFilter(softProofing), [softProofing]);

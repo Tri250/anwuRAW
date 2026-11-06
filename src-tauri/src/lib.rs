@@ -24,7 +24,10 @@ mod ai_commands;
 mod ai_connector;
 mod ai_denoise;
 mod ai_jobs;
-mod ai_perf;
+// 对外暴露性能分级 API：Android 运行时与桌面诊断命令共用同一套分档口径。
+// 私有模块会让 `pub` 项在非 Android 构建里被 dead_code lint 判为未使用
+// （clippy -D warnings 直接失败），公开后这些能力可被外部 crate 与 CLI 消费。
+pub mod ai_perf;
 mod ai_processing;
 mod android_integration;
 mod app_settings;

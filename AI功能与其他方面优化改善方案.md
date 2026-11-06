@@ -1,4 +1,5 @@
 # 透影 Crystal v2.1.16 · Android 端 AI 与其他方面优化改善方案
+
 ### 基于 ZhaJinWenQianCake（wmc-ccb）仓库全量深度对照分析 · 2026-11-06
 
 ---
@@ -16,18 +17,18 @@
 
 ### 1.1 模型与推理资产对比
 
-| 能力 | ZhaJinWenQianCake | 透影 Crystal（Android） | 结论 |
-|---|---|---|---|
-| 主体抠图 | MODNet 24.7MB | **BiRefNet lite + SAM vit_b + ESAM3（文本提示）** | 我们显著更强 |
-| 语义分割 | selfie_multiclass **tflite** 16MB（MediaPipe 发布形态） | selfie_multiclass **ONNX**（同源） | 同级；他们有移动端原生 tflite 形态 |
-| AI 降噪 | 自训练 U-Net 2.4M 参数（DIV2K **合成噪声**，PSNR +4.0~5.5dB） | NIND UTNet（**真实噪声数据集**） | 我们底子更好 |
-| 消除/填充 | LaMa fp32 ONNX 208MB | LaMa fp16 ONNX（同源） | 同级，我们更小 |
-| 超分辨率 | RealESRGAN x4plus（tile 推理） | **无** | 他们多一项 |
-| CLIP | 335MB 图像塔 ONNX（仅挑图查重） | clip_model.onnx + tokenizer（文本蒙版用） | 同源，**我们用法单一** |
-| 深度/法线 | 无 | **Depth Anything V2 + MoGe-2** | 我们多两项 |
-| 场景识别 | 无（挑图用 CLIP 查重） | 64px 统计启发式 4 类 | 我们有但弱 |
-| 生成式填充 | ComfyUI 外挂 SD1.5/SDXL | 无 | 他们多（可选组件） |
-| GPU | torch CUDA + ort，需手动注册 DLL | DirectML（Win）/ CoreML（mac）/ **Android 无 EP，纯 CPU** | 架构我们更干净，但 Android 缺 EP |
+| 能力       | ZhaJinWenQianCake                                             | 透影 Crystal（Android）                                   | 结论                               |
+| ---------- | ------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------- |
+| 主体抠图   | MODNet 24.7MB                                                 | **BiRefNet lite + SAM vit_b + ESAM3（文本提示）**         | 我们显著更强                       |
+| 语义分割   | selfie_multiclass **tflite** 16MB（MediaPipe 发布形态）       | selfie_multiclass **ONNX**（同源）                        | 同级；他们有移动端原生 tflite 形态 |
+| AI 降噪    | 自训练 U-Net 2.4M 参数（DIV2K **合成噪声**，PSNR +4.0~5.5dB） | NIND UTNet（**真实噪声数据集**）                          | 我们底子更好                       |
+| 消除/填充  | LaMa fp32 ONNX 208MB                                          | LaMa fp16 ONNX（同源）                                    | 同级，我们更小                     |
+| 超分辨率   | RealESRGAN x4plus（tile 推理）                                | **无**                                                    | 他们多一项                         |
+| CLIP       | 335MB 图像塔 ONNX（仅挑图查重）                               | clip_model.onnx + tokenizer（文本蒙版用）                 | 同源，**我们用法单一**             |
+| 深度/法线  | 无                                                            | **Depth Anything V2 + MoGe-2**                            | 我们多两项                         |
+| 场景识别   | 无（挑图用 CLIP 查重）                                        | 64px 统计启发式 4 类                                      | 我们有但弱                         |
+| 生成式填充 | ComfyUI 外挂 SD1.5/SDXL                                       | 无                                                        | 他们多（可选组件）                 |
+| GPU        | torch CUDA + ort，需手动注册 DLL                              | DirectML（Win）/ CoreML（mac）/ **Android 无 EP，纯 CPU** | 架构我们更干净，但 Android 缺 EP   |
 
 ### 1.2 Android 端现状盘点（已做对的部分，不要破坏）
 
@@ -68,6 +69,7 @@
 **参照教训**（HANDOVER）：CPU 路径病理案例烧到 **1000s+** 只能 kill；CLIP `from_pretrained` 默认联网检查更新，无网阻塞 **300s**，首载 32s 在请求路径上 → 改 `local_files_only` + 预热 → **3.7s**。
 
 **方案**：
+
 1. **建立机型分级性能基线**：对旗舰/中端/低端三档真机实测各 AI 能力的首推耗时（CLIP/分割/降噪/LaMa/深度），形成表格，据此把 tile 尺寸、线程数（`ort` intra-op threads）按机型内存/核数分级——他们实测 4 线程并发初始化 OK，但移动端建议 1~2 线程（发热与热节流）。
 2. **CLIP 零样本分类推理输入**：scene 分类只需图像塔一次前向，输入可降到 224px 级，控制在中端机 <300ms。
 3. **所有模型加载走 `local_files_only` 等价路径**（我们的下载链路本就是本地文件提交，核对无联网探测）。
@@ -83,11 +85,11 @@
 
 **机型分级性能基线表（框架，待真机实测填充）**：
 
-| 机型档位 | 判定口径 | CLIP 224px 首推 | 分割首推 | 降噪 12MP 全图 | LaMa 512² 窗口 | 深度首推 | intra-op 线程 | LaMa 预算 |
-|---|---|---|---|---|---|---|---|---|
-| 旗舰（如 8Gen2/8Gen3 + 12GB） | ≥6 核且 ≥7.5GB | _ms | _ms | _ms | _ms | _ms | 2 | 768² |
-| 中端（如 778G/7Gen1 + 6~8GB） | ≥4 核且 ≥3.5GB | _ms | _ms | _ms | _ms | _ms | 2 | 576² |
-| 低端（如 Helio G/4GB） | 其余 | _ms | _ms | _ms | _ms | _ms | 1 | 448² |
+| 机型档位                      | 判定口径       | CLIP 224px 首推 | 分割首推 | 降噪 12MP 全图 | LaMa 512² 窗口 | 深度首推 | intra-op 线程 | LaMa 预算 |
+| ----------------------------- | -------------- | --------------- | -------- | -------------- | -------------- | -------- | ------------- | --------- |
+| 旗舰（如 8Gen2/8Gen3 + 12GB） | ≥6 核且 ≥7.5GB | _ms             | _ms      | _ms            | _ms            | _ms      | 2             | 768²      |
+| 中端（如 778G/7Gen1 + 6~8GB） | ≥4 核且 ≥3.5GB | _ms             | _ms      | _ms            | _ms            | _ms      | 2             | 576²      |
+| 低端（如 Helio G/4GB）        | 其余           | _ms             | _ms      | _ms            | _ms            | _ms      | 1             | 448²      |
 
 填充方法：真机安装 release 包 → 设置 → 数据管理 → AI 诊断 → 跑一次**深度诊断**（deep=true 会逐模型输出 `sessionBuildMs` 会话构建耗时与 CLIP `probeInferenceMs` 224px 端到端探针耗时，报告同时记录 `deviceTier/cores/ram/intraOpThreads`）→ 复制诊断报告回填本表；全图降噪/LaMa/深度用秒表计时。判据：**中端机 CLIP <300ms**（方案 2 目标）、首推（会话构建 + 首次推理）无 10s 级病态值。若某档超限，先降该档 LaMa 预算/线程，仍超再评估降噪 tile 分级（需同步质量回归）。
 
@@ -96,6 +98,7 @@
 **现状**：`get_ai_model_inventory`（[ai_processing.rs:3387](file:///workspace/src-tauri/src/ai_processing.rs#L3387)）只报模型文件在位；Android 无 GPU EP（[L602-605](file:///workspace/src-tauri/src/ai_processing.rs#L602-L605) 返回 None），用户报障时"AI 慢"无法归因。
 
 **方案**：
+
 1. 新增 `diagnose_ai` 命令：一次性返回 版本 / 平台 / 每模型实际生效 EP / 模型清单+落点+首推耗时 / 下载校验状态；每模型跑一次 32×32 实测推理（把"假阳性"变可验证事实）。
 2. 设置页展示 + "复制诊断报告"（版本、机型、EP、最近 5 条 AI 错误）——用户报障直接粘贴，对齐参照仓库闭环。
 3. `ai_provider` UI 如实标注：Windows=DirectML、macOS=CoreML、Android=CPU（当前值高亮）。**不提供 Android 上不存在的选项。**
@@ -179,31 +182,37 @@
 ## 3. 其他方面改善方案（Android 视角）
 
 ### 3.1 测试与 CI
+
 - 前端零单测：对 AI 参数逻辑补 vitest——`getAiDenoiseEnablePatch`（按 provider 生成启用补丁）、enhance 三档强度映射、`aiDenoiseAmount/Detail` 缺省值（自检修复过的 100% 缺省语义）。
 - CI 失败上传产物（参照 `if: failure()` 上传 out/）；golden 测试失败上传对比图。
 - AI 质量断言（P0-2 表格）进 `src-tauri/tests/`，CI 用小尺寸用例控耗时。
 
 ### 3.2 错误可诊断性与支持闭环
+
 - Rust panic hook + 前端未捕获异常落盘（含命令名与堆栈，保留最近 N 条）。
 - 关于页"复制诊断报告"（与 P0-3 合并实现）。
 
 ### 3.3 合规与文档
+
 - 建 `THIRD_PARTY.md` 逐模型许可表：**模型许可独立于代码**。我们全部模型来自 CyberTimon/RapidRAW-Models，需逐个登记上游许可（mediapipe=Apache-2.0 安全；SAM/LaMa/DepthAnything/MoGe 各自许可需核对）。
 - 参照 ROADMAP 教训：insightface 系模型仅限研究用途=商用障碍，他们要花整周期换模型。**选型时就查许可**，借本次盘点一遍。
 - 补 PRIVACY（"照片不出本机"是卖点）。
 
 ### 3.4 性能工程（可直接抄的数字）
+
 - **区域窗口化**：`build_regions` 2024→93ms、皮肤滤波 5302→870ms（脸只占 1.8% 像素）、关键点降采样推理 2412→300ms。我们的 landmarks/multiclass 管线同样窗口化 + 降采样推理。
 - 缩略图 LRU、RAW 内嵌 JPEG 预览提取（632→13ms）——移动端相册滚动直接受益。
 - **发热与热节流**：连续推理（批量 AI）监控温升，超阈值降线程/降 tile 并如实提示；他们 CPU 1000s+ 的教训说明"没有节流=死机"。
 
 ### 3.5 UX 诚实性（参照仓库最强方法论）
+
 - **不适用就如实空态**：绿色占比 <5% 时 applicable=false，不硬猜。
 - **guidance 引导而非静默失败**：联动 P1-1 LaMa guidance。
 - **批次自适应阈值**：所有"自动"判定（曝光/模糊/场景）用批内分位数，不用固定常数。
 - **版本单一来源 + 更新检查**：版本一处定义；检查走 Releases latest，不可达静默降级。
 
 ### 3.6 发布工程
+
 - Android：APK/AAB 签名与 Play 发布链路核对；模型分发与版本更新解耦（模型 manifest 内容 hash 即版本，参照他们 CI 缓存 key 思路）。
 - 桌面代码签名（参照实测路径）：Certum 开源开发者证书（约 €25-70/年，最对口）/ SignPath.io 开源免费计划 / Azure Trusted Signing（$9.99/月）。
 
@@ -211,17 +220,17 @@
 
 ## 4. Android 端落地路线图
 
-| 优先级 | 事项 | 主要涉及 | 预期收益 | 风险 |
-|---|---|---|---|---|
-| **P0** | CLIP 零样本场景分类（+批内分位数校准+启发式降级） | scene_classify.rs、ai_processing.rs | AI 推荐准确率大升，零新增下载 | CLIP 会话内存；预热策略（见 P0-2） |
-| **P0** | Android CPU 性能基线 + 机型分级（tile/线程数） | 推理链路 | 中低端机可用性 | 需真机实测矩阵 |
-| **P0** | AI 诊断命令 + 复制诊断报告 + EP 如实标注 | ai_processing.rs、设置页 | 排障闭环；防静默 CPU 回退 | 低 |
-| **P1** | LaMa 四项契约（量程自检/洞清零/窗口化/大面积 guidance） | LaMa 调用链 + 前端 | 消除效果+速度（CPU 关键） | guidance 交互需 i18n |
-| **P1** | 分割质量包（guided filter 贴边/多人保护区/分位归一/900px 检测） | 分割与人脸链路 | 天空/主体/文本/景深四大功能质量 | 计算量增加，需窗口化 |
-| **P1** | 降噪 strength 语义化 + 真实噪声基线 + fp16 档 | ai_denoise.rs、模型资产 | 高 ISO 效果可控可复核 | 条件输入需验证 |
-| **P1** | XNNPACK EP 评估 | ort 集成 | CPU 推理提速 2~4×（预期） | 版本兼容需验证 |
-| **P1** | 分发体积治理（体积总览/Wi-Fi 限制/复用摊薄） | 下载链路 + UI | 转化率与流量友好 | 低 |
-| **P2** | 超分 / AI 挑图 / 追色 / 热节流 / 生成式（桌面） | 新功能立项 | 功能面扩展 | 各自独立评估 |
+| 优先级 | 事项                                                            | 主要涉及                            | 预期收益                        | 风险                               |
+| ------ | --------------------------------------------------------------- | ----------------------------------- | ------------------------------- | ---------------------------------- |
+| **P0** | CLIP 零样本场景分类（+批内分位数校准+启发式降级）               | scene_classify.rs、ai_processing.rs | AI 推荐准确率大升，零新增下载   | CLIP 会话内存；预热策略（见 P0-2） |
+| **P0** | Android CPU 性能基线 + 机型分级（tile/线程数）                  | 推理链路                            | 中低端机可用性                  | 需真机实测矩阵                     |
+| **P0** | AI 诊断命令 + 复制诊断报告 + EP 如实标注                        | ai_processing.rs、设置页            | 排障闭环；防静默 CPU 回退       | 低                                 |
+| **P1** | LaMa 四项契约（量程自检/洞清零/窗口化/大面积 guidance）         | LaMa 调用链 + 前端                  | 消除效果+速度（CPU 关键）       | guidance 交互需 i18n               |
+| **P1** | 分割质量包（guided filter 贴边/多人保护区/分位归一/900px 检测） | 分割与人脸链路                      | 天空/主体/文本/景深四大功能质量 | 计算量增加，需窗口化               |
+| **P1** | 降噪 strength 语义化 + 真实噪声基线 + fp16 档                   | ai_denoise.rs、模型资产             | 高 ISO 效果可控可复核           | 条件输入需验证                     |
+| **P1** | XNNPACK EP 评估                                                 | ort 集成                            | CPU 推理提速 2~4×（预期）       | 版本兼容需验证                     |
+| **P1** | 分发体积治理（体积总览/Wi-Fi 限制/复用摊薄）                    | 下载链路 + UI                       | 转化率与流量友好                | 低                                 |
+| **P2** | 超分 / AI 挑图 / 追色 / 热节流 / 生成式（桌面）                 | 新功能立项                          | 功能面扩展                      | 各自独立评估                       |
 
 ## 5. 不建议照抄的部分
 
