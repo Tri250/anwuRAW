@@ -11,6 +11,7 @@ import { BorderBasis, ExportSettings, Status, WatermarkAnchor } from '../ui/Expo
 import { Invokes } from '../ui/AppProperties';
 import { WATERMARK_TEMPLATES, WatermarkTemplate, haptic, summarizeExif, useWmPrefs, CxSwitch } from './crystalShared';
 import { getOriginalAdjustments } from '../../hooks/useEditorActions';
+import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
 
 /* ---------------------------------------------------------------------------
  * Crystal 水印导出域（青绿主题，图4）。
@@ -143,6 +144,17 @@ export default function WatermarkExportPage({
       toast.success(t('crystal.export.done'));
     }
   }, [exportState.status, t]);
+
+  // 审计自检（导出闭环）：页面内返回胶囊在导出中已禁用，但 Android 硬件/
+  // 手势系统返回不走胶囊——注册退出层消费返回事件并提示导出进行中，
+  // 防止中途离开丢失进度反馈（与胶囊禁用同一产品策略）。导出结束
+  // （完成/取消/失败）自动注销，恢复正常返回行为。
+  useEffect(() => {
+    if (!isExporting) return;
+    const handler = () => toast.info(t('crystal.export.exporting'));
+    pushExitLayer(handler);
+    return () => removeExitLayer(handler);
+  }, [isExporting, t]);
 
   // OC-2: 按住预览图对照原图（松开恢复效果图）。
   // 审计修复：此前仅翻本地 holdOriginal，而 originalPreview 在移动端恒为 null
