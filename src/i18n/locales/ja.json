@@ -406,6 +406,7 @@
       "depthStrength": "深度の強さ",
       "lumaNr": "輝度ノイズ除去",
       "maskFailed": "認識に失敗しました",
+      "proceduralSky": "AI空モデル未ダウンロード — プロシージャル空検出を使用しました（AIモデルでより正確に）",
       "modelDownloading": "AIモデルをダウンロード中",
       "removeMask": "選択を解除",
       "skyStrength": "空の強さ",
@@ -1300,7 +1301,7 @@
     },
     "aiUpscale": {
       "hint": "Renders the currently loaded image at {{factor}}× resolution.",
-      "label": "AI Upscale",
+      "label": "Upscale (Interpolated)",
       "off": "Off",
       "scale2": "2×",
       "scale4": "4×"

@@ -698,9 +698,24 @@ pub async fn ai_auto_enhance(
     app_handle: AppHandle,
     intensity: Option<EnhanceIntensity>,
 ) -> Result<Value, String> {
+    // 名实一致（自检修复 1）：「AI 增强」此前实为纯直方图统计+纹理锐化，
+    // 并无任何 AI 推理——与名称不符。现在真实接入 CLIP 零样本场景识别：
+    // 模型已下载时用 CLIP 判别场景（portrait/night/landscape/food）并做
+    // 场景感知偏置；未下载时降级启发式 classify（仍场景感知、证据更弱）；
+    // 图片不可分析时行为与旧版完全一致。async 层先取 CLIP（内部免下载
+    // 初始化），同步分析在阻塞线程中执行。
+    let clip = {
+        let state = app_handle.state::<AppState>();
+        crate::ai_processing::get_or_init_clip_models_if_downloaded(
+            &app_handle,
+            &state.ai_state,
+            &state.ai_init_lock,
+        )
+        .await
+    };
     tauri::async_runtime::spawn_blocking(move || {
         let state = app_handle.state::<AppState>();
-        run_ai_auto_enhance(&state, &app_handle, intensity)
+        run_ai_auto_enhance(&state, &app_handle, intensity, clip.as_deref())
     })
     .await
     .map_err(|e| format!("Task panicked: {}", e))?
@@ -710,6 +725,7 @@ fn run_ai_auto_enhance(
     state: &AppState,
     app_handle: &AppHandle,
     intensity: Option<EnhanceIntensity>,
+    clip: Option<&crate::ai_processing::ClipModels>,
 ) -> Result<Value, String> {
     let loaded_image = state
         .original_image
@@ -763,6 +779,48 @@ fn run_ai_auto_enhance(
             .or_insert_with(|| json!(12.0 * k));
         obj.entry("sharpness".to_string())
             .or_insert_with(|| json!(10.0 * k));
+
+        // 场景感知偏置：AI 部分的真实语义。 CLIP 不可用时启发式识别兜底。
+        let scene = clip
+            .map(|c| crate::scene_classify::classify_with_clip(c, &loaded_image.image))
+            .unwrap_or_else(|| crate::scene_classify::classify(&loaded_image.image));
+        log::info!(
+            "ai enhance: scene={} confidence={:.2} clip={}",
+            scene.scene,
+            scene.confidence,
+            clip.is_some()
+        );
+        let scale = |obj: &mut serde_json::Map<String, Value>, key: &str, f: f64| {
+            if let Some(v) = obj.get(key).and_then(Value::as_f64) {
+                obj.insert(key.to_string(), json!(v * f));
+            }
+        };
+        match scene.scene.as_str() {
+            // 人像：皮肤经不起 structure/sharpness 猛推（噪点+毛孔锐化），
+            // 收 30% 纹理、保留色调
+            "portrait" => {
+                scale(obj, "structure", 0.7);
+                scale(obj, "sharpness", 0.7);
+            }
+            // 夜景：曝光补偿到上限会拉爆光斑与噪点，曝光收 15%、
+            // 纹理收 15%（推纹理=推噪声）
+            "night" => {
+                scale(obj, "exposure", 0.85);
+                scale(obj, "structure", 0.85);
+            }
+            // 风景：自然饱和比全局饱和安全，加 15% 自然饱和偏置
+            "landscape" => {
+                let vib = obj.get("vibrance").and_then(Value::as_f64).unwrap_or(0.0);
+                obj.insert("vibrance".to_string(), json!((vib + 15.0 * k).clamp(-100.0, 100.0)));
+            }
+            // 美食：色彩食欲感，自然饱和 +10%、纹理微收（浅景深画面推纹理脏）
+            "food" => {
+                let vib = obj.get("vibrance").and_then(Value::as_f64).unwrap_or(0.0);
+                obj.insert("vibrance".to_string(), json!((vib + 10.0 * k).clamp(-100.0, 100.0)));
+                scale(obj, "structure", 0.9);
+            }
+            _ => {}
+        }
     }
 
     Ok(adjustments)

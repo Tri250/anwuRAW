@@ -449,6 +449,7 @@
       "depthStrength": "Интенсивность глубины",
       "lumaNr": "Шум яркости",
       "maskFailed": "Ошибка распознавания",
+      "proceduralSky": "ИИ-модель неба не загружена — использовано процедурное распознавание (загрузите ИИ-модель для точных масок)",
       "modelDownloading": "Загрузка ИИ-модели",
       "removeMask": "Убрать выделение",
       "skyStrength": "Сила неба",
@@ -1361,7 +1362,7 @@
     },
     "aiUpscale": {
       "hint": "Renders the currently loaded image at {{factor}}× resolution.",
-      "label": "AI Upscale",
+      "label": "Upscale (Interpolated)",
       "off": "Off",
       "scale2": "2×",
       "scale4": "4×"

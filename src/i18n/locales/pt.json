@@ -429,6 +429,7 @@
       "depthStrength": "Intensidade de profundidade",
       "lumaNr": "Ruído de luminância",
       "maskFailed": "Falha no reconhecimento",
+      "proceduralSky": "Modelo de céu IA não baixado: usada deteção procedural (baixe o modelo IA para máscaras mais precisas)",
       "modelDownloading": "Baixando modelo de IA",
       "removeMask": "Remover seleção",
       "skyStrength": "Intensidade do céu",
@@ -1333,7 +1334,7 @@
     },
     "aiUpscale": {
       "hint": "Renders the currently loaded image at {{factor}}× resolution.",
-      "label": "AI Upscale",
+      "label": "Upscale (Interpolated)",
       "off": "Off",
       "scale2": "2×",
       "scale4": "4×"

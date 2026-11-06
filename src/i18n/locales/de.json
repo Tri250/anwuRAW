@@ -409,6 +409,7 @@
       "depthStrength": "Tiefenstärke",
       "lumaNr": "Luminanz-Rauschen",
       "maskFailed": "Erkennung fehlgeschlagen",
+      "proceduralSky": "KI-Himmelmodell nicht geladen – prozedurale Himmelerkennung verwendet (KI-Modell für präzisere Masken herunterladen)",
       "modelDownloading": "KI-Modell wird geladen",
       "removeMask": "Erkennung entfernen",
       "skyStrength": "Himmelstärke",
@@ -1305,7 +1306,7 @@
     },
     "aiUpscale": {
       "hint": "Renders the currently loaded image at {{factor}}× resolution.",
-      "label": "AI Upscale",
+      "label": "Upscale (Interpolated)",
       "off": "Off",
       "scale2": "2×",
       "scale4": "4×"

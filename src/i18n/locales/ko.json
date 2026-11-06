@@ -406,6 +406,7 @@
       "depthStrength": "깊이 강도",
       "lumaNr": "휘도 노이즈",
       "maskFailed": "인식 실패",
+      "proceduralSky": "AI 하늘 모델 미다운로드 — 절차적 하늘 감지 사용(AI 모델 다운로드 시 더 정확)",
       "modelDownloading": "AI 모델 다운로드 중",
       "removeMask": "선택 제거",
       "skyStrength": "하늘 강도",
@@ -1300,7 +1301,7 @@
     },
     "aiUpscale": {
       "hint": "Renders the currently loaded image at {{factor}}× resolution.",
-      "label": "AI Upscale",
+      "label": "Upscale (Interpolated)",
       "off": "Off",
       "scale2": "2×",
       "scale4": "4×"

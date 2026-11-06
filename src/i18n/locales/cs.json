@@ -449,6 +449,7 @@
       "depthStrength": "Intenzita hloubky",
       "lumaNr": "Šum jasnosti",
       "maskFailed": "Rozpoznání selhalo",
+      "proceduralSky": "AI model oblohy stažen — použito procedurální rozpoznávání (stáhněte AI model pro přesnější masky)",
       "modelDownloading": "Stahuji model AI",
       "removeMask": "Odebrat výběr",
       "skyStrength": "Intenzita oblohy",
@@ -1361,7 +1362,7 @@
     },
     "aiUpscale": {
       "hint": "Renders the currently loaded image at {{factor}}× resolution.",
-      "label": "AI Upscale",
+      "label": "Upscale (Interpolated)",
       "off": "Off",
       "scale2": "2×",
       "scale4": "4×"

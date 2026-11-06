@@ -429,6 +429,7 @@
       "depthStrength": "Intensitat de la profunditat",
       "lumaNr": "Soroll de lluminància",
       "maskFailed": "Error de reconeixement",
+      "proceduralSky": "Model de cel IA no baixat: s'ha usat detecció procedural (baixa el model IA per a màscares més precises)",
       "modelDownloading": "Descarregant model IA",
       "removeMask": "Eliminar selecció",
       "skyStrength": "Intensitat del cel",
@@ -1333,7 +1334,7 @@
     },
     "aiUpscale": {
       "hint": "Renders the currently loaded image at {{factor}}× resolution.",
-      "label": "AI Upscale",
+      "label": "Upscale (Interpolated)",
       "off": "Off",
       "scale2": "2×",
       "scale4": "4×"

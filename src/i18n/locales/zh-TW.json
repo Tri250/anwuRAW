@@ -406,6 +406,7 @@
       "depthStrength": "深度強度",
       "lumaNr": "明度降噪",
       "maskFailed": "識別失敗",
+      "proceduralSky": "AI 天空模型未下載，已改用程序化天空識別（下載 AI 模型可獲得更準的掩膜）",
       "modelDownloading": "AI 模型下載中",
       "removeMask": "移除識別",
       "skyStrength": "天空強度",
@@ -1330,7 +1331,7 @@
     },
     "aiUpscale": {
       "hint": "Renders the currently loaded image at {{factor}}× resolution.",
-      "label": "AI Upscale",
+      "label": "Upscale (Interpolated)",
       "off": "Off",
       "scale2": "2×",
       "scale4": "4×"

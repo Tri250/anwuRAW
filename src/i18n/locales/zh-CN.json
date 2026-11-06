@@ -409,6 +409,7 @@
       "depthStrength": "深度强度",
       "lumaNr": "明度降噪",
       "maskFailed": "识别失败",
+      "proceduralSky": "AI 天空模型未下载，已改用程序化天空识别（下载 AI 模型可获得更准的掩膜）",
       "modelDownloading": "AI 模型下载中",
       "removeMask": "移除识别",
       "skyStrength": "天空强度",
@@ -1333,7 +1334,7 @@
     },
     "aiUpscale": {
       "hint": "将以 {{factor}}× 分辨率渲染当前图像。",
-      "label": "AI 超分",
+      "label": "放大（插值增强）",
       "off": "关闭",
       "scale2": "2×",
       "scale4": "4×"

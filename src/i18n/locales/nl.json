@@ -409,6 +409,7 @@
       "depthStrength": "Dieptesterkte",
       "lumaNr": "Luminantie-ruis",
       "maskFailed": "Herkenning mislukt",
+      "proceduralSky": "AI-luchtmodel niet gedownload — procedurele luchtherkenning gebruikt (download het AI-model voor scherpere maskers)",
       "modelDownloading": "AI-model downloaden",
       "removeMask": "Selectie verwijderen",
       "skyStrength": "Luchtsterkte",
@@ -1305,7 +1306,7 @@
     },
     "aiUpscale": {
       "hint": "Renders the currently loaded image at {{factor}}× resolution.",
-      "label": "AI Upscale",
+      "label": "Upscale (Interpolated)",
       "off": "Off",
       "scale2": "2×",
       "scale4": "4×"

@@ -412,6 +412,7 @@
       "depthStrength": "Depth strength",
       "lumaNr": "Luma NR",
       "maskFailed": "Recognition failed",
+      "proceduralSky": "AI sky model not downloaded — used procedural sky detection (download the AI model for sharper masks)",
       "modelDownloading": "Downloading AI model",
       "removeMask": "Remove selection",
       "skyStrength": "Sky strength",
@@ -1338,7 +1339,7 @@
     },
     "aiUpscale": {
       "hint": "Renders the currently loaded image at {{factor}}× resolution.",
-      "label": "AI Upscale",
+      "label": "Upscale (Interpolated)",
       "off": "Off",
       "scale2": "2×",
       "scale4": "4×"

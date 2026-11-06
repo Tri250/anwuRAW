@@ -80,6 +80,8 @@ export default function CrystalAiToolsPanel() {
   const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
   /** 用户主动取消后抑制「识别失败」toast（取消不是失败） */
   const cancelRef = useRef(false);
+  /* 程序化天空降级提示只弹一次（会话级），避免每次重复识别都打扰 */
+  const proceduralNotified = useRef(false);
   const [textPrompt, setTextPrompt] = useState(loadStoredTextPrompt);
   const [showTextInput, setShowTextInput] = useState(false);
   const updateTextPrompt = useCallback((value: string) => {
@@ -171,9 +173,18 @@ export default function CrystalAiToolsPanel() {
       if (cancelRef.current) return;
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (maskReady(Mask.AiSky)) {
-        // 仅首次识别后写入默认强度；重复执行不覆盖用户已调值。
+        // 仅首次识别后写入默认强度；重复执行不重复提示。
         if (!Number(container.adjustments.clarity ?? 0))
           setMaskAdjustments(container.id, { clarity: 10, dehaze: 8, saturation: 5 });
+        // 名实一致（自检修复 3）：ESAM3 未下载时后端自动降级程序化天空
+        // 识别（颜色+地平线，aiSource="procedural"）——名称仍是「天空识别」，
+        // 但必须如实告知用户当前走的是哪条路线，不能静默冒充 AI。
+        const usedProcedural =
+          String(container.subMasks[0]?.parameters?.aiSource ?? '') === 'procedural';
+        if (usedProcedural && !proceduralNotified.current) {
+          proceduralNotified.current = true;
+          toast.info(t('crystal.ai.proceduralSky'));
+        }
       } else {
         // 闭环修复：识别失败清理空容器，tile 状态回归「未开启」，下次点击干净重试。
         removeContainer(Mask.AiSky);
