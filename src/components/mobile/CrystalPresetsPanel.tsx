@@ -242,6 +242,8 @@ interface SceneClassification {
   scene: string;
   confidence: number;
   tags: string[];
+  /** 判别来源："clip" | "heuristic"（后端如实上报，二者置信度语义不同） */
+  source?: string;
 }
 
 /* W3 边界：置信度 ≥0.75 才展示场景推荐（scene_classify 后端同门槛，前端二次门控） */
@@ -383,8 +385,15 @@ function AiRecommendCard() {
             : t('crystal.aiRecommend.noScene')}
         </div>
         <div className="cx-ai-tags">
-          <span className="cx-ai-tag">AI</span>
-          {sceneKey && <span className="cx-ai-tag">{t('crystal.aiRecommend.tagStats')}</span>}
+          {/* 名实一致（自检修复 4）：「AI」标签不再无条件硬编码——后端
+              scene.source 如实区分 CLIP 零样本（AI）与统计启发式（非 AI），
+              启发式结果标注为像素统计，不冒充 AI 识别。 */}
+          <span className="cx-ai-tag">
+            {scene?.source === 'heuristic' ? t('crystal.aiRecommend.tagStats') : 'AI'}
+          </span>
+          {sceneKey && scene?.source !== 'heuristic' && (
+            <span className="cx-ai-tag">{t('crystal.aiRecommend.tagStats')}</span>
+          )}
           <span className="cx-ai-tag">{t('crystal.aiRecommend.tagExif')}</span>
         </div>
       </div>

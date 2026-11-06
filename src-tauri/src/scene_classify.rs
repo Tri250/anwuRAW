@@ -35,6 +35,10 @@ pub struct SceneClassification {
     /// "landscape" | "portrait" | "night" | "food"；空串表示无可靠判别。
     pub scene: String,
     pub confidence: f32,
+    /// 判别来源："clip"（零样本 CLIP 通道）|"heuristic"（统计启发式）。
+    /// 参照 ZhaJinWenQianCake 的可诊断性契约：能力来源必须如实上报，
+    /// 前端与日志据此区分置信度语义（二者 confidence 不可比）。
+    pub source: String,
     pub tags: Vec<String>,
 }
 
@@ -190,6 +194,7 @@ pub fn classify(img: &DynamicImage) -> SceneClassification {
     let (img_w, img_h) = img.dimensions();
     if img_w == 0 || img_h == 0 {
         return SceneClassification {
+            source: "heuristic".to_string(),
             scene: String::new(),
             confidence: 0.0,
             tags: Vec::new(),
@@ -218,6 +223,7 @@ pub fn classify(img: &DynamicImage) -> SceneClassification {
     let confidence = clamp01(best_score * 1.15 - second_score * 0.3);
     if best_score < 0.3 || confidence < DISPLAY_CONFIDENCE_GATE {
         return SceneClassification {
+            source: "heuristic".to_string(),
             scene: String::new(),
             confidence,
             tags: Vec::new(),
@@ -225,6 +231,7 @@ pub fn classify(img: &DynamicImage) -> SceneClassification {
     }
 
     SceneClassification {
+            source: "heuristic".to_string(),
         scene: best.to_string(),
         confidence,
         tags: vec![format!("luma {:.2}", s.mean_luma)],
@@ -334,6 +341,7 @@ pub fn classify_with_clip(clip: &ClipModels, img: &DynamicImage) -> SceneClassif
     let (img_w, img_h) = img.dimensions();
     if img_w == 0 || img_h == 0 {
         return SceneClassification {
+            source: "clip".to_string(),
             scene: String::new(),
             confidence: 0.0,
             tags: Vec::new(),
@@ -364,6 +372,7 @@ pub fn classify_with_clip(clip: &ClipModels, img: &DynamicImage) -> SceneClassif
     let tags = vec![format!("clip {:.2}", best)];
     if confidence < DISPLAY_CONFIDENCE_GATE {
         return SceneClassification {
+            source: "clip".to_string(),
             scene: String::new(),
             confidence,
             tags,
@@ -371,6 +380,7 @@ pub fn classify_with_clip(clip: &ClipModels, img: &DynamicImage) -> SceneClassif
     }
 
     SceneClassification {
+            source: "clip".to_string(),
         scene: SCENE_PROMPTS[best_idx].0.to_string(),
         confidence,
         tags,
