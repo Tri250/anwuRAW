@@ -826,7 +826,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance"
+      "title": "AI Enhance",
+      "intensities": {
+        "subtle": "軽め",
+        "standard": "標準",
+        "strong": "強め"
+      }
     },
     "canvas": {
       "pickerCancel": "to cancel",

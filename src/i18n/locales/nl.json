@@ -830,7 +830,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance"
+      "title": "AI Enhance",
+      "intensities": {
+        "subtle": "Subtiel",
+        "standard": "Standaard",
+        "strong": "Sterk"
+      }
     },
     "canvas": {
       "pickerCancel": "to cancel",

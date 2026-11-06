@@ -882,7 +882,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance"
+      "title": "AI Enhance",
+      "intensities": {
+        "subtle": "Subtelne",
+        "standard": "Standardowe",
+        "strong": "Mocne"
+      }
     },
     "canvas": {
       "pickerCancel": "to cancel",
