@@ -832,12 +832,33 @@ function PortraitPanel() {
     return at;
   };
 
+  /* 移除算子容器；若其承载美型（liquify）值，则同步清掉对应 aiPatch。 */
+  const removeOperator = useCallback(
+    (op: RetouchOp) => {
+      const container = findContainerByKind(op.kind);
+      removeContainerByKind(op.kind);
+      const liq = container?.subMasks[0]?.parameters?.liquify as { slimFace?: number; jawline?: number } | undefined;
+      if (container && liq && ((liq.slimFace ?? 0) > 0 || (liq.jawline ?? 0) > 0)) {
+        const patchId = `face-liquify-${container.id}`;
+        useEditorStore.getState().patchesSentToBackend.delete(patchId);
+        setAdjustments((prev) => ({
+          ...prev,
+          aiPatches: (prev.aiPatches || []).filter((p) => p.id !== patchId),
+        }));
+      }
+    },
+    [findContainerByKind, removeContainerByKind, setAdjustments],
+  );
+
   /* 算子开关：未开启 → 建独立 AiFace 容器（parts 限定作用域）并识别；已开启 → 移除。 */
   const runOperator = useCallback(
     async (op: RetouchOp) => {
       if (opBusy) return;
       if (findContainerByKind(op.kind)) {
-        removeContainerByKind(op.kind);
+        // 自检修复（人像-切换关闭）：瓦片关闭此前直接 removeContainerByKind，
+        // 不清理该容器承载的美型补丁——美型宿主选取兼容旧数据时可落到带
+        // retouchKind 的容器（跨设备 sidecar 场景），残留补丁会继续生效。
+        removeOperator(op);
         return;
       }
       setOpBusy(op.kind);
@@ -846,7 +867,11 @@ function PortraitPanel() {
         // 会立即失败并闪断激活态。先等待就绪（busy 转圈反馈），超时/切图则放弃。
         const startPath = useEditorStore.getState().selectedImage?.path;
         if (!startPath) return;
-        if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+        if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) {
+          // 自检修复（人像-反馈闭环）：静默 return 会被感知为死键（AI 面板同文案）
+          toast.info(t('crystal.aiRecommend.notReady'));
+          return;
+        }
         if (useEditorStore.getState().selectedImage?.path !== startPath) return;
         const { selectedImage: img } = useEditorStore.getState();
         const subMask = createSubMask(Mask.AiFace, { width: img?.width ?? 1000, height: img?.height ?? 1000 });
@@ -899,25 +924,7 @@ function PortraitPanel() {
         setOpBusy(null);
       }
     },
-    [findContainerByKind, handleGenerateAiFaceMask, opBusy, removeContainerByKind, setAdjustments, t],
-  );
-
-  /* 移除算子容器；若其承载美型（liquify）值，则同步清掉对应 aiPatch。 */
-  const removeOperator = useCallback(
-    (op: RetouchOp) => {
-      const container = findContainerByKind(op.kind);
-      removeContainerByKind(op.kind);
-      const liq = container?.subMasks[0]?.parameters?.liquify as { slimFace?: number; jawline?: number } | undefined;
-      if (container && liq && ((liq.slimFace ?? 0) > 0 || (liq.jawline ?? 0) > 0)) {
-        const patchId = `face-liquify-${container.id}`;
-        useEditorStore.getState().patchesSentToBackend.delete(patchId);
-        setAdjustments((prev) => ({
-          ...prev,
-          aiPatches: (prev.aiPatches || []).filter((p) => p.id !== patchId),
-        }));
-      }
-    },
-    [findContainerByKind, removeContainerByKind, setAdjustments],
+    [findContainerByKind, handleGenerateAiFaceMask, opBusy, removeOperator, setAdjustments, t],
   );
 
   /* 统一肤色：复用桌面 ComputeSkinUnify，结果写入磨皮容器 colorGrading.global。 */
@@ -929,7 +936,11 @@ function PortraitPanel() {
     try {
       // 闭环修复（人像-激活）：统一肤色读原图像素，图片未就绪时先等待，
       // 超时/切图放弃（与算子/虚化链路同一守卫）。
-      if (!img.isReady && !(await awaitImageReady(img.path))) return;
+      if (!img.isReady && !(await awaitImageReady(img.path))) {
+        // 自检修复（人像-反馈闭环）：静默 return 会被感知为死键
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       if (useEditorStore.getState().selectedImage?.path !== img.path) return;
       const main = useEditorStore.getState();
       const result: { colorGrading?: { global?: Record<string, unknown> } } | null = await invoke(
@@ -1023,7 +1034,11 @@ function PortraitPanel() {
     const imgPath = main.selectedImage.path;
     // 闭环修复（人像-激活）：液化补丁读原图，未就绪时先等待；跨图守卫与
     // 其它 AI 链路一致（生成期间切图则丢弃，避免补丁写错图上下文）。
-    if (!main.selectedImage.isReady && !(await awaitImageReady(imgPath))) return;
+    if (!main.selectedImage.isReady && !(await awaitImageReady(imgPath))) {
+      // 自检修复（人像-反馈闭环）：静默 return 会被感知为死滑杆
+      toast.info(t('crystal.aiRecommend.notReady'));
+      return;
+    }
     if (useEditorStore.getState().selectedImage?.path !== imgPath) return;
     const liq = (host.subMasks[0]?.parameters?.liquify ?? {}) as { slimFace?: number; jawline?: number };
     const slim = liq.slimFace ?? 0;
@@ -1136,7 +1151,11 @@ function PortraitPanel() {
     setBlurBusy(true);
     try {
       // 闭环修复（人像-激活）：深度图推理依赖后端原图，未就绪时先等待。
-      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) return;
+      if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) {
+        // 自检修复（人像-反馈闭环）：静默 return 会被感知为死键
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       const b64: string = await invoke('generate_full_image_depth_map', { jsAdjustments: adj });
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
