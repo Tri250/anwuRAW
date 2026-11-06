@@ -594,3 +594,37 @@ pub fn clear_all_tags(root_path: String, app_handle: AppHandle) -> Result<usize,
         tag.starts_with(COLOR_TAG_PREFIX)
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// P0-1：CLIP 图像塔预处理契约——输出必须是 1×3×224×224，纯色输入下
+    /// 全部像素同值且等于 (c/255 - mean)/std。tagging 与 scene_classify
+    /// （零样本场景分类）共用该输入约定，归一化被破坏会同时打歪挑图
+    /// 与场景识别两条链路，故钉死。
+    #[test]
+    fn preprocess_clip_image_shape_and_normalization() {
+        let img = DynamicImage::ImageRgba8(image::ImageBuffer::from_fn(
+            64,
+            64,
+            |_, _| image::Rgba([128, 64, 255, 255]),
+        ));
+        let array = preprocess_clip_image(&img);
+        assert_eq!(array.shape(), &[1, 3, 224, 224]);
+
+        let mean = [0.48145466, 0.4578275, 0.40821073];
+        let std = [0.26862954, 0.261_302_6, 0.275_777_1];
+        let channels = [128u8, 64, 255];
+        for c in 0..3 {
+            let expected =
+                (channels[c] as f32 / 255.0 - mean[c]) / std[c];
+            for &value in array.index_axis(Axis(0), 0).index_axis(Axis(0), c).iter() {
+                assert!(
+                    (value - expected).abs() < 1e-5,
+                    "channel {c}: expected {expected}, got {value}"
+                );
+            }
+        }
+    }
+}

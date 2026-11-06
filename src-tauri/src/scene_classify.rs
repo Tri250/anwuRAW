@@ -552,4 +552,39 @@ mod tests {
             "below-median image should stay gated, got {bottom}"
         );
     }
+
+    /// P0-1：prompt 表完整性——4 类 × 每类 8 条、类名与前端 SceneKey
+    /// 对齐、无空串。clip_scene_probabilities 按每类固定条数做组内平均，
+    /// 表结构被破坏会静默错分（组边界错位），故钉死。
+    #[test]
+    fn scene_prompt_table_integrity() {
+        assert_eq!(SCENE_PROMPTS.len(), 4);
+        let names: Vec<&str> = SCENE_PROMPTS.iter().map(|(name, _)| *name).collect();
+        assert_eq!(names, vec!["landscape", "portrait", "night", "food"]);
+        for (name, prompts) in SCENE_PROMPTS.iter() {
+            assert_eq!(prompts.len(), 8, "{name} must have 8 prompts");
+            assert!(
+                prompts.iter().all(|p| !p.trim().is_empty()),
+                "{name} has an empty prompt"
+            );
+        }
+    }
+
+    /// P0-1：批内校准窗口——push 超过窗口容量必须淘汰最旧样本。批次
+    /// 校准依赖窗口只反映"最近一批"，否则早期图片的概率会污染新批次的
+    /// 中位数（参照仓库"阈值取批次自身分位数"口径的前提）。
+    #[test]
+    fn recent_scene_prob_window_is_bounded() {
+        for i in 0..(SCENE_BATCH_WINDOW as i32 + 5) {
+            push_recent_scene_prob(i as f32 / 100.0);
+        }
+        let recent = RECENT_SCENE_PROBS.lock().unwrap();
+        assert_eq!(recent.len(), SCENE_BATCH_WINDOW);
+        // 最旧的 5 条被淘汰：队首是第 5 次推入的值
+        assert_eq!(recent.front(), Some(&(5f32 / 100.0)));
+        assert_eq!(
+            recent.back(),
+            Some(&((SCENE_BATCH_WINDOW as i32 + 4) as f32 / 100.0))
+        );
+    }
 }

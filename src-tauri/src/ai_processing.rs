@@ -3967,4 +3967,148 @@ mod tests {
             );
         }
     }
+
+    /// P0-3：诊断结构 ↔ 前端契约——serde 序列化必须输出 camelCase 键名，
+    /// Option 字段在 None 时整体省略（前端 TS 接口以可选字段消费）。该
+    /// 契约由 DataManagementSettings.tsx 的 AiDiagnostics/AiModelDiagnostic
+    /// 接口镜像，任何一侧改名都会让诊断面板静默显示 undefined，故钉死。
+    #[test]
+    fn diagnostics_serialization_matches_frontend_camel_case_contract() {
+        let model = AiModelDiagnostic {
+            role: "clip".into(),
+            display_name: "CLIP".into(),
+            filename: "clip_model.onnx".into(),
+            installed: true,
+            installed_bytes: Some(123),
+            path: "/models/clip_model.onnx".into(),
+            effective_ep: "CPU".into(),
+            sha256_status: "ok".into(),
+            session_build_ms: Some(42),
+            probe_inference_ms: None,
+            note: None,
+        };
+        let value = serde_json::to_value(&model).unwrap();
+        assert_eq!(value["role"], "clip");
+        assert_eq!(value["displayName"], "CLIP");
+        assert_eq!(value["installedBytes"], 123);
+        assert_eq!(value["effectiveEp"], "CPU");
+        assert_eq!(value["sha256Status"], "ok");
+        assert_eq!(value["sessionBuildMs"], 42);
+        // None 的可选字段必须整体省略（而不是序列化成 null）
+        assert!(value.get("probeInferenceMs").is_none());
+        assert!(value.get("note").is_none());
+
+        let diagnostics = AiDiagnostics {
+            app_version: "2.1.16".into(),
+            platform: "linux".into(),
+            platform_gpu_ep: "none".into(),
+            gpu_enabled_setting: false,
+            gpu_runtime_status: "idle".into(),
+            deep: true,
+            models_dir: "/models".into(),
+            device_tier: "desktop".into(),
+            cpu_cores: 8,
+            total_ram_mb: 16_384,
+            intra_op_threads: "default".into(),
+            models: vec![model],
+            manifest_healthy: true,
+            issues: vec![],
+            recent_ai_logs: vec!["WARN clip session".into()],
+        };
+        let value = serde_json::to_value(&diagnostics).unwrap();
+        for key in [
+            "appVersion",
+            "platform",
+            "platformGpuEp",
+            "gpuEnabledSetting",
+            "gpuRuntimeStatus",
+            "deep",
+            "modelsDir",
+            "deviceTier",
+            "cpuCores",
+            "totalRamMb",
+            "intraOpThreads",
+            "models",
+            "manifestHealthy",
+            "issues",
+            "recentAiLogs",
+        ] {
+            assert!(value.get(key).is_some(), "missing key {key}");
+        }
+    }
+
+    /// P0-3：EP 如实推导——按各模型初始化调用点的真实门槛路由。平台 EP
+    /// 是显式参数，断言与测试宿主平台无关。
+    #[test]
+    fn model_effective_ep_routes_by_role_and_gpu_state() {
+        // 非 ONNX 资产：n/a（无 EP 语义）
+        assert_eq!(
+            model_effective_ep("efficientsam_prompt", true, "DirectML", false),
+            "n/a"
+        );
+        assert_eq!(
+            model_effective_ep("clip_tokenizer", true, "DirectML", false),
+            "n/a"
+        );
+        // GPU 开关关闭 / 平台无 EP / 运行时失败：一律 CPU
+        assert_eq!(model_effective_ep("denoise", false, "DirectML", false), "CPU");
+        assert_eq!(model_effective_ep("denoise", true, "none", false), "CPU");
+        assert_eq!(model_effective_ep("denoise", true, "DirectML", true), "CPU");
+        // 固定 CPU 路径的模型（调用点固定传 false 或本身就是 CPU 回退档）
+        for role in [
+            "sam_encoder",
+            "sam_decoder",
+            "face_landmarks",
+            "face_segmenter",
+            "lama",
+            "efficientsam_text_encoder",
+            "foreground_fp32",
+        ] {
+            assert_eq!(
+                model_effective_ep(role, true, "DirectML", false),
+                "CPU",
+                "{role}"
+            );
+        }
+        // 平台门控组：macOS 即便开关打开也走 CPU，其余平台按平台 EP
+        let gated_expected = if cfg!(target_os = "macos") { "CPU" } else { "DirectML" };
+        for role in [
+            "foreground_fp16",
+            "efficientsam_encoder",
+            "efficientsam_decoder",
+            "normal",
+            "clip",
+        ] {
+            assert_eq!(
+                model_effective_ep(role, true, "DirectML", false),
+                gated_expected,
+                "{role}"
+            );
+        }
+        // 其余（denoise/depth）：跟随开关与运行时状态
+        assert_eq!(model_effective_ep("denoise", true, "DirectML", false), "DirectML");
+        assert_eq!(model_effective_ep("depth", true, "CoreML", false), "CoreML");
+    }
+
+    /// P0-3：平台 EP 与 GPU 状态标签只能是有限集合内的值（诊断报告的
+    /// 消费方按这些字面量渲染），集合外的值会静默显示为未知状态。
+    #[test]
+    fn platform_ep_and_gpu_status_labels_are_from_known_sets() {
+        assert!(["DirectML", "CoreML", "none"].contains(&platform_gpu_ep()));
+        assert!(["idle", "active", "failed"].contains(&gpu_status_label()));
+    }
+
+    /// P0-2：会话构建线程注入口径——Android 分档返回 1~2，桌面 None。
+    /// （数值端已在 ai_perf::tests 钉死；此处钉的是 create_session 的
+    /// 消费口径：None = 保持 ORT 默认，不调用 with_intra_threads。）
+    #[test]
+    fn mobile_thread_budget_matches_ai_perf_policy() {
+        match crate::ai_perf::mobile_intra_threads() {
+            Some(threads) => {
+                assert!((1..=2).contains(&threads));
+                assert_eq!(threads, crate::ai_perf::intra_op_threads_label().parse::<usize>().unwrap());
+            }
+            None => assert_eq!(crate::ai_perf::intra_op_threads_label(), "default"),
+        }
+    }
 }

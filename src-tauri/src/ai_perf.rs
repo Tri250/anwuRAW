@@ -198,4 +198,26 @@ mod tests {
             assert_eq!(intra_op_threads_label(), "default");
         }
     }
+
+    /// 档位标签与线程策略映射——诊断报告与性能日志直接消费这些字符串，
+    /// 改名会破坏基线表口径与"复制诊断报告"的解析，故钉死。
+    #[test]
+    fn tier_labels_and_thread_policy_mapping() {
+        assert_eq!(DeviceTier::Flagship.label(), "flagship");
+        assert_eq!(DeviceTier::Mid.label(), "mid");
+        assert_eq!(DeviceTier::Low.label(), "low");
+        assert_eq!(DeviceTier::Flagship.intra_op_threads(), 2);
+        assert_eq!(DeviceTier::Mid.intra_op_threads(), 2);
+        assert_eq!(DeviceTier::Low.intra_op_threads(), 1);
+    }
+
+    /// 诊断报告用探测值：Linux 宿主上必须能读到核数与总内存（Android
+    /// 走同源 /proc/meminfo 路径）。detected_ram_mb 返回 0 会把 Android
+    /// 分档压到低端档（保守方向），宿主机上先保证探测路径本身可用。
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn core_and_memory_detection_work_on_linux() {
+        assert!(detected_cores() >= 1);
+        assert!(detected_ram_mb() > 0);
+    }
 }
