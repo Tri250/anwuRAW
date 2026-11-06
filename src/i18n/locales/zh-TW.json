@@ -549,7 +549,8 @@
       "vignette": "暗角",
       "vignetteFeather": "羽化",
       "vignetteMidpoint": "中点",
-      "vignetteRoundness": "圆度"
+      "vignetteRoundness": "圆度",
+      "masterLuts": "大師 LUT"
     },
     "originalBadge": "原圖",
     "portrait": {

@@ -1692,6 +1692,7 @@ function FxPanel() {
   const { applyPatch } = useCrystalAdjust();
   const { handleLutSelect } = useEditorActions();
   const [lutEntries, setLutEntries] = useState<LutEntry[]>([]);
+  const [masterEntries, setMasterEntries] = useState<LutEntry[]>([]);
   const [lutPreviews, setLutPreviews] = useState<Record<string, string | null>>({});
   const lutCache = useRef<Map<string, Record<string, string | null>>>(new Map());
 
@@ -1705,17 +1706,33 @@ function FxPanel() {
     }
   }, []);
 
+  /* 自检修复（特效-大师 LUT）：14 款内置大师 LUT 走独立命令 list_master_luts
+   *（桌面在大师配方弹窗消费），移动端此前从未调用——大师 LUT 在 Android 端
+   * 完全不可见。此处拉取并以独立条区展示，选择/强度/清除与胶片 LUT 同链路。 */
+  useEffect(() => {
+    let active = true;
+    invoke<LutEntry[]>('list_master_luts')
+      .then((entries) => {
+        if (active) setMasterEntries(entries);
+      })
+      .catch((e) => console.error('Failed to list master LUTs:', e));
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useEffect(() => {
     void refreshLuts();
   }, [refreshLuts]);
 
-  /* LUT 缩略图（generate_lut_previews），按图片缓存 */
+  /* LUT 缩略图（generate_lut_previews），按图片缓存（胶片/用户/大师合并一次生成） */
   useEffect(() => {
-    if (!selectedPath || !isImageReady || lutEntries.length === 0) {
+    const allEntries = [...lutEntries, ...masterEntries];
+    if (!selectedPath || !isImageReady || allEntries.length === 0) {
       setLutPreviews({});
       return;
     }
-    const cacheKey = `${selectedPath}|${lutEntries
+    const cacheKey = `${selectedPath}|${allEntries
       .map((e) => `${e.path}:${e.isBuiltIn ? 1 : 0}:${e.isSceneReferred ? 1 : 0}`)
       .join(',')}`;
     const cached = lutCache.current.get(cacheKey);
@@ -1725,7 +1742,7 @@ function FxPanel() {
     }
     let active = true;
     invoke<LutPreviewResult[]>('generate_lut_previews', {
-      luts: lutEntries.map((e) => ({
+      luts: allEntries.map((e) => ({
         path: e.path,
         isBuiltIn: e.isBuiltIn,
         isSceneReferred: e.isSceneReferred,
@@ -1750,7 +1767,7 @@ function FxPanel() {
     return () => {
       active = false;
     };
-  }, [selectedPath, isImageReady, lutEntries]);
+  }, [selectedPath, isImageReady, lutEntries, masterEntries]);
 
   /* LUT 导入：Android content URI 需解析名称并按扩展名过滤（与桌面同链路）。
      审计 FX-反馈：导入期间按钮忙碌态防重复触发，成功后给出数量反馈。 */
@@ -1990,6 +2007,38 @@ function FxPanel() {
           </>
         )}
       </div>
+
+      {/* 自检修复（特效-大师 LUT）：内置大师配方 LUT 独立条区（桌面为大师配方
+          弹窗入口；移动端以原生 LUT 链路等价开放——同 handleLutSelect/强度/清除） */}
+      {masterEntries.length > 0 && (
+        <div className="cx-lut">
+          <div className="cx-lut-head">
+            <span className="cx-lut-title">{t('crystal.fx.masterLuts')}</span>
+          </div>
+          <div className="cx-lut-strip">
+            {masterEntries.map((entry) => (
+              <button
+                key={entry.path}
+                className={`cx-lut-thumb${adjustments.lutPath === entry.path ? ' active' : ''}`}
+                onClick={() => {
+                  haptic(6);
+                  if (entry.path === adjustments.lutPath) clearLut();
+                  else void handleLutSelect(entry.path, entry.isSceneReferred);
+                }}
+              >
+                <span className="cx-lut-img">
+                  {lutPreviews[entry.path] ? (
+                    <img src={lutPreviews[entry.path] as string} alt={entry.name} draggable={false} />
+                  ) : (
+                    <ImageOff size={14} />
+                  )}
+                </span>
+                <span className="cx-lut-name">{entry.name.replace(/^大师·/, '')}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <CxSubSection labelKey="crystal.fx.groupVignette">
         <CxSliderRow

@@ -549,7 +549,8 @@
       "vignette": "周辺減光",
       "vignetteFeather": "ぼかし",
       "vignetteMidpoint": "中心",
-      "vignetteRoundness": "丸み"
+      "vignetteRoundness": "丸み",
+      "masterLuts": "マスターLUT"
     },
     "originalBadge": "原画像",
     "portrait": {

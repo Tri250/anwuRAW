@@ -572,7 +572,8 @@
       "vignette": "Vinheta",
       "vignetteFeather": "Suavidade",
       "vignetteMidpoint": "Ponto médio",
-      "vignetteRoundness": "Arredondamento"
+      "vignetteRoundness": "Arredondamento",
+      "masterLuts": "LUTs de mestres"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {

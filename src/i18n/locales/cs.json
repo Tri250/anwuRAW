@@ -592,7 +592,8 @@
       "vignette": "Vinětace",
       "vignetteFeather": "Měkkost",
       "vignetteMidpoint": "Střed",
-      "vignetteRoundness": "Zaoblení"
+      "vignetteRoundness": "Zaoblení",
+      "masterLuts": "LUTy mistrů"
     },
     "originalBadge": "ORIGINÁL",
     "portrait": {

@@ -592,7 +592,8 @@
       "vignette": "Winieta",
       "vignetteFeather": "Miękkość",
       "vignetteMidpoint": "Środek",
-      "vignetteRoundness": "Zaokrąglenie"
+      "vignetteRoundness": "Zaokrąglenie",
+      "masterLuts": "LUT mistrzów"
     },
     "originalBadge": "ORYGINAŁ",
     "portrait": {

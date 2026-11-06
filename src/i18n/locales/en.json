@@ -555,7 +555,8 @@
       "vignette": "Vignette",
       "vignetteFeather": "Feather",
       "vignetteMidpoint": "Midpoint",
-      "vignetteRoundness": "Roundness"
+      "vignetteRoundness": "Roundness",
+      "masterLuts": "Master LUTs"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {

@@ -572,7 +572,8 @@
       "vignette": "Vignettage",
       "vignetteFeather": "Adoucissement",
       "vignetteMidpoint": "Milieu",
-      "vignetteRoundness": "Rondeur"
+      "vignetteRoundness": "Rondeur",
+      "masterLuts": "LUT de maîtres"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {

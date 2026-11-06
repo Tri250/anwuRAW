@@ -572,7 +572,8 @@
       "vignette": "Vinyeta",
       "vignetteFeather": "Difuminat",
       "vignetteMidpoint": "Punt mitjà",
-      "vignetteRoundness": "Rodonesa"
+      "vignetteRoundness": "Rodonesa",
+      "masterLuts": "LUT de mestres"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {

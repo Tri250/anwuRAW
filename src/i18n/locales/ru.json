@@ -592,7 +592,8 @@
       "vignette": "Виньетка",
       "vignetteFeather": "Размытие края",
       "vignetteMidpoint": "Середина",
-      "vignetteRoundness": "Округлость"
+      "vignetteRoundness": "Округлость",
+      "masterLuts": "LUT мастеров"
     },
     "originalBadge": "ОРИГИНАЛ",
     "portrait": {

@@ -549,7 +549,8 @@
       "vignette": "비네트",
       "vignetteFeather": "페더",
       "vignetteMidpoint": "중심점",
-      "vignetteRoundness": "원형도"
+      "vignetteRoundness": "원형도",
+      "masterLuts": "마스터 LUT"
     },
     "originalBadge": "원본",
     "portrait": {
