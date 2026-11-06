@@ -189,6 +189,32 @@ push tag v2.1.17
 
 ---
 
-## 8. 闭环记录
+## 8. 闭环记录（2026-11-06 07:49 UTC 终态）
 
-> 本节在 Actions 运行至终态后回填：run ID、各 job 结论、资产数、Release 发布状态与最终结论。
+| 项                 | 结果                                                                                                                              |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Release 工作流 run | `42178397832` — **completed success**，17/17 job 全绿，07:03:50 → 07:49:59 UTC                                                    |
+| 触发方式           | `push` tag `v2.1.17`（commit `64d0d00`），由 `on: push: tags: ['v*']` 触发                                                        |
+| prepare            | 创建 draft Release `#436198445`                                                                                                   |
+| precheck           | 18 项必需产物缺失 → `complete=false`，放行全矩阵                                                                                  |
+| release 矩阵       | 13 个平台全部 success（Windows x64/arm64、macOS arm64/intel × 标准与 tethering、Ubuntu 22.04/24.04 x64/arm64、Android arm64-v8a） |
+| verify             | `All 18 required artifacts are present.` ✅                                                                                       |
+| publish            | draft → 正式发布 ✅                                                                                                               |
+| 正式 Release       | `v2.1.17`，**43 个资产**（含 12 个 `.sig` 与 `latest.json`），`draft=false`，发布于 2026-11-06T07:49:55Z                          |
+| 发布地址           | https://github.com/Tri250/anwuRAW/releases/tag/v2.1.17                                                                            |
+| 主分支门禁         | `Lint` run `42180467683` ✅ success；`CI Build` run `42180467627` ✅ success（`@d3148a2`）                                        |
+| main HEAD          | `d3148a2413bda6b847b21bdc95ec54da1738d231`                                                                                        |
+
+### 提交记录
+
+| commit    | 内容                                                                                                                                 |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `64d0d00` | 首轮全面自检修复：clippy dead_code、Prettier 8 文件、release 触发链、pr-ci 权限、资产校验签名降级、版本 `2.1.17`、自检报告与发布清单 |
+| `d3148a2` | 二次修复：10 个 Rust 文件的 `cargo fmt` 漂移、15 个 locale 的 i18n extract 漂移，报告补充验证证据                                    |
+| 文档回填  | 纯文档提交（代码零改动，`[skip ci]`）：回填本节闭环记录；全部代码门禁已在 `d3148a2` 上全绿，无需重复消耗 2 个平台的构建资源          |
+
+### 观察与后续建议
+
+- 构建期 warning（**非失败**）：`tauri-action` 仍面向 Node 20（runner 强制 Node 24）、Android 构建若干 `unused import` / `unreachable expression`、`ubuntu-latest` 将迁移至 Ubuntu 26、macOS arm64 队列容量提示。建议后续单独清理，不在发布提交里夹带。
+- `csp: null`、`shell:default` / `process:default` 的桌面宽权限面，以及 Android `usesCleartextTraffic` 占位符，需完整功能回归后再评估收紧。
+- 本次操作使用的 PAT 为明文提交，建议在 GitHub Settings 中轮换（revoke）一次。
