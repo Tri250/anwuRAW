@@ -1794,11 +1794,15 @@ function FxPanel() {
           return;
         }
       }
+      // 自检修复（滤镜-LUT 导入计数）：import_luts 返回的是导入后的全库列表
+      // （内置+用户+缓存），此前把全库总数直接当「已导入 N」播报——导 2 个
+      // 会误报成十几个。改为按 path 集合 diff 出本次真实新增数。
+      const before = new Set(lutEntries.map((entry) => entry.path));
       const list = await invoke<LutEntry[]>('import_luts', { sourcePaths: validPaths });
       lutCache.current.clear();
       setLutEntries(list);
       setLutPreviews({});
-      toast.success(t('crystal.fx.lutImported', { n: list.length }));
+      toast.success(t('crystal.fx.lutImported', { n: list.filter((entry) => !before.has(entry.path)).length }));
     } catch (e) {
       console.error('Failed to import LUTs:', e);
       toast.error(t('ui.lut.importFailed'));
