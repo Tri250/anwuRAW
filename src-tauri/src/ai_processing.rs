@@ -1243,14 +1243,70 @@ fn candidate_urls(url: &str) -> Vec<String> {
     };
     let mut urls = Vec::new();
     if let Ok(custom) = std::env::var(HF_ENDPOINT_ENV) {
-        let custom = custom.trim().trim_end_matches('/');
-        if !custom.is_empty() {
-            urls.push(format!("{custom}{rest}"));
+        if let Some(sanitized) = sanitize_mirror_base(&custom) {
+            // A2：自定义镜像只换 host，路径段仍由本地硬编码 URL 拼装；
+            // 含查询串/片段注入的 base（如 `https://evil/?x=`）会把下载
+            // 路径吞成查询参数，静默改写真实请求目标，必须拒收。
+            urls.push(format!("{sanitized}{rest}"));
+        } else {
+            log::warn!("ignoring invalid custom model mirror {custom:?} (expect http(s)://host, no '?'/'#')");
         }
     }
     urls.push(url.to_string());
     urls.push(format!("{HF_FALLBACK_HOST}{rest}"));
     urls
+}
+
+/// A2 下载加固：校验用户自定义镜像 base URL。
+///
+/// 接受 `http(s)://host[:port][/path]`；拒绝空 host、非 http(s) 协议、
+/// 含 `?` 或 `#`（会改变拼接后 URL 的语义）以及空白结尾残留。返回
+/// 去除尾斜杠后的安全 base，非法输入返回 None（调用方跳过该候选，
+/// 回退官方源，而不是让一次畸形配置中断模型下载）。
+fn sanitize_mirror_base(raw: &str) -> Option<String> {
+    let base = raw.trim().trim_end_matches('/');
+    if base.is_empty() {
+        return None;
+    }
+    if base.contains('?') || base.contains('#') || base.contains(char::is_whitespace) {
+        return None;
+    }
+    let (scheme, rest) = base.split_once("://")?;
+    let scheme_ok = scheme.eq_ignore_ascii_case("http") || scheme.eq_ignore_ascii_case("https");
+    let host = rest.split('/').next().unwrap_or("");
+    if !scheme_ok || host.is_empty() {
+        return None;
+    }
+    Some(base.to_string())
+}
+
+/// A2 下载加固：模型落盘文件名防御性校验。
+///
+/// 清单内的 filename 目前是编译期常量（穿越面极小），但下载器写盘前
+/// 统一校验一次，防止未来清单改为动态来源时出现 `../` 逃出模型目录。
+fn ensure_safe_asset_filename(filename: &str) -> Result<(), String> {
+    let bad = filename.is_empty()
+        || filename.contains('/')
+        || filename.contains('\\')
+        || filename.contains("..")
+        || filename.starts_with('.');
+    if bad {
+        return Err(format!("refusing unsafe model filename {filename:?}"));
+    }
+    Ok(())
+}
+
+/// A4：诊断日志单行截断。错误串内嵌的大 payload（base64 图片、二进制
+/// 残渣）会把诊断报告撑爆——参照仓库 error.log 的 8000 字符截断契约，
+/// 我们取 2000 字符并追加省略标记。
+fn truncate_log_line(line: &str) -> String {
+    const MAX: usize = 2000;
+    if line.chars().count() <= MAX {
+        line.to_string()
+    } else {
+        let head: String = line.chars().take(MAX).collect();
+        format!("{head} … [truncated {} chars]", line.chars().count() - MAX)
+    }
 }
 
 static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
@@ -1434,6 +1490,7 @@ async fn download_and_verify_model(
     models_dir: &Path,
     asset: &ModelAsset,
 ) -> Result<()> {
+    ensure_safe_asset_filename(asset.filename).map_err(|e| anyhow::anyhow!(e))?;
     let dest_path = models_dir.join(asset.filename);
     let is_valid = match asset.sha256 {
         Some(expected_hash) => verify_sha256(&dest_path, expected_hash)?,
@@ -2638,7 +2695,20 @@ pub fn run_sam_decoder(
         let resized_coarse_mask =
             image::imageops::resize(&gray_mask, orig_width, orig_height, FilterType::Triangle);
 
-        let feathered_coarse_mask = image::imageops::blur(&resized_coarse_mask, radius / 3.0);
+        // B3：小区域禁羽化——全图尺度的高斯会把小掩膜稀释到消失
+        // （参照仓库实测：lips 0.0035 → 0.001）。覆盖率 <2% 的掩膜
+        // （短词文本命中等）跳过 blur，直接走引导滤波收边（引导滤波
+        // 是边缘吸附，不是稀释）。大面积掩膜行为不变。
+        let coarse_coverage: usize = resized_coarse_mask
+            .pixels()
+            .filter(|p| p[0] > 127)
+            .count();
+        let total_px = (orig_width * orig_height) as usize;
+        let feathered_coarse_mask = if coarse_coverage * 50 >= total_px {
+            image::imageops::blur(&resized_coarse_mask, radius / 3.0)
+        } else {
+            resized_coarse_mask
+        };
 
         let mut refined_mask =
             fast_guided_filter(&guide_hr, &feathered_coarse_mask, radius as usize, 0.01);
@@ -3677,7 +3747,7 @@ fn recent_ai_logs(app_handle: &tauri::AppHandle) -> Vec<String> {
         })
         .rev()
         .take(5)
-        .map(|line| line.to_string())
+        .map(truncate_log_line)
         .collect()
 }
 
@@ -3852,6 +3922,139 @@ mod tests {
     use super::*;
 
     const TEST_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/nind_denoise_utnet_684.onnx?download=true";
+
+    // ==== A1/A2/A4 整改测试 ====
+
+    // A2：自定义镜像 base 校验——合法镜像通过、注入/缺协议/空 host 拒收
+    #[test]
+    fn sanitize_mirror_base_accepts_valid_hosts() {
+        assert_eq!(
+            sanitize_mirror_base("https://hf-mirror.example.com/"),
+            Some("https://hf-mirror.example.com".into())
+        );
+        assert_eq!(
+            sanitize_mirror_base("http://192.168.1.10:8080/models"),
+            Some("http://192.168.1.10:8080/models".into())
+        );
+        assert_eq!(sanitize_mirror_base("  https://mirror.io  "), Some("https://mirror.io".into()));
+    }
+
+    #[test]
+    fn sanitize_mirror_base_rejects_injection_and_garbage() {
+        // 查询注入：base 带 '?' 会把硬编码路径吞成查询参数
+        assert_eq!(sanitize_mirror_base("https://evil.com/?x="), None);
+        // 片段注入
+        assert_eq!(sanitize_mirror_base("https://evil.com/#/x"), None);
+        // 缺协议 / 缺 host / 非法协议
+        assert_eq!(sanitize_mirror_base("hf-mirror.example.com"), None);
+        assert_eq!(sanitize_mirror_base("https://"), None);
+        assert_eq!(sanitize_mirror_base("ftp://mirror.io"), None);
+        assert_eq!(sanitize_mirror_base(""), None);
+        assert_eq!(sanitize_mirror_base("   "), None);
+    }
+
+    #[test]
+    fn candidate_urls_rejects_malformed_custom_mirror() {
+        let urls = candidate_urls("https://example.com/model.onnx");
+        // 外部 host 不走镜像链，仍单候选（不受畸形自定义镜像影响）
+        assert_eq!(urls, vec!["https://example.com/model.onnx".to_string()]);
+    }
+
+    // A2：模型文件名穿越防御
+    #[test]
+    fn ensure_safe_asset_filename_blocks_traversal() {
+        assert!(ensure_safe_asset_filename("model.onnx").is_ok());
+        assert!(ensure_safe_asset_filename("sam_encoder_fp16.onnx").is_ok());
+        assert!(ensure_safe_asset_filename("../etc/passwd").is_err());
+        assert!(ensure_safe_asset_filename("a\\b.onnx").is_err());
+        assert!(ensure_safe_asset_filename("a/b.onnx").is_err());
+        assert!(ensure_safe_asset_filename(".hidden").is_err());
+        assert!(ensure_safe_asset_filename("").is_err());
+    }
+
+    // A4：诊断日志单行截断（防大 payload 灌爆报告）
+    #[test]
+    fn truncate_log_line_caps_length_and_marks_omission() {
+        let short = "[ERROR] model download failed".to_string();
+        assert_eq!(truncate_log_line(&short), short);
+
+        let big: String = "A".repeat(5000);
+        let out = truncate_log_line(&big);
+        assert!(out.chars().count() < 2100, "must cap near 2000 chars");
+        assert!(out.contains("[truncated 3000 chars]"));
+
+        // 多字节字符按字符数截断，不产生半个码点
+        let wide: String = "表".repeat(3000);
+        let out = truncate_log_line(&wide);
+        assert!(out.contains("[truncated 1000 chars]"));
+    }
+
+    // ==== A1：整图级质量回归（参照仓库 locality/单调性方法论的移植） ====
+
+    // A1：引导滤波——平坦输入输出保持平坦（无纹理区域不得被滤波改写）
+    #[test]
+    fn guided_filter_preserves_flat_regions() {
+        let (w, h) = (48u32, 48u32);
+        let guide = GrayImage::from_raw(w, h, vec![200u8; (w * h) as usize]).unwrap();
+        let mask = GrayImage::from_raw(w, h, vec![230u8; (w * h) as usize]).unwrap();
+        let out = fast_guided_filter(&guide, &mask, 8, 0.01);
+        for p in out.pixels() {
+            let v = p[0] as i32 - 230;
+            assert!(v.abs() <= 6, "flat region drifted by {v}");
+        }
+    }
+
+    // A1：引导滤波输出值域必须留在 [0,1]（×255）——违反则后续线性
+    // 拉伸 (v-0.03)/0.94 会出现 clamped 白边或黑边（参照仓库 ULP 泄漏教训）
+    #[test]
+    fn guided_filter_output_stays_in_unit_range() {
+        // 高对比边缘 guide + 二值掩膜，最容易把输出推到量程外
+        let (w, h) = (64u32, 64u32);
+        let mut guide = GrayImage::new(w, h);
+        let mut mask = GrayImage::new(w, h);
+        for y in 0..h {
+            for x in 0..w {
+                guide.put_pixel(x, y, image::Luma([if x < w / 2 { 10 } else { 250 }]));
+                mask.put_pixel(x, y, image::Luma([if x < w / 2 { 250 } else { 5 }]));
+            }
+        }
+        let out = fast_guided_filter(&guide, &mask, 12, 0.001);
+        for p in out.pixels() {
+            assert!((0..=255).contains(&p[0]), "guided filter output {} out of range", p[0]);
+        }
+    }
+
+    // A1：头区保护带 locality——零天空掩膜在保护带外逐位不变，
+    // 保护带内只可能被压低（乘 keep ≤ 1），绝不会被抬升
+    #[test]
+    fn head_zone_subtraction_never_raises_mask() {
+        let (w, h) = (64u32, 64u32);
+        let boxes = vec![[20.0f32, 16.0, 44.0, 56.0]]; // [x1, y1, x2, y2]
+        let zone = crate::face_masking::head_zone_from_boxes(w, h, &boxes);
+
+        let mut mask = GrayImage::new(w, h);
+        // 只有画布右下角有掩膜信号（远离保护带）
+        for y in 58..64 {
+            for x in 58..64 {
+                mask.put_pixel(x, y, image::Luma([255]));
+            }
+        }
+        let before: Vec<u8> = mask.pixels().map(|p| p[0]).collect();
+
+        let mut out = mask.clone();
+        for (m, z) in out.pixels_mut().zip(zone.pixels()) {
+            let keep = 1.0 - z[0] as f32 / 255.0;
+            m[0] = (m[0] as f32 * keep).round() as u8;
+        }
+
+        for (i, (b, a)) in before.iter().zip(out.pixels()).enumerate() {
+            let after = a[0];
+            assert!(after <= *b, "pixel {i} raised by head zone: {b} -> {after}");
+            if *b == 255 {
+                assert_eq!(after, 255, "locality violation: protected-pixel untouched at {i}");
+            }
+        }
+    }
 
     #[test]
     fn candidate_urls_fall_back_to_mirror() {

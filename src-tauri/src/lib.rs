@@ -45,6 +45,7 @@ mod effect_maps;
 mod exif_processing;
 mod export_journal;
 mod export_processing;
+mod procedural_sky;
 mod face_masking;
 mod file_management;
 mod focus_stacking;

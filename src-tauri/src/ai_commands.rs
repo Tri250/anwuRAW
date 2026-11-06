@@ -215,8 +215,34 @@ pub fn generate_sky_mask(
     transform: MaskTransform,
     ai_source: Option<String>,
 ) -> Result<AiSkyMaskParameters, String> {
+    // A3 降级链：ESAM3 sky prompt 缺失时回退程序化天空检测（纯 CPU
+    // 颜色+地平线+先验，零模型依赖），结果经 ai_source="procedural"
+    // 如实标注；覆盖率守卫误判时如实报失败（不产出全图替换）。
+    // 前端已展示 ai_source，用户可分辨当前掩膜来自哪条路径。
+    let sky_prompt = models.esam3_sky_prompt();
+    if let Err(e) = &sky_prompt {
+        log::warn!(
+            "sky mask: ESAM3 sky prompt unavailable ({e}); falling back to procedural detection"
+        );
+        let sky = crate::procedural_sky::detect_procedural_sky(warped_image)
+            .map_err(|err| format!("procedural sky: {err}"))?;
+        log::info!(
+            "procedural sky: coverage {:.1}%, horizon row {}",
+            sky.coverage * 100.0,
+            sky.horizon_row
+        );
+        return Ok(AiSkyMaskParameters {
+            mask_data_base64: Some(encode_to_base64_png(&sky.mask)?),
+            rotation: Some(transform.rotation),
+            flip_horizontal: Some(transform.flip_horizontal),
+            flip_vertical: Some(transform.flip_vertical),
+            orientation_steps: Some(transform.orientation_steps),
+            ai_source: Some("procedural".to_string()),
+        });
+    }
+
     let features = cached_esam3_features(ai_state, models, cache_key, warped_image)?;
-    let prompt = models.esam3_sky_prompt().map_err(|e| e.to_string())?;
+    let prompt = sky_prompt.map_err(|e| e.to_string())?;
     let mut mask = run_esam3_decoder(
         &*models.esam3_decoder().map_err(|e| e.to_string())?,
         &features,
