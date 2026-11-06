@@ -84,10 +84,30 @@ pub const ESAM3_TEXT_SCORE_THRESHOLD: f32 = 0.3;
 pub const ESAM3_FACE_SCORE_THRESHOLD: f32 = 0.3;
 const ESAM3_MASK_LOW: f32 = 0.3;
 const ESAM3_MASK_HIGH: f32 = 0.7;
+/// P1-2：分位数自适应归一化的满值分位与下限口径。p99 作为"满值"刻度
+/// （饱和顶部 1% 的极值忽略），p99 低于 ESAM3_MASK_LOW 视为无真实信号。
+const MASK_PERCENTILE: f32 = 0.99;
 const ESAM3_REFINE_SIZE: u32 = 1024;
 const ESAM3_REFINE_RADIUS: usize = 16;
 pub const ESAM3_SKY_REFINE_EPS: f32 = 0.001;
 pub const ESAM3_TEXT_REFINE_EPS: f32 = 0.01;
+/// P1-2：BiRefNet 前景掩膜 guided filter 贴边的 eps（与 ESAM3 天空管线
+/// 同档：小 eps 让掩膜边界贴合亮度边缘，发丝/肩部获得软边）。
+const BIREFNET_REFINE_EPS: f32 = 0.001;
+
+/// P1-2：置信掩膜的分位数自适应归一化刻度——返回 Some(hi) 表示按
+/// [0, hi] 线性归一，返回 None 表示无真实信号、调用方应维持固定阈值
+/// 行为。hi 取掩膜自身 p99（select_nth_unstable，O(n)）。
+/// 纯函数，便于测试。
+fn percentile_mask_remap(values: &[f32]) -> Option<f32> {
+    if values.is_empty() {
+        return None;
+    }
+    let mut sorted = values.to_vec();
+    let rank = ((values.len() - 1) as f32 * MASK_PERCENTILE).round() as usize;
+    let (_, &mut hi, _) = sorted.select_nth_unstable_by(rank, |a, b| a.total_cmp(b));
+    (hi > ESAM3_MASK_LOW).then_some(hi)
+}
 const ESAM3_ZOOM_MIN_IOU: f32 = 0.3;
 
 const FACE_LANDMARKS_URL: &str = "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/mediapipe_face_landmarks.onnx?download=true";
@@ -661,6 +681,13 @@ fn create_session(
     let providers: Vec<_> = gpu_provider.into_iter().chain([cpu_provider]).collect();
 
     let mut builder = Session::builder()?;
+    // P0-2：Android 按机型档位限制 intra-op 线程（1~2，防发热与热节流）；
+    // 桌面端 mobile_intra_threads() 为 None，保持 ORT 默认不变。
+    // 注：若 ORT 本体以 OpenMP 构建，该设置不生效（ort 文档口径），
+    // 本项目 Android 使用官方预编译 libonnxruntime.so。
+    if let Some(threads) = crate::ai_perf::mobile_intra_threads() {
+        builder = builder.with_intra_threads(threads)?;
+    }
     if use_gpu || kind == SessionKind::OneShot {
         builder = builder.with_memory_pattern(false)?;
     }
@@ -1578,9 +1605,41 @@ pub async fn get_or_init_clip_models(
     ai_state_mutex: &Mutex<Option<AiState>>,
     ai_init_lock: &TokioMutex<()>,
 ) -> Result<Arc<ClipModels>> {
+    get_or_init_clip_models_impl(app_handle, ai_state_mutex, ai_init_lock, true).await
+}
+
+/// P0-1（release v2.1.16）：场景分类复用 CLIP 的免下载初始化。
+/// 模型文件不在本地时返回 None，由调用方降级到 scene_classify 的统计
+/// 启发式——场景识别不应静默触发数百 MB 下载（显式使用 CLIP 的文本
+/// 蒙版 / AI 标签功能才走 `get_or_init_clip_models` 的下载路径）。
+pub async fn get_or_init_clip_models_if_downloaded(
+    app_handle: &tauri::AppHandle,
+    ai_state_mutex: &Mutex<Option<AiState>>,
+    ai_init_lock: &TokioMutex<()>,
+) -> Option<Arc<ClipModels>> {
+    get_or_init_clip_models_impl(app_handle, ai_state_mutex, ai_init_lock, false)
+        .await
+        .ok()
+}
+
+async fn get_or_init_clip_models_impl(
+    app_handle: &tauri::AppHandle,
+    ai_state_mutex: &Mutex<Option<AiState>>,
+    ai_init_lock: &TokioMutex<()>,
+    download_if_missing: bool,
+) -> Result<Arc<ClipModels>> {
     if let Some(clip_models) = cached_ai_state(ai_state_mutex, |state| state.clip_models.clone()) {
         touch_state_model(ai_state_mutex, CLIP_MODEL_FILENAME);
         return Ok(clip_models);
+    }
+
+    if !download_if_missing {
+        let models_dir = get_models_dir(app_handle)?;
+        if !models_dir.join(CLIP_MODEL_FILENAME).is_file()
+            || !models_dir.join(CLIP_TOKENIZER_FILENAME).is_file()
+        {
+            anyhow::bail!("CLIP model is not downloaded");
+        }
     }
 
     let _guard = ai_init_lock.lock().await;
@@ -1593,8 +1652,10 @@ pub async fn get_or_init_clip_models(
     enforce_state_residency(ai_state_mutex, CLIP_MODEL_FILENAME);
     let models_dir = get_models_dir(app_handle)?;
 
-    download_and_verify_model(app_handle, &models_dir, &CLIP_MODEL_ASSET).await?;
-    download_and_verify_model(app_handle, &models_dir, &CLIP_TOKENIZER_ASSET).await?;
+    if download_if_missing {
+        download_and_verify_model(app_handle, &models_dir, &CLIP_MODEL_ASSET).await?;
+        download_and_verify_model(app_handle, &models_dir, &CLIP_TOKENIZER_ASSET).await?;
+    }
     let clip_tokenizer_path = models_dir.join(CLIP_TOKENIZER_FILENAME);
 
     let _ = ort::init().with_name("AI-Tagging").commit();
@@ -1850,9 +1911,36 @@ pub fn run_ai_denoise(
     Ok(DynamicImage::ImageRgb32F(out))
 }
 
-const LAMA_PIXEL_BUDGET: f32 = 768.0 * 768.0;
 const LAMA_PATCH_RADIUS: i32 = 3;
 const LAMA_PATCH_MATCH_ITERS: u32 = 6;
+/// P1-1：大面积诚实引导阈值——洞区占推理窗口（mask 外扩 1.5 倍 + 128px
+/// 后的裁剪）比例超过该值即拒绝硬跑，由调用方向前端返回 guidance。
+/// 阈值口径参照 ZhaJinWenQianCake 实测校准（单路障碍物 hole≈11% 可自动、
+/// 多紧挨障碍物 ≈29% 需引导）；移动端屏幕小、涂抹面积天然受限，取 0.35
+/// 兼顾桌面大图与移动端可用性。
+const LAMA_MAX_HOLE_RATIO: f32 = 0.35;
+
+/// P1-1：洞区占比超阈值时返回 Some(占比)，否则 None（纯函数，便于测试）。
+fn lama_guidance_hole_ratio(hole_pixels: u64, crop_w: u32, crop_h: u32) -> Option<f32> {
+    let ratio = hole_pixels as f32 / (crop_w as f32 * crop_h as f32);
+    (ratio > LAMA_MAX_HOLE_RATIO).then_some(ratio)
+}
+
+/// P1-1：LaMa 输出量程自检——不同导出管线可能输出 0-255 / [0,1] / [-1,1]，
+/// 把 0-255 输出当 [0,1] 裁剪会让 >1 的值全压成白色（参照仓库"填补结果
+/// 96.7% 纯白"的病理），反之把 [0,1] 当 0-255 会整体压黑。从输出自身
+/// min/max 判定量程，返回 (scale, offset)：归一化值 = v * scale + offset。
+/// 判定口径：合法 [0,1] 输出不可能超过 1（fp16 误差留 5% 余量），故
+/// max > 1.05 即 0-255 量程；min < -0.05 即 [-1,1] 量程。纯函数，便于测试。
+fn lama_output_scale(out_min: f32, out_max: f32) -> (f32, f32) {
+    if out_max > 1.05 {
+        (1.0 / 255.0, 0.0) // 0-255 量程
+    } else if out_min < -0.05 {
+        (0.5, 0.5) // [-1,1] 量程
+    } else {
+        (1.0, 0.0) // [0,1] 量程（含全黑输出：与 0-255 全黑归一化结果一致）
+    }
+}
 
 fn dilate_mask(mask: &[bool], w: usize, h: usize, r: usize) -> Vec<bool> {
     let mut horiz = vec![false; w * h];
@@ -2045,6 +2133,7 @@ pub fn run_lama_inpainting(
     let (mut min_x, mut min_y) = (w, h);
     let (mut max_x, mut max_y) = (0u32, 0u32);
     let mut has_mask = false;
+    let mut hole_pixels: u64 = 0;
 
     for (x, y, p) in mask.enumerate_pixels() {
         if p[0] > 0 {
@@ -2053,6 +2142,7 @@ pub fn run_lama_inpainting(
             max_x = max_x.max(x);
             max_y = max_y.max(y);
             has_mask = true;
+            hole_pixels += 1;
         }
     }
 
@@ -2074,10 +2164,19 @@ pub fn run_lama_inpainting(
     let crop_w = x1 - x0 + 1;
     let crop_h = y1 - y0 + 1;
 
+    // P1-1：大面积诚实引导——洞区占比超阈值时不硬跑（LaMa 对超大洞区只能
+    // 产出低质量臆测内容），返回带稳定前缀的错误，由调用方提示用户缩小
+    // 涂抹范围。错误字符串形如 "lama_guidance:hole_ratio=0.42"。
+    if let Some(hole_ratio) = lama_guidance_hole_ratio(hole_pixels, crop_w, crop_h) {
+        return Err(anyhow::anyhow!("lama_guidance:hole_ratio={hole_ratio:.2}"));
+    }
+
     let cropped_img = image.crop_imm(x0, y0, crop_w, crop_h).to_rgba8();
     let cropped_mask = imageops::crop_imm(mask, x0, y0, crop_w, crop_h).to_image();
 
-    let scale = (LAMA_PIXEL_BUDGET / (crop_w as f32 * crop_h as f32))
+    // P0-2：像素预算按机型分档（Android 旗舰 768 / 中端 576 / 低端 448，
+    // 桌面恒 768）。LaMa 是全卷积 FFC 结构，动态尺寸无质量回退风险。
+    let scale = (crate::ai_perf::lama_pixel_budget() / (crop_w as f32 * crop_h as f32))
         .sqrt()
         .min(1.0);
     let fw = ((crop_w as f32 * scale).round() as u32).max(1);
@@ -2106,9 +2205,14 @@ pub fn run_lama_inpainting(
             let m = inf_mask.get_pixel(x.min(fw - 1), y.min(fh - 1))[0];
             let (y, x) = (y as usize, x as usize);
 
-            img_tensor[[0, 0, y, x]] = p[0] as f32 / 255.0;
-            img_tensor[[0, 1, y, x]] = p[1] as f32 / 255.0;
-            img_tensor[[0, 2, y, x]] = p[2] as f32 / 255.0;
+            // P1-1：mask 契约——喂模型前洞内像素清零（image * (1 - mask)）。
+            // 原样喂入洞内像素会让 LaMa 在洞区输出平坦的"复制"内容
+            // （参照仓库实测病理）；细节还原用的 source 仍取原图像素，
+            // 不受清零影响（is_source 本就排除洞邻域）。
+            let keep = if m > 0 { 0.0 } else { 1.0 };
+            img_tensor[[0, 0, y, x]] = p[0] as f32 / 255.0 * keep;
+            img_tensor[[0, 1, y, x]] = p[1] as f32 / 255.0 * keep;
+            img_tensor[[0, 2, y, x]] = p[2] as f32 / 255.0 * keep;
             msk_tensor[[0, 0, y, x]] = if m > 0 { 1.0 } else { 0.0 };
         }
     }
@@ -2122,11 +2226,22 @@ pub fn run_lama_inpainting(
         outputs[0].try_extract_array::<f32>()?.to_owned()
     };
 
+    // P1-1：输出量程自检——从输出自身 min/max 判定 0-255 / [0,1] / [-1,1]
+    // 再归一化，避免把 0-255 输出当 [0,1] 裁剪成纯白（或反之整体压黑）。
+    let (out_min, out_max) = output_tensor
+        .iter()
+        .fold((f32::INFINITY, f32::NEG_INFINITY), |(lo, hi), &v| {
+            (lo.min(v), hi.max(v))
+        });
+    let (out_scale, out_offset) = lama_output_scale(out_min, out_max);
+
     let (iw, ih) = (fw as usize, fh as usize);
     let target: Vec<[f32; 3]> = (0..iw * ih)
         .map(|i| {
             let (x, y) = (i % iw, i / iw);
-            [0, 1, 2].map(|c| (output_tensor[[0, c, y, x]] / 255.0).clamp(0.0, 1.0))
+            [0, 1, 2].map(|c| {
+                (output_tensor[[0, c, y, x]] * out_scale + out_offset).clamp(0.0, 1.0)
+            })
         })
         .collect();
     let source: Vec<[f32; 3]> = inf_img
@@ -2697,13 +2812,26 @@ pub fn run_esam3_decoder(
         return Ok(None);
     };
 
+    // P1-2：分位数自适应归一化（参照仓库 semantic.py 百分位归一化）——
+    // 固定 [0.3, 0.7] 重映射在弱置信对象上把整片掩膜压成近透明、在强
+    // 置信对象上把 <0.3 的软边缘削平。用掩膜自身 p99 作满值刻度自适应；
+    // p99 低于 ESAM3_MASK_LOW 说明没有真实信号，维持固定阈值行为不变。
+    // 注意：query 分数判定（上面的 score_threshold）始终用 RAW 置信度，
+    // 不走本归一化——归一化会把背景弱响应一起拉高（参照仓库 overlap
+    // 判定病理：占比 0.86 的人物被误算成路人）。
+    let adaptive_hi = percentile_mask_remap(&coarse_mask);
     let coarse_mask = GrayImage::from_raw(
         mask_w as u32,
         mask_h as u32,
         coarse_mask
             .iter()
             .map(|&v| {
-                let v = ((v - ESAM3_MASK_LOW) / (ESAM3_MASK_HIGH - ESAM3_MASK_LOW)).clamp(0.0, 1.0);
+                let v = match adaptive_hi {
+                    Some(hi) => (v / hi).clamp(0.0, 1.0),
+                    None => {
+                        ((v - ESAM3_MASK_LOW) / (ESAM3_MASK_HIGH - ESAM3_MASK_LOW)).clamp(0.0, 1.0)
+                    }
+                };
                 (v * 255.0).round() as u8
             })
             .collect(),
@@ -2800,6 +2928,22 @@ pub fn run_birefnet_model(
             blend_feathered(&mut mask, &detail, x, y);
         }
     }
+
+    // P1-2：guided filter 贴边后处理（参照仓库 matting.py：alpha 与亮度
+    // 引导滤波融合）。BiRefNet 概率图本身质量好，但 1024² 上采样回原图的
+    // 边缘仍会切过发丝/肩部；用亮度引导滤波把掩膜边界贴到图像边缘。
+    // 与 ESAM3 管线同几何：掩膜降到 ≤1024 长边过滤、系数双线性上采样回
+    // 原尺寸，半径/eps 与 ESAM3 精修一致，成本量级相同。
+    let scale = (ESAM3_REFINE_SIZE as f32 / width.max(height) as f32).min(1.0);
+    let refine_w = ((width as f32 * scale).round() as u32).max(1);
+    let refine_h = ((height as f32 * scale).round() as u32).max(1);
+    let mask_lr = imageops::resize(&mask, refine_w, refine_h, FilterType::Triangle);
+    let mask = fast_color_guided_filter(
+        &image.to_rgb8(),
+        &mask_lr,
+        ESAM3_REFINE_RADIUS,
+        BIREFNET_REFINE_EPS,
+    );
 
     Ok(mask)
 }
@@ -3392,6 +3536,292 @@ pub async fn get_ai_model_inventory(app_handle: tauri::AppHandle) -> Result<Mode
         .map_err(|error| error.to_string())
 }
 
+/// P0-3（release v2.1.16）：AI 诊断报告。用户报障「AI 慢 / 不可用」时
+/// 一次性给出可归因的事实：平台与每个模型实际生效的 EP（防静默回退）、
+/// 模型落点与校验状态；`deep` 模式追加逐模型会话构建耗时与 CLIP 224px
+/// 实测推理耗时（把「一切正常但超慢」的假阳性变成可验证事实），并附
+/// 日志尾部的 AI 相关记录。所有失败如实呈现，不猜测、不静默。
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct AiModelDiagnostic {
+    pub role: String,
+    pub display_name: String,
+    pub filename: String,
+    pub installed: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub installed_bytes: Option<u64>,
+    pub path: String,
+    /// 该模型实际生效的 EP："CPU" | "DirectML" | "CoreML" | "n/a"（非 ONNX 资产）。
+    pub effective_ep: String,
+    /// "ok" | "mismatch" | "unverified" | "not_installed"。
+    pub sha256_status: String,
+    /// deep 模式：ONNX 会话构建耗时（毫秒；移动端首推延迟的主要构成）。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_build_ms: Option<u128>,
+    /// deep 模式：CLIP 224px 端到端实测推理耗时（毫秒）；仅 CLIP 填报。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub probe_inference_ms: Option<u128>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct AiDiagnostics {
+    pub app_version: String,
+    pub platform: String,
+    /// 平台可用的 GPU EP：DirectML / CoreML / none（Android 与 Linux 为 none，纯 CPU）。
+    pub platform_gpu_ep: String,
+    /// 用户设置里的 GPU 加速开关。
+    pub gpu_enabled_setting: bool,
+    /// 运行时 GPU 状态：idle / active / failed（failed 后自动回落 CPU）。
+    pub gpu_runtime_status: String,
+    pub deep: bool,
+    pub models_dir: String,
+    /// P0-2：机型档位（Android：flagship/mid/low；桌面：desktop 不分级）。
+    pub device_tier: String,
+    /// P0-2：进程可见核数。
+    pub cpu_cores: usize,
+    /// P0-2：总内存 MB（0 = 探测不到）。
+    pub total_ram_mb: u64,
+    /// P0-2：intra-op 线程上限（"1"/"2"/"default"=ORT 默认吃满物理核）。
+    pub intra_op_threads: String,
+    pub models: Vec<AiModelDiagnostic>,
+    pub manifest_healthy: bool,
+    pub issues: Vec<String>,
+    /// 日志尾部与 AI 相关的 WARN/ERROR 记录（最多 5 条，最新在前）。
+    pub recent_ai_logs: Vec<String>,
+}
+
+fn platform_name() -> &'static str {
+    if cfg!(target_os = "windows") {
+        "windows"
+    } else if cfg!(target_os = "macos") {
+        "macos"
+    } else if cfg!(target_os = "android") {
+        "android"
+    } else if cfg!(target_os = "linux") {
+        "linux"
+    } else {
+        "unknown"
+    }
+}
+
+fn platform_gpu_ep() -> &'static str {
+    if cfg!(target_os = "windows") {
+        "DirectML"
+    } else if cfg!(target_os = "macos") {
+        "CoreML"
+    } else {
+        "none"
+    }
+}
+
+fn gpu_status_label() -> &'static str {
+    match GPU_STATUS.load(Ordering::Acquire) {
+        GPU_ACTIVE => "active",
+        GPU_FAILED => "failed",
+        _ => "idle",
+    }
+}
+
+/// 每个模型实际生效的 EP——按各自初始化调用点的 GPU 门槛如实推导
+/// （与 `build_session` 调用点逐条对齐，不做统一假设）：
+/// - 固定 CPU：SAM 编解码器 / 人脸关键点 / 人脸分割 / LaMa / ESAM3
+///   文本塔 / foreground_fp32（调用点固定传 false，或本身就是 CPU 回退档）；
+/// - 平台门控（`gpu_allowed_on_platform`）：foreground_fp16 / ESAM3
+///   图像塔与解码器 / 法线 / CLIP——macOS 上即使开关打开也走 CPU；
+/// - 仅看开关与运行时状态：降噪 / 深度（调用点不查平台门控）。
+fn model_effective_ep(role: &str, gpu_on: bool, platform_ep: &str, gpu_failed: bool) -> String {
+    if role == "efficientsam_prompt" || role == "clip_tokenizer" {
+        return "n/a".to_string();
+    }
+    if gpu_failed || platform_ep == "none" || !gpu_on {
+        return "CPU".to_string();
+    }
+    match role {
+        "sam_encoder" | "sam_decoder" | "face_landmarks" | "face_segmenter" | "lama"
+        | "efficientsam_text_encoder" | "foreground_fp32" => "CPU".to_string(),
+        "foreground_fp16" | "efficientsam_encoder" | "efficientsam_decoder" | "normal"
+        | "clip" => {
+            if gpu_allowed_on_platform() {
+                platform_ep.to_string()
+            } else {
+                "CPU".to_string()
+            }
+        }
+        _ => platform_ep.to_string(), // denoise / depth
+    }
+}
+
+/// 读取日志尾部与 AI 相关的 WARN/ERROR 记录（最多 5 条，最新在前）。
+/// 日志不可读时返回空——诊断不因此失败。
+fn recent_ai_logs(app_handle: &tauri::AppHandle) -> Vec<String> {
+    const AI_LOG_KEYWORDS: [&str; 10] = [
+        "model", "session", "clip", "denoise", "lama", "onnx", "gpu", "inference", "efficientsam",
+        "birefnet",
+    ];
+    let Ok(log_dir) = app_handle.path().app_log_dir() else {
+        return Vec::new();
+    };
+    let Ok(content) = fs::read_to_string(log_dir.join("app.log")) else {
+        return Vec::new();
+    };
+    content
+        .lines()
+        .filter(|line| {
+            (line.contains("[WARN]") || line.contains("[ERROR]"))
+                && AI_LOG_KEYWORDS
+                    .iter()
+                    .any(|kw| line.to_lowercase().contains(kw))
+        })
+        .rev()
+        .take(5)
+        .map(|line| line.to_string())
+        .collect()
+}
+
+/// P0-3：AI 诊断命令。`deep=true` 时逐模型验证 SHA256、构建会话计时，
+/// 并对 CLIP 跑一次 224px 端到端实测（中低端机上可能需要数十秒）。
+#[tauri::command]
+pub async fn diagnose_ai(
+    app_handle: tauri::AppHandle,
+    deep: Option<bool>,
+) -> Result<AiDiagnostics, String> {
+    let deep = deep.unwrap_or(false);
+    let models_dir = get_models_dir(&app_handle).map_err(|e| e.to_string())?;
+    let manifest = model_inventory(&models_dir);
+    let manifest_healthy = manifest.is_healthy();
+    let manifest_issues = manifest.issues.clone();
+    let gpu_on = gpu_acceleration_enabled(&app_handle);
+    let platform_ep = platform_gpu_ep();
+    let gpu_failed = GPU_STATUS.load(Ordering::Acquire) == GPU_FAILED;
+    let models_dir_display = models_dir.to_string_lossy().to_string();
+
+    let models = tauri::async_runtime::spawn_blocking(move || {
+        if deep {
+            let _ = ort::init().with_name("AI-Diagnose").commit();
+        }
+        manifest
+            .models
+            .iter()
+            .map(|spec| {
+                let path = models_dir.join(&spec.filename);
+                let mut diag = AiModelDiagnostic {
+                    role: spec.role.clone(),
+                    display_name: spec.display_name.clone(),
+                    filename: spec.filename.clone(),
+                    installed: spec.installed_bytes.is_some(),
+                    installed_bytes: spec.installed_bytes,
+                    path: path.to_string_lossy().to_string(),
+                    effective_ep: model_effective_ep(&spec.role, gpu_on, platform_ep, gpu_failed),
+                    sha256_status: "not_installed".to_string(),
+                    session_build_ms: None,
+                    probe_inference_ms: None,
+                    note: None,
+                };
+                if !diag.installed {
+                    return diag;
+                }
+                if spec.sha256.is_empty() {
+                    diag.sha256_status = "unverified".to_string();
+                    diag.note = Some("manifest does not pin a hash".to_string());
+                } else if deep {
+                    match model_registry::verify_file(&path, &spec.sha256) {
+                        Ok(()) => diag.sha256_status = "ok".to_string(),
+                        Err(e) => {
+                            diag.sha256_status = "mismatch".to_string();
+                            diag.note = Some(format!("sha256 mismatch: {e}"));
+                        }
+                    }
+                } else {
+                    diag.sha256_status = "unverified".to_string();
+                }
+
+                if deep && spec.filename.ends_with(".onnx") {
+                    // 会话构建计时：移动端首次使用延迟的主要构成（图解析 +
+                    // EP 初始化）。构建后立即 drop，避免诊断本身推高内存。
+                    let started = Instant::now();
+                    match build_session(
+                        &path,
+                        SessionKind::OneShot,
+                        gpu_allowed_on_platform() && gpu_on,
+                        None,
+                    ) {
+                        Ok(session) => {
+                            diag.session_build_ms = Some(started.elapsed().as_millis());
+                            if spec.filename == CLIP_MODEL_FILENAME {
+                                // CLIP 输入尺寸固定（224px）且是场景分类与
+                                // 文本蒙版的共用路径：跑一次真实前向作为端到端
+                                // 探针（顺带验证 tokenizer 可用）。
+                                match Tokenizer::from_file(
+                                    models_dir.join(CLIP_TOKENIZER_FILENAME),
+                                ) {
+                                    Ok(tokenizer) => {
+                                        let clip = ClipModels {
+                                            model: Mutex::new(session),
+                                            tokenizer,
+                                        };
+                                        let probe_img = DynamicImage::ImageRgb8(
+                                            RgbImage::from_fn(64, 64, |x, y| {
+                                                image::Rgb([x as u8, y as u8, 160])
+                                            }),
+                                        );
+                                        let probe_started = Instant::now();
+                                        match crate::tagging::generate_tags_with_clip(
+                                            &probe_img,
+                                            &clip.model,
+                                            &clip.tokenizer,
+                                            Some(vec!["a photo".to_string()]),
+                                            1,
+                                        ) {
+                                            Ok(_) => {
+                                                diag.probe_inference_ms =
+                                                    Some(probe_started.elapsed().as_millis());
+                                            }
+                                            Err(e) => {
+                                                diag.note =
+                                                    Some(format!("CLIP probe failed: {e}"));
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        diag.note = Some(format!("CLIP tokenizer load failed: {e}"));
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            diag.note = Some(format!("session build failed: {e}"));
+                        }
+                    }
+                }
+                diag
+            })
+            .collect()
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(AiDiagnostics {
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+        platform: platform_name().to_string(),
+        platform_gpu_ep: platform_ep.to_string(),
+        gpu_enabled_setting: gpu_on,
+        gpu_runtime_status: gpu_status_label().to_string(),
+        deep,
+        models_dir: models_dir_display,
+        device_tier: crate::ai_perf::tier_label().to_string(),
+        cpu_cores: crate::ai_perf::detected_cores(),
+        total_ram_mb: crate::ai_perf::detected_ram_mb(),
+        intra_op_threads: crate::ai_perf::intra_op_threads_label(),
+        models,
+        manifest_healthy,
+        issues: manifest_issues,
+        recent_ai_logs: recent_ai_logs(&app_handle),
+    })
+}
+
 #[tauri::command]
 pub async fn delete_ai_model(
     app_handle: tauri::AppHandle,
@@ -3454,5 +3884,87 @@ mod tests {
         // download fail verification.
         assert_eq!(DENOISE_ASSET.sha256, Some(DENOISE_SHA256));
         assert_eq!(DENOISE_ASSET.filename, DENOISE_FILENAME);
+    }
+
+    #[test]
+    fn lama_output_scale_detects_range_from_output() {
+        // 0-255 量程：除以 255（旧代码硬编码假设，现由输出自检得出）
+        let (scale, offset) = lama_output_scale(0.0, 255.0);
+        assert!((scale - 1.0 / 255.0).abs() < 1e-9);
+        assert_eq!(offset, 0.0);
+        // [0,1] 量程：原样（fp16 轻微过冲 1.0009 仍判 [0,1]）
+        assert_eq!(lama_output_scale(0.0, 1.0), (1.0, 0.0));
+        assert_eq!(lama_output_scale(0.0, 1.0009), (1.0, 0.0));
+        // [-1,1] 量程：*0.5 + 0.5
+        assert_eq!(lama_output_scale(-1.0, 1.0), (0.5, 0.5));
+        // 全黑输出（max=0）：与 0-255 全黑归一化结果一致（都归零）
+        assert_eq!(lama_output_scale(0.0, 0.0), (1.0, 0.0));
+        // 判据边界：合法 [0,1] 不可能 >1.05
+        assert_ne!(lama_output_scale(0.0, 1.06), (1.0, 0.0));
+    }
+
+    #[test]
+    fn lama_guidance_only_above_hole_ratio_threshold() {
+        // 洞区占窗口 10%（参照仓库单路障碍物口径）→ 放行
+        assert_eq!(lama_guidance_hole_ratio(1_000, 100, 100), None);
+        // 恰好等于阈值 → 放行（严格大于才引导）
+        let at_threshold = (0.35 * 100.0 * 100.0) as u64;
+        assert_eq!(lama_guidance_hole_ratio(at_threshold, 100, 100), None);
+        // 超过阈值（参照仓库多紧挨障碍物 ~29% 起需引导，这里取 40%）→ 引导
+        let ratio = lama_guidance_hole_ratio(4_000, 100, 100);
+        assert!(ratio.is_some_and(|r| (r - 0.4).abs() < 1e-6));
+    }
+
+    #[test]
+    fn percentile_mask_remap_adapts_to_confidence_scale() {
+        // 强置信（p99≈0.9）：按 [0, 0.9] 归一，软边缘保留梯度（旧的固定
+        // 阈值会把 <0.3 的边缘直接削平）
+        let strong: Vec<f32> = (0..1000).map(|i| i as f32 / 1000.0 * 0.9).collect();
+        let hi = percentile_mask_remap(&strong).expect("strong signal should adapt");
+        // rank = round(999 * 0.99) = 989 → 989/999 × 0.9 ≈ 0.890
+        assert!((hi - 0.890).abs() < 0.01, "p99 of ramp to 0.9, got {hi}");
+        // 弱置信对象（峰值仅 0.45）：仍自适应放大到满值——固定阈值会把它
+        // 压成 0.375 的近透明掩膜
+        let weak: Vec<f32> = (0..1000).map(|i| i as f32 / 1000.0 * 0.45).collect();
+        let hi = percentile_mask_remap(&weak).expect("weak-but-real signal should adapt");
+        assert!((hi - 0.445).abs() < 0.01, "got {hi}");
+        // 无真实信号（p99 ≤ 0.3）：维持固定阈值行为
+        let noise: Vec<f32> = (0..1000).map(|i| i as f32 / 1000.0 * 0.2).collect();
+        assert_eq!(percentile_mask_remap(&noise), None);
+        // 全零（无 query 命中）
+        assert_eq!(percentile_mask_remap(&[0.0; 100]), None);
+        assert_eq!(percentile_mask_remap(&[]), None);
+    }
+
+    /// P1-3：tile 稳定性专项——任意边长下每个像素都必须被至少一个 tile
+    /// 的有效区覆盖（否则累积器该像素权重为 0，输出黑洞/花屏）。
+    #[test]
+    fn denoise_tiling_covers_every_pixel() {
+        let valid = DENOISE_TILE.cs - 2 * DENOISE_TILE.margin;
+        let weights = tile_blend_weights(DENOISE_TILE);
+        // 混合权重必须是 (0,1] 的 smoothstep 对称斜坡：两端渐隐、中间为 1
+        let n = weights.len();
+        assert!(weights.iter().all(|&w| w > 0.0 && w <= 1.0));
+        assert!(weights[0] < 0.1 && weights[n - 1] < 0.1, "edges must feather out");
+        assert!((weights[n / 2] - 1.0).abs() < 1e-6, "center must be full weight");
+        for i in 0..n {
+            assert!((weights[i] - weights[n - 1 - i]).abs() < 1e-6, "weights must be symmetric");
+        }
+        for &len in &[1usize, 100, 479, 480, 481, 500, 1000, 4096, 6000] {
+            let origins = tile_origins(len, DENOISE_TILE);
+            let mut covered = vec![false; len];
+            for &o in &origins {
+                for i in 0..valid {
+                    let g = o + DENOISE_TILE.margin as i32 + i as i32;
+                    if (0..len as i32).contains(&g) {
+                        covered[g as usize] = true;
+                    }
+                }
+            }
+            assert!(
+                covered.iter().all(|&c| c),
+                "len {len} has pixels with zero blend weight"
+            );
+        }
     }
 }

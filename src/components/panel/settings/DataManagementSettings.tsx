@@ -2,7 +2,7 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import clsx from 'clsx';
-import { FolderOpen, Loader2, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
+import { Copy, FolderOpen, Loader2, RefreshCw, RotateCcw, Stethoscope, Trash2 } from 'lucide-react';
 import Text from '../../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { AppSettings, Invokes } from '../../ui/AppProperties';
@@ -31,11 +31,81 @@ interface ModelInventoryEntry {
 }
 
 interface ModelInventory {
+  installedBytesTotal: number;
   installedCount: number;
   issues: string[];
   models: ModelInventoryEntry[];
   totalCount: number;
 }
+
+interface AiModelDiagnostic {
+  displayName: string;
+  effectiveEp: string;
+  filename: string;
+  installed: boolean;
+  installedBytes?: number;
+  note?: string;
+  path: string;
+  probeInferenceMs?: number;
+  role: string;
+  sessionBuildMs?: number;
+  sha256Status: string;
+}
+
+interface AiDiagnostics {
+  appVersion: string;
+  cpuCores: number;
+  deep: boolean;
+  deviceTier: string;
+  gpuEnabledSetting: boolean;
+  gpuRuntimeStatus: string;
+  intraOpThreads: string;
+  issues: string[];
+  manifestHealthy: boolean;
+  models: AiModelDiagnostic[];
+  modelsDir: string;
+  platform: string;
+  platformGpuEp: string;
+  recentAiLogs: string[];
+  totalRamMb: number;
+}
+
+const buildDiagnosticReport = (diagnostic: AiDiagnostics): string => {
+  const ram = diagnostic.totalRamMb > 0 ? ` ${diagnostic.totalRamMb}MB ram` : '';
+  const lines: string[] = [
+    'Crystal (RapidRAW) AI Diagnostics',
+    `app version: ${diagnostic.appVersion}`,
+    `platform: ${diagnostic.platform}`,
+    `device: tier=${diagnostic.deviceTier} cores=${diagnostic.cpuCores}${ram} intra-op threads=${diagnostic.intraOpThreads}`,
+    `gpu ep: ${diagnostic.platformGpuEp === 'none' ? 'CPU (no execution provider)' : diagnostic.platformGpuEp} (setting: ${diagnostic.gpuEnabledSetting ? 'on' : 'off'}, runtime: ${diagnostic.gpuRuntimeStatus})`,
+    `models dir: ${diagnostic.modelsDir}`,
+    `manifest healthy: ${diagnostic.manifestHealthy}`,
+    `deep: ${diagnostic.deep}`,
+    'models:',
+  ];
+  for (const model of diagnostic.models) {
+    const size = model.installedBytes ? ` ${(model.installedBytes / 1024 / 1024).toFixed(1)}MB` : '';
+    const build = model.sessionBuildMs !== undefined ? ` build=${model.sessionBuildMs}ms` : '';
+    const probe = model.probeInferenceMs !== undefined ? ` probe=${model.probeInferenceMs}ms` : '';
+    const note = model.note ? ` note=${model.note}` : '';
+    lines.push(
+      `- [${model.role}] ${model.filename} installed=${model.installed}${size} ep=${model.effectiveEp} sha256=${model.sha256Status}${build}${probe}${note}`,
+    );
+  }
+  if (diagnostic.issues.length > 0) {
+    lines.push('manifest issues:');
+    for (const issue of diagnostic.issues) {
+      lines.push(`- ${issue}`);
+    }
+  }
+  if (diagnostic.recentAiLogs.length > 0) {
+    lines.push('recent ai logs:');
+    for (const log of diagnostic.recentAiLogs) {
+      lines.push(`- ${log}`);
+    }
+  }
+  return lines.join('\n');
+};
 
 interface StorageItem {
   key: StorageKey;
@@ -275,6 +345,8 @@ export default function DataManagementSettings({
   const { t } = useTranslation();
   const [usage, setUsage] = useState<StorageUsage | null>(null);
   const [inventory, setInventory] = useState<ModelInventory | null>(null);
+  const [diagnostic, setDiagnostic] = useState<AiDiagnostics | null>(null);
+  const [diagnosticBusy, setDiagnosticBusy] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [statuses, setStatuses] = useState<Record<string, Status>>({});
@@ -295,6 +367,13 @@ export default function DataManagementSettings({
         return null;
       });
       if (seq === refreshSeq.current) setInventory(models);
+      // Shallow diagnostics (inventory + effective EP, no hashing) ride along
+      // with the refresh; failures must not hide the storage numbers above.
+      invoke<AiDiagnostics>(Invokes.DiagnoseAi, { deep: false })
+        .then((result) => {
+          if (seq === refreshSeq.current) setDiagnostic(result);
+        })
+        .catch((err) => console.error('Failed to get the AI diagnostics:', err));
     } catch (err) {
       console.error('Failed to get storage usage:', err);
     } finally {
@@ -330,6 +409,30 @@ export default function DataManagementSettings({
     } finally {
       setBusy((prev) => ({ ...prev, [key]: false }));
       refreshUsage();
+    }
+  };
+
+  // P0-3: deep diagnostics build every model session and run a CLIP probe —
+  // tens of seconds on mid/low-end devices, so it is an explicit action.
+  const runDeepDiagnostics = async () => {
+    setDiagnosticBusy(true);
+    try {
+      setDiagnostic(await invoke<AiDiagnostics>(Invokes.DiagnoseAi, { deep: true }));
+    } catch (err) {
+      console.error('Failed to run deep AI diagnostics:', err);
+      showStatus('diagnostics', { text: `Error: ${err}`, error: true });
+    } finally {
+      setDiagnosticBusy(false);
+    }
+  };
+
+  const copyDiagnosticReport = async () => {
+    if (!diagnostic) return;
+    try {
+      await navigator.clipboard.writeText(buildDiagnosticReport(diagnostic));
+      showStatus('diagnostics', { text: t('settings.data.storage.aiDiagnostics.copied') });
+    } catch (err) {
+      console.error('Failed to copy the AI diagnostics report:', err);
     }
   };
 
@@ -563,7 +666,8 @@ export default function DataManagementSettings({
                         data-tooltip={inventory.issues.length > 0 ? inventory.issues.join(' · ') : undefined}
                       >
                         {' '}
-                        · {inventory.installedCount}/{inventory.totalCount}
+                        · {inventory.installedCount}/{inventory.totalCount} ·{' '}
+                        {formatBytes(inventory.installedBytesTotal ?? 0, t, 1)}
                       </span>
                     </>
                   ) : (
@@ -598,6 +702,70 @@ export default function DataManagementSettings({
                           </button>
                         </div>
                       ))}
+                  </div>
+                )}
+                {key === 'models' && diagnostic && (
+                  <div className="mt-2.5 pl-5.5 flex flex-col gap-1.5 border-t border-border-color pt-2.5">
+                    <div
+                      className="flex items-center gap-2"
+                      data-tooltip={`tier=${diagnostic.deviceTier} cores=${diagnostic.cpuCores} ram=${diagnostic.totalRamMb}MB intra-op threads=${diagnostic.intraOpThreads}`}
+                    >
+                      <Text variant={TextVariants.small} className="flex-1 min-w-0 truncate">
+                        {t('settings.data.storage.aiDiagnostics.title')}
+                        <span className="text-text-secondary">
+                          {' · '}
+                          {t('settings.data.storage.aiDiagnostics.backend', {
+                            ep: diagnostic.platformGpuEp === 'none' ? 'CPU' : diagnostic.platformGpuEp,
+                            state: diagnostic.gpuEnabledSetting ? 'on' : 'off',
+                            status: diagnostic.gpuRuntimeStatus,
+                          })}
+                        </span>
+                      </Text>
+                      <span data-tooltip={t('settings.data.storage.aiDiagnostics.deepHint')}>
+                        <ActionButton
+                          busy={diagnosticBusy}
+                          disabled={isRefreshing}
+                          icon={<Stethoscope size={13} />}
+                          onClick={runDeepDiagnostics}
+                        >
+                          {diagnosticBusy
+                            ? t('settings.data.storage.aiDiagnostics.deepRunning')
+                            : t('settings.data.storage.aiDiagnostics.deep')}
+                        </ActionButton>
+                      </span>
+                      <ActionButton
+                        disabled={diagnosticBusy}
+                        icon={<Copy size={13} />}
+                        onClick={copyDiagnosticReport}
+                      >
+                        {t('settings.data.storage.aiDiagnostics.copy')}
+                      </ActionButton>
+                    </div>
+                    {statuses.diagnostics && (
+                      <Text
+                        variant={TextVariants.small}
+                        className={statuses.diagnostics.error ? 'text-red-400' : 'text-text-secondary'}
+                      >
+                        {statuses.diagnostics.text}
+                      </Text>
+                    )}
+                    {diagnostic.deep && (
+                      <Text variant={TextVariants.small} className="text-text-secondary">
+                        {t('settings.data.storage.aiDiagnostics.hashSummary', {
+                          ok: diagnostic.models.filter((model) => model.sha256Status === 'ok').length,
+                          bad: diagnostic.models.filter((model) => model.sha256Status === 'mismatch')
+                            .length,
+                        })}
+                        {(() => {
+                          const probe = diagnostic.models.find(
+                            (model) => model.probeInferenceMs !== undefined,
+                          );
+                          return probe
+                            ? ` · ${t('settings.data.storage.aiDiagnostics.probeResult', { ms: probe.probeInferenceMs })}`
+                            : '';
+                        })()}
+                      </Text>
+                    )}
                   </div>
                 )}
                 {limitGb !== undefined && (

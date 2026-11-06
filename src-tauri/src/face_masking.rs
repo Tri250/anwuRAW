@@ -40,6 +40,55 @@ const REFINE_DIVISOR: f32 = 60.0;
 const REFINE_EPS: f32 = 0.001;
 const SUPERSAMPLING: usize = 4;
 
+/// P1-2：多人合影强制保护区的解剖比例（参照仓库语义分割的单主体病理：
+/// selfie 类模型在多人合影里会误删次要主角）。头顶 = 脸上缘 - 0.42×脸高，
+/// 头高 = 1.72×脸高，头宽 = 1.3×脸宽。该几何区不依赖任何分割模型质量，
+/// 直接与既有掩膜取并集（前景/主体保护）或差集（天空替换时人物绝不处理）。
+const HEAD_TOP_RISE: f32 = 0.42;
+const HEAD_HEIGHT_RATIO: f32 = 1.72;
+const HEAD_WIDTH_RATIO: f32 = 1.3;
+/// 保护带边缘柔化：σ = 该比例 × 脸高，避免扣除后天空掩膜出现硬方块边界。
+const HEAD_FEATHER: f32 = 0.02;
+
+/// P1-2：由人脸检测框（归一化 `[x0, y0, x1, y1]`，相对 image 宽高）构造
+/// 头区保护带（多脸并集）。检测分数由调用方按 RAW 置信度阈值过滤——
+/// 不走任何归一化：归一化会把背景弱响应拉高，把大占比人物误算成背景
+/// （参照仓库 overlap 判定病理）。
+pub fn head_zone_from_boxes(width: u32, height: u32, boxes: &[[f32; 4]]) -> GrayImage {
+    let mut zone = GrayImage::new(width, height);
+    let (w, h) = (width as usize, height as usize);
+    let mut feather_sigma = 0.5f32;
+    for b in boxes {
+        let (x0, y0, x1, y1) = (
+            b[0] * width as f32,
+            b[1] * height as f32,
+            b[2] * width as f32,
+            b[3] * height as f32,
+        );
+        if x1 <= x0 || y1 <= y0 {
+            continue;
+        }
+        let (face_w, face_h) = (x1 - x0, y1 - y0);
+        let (head_w, head_h) = (face_w * HEAD_WIDTH_RATIO, face_h * HEAD_HEIGHT_RATIO);
+        let center_x = (x0 + x1) * 0.5;
+        let center_y = y0 - face_h * HEAD_TOP_RISE + head_h * 0.5;
+        let polygon = [
+            [center_x - head_w * 0.5, center_y - head_h * 0.5],
+            [center_x + head_w * 0.5, center_y - head_h * 0.5],
+            [center_x + head_w * 0.5, center_y + head_h * 0.5],
+            [center_x - head_w * 0.5, center_y + head_h * 0.5],
+        ];
+        for (out, &v) in zone.pixels_mut().zip(&polygon_mask(w, h, &polygon)) {
+            out[0] = out[0].max((v * 255.0).round() as u8);
+        }
+        feather_sigma = feather_sigma.max(face_h * HEAD_FEATHER);
+    }
+    if zone.iter().all(|&v| v == 0) {
+        return zone;
+    }
+    imageops::blur(&zone, feather_sigma)
+}
+
 const RIGHT_EYE_CORNER: usize = 33;
 const LEFT_EYE_CORNER: usize = 263;
 const LIPS_OUTER: [usize; 20] = [
@@ -836,4 +885,49 @@ pub fn compose_face_mask(
         }
     }
     mask
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn head_zone_covers_anatomical_ratios() {
+        // 200x200 图，脸框 [0.4,0.4,0.6,0.6]（归一化）→ 脸 40x40 像素。
+        let zone = head_zone_from_boxes(200, 200, &[[0.4, 0.4, 0.6, 0.6]]);
+        assert_eq!(zone.dimensions(), (200, 200));
+        // 脸心 (100,100) 必须被保护
+        assert!(zone.get_pixel(100, 100)[0] > 128);
+        // 头顶 = 脸上缘(80) - 0.42x40 = 63.2，故 y=70 在保护带内
+        assert!(zone.get_pixel(100, 70)[0] > 128);
+        // 头上缘之上（y=40）不应被保护
+        assert!(zone.get_pixel(100, 40)[0] < 128);
+        // 头底 = 63.2 + 1.72x40 = 132，y=140 应已出带
+        assert!(zone.get_pixel(100, 140)[0] < 128);
+        // 左下角远离头部
+        assert_eq!(zone.get_pixel(5, 195)[0], 0);
+    }
+
+    #[test]
+    fn head_zone_unions_multiple_faces() {
+        // 合影：左右两张脸都必须进保护带（参照仓库 8 人合影误删次要主角病理）
+        let zone = head_zone_from_boxes(
+            400,
+            200,
+            &[[0.05, 0.3, 0.25, 0.7], [0.75, 0.3, 0.95, 0.7]],
+        );
+        assert!(zone.get_pixel(60, 100)[0] > 128, "left face head must be protected");
+        assert!(zone.get_pixel(340, 100)[0] > 128, "right face head must be protected");
+        // 两脸之间不应被保护
+        assert!(zone.get_pixel(200, 100)[0] < 128);
+    }
+
+    #[test]
+    fn head_zone_rejects_degenerate_boxes() {
+        // 退化框（宽或高 ≤0）必须被忽略而非 panic / 覆盖全图
+        let zone = head_zone_from_boxes(100, 100, &[[0.5, 0.5, 0.5, 0.9], [0.5, 0.5, 0.9, 0.5]]);
+        assert!(zone.iter().all(|&v| v == 0));
+        // 空列表同样安全
+        assert!(head_zone_from_boxes(100, 100, &[]).iter().all(|&v| v == 0));
+    }
 }

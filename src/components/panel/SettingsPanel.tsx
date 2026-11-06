@@ -1546,6 +1546,11 @@ export default function SettingsPanel({
                               <li>{t('settings.processing.ai.cpu.feature2')}</li>
                               <li>{t('settings.processing.ai.cpu.feature3')}</li>
                             </Text>
+                            {osPlatform !== 'windows' && osPlatform !== 'macos' && (
+                              <Text className="mt-3 text-text-secondary">
+                                {t('settings.processing.ai.cpu.backendCpuOnly')}
+                              </Text>
+                            )}
                             {(osPlatform === 'windows' || osPlatform === 'macos') && (
                               <div className="mt-8">
                                 <SettingItem

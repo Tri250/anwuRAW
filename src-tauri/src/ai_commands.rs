@@ -217,7 +217,7 @@ pub fn generate_sky_mask(
 ) -> Result<AiSkyMaskParameters, String> {
     let features = cached_esam3_features(ai_state, models, cache_key, warped_image)?;
     let prompt = models.esam3_sky_prompt().map_err(|e| e.to_string())?;
-    let mask = run_esam3_decoder(
+    let mut mask = run_esam3_decoder(
         &*models.esam3_decoder().map_err(|e| e.to_string())?,
         &features,
         &prompt,
@@ -227,6 +227,36 @@ pub fn generate_sky_mask(
     )
     .map_err(|e| e.to_string())?
     .ok_or_else(|| NO_SKY_FOUND.to_string())?;
+
+    // P1-2：人物与天空重叠时人物绝不处理（参照仓库 overlap 病理：归一化
+    // 置信度把占比大的人物误算成背景）。用 RAW 检测分数的人脸框构造解剖
+    // 头区保护带，从天空掩膜中扣除——ESAM3 特征已缓存，边际成本仅一次
+    // decoder 查询。人脸 prompt 模型未下载时如实降级：不扣除、仅 warn，
+    // 天空替换本身不依赖人脸模型。
+    match models.esam3_face_prompt() {
+        Ok(face_prompt) => {
+            let decoder = models.esam3_decoder().map_err(|e| e.to_string())?;
+            match run_esam3_boxes(&decoder, &features, &face_prompt, ESAM3_FACE_SCORE_THRESHOLD) {
+                Ok(detections) => {
+                    let boxes: Vec<[f32; 4]> =
+                        detections.into_iter().map(|(_, b)| b).collect();
+                    if !boxes.is_empty() {
+                        let zone = crate::face_masking::head_zone_from_boxes(
+                            mask.width(),
+                            mask.height(),
+                            &boxes,
+                        );
+                        for (m, z) in mask.pixels_mut().zip(zone.pixels()) {
+                            let keep = 1.0 - z[0] as f32 / 255.0;
+                            m[0] = (m[0] as f32 * keep).round() as u8;
+                        }
+                    }
+                }
+                Err(e) => log::warn!("sky mask: face overlap protection skipped ({e})"),
+            }
+        }
+        Err(e) => log::warn!("sky mask: face prompt model unavailable, overlap protection skipped ({e})"),
+    }
 
     Ok(AiSkyMaskParameters {
         mask_data_base64: Some(encode_to_base64_png(&mask)?),

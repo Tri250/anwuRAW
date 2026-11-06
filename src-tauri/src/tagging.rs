@@ -23,7 +23,9 @@ use crate::{AppState, candidates::TAG_CANDIDATES};
 pub const COLOR_TAG_PREFIX: &str = "color:";
 pub const USER_TAG_PREFIX: &str = "user:";
 
-fn preprocess_clip_image(image: &DynamicImage) -> Array<f32, ndarray::Dim<[usize; 4]>> {
+/// CLIP 图像塔预处理（224px + CLIP mean/std）。tagging 与 scene_classify
+/// （P0-1 零样本场景分类）共用同一输入约定。
+pub(crate) fn preprocess_clip_image(image: &DynamicImage) -> Array<f32, ndarray::Dim<[usize; 4]>> {
     let input_size = 224;
     let resized = image.resize_to_fill(input_size, input_size, FilterType::Triangle);
     let rgb_image = resized.to_rgb8();

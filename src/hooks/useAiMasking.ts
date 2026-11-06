@@ -198,7 +198,12 @@ export function useAiMasking() {
         }
       } catch (err: any) {
         if (isStaleAiMaskRequest(patchId, epoch)) return;
-        if (!String(err).includes('cancelled')) {
+        const message = String(err?.message || err);
+        if (message.includes('lama_guidance')) {
+          // P1-1：大面积诚实引导——后端判定涂抹占比超阈值，不产出垃圾结果，
+          // 改为引导用户缩小范围（阈值与口径见 ai_processing.rs LAMA_MAX_HOLE_RATIO）。
+          toast.error(t('editor.ai.settings.maskTooLargeGuidance'));
+        } else if (!message.includes('cancelled')) {
           toast.error(`AI Replace Failed: ${err}`);
         }
         setAdjustments((prev: Adjustments) => ({
@@ -211,7 +216,7 @@ export function useAiMasking() {
         }
       }
     },
-    [setAdjustments, getToken, registerAiTask, unregisterAiTask, setEditor],
+    [setAdjustments, getToken, registerAiTask, unregisterAiTask, setEditor, t],
   );
 
   const handleQuickErase = useCallback(

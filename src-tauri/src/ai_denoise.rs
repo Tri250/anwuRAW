@@ -679,3 +679,86 @@ pub fn clear_ai_denoise_cache() -> Result<(), String> {
     cache.epoch += 1;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use image::Rgb;
+
+    /// P1-3：低频恢复独立验证——源图含平滑低频渐变，denoised 丢失低频
+    /// （全中灰）后，恢复应把源图低频加回来，误差显著下降。
+    /// 用 1024×1024（16×16 个 64px 块）：块网格必须远大于恢复用的半径 3
+    /// 盒式滤波核，否则模糊核会把整个块均值场抹成均值（小图上退化）。
+    #[test]
+    fn restore_low_frequencies_recovers_source_low_frequency() {
+        let (w, h) = (1024u32, 1024u32);
+        let source = Rgb32FImage::from_fn(w, h, |x, y| {
+            let v = x as f32 / w as f32 * 0.5 + y as f32 / h as f32 * 0.3;
+            Rgb([v, v, v])
+        });
+        // denoised：丢失全部低频的平灰（高频细节保留由 model 负责，这里只测低频）
+        let mut denoised = Rgb32FImage::from_fn(w, h, |_, _| Rgb([0.25, 0.25, 0.25]));
+
+        let mean_abs_error = |img: &Rgb32FImage| -> f32 {
+            img.as_raw()
+                .iter()
+                .zip(source.as_raw())
+                .map(|(a, b)| (a - b).abs())
+                .sum::<f32>()
+                / img.as_raw().len() as f32
+        };
+        let before = mean_abs_error(&denoised);
+        restore_low_frequencies(&mut denoised, &source);
+        let after = mean_abs_error(&denoised);
+
+        // 函数真正保证的是"块均值低频"回归源图：逐 64px 块比较块均值误差
+        const BLK: usize = 64;
+        let block_mean_error = |img: &Rgb32FImage| -> f32 {
+            let (w, h) = (img.width() as usize, img.height() as usize);
+            let (bw, bh) = (w / BLK, h / BLK);
+            let mut total = 0.0f32;
+            let mut count = 0usize;
+            for by in 0..bh {
+                for bx in 0..bw {
+                    let mut a = 0.0f32;
+                    let mut b = 0.0f32;
+                    for y in by * BLK..(by + 1) * BLK {
+                        for x in bx * BLK..(bx + 1) * BLK {
+                            a += img.as_raw()[(y * w + x) * 3];
+                            b += source.as_raw()[(y * w + x) * 3];
+                        }
+                    }
+                    let n = (BLK * BLK) as f32;
+                    total += (a / n - b / n).abs();
+                    count += 1;
+                }
+            }
+            total / count as f32
+        };
+        let flat = Rgb32FImage::from_fn(w, h, |_, _| Rgb([0.25, 0.25, 0.25]));
+        let block_before = block_mean_error(&flat);
+        let block_after = block_mean_error(&denoised);
+
+        assert!(
+            after < before * 0.25,
+            "low frequencies should be restored from source: error {before:.4} -> {after:.4}"
+        );
+        // 函数的核心保证是"块均值低频"回归源图（逐 64px 块）
+        assert!(
+            block_after < block_before * 0.25,
+            "block-mean low frequencies should track the source: {block_before:.4} -> {block_after:.4}"
+        );
+        // 恢复不得过冲：残余误差应远小于初始平灰误差
+        assert!(after < 0.05, "restored image should track the source, error {after:.4}");
+    }
+
+    /// P1-3：低频恢复对小图（<2 个 64px 块）必须原样返回——分块下采样
+    /// 没有意义，不得写入 NaN/越界。
+    #[test]
+    fn restore_low_frequencies_skips_tiny_images() {
+        let source = Rgb32FImage::from_fn(50, 50, |x, y| Rgb([x as f32 / 50.0, 0.5, y as f32 / 50.0]));
+        let mut denoised = source.clone();
+        restore_low_frequencies(&mut denoised, &source);
+        assert_eq!(denoised.as_raw(), source.as_raw());
+    }
+}

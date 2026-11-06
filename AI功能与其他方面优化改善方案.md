@@ -73,6 +73,24 @@
 3. **所有模型加载走 `local_files_only` 等价路径**（我们的下载链路本就是本地文件提交，核对无联网探测）。
 4. **预热与内存的平衡**：参照仓库的预热是为桌面；Android 有 residency 淘汰（1.2 节），预热策略改为"用后驻留 + 空闲淘汰"——首次使用后驻留一段时间，退后台或内存压力下淘汰，二次使用秒开。**不做启动期无条件预热**（移动端内存敏感）。
 
+**落地记录（release v2.1.16，`ai_perf.rs` 新增 + `ai_processing.rs` 接线）**：
+
+1. **机型分档**：`classify_tier(cores, ram_mb)` 纯函数——旗舰（≥6 核且 ≥7.5GB）/ 中端（≥4 核且 ≥3.5GB）/ 低端（其余）；核数取 `available_parallelism`，内存读 `/proc/meminfo` MemTotal，**探测失败按低端处理**（保守方向）。
+2. **线程分级**：`build_session` 的 builder 链注入 `with_intra_threads`——Android 旗舰/中端 2 线程、低端 1 线程；**桌面端 None，保持 ORT 默认**（与分级前行为完全一致）。注：若 ORT 本体以 OpenMP 构建该设置不生效（ort 文档口径），Android 用官方预编译 `libonnxruntime.so`（build.rs 固定 v1.22.0 + sha256）。
+3. **LaMa 像素预算分级**：`LAMA_PIXEL_BUDGET` 由常量改为 `ai_perf::lama_pixel_budget()`——Android 旗舰 768² / 中端 576² / 低端 448²（均为 32 倍数对齐张量），桌面恒 768²。LaMa 为全卷积 FFC 结构，动态尺寸无质量回退风险。
+4. **降噪 tile 尺寸暂不分级（如实说明）**：`DENOISE_TILE cs=504` 各平台保持一致。UTNet 含 transformer 组件，输入尺寸变化对质量的影响未经真机回归验证，不做无依据的静默改动；待基线表采集后按机型验证通过再分级（参照仓库 tile=256/overlap=32 的参数可借用）。
+5. **无联网探测 / 无启动预热核对通过**：模型加载链路全部是先查本地文件再按需下载（CLIP 另有免下载初始化 `get_or_init_clip_models_if_downloaded`），无 `from_pretrained` 式联网检查；全仓无启动期模型预热调用，驻留策略为"用后驻留 + 空闲淘汰"（model_residency.rs）。
+
+**机型分级性能基线表（框架，待真机实测填充）**：
+
+| 机型档位 | 判定口径 | CLIP 224px 首推 | 分割首推 | 降噪 12MP 全图 | LaMa 512² 窗口 | 深度首推 | intra-op 线程 | LaMa 预算 |
+|---|---|---|---|---|---|---|---|---|
+| 旗舰（如 8Gen2/8Gen3 + 12GB） | ≥6 核且 ≥7.5GB | _ms | _ms | _ms | _ms | _ms | 2 | 768² |
+| 中端（如 778G/7Gen1 + 6~8GB） | ≥4 核且 ≥3.5GB | _ms | _ms | _ms | _ms | _ms | 2 | 576² |
+| 低端（如 Helio G/4GB） | 其余 | _ms | _ms | _ms | _ms | _ms | 1 | 448² |
+
+填充方法：真机安装 release 包 → 设置 → 数据管理 → AI 诊断 → 跑一次**深度诊断**（deep=true 会逐模型输出 `sessionBuildMs` 会话构建耗时与 CLIP `probeInferenceMs` 224px 端到端探针耗时，报告同时记录 `deviceTier/cores/ram/intraOpThreads`）→ 复制诊断报告回填本表；全图降噪/LaMa/深度用秒表计时。判据：**中端机 CLIP <300ms**（方案 2 目标）、首推（会话构建 + 首次推理）无 10s 级病态值。若某档超限，先降该档 LaMa 预算/线程，仍超再评估降噪 tile 分级（需同步质量回归）。
+
 ### P0-3 AI 诊断与"复制诊断报告"（防静默回退，Android 尤其重要）
 
 **现状**：`get_ai_model_inventory`（[ai_processing.rs:3387](file:///workspace/src-tauri/src/ai_processing.rs#L3387)）只报模型文件在位；Android 无 GPU EP（[L602-605](file:///workspace/src-tauri/src/ai_processing.rs#L602-L605) 返回 None），用户报障时"AI 慢"无法归因。
@@ -91,6 +109,13 @@
 3. **窗口化执行**：只跑覆盖 mask（dilate 扩展后）的窗口，`touched` 区域显式返回——大图上消除一角耗时可降一个量级；**CPU 推理下这是可用性级别的优化**（参照他们 CPU 病理 1000s+ 的教训）。我们的 tile 推理机制已具备，LaMa 路径核对是否窗口化。
 4. **大面积诚实引导**：hole 占比超阈值返回 guidance 事件而非硬跑（他们实测校准：单路人 hole≈11% 可自动、多紧挨路人 ≈29% → 引导）。前端弹"建议缩小涂抹范围"，不产出垃圾结果——移动端屏幕小、涂抹面积天然受限，阈值需按移动端重新校准。
 
+**落地记录（release v2.1.16，`ai_processing.rs` `run_lama_inpainting` + `useAiMasking.ts` + 15 语言）**：
+
+1. **输出量程自检**：新增纯函数 `lama_output_scale(out_min, out_max)`——`max > 1.05` 判 0-255（合法 [0,1] 不可能超 1，fp16 留 5% 余量）、`min < -0.05` 判 [-1,1]、其余判 [0,1]；归一化由硬编码 `/255.0` 改为 `v * scale + offset`。旧假设（恒 0-255）被自检替代，换模型不再静默出纯白/纯黑。单测覆盖三种量程 + fp16 过冲 + 全黑边界。
+2. **mask 洞内清零**：喂模型前 `img * (1 - mask)`；细节还原的 patch-match `source` 仍取原图像素（is_source 本就排除洞邻域，不受影响）。
+3. **窗口化执行：核对通过**——现有实现本就按 mask 外扩（1.5× + 128px 下限）裁剪后只推理该窗口，未变。
+4. **大面积诚实引导**：新增 `LAMA_MAX_HOLE_RATIO = 0.35`（洞区占推理窗口比例；参照仓库 11%/29% 校准取中偏上，桌面大图与移动端兼顾），超阈值返回 `lama_guidance:hole_ratio=..` 错误而非硬跑；前端 `handleGenerativeReplace` 识别该前缀，弹出本地化引导 toast（新增 i18n 键 `editor.ai.settings.maskTooLargeGuidance` ×15 语言）。移动端真机占比分布留待反馈校准阈值。
+
 ### P1-2 分割与蒙版质量（直接提升天空/主体/文本/景深四大移动端功能）
 
 1. **guided filter 贴边后处理**（`engine/matting.py:138-190`）：alpha 与亮度引导滤波融合，发丝/肩部软边。BiRefNet 质量好但边缘可再收尾。
@@ -99,6 +124,14 @@
 4. **overlap 判定用 raw confidence**：归一化会把背景弱响应拉高，0.86 占比的人物被算成路人（他们实测）。
 5. **检测分辨率陷阱**：检出率对输入尺寸**非单调**（YuNet 同一张 60px 小脸 900~1300px 稳定检出、>1400px 反而消失）。人脸/关键点管线固定 ~900px 长边检测后映回原尺度。移动端照片本就大，此坑必踩。
 
+**落地记录（release v2.1.16）**：
+
+1. **guided filter 贴边（已补齐最后缺口）**：ESAM3 天空/文本掩膜与 face body/skin 路径本就有引导/联合滤波精修；本次把 **BiRefNet 前景掩膜**接上同一机制——`run_birefnet_model` 尾部按 ESAM3 同几何（mask 降到 ≤1024 长边、`fast_color_guided_filter` 半径 16、eps 0.001、系数双线性上采样回原尺寸），成本量级与 ESAM3 精修相同。
+2. **多人合影强制保护区（已落地天空路径）**：新增 `face_masking::head_zone_from_boxes`——按解剖比例（头顶=脸上缘-0.42×脸高、头高=1.72×脸高、头宽=1.3×脸宽）从人脸检测框生成多脸并集保护带，边缘按脸高 2% 柔化。天空替换（`generate_sky_mask`）在出掩膜后扣除该保护带：**人物与天空重叠时人物绝不处理**。ESAM3 特征已缓存，边际成本仅一次 decoder 查询；人脸 prompt 模型未下载时如实降级（不扣除 + warn，天空替换不依赖人脸模型）。单测：解剖比例边界、多脸并集、退化框。
+3. **前景/主体路径的并集保护：经评估暂缓**（如实说明）：BiRefNet 路径要拿人脸框需先跑 ESAM3 编码器（重前向），为主旨 mask 增加 ~50% 耗时，而 general_lite 本身是显著物模型、单人主体风险低于 selfie 类模型；头区辅助函数已就绪，待真机数据证明必要时再接。
+4. **分位数归一化（已落地）**：`percentile_mask_remap(values)` 取掩膜自身 p99 作满值刻度（O(n) select_nth），应用到 ESAM3 coarse mask 重映射——p99 > 0.3 时按 [0, p99] 自适应归一（弱置信对象不再被固定 0.3 下限压成近透明、<0.3 的软边缘不再被削平），无真实信号时维持原固定 [0.3,0.7] 行为。**判定始终用 RAW 置信度**（query 分数阈值不走归一化）——这正是第 4 条 overlap 病理的修复原则；我们的天空/文本/人脸管线没有"归一化置信度参与 overlap 仲裁"的代码路径（该病理为他们语义管线的特有结构），按原则落实为上述分离。
+5. **检测分辨率陷阱（核对通过）**：我们的人脸检测是 ESAM3 编码器固定 `ESAM3_INPUT_SIZE=1008` 长边，天然落在他们实测稳定的 900~1300px 区间内，无 >1400px 输入；关键点/分割按每脸 256px 窗口化。无需改动。
+
 ### P1-3 AI 降噪精细化
 
 1. **strength 语义化**：NIND UTNet 模型名中 684 对应训练噪声等级体系；核对模型是否带噪声等级条件输入，有则把 `aiDenoiseAmount` 映射到等级输入（而非仅输出混合比例）——参照 `engine/nndenoise.py:112-173`。现有 luma_keep/chroma_keep 双通道混合（`ai_denoise.rs:337-358`）保留为第二层控制。
@@ -106,11 +139,26 @@
 3. **低频恢复独立验证**：`restore_low_frequencies`（`ai_denoise.rs:363-412`）补"开关前后低频保真"+"tile 稳定性"专项测试。
 4. **Android 性能档**：CPU 下评估 fp16 模型档位与 tile 尺寸按机型内存自适应（超低端自动降 tile）。参照仓库 tile=256/overlap=32 加权混合 + 推理锁防并发（`engine/superres.py:167-246`）的参数可直接借用。
 
+**落地记录（release v2.1.16）**：
+
+1. **strength 语义化（核对结果：模型无噪声等级输入）**：`run_ai_denoise` 对会话是单输入推理（`ort::inputs![t_input]`，`ai_processing.rs:1815`），nind_denoise_utnet_684.onnx 不带噪声等级条件输入——"684"只是训练配置命名，无法把 strength 映射到等级输入。strength 保持输出混合语义（`luma_keep = 1 - amount×(1-detail)`、`chroma_keep = 1 - amount`，detail 控制亮度细节保留），与方案"保留双通道混合为第二层控制"一致。
+2. **真实噪声回归基线（待真机数据，方法论已定）**：PSNR/SSIM 基线需要真实高 ISO/暗场 clean/noisy 样张对，本环境无采集设备、也不应伪造基线数字。采集方法：固定场景（ISO 6400 暗光、ISO 200 日光）各拍 10 张，clean 参考用三脚架长曝光平均，跑 `aiDenoiseAmount` 0.25/0.5/0.75/1.0 四档，对输出与 clean 参考算 PSNR/SSIM 与色偏（ΔE），连同 P0-2 基线表一起回填文档。换模型（如 fp16 档）后重跑同一组对比即"换模型不回退"的回归判据。
+3. **低频恢复独立验证（已落地单测）**：`ai_denoise.rs` 新增测试模块——1024×1024 合成低频渐变 + 丢失低频的平灰"denoised"，恢复后整体误差降 >75%、逐 64px 块均值误差降 >75%且残差 <0.05；小图（<2 块）原样返回不写 NaN。**注意**：恢复核半径 3 的盒式滤波要求块网格远大于核（≥16×16 块），1024px 以下图像上块均值场会被抹平——这是既有实现的尺寸约束，测试已用 1024² 钉住行为。
+4. **tile 稳定性（已落地单测）**：`denoise_tiling_covers_every_pixel`——对 1/100/479/480/481/500/1000/4096/6000px 各边长验证每个像素都被至少一个 tile 有效区覆盖（无累积器权重 0 的输出黑洞）；混合权重为 (0,1] 的 smoothstep 对称斜坡、中心满权重、两端渐隐。
+5. **Android 性能档（线程/预算分级已在 P0-2 落地；fp16 模型档待评估）**：fp16 档需要重新导出/量化模型并在真机对比质量-速度，本环境无 ONNX 量化工具链与设备，留待真机执行；tile 尺寸分级已在 P0-2 说明 UTNet 尺寸敏感性未验证前不改。
+
 ### P1-4 Android EP 与推理后端评估
 
 - 现状：`gpu_execution_provider()` 在 Android 返回 None，纯 CPU。
 - 评估 **XNNPACK EP**（ort 版本兼容性、内存占用、与 fp16 模型叠加效果）；NNAPI 委托兼容性差、稳定性风险高，不建议优先。
 - 远期备选：selfie_multiclass 走 MediaPipe 原生 tflite（他们保持 MediaPipe 发布形态的启发）——但引入 JNI 依赖重，仅当 ONNX 路径性能不可接受时再评估。
+
+**评估记录（release v2.1.16，静态评估；真机 A/B 待执行）**：
+
+1. **兼容性（静态核对通过）**：ort 2.0.0-rc.10 在 `load-dynamic` 特性下提供 `XNNPACKExecutionProvider`（`execution_providers/xnnpack.rs:30` 的条件编译包含 load-dynamic），接入点唯一——`create_session` 的 `with_execution_providers` 链，注册代码与 DirectML/CoreML 同形；官方预编译 libonnxruntime.so（build.rs 固定 v1.22.0 + sha256）内置 XNNPACK EP，无需换库。
+2. **与 P0-2 线程分级的交互（必须一起设计）**：ort 文档明确 XNNPACK 使用**独立线程池**，不受 `SetIntraOpNumThreads` 约束——若启用 XNNPACK，P0-2 的 Android 1~2 线程上限对该 EP 不生效，需按 XNNPACK 的线程参数另行设限，否则移动端发热/热节流风险回退。
+3. **内存与 fp16 叠加（待真机测）**：XNNPACK 的图内量化/融合通常降内存，但也可能改变 fp16 模型的数值路径——必须真机 A/B（精度对比 + 峰值 RSS + 首推/稳态耗时）后才能默认开启。决策门槛：CLIP 224px 与分割首推在中端机不劣于现状 >15%，峰值内存不增。
+4. **结论**：接入成本低但风险点（独立线程池、数值路径变化）明确，列为真机验证项而非本版默认改动。
 
 ### P1-5 模型分发体积（Android 特有）
 
@@ -118,6 +166,13 @@
   1. 下载体积总览页（哪些功能需要哪些模型、各多大），启用前明示；
   2. **Wi-Fi 限制开关**（移动数据下默认不自动下载 300MB+ 模型）；
   3. CLIP 351MB 级模型的场景分类复用（P0-1）恰好摊薄了这笔下载的成本——在方案文档中把这一点写进收益论证。
+
+**落地记录（release v2.1.16）**：
+
+1. **下载体积总览（已落地）**：`ModelManifest` 新增 `installed_bytes_total`（已安装模型磁盘占用合计，真实数据无估算），设置 → 数据管理 → AI 模型说明行现展示"已装 X/Y · 占用 Z"；模型列表逐行展示已安装体积与文件名/用途（displayName）。按需下载语义由既有 `modelsDesc` 文案明示（"首次使用 AI 功能时按需下载"）。
+2. **CLIP 复用收益论证（如方案）**：P0-1 的零样本场景分类复用 CLIP 图像塔——同一笔 351MB 级下载同时服务 AI 标签与场景分类，摊薄单功能成本；且场景分类走免下载初始化（`get_or_init_clip_models_if_downloaded`），未下载时不触发、不阻塞、如实回落启发式。
+3. **Wi-Fi 限制开关（经评估暂缓，如实说明）**：WebView 无法可靠区分 Wi-Fi 与蜂窝——`navigator.connection.effectiveType` 把 Wi-Fi 5G 与蜂窝 4G 都报 '4g'，`connection.type` 为非标准 Chromium-only API。可靠实现需要 Tauri 原生插件（Android `ConnectivityManager`）上报网络类型 + 后端下载前检查，属于新插件级改动。替代方案（下载前显式确认弹窗）会改变全部按需下载流的交互，需产品决策。故本版不内置不可靠的开关；两条路径已记录，待真机环境与产品决策后实施。
+4. **下载体积精确值（如实说明）**：各模型下载字节数未写入 manifest（只有安装后实测 `installed_bytes`）——沙箱内 HF CDN 不返回 Content-Length/Content-Range，无法在此获取可靠数值，不写估算值误导用户；已安装体积的展示不受影响。
 
 ---
 

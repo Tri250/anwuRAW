@@ -46,6 +46,8 @@ pub struct ModelManifest {
     pub issues: Vec<String>,
     pub installed_count: usize,
     pub total_count: usize,
+    /// Sum of on-disk bytes of installed models (P1-5: 分发体积总览)。
+    pub installed_bytes_total: u64,
 }
 
 impl ModelManifest {
@@ -111,6 +113,10 @@ pub fn build_manifest(mut models: Vec<ModelSpec>) -> ModelManifest {
         .filter(|model| model.installed_bytes.is_some())
         .count();
     let total_count = models.len();
+    let installed_bytes_total = models
+        .iter()
+        .filter_map(|model| model.installed_bytes)
+        .sum();
 
     ModelManifest {
         schema: MANIFEST_SCHEMA_VERSION,
@@ -118,6 +124,7 @@ pub fn build_manifest(mut models: Vec<ModelSpec>) -> ModelManifest {
         issues,
         installed_count,
         total_count,
+        installed_bytes_total,
     }
 }
 
@@ -273,6 +280,7 @@ mod tests {
         );
         let manifest = build_manifest(models);
         assert_eq!(manifest.installed_count, 1);
+        assert_eq!(manifest.installed_bytes_total, 5);
         assert_eq!(
             manifest
                 .models

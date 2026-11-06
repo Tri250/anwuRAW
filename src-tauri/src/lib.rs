@@ -24,6 +24,7 @@ mod ai_commands;
 mod ai_connector;
 mod ai_denoise;
 mod ai_jobs;
+mod ai_perf;
 mod ai_processing;
 mod android_integration;
 mod app_settings;
@@ -1509,22 +1510,37 @@ async fn generate_preset_preview(
     .map_err(|e| e.to_string())?
 }
 
-/// Crystal 移动端（W3）：对当前已加载原图做场景识别（真实像素统计，
-/// 见 scene_classify 模块文档）。识别失败时返回错误，前端静默降级、
+/// Crystal 移动端（W3）：对当前已加载原图做场景识别。
+/// P0-1（release v2.1.16）：CLIP 零样本分类优先——仅当 CLIP 模型已本地
+/// 下载时启用（免下载初始化，不静默触发数百 MB 下载），softmax 概率语义
+/// + 批内分位数校准；CLIP 不可用或推理失败时完整回落到 scene_classify
+/// 的统计启发式（诚实降级链）。识别失败时返回错误，前端静默降级、
 /// 不阻塞编辑——原方案「AI 失败不阻塞」边界。
 #[tauri::command]
 async fn scene_classify(
     app_handle: tauri::AppHandle,
 ) -> Result<scene_classify::SceneClassification, String> {
+    let state = app_handle.state::<AppState>();
+    let image = state
+        .original_image
+        .lock()
+        .unwrap()
+        .as_ref()
+        .map(|loaded| Arc::clone(&loaded.image))
+        .ok_or("No original image loaded")?;
+
+    let clip_models = crate::ai_processing::get_or_init_clip_models_if_downloaded(
+        &app_handle,
+        &state.ai_state,
+        &state.ai_init_lock,
+    )
+    .await;
+
     tauri::async_runtime::spawn_blocking(move || {
-        let state = app_handle.state::<AppState>();
-        let loaded_image = state
-            .original_image
-            .lock()
-            .unwrap()
-            .clone()
-            .ok_or("No original image loaded")?;
-        Ok(scene_classify::classify(&loaded_image.image))
+        Ok(match clip_models {
+            Some(clip) => scene_classify::classify_with_clip(&clip, &image),
+            None => scene_classify::classify(&image),
+        })
     })
     .await
     .map_err(|e| e.to_string())?
@@ -2981,6 +2997,7 @@ pub fn run() {
             storage::clear_ai_models,
             ai_processing::get_ai_model_inventory,
             ai_processing::delete_ai_model,
+            ai_processing::diagnose_ai,
             get_edit_history,
             save_edit_snapshot,
             checkout_edit_history,
