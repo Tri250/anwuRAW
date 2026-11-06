@@ -428,7 +428,15 @@ export function CxSliderRow({
           ) : null}
         </span>
       </div>
-      <CrystalRangeSlider min={min} max={max} step={step} value={value} onChange={onChange} onCommit={onCommit} />
+      <CrystalRangeSlider
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        defaultValue={defaultValue}
+        onChange={onChange}
+        onCommit={onCommit}
+      />
     </div>
   );
 }
@@ -442,6 +450,7 @@ function CrystalRangeSlider({
   max,
   step,
   value,
+  defaultValue,
   onChange,
   onCommit,
 }: {
@@ -449,6 +458,7 @@ function CrystalRangeSlider({
   max: number;
   step: number;
   value: number;
+  defaultValue?: number;
   onChange: (v: number) => void;
   onCommit?: () => void;
 }) {
@@ -458,7 +468,11 @@ function CrystalRangeSlider({
   const left = Math.min(frac, zeroFrac) * 100;
   const width = Math.abs(frac - zeroFrac) * 100;
   return (
-    <div className="relative h-9 flex items-center" onDoubleClick={() => onChange(0)}>
+    /* 自检修复（预设-强度滑杆）：双击复位此前硬编码归 0——强度滑杆（默认
+     * 100）、AI 蒙版强度（50）、深度远近（20/80）、AI 降噪量（100）等非零
+     * 默认值滑杆双击会瞬间打到 0 而非复位默认值。改为复位到 defaultValue
+     * （未传时回落 0，与既有调整量滑杆行为一致）。 */
+    <div className="relative h-9 flex items-center" onDoubleClick={() => onChange(defaultValue ?? 0)}>
       <div className="absolute left-0 right-0 h-1.5 rounded-full" style={{ background: 'var(--cx-card2)' }} />
       <div
         className="absolute h-1.5 rounded-full"
