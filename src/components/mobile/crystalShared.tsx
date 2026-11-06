@@ -467,6 +467,13 @@ function CrystalRangeSlider({
   const zeroFrac = max !== min && min < 0 && max > 0 ? -min / (max - min) : 0;
   const left = Math.min(frac, zeroFrac) * 100;
   const width = Math.abs(frac - zeroFrac) * 100;
+  /* 触摸滚动修复（调色-上滑阻力）：滑杆输入层此前 touchAction:'none'，
+   * 而 36px 高的全宽隐形 input 几乎铺满调色/特效/人像等面板——纵向滑动
+   * 落在滑杆上时被完全吞掉（还会误拖数值），面板"很难向上滑"。
+   * 改为 pan-y：浏览器轴向仲裁——横向拖动调值、纵向滑动滚动面板，
+   * 与桌面 Slider 空闲态（pan-y）语义一致。配套：轴向判定前几像素的
+   * 斜向漂移可能误改值，pointercancel（浏览器接管滚动）时恢复按下时的值。 */
+  const dragStartValue = useRef<number | null>(null);
   return (
     /* 自检修复（预设-强度滑杆）：双击复位此前硬编码归 0——强度滑杆（默认
      * 100）、AI 蒙版强度（50）、深度远近（20/80）、AI 降噪量（100）等非零
@@ -496,9 +503,21 @@ function CrystalRangeSlider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        onPointerUp={onCommit}
+        onPointerDown={() => {
+          dragStartValue.current = value;
+        }}
+        onPointerUp={() => {
+          dragStartValue.current = null;
+          onCommit?.();
+        }}
+        onPointerCancel={() => {
+          if (dragStartValue.current !== null && Number(value) !== dragStartValue.current) {
+            onChange(dragStartValue.current);
+          }
+          dragStartValue.current = null;
+        }}
         className="absolute inset-0 w-full opacity-0 cursor-pointer"
-        style={{ height: 36, touchAction: 'none' }}
+        style={{ height: 36, touchAction: 'pan-y' }}
       />
     </div>
   );
