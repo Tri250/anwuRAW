@@ -235,20 +235,34 @@ pub fn generate_sky_mask(
     // 天空替换本身不依赖人脸模型。
     match models.esam3_face_prompt() {
         Ok(face_prompt) => {
-            let decoder = models.esam3_decoder().map_err(|e| e.to_string())?;
-            match run_esam3_boxes(&decoder, &features, &face_prompt, ESAM3_FACE_SCORE_THRESHOLD) {
-                Ok(detections) => {
-                    let boxes: Vec<[f32; 4]> =
-                        detections.into_iter().map(|(_, b)| b).collect();
-                    if !boxes.is_empty() {
-                        let zone = crate::face_masking::head_zone_from_boxes(
-                            mask.width(),
-                            mask.height(),
-                            &boxes,
-                        );
-                        for (m, z) in mask.pixels_mut().zip(zone.pixels()) {
-                            let keep = 1.0 - z[0] as f32 / 255.0;
-                            m[0] = (m[0] as f32 * keep).round() as u8;
+            // 解码器句柄获取失败同样只降级保护带：掩膜此刻已成功产出，
+            // 防护是可选增强，不应让整个天空替换失败——与 prompt 模型
+            // 缺失的"不扣除 + warn"降级口径一致（闭环自检修复）。
+            match models.esam3_decoder() {
+                Ok(decoder) => {
+                    match run_esam3_boxes(
+                        &decoder,
+                        &features,
+                        &face_prompt,
+                        ESAM3_FACE_SCORE_THRESHOLD,
+                    ) {
+                        Ok(detections) => {
+                            let boxes: Vec<[f32; 4]> =
+                                detections.into_iter().map(|(_, b)| b).collect();
+                            if !boxes.is_empty() {
+                                let zone = crate::face_masking::head_zone_from_boxes(
+                                    mask.width(),
+                                    mask.height(),
+                                    &boxes,
+                                );
+                                for (m, z) in mask.pixels_mut().zip(zone.pixels()) {
+                                    let keep = 1.0 - z[0] as f32 / 255.0;
+                                    m[0] = (m[0] as f32 * keep).round() as u8;
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("sky mask: face overlap protection skipped ({e})")
                         }
                     }
                 }

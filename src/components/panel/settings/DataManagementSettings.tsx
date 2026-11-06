@@ -432,7 +432,9 @@ export default function DataManagementSettings({
       await navigator.clipboard.writeText(buildDiagnosticReport(diagnostic));
       showStatus('diagnostics', { text: t('settings.data.storage.aiDiagnostics.copied') });
     } catch (err) {
+      // 剪贴板在部分 Android WebView 上不可用/被拒：给出可见反馈而非静默。
       console.error('Failed to copy the AI diagnostics report:', err);
+      showStatus('diagnostics', { text: `Error: ${err}`, error: true });
     }
   };
 
