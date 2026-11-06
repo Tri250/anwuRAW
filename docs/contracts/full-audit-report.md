@@ -203,7 +203,7 @@ push tag v2.1.17
 | 正式 Release       | `v2.1.17`，**43 个资产**（含 12 个 `.sig` 与 `latest.json`），`draft=false`，发布于 2026-11-06T07:49:55Z                          |
 | 发布地址           | https://github.com/Tri250/anwuRAW/releases/tag/v2.1.17                                                                            |
 | 主分支门禁         | `Lint` run `42180467683` ✅ success；`CI Build` run `42180467627` ✅ success（`@d3148a2`）                                        |
-| 提交链终态         | 代码 `d3148a2` → 文档回填 `85d74938`（`main` 最新，纯文档 `[skip ci]`）                                                           |
+| 提交链             | 代码 `d3148a2` → 纯文档回填（自 `85d74938` 起，均 `[skip ci]`、代码零改动）                                                       |
 
 ### 提交记录
 
