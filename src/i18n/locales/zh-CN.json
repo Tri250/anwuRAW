@@ -2806,7 +2806,8 @@
       "remove": "移除文件夹",
       "statusSummary": "{{known}} 张图像，{{pending}} 张待处理",
       "statusUnknown": "状态不可用",
-      "title": "监视文件夹"
+      "title": "监视文件夹",
+      "imported": "{{folder}} 新导入 {{count}} 张图片"
     }
   },
   "survey": {

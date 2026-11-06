@@ -2747,7 +2747,8 @@
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders"
+      "title": "Watched Folders",
+      "imported": "{{folder}} から {{count}} 枚の新しい画像を取り込みました"
     }
   },
   "survey": {

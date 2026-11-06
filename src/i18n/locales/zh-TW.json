@@ -2772,7 +2772,8 @@
       "remove": "移除資料夾",
       "statusSummary": "{{known}} 張影像，{{pending}} 張待處理",
       "statusUnknown": "狀態無法取得",
-      "title": "監視資料夾"
+      "title": "監視資料夾",
+      "imported": "{{folder}} 新匯入 {{count}} 張圖片"
     }
   },
   "survey": {

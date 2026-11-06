@@ -2811,7 +2811,8 @@
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders"
+      "title": "Watched Folders",
+      "imported": "{{count}} nouvelles images importées depuis {{folder}}"
     }
   },
   "survey": {

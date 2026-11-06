@@ -2862,7 +2862,8 @@
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders"
+      "title": "Watched Folders",
+      "imported": "Из {{folder}} импортировано новых изображений: {{count}}"
     }
   },
   "survey": {
