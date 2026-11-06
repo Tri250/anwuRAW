@@ -295,7 +295,9 @@ pub fn generate_sky_mask(
                 Err(e) => log::warn!("sky mask: face overlap protection skipped ({e})"),
             }
         }
-        Err(e) => log::warn!("sky mask: face prompt model unavailable, overlap protection skipped ({e})"),
+        Err(e) => {
+            log::warn!("sky mask: face prompt model unavailable, overlap protection skipped ({e})")
+        }
     }
 
     Ok(AiSkyMaskParameters {

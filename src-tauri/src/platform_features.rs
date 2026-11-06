@@ -252,7 +252,10 @@ pub fn resolve_wgpu_rendering(
     // v2.1.16 Windows 灰屏自检修复：前端看门狗上报显示失效后，会话内所有
     // 预览强制走 CPU 渲染 + JPEG 读回路径。用户重启应用后标志复位，wgpu
     // 路径可重新尝试。
-    if state.wgpu_force_cpu_preview.load(std::sync::atomic::Ordering::Acquire) {
+    if state
+        .wgpu_force_cpu_preview
+        .load(std::sync::atomic::Ordering::Acquire)
+    {
         return false;
     }
     let probe = get_or_probe_adapter(state);
@@ -277,10 +280,7 @@ pub fn get_gpu_adapter_info(app_handle: AppHandle) -> Result<GpuAdapterReport, S
 /// 事件（D3D12 surface 合成层丢失、GPU error 等后端无法自感知的场景），
 /// 即调用本命令。收到上报后会话级强制 CPU 预览并记录错误日志用于诊断。
 #[tauri::command]
-pub fn report_wgpu_display_failure(
-    reason: String,
-    app_handle: AppHandle,
-) -> Result<(), String> {
+pub fn report_wgpu_display_failure(reason: String, app_handle: AppHandle) -> Result<(), String> {
     let state = app_handle.state::<AppState>();
     state
         .wgpu_force_cpu_preview
@@ -811,12 +811,18 @@ fn run_ai_auto_enhance(
             // 风景：自然饱和比全局饱和安全，加 15% 自然饱和偏置
             "landscape" => {
                 let vib = obj.get("vibrance").and_then(Value::as_f64).unwrap_or(0.0);
-                obj.insert("vibrance".to_string(), json!((vib + 15.0 * k).clamp(-100.0, 100.0)));
+                obj.insert(
+                    "vibrance".to_string(),
+                    json!((vib + 15.0 * k).clamp(-100.0, 100.0)),
+                );
             }
             // 美食：色彩食欲感，自然饱和 +10%、纹理微收（浅景深画面推纹理脏）
             "food" => {
                 let vib = obj.get("vibrance").and_then(Value::as_f64).unwrap_or(0.0);
-                obj.insert("vibrance".to_string(), json!((vib + 10.0 * k).clamp(-100.0, 100.0)));
+                obj.insert(
+                    "vibrance".to_string(),
+                    json!((vib + 10.0 * k).clamp(-100.0, 100.0)),
+                );
                 scale(obj, "structure", 0.9);
             }
             _ => {}

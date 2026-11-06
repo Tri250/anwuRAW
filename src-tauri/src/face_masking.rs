@@ -911,13 +911,16 @@ mod tests {
     #[test]
     fn head_zone_unions_multiple_faces() {
         // 合影：左右两张脸都必须进保护带（参照仓库 8 人合影误删次要主角病理）
-        let zone = head_zone_from_boxes(
-            400,
-            200,
-            &[[0.05, 0.3, 0.25, 0.7], [0.75, 0.3, 0.95, 0.7]],
+        let zone =
+            head_zone_from_boxes(400, 200, &[[0.05, 0.3, 0.25, 0.7], [0.75, 0.3, 0.95, 0.7]]);
+        assert!(
+            zone.get_pixel(60, 100)[0] > 128,
+            "left face head must be protected"
         );
-        assert!(zone.get_pixel(60, 100)[0] > 128, "left face head must be protected");
-        assert!(zone.get_pixel(340, 100)[0] > 128, "right face head must be protected");
+        assert!(
+            zone.get_pixel(340, 100)[0] > 128,
+            "right face head must be protected"
+        );
         // 两脸之间不应被保护
         assert!(zone.get_pixel(200, 100)[0] < 128);
     }

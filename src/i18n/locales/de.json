@@ -409,8 +409,8 @@
       "depthStrength": "Tiefenstärke",
       "lumaNr": "Luminanz-Rauschen",
       "maskFailed": "Erkennung fehlgeschlagen",
-      "proceduralSky": "KI-Himmelmodell nicht geladen – prozedurale Himmelerkennung verwendet (KI-Modell für präzisere Masken herunterladen)",
       "modelDownloading": "KI-Modell wird geladen",
+      "proceduralSky": "KI-Himmelmodell nicht geladen – prozedurale Himmelerkennung verwendet (KI-Modell für präzisere Masken herunterladen)",
       "removeMask": "Erkennung entfernen",
       "skyStrength": "Himmelstärke",
       "structure": "Struktur",
@@ -547,13 +547,13 @@
       "lutImport": "Import",
       "lutImported": "{{n}} LUT(s) importiert",
       "lutIntensity": "LUT-Intensität",
+      "masterLuts": "Master-LUTs",
       "normalFailed": "Normalenkarte konnte nicht erstellt werden",
       "relightHint": "Licht hinzufügen oder auswählen, dann Position und Parameter anpassen",
       "vignette": "Vignette",
       "vignetteFeather": "Weichheit",
       "vignetteMidpoint": "Mittelpunkt",
-      "vignetteRoundness": "Rundung",
-      "masterLuts": "Master-LUTs"
+      "vignetteRoundness": "Rundung"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {
@@ -819,9 +819,9 @@
         "generativeDesc": "Beschreiben Sie, was im ausgewählten Bereich generiert werden soll.",
         "generativeReplaceTitle": "Generatives Ersetzen",
         "inpaintSelectionButton": "Auswahl füllen (Inpaint)",
-        "maskTooLargeGuidance": "Der bemalte Bereich ist zu groß für schnelles Inpainting. Bitte verkleinere die Auswahl und versuche es erneut.",
         "invertComponent": "Komponente umkehren",
         "invertSelection": "Auswahl umkehren",
+        "maskTooLargeGuidance": "Der bemalte Bereich ist zu groß für schnelles Inpainting. Bitte verkleinere die Auswahl und versuche es erneut.",
         "placeholder": "z. B. ein Blumenfeld",
         "quickEraseDesc": "Auswahl füllen, um das Objekt zu entfernen.",
         "selectionPropertiesTitle": "Auswahleigenschaften",
@@ -831,12 +831,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance",
       "intensities": {
-        "subtle": "Dezent",
         "standard": "Standard",
-        "strong": "Stark"
-      }
+        "strong": "Stark",
+        "subtle": "Dezent"
+      },
+      "title": "AI Enhance"
     },
     "canvas": {
       "pickerCancel": "to cancel",
@@ -2350,8 +2350,6 @@
       "storage": {
         "aiDenoise": "KI-Entrauschen",
         "aiDenoiseDesc": "Zwischengespeicherte Entrauschungsergebnisse.",
-        "aiMaps": "Tiefen- & Normal-Maps",
-        "aiMapsDesc": "Werden von Objektivunschärfe, Nebel und Neubeleuchtung genutzt.",
         "aiDiagnostics": {
           "backend": "Backend: {{ep}} · GPU {{state}} · {{status}}",
           "copied": "Diagnosebericht kopiert",
@@ -2363,6 +2361,8 @@
           "probeResult": "CLIP-Sonde: {{ms}} ms",
           "title": "KI-Diagnose"
         },
+        "aiMaps": "Tiefen- & Normal-Maps",
+        "aiMapsDesc": "Werden von Objektivunschärfe, Nebel und Neubeleuchtung genutzt.",
         "immich": "Immich",
         "immichDesc": "Heruntergeladene Originale. Die am längsten nicht genutzten werden entfernt, sobald das Limit erreicht ist. Deine Bearbeitungen bleiben erhalten.",
         "logs": "Protokolle",
@@ -2555,10 +2555,10 @@
           "title": "Selbstgehostet (RapidRAW AI Connector)"
         },
         "cpu": {
+          "backendCpuOnly": "Diese Plattform hat keinen GPU-Ausführungsanbieter; AI-Inferenz läuft immer auf der CPU.",
           "description": "Diese Funktionen sind direkt in RapidRAW integriert und laufen vollständig auf Ihrem Computer. Sie sind schnell, kostenlos und erfordern keine Einrichtung.",
           "feature1": "KI-Maskierung (Motiv, Himmel, Vordergrund)",
           "feature2": "Automatisches Bild-Tagging",
-          "backendCpuOnly": "Diese Plattform hat keinen GPU-Ausführungsanbieter; AI-Inferenz läuft immer auf der CPU.",
           "feature3": "Einfaches generatives Ersetzen auf dem Gerät",
           "gpuAcceleration": "GPU-Beschleunigung",
           "gpuAccelerationDesc": "Führt integrierte KI-Funktionen wie Rauschentfernung, Masken, Tiefen- und Normalenkarten sowie Verschlagwortung auf der Grafikkarte aus, um deutlich schnellere Ergebnisse zu erzielen. Deaktiviere diese Option, wenn Abstürze oder fehlerhafte KI-Ergebnisse auftreten.",
@@ -2595,7 +2595,6 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
-      "wgpuDisplayFallbackNotice": "Problem mit der Vorschauanzeige erkannt – für diese Sitzung auf CPU-Rendering umgeschaltet. Starten Sie die App neu, um das GPU-Rendering wieder zu aktivieren.",
       "highDpi": "High-DPI Rendering",
       "highDpiDesc": "Rendern Sie Vorschauen in der nativen {{dpr}}x Auflösung Ihres Bildschirms. Erzeugt die schärfste Vorschau, verbraucht aber mehr Speicher.",
       "highDpiDescStandard": "Diese Einstellung betrifft nur High-DPI-Displays. Ihr aktuelles Display hat Standardauflösung.",
@@ -2684,6 +2683,7 @@
       "wgpuDescAndroid": "Umgeht die Browser-Kodierung für sofort reagierende Live-Vorschauen. (Auf Android deaktiviert: Native WGPU-Erstellung wird neben dem mobilen Webview nicht unterstützt.)",
       "wgpuDescLinux": "Umgeht die Browser-Kodierung für sofort reagierende Live-Vorschauen. (Auf Linux deaktiviert: Tauri nutzt GTK, was mit WGPU kollidiert.)",
       "wgpuDescRecommended": "Umgeht die Browser-Kodierung für sofort reagierende Live-Vorschauen. Sehr empfehlenswert für die Leistung.",
+      "wgpuDisplayFallbackNotice": "Problem mit der Vorschauanzeige erkannt – für diese Sitzung auf CPU-Rendering umgeschaltet. Starten Sie die App neu, um das GPU-Rendering wieder zu aktivieren.",
       "wgpuLabel": "Direktes WGPU-Rendern aktivieren",
       "workerThreads": "Miniaturbild-Worker-Threads",
       "workerThreadsDesc": "Anzahl der parallelen Threads zur Generierung von Miniaturbildern. Höhere Werte beschleunigen das Laden der Bibliothek, nutzen aber mehr CPU & RAM."
@@ -2752,14 +2752,14 @@
       "duplicate": "Ordner wird bereits überwacht: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
+      "imported": "{{count}} neue Bilder aus {{folder}} importiert",
       "imported_one": "{{count}} new image imported from {{folder}}",
       "imported_other": "{{count}} new images imported from {{folder}}",
       "refresh": "Refresh Status",
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders",
-      "imported": "{{count}} neue Bilder aus {{folder}} importiert"
+      "title": "Watched Folders"
     }
   },
   "survey": {

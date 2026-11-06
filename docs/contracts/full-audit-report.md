@@ -42,12 +42,14 @@
 
 ### 3.1 稳定性（阻断级问题最多）
 
-| 证据                                                             | 结论                                                                                                                     |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Lint run `42171866632` 的 `cargo clippy` 日志                    | `cargo clippy --all-targets --all-features -- -D warnings` 因 4 个 `dead_code` 错误退出 101                              |
-| 同一 run 的 `prettier --check .`                                 | 8 个文件格式不符，退出 1                                                                                                 |
-| `ci.yml` / `pr-ci.yml` 的 `concurrency.cancel-in-progress: true` | 高频推送会取消正在构建的 run，历史多次出现 `cancelled`；属预期行为但叠加长构建会放大"看起来一直红"的观感                 |
-| `pr-ci.yml` 调用 `build.yml` 却未声明 `permissions`              | reusable workflow 的调用方不能授予比被调 job 更少的权限，`build.yml` 已声明 `contents: write` → 会触发 `startup_failure` |
+| 证据                                                                       | 结论                                                                                                                           |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Lint run `42171866632` 的 `cargo clippy` 日志                              | `cargo clippy --all-targets --all-features -- -D warnings` 因 4 个 `dead_code` 错误退出 101                                    |
+| 同一 run 的 `prettier --check .`                                           | 8 个文件格式不符，退出 1                                                                                                       |
+| `ci.yml` / `pr-ci.yml` 的 `concurrency.cancel-in-progress: true`           | 高频推送会取消正在构建的 run，历史多次出现 `cancelled`；属预期行为但叠加长构建会放大"看起来一直红"的观感                       |
+| `pr-ci.yml` 调用 `build.yml` 却未声明 `permissions`                        | reusable workflow 的调用方不能授予比被调 job 更少的权限，`build.yml` 已声明 `contents: write` → 会触发 `startup_failure`       |
+| Lint run `42177509452` / CI Build run `42177509529` 的 `cargo fmt --check` | 前置阻断修复后暴露的**既有**格式漂移：10 个 `src-tauri/src/*.rs` 不符合 rustfmt 风格（基线 run 中 `cargo fmt` 同样为 failure） |
+| Lint run `42177509452` 的 `i18n:check`                                     | 前置步骤修好后暴露的**既有**漂移：`i18next-cli extract --ci --dry-run` 报 15 个 locale「无 key 差异，仅格式/排序变化」         |
 
 **根因（clippy）**：`src/ai_perf.rs` 的 `DeviceTier` 及其方法、`classify_tier` 只在 `#[cfg(target_os = "android")]` 的 `device_tier()` 中被引用。Linux 构建裁掉该路径后，私有 `mod ai_perf` 中的这些 `pub` 项被 dead_code lint 判为未使用。这不是"功能没写完"，而是**条件编译 + 私有模块导致的误报**，同时说明该性能分级能力尚未作为公共 API 暴露。
 
@@ -108,6 +110,8 @@
 | R5  | 发布链路    | 中     | `release.yml` / `check-release-assets.sh`       | draft release 用 `/releases/tags/{tag}` 查询不可靠                                                                | 改走 `/releases` 列表 + `env.GH_RELEASE_TAG` jq 过滤                                           |
 | V1  | 兼容性      | 中     | `Cargo.toml` / `Cargo.lock` / `tauri.conf.json` | 版本停留在已发布的 `2.1.16`，新发布需要新版本号                                                                   | 三处同步升 `2.1.17`                                                                            |
 | D1  | 文档        | 低     | `docs/contracts/release-checklist.md`           | 仍写"资产数 ≥30"、旧触发链描述                                                                                    | 更新为按名称校验、push tag 触发与 prepare/publish 流程                                         |
+| S5  | 稳定性      | 高     | `src-tauri/src/*.rs`（10 个文件）               | `cargo fmt --check` 既有格式漂移，基线 run 即失败                                                                 | 用与 CI 逐行一致的 rustfmt 版本格式化并复检                                                    |
+| S6  | 稳定性      | 中     | `src/i18n/locales/*.json`（15 个语言）          | `i18next-cli extract --ci --dry-run` 排序/格式漂移                                                                | 完整源码重新 extract；extract 与 Prettier 双向校验通过                                         |
 
 **未改动但已登记的风险**（不擅自做破坏性变更）：`csp: null` 的宽权限面；`shell:default` / `process:default` 的桌面权限；Android `usesCleartextTraffic` 占位符；NSIS `installMode` 默认值。这些需要完整功能回归与样张验证才能安全调整。
 
@@ -133,6 +137,11 @@
 - `.github/workflows/pr-ci.yml`：补 `permissions` + `secrets: inherit`，矩阵与 `ci.yml` 对齐
 - `.github/scripts/check-release-assets.sh`：签名/清单校验降级开关，主产物与签名产物分组
 
+**CI 门禁（二次修复，均为仓库既有问题）**
+
+- `src-tauri/src/` 下 10 个文件（`ai_commands` / `ai_denoise` / `ai_processing` / `face_masking` / `gpu_processing` / `lib` / `platform_features` / `procedural_sky` / `scene_classify` / `tagging`）：用与 CI 逐行一致的 rustfmt 规则全量格式化，`rustfmt --check` 复检通过；
+- `src/i18n/locales/*.json`（15 语言）：以锁定版本 `i18next-cli 1.71.0` 对**完整 168 个前端源码文件**重新 extract，消除排序/格式漂移；`extract --ci --dry-run` 报 `No files were updated`，且 15 个文件通过 Prettier 校验（两门禁不再互相冲突）。
+
 **版本与文档**
 
 - `src-tauri/Cargo.toml`、`src-tauri/Cargo.lock`、`src-tauri/tauri.conf.json` → `2.1.17`
@@ -143,15 +152,20 @@
 
 ## 6. 验证证据
 
-| 检查                                            | 执行环境                                     | 结果                                            |
-| ----------------------------------------------- | -------------------------------------------- | ----------------------------------------------- |
-| `prettier --check .`（8 个修复文件）            | 本地 Prettier 3.9.6 + 仓库 `.prettierrc`     | ✅ `All matched files use Prettier code style!` |
-| YAML 语法 / GitHub 表达式结构                   | 本地 PyYAML 静态解析                         | ✅ 通过（见闭环记录）                           |
-| JSON 合法性（`tauri.conf.json` 等）             | 本地 `json.load`                             | ✅ 通过                                         |
-| Shell 脚本语法（`check-release-assets.sh`）     | 本地 `bash -n`                               | ✅ 通过                                         |
-| Rust 语法解析（`lib.rs` / `procedural_sky.rs`） | 本地 `rustfmt` 解析                          | ✅ 通过                                         |
-| `cargo clippy` / `cargo test` / 全平台构建      | GitHub Actions（stable，rust-version ≥1.98） | 由 CI 提供权威结果，见第 8 节闭环记录           |
-| Release 资产完整性与发布状态                    | GitHub Actions `verify` / `publish`          | 见第 8 节闭环记录                               |
+| 检查                                                       | 执行环境                                 | 结果                                                 |
+| ---------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------- |
+| `prettier --check .`（8 个修复文件）                       | 本地 Prettier 3.9.6 + 仓库 `.prettierrc` | ✅ `All matched files use Prettier code style!`      |
+| YAML 语法 / GitHub 表达式结构                              | 本地 PyYAML 静态解析                     | ✅ 通过（见闭环记录）                                |
+| JSON 合法性（`tauri.conf.json` 等）                        | 本地 `json.load`                         | ✅ 通过                                              |
+| Shell 脚本语法（`check-release-assets.sh`）                | 本地 `bash -n`                           | ✅ 通过                                              |
+| Rust 语法解析（`lib.rs` / `procedural_sky.rs`）            | 本地 `rustfmt` 解析                      | ✅ 通过                                              |
+| `cargo clippy --all-targets --all-features -D warnings`    | CI Lint run `42177509452`                | ✅ **success**（dead_code 4 项已消除）               |
+| `Frontend quality gate (tsc, eslint, lint:e9, vite build)` | CI Build run `42177509529`               | ✅ **success**                                       |
+| `cargo fmt --check`                                        | 本地 rustfmt（与 CI 差异逐行一致）       | ✅ 10 个文件格式化后复检通过；CI 复核见第 8 节       |
+| `i18next-cli extract --ci --dry-run`                       | 本地 1.71.0 + 完整 168 个源码文件        | ✅ `No files were updated.`                          |
+| `npm run i18n:runtime-check`                               | 本地                                     | ✅ 2035 plural / 33669 placeholder sets / 15 locales |
+| `cargo test` / 全平台构建                                  | GitHub Actions                           | 由 CI 提供权威结果，见第 8 节闭环记录                |
+| Release 资产完整性与发布状态                               | GitHub Actions `verify` / `publish`      | 见第 8 节闭环记录                                    |
 
 > 说明：本地沙箱 Rust 为 1.93，低于项目 `rust-version = 1.98`，因此**未伪造本地 Rust 编译结论**，Rust 侧以 CI 真实结果为准。
 

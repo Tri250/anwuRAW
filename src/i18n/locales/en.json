@@ -412,8 +412,8 @@
       "depthStrength": "Depth strength",
       "lumaNr": "Luma NR",
       "maskFailed": "Recognition failed",
-      "proceduralSky": "AI sky model not downloaded — used procedural sky detection (download the AI model for sharper masks)",
       "modelDownloading": "Downloading AI model",
+      "proceduralSky": "AI sky model not downloaded — used procedural sky detection (download the AI model for sharper masks)",
       "removeMask": "Remove selection",
       "skyStrength": "Sky strength",
       "structure": "Structure",
@@ -550,13 +550,13 @@
       "lutImport": "Import",
       "lutImported": "Imported {{n}} LUT(s)",
       "lutIntensity": "LUT intensity",
+      "masterLuts": "Master LUTs",
       "normalFailed": "Normal map generation failed",
       "relightHint": "Add or select a light, then adjust its position and parameters",
       "vignette": "Vignette",
       "vignetteFeather": "Feather",
       "vignetteMidpoint": "Midpoint",
-      "vignetteRoundness": "Roundness",
-      "masterLuts": "Master LUTs"
+      "vignetteRoundness": "Roundness"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {
@@ -822,9 +822,9 @@
         "generativeDesc": "Describe what you want to generate in the selected area.",
         "generativeReplaceTitle": "Generative Replace",
         "inpaintSelectionButton": "Inpaint Selection",
-        "maskTooLargeGuidance": "The painted area is too large for fast inpainting. Please reduce the selection and try again.",
         "invertComponent": "Invert Component",
         "invertSelection": "Invert Selection",
+        "maskTooLargeGuidance": "The painted area is too large for fast inpainting. Please reduce the selection and try again.",
         "placeholder": "e.g., a field of flowers",
         "quickEraseDesc": "Fill selection to remove the object.",
         "selectionPropertiesTitle": "Selection Properties",
@@ -2409,8 +2409,6 @@
       "storage": {
         "aiDenoise": "AI Denoise",
         "aiDenoiseDesc": "Cached denoise results.",
-        "aiMaps": "Depth & Normal Maps",
-        "aiMapsDesc": "Used by Lens Blur, Fog and Relight.",
         "aiDiagnostics": {
           "backend": "Backend: {{ep}} · GPU {{state}} · {{status}}",
           "copied": "Diagnostic report copied",
@@ -2422,6 +2420,8 @@
           "probeResult": "CLIP probe: {{ms}} ms",
           "title": "AI Diagnostics"
         },
+        "aiMaps": "Depth & Normal Maps",
+        "aiMapsDesc": "Used by Lens Blur, Fog and Relight.",
         "immich": "Immich",
         "immichDesc": "Downloaded originals. Least recently used ones are removed once the limit is reached; your edits are kept.",
         "logs": "Logs",
@@ -2614,10 +2614,10 @@
           "title": "Self-Hosted (RapidRAW AI Connector)"
         },
         "cpu": {
+          "backendCpuOnly": "This platform has no GPU execution provider; AI inference always runs on the CPU.",
           "description": "Integrated directly into RapidRAW, these features run entirely on your computer. They are fast, free, and require no setup, making them ideal for everyday workflow acceleration.",
           "feature1": "AI Masking (Subject, Sky, Foreground)",
           "feature2": "Automatic Image Tagging",
-          "backendCpuOnly": "This platform has no GPU execution provider; AI inference always runs on the CPU.",
           "feature3": "Simple on-device Generative Replace",
           "gpuAcceleration": "GPU Acceleration",
           "gpuAccelerationDesc": "Run built-in AI features like denoise, masks, depth and normal maps and tagging on your graphics card for much faster results. Disable this if you experience crashes or incorrect AI results.",
@@ -2654,7 +2654,6 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
-      "wgpuDisplayFallbackNotice": "Preview display issue detected — switched to CPU rendering for this session. Restart the app to re-enable GPU rendering.",
       "highDpi": "High-DPI Rendering",
       "highDpiDesc": "Render previews at your screen's native {{dpr}}x physical pixel resolution. Produces the sharpest possible preview but uses significantly more memory.",
       "highDpiDescStandard": "This setting only affects high-DPI displays. Your current display is standard resolution.",
@@ -2743,6 +2742,7 @@
       "wgpuDescAndroid": "Bypasses browser encoding for instantly responsive live previews. (Disabled on Android: Native WGPU surface creation is currently not supported alongside the mobile webview.)",
       "wgpuDescLinux": "Bypasses browser encoding for instantly responsive live previews. (Disabled on Linux: Tauri uses GTK for webviews, which conflicts with WGPU on the same X11 surface and causes flickering.)",
       "wgpuDescRecommended": "Bypasses browser encoding for instantly responsive live previews. Highly recommended for performance.",
+      "wgpuDisplayFallbackNotice": "Preview display issue detected — switched to CPU rendering for this session. Restart the app to re-enable GPU rendering.",
       "wgpuLabel": "Enable Direct WGPU Render",
       "workerThreads": "Thumbnail Worker Threads",
       "workerThreadsDesc": "Number of parallel threads used to generate thumbnails. Higher values speed up library loading but use more CPU & RAM."

@@ -231,7 +231,7 @@ pub fn classify(img: &DynamicImage) -> SceneClassification {
     }
 
     SceneClassification {
-            source: "heuristic".to_string(),
+        source: "heuristic".to_string(),
         scene: best.to_string(),
         confidence,
         tags: vec![format!("luma {:.2}", s.mean_luma)],
@@ -360,12 +360,7 @@ pub fn classify_with_clip(clip: &ClipModels, img: &DynamicImage) -> SceneClassif
         .map(|(i, &v)| (i, v))
         .unwrap_or((0, 0.0));
 
-    let recent: Vec<f32> = RECENT_SCENE_PROBS
-        .lock()
-        .unwrap()
-        .iter()
-        .copied()
-        .collect();
+    let recent: Vec<f32> = RECENT_SCENE_PROBS.lock().unwrap().iter().copied().collect();
     let confidence = batch_calibrate(best, &recent);
     push_recent_scene_prob(best);
 
@@ -380,7 +375,7 @@ pub fn classify_with_clip(clip: &ClipModels, img: &DynamicImage) -> SceneClassif
     }
 
     SceneClassification {
-            source: "clip".to_string(),
+        source: "clip".to_string(),
         scene: SCENE_PROMPTS[best_idx].0.to_string(),
         confidence,
         tags,
@@ -428,13 +423,15 @@ fn clip_scene_probabilities(clip: &ClipModels, img: &DynamicImage) -> Option<[f3
 
     let image_val =
         Tensor::from_array(image_input.into_dyn().as_standard_layout().into_owned()).ok()?;
-    let ids_val = Tensor::from_array(ids_array.into_dyn().as_standard_layout().into_owned()).ok()?;
-    let mask_val = Tensor::from_array(mask_array.into_dyn().as_standard_layout().into_owned()).ok()?;
+    let ids_val =
+        Tensor::from_array(ids_array.into_dyn().as_standard_layout().into_owned()).ok()?;
+    let mask_val =
+        Tensor::from_array(mask_array.into_dyn().as_standard_layout().into_owned()).ok()?;
 
     let mut session = clip.model.lock().unwrap();
-    let outputs = crate::ai_processing::gpu_inference(session.run(ort::inputs![
-        ids_val, image_val, mask_val
-    ]))
+    let outputs = crate::ai_processing::gpu_inference(
+        session.run(ort::inputs![ids_val, image_val, mask_val]),
+    )
     .ok()?;
     let logits_dyn = outputs[0].try_extract_array::<f32>().ok()?.to_owned();
     let logits = logits_dyn

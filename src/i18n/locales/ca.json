@@ -429,8 +429,8 @@
       "depthStrength": "Intensitat de la profunditat",
       "lumaNr": "Soroll de lluminància",
       "maskFailed": "Error de reconeixement",
-      "proceduralSky": "Model de cel IA no baixat: s'ha usat detecció procedural (baixa el model IA per a màscares més precises)",
       "modelDownloading": "Descarregant model IA",
+      "proceduralSky": "Model de cel IA no baixat: s'ha usat detecció procedural (baixa el model IA per a màscares més precises)",
       "removeMask": "Eliminar selecció",
       "skyStrength": "Intensitat del cel",
       "structure": "Estructura",
@@ -567,13 +567,13 @@
       "lutImport": "Importa",
       "lutImported": "{{n}} LUT importats",
       "lutIntensity": "Intensitat LUT",
+      "masterLuts": "LUT de mestres",
       "normalFailed": "Error en generar el mapa de normals",
       "relightHint": "Afegeix o selecciona una llum i ajusta'n la posició i els paràmetres",
       "vignette": "Vinyeta",
       "vignetteFeather": "Difuminat",
       "vignetteMidpoint": "Punt mitjà",
-      "vignetteRoundness": "Rodonesa",
-      "masterLuts": "LUT de mestres"
+      "vignetteRoundness": "Rodonesa"
     },
     "originalBadge": "ORIGINAL",
     "portrait": {
@@ -845,9 +845,9 @@
         "generativeDesc": "Descriviu el que voleu generar a l'àrea seleccionada.",
         "generativeReplaceTitle": "Substitució generativa",
         "inpaintSelectionButton": "Omplir selecció (Inpaint)",
-        "maskTooLargeGuidance": "L'àrea pintada és massa gran per al emplenat ràpid. Redueix la selecció i torna-ho a provar.",
         "invertComponent": "Invertir component",
         "invertSelection": "Invertir selecció",
+        "maskTooLargeGuidance": "L'àrea pintada és massa gran per al emplenat ràpid. Redueix la selecció i torna-ho a provar.",
         "placeholder": "p. ex., un camp de flors",
         "quickEraseDesc": "Omplir la selecció per eliminar l'objecte.",
         "selectionPropertiesTitle": "Propietats de selecció",
@@ -857,12 +857,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance",
       "intensities": {
-        "subtle": "Lleu",
         "standard": "Estàndard",
-        "strong": "Fort"
-      }
+        "strong": "Fort",
+        "subtle": "Lleu"
+      },
+      "title": "AI Enhance"
     },
     "canvas": {
       "pickerCancel": "to cancel",
@@ -2401,8 +2401,6 @@
       "storage": {
         "aiDenoise": "Reducció de soroll IA",
         "aiDenoiseDesc": "Resultats de reducció de soroll a la memòria cau.",
-        "aiMaps": "Mapes de profunditat i normals",
-        "aiMapsDesc": "Els fan servir el desenfocament d’objectiu, la boira i la reil·luminació.",
         "aiDiagnostics": {
           "backend": "Backend: {{ep}} · GPU {{state}} · {{status}}",
           "copied": "Informe de diagnòstic copiat",
@@ -2414,6 +2412,8 @@
           "probeResult": "Sonda CLIP: {{ms}} ms",
           "title": "Diagnòstic d'IA"
         },
+        "aiMaps": "Mapes de profunditat i normals",
+        "aiMapsDesc": "Els fan servir el desenfocament d’objectiu, la boira i la reil·luminació.",
         "immich": "Immich",
         "immichDesc": "Originals descarregats. Els utilitzats fa més temps s’eliminen quan s’arriba al límit; les teves edicions es conserven.",
         "logs": "Registres",
@@ -2606,10 +2606,10 @@
           "title": "Autoallotjat (RapidRAW AI Connector)"
         },
         "cpu": {
+          "backendCpuOnly": "Aquesta plataforma no té proveïdor d'execució de GPU; la inferència d'IA sempre s'executa a la CPU.",
           "description": "Integrades directament a RapidRAW, aquestes funcions s'executen completament al vostre ordinador. Són ràpides, gratuïtes i no requereixen cap configuració, cosa que les fa ideals per accelerar el flux de treball diari.",
           "feature1": "Emmascarament d'IA (Subjecte, Cel, Primer pla)",
           "feature2": "Etiquetatge automàtic d'imatges",
-          "backendCpuOnly": "Aquesta plataforma no té proveïdor d'execució de GPU; la inferència d'IA sempre s'executa a la CPU.",
           "feature3": "Substitució generativa simple al dispositiu",
           "gpuAcceleration": "Acceleració per GPU",
           "gpuAccelerationDesc": "Executa les funcions d'IA integrades, com la reducció de soroll, les màscares, els mapes de profunditat i de normals i l'etiquetatge, a la targeta gràfica per obtenir resultats molt més ràpids. Desactiva-ho si tens bloquejos o resultats d'IA incorrectes.",
@@ -2646,7 +2646,6 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
-      "wgpuDisplayFallbackNotice": "S'ha detectat un problema de visualització de la previsualització — s'ha canviat al renderitzat per CPU per a aquesta sessió. Reinicia l'aplicació per tornar a activar el renderitzat per GPU.",
       "highDpi": "Renderització High-DPI",
       "highDpiDesc": "Renderitzar vistes prèvies a la resolució nativa de {{dpr}}x píxels de la pantalla. Produeix la vista prèvia més nítida possible, però utilitza molta més memòria.",
       "highDpiDescStandard": "Aquesta configuració només afecta pantalles d'alta densitat (High-DPI). La vostra pantalla actual té una resolució estàndard.",
@@ -2735,6 +2734,7 @@
       "wgpuDescAndroid": "Omet la codificació del navegador per a unes vistes prèvies en directe que responen a l'instant. (Desactivat a Android: La creació de la superfície nativa WGPU actualment no és compatible juntament amb la vista web mòbil.)",
       "wgpuDescLinux": "Omet la codificació del navegador per a unes vistes prèvies en directe que responen a l'instant. (Desactivat a Linux: Tauri utilitza GTK per a les vistes web, la qual cosa entra en conflicte amb WGPU a la mateixa superfície X11 i causa parpellejos.)",
       "wgpuDescRecommended": "Omet la codificació del navegador per a unes vistes prèvies en directe que responen a l'instant. Molt recomanat pel seu rendiment.",
+      "wgpuDisplayFallbackNotice": "S'ha detectat un problema de visualització de la previsualització — s'ha canviat al renderitzat per CPU per a aquesta sessió. Reinicia l'aplicació per tornar a activar el renderitzat per GPU.",
       "wgpuLabel": "Activar la renderització directa WGPU",
       "workerThreads": "Fils de treball per a les miniatures",
       "workerThreadsDesc": "Nombre de fils paral·lels utilitzats per generar miniatures. Valors més alts acceleren la càrrega de la biblioteca, però fan servir més CPU i RAM."
@@ -2803,6 +2803,7 @@
       "duplicate": "La carpeta ja està sent vigilada: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
+      "imported": "{{count}} imatges noves importades de {{folder}}",
       "imported_one": "{{count}} new image imported from {{folder}}",
       "imported_many": "{{count}} new images imported from {{folder}}",
       "imported_other": "{{count}} new images imported from {{folder}}",
@@ -2810,8 +2811,7 @@
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders",
-      "imported": "{{count}} imatges noves importades de {{folder}}"
+      "title": "Watched Folders"
     }
   },
   "survey": {

@@ -180,66 +180,64 @@ impl WgpuDisplay {
             }
             _ => return false,
         };
-            let view = output
-                .texture
-                .create_view(&wgpu::TextureViewDescriptor::default());
-            let mut encoder =
-                device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-            {
-                let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: None,
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color {
-                                r: self.latest_transform.bg_primary[0] as f64,
-                                g: self.latest_transform.bg_primary[1] as f64,
-                                b: self.latest_transform.bg_primary[2] as f64,
-                                a: self.latest_transform.bg_primary[3] as f64,
-                            }),
-                            store: wgpu::StoreOp::Store,
-                        },
-                        depth_slice: None,
-                    })],
-                    depth_stencil_attachment: None,
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                    multiview_mask: NonZero::new(0),
-                });
-                let clip_x1 = self.latest_transform.clip[0].max(0.0);
-                let clip_y1 = self.latest_transform.clip[1].max(0.0);
-                let clip_x2 =
-                    (self.latest_transform.clip[0] + self.latest_transform.clip[2]).max(0.0);
-                let clip_y2 =
-                    (self.latest_transform.clip[1] + self.latest_transform.clip[3]).max(0.0);
+        let view = output
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let mut encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        {
+            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: None,
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: self.latest_transform.bg_primary[0] as f64,
+                            g: self.latest_transform.bg_primary[1] as f64,
+                            b: self.latest_transform.bg_primary[2] as f64,
+                            a: self.latest_transform.bg_primary[3] as f64,
+                        }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                    depth_slice: None,
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: NonZero::new(0),
+            });
+            let clip_x1 = self.latest_transform.clip[0].max(0.0);
+            let clip_y1 = self.latest_transform.clip[1].max(0.0);
+            let clip_x2 = (self.latest_transform.clip[0] + self.latest_transform.clip[2]).max(0.0);
+            let clip_y2 = (self.latest_transform.clip[1] + self.latest_transform.clip[3]).max(0.0);
 
-                let final_clip_x = clip_x1.floor() as u32;
-                let final_clip_y = clip_y1.floor() as u32;
-                let final_clip_w = (clip_x2.ceil() as u32).saturating_sub(final_clip_x);
-                let final_clip_h = (clip_y2.ceil() as u32).saturating_sub(final_clip_y);
+            let final_clip_x = clip_x1.floor() as u32;
+            let final_clip_y = clip_y1.floor() as u32;
+            let final_clip_w = (clip_x2.ceil() as u32).saturating_sub(final_clip_x);
+            let final_clip_h = (clip_y2.ceil() as u32).saturating_sub(final_clip_y);
 
-                let max_x = self.config.width;
-                let max_y = self.config.height;
+            let max_x = self.config.width;
+            let max_y = self.config.height;
 
-                if final_clip_x < max_x && final_clip_y < max_y {
-                    let clamped_width = final_clip_w.min(max_x - final_clip_x);
-                    let clamped_height = final_clip_h.min(max_y - final_clip_y);
+            if final_clip_x < max_x && final_clip_y < max_y {
+                let clamped_width = final_clip_w.min(max_x - final_clip_x);
+                let clamped_height = final_clip_h.min(max_y - final_clip_y);
 
-                    if clamped_width > 0 && clamped_height > 0 {
-                        rpass.set_scissor_rect(
-                            final_clip_x,
-                            final_clip_y,
-                            clamped_width,
-                            clamped_height,
-                        );
+                if clamped_width > 0 && clamped_height > 0 {
+                    rpass.set_scissor_rect(
+                        final_clip_x,
+                        final_clip_y,
+                        clamped_width,
+                        clamped_height,
+                    );
 
-                        rpass.set_pipeline(&self.pipeline);
-                        rpass.set_bind_group(0, bind_group, &[]);
-                        rpass.draw(0..4, 0..1);
-                    }
+                    rpass.set_pipeline(&self.pipeline);
+                    rpass.set_bind_group(0, bind_group, &[]);
+                    rpass.draw(0..4, 0..1);
                 }
             }
+        }
         queue.submit(Some(encoder.finish()));
         output.present();
         true
@@ -3947,15 +3945,15 @@ fn process_and_get_dynamic_image_inner(
         );
         display.rebind(device);
         if display.render(device, queue) {
-            state.wgpu_display_failures.store(0, std::sync::atomic::Ordering::Relaxed);
+            state
+                .wgpu_display_failures
+                .store(0, std::sync::atomic::Ordering::Relaxed);
         } else {
             let failures = state
                 .wgpu_display_failures
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
                 + 1;
-            log::warn!(
-                "wgpu display frame not presented (consecutive failures: {failures})"
-            );
+            log::warn!("wgpu display frame not presented (consecutive failures: {failures})");
         }
     }
 

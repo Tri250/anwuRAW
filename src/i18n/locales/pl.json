@@ -449,8 +449,8 @@
       "depthStrength": "Siła głębi",
       "lumaNr": "Szum luminancji",
       "maskFailed": "Rozpoznanie nieudane",
-      "proceduralSky": "Model AI nieba niedostępny — użyto proceduralnego wykrywania (pobierz model AI dla dokładniejszych masek)",
       "modelDownloading": "Pobieranie modelu AI",
+      "proceduralSky": "Model AI nieba niedostępny — użyto proceduralnego wykrywania (pobierz model AI dla dokładniejszych masek)",
       "removeMask": "Usuń zaznaczenie",
       "skyStrength": "Siła nieba",
       "structure": "Struktura",
@@ -587,13 +587,13 @@
       "lutImport": "Importuj",
       "lutImported": "Zaimportowano LUT: {{n}}",
       "lutIntensity": "Intensywność LUT",
+      "masterLuts": "LUT mistrzów",
       "normalFailed": "Nie udało się wygenerować mapy normalnych",
       "relightHint": "Dodaj lub wybierz światło, a następnie dostosuj jego pozycję i parametry",
       "vignette": "Winieta",
       "vignetteFeather": "Miękkość",
       "vignetteMidpoint": "Środek",
-      "vignetteRoundness": "Zaokrąglenie",
-      "masterLuts": "LUT mistrzów"
+      "vignetteRoundness": "Zaokrąglenie"
     },
     "originalBadge": "ORYGINAŁ",
     "portrait": {
@@ -871,9 +871,9 @@
         "generativeDesc": "Opisz, co chcesz wygenerować w wybranym obszarze.",
         "generativeReplaceTitle": "Zastępowanie generatywne",
         "inpaintSelectionButton": "Wypełnij (Inpaint) zaznaczenie",
-        "maskTooLargeGuidance": "Zamalowany obszar jest zbyt duży do szybkiego wypełniania. Zmniejsz zaznaczenie i spróbuj ponownie.",
         "invertComponent": "Odwróć komponent",
         "invertSelection": "Odwróć zaznaczenie",
+        "maskTooLargeGuidance": "Zamalowany obszar jest zbyt duży do szybkiego wypełniania. Zmniejsz zaznaczenie i spróbuj ponownie.",
         "placeholder": "np. pole pełne kwiatów",
         "quickEraseDesc": "Wypełnij zaznaczenie, aby usunąć obiekt.",
         "selectionPropertiesTitle": "Właściwości zaznaczenia",
@@ -883,12 +883,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance",
       "intensities": {
-        "subtle": "Subtelne",
         "standard": "Standardowe",
-        "strong": "Mocne"
-      }
+        "strong": "Mocne",
+        "subtle": "Subtelne"
+      },
+      "title": "AI Enhance"
     },
     "canvas": {
       "pickerCancel": "to cancel",
@@ -2452,8 +2452,6 @@
       "storage": {
         "aiDenoise": "Odszumianie AI",
         "aiDenoiseDesc": "Zapisane wyniki odszumiania.",
-        "aiMaps": "Mapy głębi i normalnych",
-        "aiMapsDesc": "Używane przez rozmycie obiektywu, mgłę i ponowne oświetlenie.",
         "aiDiagnostics": {
           "backend": "Backend: {{ep}} · GPU {{state}} · {{status}}",
           "copied": "Skopiowano raport diagnostyczny",
@@ -2465,6 +2463,8 @@
           "probeResult": "Próba CLIP: {{ms}} ms",
           "title": "Diagnostyka AI"
         },
+        "aiMaps": "Mapy głębi i normalnych",
+        "aiMapsDesc": "Używane przez rozmycie obiektywu, mgłę i ponowne oświetlenie.",
         "immich": "Immich",
         "immichDesc": "Pobrane oryginały. Najdawniej używane są usuwane po osiągnięciu limitu; Twoje edycje zostają zachowane.",
         "logs": "Logi",
@@ -2657,10 +2657,10 @@
           "title": "Własny serwer (RapidRAW AI Connector)"
         },
         "cpu": {
+          "backendCpuOnly": "Ta platforma nie ma dostawcy wykonania GPU; inferencja AI zawsze działa na procesorze.",
           "description": "Zintegrowane bezpośrednio z RapidRAW, te funkcje działają całkowicie na Twoim komputerze. Są szybkie, bezpłatne i nie wymagają konfiguracji, stanowiąc idealne usprawnienie dla codziennej pracy.",
           "feature1": "Maskowanie AI (Temat, Niebo, Pierwszy plan)",
           "feature2": "Automatyczne tagowanie obrazów",
-          "backendCpuOnly": "Ta platforma nie ma dostawcy wykonania GPU; inferencja AI zawsze działa na procesorze.",
           "feature3": "Proste zastępowanie generatywne na urządzeniu",
           "gpuAcceleration": "Akceleracja GPU",
           "gpuAccelerationDesc": "Uruchamia wbudowane funkcje AI, takie jak odszumianie, maski, mapy głębi i normalnych oraz tagowanie, na karcie graficznej, aby uzyskać znacznie szybsze wyniki. Wyłącz, jeśli występują awarie lub nieprawidłowe wyniki AI.",
@@ -2697,7 +2697,6 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
-      "wgpuDisplayFallbackNotice": "Wykryto problem z wyświetlaniem podglądu — na czas tej sesji przełączono na renderowanie CPU. Uruchom ponownie aplikację, aby przywrócić renderowanie GPU.",
       "highDpi": "Renderowanie High-DPI",
       "highDpiDesc": "Renderuj podglądy w natywnej {{dpr}}x rozdzielczości pikseli fizycznych twojego ekranu. Zapewnia najostrzejszy z możliwych podglądów, ale zużywa znacznie więcej pamięci.",
       "highDpiDescStandard": "To ustawienie wpływa tylko na wyświetlacze high-DPI (np. Retina). Twój obecny wyświetlacz ma standardową rozdzielczość.",
@@ -2786,6 +2785,7 @@
       "wgpuDescAndroid": "Omija enkoder przeglądarki dla najszybszego podglądu. (Wyłączone na Androidzie: Tworzenie powierzchni WGPU obecnie nie jest obsługiwane wraz z WebView.)",
       "wgpuDescLinux": "Omija enkoder przeglądarki. (Wyłączone na Linuksie: Tauri używa GTK dla WebView, co wchodzi w konflikt z WGPU na tej samej powierzchni X11, wywołując migotanie.)",
       "wgpuDescRecommended": "Omija kodowanie w przeglądarce pozwalając na natychmiastowe reakcje podglądu. Wysoce zalecane dla zachowania płynności.",
+      "wgpuDisplayFallbackNotice": "Wykryto problem z wyświetlaniem podglądu — na czas tej sesji przełączono na renderowanie CPU. Uruchom ponownie aplikację, aby przywrócić renderowanie GPU.",
       "wgpuLabel": "Włącz bezpośrednie renderowanie WGPU",
       "workerThreads": "Liczba wątków miniatur",
       "workerThreadsDesc": "Liczba równoległych procesów do generowania miniaturek. Wyższe wartości znacząco przyśpieszają wczytywanie biblioteki, ale zużywają więcej RAM i CPU."
@@ -2854,6 +2854,7 @@
       "duplicate": "Folder jest już obserwowany: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
+      "imported": "Zaimportowano {{count}} nowych zdjęć z {{folder}}",
       "imported_one": "{{count}} new image imported from {{folder}}",
       "imported_few": "{{count}} new images imported from {{folder}}",
       "imported_many": "{{count}} new images imported from {{folder}}",
@@ -2862,8 +2863,7 @@
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders",
-      "imported": "Zaimportowano {{count}} nowych zdjęć z {{folder}}"
+      "title": "Watched Folders"
     }
   },
   "survey": {

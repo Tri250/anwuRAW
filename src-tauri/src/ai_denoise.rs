@@ -749,14 +749,18 @@ mod tests {
             "block-mean low frequencies should track the source: {block_before:.4} -> {block_after:.4}"
         );
         // 恢复不得过冲：残余误差应远小于初始平灰误差
-        assert!(after < 0.05, "restored image should track the source, error {after:.4}");
+        assert!(
+            after < 0.05,
+            "restored image should track the source, error {after:.4}"
+        );
     }
 
     /// P1-3：低频恢复对小图（<2 个 64px 块）必须原样返回——分块下采样
     /// 没有意义，不得写入 NaN/越界。
     #[test]
     fn restore_low_frequencies_skips_tiny_images() {
-        let source = Rgb32FImage::from_fn(50, 50, |x, y| Rgb([x as f32 / 50.0, 0.5, y as f32 / 50.0]));
+        let source =
+            Rgb32FImage::from_fn(50, 50, |x, y| Rgb([x as f32 / 50.0, 0.5, y as f32 / 50.0]));
         let mut denoised = source.clone();
         restore_low_frequencies(&mut denoised, &source);
         assert_eq!(denoised.as_raw(), source.as_raw());

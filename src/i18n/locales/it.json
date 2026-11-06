@@ -429,8 +429,8 @@
       "depthStrength": "Intensità profondità",
       "lumaNr": "Rumore luminanza",
       "maskFailed": "Riconoscimento non riuscito",
-      "proceduralSky": "Modello cielo IA non scaricato: usata rilevamento procedurale (scarica il modello IA per maschere più precise)",
       "modelDownloading": "Download del modello IA",
+      "proceduralSky": "Modello cielo IA non scaricato: usata rilevamento procedurale (scarica il modello IA per maschere più precise)",
       "removeMask": "Rimuovi selezione",
       "skyStrength": "Intensità del cielo",
       "structure": "Struttura",
@@ -567,13 +567,13 @@
       "lutImport": "Importa",
       "lutImported": "{{n}} LUT importati",
       "lutIntensity": "Intensità LUT",
+      "masterLuts": "LUT dei maestri",
       "normalFailed": "Generazione della mappa normale non riuscita",
       "relightHint": "Aggiungi o seleziona una luce, quindi regola posizione e parametri",
       "vignette": "Vignettatura",
       "vignetteFeather": "Sfumatura",
       "vignetteMidpoint": "Punto medio",
-      "vignetteRoundness": "Rotondità",
-      "masterLuts": "LUT dei maestri"
+      "vignetteRoundness": "Rotondità"
     },
     "originalBadge": "ORIGINALE",
     "portrait": {
@@ -845,9 +845,9 @@
         "generativeDesc": "Descrivi cosa desideri generare nell'area selezionata.",
         "generativeReplaceTitle": "Sostituzione Generativa",
         "inpaintSelectionButton": "Inpainting Selezione",
-        "maskTooLargeGuidance": "L'area dipinta è troppo grande per il riempimento rapido. Riduci la selezione e riprova.",
         "invertComponent": "Inverti Componente",
         "invertSelection": "Inverti Selezione",
+        "maskTooLargeGuidance": "L'area dipinta è troppo grande per il riempimento rapido. Riduci la selezione e riprova.",
         "placeholder": "es. un campo di fiori",
         "quickEraseDesc": "Riempi la selezione per rimuovere l'oggetto.",
         "selectionPropertiesTitle": "Proprietà Selezione",
@@ -857,12 +857,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance",
       "intensities": {
-        "subtle": "Leggero",
         "standard": "Standard",
-        "strong": "Forte"
-      }
+        "strong": "Forte",
+        "subtle": "Leggero"
+      },
+      "title": "AI Enhance"
     },
     "canvas": {
       "pickerCancel": "to cancel",
@@ -2401,8 +2401,6 @@
       "storage": {
         "aiDenoise": "Riduzione rumore IA",
         "aiDenoiseDesc": "Risultati della riduzione rumore in cache.",
-        "aiMaps": "Mappe di profondità e normali",
-        "aiMapsDesc": "Usate da sfocatura obiettivo, nebbia e reilluminazione.",
         "aiDiagnostics": {
           "backend": "Backend: {{ep}} · GPU {{state}} · {{status}}",
           "copied": "Report di diagnostica copiato",
@@ -2414,6 +2412,8 @@
           "probeResult": "Sonda CLIP: {{ms}} ms",
           "title": "Diagnostica AI"
         },
+        "aiMaps": "Mappe di profondità e normali",
+        "aiMapsDesc": "Usate da sfocatura obiettivo, nebbia e reilluminazione.",
         "immich": "Immich",
         "immichDesc": "Originali scaricati. Quelli usati meno di recente vengono rimossi al raggiungimento del limite; le tue modifiche vengono mantenute.",
         "logs": "Log",
@@ -2606,10 +2606,10 @@
           "title": "Self-Hosted (Connettore AI RapidRAW)"
         },
         "cpu": {
+          "backendCpuOnly": "Questa piattaforma non ha un provider di esecuzione GPU; l'inferenza AI viene sempre eseguita sulla CPU.",
           "description": "Integrate direttamente in RapidRAW, queste funzionalità funzionano interamente sul tuo computer. Sono veloci, gratuite e non richiedono alcuna configurazione, rendendole ideali per accelerare il flusso di lavoro quotidiano.",
           "feature1": "Mascheratura AI (Soggetto, Cielo, Primo Piano)",
           "feature2": "Tagging Automatico Immagini",
-          "backendCpuOnly": "Questa piattaforma non ha un provider di esecuzione GPU; l'inferenza AI viene sempre eseguita sulla CPU.",
           "feature3": "Sostituzione Generativa semplice sul dispositivo",
           "gpuAcceleration": "Accelerazione GPU",
           "gpuAccelerationDesc": "Esegue le funzioni IA integrate, come riduzione del rumore, maschere, mappe di profondità e delle normali e tagging, sulla scheda grafica per risultati molto più rapidi. Disattivala in caso di arresti anomali o risultati IA errati.",
@@ -2646,7 +2646,6 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
-      "wgpuDisplayFallbackNotice": "Rilevato un problema di visualizzazione dell’anteprima — passaggio al rendering CPU per questa sessione. Riavvia l’app per riattivare il rendering GPU.",
       "highDpi": "Rendering High-DPI",
       "highDpiDesc": "Renderizza le anteprime alla risoluzione nativa in pixel fisici {{dpr}}x del tuo schermo. Produce l'anteprima più nitida possibile ma utilizza molta più memoria.",
       "highDpiDescStandard": "Questa impostazione ha effetto solo sui display ad alta risoluzione (High-DPI). Il tuo display attuale ha una risoluzione standard.",
@@ -2735,6 +2734,7 @@
       "wgpuDescAndroid": "Bypassa la codifica del browser per anteprime dal vivo immediatamente reattive. (Disabilitato su Android: la creazione nativa della superficie WGPU non è attualmente supportata insieme alla webview mobile.)",
       "wgpuDescLinux": "Bypassa la codifica del browser per anteprime dal vivo immediatamente reattive. (Disabilitato su Linux: Tauri usa GTK per le webview, che è in conflitto con WGPU sulla stessa superficie X11 e causa sfarfallio.)",
       "wgpuDescRecommended": "Bypassa la codifica del browser per anteprime dal vivo immediatamente reattive. Altamente raccomandato per le prestazioni.",
+      "wgpuDisplayFallbackNotice": "Rilevato un problema di visualizzazione dell’anteprima — passaggio al rendering CPU per questa sessione. Riavvia l’app per riattivare il rendering GPU.",
       "wgpuLabel": "Abilita Rendering WGPU Diretto",
       "workerThreads": "Thread di Lavoro Miniature",
       "workerThreadsDesc": "Numero di thread paralleli utilizzati per generare le miniature. Valori più alti velocizzano il caricamento della libreria ma usano più CPU e RAM."
@@ -2803,6 +2803,7 @@
       "duplicate": "La cartella è già sotto osservazione: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
+      "imported": "{{count}} nuove immagini importate da {{folder}}",
       "imported_one": "{{count}} new image imported from {{folder}}",
       "imported_many": "{{count}} new images imported from {{folder}}",
       "imported_other": "{{count}} new images imported from {{folder}}",
@@ -2810,8 +2811,7 @@
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders",
-      "imported": "{{count}} nuove immagini importate da {{folder}}"
+      "title": "Watched Folders"
     }
   },
   "survey": {

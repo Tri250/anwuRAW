@@ -1249,7 +1249,9 @@ fn candidate_urls(url: &str) -> Vec<String> {
             // 路径吞成查询参数，静默改写真实请求目标，必须拒收。
             urls.push(format!("{sanitized}{rest}"));
         } else {
-            log::warn!("ignoring invalid custom model mirror {custom:?} (expect http(s)://host, no '?'/'#')");
+            log::warn!(
+                "ignoring invalid custom model mirror {custom:?} (expect http(s)://host, no '?'/'#')"
+            );
         }
     }
     urls.push(url.to_string());
@@ -2296,9 +2298,8 @@ pub fn run_lama_inpainting(
     let target: Vec<[f32; 3]> = (0..iw * ih)
         .map(|i| {
             let (x, y) = (i % iw, i / iw);
-            [0, 1, 2].map(|c| {
-                (output_tensor[[0, c, y, x]] * out_scale + out_offset).clamp(0.0, 1.0)
-            })
+            [0, 1, 2]
+                .map(|c| (output_tensor[[0, c, y, x]] * out_scale + out_offset).clamp(0.0, 1.0))
         })
         .collect();
     let source: Vec<[f32; 3]> = inf_img
@@ -2699,10 +2700,7 @@ pub fn run_sam_decoder(
         // （参照仓库实测：lips 0.0035 → 0.001）。覆盖率 <2% 的掩膜
         // （短词文本命中等）跳过 blur，直接走引导滤波收边（引导滤波
         // 是边缘吸附，不是稀释）。大面积掩膜行为不变。
-        let coarse_coverage: usize = resized_coarse_mask
-            .pixels()
-            .filter(|p| p[0] > 127)
-            .count();
+        let coarse_coverage: usize = resized_coarse_mask.pixels().filter(|p| p[0] > 127).count();
         let total_px = (orig_width * orig_height) as usize;
         let feathered_coarse_mask = if coarse_coverage * 50 >= total_px {
             image::imageops::blur(&resized_coarse_mask, radius / 3.0)
@@ -3710,10 +3708,14 @@ fn model_effective_ep(role: &str, gpu_on: bool, platform_ep: &str, gpu_failed: b
         return "CPU".to_string();
     }
     match role {
-        "sam_encoder" | "sam_decoder" | "face_landmarks" | "face_segmenter" | "lama"
-        | "efficientsam_text_encoder" | "foreground_fp32" => "CPU".to_string(),
-        "foreground_fp16" | "efficientsam_encoder" | "efficientsam_decoder" | "normal"
-        | "clip" => {
+        "sam_encoder"
+        | "sam_decoder"
+        | "face_landmarks"
+        | "face_segmenter"
+        | "lama"
+        | "efficientsam_text_encoder"
+        | "foreground_fp32" => "CPU".to_string(),
+        "foreground_fp16" | "efficientsam_encoder" | "efficientsam_decoder" | "normal" | "clip" => {
             if gpu_allowed_on_platform() {
                 platform_ep.to_string()
             } else {
@@ -3728,7 +3730,15 @@ fn model_effective_ep(role: &str, gpu_on: bool, platform_ep: &str, gpu_failed: b
 /// 日志不可读时返回空——诊断不因此失败。
 fn recent_ai_logs(app_handle: &tauri::AppHandle) -> Vec<String> {
     const AI_LOG_KEYWORDS: [&str; 10] = [
-        "model", "session", "clip", "denoise", "lama", "onnx", "gpu", "inference", "efficientsam",
+        "model",
+        "session",
+        "clip",
+        "denoise",
+        "lama",
+        "onnx",
+        "gpu",
+        "inference",
+        "efficientsam",
         "birefnet",
     ];
     let Ok(log_dir) = app_handle.path().app_log_dir() else {
@@ -3824,19 +3834,18 @@ pub async fn diagnose_ai(
                                 // CLIP 输入尺寸固定（224px）且是场景分类与
                                 // 文本蒙版的共用路径：跑一次真实前向作为端到端
                                 // 探针（顺带验证 tokenizer 可用）。
-                                match Tokenizer::from_file(
-                                    models_dir.join(CLIP_TOKENIZER_FILENAME),
-                                ) {
+                                match Tokenizer::from_file(models_dir.join(CLIP_TOKENIZER_FILENAME))
+                                {
                                     Ok(tokenizer) => {
                                         let clip = ClipModels {
                                             model: Mutex::new(session),
                                             tokenizer,
                                         };
-                                        let probe_img = DynamicImage::ImageRgb8(
-                                            RgbImage::from_fn(64, 64, |x, y| {
-                                                image::Rgb([x as u8, y as u8, 160])
-                                            }),
-                                        );
+                                        let probe_img = DynamicImage::ImageRgb8(RgbImage::from_fn(
+                                            64,
+                                            64,
+                                            |x, y| image::Rgb([x as u8, y as u8, 160]),
+                                        ));
                                         let probe_started = Instant::now();
                                         match crate::tagging::generate_tags_with_clip(
                                             &probe_img,
@@ -3850,13 +3859,13 @@ pub async fn diagnose_ai(
                                                     Some(probe_started.elapsed().as_millis());
                                             }
                                             Err(e) => {
-                                                diag.note =
-                                                    Some(format!("CLIP probe failed: {e}"));
+                                                diag.note = Some(format!("CLIP probe failed: {e}"));
                                             }
                                         }
                                     }
                                     Err(e) => {
-                                        diag.note = Some(format!("CLIP tokenizer load failed: {e}"));
+                                        diag.note =
+                                            Some(format!("CLIP tokenizer load failed: {e}"));
                                     }
                                 }
                             }
@@ -3936,7 +3945,10 @@ mod tests {
             sanitize_mirror_base("http://192.168.1.10:8080/models"),
             Some("http://192.168.1.10:8080/models".into())
         );
-        assert_eq!(sanitize_mirror_base("  https://mirror.io  "), Some("https://mirror.io".into()));
+        assert_eq!(
+            sanitize_mirror_base("  https://mirror.io  "),
+            Some("https://mirror.io".into())
+        );
     }
 
     #[test]
@@ -4020,7 +4032,11 @@ mod tests {
         }
         let out = fast_guided_filter(&guide, &mask, 12, 0.001);
         for p in out.pixels() {
-            assert!((0..=255).contains(&p[0]), "guided filter output {} out of range", p[0]);
+            assert!(
+                (0..=255).contains(&p[0]),
+                "guided filter output {} out of range",
+                p[0]
+            );
         }
     }
 
@@ -4051,7 +4067,10 @@ mod tests {
             let after = a[0];
             assert!(after <= *b, "pixel {i} raised by head zone: {b} -> {after}");
             if *b == 255 {
-                assert_eq!(after, 255, "locality violation: protected-pixel untouched at {i}");
+                assert_eq!(
+                    after, 255,
+                    "locality violation: protected-pixel untouched at {i}"
+                );
             }
         }
     }
@@ -4148,10 +4167,19 @@ mod tests {
         // 混合权重必须是 (0,1] 的 smoothstep 对称斜坡：两端渐隐、中间为 1
         let n = weights.len();
         assert!(weights.iter().all(|&w| w > 0.0 && w <= 1.0));
-        assert!(weights[0] < 0.1 && weights[n - 1] < 0.1, "edges must feather out");
-        assert!((weights[n / 2] - 1.0).abs() < 1e-6, "center must be full weight");
+        assert!(
+            weights[0] < 0.1 && weights[n - 1] < 0.1,
+            "edges must feather out"
+        );
+        assert!(
+            (weights[n / 2] - 1.0).abs() < 1e-6,
+            "center must be full weight"
+        );
         for i in 0..n {
-            assert!((weights[i] - weights[n - 1 - i]).abs() < 1e-6, "weights must be symmetric");
+            assert!(
+                (weights[i] - weights[n - 1 - i]).abs() < 1e-6,
+                "weights must be symmetric"
+            );
         }
         for &len in &[1usize, 100, 479, 480, 481, 500, 1000, 4096, 6000] {
             let origins = tile_origins(len, DENOISE_TILE);
@@ -4254,7 +4282,10 @@ mod tests {
             "n/a"
         );
         // GPU 开关关闭 / 平台无 EP / 运行时失败：一律 CPU
-        assert_eq!(model_effective_ep("denoise", false, "DirectML", false), "CPU");
+        assert_eq!(
+            model_effective_ep("denoise", false, "DirectML", false),
+            "CPU"
+        );
         assert_eq!(model_effective_ep("denoise", true, "none", false), "CPU");
         assert_eq!(model_effective_ep("denoise", true, "DirectML", true), "CPU");
         // 固定 CPU 路径的模型（调用点固定传 false 或本身就是 CPU 回退档）
@@ -4274,7 +4305,11 @@ mod tests {
             );
         }
         // 平台门控组：macOS 即便开关打开也走 CPU，其余平台按平台 EP
-        let gated_expected = if cfg!(target_os = "macos") { "CPU" } else { "DirectML" };
+        let gated_expected = if cfg!(target_os = "macos") {
+            "CPU"
+        } else {
+            "DirectML"
+        };
         for role in [
             "foreground_fp16",
             "efficientsam_encoder",
@@ -4289,7 +4324,10 @@ mod tests {
             );
         }
         // 其余（denoise/depth）：跟随开关与运行时状态
-        assert_eq!(model_effective_ep("denoise", true, "DirectML", false), "DirectML");
+        assert_eq!(
+            model_effective_ep("denoise", true, "DirectML", false),
+            "DirectML"
+        );
         assert_eq!(model_effective_ep("depth", true, "CoreML", false), "CoreML");
     }
 
@@ -4309,7 +4347,12 @@ mod tests {
         match crate::ai_perf::mobile_intra_threads() {
             Some(threads) => {
                 assert!((1..=2).contains(&threads));
-                assert_eq!(threads, crate::ai_perf::intra_op_threads_label().parse::<usize>().unwrap());
+                assert_eq!(
+                    threads,
+                    crate::ai_perf::intra_op_threads_label()
+                        .parse::<usize>()
+                        .unwrap()
+                );
             }
             None => assert_eq!(crate::ai_perf::intra_op_threads_label(), "default"),
         }

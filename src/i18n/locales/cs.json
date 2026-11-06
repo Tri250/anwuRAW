@@ -449,8 +449,8 @@
       "depthStrength": "Intenzita hloubky",
       "lumaNr": "Šum jasnosti",
       "maskFailed": "Rozpoznání selhalo",
-      "proceduralSky": "AI model oblohy stažen — použito procedurální rozpoznávání (stáhněte AI model pro přesnější masky)",
       "modelDownloading": "Stahuji model AI",
+      "proceduralSky": "AI model oblohy stažen — použito procedurální rozpoznávání (stáhněte AI model pro přesnější masky)",
       "removeMask": "Odebrat výběr",
       "skyStrength": "Intenzita oblohy",
       "structure": "Struktura",
@@ -587,13 +587,13 @@
       "lutImport": "Import",
       "lutImported": "Importováno LUT: {{n}}",
       "lutIntensity": "Intenzita LUT",
+      "masterLuts": "LUTy mistrů",
       "normalFailed": "Generování mapy normál selhalo",
       "relightHint": "Přidejte nebo vyberte světlo a upravte jeho polohu a parametry",
       "vignette": "Vinětace",
       "vignetteFeather": "Měkkost",
       "vignetteMidpoint": "Střed",
-      "vignetteRoundness": "Zaoblení",
-      "masterLuts": "LUTy mistrů"
+      "vignetteRoundness": "Zaoblení"
     },
     "originalBadge": "ORIGINÁL",
     "portrait": {
@@ -871,9 +871,9 @@
         "generativeDesc": "Popište, co chcete ve vybrané oblasti vygenerovat.",
         "generativeReplaceTitle": "Generativní náhrada",
         "inpaintSelectionButton": "Výběr pro retuš",
-        "maskTooLargeGuidance": "Malovaná oblast je pro rychlé doplňování příliš velká. Zmenšete výběr a zkuste to znovu.",
         "invertComponent": "Invertovat komponentu",
         "invertSelection": "Invertovat výběr",
+        "maskTooLargeGuidance": "Malovaná oblast je pro rychlé doplňování příliš velká. Zmenšete výběr a zkuste to znovu.",
         "placeholder": "např. pole květin",
         "quickEraseDesc": "Vyplnit výběr pro odstranění objektu.",
         "selectionPropertiesTitle": "Vlastnosti výběru",
@@ -883,12 +883,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance",
       "intensities": {
-        "subtle": "Jemné",
         "standard": "Standardní",
-        "strong": "Silné"
-      }
+        "strong": "Silné",
+        "subtle": "Jemné"
+      },
+      "title": "AI Enhance"
     },
     "canvas": {
       "pickerCancel": "to cancel",
@@ -2452,8 +2452,6 @@
       "storage": {
         "aiDenoise": "AI odšumění",
         "aiDenoiseDesc": "Uložené výsledky odšumění.",
-        "aiMaps": "Hloubkové a normálové mapy",
-        "aiMapsDesc": "Používá je rozostření objektivu, mlha a přesvícení.",
         "aiDiagnostics": {
           "backend": "Backend: {{ep}} · GPU {{state}} · {{status}}",
           "copied": "Diagnostická zpráva zkopírována",
@@ -2465,6 +2463,8 @@
           "probeResult": "Sonda CLIP: {{ms}} ms",
           "title": "Diagnostika AI"
         },
+        "aiMaps": "Hloubkové a normálové mapy",
+        "aiMapsDesc": "Používá je rozostření objektivu, mlha a přesvícení.",
         "immich": "Immich",
         "immichDesc": "Stažené originály. Po dosažení limitu se odstraní nejdéle nepoužité; vaše úpravy zůstanou zachovány.",
         "logs": "Protokoly",
@@ -2657,10 +2657,10 @@
           "title": "Vlastní (konektor RapidRAW AI)"
         },
         "cpu": {
+          "backendCpuOnly": "Tato platforma nemá poskytovatele provádění GPU; inference AI se vždy provádí na procesoru.",
           "description": "Tyto funkce jsou integrovány přímo do RapidRAW a běží výhradně na vašem počítači. Jsou rychlé, zdarma a nevyžadují žádné nastavení, takže jsou ideální pro každodenní zrychlení práce.",
           "feature1": "Maskování AI (předmět, obloha, popředí)",
           "feature2": "Automatické označování snímků",
-          "backendCpuOnly": "Tato platforma nemá poskytovatele provádění GPU; inference AI se vždy provádí na procesoru.",
           "feature3": "Jednoduchá generativní výměna přímo v zařízení",
           "gpuAcceleration": "Akcelerace GPU",
           "gpuAccelerationDesc": "Spouští vestavěné funkce AI, jako je odšumění, masky, hloubkové a normálové mapy a štítkování, na grafické kartě pro výrazně rychlejší výsledky. Vypněte, pokud dochází k pádům nebo nesprávným výsledkům AI.",
@@ -2697,7 +2697,6 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
-      "wgpuDisplayFallbackNotice": "Zjištěn problém se zobrazením náhledu — pro toto sezení bylo přepnuto na vykreslování pomocí CPU. Pro opětovné povolení vykreslování GPU restartujte aplikaci.",
       "highDpi": "High-DPI rendering",
       "highDpiDesc": "Vykreslovat náhledy v nativním {{dpr}}x fyzickém rozlišení pixelů obrazovky. Poskytuje nejostřejší možný náhled, ale spotřebovává výrazně více paměti.",
       "highDpiDescStandard": "Toto nastavení ovlivňuje pouze displeje s vysokým DPI. Váš aktuální displej má standardní rozlišení.",
@@ -2786,6 +2785,7 @@
       "wgpuDescAndroid": "Obchází kódování prohlížeče pro okamžitě reagující živé náhledy. (Na Androidu zakázáno: nativní tvorba povrchů WGPU není v současnosti podporována vedle mobilního webview.)",
       "wgpuDescLinux": "Obchází kódování prohlížeče pro okamžitě reagující živé náhledy. (Na Linuxu zakázáno: Tauri používá GTK pro webview, což je v konfliktu s WGPU na stejném povrchu X11 a způsobuje blikání.)",
       "wgpuDescRecommended": "Obchází kódování prohlížeče pro okamžitě reagující živé náhledy. Důrazně doporučeno pro výkon.",
+      "wgpuDisplayFallbackNotice": "Zjištěn problém se zobrazením náhledu — pro toto sezení bylo přepnuto na vykreslování pomocí CPU. Pro opětovné povolení vykreslování GPU restartujte aplikaci.",
       "wgpuLabel": "Povolit přímé vykreslování WGPU",
       "workerThreads": "Pracovní vlákna miniatur",
       "workerThreadsDesc": "Počet paralelních vláken použitých ke generování miniatur. Vyšší hodnoty zrychlují načítání knihovny, ale spotřebovávají více CPU a RAM."
@@ -2854,6 +2854,7 @@
       "duplicate": "Složka je již sledována: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
+      "imported": "Importováno {{count}} nových obrázků z {{folder}}",
       "imported_one": "{{count}} new image imported from {{folder}}",
       "imported_few": "{{count}} new images imported from {{folder}}",
       "imported_many": "{{count}} new images imported from {{folder}}",
@@ -2862,8 +2863,7 @@
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders",
-      "imported": "Importováno {{count}} nových obrázků z {{folder}}"
+      "title": "Watched Folders"
     }
   },
   "survey": {

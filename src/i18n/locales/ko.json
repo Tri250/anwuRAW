@@ -406,8 +406,8 @@
       "depthStrength": "깊이 강도",
       "lumaNr": "휘도 노이즈",
       "maskFailed": "인식 실패",
-      "proceduralSky": "AI 하늘 모델 미다운로드 — 절차적 하늘 감지 사용(AI 모델 다운로드 시 더 정확)",
       "modelDownloading": "AI 모델 다운로드 중",
+      "proceduralSky": "AI 하늘 모델 미다운로드 — 절차적 하늘 감지 사용(AI 모델 다운로드 시 더 정확)",
       "removeMask": "선택 제거",
       "skyStrength": "하늘 강도",
       "structure": "구조",
@@ -544,13 +544,13 @@
       "lutImport": "가져오기",
       "lutImported": "LUT {{n}}개를 가져왔습니다",
       "lutIntensity": "LUT 강도",
+      "masterLuts": "마스터 LUT",
       "normalFailed": "노멀 맵 생성 실패",
       "relightHint": "조명을 추가하거나 선택한 후 위치와 매개변수를 조정하세요",
       "vignette": "비네트",
       "vignetteFeather": "페더",
       "vignetteMidpoint": "중심점",
-      "vignetteRoundness": "원형도",
-      "masterLuts": "마스터 LUT"
+      "vignetteRoundness": "원형도"
     },
     "originalBadge": "원본",
     "portrait": {
@@ -815,9 +815,9 @@
         "generativeDesc": "선택한 영역에 생성하려는 내용을 설명하세요.",
         "generativeReplaceTitle": "생성형 교체",
         "inpaintSelectionButton": "선택 영역 인페인팅",
-        "maskTooLargeGuidance": "칠한 영역이 너무 커서 빠른 인페인트를 사용할 수 없습니다. 선택 영역을 줄이고 다시 시도하세요.",
         "invertComponent": "구성 요소 반전",
         "invertSelection": "선택 영역 반전",
+        "maskTooLargeGuidance": "칠한 영역이 너무 커서 빠른 인페인트를 사용할 수 없습니다. 선택 영역을 줄이고 다시 시도하세요.",
         "placeholder": "예: 꽃밭",
         "quickEraseDesc": "선택 영역을 채워 객체를 제거합니다.",
         "selectionPropertiesTitle": "선택 영역 속성",
@@ -827,12 +827,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance",
       "intensities": {
-        "subtle": "약하게",
         "standard": "표준",
-        "strong": "강하게"
-      }
+        "strong": "강하게",
+        "subtle": "약하게"
+      },
+      "title": "AI Enhance"
     },
     "canvas": {
       "pickerCancel": "to cancel",
@@ -2340,8 +2340,6 @@
       "storage": {
         "aiDenoise": "AI 노이즈 제거",
         "aiDenoiseDesc": "캐시된 노이즈 제거 결과입니다.",
-        "aiMaps": "깊이 및 노멀 맵",
-        "aiMapsDesc": "렌즈 블러, 안개, 리라이트에 사용됩니다.",
         "aiDiagnostics": {
           "backend": "백엔드: {{ep}} · GPU {{state}} · {{status}}",
           "copied": "진단 보고서가 복사되었습니다",
@@ -2353,6 +2351,8 @@
           "probeResult": "CLIP 실측 {{ms}} ms",
           "title": "AI 진단"
         },
+        "aiMaps": "깊이 및 노멀 맵",
+        "aiMapsDesc": "렌즈 블러, 안개, 리라이트에 사용됩니다.",
         "immich": "Immich",
         "immichDesc": "다운로드된 원본입니다. 한도에 도달하면 가장 오래 사용하지 않은 항목부터 삭제되며, 편집 내용은 유지됩니다.",
         "logs": "로그",
@@ -2545,10 +2545,10 @@
           "title": "셀프 호스팅 (RapidRAW AI 커넥터)"
         },
         "cpu": {
+          "backendCpuOnly": "이 플랫폼에는 GPU 실행 공급자가 없으므로 AI 추론은 항상 CPU에서 실행됩니다.",
           "description": "RapidRAW에 직접 통합된 이 기능들은 컴퓨터에서 전적으로 실행됩니다. 빠르고 무료이며 설정이 필요 없어 일상적인 워크플로 가속에 이상적입니다.",
           "feature1": "AI 마스킹 (피사체, 하늘, 전경)",
           "feature2": "자동 이미지 태그 지정",
-          "backendCpuOnly": "이 플랫폼에는 GPU 실행 공급자가 없으므로 AI 추론은 항상 CPU에서 실행됩니다.",
           "feature3": "간단한 기기 내 생성형 교체",
           "gpuAcceleration": "GPU 가속",
           "gpuAccelerationDesc": "노이즈 제거, 마스크, 깊이 및 노멀 맵, 태그 지정 등 내장 AI 기능을 그래픽 카드에서 실행하여 훨씬 빠르게 처리합니다. 충돌이 발생하거나 AI 결과가 올바르지 않으면 비활성화하세요.",
@@ -2585,7 +2585,6 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
-      "wgpuDisplayFallbackNotice": "미리보기 표시 문제가 감지되어 이 세션에서는 CPU 렌더링으로 전환했습니다. GPU 렌더링을 다시 활성화하려면 앱을 재시작하세요.",
       "highDpi": "고해상도(High-DPI) 렌더링",
       "highDpiDesc": "화면의 네이티브 {{dpr}}배 물리적 픽셀 해상도로 미리보기를 렌더링합니다. 가능한 가장 선명한 미리보기를 제공하지만 메모리를 훨씬 많이 사용합니다.",
       "highDpiDescStandard": "이 설정은 고해상도 디스플레이에만 영향을 줍니다. 현재 디스플레이는 표준 해상도입니다.",
@@ -2674,6 +2673,7 @@
       "wgpuDescAndroid": "브라우저 인코딩을 우회하여 즉각적으로 반응하는 실시간 미리보기를 제공합니다. (Android에서 비활성화됨: 네이티브 WGPU 서피스 생성이 현재 모바일 웹뷰와 함께 지원되지 않습니다.)",
       "wgpuDescLinux": "브라우저 인코딩을 우회하여 즉각적으로 반응하는 실시간 미리보기를 제공합니다. (Linux에서 비활성화됨: Tauri는 웹뷰에 GTK를 사용하는데, 이는 동일한 X11 서피스에서 WGPU와 충돌하여 깜박임을 유발합니다.)",
       "wgpuDescRecommended": "브라우저 인코딩을 우회하여 즉각적으로 반응하는 실시간 미리보기를 제공합니다. 성능을 위해 적극 권장합니다.",
+      "wgpuDisplayFallbackNotice": "미리보기 표시 문제가 감지되어 이 세션에서는 CPU 렌더링으로 전환했습니다. GPU 렌더링을 다시 활성화하려면 앱을 재시작하세요.",
       "wgpuLabel": "직접 WGPU 렌더링 활성화",
       "workerThreads": "썸네일 워커 스레드",
       "workerThreadsDesc": "썸네일을 생성하는 데 사용되는 병렬 스레드 수입니다. 값이 높을수록 라이브러리 로딩 속도가 빨라지지만 CPU와 RAM을 더 많이 사용합니다."
@@ -2742,13 +2742,13 @@
       "duplicate": "이미 감시 중인 폴더입니다: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
+      "imported": "{{folder}}에서 새 이미지 {{count}}장을 가져왔습니다",
       "imported_other": "{{count}} new images imported from {{folder}}",
       "refresh": "Refresh Status",
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders",
-      "imported": "{{folder}}에서 새 이미지 {{count}}장을 가져왔습니다"
+      "title": "Watched Folders"
     }
   },
   "survey": {

@@ -49,18 +49,12 @@ fn detect_horizon(row_means: &[f32]) -> usize {
     if h < 8 {
         return h;
     }
-    let peak = row_means[..h / 4]
-        .iter()
-        .cloned()
-        .fold(0.0_f32, f32::max);
+    let peak = row_means[..h / 4].iter().cloned().fold(0.0_f32, f32::max);
     if peak <= 0.05 {
         return h;
     }
     let thr = peak * 0.45;
-    row_means
-        .iter()
-        .position(|&m| m < thr)
-        .unwrap_or(h)
+    row_means.iter().position(|&m| m < thr).unwrap_or(h)
 }
 
 /// 5×5 结构元的形态学开运算（先腐蚀后膨胀），去除细碎误判斑点。
@@ -134,7 +128,11 @@ pub fn detect_procedural_sky(img: &DynamicImage) -> Result<ProceduralSky, String
     let mut from_bright = vec![false; w * h];
     let mut row_sums = vec![0.0_f32; h];
     for (i, p) in rgb.pixels().enumerate() {
-        let (r, g, b) = (p[0] as f32 / 255.0, p[1] as f32 / 255.0, p[2] as f32 / 255.0);
+        let (r, g, b) = (
+            p[0] as f32 / 255.0,
+            p[1] as f32 / 255.0,
+            p[2] as f32 / 255.0,
+        );
         let max = r.max(g).max(b);
         let min = r.min(g).min(b);
         let v = max;
@@ -237,14 +235,22 @@ mod tests {
         let mut img = RgbImage::new(w, hh);
         for y in 0..hh {
             for x in 0..w {
-                let c = if y < 32 { [70, 130, 220] } else { [40, 120, 50] };
+                let c = if y < 32 {
+                    [70, 130, 220]
+                } else {
+                    [40, 120, 50]
+                };
                 img.put_pixel(x, y, Rgb(c));
             }
         }
         let result = detect_procedural_sky(&DynamicImage::ImageRgb8(img));
         let sky = result.expect("blue sky scene should detect");
         assert!(sky.coverage > 0.1, "coverage too low: {}", sky.coverage);
-        assert!(sky.horizon_row < 60, "horizon should sit in the lower part, got {}", sky.horizon_row);
+        assert!(
+            sky.horizon_row < 60,
+            "horizon should sit in the lower part, got {}",
+            sky.horizon_row
+        );
         // 地平线以下强制清零
         let below = sky.mask.get_pixel(32, 63)[0];
         assert_eq!(below, 0, "ground row must stay zero");
@@ -256,8 +262,8 @@ mod tests {
     /// 纯黑图：无任何天空信号 → 覆盖率 0，掩膜全零。
     #[test]
     fn dark_frame_yields_empty_mask() {
-        let sky = detect_procedural_sky(&solid([8, 8, 10], 32, 32))
-            .expect("dark frame should not error");
+        let sky =
+            detect_procedural_sky(&solid([8, 8, 10], 32, 32)).expect("dark frame should not error");
         assert!(sky.coverage < 0.01);
         assert_eq!(sky.horizon_row, 32);
         assert!(sky.mask.pixels().all(|p| p[0] == 0));

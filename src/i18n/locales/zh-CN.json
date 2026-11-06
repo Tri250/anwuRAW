@@ -409,8 +409,8 @@
       "depthStrength": "深度强度",
       "lumaNr": "明度降噪",
       "maskFailed": "识别失败",
-      "proceduralSky": "AI 天空模型未下载，已改用程序化天空识别（下载 AI 模型可获得更准的掩膜）",
       "modelDownloading": "AI 模型下载中",
+      "proceduralSky": "AI 天空模型未下载，已改用程序化天空识别（下载 AI 模型可获得更准的掩膜）",
       "removeMask": "移除识别",
       "skyStrength": "天空强度",
       "structure": "结构",
@@ -547,13 +547,13 @@
       "lutImport": "导入",
       "lutImported": "已导入 {{n}} 个 LUT",
       "lutIntensity": "LUT 强度",
+      "masterLuts": "大师 LUT",
       "normalFailed": "法线图生成失败",
       "relightHint": "添加或选择一个光源，然后在下方调整位置与参数",
       "vignette": "暗角",
       "vignetteFeather": "羽化",
       "vignetteMidpoint": "中点",
-      "vignetteRoundness": "圆度",
-      "masterLuts": "大师 LUT"
+      "vignetteRoundness": "圆度"
     },
     "originalBadge": "原图",
     "portrait": {
@@ -818,9 +818,9 @@
         "generativeDesc": "描述您想要在选定区域生成的内容。",
         "generativeReplaceTitle": "生成式替换",
         "inpaintSelectionButton": "修复选区",
-        "maskTooLargeGuidance": "涂抹范围过大，快速重绘不适用。请缩小选择范围后重试。",
         "invertComponent": "反转组件",
         "invertSelection": "反转选区",
+        "maskTooLargeGuidance": "涂抹范围过大，快速重绘不适用。请缩小选择范围后重试。",
         "placeholder": "例如，一片花海",
         "quickEraseDesc": "填充选区以移除对象。",
         "selectionPropertiesTitle": "选区属性",
@@ -2399,8 +2399,6 @@
       "storage": {
         "aiDenoise": "AI 降噪",
         "aiDenoiseDesc": "缓存的降噪结果。",
-        "aiMaps": "深度与法线贴图",
-        "aiMapsDesc": "用于镜头模糊、雾效和重新打光。",
         "aiDiagnostics": {
           "backend": "推理后端：{{ep}} · GPU {{state}} · {{status}}",
           "copied": "诊断报告已复制",
@@ -2412,6 +2410,8 @@
           "probeResult": "CLIP 实测 {{ms}} ms",
           "title": "AI 诊断"
         },
+        "aiMaps": "深度与法线贴图",
+        "aiMapsDesc": "用于镜头模糊、雾效和重新打光。",
         "immich": "Immich",
         "immichDesc": "已下载的原片。达到上限后会删除最久未使用的原片；你的编辑会保留。",
         "logs": "日志",
@@ -2604,10 +2604,10 @@
           "title": "自托管（RapidRAW AI 连接器）"
         },
         "cpu": {
+          "backendCpuOnly": "该平台没有 GPU 执行提供程序，AI 推理固定使用 CPU。",
           "description": "直接集成到 RapidRAW 中，这些功能完全在您的计算机上运行。它们快速、免费且无需设置，非常适合日常加速工作流程。",
           "feature1": "AI 蒙版（主体、天空、前景）",
           "feature2": "自动图像标签",
-          "backendCpuOnly": "该平台没有 GPU 执行提供程序，AI 推理固定使用 CPU。",
           "feature3": "简单的本地生成式替换",
           "gpuAcceleration": "GPU 加速",
           "gpuAccelerationDesc": "在显卡上运行降噪、蒙版、深度图和法线图以及标签等内置 AI 功能，大幅提升速度。如果遇到崩溃或 AI 结果不正确，请关闭此选项。",
@@ -2644,7 +2644,6 @@
       "gpuAdapterStatus": "{{name}}（{{backend}}）· {{status}}",
       "gpuAdapterUnknown": "无法获取适配器信息",
       "gpuFallbackNotice": "GPU 渲染不可用：{{name}} — {{reason}}",
-      "wgpuDisplayFallbackNotice": "检测到预览显示异常 —— 本次会话已切换为 CPU 渲染。重启应用后可恢复 GPU 渲染。",
       "highDpi": "高 DPI 渲染",
       "highDpiDesc": "以屏幕原生 {{dpr}}x 物理像素分辨率渲染预览。产生最清晰的预览，但会显著增加内存使用。",
       "highDpiDescStandard": "此设置仅影响高 DPI 显示器。您当前的显示器为标准分辨率。",
@@ -2733,6 +2732,7 @@
       "wgpuDescAndroid": "绕过浏览器编码，实现即时响应的实时预览。（在 Android 上已禁用：原生 WGPU 表面创建目前不支持与移动端 Webview 同时运行。）",
       "wgpuDescLinux": "绕过浏览器编码，实现即时响应的实时预览。（在 Linux 上已禁用：Tauri 使用 GTK 作为 Webview，与同一 X11 表面上的 WGPU 冲突并导致闪烁。）",
       "wgpuDescRecommended": "绕过浏览器编码，实现即时响应的实时预览。强烈推荐以获得最佳性能。",
+      "wgpuDisplayFallbackNotice": "检测到预览显示异常 —— 本次会话已切换为 CPU 渲染。重启应用后可恢复 GPU 渲染。",
       "wgpuLabel": "启用直接 WGPU 渲染",
       "workerThreads": "缩略图工作线程数",
       "workerThreadsDesc": "用于生成缩略图的并行线程数。较高的值可加快图库加载速度，但会占用更多 CPU 和内存。"
@@ -2801,13 +2801,13 @@
       "duplicate": "文件夹已在监视列表中：{{path}}",
       "empty": "尚无监视的文件夹。",
       "enabled": "启用",
+      "imported": "{{folder}} 新导入 {{count}} 张图片",
       "imported_other": "已从 {{folder}} 导入 {{count}} 张新图像",
       "refresh": "刷新状态",
       "remove": "移除文件夹",
       "statusSummary": "{{known}} 张图像，{{pending}} 张待处理",
       "statusUnknown": "状态不可用",
-      "title": "监视文件夹",
-      "imported": "{{folder}} 新导入 {{count}} 张图片"
+      "title": "监视文件夹"
     }
   },
   "survey": {

@@ -48,7 +48,6 @@ mod effect_maps;
 mod exif_processing;
 mod export_journal;
 mod export_processing;
-mod procedural_sky;
 mod face_masking;
 mod file_management;
 mod focus_stacking;
@@ -77,6 +76,7 @@ mod panorama_stitching;
 mod panorama_utils;
 mod platform_features;
 mod preset_converter;
+mod procedural_sky;
 mod raw_processing;
 mod relight;
 mod scene_classify;
@@ -617,11 +617,10 @@ async fn update_wgpu_transform(
     if presented {
         state.wgpu_display_failures.store(0, Ordering::Relaxed);
     } else {
-        let failures = state
-            .wgpu_display_failures
-            .fetch_add(1, Ordering::Relaxed)
-            + 1;
-        log::warn!("update_wgpu_transform did not present a frame (consecutive failures: {failures})");
+        let failures = state.wgpu_display_failures.fetch_add(1, Ordering::Relaxed) + 1;
+        log::warn!(
+            "update_wgpu_transform did not present a frame (consecutive failures: {failures})"
+        );
     }
 
     Ok(())

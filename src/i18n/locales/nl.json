@@ -409,8 +409,8 @@
       "depthStrength": "Dieptesterkte",
       "lumaNr": "Luminantie-ruis",
       "maskFailed": "Herkenning mislukt",
-      "proceduralSky": "AI-luchtmodel niet gedownload — procedurele luchtherkenning gebruikt (download het AI-model voor scherpere maskers)",
       "modelDownloading": "AI-model downloaden",
+      "proceduralSky": "AI-luchtmodel niet gedownload — procedurele luchtherkenning gebruikt (download het AI-model voor scherpere maskers)",
       "removeMask": "Selectie verwijderen",
       "skyStrength": "Luchtsterkte",
       "structure": "Structuur",
@@ -547,13 +547,13 @@
       "lutImport": "Importeren",
       "lutImported": "{{n}} LUT('s) geïmporteerd",
       "lutIntensity": "LUT-intensiteit",
+      "masterLuts": "Master-LUT's",
       "normalFailed": "Normaalkaart genereren mislukt",
       "relightHint": "Voeg een licht toe of selecteer er een en pas positie en parameters aan",
       "vignette": "Vignet",
       "vignetteFeather": "Zachtheid",
       "vignetteMidpoint": "Midden",
-      "vignetteRoundness": "Rondheid",
-      "masterLuts": "Master-LUT's"
+      "vignetteRoundness": "Rondheid"
     },
     "originalBadge": "ORIGINEEL",
     "portrait": {
@@ -819,9 +819,9 @@
         "generativeDesc": "Beschrijf wat u wilt genereren in het geselecteerde gebied.",
         "generativeReplaceTitle": "Generatieve vervanging",
         "inpaintSelectionButton": "Selectie inpainten",
-        "maskTooLargeGuidance": "Het geschilderde gebied is te groot voor snel inpainten. Verklein de selectie en probeer het opnieuw.",
         "invertComponent": "Component omkeren",
         "invertSelection": "Selectie omkeren",
+        "maskTooLargeGuidance": "Het geschilderde gebied is te groot voor snel inpainten. Verklein de selectie en probeer het opnieuw.",
         "placeholder": "bijv. een bloemenveld",
         "quickEraseDesc": "Selectie opvullen om object te verwijderen.",
         "selectionPropertiesTitle": "Selectie-eigenschappen",
@@ -831,12 +831,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance",
       "intensities": {
-        "subtle": "Subtiel",
         "standard": "Standaard",
-        "strong": "Sterk"
-      }
+        "strong": "Sterk",
+        "subtle": "Subtiel"
+      },
+      "title": "AI Enhance"
     },
     "canvas": {
       "pickerCancel": "to cancel",
@@ -2350,8 +2350,6 @@
       "storage": {
         "aiDenoise": "AI-ruisonderdrukking",
         "aiDenoiseDesc": "Gecachete ruisonderdrukkingsresultaten.",
-        "aiMaps": "Diepte- & normal maps",
-        "aiMapsDesc": "Gebruikt door lensvervaging, mist en herbelichting.",
         "aiDiagnostics": {
           "backend": "Backend: {{ep}} · GPU {{state}} · {{status}}",
           "copied": "Diagnoserapport gekopieerd",
@@ -2363,6 +2361,8 @@
           "probeResult": "CLIP-test: {{ms}} ms",
           "title": "AI-diagnose"
         },
+        "aiMaps": "Diepte- & normal maps",
+        "aiMapsDesc": "Gebruikt door lensvervaging, mist en herbelichting.",
         "immich": "Immich",
         "immichDesc": "Gedownloade originelen. De langst niet gebruikte worden verwijderd zodra de limiet is bereikt; je bewerkingen blijven behouden.",
         "logs": "Logboeken",
@@ -2555,10 +2555,10 @@
           "title": "Zelfgehost (RapidRAW AI Connector)"
         },
         "cpu": {
+          "backendCpuOnly": "Dit platform heeft geen GPU-uitvoeringsprovider; AI-inferentie draait altijd op de CPU.",
           "description": "Rechtstreeks geïntegreerd in RapidRAW, draaien deze functies volledig op uw computer. Ze zijn snel, gratis en vereisen geen installatie, waardoor ze ideaal zijn voor dagelijkse workflowversnelling.",
           "feature1": "AI-maskering (onderwerp, lucht, voorgrond)",
           "feature2": "Automatische afbeeldingstagging",
-          "backendCpuOnly": "Dit platform heeft geen GPU-uitvoeringsprovider; AI-inferentie draait altijd op de CPU.",
           "feature3": "Eenvoudige generatieve vervanging op het apparaat",
           "gpuAcceleration": "GPU-versnelling",
           "gpuAccelerationDesc": "Voert ingebouwde AI-functies zoals ruisonderdrukking, maskers, diepte- en normaalkaarten en taggen uit op de grafische kaart voor veel snellere resultaten. Schakel dit uit als je crashes of onjuiste AI-resultaten ervaart.",
@@ -2595,7 +2595,6 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
-      "wgpuDisplayFallbackNotice": "Probleem met de voorbeeldweergave gedetecteerd — voor deze sessie overgeschakeld naar CPU-rendering. Herstart de app om GPU-rendering weer in te schakelen.",
       "highDpi": "High-DPI-rendering",
       "highDpiDesc": "Voorbeelden renderen op de native {{dpr}}x fysieke pixelresolutie van uw scherm. Produceert het scherpste mogelijk voorbeeld maar gebruikt aanzienlijk meer geheugen.",
       "highDpiDescStandard": "Deze instelling is alleen van invloed op high-DPI-beeldschermen. Uw huidige beeldscherm heeft een standaardresolutie.",
@@ -2684,6 +2683,7 @@
       "wgpuDescAndroid": "Omzeilt browsercodering voor direct responsieve live voorbeelden. (Uitgeschakeld op Android: native WGPU-surface creatie wordt momenteel niet ondersteund naast de mobiele webweergave.)",
       "wgpuDescLinux": "Omzeilt browsercodering voor direct responsieve live voorbeelden. (Uitgeschakeld op Linux: Tauri gebruikt GTK voor webweergaven, wat conflicteert met WGPU op hetzelfde X11-surface en flikkering veroorzaakt.)",
       "wgpuDescRecommended": "Omzeilt browsercodering voor direct responsieve live voorbeelden. Sterk aanbevolen voor prestaties.",
+      "wgpuDisplayFallbackNotice": "Probleem met de voorbeeldweergave gedetecteerd — voor deze sessie overgeschakeld naar CPU-rendering. Herstart de app om GPU-rendering weer in te schakelen.",
       "wgpuLabel": "Directe WGPU-rendering inschakelen",
       "workerThreads": "Miniatuurwerkerthreads",
       "workerThreadsDesc": "Aantal parallelle threads dat wordt gebruikt om miniaturen te genereren. Hogere waarden versnellen het laden van de bibliotheek maar gebruiken meer CPU en RAM."
@@ -2752,14 +2752,14 @@
       "duplicate": "Map wordt al gevolgd: {{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
+      "imported": "{{count}} nieuwe afbeeldingen geïmporteerd uit {{folder}}",
       "imported_one": "{{count}} new image imported from {{folder}}",
       "imported_other": "{{count}} new images imported from {{folder}}",
       "refresh": "Refresh Status",
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders",
-      "imported": "{{count}} nieuwe afbeeldingen geïmporteerd uit {{folder}}"
+      "title": "Watched Folders"
     }
   },
   "survey": {

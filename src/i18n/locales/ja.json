@@ -406,8 +406,8 @@
       "depthStrength": "深度の強さ",
       "lumaNr": "輝度ノイズ除去",
       "maskFailed": "認識に失敗しました",
-      "proceduralSky": "AI空モデル未ダウンロード — プロシージャル空検出を使用しました（AIモデルでより正確に）",
       "modelDownloading": "AIモデルをダウンロード中",
+      "proceduralSky": "AI空モデル未ダウンロード — プロシージャル空検出を使用しました（AIモデルでより正確に）",
       "removeMask": "選択を解除",
       "skyStrength": "空の強さ",
       "structure": "ストラクチャー",
@@ -544,13 +544,13 @@
       "lutImport": "読み込み",
       "lutImported": "{{n}} 個のLUTを読み込みました",
       "lutIntensity": "LUT 強度",
+      "masterLuts": "マスターLUT",
       "normalFailed": "法線マップの生成に失敗しました",
       "relightHint": "ライトを追加または選択し、位置とパラメーターを調整してください",
       "vignette": "周辺減光",
       "vignetteFeather": "ぼかし",
       "vignetteMidpoint": "中心",
-      "vignetteRoundness": "丸み",
-      "masterLuts": "マスターLUT"
+      "vignetteRoundness": "丸み"
     },
     "originalBadge": "原画像",
     "portrait": {
@@ -815,9 +815,9 @@
         "generativeDesc": "選択範囲に生成したい内容を入力してください。",
         "generativeReplaceTitle": "生成塗りつぶし",
         "inpaintSelectionButton": "選択範囲を塗りつぶし",
-        "maskTooLargeGuidance": "塗り範囲が大きすぎて高速インペイントできません。選択範囲を小さくして再試行してください。",
         "invertComponent": "コンポーネントを反転",
         "invertSelection": "選択範囲を反転",
+        "maskTooLargeGuidance": "塗り範囲が大きすぎて高速インペイントできません。選択範囲を小さくして再試行してください。",
         "placeholder": "例: お花畑",
         "quickEraseDesc": "選択範囲を塗りつぶしてオブジェクトを削除します。",
         "selectionPropertiesTitle": "選択範囲のプロパティ",
@@ -827,12 +827,12 @@
     },
     "aiEnhance": {
       "failed": "AI enhance failed",
-      "title": "AI Enhance",
       "intensities": {
-        "subtle": "軽め",
         "standard": "標準",
-        "strong": "強め"
-      }
+        "strong": "強め",
+        "subtle": "軽め"
+      },
+      "title": "AI Enhance"
     },
     "canvas": {
       "pickerCancel": "to cancel",
@@ -2340,8 +2340,6 @@
       "storage": {
         "aiDenoise": "AI ノイズ除去",
         "aiDenoiseDesc": "キャッシュされたノイズ除去結果。",
-        "aiMaps": "深度・法線マップ",
-        "aiMapsDesc": "レンズブラー、フォグ、リライトで使用されます。",
         "aiDiagnostics": {
           "backend": "バックエンド：{{ep}} · GPU {{state}} · {{status}}",
           "copied": "診断レポートをコピーしました",
@@ -2353,6 +2351,8 @@
           "probeResult": "CLIP 実測 {{ms}} ms",
           "title": "AI 診断"
         },
+        "aiMaps": "深度・法線マップ",
+        "aiMapsDesc": "レンズブラー、フォグ、リライトで使用されます。",
         "immich": "Immich",
         "immichDesc": "ダウンロード済みのオリジナル。上限に達すると最も長く使われていないものから削除されます。編集内容は保持されます。",
         "logs": "ログ",
@@ -2545,10 +2545,10 @@
           "title": "セルフホスト (RapidRAW AI Connector)"
         },
         "cpu": {
+          "backendCpuOnly": "このプラットフォームには GPU 実行プロバイダーがないため、AI 推論は常に CPU で実行されます。",
           "description": "RapidRAWに直接内蔵されており、お使いのコンピューター上のみで動作します。高速かつ無料でセットアップも不要です。",
           "feature1": "AIマスク機能 (被写体、空、手前)",
           "feature2": "自動画像タグ付け機能",
-          "backendCpuOnly": "このプラットフォームには GPU 実行プロバイダーがないため、AI 推論は常に CPU で実行されます。",
           "feature3": "デバイス上での簡易生成塗りつぶし",
           "gpuAcceleration": "GPUアクセラレーション",
           "gpuAccelerationDesc": "ノイズ除去、マスク、深度マップや法線マップ、タグ付けなどの内蔵AI機能をグラフィックカードで実行し、大幅に高速化します。クラッシュやAIの結果がおかしい場合は無効にしてください。",
@@ -2585,7 +2585,6 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
-      "wgpuDisplayFallbackNotice": "プレビュー表示に問題が検出されました —— このセッションでは CPU レンダリングに切り替えました。GPU レンダリングを再度有効にするにはアプリを再起動してください。",
       "highDpi": "高DPIレンダリング",
       "highDpiDesc": "画面本来の物理解像度である {{dpr}}x でプレビューをレンダリングします。極めて鮮明なプレビューが得られますが、メモリ消費が大幅に増加します。",
       "highDpiDescStandard": "この設定は高DPIディスプレイのみに影響します。現在のディスプレイは標準解像度です。",
@@ -2674,6 +2673,7 @@
       "wgpuDescAndroid": "ブラウザエンコードをバイパスし、即座に反応するプレビューを実現します。（Androidでは無効: モバイルのWebview環境下でのネイティブWGPUサーフェスの作成は現在サポートされていません。）",
       "wgpuDescLinux": "ブラウザエンコードをバイパスし、即座に反応するプレビューを実現します。（Linuxでは無効: TauriはGTKウェブビューを使用しており、同一X11サーフェス上でWGPUと競合してちらつきが発生するためです。）",
       "wgpuDescRecommended": "ブラウザエンコードをバイパスし、即座に反応するライブプレビューを実現します。パフォーマンス向上のため、強く推奨します。",
+      "wgpuDisplayFallbackNotice": "プレビュー表示に問題が検出されました —— このセッションでは CPU レンダリングに切り替えました。GPU レンダリングを再度有効にするにはアプリを再起動してください。",
       "wgpuLabel": "WGPUダイレクトレンダリングを有効化",
       "workerThreads": "サムネイルワーカー数",
       "workerThreadsDesc": "サムネイル作成に使用する並行スレッドの数。値を大きくするとライブラリのロードが速くなりますが、CPUとメモリを多く使用します。"
@@ -2742,13 +2742,13 @@
       "duplicate": "フォルダはすでに監視対象です：{{path}}",
       "empty": "No folders are being watched yet.",
       "enabled": "Enabled",
+      "imported": "{{folder}} から {{count}} 枚の新しい画像を取り込みました",
       "imported_other": "{{count}} new images imported from {{folder}}",
       "refresh": "Refresh Status",
       "remove": "Remove folder",
       "statusSummary": "{{known}} images, {{pending}} pending",
       "statusUnknown": "Status unavailable",
-      "title": "Watched Folders",
-      "imported": "{{folder}} から {{count}} 枚の新しい画像を取り込みました"
+      "title": "Watched Folders"
     }
   },
   "survey": {
