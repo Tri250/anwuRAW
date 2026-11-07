@@ -431,14 +431,23 @@
         "detail": "Detail+",
         "enhance": "KI-Verbesserung",
         "sky": "Himmel",
-        "subject": "Motiv"
+        "subject": "Motiv",
+        "style": "Farblook per Text"
       },
       "style": {
         "cloud": "Cloud-Referenz",
         "cloudApplied": "Cloud-Referenz-Farbabgleich angewendet",
         "cloudFailed": "Cloud-Referenz-Erzeugung fehlgeschlagen, bitte erneut versuchen",
         "cloudNeedLogin": "Bitte zuerst im Pro-Konto anmelden",
-        "cloudNoPatch": "Generiertes Bild ist dem aktuellen Foto zu ähnlich – keine Anpassung nötig"
+        "cloudNoPatch": "Generiertes Bild ist dem aktuellen Foto zu ähnlich – keine Anpassung nötig",
+        "title": "Farblook per Text",
+        "applied": "Stil „{{name}}“ angewendet (Konfidenz {{conf}}%)",
+        "failed": "Kein Stil erkannt — Anpassungen unverändert",
+        "placeholder": "Gewünschten Stil beschreiben, z. B. helles Japanisch, cineastisches Teal-Orange, S/W"
+      },
+      "strength": {
+        "tone": "Ton-Stärke",
+        "color": "Farb-Stärke"
       }
     },
     "aiRecommend": {

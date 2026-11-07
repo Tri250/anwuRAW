@@ -428,14 +428,23 @@
         "detail": "ディテール+",
         "enhance": "AI 強化",
         "sky": "空",
-        "subject": "被写体"
+        "subject": "被写体",
+        "style": "一言カラーグレード"
       },
       "style": {
         "cloud": "クラウド参照",
         "cloudApplied": "クラウド参照のカラーマッチを適用しました",
         "cloudFailed": "クラウド参照の生成に失敗しました。再試行してください",
         "cloudNeedLogin": "まず Pro アカウントにログインしてください",
-        "cloudNoPatch": "生成画像が現在の写真に近すぎるため、調整は不要です"
+        "cloudNoPatch": "生成画像が現在の写真に近すぎるため、調整は不要です",
+        "title": "一言カラーグレード",
+        "applied": "「{{name}}」スタイルを適用（信頼度 {{conf}}%）",
+        "failed": "スタイルを認識できず、調整は変更されていません",
+        "placeholder": "希望するスタイルを入力（例：クリアな日系、シネマティック青橙、モノクロ）"
+      },
+      "strength": {
+        "tone": "明るさ強度",
+        "color": "カラー強度"
       }
     },
     "aiRecommend": {

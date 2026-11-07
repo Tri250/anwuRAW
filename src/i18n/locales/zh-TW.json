@@ -428,14 +428,23 @@
         "detail": "細節+",
         "enhance": "AI 強化",
         "sky": "天空識別",
-        "subject": "主體識別"
+        "subject": "主體識別",
+        "style": "一句話調色"
       },
       "style": {
         "cloud": "雲參考圖",
         "cloudApplied": "雲參考圖追色已套用",
         "cloudFailed": "雲參考圖生成失敗，請重試",
         "cloudNeedLogin": "請先登入 Pro 帳號",
-        "cloudNoPatch": "生成圖與目前照片過於接近，無需調整"
+        "cloudNoPatch": "生成圖與目前照片過於接近，無需調整",
+        "title": "一句話調色",
+        "applied": "已套用「{{name}}」風格（信心 {{conf}}%）",
+        "failed": "未識別到風格描述，調整保持不變",
+        "placeholder": "描述想要的風格，如：清透日系、電影感青橙、黑白、賽博龐克"
+      },
+      "strength": {
+        "tone": "明暗強度",
+        "color": "色彩強度"
       }
     },
     "aiRecommend": {

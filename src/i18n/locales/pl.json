@@ -471,14 +471,23 @@
         "detail": "Detal+",
         "enhance": "Ulepszenie AI",
         "sky": "Niebo",
-        "subject": "Obiekt"
+        "subject": "Obiekt",
+        "style": "Styl z tekstu"
       },
       "style": {
         "cloud": "Referencja w chmurze",
         "cloudApplied": "Dopasowanie referencji w chmurze zastosowane",
         "cloudFailed": "Generowanie referencji w chmurze nie powiodło się, spróbuj ponownie",
         "cloudNeedLogin": "Najpierw zaloguj się na konto Pro",
-        "cloudNoPatch": "Wygenerowany obraz jest zbyt podobny do aktualnego zdjęcia — brak zmian"
+        "cloudNoPatch": "Wygenerowany obraz jest zbyt podobny do aktualnego zdjęcia — brak zmian",
+        "title": "Styl z tekstu",
+        "applied": "Zastosowano styl „{{name}}” (pewność {{conf}}%)",
+        "failed": "Nie rozpoznano stylu — korekty bez zmian",
+        "placeholder": "Opisz pożądany styl, np. jasny japoński, filmowy teal-orange, cz-b"
+      },
+      "strength": {
+        "tone": "Intensywność tonów",
+        "color": "Intensywność koloru"
       }
     },
     "aiRecommend": {

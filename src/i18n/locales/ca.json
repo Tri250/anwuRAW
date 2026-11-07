@@ -451,14 +451,23 @@
         "detail": "Detall+",
         "enhance": "Millora IA",
         "sky": "Cel",
-        "subject": "Subjecte"
+        "subject": "Subjecte",
+        "style": "Estil per text"
       },
       "style": {
         "cloud": "Referència al núvol",
         "cloudApplied": "Coincidència de referència al núvol aplicada",
         "cloudFailed": "Error en generar la referència al núvol, torna-ho a provar",
         "cloudNeedLogin": "Inicia sessió primer al teu compte Pro",
-        "cloudNoPatch": "La imatge generada és massa similar a la foto actual: cal cap ajust"
+        "cloudNoPatch": "La imatge generada és massa similar a la foto actual: cal cap ajust",
+        "title": "Estil per text",
+        "applied": "Estil «{{name}}» aplicat (confiança {{conf}}%)",
+        "failed": "No s'ha reconegut cap estil — ajustos sense canvis",
+        "placeholder": "Descriu l'estil desitjat, p. ex. japonès lluminós, teal-taronja cinematogràfic, B/N"
+      },
+      "strength": {
+        "tone": "Intensitat de to",
+        "color": "Intensitat de color"
       }
     },
     "aiRecommend": {

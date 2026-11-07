@@ -448,7 +448,7 @@
       "strength": {
         "color": "色彩强度",
         "tone": "明暗强度"
-      },
+      }
     },
     "aiRecommend": {
       "applied": "AI 增强已应用",

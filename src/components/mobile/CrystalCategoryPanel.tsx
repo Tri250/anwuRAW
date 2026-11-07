@@ -302,7 +302,14 @@ function TonePanel() {
         applyPatch({ ...next, activeTools });
       }
       toast.success(
-        t('adjustments.color.colorMatchDone', { reduction: Math.round(result.metrics?.deltaEReduction ?? 0) }),
+        paths.length > 1
+          ? t('adjustments.color.colorMatchDoneMulti', {
+              reduction: Math.round(result.metrics?.deltaEReduction ?? 0),
+              count: paths.length,
+            })
+          : t('adjustments.color.colorMatchDone', {
+              reduction: Math.round(result.metrics?.deltaEReduction ?? 0),
+            }),
       );
     } catch (e) {
       console.error('Color match failed:', e);

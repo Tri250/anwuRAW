@@ -451,14 +451,23 @@
         "detail": "Dettaglio+",
         "enhance": "Miglioramento IA",
         "sky": "Cielo",
-        "subject": "Soggetto"
+        "subject": "Soggetto",
+        "style": "Stile da testo"
       },
       "style": {
         "cloud": "Riferimento cloud",
         "cloudApplied": "Corrispondenza riferimento cloud applicata",
         "cloudFailed": "Generazione riferimento cloud non riuscita, riprova",
         "cloudNeedLogin": "Accedi prima al tuo account Pro",
-        "cloudNoPatch": "L'immagine generata è troppo simile alla foto attuale: nessuna regolazione necessaria"
+        "cloudNoPatch": "L'immagine generata è troppo simile alla foto attuale: nessuna regolazione necessaria",
+        "title": "Stile da testo",
+        "applied": "Stile \"{{name}}\" applicato (affidabilità {{conf}}%)",
+        "failed": "Nessuno stile riconosciuto — regolazioni invariate",
+        "placeholder": "Descrivi lo stile desiderato, es. giapponese arioso, teal-orange cinematografico, B/N"
+      },
+      "strength": {
+        "tone": "Intensità toni",
+        "color": "Intensità colore"
       }
     },
     "aiRecommend": {

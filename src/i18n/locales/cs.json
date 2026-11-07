@@ -471,14 +471,23 @@
         "detail": "Detail+",
         "enhance": "AI vylepšení",
         "sky": "Obloha",
-        "subject": "Objekt"
+        "subject": "Objekt",
+        "style": "Styl z textu"
       },
       "style": {
         "cloud": "Cloudová reference",
         "cloudApplied": "Cloudová reference aplikována",
         "cloudFailed": "Generování cloudové reference selhalo, zkuste to znovu",
         "cloudNeedLogin": "Nejprve se přihlaste ke svému Pro účtu",
-        "cloudNoPatch": "Generovaný obrázek je příliš podobný aktuální fotce — úprava není nutná"
+        "cloudNoPatch": "Generovaný obrázek je příliš podobný aktuální fotce — úprava není nutná",
+        "title": "Styl z textu",
+        "applied": "Styl „{{name}}“ aplikován (jistota {{conf}}%)",
+        "failed": "Styl nebyl rozpoznán — úpravy beze změn",
+        "placeholder": "Popište požadovaný styl, např. světlý japonský, filmové teal-orange, č/b"
+      },
+      "strength": {
+        "tone": "Síla tónů",
+        "color": "Síla barev"
       }
     },
     "aiRecommend": {

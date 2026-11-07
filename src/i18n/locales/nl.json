@@ -431,14 +431,23 @@
         "detail": "Detail+",
         "enhance": "AI-verbetering",
         "sky": "Lucht",
-        "subject": "Onderwerp"
+        "subject": "Onderwerp",
+        "style": "Stijl via tekst"
       },
       "style": {
         "cloud": "Cloudreferentie",
         "cloudApplied": "Cloudreferentie-kleurmatching toegepast",
         "cloudFailed": "Cloudreferentie genereren mislukt, probeer opnieuw",
         "cloudNeedLogin": "Meld je eerst aan bij je Pro-account",
-        "cloudNoPatch": "Gegenereerde beeld lijkt te veel op de huidige foto — geen aanpassing nodig"
+        "cloudNoPatch": "Gegenereerde beeld lijkt te veel op de huidige foto — geen aanpassing nodig",
+        "title": "Stijl via tekst",
+        "applied": "Stijl \"{{name}}\" toegepast (zekerheid {{conf}}%)",
+        "failed": "Geen stijl herkend — aanpassingen ongewijzigd",
+        "placeholder": "Beschrijf de gewenste stijl, bijv. luchtig Japans, filmisch teal-oranje, zw-w"
+      },
+      "strength": {
+        "tone": "Toonsterkte",
+        "color": "Kleursterkte"
       }
     },
     "aiRecommend": {

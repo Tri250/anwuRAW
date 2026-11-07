@@ -428,14 +428,23 @@
         "detail": "디테일+",
         "enhance": "AI 강화",
         "sky": "하늘",
-        "subject": "피사체"
+        "subject": "피사체",
+        "style": "한마디 컬러"
       },
       "style": {
         "cloud": "클라우드 참조",
         "cloudApplied": "클라우드 참조 컬러 매치 적용됨",
         "cloudFailed": "클라우드 참조 생성 실패, 다시 시도하세요",
         "cloudNeedLogin": "Pro 계정에 먼저 로그인하세요",
-        "cloudNoPatch": "생성된 이미지가 현재 사진과 너무 유사하여 조정이 필요하지 않습니다"
+        "cloudNoPatch": "생성된 이미지가 현재 사진과 너무 유사하여 조정이 필요하지 않습니다",
+        "title": "한마디 컬러",
+        "applied": "\"{{name}}\" 스타일 적용 (신뢰도 {{conf}}%)",
+        "failed": "스타일을 인식하지 못했습니다 — 조정 변경 없음",
+        "placeholder": "원하는 스타일을 입력하세요 (예: 맑은 일본풍, 시네마틱 청오렌지, 흑백)"
+      },
+      "strength": {
+        "tone": "톤 강도",
+        "color": "색 강도"
       }
     },
     "aiRecommend": {
