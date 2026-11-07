@@ -43,6 +43,13 @@
       "colorMatchDone": "Color match applied · ΔE reduced {{reduction}}%",
       "colorMatchFailed": "Color match failed",
       "colorMatchRunning": "Matching colors…",
+      "matchSamples": "{{count}} reference images",
+      "matchClearSamples": "Clear references",
+      "aggregate": {
+        "bures": "Bures",
+        "robustBures": "Robust",
+        "meanCov": "Mean"
+      },
       "colorMixer": "Color Mixer",
       "grading": {
         "balance": "Balance",
@@ -433,7 +440,12 @@
         "applied": "Applied \"{{name}}\" style (confidence {{conf}}%)",
         "failed": "No style recognized — adjustments unchanged",
         "placeholder": "Describe a style, e.g. airy Japanese, cinematic teal-orange, B&W",
-        "title": "Style from Text"
+        "title": "Style from Text",
+        "cloud": "Cloud reference",
+        "cloudApplied": "Cloud reference color match applied",
+        "cloudFailed": "Cloud reference generation failed, please retry",
+        "cloudNeedLogin": "Please sign in to your Pro account",
+        "cloudNoPatch": "Generated reference is too close to the current photo"
       },
       "strength": {
         "color": "Color strength",

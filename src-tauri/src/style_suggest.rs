@@ -11,9 +11,11 @@
 //! 命中为空时不猜测（confidence=0、无补丁，交由上层回退 AI 一键增强）。
 //!
 //! 后续若接入云端参考图链路（方案 B）：由云端生成调色参考小图后走
-//! `crate::color_transfer` 的 MKL 拟合，本模块的词库可作为提示词构造器。
+//! `crate::color_transfer` 的 MKL 拟合，本模块的词库可作为提示词构造器
+//! （见 `ai_generate_style_reference`）。
 
 use serde_json::{json, Value};
+use tauri::Manager;
 
 /// 分区色光参数（colorGrading 分区）
 struct ZoneGrade {
@@ -39,12 +41,14 @@ impl ZoneGrade {
     }
 }
 
-/// 风格定义：id、中文名、双语词库（词, 权重）、参数配方。
+/// 风格定义：id、中文名、双语词库（词, 权重）、参数配方、英文生成提示
+/// （`prompt_en` 供方案 B 云参考图文生图使用；SD 后端对英文提示更稳）。
 pub struct StyleDef {
     pub id: &'static str,
     pub name: &'static str,
     pub keywords: &'static [(&'static str, f64)],
     pub patch: fn() -> Value,
+    pub prompt_en: &'static str,
 }
 
 /// 置信度换算：score / (score + 0.75)。
@@ -84,6 +88,7 @@ impl StyleSuggestion {
 const STYLE_DEFS: &[StyleDef] = &[
     StyleDef {
         id: "clear_japanese",
+        prompt_en: "bright airy Japanese photography, soft diffused light, clean pastel tones, high key",
         name: "清透日系",
         keywords: &[
             ("日系", 2.0),
@@ -120,6 +125,7 @@ const STYLE_DEFS: &[StyleDef] = &[
     },
     StyleDef {
         id: "cinematic",
+        prompt_en: "cinematic film still, teal and orange color grade, deep contrast, shallow depth of field",
         name: "电影感",
         keywords: &[
             ("电影", 2.0),
@@ -153,6 +159,7 @@ const STYLE_DEFS: &[StyleDef] = &[
     },
     StyleDef {
         id: "retro_film",
+        prompt_en: "vintage 35mm film photograph, faded warm tones, grain, halation, lifted blacks",
         name: "复古胶片",
         keywords: &[
             ("复古", 2.0),
@@ -187,6 +194,7 @@ const STYLE_DEFS: &[StyleDef] = &[
     },
     StyleDef {
         id: "monochrome",
+        prompt_en: "black and white monochrome photograph, rich tonal contrast, fine grain",
         name: "黑白",
         keywords: &[
             ("黑白", 2.5),
@@ -212,6 +220,7 @@ const STYLE_DEFS: &[StyleDef] = &[
     },
     StyleDef {
         id: "cyberpunk",
+        prompt_en: "cyberpunk night city, neon magenta and cyan lighting, rain reflections, high contrast",
         name: "赛博朋克",
         keywords: &[
             ("赛博", 2.5),
@@ -243,6 +252,7 @@ const STYLE_DEFS: &[StyleDef] = &[
     },
     StyleDef {
         id: "fresh_green",
+        prompt_en: "fresh nature photography, lush green forest, soft clean light, natural colors",
         name: "森系清新",
         keywords: &[
             ("森系", 2.0),
@@ -275,6 +285,7 @@ const STYLE_DEFS: &[StyleDef] = &[
     },
     StyleDef {
         id: "warm_golden",
+        prompt_en: "golden hour portrait, warm sunset light, soft glow, amber tones",
         name: "暖阳夕晒",
         keywords: &[
             ("暖阳", 2.5),
@@ -309,6 +320,7 @@ const STYLE_DEFS: &[StyleDef] = &[
     },
     StyleDef {
         id: "moody_dark",
+        prompt_en: "moody low key photograph, dark desaturated tones, cool shadows, dramatic light",
         name: "暗调情绪",
         keywords: &[
             ("暗调", 2.5),
@@ -398,6 +410,61 @@ pub fn suggest_style(text: &str) -> StyleSuggestion {
 #[tauri::command]
 pub fn ai_style_suggest(prompt: String) -> Value {
     suggest_style(&prompt).to_json()
+}
+
+/// 提示词 → 云端生成提示：命中风格时用风格英文提示（SD 后端对英文更稳），
+/// 未命中时透传原始提示。返回（生成提示, 命中风格 id）。
+fn generation_prompt_for(text: &str) -> (String, Option<&'static str>) {
+    let suggestion = suggest_style(text);
+    match suggestion.style_id {
+        Some(id) => {
+            let prompt = STYLE_DEFS
+                .iter()
+                .find(|d| d.id == id)
+                .map(|d| d.prompt_en)
+                .unwrap_or(text);
+            (prompt.to_string(), Some(id))
+        }
+        None => (text.to_string(), None),
+    }
+}
+
+/// 云参考图生成命令（方案 B）：提示词 → 云端文生图 → 缓存 PNG 路径。
+///
+/// 前端拿到 path 后作为多样片之一喂给 `compute_color_match`
+/// （MKL 传输的目标分布即生成图的 Oklab 统计，与本地样片可混合聚合）。
+/// 无 token 时返回 `CLOUD_AUTH_REQUIRED`（前端引导登录 Pro）。
+#[tauri::command]
+pub async fn ai_generate_style_reference(
+    app_handle: tauri::AppHandle,
+    prompt: String,
+    token: Option<String>,
+) -> Result<Value, String> {
+    let token = token.ok_or_else(|| "CLOUD_AUTH_REQUIRED".to_string())?;
+    let (generation_prompt, style_id) = generation_prompt_for(&prompt);
+    let image = crate::ai_connector::process_cloud_generation(
+        crate::ai_connector::CLOUD_BASE_URL,
+        generation_prompt.clone(),
+        &token,
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+    // 落缓存目录：style_reference_<纳秒时间戳>.png（仅作统计参考，不进相册）
+    let cache_dir = app_handle
+        .path()
+        .app_cache_dir()
+        .map_err(|e| format!("缓存目录不可用: {e}"))?;
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let path = cache_dir.join(format!("style_reference_{nanos:x}.png"));
+    image.save(&path).map_err(|e| format!("保存参考图失败: {e}"))?;
+    Ok(json!({
+        "path": path.to_string_lossy(),
+        "styleId": style_id,
+        "generationPrompt": generation_prompt,
+    }))
 }
 
 #[cfg(test)]
@@ -496,5 +563,25 @@ mod tests {
                 assert!(seen.insert(*term), "{} 词条重复: {}", def.id, term);
             }
         }
+    }
+
+    #[test]
+    fn test_prompt_en_present_for_cloud_generation() {
+        // 方案 B 云参考图消费：每个风格都必须有非空英文生成提示
+        for def in STYLE_DEFS {
+            assert!(!def.prompt_en.trim().is_empty(), "{} 缺英文生成提示", def.id);
+            assert!(def.prompt_en.len() >= 20, "{} 英文提示过短", def.id);
+        }
+    }
+
+    #[test]
+    fn test_generation_prompt_mapping() {
+        // 命中风格 → 英文生成提示；未命中 → 透传原始提示
+        let (p, id) = generation_prompt_for("来点电影感，青橙色调");
+        assert_eq!(id, Some("cinematic"));
+        assert!(p.contains("cinematic"), "应替换为风格英文提示，实际 {p}");
+        let (p, id) = generation_prompt_for("随便说说而已");
+        assert_eq!(id, None);
+        assert_eq!(p, "随便说说而已");
     }
 }

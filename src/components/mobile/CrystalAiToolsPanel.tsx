@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import { useEditorStore } from '../../store/useEditorStore';
 import { selectAiModelDownloadStatus, useProcessStore } from '../../store/useProcessStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { useCloudStore } from '../../store/useCloudStore';
 import { Adjustments, getAiDenoiseEnablePatch } from '../../utils/adjustments';
 import { Invokes } from '../ui/AppProperties';
 import { Mask } from '../panel/right/Masks';
@@ -27,7 +28,7 @@ import { CxSliderRow, awaitImageReady, haptic, useCrystalAdjust, useCrystalAiMas
  * ------------------------------------------------------------------------- */
 
 type EnhanceIntensity = 'subtle' | 'standard' | 'strong';
-type AiBusyKind = 'enhance' | 'auto' | 'sky' | 'subject' | 'text' | 'depth';
+type AiBusyKind = 'enhance' | 'auto' | 'sky' | 'subject' | 'text' | 'depth' | 'styleRef';
 
 const INTENSITIES: ReadonlyArray<{ id: EnhanceIntensity; labelKey: ParseKeys }> = [
   { id: 'subtle', labelKey: 'editor.aiEnhance.intensities.subtle' },
@@ -70,6 +71,8 @@ export default function CrystalAiToolsPanel() {
   const { t } = useTranslation();
   const adjustments = useEditorStore((s) => s.adjustments);
   const aiProvider = useSettingsStore((s) => s.appSettings?.aiProvider);
+  const cloudUser = useCloudStore((s) => s.user);
+  const getCloudToken = useCloudStore((s) => s.getToken);
   const aiDownloadStatus = useProcessStore(selectAiModelDownloadStatus);
   const { handleAutoAdjustments } = useEditorActions();
   const { applyPatch, setAdjustments } = useCrystalAdjust();
@@ -100,6 +103,9 @@ export default function CrystalAiToolsPanel() {
   /* 一句话调色：提示词仅驻内存（风格结果即时生效，无跨会话保留必要） */
   const [stylePrompt, setStylePrompt] = useState('');
   const [showStyleInput, setShowStyleInput] = useState(false);
+  /* 方案 B 云参考图入口：仅 cloud 提供商且已登录 Pro 时可见
+   * （Android 无 Clerk 登录态，cloudUser 恒为 null → 按钮隐藏）。 */
+  const canCloudStyle = aiProvider === 'cloud' && Boolean(cloudUser);
   const updateTextPrompt = useCallback((value: string) => {
     setTextPrompt(value);
     storeTextPrompt(value);
@@ -205,6 +211,51 @@ export default function CrystalAiToolsPanel() {
       setBusy(null);
     }
   }, [busy, setAdjustments, stylePrompt, t]);
+
+  /* 方案 B 云参考图：提示词 → 云端文生图（ai_generate_style_reference，
+   * 命中词库风格时用风格英文生成提示）→ 生成图作为样片走 MKL 追色
+   * （compute_color_match，bures 聚合）。生成图只进缓存目录作统计参考。 */
+  const runStyleReference = useCallback(async () => {
+    const prompt = stylePrompt.trim();
+    if (!prompt || busy) return;
+    const startPath = useEditorStore.getState().selectedImage?.path;
+    if (!startPath) {
+      setBusy(null);
+      return;
+    }
+    setBusy('styleRef');
+    try {
+      const token = await getCloudToken();
+      if (!token) {
+        toast.error(t('crystal.ai.style.cloudNeedLogin'));
+        return;
+      }
+      const generated = await invoke<{ path: string; styleId: string | null }>(
+        Invokes.AiGenerateStyleReference,
+        { prompt, token },
+      );
+      // 跨图守卫：生成期间切图则丢弃，避免把参考图追色落到新图上
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
+      const match = await invoke<{ adjustments: Partial<Adjustments> }>(Invokes.ComputeColorMatch, {
+        samplePath: generated.path,
+        targetPath: startPath,
+        aggregate: 'bures',
+      });
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
+      if (!match.adjustments || Object.keys(match.adjustments).length === 0) {
+        toast.info(t('crystal.ai.style.cloudNoPatch'));
+        return;
+      }
+      applyPatch(match.adjustments);
+      setShowStyleInput(false);
+      toast.success(t('crystal.ai.style.cloudApplied'));
+    } catch (e) {
+      console.error('AI cloud style reference failed:', e);
+      toast.error(t('crystal.ai.style.cloudFailed'));
+    } finally {
+      setBusy(null);
+    }
+  }, [busy, getCloudToken, applyPatch, stylePrompt, t]);
 
   /* 天空识别 —— 复用桌面 sky mask 链路；识别成功后以容器级
    * MaskAdjustments（clarity/dehaze/saturation）提供「天空强度」滑杆。 */
@@ -637,6 +688,24 @@ export default function CrystalAiToolsPanel() {
               >
                 {t('crystal.ai.style.title')}
               </button>
+              {canCloudStyle && (
+                <button
+                  className="cx-chip shrink-0"
+                  title={t('crystal.ai.style.cloud')}
+                  aria-label={t('crystal.ai.style.cloud')}
+                  disabled={Boolean(busy) || !stylePrompt.trim()}
+                  onClick={() => {
+                    haptic(6);
+                    void runStyleReference();
+                  }}
+                >
+                  {busy === 'styleRef' ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <CloudSun size={12} />
+                  )}
+                </button>
+              )}
             </div>
           )}
 

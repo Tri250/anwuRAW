@@ -156,6 +156,7 @@ export enum Invokes {
   AiAutoEnhance = 'ai_auto_enhance',
   SceneClassify = 'scene_classify',
   AiStyleSuggest = 'ai_style_suggest',
+  AiGenerateStyleReference = 'ai_generate_style_reference',
   AiUpscaleExport = 'ai_upscale_export',
   ExportXmpSidecar = 'export_xmp_sidecar',
   ImportXmpSidecar = 'import_xmp_sidecar',

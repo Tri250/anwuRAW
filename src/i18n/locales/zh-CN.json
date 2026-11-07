@@ -43,6 +43,13 @@
       "colorMatchDone": "追色已应用 · ΔE 下降 {{reduction}}%",
       "colorMatchFailed": "追色失败",
       "colorMatchRunning": "正在计算追色…",
+      "matchSamples": "{{count}} 张样片",
+      "matchClearSamples": "清除样片",
+      "aggregate": {
+        "bures": "W2 重心",
+        "robustBures": "稳健重心",
+        "meanCov": "平均"
+      },
       "colorMixer": "颜色混合器",
       "grading": {
         "balance": "平衡",
@@ -430,7 +437,12 @@
         "applied": "已应用「{{name}}」风格（置信度 {{conf}}%）",
         "failed": "未识别到风格描述，调整保持不变",
         "placeholder": "描述想要的风格，如：清透日系、电影感青橙、黑白、赛博朋克",
-        "title": "一句话调色"
+        "title": "一句话调色",
+        "cloud": "云参考图",
+        "cloudApplied": "云参考图追色已应用",
+        "cloudFailed": "云参考图生成失败，请重试",
+        "cloudNeedLogin": "请先登录 Pro 账号",
+        "cloudNoPatch": "生成图与当前照片过于接近，无需调整"
       },
       "strength": {
         "color": "色彩强度",

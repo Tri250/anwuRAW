@@ -1,7 +1,8 @@
 use anyhow::{Result, anyhow};
 use base64::{Engine as _, engine::general_purpose};
 use image::{
-    DynamicImage, GenericImageView, ImageFormat, RgbaImage, codecs::jpeg::JpegEncoder, imageops,
+    DynamicImage, GenericImageView, GrayImage, ImageFormat, Luma, Rgb, RgbImage, RgbaImage,
+    codecs::jpeg::JpegEncoder, imageops,
 };
 use reqwest::{Client, multipart};
 use serde::{Deserialize, Serialize};
@@ -9,6 +10,9 @@ use std::fs;
 use std::io::Cursor;
 use std::path::Path;
 use std::time::SystemTime;
+
+/// 云端后端根地址（修复 /inpaint 与文生图同源）。
+pub const CLOUD_BASE_URL: &str = "https://www.getrapidraw.com/api";
 
 #[derive(Serialize)]
 struct InpaintRequest {
@@ -221,4 +225,29 @@ pub async fn process_cloud_inpainting(
     let decoded = general_purpose::STANDARD.decode(&response.color)?;
 
     Ok(image::load_from_memory(&decoded)?)
+}
+
+/// 云侧文生图参考图（方案 B 云参考图链路）。
+///
+/// 以"空白画布 + 全白 mask"的修复请求表达整幅重绘——这是 SD 修复系
+/// （`/inpaint`）的全 mask 退化形态，无需后端新增端点。生成图仅作为
+/// 追色的统计参考（MKL 传输的目标分布），不直接呈现给用户。
+pub async fn process_cloud_generation(
+    base_url: &str,
+    prompt: String,
+    token: &str,
+) -> Result<DynamicImage> {
+    /// 生成尺寸：512×512（16 的倍数，SD 友好）
+    const GEN_SIZE: u32 = 512;
+    let blank = DynamicImage::ImageRgb8(RgbImage::from_pixel(
+        GEN_SIZE,
+        GEN_SIZE,
+        Rgb([128, 128, 128]),
+    ));
+    let mask = DynamicImage::ImageLuma8(GrayImage::from_pixel(
+        GEN_SIZE,
+        GEN_SIZE,
+        Luma([255]),
+    ));
+    process_cloud_inpainting(base_url, &blank, &mask, prompt, token).await
 }

@@ -3023,6 +3023,7 @@ pub fn run() {
             culling::cull_images,
             color_transfer::compute_color_match,
             style_suggest::ai_style_suggest,
+            style_suggest::ai_generate_style_reference,
             ai_commands::compute_skin_unify,
             lens_correction::get_lensfun_makers,
             lens_correction::get_lensfun_lenses_for_maker,

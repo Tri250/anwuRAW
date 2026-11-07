@@ -68,6 +68,17 @@ import type { CrystalCategory } from './CrystalMobileApp';
 import CrystalPresetsPanel from './CrystalPresetsPanel';
 import CrystalAiToolsPanel from './CrystalAiToolsPanel';
 
+/* 多样片聚合模式（与后端 color_transfer::AggregateMode 对应）：
+ * bures = W2 重心（默认，几何意义正确）；robust-bures = 离群截尾后的重心；
+ * mean-cov = 协方差直接平均（无迭代，最稳）。 */
+type MatchAggregate = 'bures' | 'robust-bures' | 'mean-cov';
+
+const MATCH_AGGREGATES: ReadonlyArray<{ id: MatchAggregate; labelKey: ParseKeys }> = [
+  { id: 'bures', labelKey: 'adjustments.color.aggregate.bures' },
+  { id: 'robust-bures', labelKey: 'adjustments.color.aggregate.robustBures' },
+  { id: 'mean-cov', labelKey: 'adjustments.color.aggregate.meanCov' },
+];
+
 /* ---------------------------------------------------------------------------
  * 参数面板骨架：标题 + 滑杆组。所有值读写真实 store.adjustments。
  * 布局统一（以预设/滤镜/AI 工具面板为标准）：标题行与标准面板同规格——
@@ -208,9 +219,14 @@ function TonePanel() {
     applyPatch({ colorCalibration: { ...INITIAL_ADJUSTMENTS.colorCalibration } });
   };
 
-  /* 色彩匹配（AI 追色）：拾取样片 → ComputeColorMatch → 合并 colorGrading/curves 补丁。
-   * 与桌面 handleColorMatch 同链路；Android 样片为 content:// URI，由后端 ContentResolver 读取。 */
+  /* 色彩匹配（AI 追色）：拾取样片（可多选）→ ComputeColorMatch → 合并
+   * colorGrading/curves 补丁。与桌面 handleColorMatch 同链路；多样片时按
+   * 聚合模式（默认 bures W2 重心）合并 Oklab 统计后传输（大师配方精修）。
+   * Android 样片为 content:// URI，由后端 ContentResolver 读取。 */
   const [matchBusy, setMatchBusy] = useState(false);
+  /** 上次追色实际使用的样片集合（UI 展示张数/聚合模式用） */
+  const [matchSamples, setMatchSamples] = useState<string[]>([]);
+  const [matchAggregate, setMatchAggregate] = useState<MatchAggregate>('bures');
   const handleColorMatch = useCallback(async () => {
     const img = useEditorStore.getState().selectedImage;
     if (!img || matchBusy) return;
@@ -218,7 +234,7 @@ function TonePanel() {
     try {
       const { osPlatform } = useSettingsStore.getState();
       const selected = await open({
-        multiple: false,
+        multiple: true,
         filters:
           osPlatform === 'android'
             ? []
@@ -247,12 +263,17 @@ function TonePanel() {
                 },
               ],
       });
-      const samplePath = Array.isArray(selected) ? selected[0] : selected;
-      if (!samplePath) return;
+      const paths = Array.isArray(selected) ? selected : selected ? [selected] : [];
+      if (paths.length === 0) return;
+      setMatchSamples(paths);
       const result = await invoke<{
         adjustments?: { colorGrading?: Record<string, unknown>; curves?: Record<string, unknown> };
         metrics?: { deltaEReduction?: number };
-      }>(Invokes.ComputeColorMatch, { samplePath, targetPath: img.path });
+      }>(Invokes.ComputeColorMatch, {
+        samplePaths: paths,
+        targetPath: img.path,
+        aggregate: matchAggregate,
+      });
       const patch = result.adjustments || {};
       const cur = useEditorStore.getState().adjustments;
       const next: Partial<Adjustments> = {};
@@ -289,7 +310,7 @@ function TonePanel() {
     } finally {
       setMatchBusy(false);
     }
-  }, [applyPatch, matchBusy, t]);
+  }, [applyPatch, matchBusy, matchAggregate, t]);
 
   /* 参数化曲线：按通道滑杆实时换算为点曲线（后端渲染 curves[channel]），与桌面 Curves 同一套数学。
    * 审计修复（调色-曲线）：嵌套 patch 一律从 store 实时读取——闭包旧值在快速拖动时
@@ -533,6 +554,38 @@ function TonePanel() {
               {matchBusy ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
               {t('adjustments.color.colorMatch')}
             </button>
+            {/* 多样片（大师配方）：张数徽标 + 聚合模式切换（单张时模式无意义，隐藏） */}
+            {matchSamples.length > 0 && (
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="text-[10px] cx-text-dim">
+                  {t('adjustments.color.matchSamples', { count: matchSamples.length })}
+                </span>
+                {matchSamples.length > 1 &&
+                  MATCH_AGGREGATES.map((m) => (
+                    <button
+                      key={m.id}
+                      className={`cx-chip shrink-0 ${matchAggregate === m.id ? 'is-active' : ''}`}
+                      onClick={() => {
+                        haptic(5);
+                        setMatchAggregate(m.id);
+                      }}
+                      aria-pressed={matchAggregate === m.id}
+                    >
+                      {t(m.labelKey)}
+                    </button>
+                  ))}
+                <button
+                  className="cx-chip shrink-0"
+                  title={t('adjustments.color.matchClearSamples')}
+                  onClick={() => {
+                    haptic(5);
+                    setMatchSamples([]);
+                  }}
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            )}
             <CxSliderRow
               label={t('crystal.tone.hslHue')}
               min={0}

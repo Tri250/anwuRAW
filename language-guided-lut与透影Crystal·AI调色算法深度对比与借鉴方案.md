@@ -170,14 +170,20 @@ ColorFM-L / D-LUT / ModFlows 需要 PyTorch 级运行时。本地推理设施是
 | 4 | 黑白参考路由（通道 spread 统计，跳过 tint 仅走曲线）+ MKL 诊断度量（mklUsed / mklInvariantError / monochromeReference） | 同文件 `classify_monochrome` 与 metrics |
 | 3 | AI 一键增强明暗/色彩双强度：`ai_auto_enhance(toneStrength, colorStrength)`，色彩组 = vibrance/saturation/temperature/tint，其余归明暗组 | [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs) `run_ai_auto_enhance` + [CrystalAiToolsPanel.tsx](file:///workspace/src/components/mobile/CrystalAiToolsPanel.tsx) 双滑杆 |
 | 2 | 一句话调色（方案 A 本地实现）：8 风格 × 双语词库（加权命中 + 置信度换算）+ 非破坏性参数配方（colorGrading + curves + 基础滑杆）；未命中不猜测 | 新增 [style_suggest.rs](file:///workspace/src-tauri/src/style_suggest.rs)（含命令 `ai_style_suggest`）+ 移动端输入 UI |
+| 5 | P1-2 大师配方 bures 聚合：多样片入口（像素分布拼接 + 高斯 W2 重心/稳健截尾/直接平均，黑白多数票）+ 移动端多样片拾取与聚合模式切换；方案 B 云参考图：提示词 → 云端整幅重绘（复用 `/inpaint` 全 mask 形态）→ 生成图作样片走 MKL 追色（仅 cloud 登录用户可见入口） | [color_transfer.rs](file:///workspace/src-tauri/src/color_transfer.rs) `AggregateMode`/聚合层 + [ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs) `process_cloud_generation` + [style_suggest.rs](file:///workspace/src-tauri/src/style_suggest.rs) `ai_generate_style_reference` + [CrystalCategoryPanel.tsx](file:///workspace/src/components/mobile/CrystalCategoryPanel.tsx) 多样片 UI |
 
 **实现说明与偏差**：
-- 方案 A 原设计为 CLIP 零样本风格识别，实施时发现项目 CLIP 为图文联合 ONNX 导出（forward 必须同时喂图），无纯文本编码通路，text→text 比对不可行；故改为确定性双语词库映射（零依赖、瞬时、可测试），CLIP 场景通道保持不变。云端参考图链路（方案 B）仍按原计划作为后续项。
+- 方案 A 原设计为 CLIP 零样本风格识别，实施时发现项目 CLIP 为图文联合 ONNX 导出（forward 必须同时喂图），无纯文本编码通路，text→text 比对不可行；故改为确定性双语词库映射（零依赖、瞬时、可测试），CLIP 场景通道保持不变。云端参考图链路（方案 B）已作为阶段 5 落地，见下文。
 - 追色强度参数通过 `compute_color_match(strength/toneStrength/colorStrength)` 暴露，移动端调用向后兼容（默认 1.0）。
 - 数学层独立验证：Oklab 往返 <1e-6、特征分解重建 <1e-10、MKL 不变式误差 2.8e-11、协方差映射最大相对误差 5.3e-9、强度分解冻结语义正确、退化输入拒绝。
 
 **测试暴露并修复的真 bug**：`classify_monochrome` 的 spread 阈值（2/4/12）为 0..255 域，而生产路径传入 0..1 归一化像素，会导致所有彩色照片被误判为黑白、跳过 tint 拟合；已在函数内统一换算至 0..255 域（`test_monochrome_classification` 回归覆盖）。
 
-**验证状态**：`cargo test --lib` 104/104 通过（color_transfer 10 + style_suggest 5 + 其余 89 无回归）；`tsc --noEmit` 无错误；`cargo check --lib` 零警告。移动端 UI：AI 工具面板新增「一句话调色」磁贴与输入行、明暗/色彩双强度滑杆，词条走 i18n（zh-CN/en 双语）。
+**阶段 5 落地（P1-2 多样片聚合 + 方案 B 云参考图）**：
+- **P1-2 bures 聚合**（[color_transfer.rs](file:///workspace/src-tauri/src/color_transfer.rs)）：新增 `AggregateMode`（mean-cov / bures / robust-bures，默认 bures）、W2 距离、Alvarez-Esteban 协方差重心不动点（tol 1e-9 / 256 轮 / 残差 1e-7）、W2 medoid 软截尾稳健权重；`compute_color_transfer` 改为多样片入口（像素分布拼接 + 高斯等权聚合 + 黑白多数票）；命令 `compute_color_match` 新增 `samplePaths`/`aggregate` 参数（旧 `samplePath` 单参调用向后兼容）；移动端追色改为可多选样片 + 聚合模式切换 chips。
+- **修复第二个真 bug**：ΔE 度量按 `sample_lin[i]` 直接下标配对参考分布，样片与客片缩略图宽高比不同（或多样片必然不同）时越界 panic；已改为确定性跨步取模配对（`test_delta_e_pairing_survives_size_mismatch` 回归覆盖）。该 bug 在改动前的单样片路径即存在（git 9d051ab 起）。
+- **方案 B 云参考图**（[ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs) / [style_suggest.rs](file:///workspace/src-tauri/src/style_suggest.rs)）：`process_cloud_generation` 以「空白画布 + 全白 mask」复用现有 `/inpaint` 契约表达整幅重绘（SD 修复系的全 mask 退化形态，无需后端新增端点）；新命令 `ai_generate_style_reference`（提示词 → 命中词库风格时用风格英文生成提示 → 云生成 → 缓存目录 PNG → 返回路径），前端拿路径作多样片走 MKL 追色；入口仅在 cloud 提供商且已登录 Pro 时可见（Android 无 Clerk 登录态，按钮自动隐藏——云能力实际为桌面限定）。**注意**：全 mask 生成依赖后端 `/inpaint` 对全白 mask 的接受度，沙箱内无 token 无法实测，上线前需一次真机验证。
 
-**未实施（后续项）**：方案 B 云参考图链路、大师配方 bures 聚合精修（P1-2）、ColorFM-L 学习型后端（P2，不建议）。
+**验证状态**：`cargo test --lib` 114/114 通过（color_transfer 18 + style_suggest 7 + 其余无回归，新增 10 个用例覆盖聚合数学/多样片传输/黑白多数票/尺寸不匹配配对/英文提示映射）；`tsc --noEmit` 无错误；`cargo check --lib` 代码零警告。移动端 UI：AI 工具面板「一句话调色」行新增云参考图按钮（Loader2 旋转态），调色面板追色支持多样片与聚合模式切换，词条走 i18n（zh-CN/en 双语）。
+
+**未实施（后续项）**：ColorFM-L 学习型后端（P2，不建议）；大师配方在桌面端的多选入口（当前仅移动端，桌面保持单样片向后兼容）。
