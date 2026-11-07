@@ -77,7 +77,15 @@
       "vibrance": "Vividezza",
       "wbPickerTooltip": "Selettore Bilanciamento del Bianco",
       "wbPickerWgpuDisabled": "Selettore BB: Disabilita WGPU nelle Impostazioni.",
-      "whiteBalance": "Bilanciamento del Bianco"
+      "whiteBalance": "Bilanciamento del Bianco",
+      "colorMatchDoneMulti": "Corrispondenza colore applicata · {{count}} riferimenti aggregati · ΔE ridotto del {{reduction}}%",
+      "matchSamples": "{{count}} immagini di riferimento",
+      "matchClearSamples": "Cancella riferimenti",
+      "aggregate": {
+        "bures": "Baricentro W2",
+        "robustBures": "Baricentro robusto",
+        "meanCov": "Media"
+      }
     },
     "curves": {
       "channels": {
@@ -444,6 +452,13 @@
         "enhance": "Miglioramento IA",
         "sky": "Cielo",
         "subject": "Soggetto"
+      },
+      "style": {
+        "cloud": "Riferimento cloud",
+        "cloudApplied": "Corrispondenza riferimento cloud applicata",
+        "cloudFailed": "Generazione riferimento cloud non riuscita, riprova",
+        "cloudNeedLogin": "Accedi prima al tuo account Pro",
+        "cloudNoPatch": "L'immagine generata è troppo simile alla foto attuale: nessuna regolazione necessaria"
       }
     },
     "aiRecommend": {

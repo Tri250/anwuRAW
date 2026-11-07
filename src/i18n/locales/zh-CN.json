@@ -41,6 +41,7 @@
       "colorMatch": "AI 追色",
       "colorMatchDesc": "将样片的色彩风格传递到当前照片（非破坏性）",
       "colorMatchDone": "追色已应用 · ΔE 下降 {{reduction}}%",
+      "colorMatchDoneMulti": "追色已应用 · {{count}} 张样片聚合 · ΔE 下降 {{reduction}}%",
       "colorMatchFailed": "追色失败",
       "colorMatchRunning": "正在计算追色…",
       "matchSamples": "{{count}} 张样片",

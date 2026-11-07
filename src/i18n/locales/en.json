@@ -41,6 +41,7 @@
       "colorMatch": "AI Color Match",
       "colorMatchDesc": "Transfer the color style of a sample photo onto this photo (non-destructive)",
       "colorMatchDone": "Color match applied · ΔE reduced {{reduction}}%",
+      "colorMatchDoneMulti": "Color match applied · {{count}} references · ΔE reduced {{reduction}}%",
       "colorMatchFailed": "Color match failed",
       "colorMatchRunning": "Matching colors…",
       "matchSamples": "{{count}} reference images",

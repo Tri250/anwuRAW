@@ -77,7 +77,15 @@
       "vibrance": "Živost",
       "wbPickerTooltip": "Výběr vyvážení bílé",
       "wbPickerWgpuDisabled": "Výběr vyvážení bílé: zakažte WGPU v nastavení.",
-      "whiteBalance": "Vyvážení bílé"
+      "whiteBalance": "Vyvážení bílé",
+      "colorMatchDoneMulti": "Přizpůsobení barev aplikováno · agregováno referencí: {{count}} · ΔE sníženo o {{reduction}}%",
+      "matchSamples": "{{count}} referenčních snímků",
+      "matchClearSamples": "Vymazat reference",
+      "aggregate": {
+        "bures": "W2 barycentrum",
+        "robustBures": "Robustní barycentrum",
+        "meanCov": "Průměr"
+      }
     },
     "curves": {
       "channels": {
@@ -464,6 +472,13 @@
         "enhance": "AI vylepšení",
         "sky": "Obloha",
         "subject": "Objekt"
+      },
+      "style": {
+        "cloud": "Cloudová reference",
+        "cloudApplied": "Cloudová reference aplikována",
+        "cloudFailed": "Generování cloudové reference selhalo, zkuste to znovu",
+        "cloudNeedLogin": "Nejprve se přihlaste ke svému Pro účtu",
+        "cloudNoPatch": "Generovaný obrázek je příliš podobný aktuální fotce — úprava není nutná"
       }
     },
     "aiRecommend": {

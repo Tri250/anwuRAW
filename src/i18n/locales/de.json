@@ -77,7 +77,15 @@
       "vibrance": "Dynamik",
       "wbPickerTooltip": "Weißabgleich-Pipette",
       "wbPickerWgpuDisabled": "WA-Pipette: WGPU in den Einstellungen deaktivieren.",
-      "whiteBalance": "Weißabgleich"
+      "whiteBalance": "Weißabgleich",
+      "colorMatchDoneMulti": "Farbabgleich angewendet · {{count}} Referenzen aggregiert · ΔE um {{reduction}}% reduziert",
+      "matchSamples": "{{count}} Referenzbilder",
+      "matchClearSamples": "Referenzen löschen",
+      "aggregate": {
+        "bures": "W2-Baryzentrum",
+        "robustBures": "Robustes Baryzentrum",
+        "meanCov": "Mittelwert"
+      }
     },
     "curves": {
       "channels": {
@@ -424,6 +432,13 @@
         "enhance": "KI-Verbesserung",
         "sky": "Himmel",
         "subject": "Motiv"
+      },
+      "style": {
+        "cloud": "Cloud-Referenz",
+        "cloudApplied": "Cloud-Referenz-Farbabgleich angewendet",
+        "cloudFailed": "Cloud-Referenz-Erzeugung fehlgeschlagen, bitte erneut versuchen",
+        "cloudNeedLogin": "Bitte zuerst im Pro-Konto anmelden",
+        "cloudNoPatch": "Generiertes Bild ist dem aktuellen Foto zu ähnlich – keine Anpassung nötig"
       }
     },
     "aiRecommend": {

@@ -77,7 +77,15 @@
       "vibrance": "생동감",
       "wbPickerTooltip": "화이트 밸런스 피커",
       "wbPickerWgpuDisabled": "WB 피커: 설정에서 WGPU를 비활성화하세요.",
-      "whiteBalance": "화이트 밸런스"
+      "whiteBalance": "화이트 밸런스",
+      "colorMatchDoneMulti": "컬러 매치 적용 · 참조 이미지 {{count}}장 결합 · ΔE {{reduction}}% 감소",
+      "matchSamples": "참조 이미지 {{count}}장",
+      "matchClearSamples": "참조 이미지 지우기",
+      "aggregate": {
+        "bures": "W2 무게중심",
+        "robustBures": "강건 무게중심",
+        "meanCov": "평균"
+      }
     },
     "curves": {
       "channels": {
@@ -421,6 +429,13 @@
         "enhance": "AI 강화",
         "sky": "하늘",
         "subject": "피사체"
+      },
+      "style": {
+        "cloud": "클라우드 참조",
+        "cloudApplied": "클라우드 참조 컬러 매치 적용됨",
+        "cloudFailed": "클라우드 참조 생성 실패, 다시 시도하세요",
+        "cloudNeedLogin": "Pro 계정에 먼저 로그인하세요",
+        "cloudNoPatch": "생성된 이미지가 현재 사진과 너무 유사하여 조정이 필요하지 않습니다"
       }
     },
     "aiRecommend": {

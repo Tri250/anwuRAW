@@ -77,7 +77,15 @@
       "vibrance": "Красочность",
       "wbPickerTooltip": "Пипетка баланса белого",
       "wbPickerWgpuDisabled": "Пипетка ББ: отключите WGPU в настройках.",
-      "whiteBalance": "Баланс белого"
+      "whiteBalance": "Баланс белого",
+      "colorMatchDoneMulti": "Сопоставление цвета применено · агрегировано эталонов: {{count}} · ΔE снижено на {{reduction}}%",
+      "matchSamples": "Эталонов: {{count}}",
+      "matchClearSamples": "Очистить эталоны",
+      "aggregate": {
+        "bures": "Барицентр W2",
+        "robustBures": "Робастный барицентр",
+        "meanCov": "Среднее"
+      }
     },
     "curves": {
       "channels": {
@@ -464,6 +472,13 @@
         "enhance": "ИИ-улучшение",
         "sky": "Небо",
         "subject": "Объект"
+      },
+      "style": {
+        "cloud": "Облачный эталон",
+        "cloudApplied": "Облачный эталон применён",
+        "cloudFailed": "Не удалось создать облачный эталон, повторите",
+        "cloudNeedLogin": "Сначала войдите в аккаунт Pro",
+        "cloudNoPatch": "Сгенерированное изображение слишком похоже на текущее фото — правки не требуются"
       }
     },
     "aiRecommend": {

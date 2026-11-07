@@ -77,7 +77,15 @@
       "vibrance": "自然な彩度",
       "wbPickerTooltip": "ホワイトバランススポイト",
       "wbPickerWgpuDisabled": "WBスポイト: 設定でWGPUを無効にしてください。",
-      "whiteBalance": "ホワイトバランス"
+      "whiteBalance": "ホワイトバランス",
+      "colorMatchDoneMulti": "カラーマッチを適用 · {{count}} 枚のリファレンス合成 · ΔE {{reduction}}% 低減",
+      "matchSamples": "リファレンス {{count}} 枚",
+      "matchClearSamples": "リファレンスを消去",
+      "aggregate": {
+        "bures": "W2 重心",
+        "robustBures": "ロバスト重心",
+        "meanCov": "平均"
+      }
     },
     "curves": {
       "channels": {
@@ -421,6 +429,13 @@
         "enhance": "AI 強化",
         "sky": "空",
         "subject": "被写体"
+      },
+      "style": {
+        "cloud": "クラウド参照",
+        "cloudApplied": "クラウド参照のカラーマッチを適用しました",
+        "cloudFailed": "クラウド参照の生成に失敗しました。再試行してください",
+        "cloudNeedLogin": "まず Pro アカウントにログインしてください",
+        "cloudNoPatch": "生成画像が現在の写真に近すぎるため、調整は不要です"
       }
     },
     "aiRecommend": {

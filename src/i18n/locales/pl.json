@@ -77,7 +77,15 @@
       "vibrance": "Jaskrawość",
       "wbPickerTooltip": "Próbnik balansu bieli",
       "wbPickerWgpuDisabled": "Próbnik BB: Wyłącz WGPU w Ustawieniach.",
-      "whiteBalance": "Balans bieli"
+      "whiteBalance": "Balans bieli",
+      "colorMatchDoneMulti": "Dopasowanie koloru zastosowane · {{count}} referencji zagregowanych · ΔE zmniejszone o {{reduction}}%",
+      "matchSamples": "{{count}} obrazów referencyjnych",
+      "matchClearSamples": "Wyczyść referencje",
+      "aggregate": {
+        "bures": "Barocentrum W2",
+        "robustBures": "Barocentrum odporne",
+        "meanCov": "Średnia"
+      }
     },
     "curves": {
       "channels": {
@@ -464,6 +472,13 @@
         "enhance": "Ulepszenie AI",
         "sky": "Niebo",
         "subject": "Obiekt"
+      },
+      "style": {
+        "cloud": "Referencja w chmurze",
+        "cloudApplied": "Dopasowanie referencji w chmurze zastosowane",
+        "cloudFailed": "Generowanie referencji w chmurze nie powiodło się, spróbuj ponownie",
+        "cloudNeedLogin": "Najpierw zaloguj się na konto Pro",
+        "cloudNoPatch": "Wygenerowany obraz jest zbyt podobny do aktualnego zdjęcia — brak zmian"
       }
     },
     "aiRecommend": {

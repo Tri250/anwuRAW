@@ -168,19 +168,30 @@ const ColorGradingPanel = ({ adjustments, setAdjustments, onDragStateChange }: C
   };
 
   const selectedImage = useEditorStore((state) => state.selectedImage);
-  const [colorMatchState, setColorMatchState] = useState<{ failed: boolean; message: string; running: boolean }>({
+  const [colorMatchState, setColorMatchState] = useState<{
+    failed: boolean;
+    message: string;
+    running: boolean;
+    /** 上次追色实际使用的样片张数（多样片时展示聚合模式切换） */
+    sampleCount?: number;
+  }>({
     failed: false,
     message: '',
     running: false,
   });
+  /** 多样片聚合模式（与后端 AggregateMode 对应；单样片时后端忽略） */
+  const [colorMatchAggregate, setColorMatchAggregate] = useState<'bures' | 'robust-bures' | 'mean-cov'>(
+    'bures',
+  );
 
   const handleColorMatch = async () => {
     if (!selectedImage || colorMatchState.running) return;
     setColorMatchState({ failed: false, message: '', running: true });
     try {
-      const samplePath = await open({
+      // 多样片（大师配方）：一次可拾取多张参考图，按聚合模式合并 Oklab 统计
+      const selected = await open({
         title: t('adjustments.color.colorMatch'),
-        multiple: false,
+        multiple: true,
         filters: [
           {
             name: 'Images',
@@ -206,13 +217,15 @@ const ColorGradingPanel = ({ adjustments, setAdjustments, onDragStateChange }: C
           },
         ],
       });
-      if (!samplePath) {
+      const samplePaths = Array.isArray(selected) ? selected : selected ? [selected] : [];
+      if (samplePaths.length === 0) {
         setColorMatchState({ failed: false, message: '', running: false });
         return;
       }
       const result = await invoke(Invokes.ComputeColorMatch, {
-        samplePath,
+        samplePaths,
         targetPath: selectedImage.path,
+        aggregate: colorMatchAggregate,
       });
       const patch = (result as { adjustments?: Record<string, any> })?.adjustments || {};
       setAdjustments((prev: Partial<Adjustments>) => {
@@ -236,8 +249,12 @@ const ColorGradingPanel = ({ adjustments, setAdjustments, onDragStateChange }: C
       );
       setColorMatchState({
         failed: false,
-        message: t('adjustments.color.colorMatchDone', { reduction }),
+        message:
+          samplePaths.length > 1
+            ? t('adjustments.color.colorMatchDoneMulti', { reduction, count: samplePaths.length })
+            : t('adjustments.color.colorMatchDone', { reduction }),
         running: false,
+        sampleCount: samplePaths.length,
       });
     } catch (err) {
       console.error('Color match failed:', err);
@@ -310,7 +327,21 @@ const ColorGradingPanel = ({ adjustments, setAdjustments, onDragStateChange }: C
           <Sliders size={14} />
         </button>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          {/* 多样片聚合模式：上次使用了多张样片时才显示，对下次追色生效 */}
+          {(colorMatchState.sampleCount ?? 0) > 1 && (
+            <Dropdown
+              value={colorMatchAggregate}
+              onChange={(value) => setColorMatchAggregate(value)}
+              options={[
+                { value: 'bures', label: t('adjustments.color.aggregate.bures') },
+                { value: 'robust-bures', label: t('adjustments.color.aggregate.robustBures') },
+                { value: 'mean-cov', label: t('adjustments.color.aggregate.meanCov') },
+              ]}
+              placeholder={t('adjustments.color.aggregate.bures')}
+              triggerClassName="h-7 text-xs"
+            />
+          )}
           <button
             onClick={handleColorMatch}
             disabled={colorMatchState.running || !selectedImage}

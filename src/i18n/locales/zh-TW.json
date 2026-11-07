@@ -77,7 +77,15 @@
       "vibrance": "鮮豔度",
       "wbPickerTooltip": "白平衡選取器",
       "wbPickerWgpuDisabled": "白平衡選取器：請在設定中停用 WGPU。",
-      "whiteBalance": "白平衡"
+      "whiteBalance": "白平衡",
+      "colorMatchDoneMulti": "追色已套用 · {{count}} 張樣片聚合 · ΔE 下降 {{reduction}}%",
+      "matchSamples": "{{count}} 張樣片",
+      "matchClearSamples": "清除樣片",
+      "aggregate": {
+        "bures": "W2 重心",
+        "robustBures": "穩健重心",
+        "meanCov": "平均"
+      }
     },
     "curves": {
       "channels": {
@@ -421,6 +429,13 @@
         "enhance": "AI 強化",
         "sky": "天空識別",
         "subject": "主體識別"
+      },
+      "style": {
+        "cloud": "雲參考圖",
+        "cloudApplied": "雲參考圖追色已套用",
+        "cloudFailed": "雲參考圖生成失敗，請重試",
+        "cloudNeedLogin": "請先登入 Pro 帳號",
+        "cloudNoPatch": "生成圖與目前照片過於接近，無需調整"
       }
     },
     "aiRecommend": {

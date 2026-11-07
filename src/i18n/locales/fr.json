@@ -77,7 +77,15 @@
       "vibrance": "Vibrance",
       "wbPickerTooltip": "Pipette de balance des blancs",
       "wbPickerWgpuDisabled": "Pipette BB : Désactivez WGPU dans les paramètres.",
-      "whiteBalance": "Balance des blancs"
+      "whiteBalance": "Balance des blancs",
+      "colorMatchDoneMulti": "Correspondance des couleurs appliquée · {{count}} références agrégées · ΔE réduit de {{reduction}}%",
+      "matchSamples": "{{count}} images de référence",
+      "matchClearSamples": "Effacer les références",
+      "aggregate": {
+        "bures": "Barycentre W2",
+        "robustBures": "Barycentre robuste",
+        "meanCov": "Moyenne"
+      }
     },
     "curves": {
       "channels": {
@@ -444,6 +452,13 @@
         "enhance": "Amélioration IA",
         "sky": "Ciel",
         "subject": "Sujet"
+      },
+      "style": {
+        "cloud": "Référence cloud",
+        "cloudApplied": "Correspondance de référence cloud appliquée",
+        "cloudFailed": "Échec de la génération de la référence cloud, veuillez réessayer",
+        "cloudNeedLogin": "Veuillez d'abord vous connecter à votre compte Pro",
+        "cloudNoPatch": "L'image générée est trop proche de la photo actuelle — aucun ajustement nécessaire"
       }
     },
     "aiRecommend": {

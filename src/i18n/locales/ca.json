@@ -77,7 +77,15 @@
       "vibrance": "Intensitat",
       "wbPickerTooltip": "Comptagotes de balanç de blancs",
       "wbPickerWgpuDisabled": "Comptagotes BB: Desactiva WGPU a Configuració.",
-      "whiteBalance": "Balanç de blancs"
+      "whiteBalance": "Balanç de blancs",
+      "colorMatchDoneMulti": "Coincidència de color aplicada · {{count}} referències agregades · ΔE reduït {{reduction}}%",
+      "matchSamples": "{{count}} imatges de referència",
+      "matchClearSamples": "Esborrar referències",
+      "aggregate": {
+        "bures": "Baricentre W2",
+        "robustBures": "Baricentre robust",
+        "meanCov": "Mitjana"
+      }
     },
     "curves": {
       "channels": {
@@ -444,6 +452,13 @@
         "enhance": "Millora IA",
         "sky": "Cel",
         "subject": "Subjecte"
+      },
+      "style": {
+        "cloud": "Referència al núvol",
+        "cloudApplied": "Coincidència de referència al núvol aplicada",
+        "cloudFailed": "Error en generar la referència al núvol, torna-ho a provar",
+        "cloudNeedLogin": "Inicia sessió primer al teu compte Pro",
+        "cloudNoPatch": "La imatge generada és massa similar a la foto actual: cal cap ajust"
       }
     },
     "aiRecommend": {

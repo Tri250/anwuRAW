@@ -77,7 +77,15 @@
       "vibrance": "Levendigheid",
       "wbPickerTooltip": "Witbalans pipet",
       "wbPickerWgpuDisabled": "WB-pipet: Schakel WGPU uit in instellingen.",
-      "whiteBalance": "Witbalans"
+      "whiteBalance": "Witbalans",
+      "colorMatchDoneMulti": "Kleurmatching toegepast · {{count}} referenties geaggregeerd · ΔE {{reduction}}% verlaagd",
+      "matchSamples": "{{count}} referentieafbeeldingen",
+      "matchClearSamples": "Referenties wissen",
+      "aggregate": {
+        "bures": "W2-barycentrum",
+        "robustBures": "Robuust barycentrum",
+        "meanCov": "Gemiddelde"
+      }
     },
     "curves": {
       "channels": {
@@ -424,6 +432,13 @@
         "enhance": "AI-verbetering",
         "sky": "Lucht",
         "subject": "Onderwerp"
+      },
+      "style": {
+        "cloud": "Cloudreferentie",
+        "cloudApplied": "Cloudreferentie-kleurmatching toegepast",
+        "cloudFailed": "Cloudreferentie genereren mislukt, probeer opnieuw",
+        "cloudNeedLogin": "Meld je eerst aan bij je Pro-account",
+        "cloudNoPatch": "Gegenereerde beeld lijkt te veel op de huidige foto — geen aanpassing nodig"
       }
     },
     "aiRecommend": {

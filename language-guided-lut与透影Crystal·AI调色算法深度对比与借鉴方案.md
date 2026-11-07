@@ -184,6 +184,6 @@ ColorFM-L / D-LUT / ModFlows 需要 PyTorch 级运行时。本地推理设施是
 - **修复第二个真 bug**：ΔE 度量按 `sample_lin[i]` 直接下标配对参考分布，样片与客片缩略图宽高比不同（或多样片必然不同）时越界 panic；已改为确定性跨步取模配对（`test_delta_e_pairing_survives_size_mismatch` 回归覆盖）。该 bug 在改动前的单样片路径即存在（git 9d051ab 起）。
 - **方案 B 云参考图**（[ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs) / [style_suggest.rs](file:///workspace/src-tauri/src/style_suggest.rs)）：`process_cloud_generation` 以「空白画布 + 全白 mask」复用现有 `/inpaint` 契约表达整幅重绘（SD 修复系的全 mask 退化形态，无需后端新增端点）；新命令 `ai_generate_style_reference`（提示词 → 命中词库风格时用风格英文生成提示 → 云生成 → 缓存目录 PNG → 返回路径），前端拿路径作多样片走 MKL 追色；入口仅在 cloud 提供商且已登录 Pro 时可见（Android 无 Clerk 登录态，按钮自动隐藏——云能力实际为桌面限定）。**注意**：全 mask 生成依赖后端 `/inpaint` 对全白 mask 的接受度，沙箱内无 token 无法实测，上线前需一次真机验证。
 
-**验证状态**：`cargo test --lib` 114/114 通过（color_transfer 18 + style_suggest 7 + 其余无回归，新增 10 个用例覆盖聚合数学/多样片传输/黑白多数票/尺寸不匹配配对/英文提示映射）；`tsc --noEmit` 无错误；`cargo check --lib` 代码零警告。移动端 UI：AI 工具面板「一句话调色」行新增云参考图按钮（Loader2 旋转态），调色面板追色支持多样片与聚合模式切换，词条走 i18n（zh-CN/en 双语）。
+**验证状态**：`cargo test --lib` 114/114 通过（color_transfer 18 + style_suggest 7 + 其余无回归，新增 10 个用例覆盖聚合数学/多样片传输/黑白多数票/尺寸不匹配配对/英文提示映射）；`tsc --noEmit` 无错误；`cargo check --lib` 代码零警告。移动端 UI：AI 工具面板「一句话调色」行新增云参考图按钮（Loader2 旋转态），调色面板追色支持多样片与聚合模式切换；桌面端调色面板同样支持多样片拾取与聚合模式下拉；全部新词条已补齐 15 种语言翻译。
 
-**未实施（后续项）**：ColorFM-L 学习型后端（P2，不建议）；大师配方在桌面端的多选入口（当前仅移动端，桌面保持单样片向后兼容）。
+**未实施（后续项）**：ColorFM-L 学习型后端（P2，不建议）。桌面端追色已支持多样片与聚合模式切换（[Color.tsx](file:///workspace/src/components/adjustments/Color.tsx)，多样片运行后出现模式下拉，对下次追色生效）；云参考图的全 mask 生成形态待真机验证（需 Pro 登录态）。
