@@ -80,6 +80,7 @@ mod procedural_sky;
 mod raw_processing;
 mod relight;
 mod scene_classify;
+mod style_suggest;
 mod storage;
 mod tagging;
 mod tagging_utils;
@@ -3021,6 +3022,7 @@ pub fn run() {
             tagging::remove_tag_for_paths,
             culling::cull_images,
             color_transfer::compute_color_match,
+            style_suggest::ai_style_suggest,
             ai_commands::compute_skin_unify,
             lens_correction::get_lensfun_makers,
             lens_correction::get_lensfun_lenses_for_maker,

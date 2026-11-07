@@ -38,6 +38,9 @@ struct ImageStats {
     /// 编码像素（0..1），用于模拟
     enc_pixels: Vec<[f32; 3]>,
     luma_hist: [f64; 32],
+    /// Oklab 高斯统计：全局 + 三分区（MKL 传输的输入）
+    global_gauss: Gaussian,
+    zone_gauss: [Gaussian; 3],
 }
 
 #[derive(Clone, Copy)]
@@ -223,6 +226,302 @@ impl TintFit {
     }
 }
 
+/* ------------------------------ Oklab + MKL 协方差传输（借鉴 language-guided-lut） ------------------------------ */
+
+/// Oklab（Björn Ottosson）常数：linear sRGB → LMS → Oklab，及其逆映射。
+/// 相比 CIE Lab，Oklab 在感知均匀性上更接近理想，青-黄轴的预测畸变更小，
+/// 协方差传输（MKL）对色相旋转的表达更稳定。
+const OKLAB_M1: [[f64; 3]; 3] = [
+    [0.4122214708, 0.5363325363, 0.0514459929],
+    [0.2119034982, 0.6806995451, 0.1073969566],
+    [0.0883024619, 0.2817188376, 0.6299787005],
+];
+const OKLAB_M2: [[f64; 3]; 3] = [
+    [0.2104542553, 0.7936177850, -0.0040720468],
+    [1.9779984951, -2.4285922050, 0.4505937099],
+    [0.0259040371, 0.7827717662, -0.8086757660],
+];
+/// Oklab → LMS'（cube 前），LMS' → linear sRGB。
+const OKLAB_M1_INV: [[f64; 3]; 3] = [
+    [1.0, 0.3963377774, 0.2158037573],
+    [1.0, -0.1055613458, -0.0638541728],
+    [1.0, -0.0894841775, -1.2914855480],
+];
+const OKLAB_M2_INV: [[f64; 3]; 3] = [
+    [4.0767416621, -3.3077115913, 0.2309699292],
+    [-1.2684380046, 2.6097574011, -0.3413193965],
+    [-0.0041960863, -0.7034186147, 1.7076147010],
+];
+/// 协方差正则化（与 language-guided-lut 一致）：保证可逆与数值稳定。
+const COV_REG: f64 = 1e-6;
+/// MKL 协方差不变式 `A·C_s·Aᵀ ≈ C_t` 的相对误差阈值。
+const MKL_INVARIANT_TOL: f64 = 1e-5;
+
+fn mat3_vec(m: &[[f64; 3]; 3], v: [f64; 3]) -> [f64; 3] {
+    [
+        m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
+        m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
+        m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2],
+    ]
+}
+
+fn mat3_mul(a: &[[f64; 3]; 3], b: &[[f64; 3]; 3]) -> [[f64; 3]; 3] {
+    let mut out = [[0.0; 3]; 3];
+    for i in 0..3 {
+        for j in 0..3 {
+            out[i][j] = (0..3).map(|k| a[i][k] * b[k][j]).sum();
+        }
+    }
+    out
+}
+
+fn mat3_transpose(m: &[[f64; 3]; 3]) -> [[f64; 3]; 3] {
+    [
+        [m[0][0], m[1][0], m[2][0]],
+        [m[0][1], m[1][1], m[2][1]],
+        [m[0][2], m[1][2], m[2][2]],
+    ]
+}
+
+fn mat3_frobenius(m: &[[f64; 3]; 3]) -> f64 {
+    m.iter()
+        .flat_map(|row| row.iter())
+        .map(|v| v * v)
+        .sum::<f64>()
+        .sqrt()
+}
+
+/// 线性域 RGB → Oklab。
+fn to_oklab(lin: [f64; 3]) -> [f64; 3] {
+    let lms = mat3_vec(&OKLAB_M1, lin);
+    let c = [
+        lms[0].max(0.0).cbrt(),
+        lms[1].max(0.0).cbrt(),
+        lms[2].max(0.0).cbrt(),
+    ];
+    mat3_vec(&OKLAB_M2, c)
+}
+
+/// Oklab → 线性域 RGB（不做 gamma 编码，保持管线线性域）。
+fn from_oklab(lab: [f64; 3]) -> [f64; 3] {
+    let lms = mat3_vec(&OKLAB_M1_INV, lab);
+    let l = [lms[0].powi(3), lms[1].powi(3), lms[2].powi(3)];
+    mat3_vec(&OKLAB_M2_INV, l)
+}
+
+/// Oklab 高斯统计（均值 + 协方差，协方差加 `1e-6·I` 正则）。
+#[derive(Clone, Copy, Debug, Default)]
+struct Gaussian {
+    mean: [f64; 3],
+    cov: [[f64; 3]; 3],
+    count: u64,
+}
+
+impl Gaussian {
+    fn is_empty(&self) -> bool {
+        self.count == 0
+    }
+}
+
+/// 累加器：在线计算 Oklab 高斯统计（避免物化样本列表）。
+#[derive(Default)]
+struct GaussianAccumulator {
+    n: u64,
+    sum: [f64; 3],
+    /// 上三角外积和：xx, xy, xz, yy, yz, zz
+    outer: [f64; 6],
+}
+
+impl GaussianAccumulator {
+    fn push(&mut self, v: [f64; 3]) {
+        self.n += 1;
+        self.sum[0] += v[0];
+        self.sum[1] += v[1];
+        self.sum[2] += v[2];
+        self.outer[0] += v[0] * v[0];
+        self.outer[1] += v[0] * v[1];
+        self.outer[2] += v[0] * v[2];
+        self.outer[3] += v[1] * v[1];
+        self.outer[4] += v[1] * v[2];
+        self.outer[5] += v[2] * v[2];
+    }
+
+    fn finish(&self) -> Gaussian {
+        if self.n == 0 {
+            return Gaussian::default();
+        }
+        let n = self.n as f64;
+        let mean = [self.sum[0] / n, self.sum[1] / n, self.sum[2] / n];
+        let mut cov = [[0.0; 3]; 3];
+        if self.n > 1 {
+            // 样本协方差（N-1），与 numpy.cov 一致
+            let d = n - 1.0;
+            let raw = [
+                [self.outer[0], self.outer[1], self.outer[2]],
+                [self.outer[1], self.outer[3], self.outer[4]],
+                [self.outer[2], self.outer[4], self.outer[5]],
+            ];
+            for i in 0..3 {
+                for j in 0..3 {
+                    cov[i][j] = (raw[i][j] - n * mean[i] * mean[j]) / d;
+                }
+            }
+        }
+        for i in 0..3 {
+            cov[i][i] += COV_REG;
+        }
+        Gaussian {
+            mean,
+            cov,
+            count: self.n,
+        }
+    }
+}
+
+/// 对称矩阵特征分解（Jacobi 旋转法），返回 (特征值, 特征向量列矩阵)。
+fn sym_eigen(m: &[[f64; 3]; 3]) -> ([f64; 3], [[f64; 3]; 3]) {
+    let mut a = *m;
+    let mut v = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+    for _ in 0..64 {
+        // 找最大非对角元
+        let (mut p, mut q, mut max_off) = (0usize, 1usize, 0.0f64);
+        for i in 0..3 {
+            for j in (i + 1)..3 {
+                if a[i][j].abs() > max_off {
+                    max_off = a[i][j].abs();
+                    p = i;
+                    q = j;
+                }
+            }
+        }
+        if max_off < 1e-15 {
+            break;
+        }
+        let app = a[p][p];
+        let aqq = a[q][q];
+        let apq = a[p][q];
+        let tau = (aqq - app) / (2.0 * apq);
+        let t = if tau >= 0.0 {
+            1.0 / (tau + (1.0 + tau * tau).sqrt())
+        } else {
+            -1.0 / (-tau + (1.0 + tau * tau).sqrt())
+        };
+        let c = 1.0 / (1.0 + t * t).sqrt();
+        let s = t * c;
+        // 旋转 A
+        for i in 0..3 {
+            let (aip, aiq) = (a[i][p], a[i][q]);
+            a[i][p] = c * aip - s * aiq;
+            a[i][q] = s * aip + c * aiq;
+        }
+        for j in 0..3 {
+            let (apj, aqj) = (a[p][j], a[q][j]);
+            a[p][j] = c * apj - s * aqj;
+            a[q][j] = s * apj + c * aqj;
+        }
+        // 旋转 V（累积特征向量）
+        for i in 0..3 {
+            let (vip, viq) = (v[i][p], v[i][q]);
+            v[i][p] = c * vip - s * viq;
+            v[i][q] = s * vip + c * viq;
+        }
+    }
+    ([a[0][0], a[1][1], a[2][2]], v)
+}
+
+/// PSD 矩阵幂：V·diag(max(λ, floor)^p)·Vᵀ。
+/// 负指数（开方逆）使用相对特征值下限，避免把嵌套协方差的正平方根
+/// 截断到常数而人为放大色度（与 language-guided-lut 同口径）。
+fn psd_power(m: &[[f64; 3]; 3], exponent: f64) -> [[f64; 3]; 3] {
+    let (eval, evec) = sym_eigen(m);
+    let floor = if exponent < 0.0 {
+        eval.iter().cloned().fold(f64::NEG_INFINITY, f64::max) * 1e-12
+    } else {
+        0.0
+    };
+    let floor = floor.max(1e-15);
+    let mut d = [[0.0; 3]; 3];
+    for i in 0..3 {
+        d[i][i] = eval[i].max(floor).powf(exponent);
+    }
+    mat3_mul(&mat3_mul(&evec, &d), &mat3_transpose(&evec))
+}
+
+/// MKL 线性 Monge-Kantorovitch 传输（Pitié & Kokaram 2007）：
+/// `A = C_s^(-1/2)·(C_s^(1/2)·C_t·C_s^(1/2))^(1/2)·C_s^(-1/2)`，`b = μ_t - A·μ_s`。
+/// 返回 (A, b, 协方差不变式相对误差)。不变量超阈值时返回 Err（调用方降级）。
+fn mkl_transport(src: &Gaussian, dst: &Gaussian) -> Result<([[f64; 3]; 3], [f64; 3], f64), String> {
+    let cs_half = psd_power(&src.cov, 0.5);
+    let cs_inv_half = psd_power(&src.cov, -0.5);
+    let mid = mat3_mul(&mat3_mul(&cs_half, &dst.cov), &cs_half);
+    let mid_sqrt = psd_power(&mid, 0.5);
+    let a = mat3_mul(&mat3_mul(&cs_inv_half, &mid_sqrt), &cs_inv_half);
+    // 对称化，消掉特征分解/迭代的数值不对称
+    let a = [
+        [a[0][0], (a[0][1] + a[1][0]) / 2.0, (a[0][2] + a[2][0]) / 2.0],
+        [(a[1][0] + a[0][1]) / 2.0, a[1][1], (a[1][2] + a[2][1]) / 2.0],
+        [(a[2][0] + a[0][2]) / 2.0, (a[2][1] + a[1][2]) / 2.0, a[2][2]],
+    ];
+    let acsa = mat3_mul(&mat3_mul(&a, &src.cov), &mat3_transpose(&a));
+    let denom = mat3_frobenius(&dst.cov).max(1e-15);
+    let err = mat3_frobenius(&[
+        [
+            acsa[0][0] - dst.cov[0][0],
+            acsa[0][1] - dst.cov[0][1],
+            acsa[0][2] - dst.cov[0][2],
+        ],
+        [
+            acsa[1][0] - dst.cov[1][0],
+            acsa[1][1] - dst.cov[1][1],
+            acsa[1][2] - dst.cov[1][2],
+        ],
+        [
+            acsa[2][0] - dst.cov[2][0],
+            acsa[2][1] - dst.cov[2][1],
+            acsa[2][2] - dst.cov[2][2],
+        ],
+    ]) / denom;
+    if !err.is_finite() {
+        return Err("MKL invariant is not finite".to_string());
+    }
+    if err > MKL_INVARIANT_TOL {
+        return Err(format!(
+            "MKL covariance invariant failed: relative error {err:.2e}"
+        ));
+    }
+    let b = [
+        dst.mean[0] - (a[0][0] * src.mean[0] + a[0][1] * src.mean[1] + a[0][2] * src.mean[2]),
+        dst.mean[1] - (a[1][0] * src.mean[0] + a[1][1] * src.mean[1] + a[1][2] * src.mean[2]),
+        dst.mean[2] - (a[2][0] * src.mean[0] + a[2][1] * src.mean[1] + a[2][2] * src.mean[2]),
+    ];
+    Ok((a, b, err))
+}
+
+/// 参考图近中性（黑白）判定：通道差 spread 统计（借鉴 language-guided-lut monochrome.py）。
+/// 平均 spread ≤2 且 spread>4 的像素占比 ≤1%、spread>12 占比 ≤0.01% 视为黑白。
+/// 阈值口径与 Python 原版一致（0..255 域），输入为 0..1 归一化像素，故在函数内换算。
+fn classify_monochrome(enc_pixels: &[[f32; 3]]) -> bool {
+    if enc_pixels.is_empty() {
+        return false;
+    }
+    let mut spread_sum = 0.0f64;
+    let mut mild = 0u64;
+    let mut strong = 0u64;
+    for p in enc_pixels {
+        // 0..1 → 0..255 域，与阈值 2/4/12 同口径
+        let spread = (p[0].max(p[1]).max(p[2]) - p[0].min(p[1]).min(p[2])) as f64 * 255.0;
+        spread_sum += spread;
+        if spread > 4.0 {
+            mild += 1;
+        }
+        if spread > 12.0 {
+            strong += 1;
+        }
+    }
+    let n = enc_pixels.len() as f64;
+    spread_sum / n <= 2.0 && (mild as f64) / n <= 0.01 && (strong as f64) / n <= 0.0001
+}
+
 fn analyze_image(img: &DynamicImage) -> ImageStats {
     let thumb = img.thumbnail(ANALYSIS_DIM, ANALYSIS_DIM);
     let (width, height) = thumb.dimensions();
@@ -240,18 +539,28 @@ fn analyze_image(img: &DynamicImage) -> ImageStats {
     let mut zone_sum = [[0f64; 3]; 3];
     let mut zone_n = [0f64; 3];
     let mut luma_hist = [0f64; 32];
+    // Oklab 高斯累加器：全局 + 三分区（与线性域 zone 判定同一 zone_masks）
+    let mut gauss_global = GaussianAccumulator::default();
+    let mut gauss_zone: [GaussianAccumulator; 3] = [
+        GaussianAccumulator::default(),
+        GaussianAccumulator::default(),
+        GaussianAccumulator::default(),
+    ];
     for lin in &lin_pixels {
         for c in 0..3 {
             lin_sum[c] += lin[c];
         }
         let l = luma(*lin);
         let masks = zone_masks(l);
+        let lab = to_oklab(*lin);
+        gauss_global.push(lab);
         for z in 0..3 {
             if masks[z] > 0.5 {
                 zone_n[z] += 1.0;
                 for c in 0..3 {
                     zone_sum[z][c] += lin[c];
                 }
+                gauss_zone[z].push(lab);
             }
         }
         let enc_y = srgb_encode(l.clamp(0.0, 1.0));
@@ -286,6 +595,12 @@ fn analyze_image(img: &DynamicImage) -> ImageStats {
         ],
         enc_pixels,
         luma_hist,
+        global_gauss: gauss_global.finish(),
+        zone_gauss: [
+            gauss_zone[0].finish(),
+            gauss_zone[1].finish(),
+            gauss_zone[2].finish(),
+        ],
     }
 }
 
@@ -405,22 +720,193 @@ fn chi_square(h1: &[f64; 32], h2: &[f64; 32]) -> f64 {
     chi * 0.5
 }
 
+/// MKL 传输强度参数（0..1）：strength 整体、tone 只缩放 Oklab L 轴（明暗）、
+/// color 只缩放 a/b 轴（色彩）。借鉴 language-guided-lut 的强度三分解，
+/// 使「只调氛围不改明暗」成为一阶能力。
+#[derive(Clone, Copy, Debug)]
+pub struct TransferStrength {
+    pub strength: f64,
+    pub tone_strength: f64,
+    pub color_strength: f64,
+}
+
+impl Default for TransferStrength {
+    fn default() -> Self {
+        Self {
+            strength: 1.0,
+            tone_strength: 1.0,
+            color_strength: 1.0,
+        }
+    }
+}
+
+impl TransferStrength {
+    fn sanitized(&self) -> Self {
+        let clamp01 = |v: f64| if v.is_finite() { v.clamp(0.0, 1.0) } else { 1.0 };
+        Self {
+            strength: clamp01(self.strength),
+            tone_strength: clamp01(self.tone_strength),
+            color_strength: clamp01(self.color_strength),
+        }
+    }
+}
+
+/// 对目标像素的 Oklab 坐标应用 MKL 仿射映射，按强度分解缩放 L 与 a/b 轴，
+/// 返回线性域增量（mapped - original）。
+fn mkl_delta(
+    a: &[[f64; 3]; 3],
+    b: [f64; 3],
+    lab: [f64; 3],
+    lin: [f64; 3],
+    k: &TransferStrength,
+) -> [f64; 3] {
+    let mapped = mat3_vec(a, lab);
+    let mut d = [
+        mapped[0] + b[0] - lab[0],
+        mapped[1] + b[1] - lab[1],
+        mapped[2] + b[2] - lab[2],
+    ];
+    d[0] *= k.tone_strength * k.strength;
+    d[1] *= k.color_strength * k.strength;
+    d[2] *= k.color_strength * k.strength;
+    let out = from_oklab([lab[0] + d[0], lab[1] + d[1], lab[2] + d[2]]);
+    [out[0] - lin[0], out[1] - lin[1], out[2] - lin[2]]
+}
+
 pub fn compute_color_transfer(
     sample: &DynamicImage,
     target: &DynamicImage,
+    strength: TransferStrength,
 ) -> Result<(Value, Value), String> {
     let s = analyze_image(sample);
     let t = analyze_image(target);
     if s.enc_pixels.is_empty() || t.enc_pixels.is_empty() {
         return Err("Empty image".to_string());
     }
+    let k = strength.sanitized();
 
-    // 阶段 1：全局 tint（线性域，先于曲线，符合管线顺序；全局强度 sat=1.0/lum=1.0）
-    let v_global = [
+    // 黑白参考路由：样片近中性时跳过 tint（避免给客片染上伪彩色），
+    // 仅保留逐通道曲线做明暗/反差匹配（保亮度结构）。
+    let monochrome = classify_monochrome(&s.enc_pixels);
+
+    // 阶段 0：MKL 协方差传输求解（全局 + 三分区）。源 = 客片（被调色），
+    // 目标 = 样片（期望风格）。任何分区不变量校验失败只丢弃该分区，
+    // 全部失败时整体降级为一阶矩（Reinhard 均值差）路径。
+    // transports[0] = 全局，transports[1..=3] = shadow/mid/highlight。
+    let mut transports: [Option<([[f64; 3]; 3], [f64; 3])>; 4] = [None; 4];
+    let mut invariant_err_max = 0.0f64;
+    let mut mkl_error: Option<String> = None;
+    if !monochrome {
+        if !t.global_gauss.is_empty() && !s.global_gauss.is_empty() {
+            match mkl_transport(&t.global_gauss, &s.global_gauss) {
+                Ok((a, b, err)) => {
+                    transports[0] = Some((a, b));
+                    invariant_err_max = invariant_err_max.max(err);
+                }
+                Err(e) => mkl_error = Some(e),
+            }
+        }
+        for z in 0..3 {
+            if t.zone_frac[z] < 0.02
+                || t.zone_gauss[z].is_empty()
+                || s.zone_gauss[z].is_empty()
+            {
+                continue;
+            }
+            match mkl_transport(&t.zone_gauss[z], &s.zone_gauss[z]) {
+                Ok((a, b, err)) => {
+                    transports[z + 1] = Some((a, b));
+                    invariant_err_max = invariant_err_max.max(err);
+                }
+                Err(e) => {
+                    log::warn!("MKL zone {z} transport failed, falling back: {e}");
+                }
+            }
+        }
+    }
+    let use_mkl = transports.iter().any(|t| t.is_some());
+    // 分区/全局均缺失时的兜底映射（use_mkl 为 true 时必然存在）
+    let transport_fallback: Option<([[f64; 3]; 3], [f64; 3])> =
+        transports.iter().find_map(|t| t.as_ref()).copied();
+    if !use_mkl && !monochrome {
+        log::warn!(
+            "color transfer: MKL unavailable ({}), degrading to first-order mean matching",
+            mkl_error.unwrap_or_else(|| "empty statistics".to_string())
+        );
+    }
+
+    // 阶段 0.5：逐像素增量。MKL 可用时按 zone_masks 加权合并各分区映射
+    // （分区缺失回退全局映射）；否则用常数均值差 + 分区均值差残余，
+    // 与旧版 Reinhard 路径逐位等价。
+    let t_lin: Vec<[f64; 3]> = t
+        .enc_pixels
+        .iter()
+        .map(|p| to_linear([p[0] as f64, p[1] as f64, p[2] as f64]))
+        .collect();
+    let v_legacy = [
         s.lin_mean[0] - t.lin_mean[0],
         s.lin_mean[1] - t.lin_mean[1],
         s.lin_mean[2] - t.lin_mean[2],
     ];
+    let zone_residual_legacy: [[f64; 3]; 3] = std::array::from_fn(|z| {
+        [
+            s.zone_lin_mean[z][0] - t.zone_lin_mean[z][0] - v_legacy[0],
+            s.zone_lin_mean[z][1] - t.zone_lin_mean[z][1] - v_legacy[1],
+            s.zone_lin_mean[z][2] - t.zone_lin_mean[z][2] - v_legacy[2],
+        ]
+    });
+    let mut global_delta_sum = [0f64; 3];
+    let mut zone_delta_sum = [[0f64; 3]; 3];
+    let mut zone_delta_n = [0f64; 3];
+    for lin in &t_lin {
+        let l = luma(*lin);
+        let masks = zone_masks(l);
+        let d = if monochrome {
+            [0.0; 3]
+        } else if use_mkl {
+            let lab = to_oklab(*lin);
+            let mut d = [0f64; 3];
+            for z in 0..3 {
+                // 分区映射优先 → 全局映射 → 任意可用映射兜底
+                let (a, b) = transports[z + 1]
+                    .or(transports[0])
+                    .or(transport_fallback)
+                    .unwrap();
+                let dz = mkl_delta(&a, b, lab, *lin, &k);
+                for c in 0..3 {
+                    d[c] += masks[z] * dz[c];
+                }
+            }
+            d
+        } else {
+            let mut d = v_legacy;
+            for z in 0..3 {
+                for c in 0..3 {
+                    d[c] += masks[z] * zone_residual_legacy[z][c];
+                }
+            }
+            d
+        };
+        for c in 0..3 {
+            global_delta_sum[c] += d[c];
+        }
+        for z in 0..3 {
+            if masks[z] > 0.5 {
+                zone_delta_n[z] += 1.0;
+                for c in 0..3 {
+                    zone_delta_sum[z][c] += d[c];
+                }
+            }
+        }
+    }
+    let n_px = t_lin.len().max(1) as f64;
+    let v_global = [
+        global_delta_sum[0] / n_px,
+        global_delta_sum[1] / n_px,
+        global_delta_sum[2] / n_px,
+    ];
+
+    // 阶段 1：全局 tint（线性域，先于曲线，符合管线顺序；全局强度 sat=1.0/lum=1.0）
     let global = fit_tint(v_global, 1.0, 1.0);
     let gs = global.shift(1.0, 1.0);
 
@@ -431,14 +917,14 @@ pub fn compute_color_transfer(
         lum: 0.0,
     }; 3];
     for z in 0..3 {
-        if t.zone_frac[z] < 0.02 {
+        if monochrome || t.zone_frac[z] < 0.02 || zone_delta_n[z] <= 0.0 {
             continue;
         }
-        // 分区内像素期望的残余均值偏移 = 分区均值差 - 全局 tint 已覆盖部分
+        // 分区内像素期望的残余偏移 = 分区平均增量 - 全局 tint 已覆盖部分
         let residual = [
-            s.zone_lin_mean[z][0] - t.zone_lin_mean[z][0] - gs[0],
-            s.zone_lin_mean[z][1] - t.zone_lin_mean[z][1] - gs[1],
-            s.zone_lin_mean[z][2] - t.zone_lin_mean[z][2] - gs[2],
+            zone_delta_sum[z][0] / zone_delta_n[z] - gs[0],
+            zone_delta_sum[z][1] / zone_delta_n[z] - gs[1],
+            zone_delta_sum[z][2] / zone_delta_n[z] - gs[2],
         ];
         if residual.iter().all(|c| c.abs() < 1e-5) {
             continue;
@@ -454,11 +940,6 @@ pub fn compute_color_transfer(
         .map(|z| zones[z].shift(ZONE_SAT_STRENGTHS[z], ZONE_LUM_STRENGTHS[z]))
         .collect();
     let mut pred_enc_ch: [Vec<f64>; 3] = [Vec::new(), Vec::new(), Vec::new()];
-    let t_lin: Vec<[f64; 3]> = t
-        .enc_pixels
-        .iter()
-        .map(|p| to_linear([p[0] as f64, p[1] as f64, p[2] as f64]))
-        .collect();
     for lin in &t_lin {
         let l = luma(*lin);
         let masks = zone_masks(l);
@@ -477,7 +958,16 @@ pub fn compute_color_transfer(
     }
     let sample_enc_ch: [Vec<f64>; 3] =
         std::array::from_fn(|c| s.enc_pixels.iter().map(|p| p[c] as f64).collect());
-    let curves = fit_curves_quantile(&pred_enc_ch, &sample_enc_ch);
+    let mut curves = fit_curves_quantile(&pred_enc_ch, &sample_enc_ch);
+    // 整体强度作用于曲线：仅缩放与恒等映射的偏离量（tone/color 分解已由
+    // tint 目标与 MKL 增量承载）
+    if (k.strength - 1.0).abs() > 1e-9 {
+        for curve in curves.iter_mut().flatten() {
+            for pt in curve.iter_mut() {
+                pt[1] = pt[0] + (pt[1] - pt[0]) * k.strength;
+            }
+        }
+    }
 
     // 最终模拟（tint → 编码 → 曲线），计算度量
     let sample_lin: Vec<[f64; 3]> = s
@@ -569,6 +1059,12 @@ pub fn compute_color_transfer(
         "deltaEReduction": if de_before > 1e-6 { ((1.0 - de_after / de_before) * 100.0).clamp(0.0, 100.0) } else { 0.0 },
         "chiSquareBefore": chi_square(&t.luma_hist, &s.luma_hist),
         "chiSquareAfter": chi_square(&hist_after, &s.luma_hist),
+        // MKL 诊断（借鉴 language-guided-lut 的可诊断性契约）：
+        // mklUsed 是否启用协方差传输；mklInvariantError 为 A·C_s·Aᵀ≈C_t
+        // 不变式的最大相对误差；monochromeReference 样片是否走了黑白路由。
+        "mklUsed": use_mkl,
+        "mklInvariantError": invariant_err_max,
+        "monochromeReference": monochrome,
     });
     Ok((Value::Object(patch), metrics))
 }
@@ -627,12 +1123,23 @@ pub async fn compute_color_match(
     app_handle: tauri::AppHandle,
     sample_path: String,
     target_path: String,
+    // 整体强度（0..1，默认 1.0）
+    strength: Option<f64>,
+    // 明暗强度（0..1，默认 1.0）：只缩放 Oklab L 轴增量
+    tone_strength: Option<f64>,
+    // 色彩强度（0..1，默认 1.0）：只缩放 Oklab a/b 轴增量
+    color_strength: Option<f64>,
 ) -> Result<Value, String> {
     tokio::task::spawn_blocking(move || -> Result<Value, String> {
         let settings = crate::app_settings::load_settings(app_handle).unwrap_or_default();
         let sample = load_analysis_image(&sample_path, &settings)?;
         let target = load_analysis_image(&target_path, &settings)?;
-        let (adjustments, metrics) = compute_color_transfer(&sample, &target)?;
+        let strength = TransferStrength {
+            strength: strength.unwrap_or(1.0),
+            tone_strength: tone_strength.unwrap_or(1.0),
+            color_strength: color_strength.unwrap_or(1.0),
+        };
+        let (adjustments, metrics) = compute_color_transfer(&sample, &target, strength)?;
         Ok(json!({ "adjustments": adjustments, "metrics": metrics }))
     })
     .await
@@ -684,7 +1191,8 @@ mod tests {
     #[test]
     fn test_identity_returns_empty_patch() {
         let img = gradient_image();
-        let (patch, metrics) = compute_color_transfer(&img, &img).unwrap();
+        let (patch, metrics) =
+            compute_color_transfer(&img, &img, TransferStrength::default()).unwrap();
         assert!(
             patch.get("colorGrading").is_none(),
             "identity 应无 colorGrading"
@@ -697,7 +1205,8 @@ mod tests {
     fn test_synthetic_match_reduces_delta_e() {
         let target = gradient_image();
         let sample = warm_sample(&target);
-        let (patch, metrics) = compute_color_transfer(&sample, &target).unwrap();
+        let (patch, metrics) =
+            compute_color_transfer(&sample, &target, TransferStrength::default()).unwrap();
         let before = metrics["deltaEMeanBefore"].as_f64().unwrap();
         let after = metrics["deltaEMeanAfter"].as_f64().unwrap();
         assert!(before > 2.0, "合成样片应有明显差异，before={before}");
@@ -712,7 +1221,8 @@ mod tests {
     fn test_patch_values_within_slider_ranges() {
         let target = gradient_image();
         let sample = warm_sample(&target);
-        let (patch, _) = compute_color_transfer(&sample, &target).unwrap();
+        let (patch, _) =
+            compute_color_transfer(&sample, &target, TransferStrength::default()).unwrap();
         if let Some(cg) = patch.get("colorGrading") {
             for zone in ["global", "shadows", "midtones", "highlights"] {
                 if let Some(z) = cg.get(zone) {
@@ -725,5 +1235,191 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_oklab_roundtrip() {
+        // Oklab 正逆变换应在编码域闭环（线性域）
+        for enc in [
+            [0.0f64, 0.0, 0.0],
+            [1.0, 1.0, 1.0],
+            [0.5, 0.5, 0.5],
+            [0.9, 0.1, 0.2],
+            [0.1, 0.8, 0.6],
+            [0.25, 0.35, 0.75],
+        ] {
+            let lin = to_linear(enc);
+            let lab = to_oklab(lin);
+            let back = from_oklab(lab);
+            for c in 0..3 {
+                assert!(
+                    (back[c] - lin[c]).abs() < 1e-6,
+                    "Oklab 往返误差过大: enc={enc:?} c={c} {back:?} vs {lin:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_mkl_transport_maps_covariance_and_mean() {
+        // 构造两组 Oklab 高斯：源（低反差、偏青）与目标（高反差、偏暖）
+        let mut acc_s = GaussianAccumulator::default();
+        let mut acc_t = GaussianAccumulator::default();
+        // 简单确定性伪随机（LCG），避免引入 rand 依赖
+        let mut seed = 42u64;
+        let mut next = || {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            ((seed >> 33) as f64 / (u32::MAX as f64)) * 2.0 - 1.0
+        };
+        for _ in 0..20000 {
+            // 源：a/b 平面较窄、整体偏负 a（偏青）
+            let s = [0.5 + 0.03 * next(), -0.05 + 0.02 * next(), -0.04 + 0.02 * next()];
+            // 目标：a/b 平面更宽、整体偏正 a（偏暖）
+            let t = [0.55 + 0.08 * next(), 0.06 + 0.06 * next(), 0.05 + 0.06 * next()];
+            acc_s.push(s);
+            acc_t.push(t);
+        }
+        let src = acc_s.finish();
+        let dst = acc_t.finish();
+        let (a, b, err) = mkl_transport(&src, &dst).expect("MKL 应求解成功");
+        assert!(err <= MKL_INVARIANT_TOL, "不变式误差 {err:.2e} 超阈值");
+        // 均值应精确映射到目标均值
+        let mapped_mean = mat3_vec(&a, src.mean);
+        let expected_b = [
+            dst.mean[0] - mapped_mean[0],
+            dst.mean[1] - mapped_mean[1],
+            dst.mean[2] - mapped_mean[2],
+        ];
+        for c in 0..3 {
+            assert!((b[c] - expected_b[c]).abs() < 1e-9, "b 向量不一致");
+        }
+        // 传输后的协方差应贴近目标协方差（MKL 的核心保证）
+        let acsa = mat3_mul(&mat3_mul(&a, &src.cov), &mat3_transpose(&a));
+        for i in 0..3 {
+            for j in 0..3 {
+                let rel = (acsa[i][j] - dst.cov[i][j]).abs() / dst.cov[i][j].abs().max(1e-6);
+                assert!(rel < 1e-3, "协方差元素 [{i}][{j}] 相对误差 {rel:.2e}");
+            }
+        }
+    }
+
+    #[test]
+    fn test_monochrome_classification() {
+        // 纯灰度图应判定为黑白
+        let mut gray = RgbImage::new(32, 32);
+        for (x, y, p) in gray.enumerate_pixels_mut() {
+            let v = ((x + y) * 4).min(255) as u8;
+            *p = Rgb([v, v, v]);
+        }
+        let gray_pixels: Vec<[f32; 3]> = gray
+            .pixels()
+            .map(|p| [p[0] as f32 / 255.0, p[1] as f32 / 255.0, p[2] as f32 / 255.0])
+            .collect();
+        assert!(classify_monochrome(&gray_pixels), "灰度图应判定为黑白");
+        // 彩色图不应判定为黑白
+        let mut color = RgbImage::new(32, 32);
+        for (x, y, p) in color.enumerate_pixels_mut() {
+            *p = Rgb([(x * 8 % 256) as u8, (y * 4 % 256) as u8, 128]);
+        }
+        let color_pixels: Vec<[f32; 3]> = color
+            .pixels()
+            .map(|p| [p[0] as f32 / 255.0, p[1] as f32 / 255.0, p[2] as f32 / 255.0])
+            .collect();
+        assert!(!classify_monochrome(&color_pixels), "彩色图不应判定为黑白");
+    }
+
+    #[test]
+    fn test_monochrome_reference_skips_tint() {
+        // 黑白样片：应跳过 colorGrading tint，仅走曲线
+        let target = gradient_image();
+        let mut gray = RgbImage::new(128, 128);
+        for (x, y, p) in gray.enumerate_pixels_mut() {
+            let v = ((x + y) * 255 / 254) as u8;
+            *p = Rgb([v, v, v]);
+        }
+        let gray = DynamicImage::ImageRgb8(gray);
+        let (patch, metrics) = compute_color_transfer(&gray, &target, TransferStrength::default())
+            .expect("黑白参考应成功");
+        assert!(
+            patch.get("colorGrading").is_none(),
+            "黑白参考不应输出 colorGrading，patch={patch}"
+        );
+        assert!(
+            metrics["monochromeReference"].as_bool().unwrap(),
+            "应标记黑白路由"
+        );
+        assert!(!metrics["mklUsed"].as_bool().unwrap(), "黑白路由不走 MKL");
+    }
+
+    #[test]
+    fn test_strength_zero_is_near_identity() {
+        // 强度为 0 时补丁应接近恒等（ΔE 几乎不下降）
+        let target = gradient_image();
+        let sample = warm_sample(&target);
+        let (patch, metrics) = compute_color_transfer(
+            &sample,
+            &target,
+            TransferStrength {
+                strength: 0.0,
+                tone_strength: 1.0,
+                color_strength: 1.0,
+            },
+        )
+        .unwrap();
+        let before = metrics["deltaEMeanBefore"].as_f64().unwrap();
+        let after = metrics["deltaEMeanAfter"].as_f64().unwrap();
+        assert!(
+            after > before * 0.9,
+            "strength=0 应接近恒等，before={before}, after={after}, patch={patch}"
+        );
+    }
+
+    #[test]
+    fn test_color_strength_zero_preserves_tone() {
+        // color_strength=0 时明暗仍应改善（ΔE 下降），但色度增量被抑制：
+        // 与全强度相比，补丁中 tint 饱和度应不更大。
+        let target = gradient_image();
+        let sample = warm_sample(&target);
+        let (full, _) =
+            compute_color_transfer(&sample, &target, TransferStrength::default()).unwrap();
+        let (no_color, _) = compute_color_transfer(
+            &sample,
+            &target,
+            TransferStrength {
+                strength: 1.0,
+                tone_strength: 1.0,
+                color_strength: 0.0,
+            },
+        )
+        .unwrap();
+        let sat_of = |patch: &Value| -> f64 {
+            patch
+                .get("colorGrading")
+                .and_then(|cg| cg.get("global"))
+                .and_then(|g| g.get("saturation"))
+                .and_then(|s| s.as_f64())
+                .unwrap_or(0.0)
+        };
+        assert!(
+            sat_of(&no_color) <= sat_of(&full) + 1e-6,
+            "color_strength=0 的全局 tint 饱和度不应更大: {} vs {}",
+            sat_of(&no_color),
+            sat_of(&full)
+        );
+    }
+
+    #[test]
+    fn test_mkl_invariant_rejects_degenerate() {
+        // 非有限协方差必须被拒绝，而不是产出错误传输
+        let mut g = Gaussian::default();
+        g.count = 10;
+        g.mean = [0.5, 0.0, 0.0];
+        g.cov = [[f64::NAN, 0.0, 0.0], [0.0, 1e-6, 0.0], [0.0, 0.0, 1e-6]];
+        let h = Gaussian {
+            mean: [0.5, 0.0, 0.0],
+            cov: [[1e-6, 0.0, 0.0], [0.0, 1e-6, 0.0], [0.0, 0.0, 1e-6]],
+            count: 10,
+        };
+        assert!(mkl_transport(&g, &h).is_err(), "非有限协方差应拒绝");
     }
 }

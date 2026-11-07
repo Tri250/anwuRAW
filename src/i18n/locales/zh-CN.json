@@ -423,8 +423,19 @@
         "detail": "细节+",
         "enhance": "AI 增强",
         "sky": "天空识别",
-        "subject": "主体识别"
-      }
+        "subject": "主体识别",
+        "style": "风格调色"
+      },
+      "style": {
+        "applied": "已应用「{{name}}」风格（置信度 {{conf}}%）",
+        "failed": "未识别到风格描述，调整保持不变",
+        "placeholder": "描述想要的风格，如：清透日系、电影感青橙、黑白、赛博朋克",
+        "title": "一句话调色"
+      },
+      "strength": {
+        "color": "色彩强度",
+        "tone": "明暗强度"
+      },
     },
     "aiRecommend": {
       "applied": "AI 增强已应用",

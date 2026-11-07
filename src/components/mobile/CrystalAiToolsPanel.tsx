@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import { BringToFront, CloudSun, Loader2, Sparkles, TextSearch, User, Wand2, Waves, Eraser, X } from 'lucide-react';
+import { BringToFront, CloudSun, Loader2, Sparkles, TextSearch, User, Wand2, Waves, Eraser, X, Palette } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useEditorStore } from '../../store/useEditorStore';
 import { selectAiModelDownloadStatus, useProcessStore } from '../../store/useProcessStore';
@@ -34,6 +34,16 @@ const INTENSITIES: ReadonlyArray<{ id: EnhanceIntensity; labelKey: ParseKeys }> 
   { id: 'standard', labelKey: 'editor.aiEnhance.intensities.standard' },
   { id: 'strong', labelKey: 'editor.aiEnhance.intensities.strong' },
 ];
+
+/** 一句话调色返回结构（与后端 style_suggest::StyleSuggestion::to_json 对齐） */
+interface StyleSuggestResult {
+  styleId: string | null;
+  styleName: string | null;
+  confidence: number;
+  scores: Array<{ id: string; score: number }>;
+  matchedTerms: string[];
+  adjustments: Partial<Adjustments> | null;
+}
 
 /** 深度蒙版默认参数（与桌面 MasksPanel.createMaskLogic 同源） */
 const DEPTH_DEFAULTS = { minDepth: 20, maxDepth: 80, minFade: 15, maxFade: 15, feather: 10 } as const;
@@ -76,6 +86,9 @@ export default function CrystalAiToolsPanel() {
   } = useCrystalAiMasks();
 
   const [intensity, setIntensity] = useState<EnhanceIntensity>('standard');
+  /** AI 增强明暗/色彩双强度（0..1，对应后端 tone_strength/color_strength） */
+  const [toneStrength, setToneStrength] = useState(1);
+  const [colorStrength, setColorStrength] = useState(1);
   const [busy, setBusy] = useState<AiBusyKind | null>(null);
   const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
   /** 用户主动取消后抑制「识别失败」toast（取消不是失败） */
@@ -84,6 +97,9 @@ export default function CrystalAiToolsPanel() {
   const proceduralNotified = useRef(false);
   const [textPrompt, setTextPrompt] = useState(loadStoredTextPrompt);
   const [showTextInput, setShowTextInput] = useState(false);
+  /* 一句话调色：提示词仅驻内存（风格结果即时生效，无跨会话保留必要） */
+  const [stylePrompt, setStylePrompt] = useState('');
+  const [showStyleInput, setShowStyleInput] = useState(false);
   const updateTextPrompt = useCallback((value: string) => {
     setTextPrompt(value);
     storeTextPrompt(value);
@@ -112,7 +128,11 @@ export default function CrystalAiToolsPanel() {
         return;
       }
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
-      const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, { intensity });
+      const result = await invoke<Partial<Adjustments>>(Invokes.AiAutoEnhance, {
+        intensity,
+        toneStrength,
+        colorStrength,
+      });
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       // 与桌面 EditorToolbar 同源：经 setAdjustments → debounced pushHistory，
       // 保证 AI 增强结果进 50 步撤销栈（setEditor 直接写会绕过历史）。
@@ -155,6 +175,36 @@ export default function CrystalAiToolsPanel() {
   }, [busy, handleAutoAdjustments, t]);
 
   const denoiseOn = Boolean(adjustments.aiDenoiseEnabled);
+
+  /* 一句话调色 —— 本地词库映射（后端 ai_style_suggest，无网络/模型依赖）：
+   * 自然语言 → 风格 + 非破坏性参数补丁；未命中时不改动当前调整。 */
+  const runStyleSuggest = useCallback(async () => {
+    const prompt = stylePrompt.trim();
+    if (!prompt || busy) return;
+    setBusy('enhance');
+    const startPath = useEditorStore.getState().selectedImage?.path;
+    try {
+      const result = await invoke<StyleSuggestResult>(Invokes.AiStyleSuggest, { prompt });
+      if (useEditorStore.getState().selectedImage?.path !== startPath) return;
+      if (!result.adjustments || !result.styleId) {
+        toast.info(t('crystal.ai.style.failed'));
+        return;
+      }
+      setAdjustments((prev) => ({ ...prev, ...result.adjustments }));
+      setShowStyleInput(false);
+      toast.success(
+        t('crystal.ai.style.applied', {
+          name: result.styleName ?? result.styleId,
+          conf: Math.round((result.confidence ?? 0) * 100),
+        }),
+      );
+    } catch (e) {
+      console.error('AI style suggest failed:', e);
+      toast.error(t('crystal.ai.style.failed'));
+    } finally {
+      setBusy(null);
+    }
+  }, [busy, setAdjustments, stylePrompt, t]);
 
   /* 天空识别 —— 复用桌面 sky mask 链路；识别成功后以容器级
    * MaskAdjustments（clarity/dehaze/saturation）提供「天空强度」滑杆。 */
@@ -427,6 +477,14 @@ export default function CrystalAiToolsPanel() {
       busy: busy === 'subject',
     },
     {
+      id: 'style',
+      label: t('crystal.ai.tiles.style'),
+      icon: Palette,
+      color: 'var(--cx-cat-presets)',
+      onClick: () => setShowStyleInput((v) => !v),
+      active: showStyleInput,
+    },
+    {
       id: 'text',
       label: t('masks.types.text'),
       icon: TextSearch,
@@ -472,6 +530,29 @@ export default function CrystalAiToolsPanel() {
                 {t(labelKey)}
               </button>
             ))}
+          </div>
+
+          {/* 明暗/色彩双强度：作用于 AI 增强参数（后端 tone_strength/color_strength），
+              使「只调氛围不改明暗」成为一阶能力 */}
+          <div className="mb-3">
+            <CxSliderRow
+              label={t('crystal.ai.strength.tone')}
+              min={0}
+              max={100}
+              step={5}
+              defaultValue={100}
+              value={Math.round(toneStrength * 100)}
+              onChange={(v) => setToneStrength(v / 100)}
+            />
+            <CxSliderRow
+              label={t('crystal.ai.strength.color')}
+              min={0}
+              max={100}
+              step={5}
+              defaultValue={100}
+              value={Math.round(colorStrength * 100)}
+              onChange={(v) => setColorStrength(v / 100)}
+            />
           </div>
 
           <div className="cx-grid-tiles mb-2">
@@ -526,6 +607,35 @@ export default function CrystalAiToolsPanel() {
                 }}
               >
                 {t('editor.masks.settings.generateTextMask')}
+              </button>
+            </div>
+          )}
+
+          {/* 一句话调色：风格描述输入 + 应用（后端 ai_style_suggest 本地词库映射） */}
+          {showStyleInput && (
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                className="cx-input grow"
+                type="text"
+                value={stylePrompt}
+                placeholder={t('crystal.ai.style.placeholder')}
+                disabled={Boolean(busy)}
+                autoFocus
+                enterKeyHint="go"
+                onChange={(e) => setStylePrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void runStyleSuggest();
+                }}
+              />
+              <button
+                className="cx-chip is-active shrink-0"
+                disabled={Boolean(busy) || !stylePrompt.trim()}
+                onClick={() => {
+                  haptic(6);
+                  void runStyleSuggest();
+                }}
+              >
+                {t('crystal.ai.style.title')}
               </button>
             </div>
           )}

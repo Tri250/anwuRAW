@@ -697,6 +697,10 @@ pub enum EnhanceIntensity {
 pub async fn ai_auto_enhance(
     app_handle: AppHandle,
     intensity: Option<EnhanceIntensity>,
+    // 明暗强度（0..1，默认 1.0）：只缩放曝光/对比/高光/阴影/清晰度等明暗类参数
+    tone_strength: Option<f64>,
+    // 色彩强度（0..1，默认 1.0）：只缩放自然饱和/色温/色调等色彩类参数
+    color_strength: Option<f64>,
 ) -> Result<Value, String> {
     // 名实一致（自检修复 1）：「AI 增强」此前实为纯直方图统计+纹理锐化，
     // 并无任何 AI 推理——与名称不符。现在真实接入 CLIP 零样本场景识别：
@@ -715,7 +719,14 @@ pub async fn ai_auto_enhance(
     };
     tauri::async_runtime::spawn_blocking(move || {
         let state = app_handle.state::<AppState>();
-        run_ai_auto_enhance(&state, &app_handle, intensity, clip.as_deref())
+        run_ai_auto_enhance(
+            &state,
+            &app_handle,
+            intensity,
+            clip.as_deref(),
+            tone_strength,
+            color_strength,
+        )
     })
     .await
     .map_err(|e| format!("Task panicked: {}", e))?
@@ -726,6 +737,8 @@ fn run_ai_auto_enhance(
     app_handle: &AppHandle,
     intensity: Option<EnhanceIntensity>,
     clip: Option<&crate::ai_processing::ClipModels>,
+    tone_strength: Option<f64>,
+    color_strength: Option<f64>,
 ) -> Result<Value, String> {
     let loaded_image = state
         .original_image
@@ -754,6 +767,17 @@ fn run_ai_auto_enhance(
         EnhanceIntensity::Standard => 1.0,
         EnhanceIntensity::Strong => 1.4,
     };
+    // 明暗/色彩双强度（借鉴 language-guided-lut 的强度分解）：
+    // tone 只作用于明暗/反差/纹理类参数，color 只作用于色彩类参数，
+    // 使「只调氛围不改明暗」成为一阶能力。
+    let tone_k = tone_strength
+        .filter(|v| v.is_finite())
+        .map(|v| v.clamp(0.0, 1.0))
+        .unwrap_or(1.0);
+    let color_k = color_strength
+        .filter(|v| v.is_finite())
+        .map(|v| v.clamp(0.0, 1.0))
+        .unwrap_or(1.0);
 
     if let Some(obj) = adjustments.as_object_mut() {
         // Exposure is perceptually the strongest lever; keep it subtler than
@@ -761,24 +785,31 @@ fn run_ai_auto_enhance(
         if let Some(exp) = obj.get("exposure").and_then(Value::as_f64) {
             obj.insert(
                 "exposure".to_string(),
-                json!((exp * k * 0.8).clamp(-5.0, 5.0)),
+                json!((exp * k * 0.8 * tone_k).clamp(-5.0, 5.0)),
             );
         }
+        // 色彩类键（其余数值键归入明暗组）
+        const COLOR_KEYS: [&str; 4] = ["vibrance", "saturation", "temperature", "tint"];
         for (key, value) in obj.iter_mut() {
             if key == "exposure" || key == "activeTools" {
                 continue;
             }
             if let Some(num) = value.as_f64() {
-                *value = json!(num * k);
+                let group_k = if COLOR_KEYS.contains(&key.as_str()) {
+                    color_k
+                } else {
+                    tone_k
+                };
+                *value = json!(num * k * group_k);
             }
         }
 
         // Texture polish on top of the tonal pass — this is what makes the
         // result read as "enhanced" rather than just auto-levels.
         obj.entry("structure".to_string())
-            .or_insert_with(|| json!(12.0 * k));
+            .or_insert_with(|| json!(12.0 * k * tone_k));
         obj.entry("sharpness".to_string())
-            .or_insert_with(|| json!(10.0 * k));
+            .or_insert_with(|| json!(10.0 * k * tone_k));
 
         // 场景感知偏置：AI 部分的真实语义。 CLIP 不可用时启发式识别兜底。
         let scene = clip

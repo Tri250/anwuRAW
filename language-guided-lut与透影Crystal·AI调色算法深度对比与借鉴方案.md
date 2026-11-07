@@ -159,3 +159,25 @@ ColorFM-L / D-LUT / ModFlows 需要 PyTorch 级运行时。本地推理设施是
 | 3 | P0-2 明暗/色彩双强度（追色 + 增强 + 前端双滑杆） | 阶段 1 |
 | 4 | P1-1/P1-3 校验体系 + 黑白路由 | 阶段 1 |
 | 5 | P0-3 方案 B 云参考图链路（可选）+ P1-2 大师配方 bures 精修 | aiProvider 云通道 |
+
+---
+
+## 六、落地记录（v2.1.17，已实施）
+
+| 阶段 | 内容 | 落点 |
+|---|---|---|
+| 1 | Oklab + MKL 分区协方差传输：`to_oklab/from_oklab`、3×3 对称特征分解（Jacobi）、`psd_power`、`mkl_transport`（A,b + 不变式校验 ≤1e-5）、逐像素分区加权增量、强度三分解（strength/tone/color）、协方差/均值不可用时降级一阶矩 | [color_transfer.rs](file:///workspace/src-tauri/src/color_transfer.rs)（新增数学层 ~260 行 + 重写 `compute_color_transfer` 阶段 0-3） |
+| 4 | 黑白参考路由（通道 spread 统计，跳过 tint 仅走曲线）+ MKL 诊断度量（mklUsed / mklInvariantError / monochromeReference） | 同文件 `classify_monochrome` 与 metrics |
+| 3 | AI 一键增强明暗/色彩双强度：`ai_auto_enhance(toneStrength, colorStrength)`，色彩组 = vibrance/saturation/temperature/tint，其余归明暗组 | [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs) `run_ai_auto_enhance` + [CrystalAiToolsPanel.tsx](file:///workspace/src/components/mobile/CrystalAiToolsPanel.tsx) 双滑杆 |
+| 2 | 一句话调色（方案 A 本地实现）：8 风格 × 双语词库（加权命中 + 置信度换算）+ 非破坏性参数配方（colorGrading + curves + 基础滑杆）；未命中不猜测 | 新增 [style_suggest.rs](file:///workspace/src-tauri/src/style_suggest.rs)（含命令 `ai_style_suggest`）+ 移动端输入 UI |
+
+**实现说明与偏差**：
+- 方案 A 原设计为 CLIP 零样本风格识别，实施时发现项目 CLIP 为图文联合 ONNX 导出（forward 必须同时喂图），无纯文本编码通路，text→text 比对不可行；故改为确定性双语词库映射（零依赖、瞬时、可测试），CLIP 场景通道保持不变。云端参考图链路（方案 B）仍按原计划作为后续项。
+- 追色强度参数通过 `compute_color_match(strength/toneStrength/colorStrength)` 暴露，移动端调用向后兼容（默认 1.0）。
+- 数学层独立验证：Oklab 往返 <1e-6、特征分解重建 <1e-10、MKL 不变式误差 2.8e-11、协方差映射最大相对误差 5.3e-9、强度分解冻结语义正确、退化输入拒绝。
+
+**测试暴露并修复的真 bug**：`classify_monochrome` 的 spread 阈值（2/4/12）为 0..255 域，而生产路径传入 0..1 归一化像素，会导致所有彩色照片被误判为黑白、跳过 tint 拟合；已在函数内统一换算至 0..255 域（`test_monochrome_classification` 回归覆盖）。
+
+**验证状态**：`cargo test --lib` 104/104 通过（color_transfer 10 + style_suggest 5 + 其余 89 无回归）；`tsc --noEmit` 无错误；`cargo check --lib` 零警告。移动端 UI：AI 工具面板新增「一句话调色」磁贴与输入行、明暗/色彩双强度滑杆，词条走 i18n（zh-CN/en 双语）。
+
+**未实施（后续项）**：方案 B 云参考图链路、大师配方 bures 聚合精修（P1-2）、ColorFM-L 学习型后端（P2，不建议）。

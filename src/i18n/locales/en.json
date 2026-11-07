@@ -426,7 +426,18 @@
         "detail": "Detail+",
         "enhance": "AI Enhance",
         "sky": "Sky",
-        "subject": "Subject"
+        "subject": "Subject",
+        "style": "Style Grade"
+      },
+      "style": {
+        "applied": "Applied \"{{name}}\" style (confidence {{conf}}%)",
+        "failed": "No style recognized — adjustments unchanged",
+        "placeholder": "Describe a style, e.g. airy Japanese, cinematic teal-orange, B&W",
+        "title": "Style from Text"
+      },
+      "strength": {
+        "color": "Color strength",
+        "tone": "Tone strength"
       }
     },
     "aiRecommend": {
