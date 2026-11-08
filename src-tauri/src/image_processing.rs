@@ -2042,7 +2042,14 @@ fn parse_color_grade_settings(js_cg: &serde_json::Value) -> ColorGradeSettings {
 fn convert_points_to_aligned(frontend_points: Vec<serde_json::Value>) -> [Point; 16] {
     let mut aligned_points = [Point::default(); 16];
     for (i, point) in frontend_points.iter().enumerate().take(16) {
-        if let (Some(x), Some(y)) = (point["x"].as_f64(), point["y"].as_f64()) {
+        // 权威 schema 为 {"x","y"} 对象点（0..255）。兼容 [x,y] 数组点：数组点
+        // 此前被静默跳过 → 控制点全为 (0,0) → 整条曲线恒 0 → 预览一片黑
+        // （v2.1.19/v2.1.20 风格调色缺陷根因，防御第三方/历史格式数据）。
+        let (x, y) = match point.as_array() {
+            Some(pair) if pair.len() == 2 => (pair[0].as_f64(), pair[1].as_f64()),
+            _ => (point["x"].as_f64(), point["y"].as_f64()),
+        };
+        if let (Some(x), Some(y)) = (x, y) {
             aligned_points[i] = Point {
                 x: x as f32,
                 y: y as f32,
@@ -2052,6 +2059,32 @@ fn convert_points_to_aligned(frontend_points: Vec<serde_json::Value>) -> [Point;
         }
     }
     aligned_points
+}
+
+#[cfg(test)]
+mod curve_points_tests {
+    use super::*;
+
+    /// 回归（v2.1.19 风格调色预览全黑）：{"x","y"} 对象点与 [x,y] 数组点都必须
+    /// 被解析；未知格式才落到 (0,0) 缺省槽（由 curve_count 屏蔽）。
+    #[test]
+    fn test_convert_points_accepts_object_and_array_points() {
+        let obj_pts = vec![
+            serde_json::json!({ "x": 0.0, "y": 16.0 }),
+            serde_json::json!({ "x": 255.0, "y": 244.0 }),
+        ];
+        let a = convert_points_to_aligned(obj_pts);
+        assert!((a[0].x - 0.0).abs() < 1e-6 && (a[0].y - 16.0).abs() < 1e-6);
+        assert!((a[1].x - 255.0).abs() < 1e-6 && (a[1].y - 244.0).abs() < 1e-6);
+
+        let arr_pts = vec![
+            serde_json::json!([0.0, 16.0]),
+            serde_json::json!([255.0, 244.0]),
+        ];
+        let b = convert_points_to_aligned(arr_pts);
+        assert!((b[0].x - 0.0).abs() < 1e-6 && (b[0].y - 16.0).abs() < 1e-6);
+        assert!((b[1].x - 255.0).abs() < 1e-6 && (b[1].y - 244.0).abs() < 1e-6);
+    }
 }
 
 pub(crate) const WP_D65: Vec2 = Vec2::new(0.3127, 0.3290);
