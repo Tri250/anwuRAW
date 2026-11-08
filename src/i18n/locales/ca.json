@@ -22,6 +22,11 @@
       "whites": "Blancs"
     },
     "color": {
+      "aggregate": {
+        "bures": "Baricentre W2",
+        "meanCov": "Mitjana",
+        "robustBures": "Baricentre robust"
+      },
       "ariaSelectColor": "Seleccionar el color {{name}}",
       "calibration": {
         "colors": {
@@ -41,6 +46,9 @@
       "colorMatch": "Igualació de color IA",
       "colorMatchDesc": "Transfereix l'estil de color d'una foto de mostra a aquesta foto (no destructiu)",
       "colorMatchDone": "Igualació aplicada · ΔE reduït un {{reduction}}%",
+      "colorMatchDoneMulti_one": "Coincidència de color aplicada · {{count}} referència agregada · ΔE reduït {{reduction}}%",
+      "colorMatchDoneMulti_many": "Coincidència de color aplicada · {{count}} referències agregades · ΔE reduït {{reduction}}%",
+      "colorMatchDoneMulti_other": "Coincidència de color aplicada · {{count}} referències agregades · ΔE reduït {{reduction}}%",
       "colorMatchFailed": "Error en la igualació de color",
       "colorMatchRunning": "Igualant colors…",
       "colorMixer": "Mesclador de colors",
@@ -57,6 +65,10 @@
       "kelvinModeTooltip": "Mostra la temperatura en Kelvin",
       "localHue": "To local",
       "luminance": "Luminància",
+      "matchClearSamples": "Esborrar referències",
+      "matchSamples_one": "{{count}} imatge de referència",
+      "matchSamples_many": "{{count}} imatges de referència",
+      "matchSamples_other": "{{count}} imatges de referència",
       "mixerColors": {
         "aquas": "Aiguamarines",
         "blues": "Blaus",
@@ -77,15 +89,7 @@
       "vibrance": "Intensitat",
       "wbPickerTooltip": "Comptagotes de balanç de blancs",
       "wbPickerWgpuDisabled": "Comptagotes BB: Desactiva WGPU a Configuració.",
-      "whiteBalance": "Balanç de blancs",
-      "colorMatchDoneMulti": "Coincidència de color aplicada · {{count}} referències agregades · ΔE reduït {{reduction}}%",
-      "matchSamples": "{{count}} imatges de referència",
-      "matchClearSamples": "Esborrar referències",
-      "aggregate": {
-        "bures": "Baricentre W2",
-        "robustBures": "Baricentre robust",
-        "meanCov": "Mitjana"
-      }
+      "whiteBalance": "Balanç de blancs"
     },
     "curves": {
       "channels": {
@@ -441,7 +445,37 @@
       "proceduralSky": "Model de cel IA no baixat: s'ha usat detecció procedural (baixa el model IA per a màscares més precises)",
       "removeMask": "Eliminar selecció",
       "skyStrength": "Intensitat del cel",
+      "sourceBadge": {
+        "cloud": "Núvol",
+        "model": "Model local",
+        "rule": "Regla local"
+      },
+      "sourceNote": {
+        "cloud": "Crida la generació al núvol — només s'envia el prompt de text.",
+        "model": "Processa amb un model d'IA al dispositiu; es baixa al primer ús. Les fotos mai surten del dispositiu.",
+        "rule": "Calculat per regles de paràmetres locals — sense baixades ni xarxa."
+      },
+      "strength": {
+        "color": "Intensitat de color",
+        "tone": "Intensitat de to"
+      },
       "structure": "Estructura",
+      "style": {
+        "applied": "Estil «{{name}}» aplicat (confiança {{conf}}%)",
+        "cloud": "Referència al núvol",
+        "cloudApplied": "Coincidència de referència al núvol aplicada",
+        "cloudDesktopOnly": "Funció d'escriptori · cal inici de sessió Pro",
+        "cloudFailed": "Error en generar la referència al núvol, torna-ho a provar",
+        "cloudNeedLogin": "Inicia sessió primer al teu compte Pro",
+        "cloudNoPatch": "La imatge generada és massa similar a la foto actual: cal cap ajust",
+        "cloudPrivacyNote": "Utilitza generació al núvol — només s'envia el prompt de text, mai la teva foto",
+        "experimental": "Experimental",
+        "failed": "No s'ha reconegut cap estil — ajustos sense canvis",
+        "intensity": "Intensitat {{n}}%",
+        "negatedHint": "Descripcions negades ignorades: {{terms}}",
+        "placeholder": "Descriu l'estil desitjat, p. ex. japonès lluminós, teal-taronja cinematogràfic, B/N",
+        "title": "Paraules d'estil"
+      },
       "subjectStrength": "Intensitat del subjecte",
       "textStrength": "Intensitat del text",
       "texture": "Textura",
@@ -451,23 +485,8 @@
         "detail": "Detall+",
         "enhance": "Millora IA",
         "sky": "Cel",
-        "subject": "Subjecte",
-        "style": "Estil per text"
-      },
-      "style": {
-        "cloud": "Referència al núvol",
-        "cloudApplied": "Coincidència de referència al núvol aplicada",
-        "cloudFailed": "Error en generar la referència al núvol, torna-ho a provar",
-        "cloudNeedLogin": "Inicia sessió primer al teu compte Pro",
-        "cloudNoPatch": "La imatge generada és massa similar a la foto actual: cal cap ajust",
-        "title": "Estil per text",
-        "applied": "Estil «{{name}}» aplicat (confiança {{conf}}%)",
-        "failed": "No s'ha reconegut cap estil — ajustos sense canvis",
-        "placeholder": "Descriu l'estil desitjat, p. ex. japonès lluminós, teal-taronja cinematogràfic, B/N"
-      },
-      "strength": {
-        "tone": "Intensitat de to",
-        "color": "Intensitat de color"
+        "style": "Estil per text",
+        "subject": "Subjecte"
       }
     },
     "aiRecommend": {
@@ -483,8 +502,10 @@
       "scenes": {
         "food": "menjar",
         "landscape": "paisatge",
+        "macro": "macro",
         "night": "nit",
         "portrait": "retrat",
+        "street": "carrer",
         "tele": "teleobjectiu"
       },
       "tagExif": "EXIF",
@@ -514,6 +535,12 @@
       "flipH": "Capgira H",
       "flipV": "Capgira V",
       "free": "Lliure",
+      "gestureState": {
+        "draw": "Arrossega per dibuixar un retall",
+        "moveResize": "Mou / redimensiona el retall",
+        "pinch": "Pessigueu per fer zoom"
+      },
+      "immersiveCrop": "Retall immersiu",
       "perspectiveH": "Horitzontal",
       "perspectiveV": "Vertical",
       "ratio11": "1:1",
@@ -572,6 +599,7 @@
       "centerX": "Centre X",
       "centerY": "Centre Y",
       "dehaze": "Treu la boira",
+      "depthBusy": "Generant el mapa de profunditat…",
       "depthFailed": "Error en generar el mapa de profunditat",
       "flare": "Enlluernament",
       "glow": "Lluentor",
@@ -608,6 +636,7 @@
       "contour": "Contorn",
       "eyeEnhance": "Millora dels ulls",
       "eyeStrength": "Intensitat dels ulls",
+      "faceNotApplicable": "Aquesta cara no és apta per a remodelar (perfil/inclinada). Prova un altre angle.",
       "faceShape": "Reforma facial",
       "glow": "Lluentor",
       "jawline": "Línia de la mandíbula",
@@ -619,6 +648,11 @@
       "smoothSkin": "Suavitza la pell",
       "softSkin": "Pell suau",
       "teethWhiten": "Blanqueja les dents",
+      "toast": {
+        "failed": "Detecció fallida — s'han mantingut els ajustos globals",
+        "globalOnly": "Ajustos globals aplicats — no s'ha detectat cap cara",
+        "multiFace": "Foto de grup — només s'apliquen paràmetres globals i de protecció"
+      },
       "unifyDone": "To de pell unificat",
       "unifyFailed": "Error en unificar",
       "unifySkin": "Unifica el to de pell",
@@ -634,6 +668,7 @@
       "exportEmpty": "Encara no hi ha preajustos per exportar",
       "exportFailed": "Error en exportar preajust",
       "exportSuccess": "Preajust exportat",
+      "favorites": "Preferits",
       "import": "Importa",
       "importFailed": "Error en importar preajustos",
       "importSuccess": "Preajustos importats",
@@ -641,11 +676,14 @@
       "menuApply": "Aplica",
       "menuDelete": "Suprimeix",
       "menuExport": "Exporta",
+      "menuFavorite": "Afegeix als preferits",
       "menuOverwrite": "Actualitza amb l'actual",
       "menuRename": "Canvia el nom",
+      "menuUnfavorite": "Treu dels preferits",
       "namePlaceholder": "Nom del preajust",
       "overwriteFailed": "No s'ha pogut actualitzar el preajust",
       "overwritten": "Preajust actualitzat",
+      "recent": "Recents",
       "renameTitle": "Canvia el nom del preajust",
       "saveCurrent": "Desa l'actual",
       "saved": "Preajust desat",
@@ -657,6 +695,15 @@
     "previewLoading": "Carregant…",
     "previewRendering": "Renderitzant…",
     "previewResetZoom": "Restableix el zoom",
+    "recommend": {
+      "evidence": {
+        "clip": "Reconeixement visual CLIP",
+        "exif": "Pistes EXIF",
+        "stats": "Estadístiques de píxels",
+        "statsHint": "Estadístiques heurístiques · orientatiu"
+      },
+      "titleStats": "Suggeriments d'escena"
+    },
     "redo": "Refés",
     "resetConfirm": {
       "message": "Recupera l'aspecte original i reconstrueix l'historial.",
@@ -692,6 +739,12 @@
     },
     "title": "Retoc Pro",
     "tone": {
+      "aggregation": {
+        "buresHint": "Per defecte · estable amb poques mostres",
+        "meanCovHint": "Estadístiques promediades, el més conservador",
+        "robustBuresHint": "Més robust amb mostres atípiques",
+        "robustGate": "Cal ≥3 mostres"
+      },
       "bandAquas": "Cians",
       "bandBlues": "Blaus",
       "bandGreens": "Verds",
@@ -716,6 +769,15 @@
       "hslLuminance": "Luminància",
       "hslSaturation": "Saturació",
       "hslTitle": "Mesclador de color",
+      "match": {
+        "aspectHint": "La relació d'aspect mostra/imatge difereix — mètriques a nivell de distribució",
+        "fitResidual": "Resíduu d'ajust {{v}}",
+        "hybridBadge": "Inclou suport LUT",
+        "hybridConflict": "Hi ha una LUT activa — buida-la primer",
+        "hybridMode": "LUT d'alta fidelitat",
+        "paramsMode": "Mode paràmetres",
+        "residualHint": "Rotació de to detectada — els paràmetres perden precisió, es recomana LUT d'alta fidelitat"
+      },
       "saturation": "Saturació",
       "shadows": "Ombres",
       "tabColor": "Color",

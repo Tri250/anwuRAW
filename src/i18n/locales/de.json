@@ -22,6 +22,11 @@
       "whites": "Weiß"
     },
     "color": {
+      "aggregate": {
+        "bures": "W2-Baryzentrum",
+        "meanCov": "Mittelwert",
+        "robustBures": "Robustes Baryzentrum"
+      },
       "ariaSelectColor": "{{name}}-Farbe auswählen",
       "calibration": {
         "colors": {
@@ -41,6 +46,8 @@
       "colorMatch": "KI-Farbübertragung",
       "colorMatchDesc": "Überträgt den Farbstil eines Beispielfotos auf dieses Foto (nicht destruktiv)",
       "colorMatchDone": "Farbübertragung angewendet · ΔE um {{reduction}}% reduziert",
+      "colorMatchDoneMulti_one": "Farbabgleich angewendet · {{count}} Referenz aggregiert · ΔE um {{reduction}}% reduziert",
+      "colorMatchDoneMulti_other": "Farbabgleich angewendet · {{count}} Referenzen aggregiert · ΔE um {{reduction}}% reduziert",
       "colorMatchFailed": "Farbübertragung fehlgeschlagen",
       "colorMatchRunning": "Farben werden übertragen…",
       "colorMixer": "Farbmischer",
@@ -57,6 +64,9 @@
       "kelvinModeTooltip": "Temperatur in Kelvin anzeigen",
       "localHue": "Lokaler Farbton",
       "luminance": "Luminanz",
+      "matchClearSamples": "Referenzen löschen",
+      "matchSamples_one": "{{count}} Referenzbild",
+      "matchSamples_other": "{{count}} Referenzbilder",
       "mixerColors": {
         "aquas": "Aquamarin",
         "blues": "Blau",
@@ -77,15 +87,7 @@
       "vibrance": "Dynamik",
       "wbPickerTooltip": "Weißabgleich-Pipette",
       "wbPickerWgpuDisabled": "WA-Pipette: WGPU in den Einstellungen deaktivieren.",
-      "whiteBalance": "Weißabgleich",
-      "colorMatchDoneMulti": "Farbabgleich angewendet · {{count}} Referenzen aggregiert · ΔE um {{reduction}}% reduziert",
-      "matchSamples": "{{count}} Referenzbilder",
-      "matchClearSamples": "Referenzen löschen",
-      "aggregate": {
-        "bures": "W2-Baryzentrum",
-        "robustBures": "Robustes Baryzentrum",
-        "meanCov": "Mittelwert"
-      }
+      "whiteBalance": "Weißabgleich"
     },
     "curves": {
       "channels": {
@@ -421,7 +423,37 @@
       "proceduralSky": "KI-Himmelmodell nicht geladen – prozedurale Himmelerkennung verwendet (KI-Modell für präzisere Masken herunterladen)",
       "removeMask": "Erkennung entfernen",
       "skyStrength": "Himmelstärke",
+      "sourceBadge": {
+        "cloud": "Cloud",
+        "model": "Lokales Modell",
+        "rule": "Lokale Regel"
+      },
+      "sourceNote": {
+        "cloud": "Ruft die Cloud-Generierung online auf – nur der Textprompt wird hochgeladen.",
+        "model": "Verarbeitet mit einem KI-Modell auf dem Gerät; wird bei erster Nutzung heruntergeladen. Fotos verlassen dieses Gerät nie.",
+        "rule": "Berechnet durch lokale Parameterregeln – kein Download, kein Netzwerk."
+      },
+      "strength": {
+        "color": "Farb-Stärke",
+        "tone": "Ton-Stärke"
+      },
       "structure": "Struktur",
+      "style": {
+        "applied": "Stil „{{name}}“ angewendet (Konfidenz {{conf}}%)",
+        "cloud": "Cloud-Referenz",
+        "cloudApplied": "Cloud-Referenz-Farbabgleich angewendet",
+        "cloudDesktopOnly": "Desktop-Funktion · Pro-Anmeldung erforderlich",
+        "cloudFailed": "Cloud-Referenz-Erzeugung fehlgeschlagen, bitte erneut versuchen",
+        "cloudNeedLogin": "Bitte zuerst im Pro-Konto anmelden",
+        "cloudNoPatch": "Generiertes Bild ist dem aktuellen Foto zu ähnlich – keine Anpassung nötig",
+        "cloudPrivacyNote": "Nutzt Online-Cloud-Generierung – nur der Textprompt wird hochgeladen, niemals dein Foto",
+        "experimental": "Experimentell",
+        "failed": "Kein Stil erkannt — Anpassungen unverändert",
+        "intensity": "Intensität {{n}}%",
+        "negatedHint": "Verneinte Angaben ignoriert: {{terms}}",
+        "placeholder": "Gewünschten Stil beschreiben, z. B. helles Japanisch, cineastisches Teal-Orange, S/W",
+        "title": "Stilwörter"
+      },
       "subjectStrength": "Motivstärke",
       "textStrength": "Textstärke",
       "texture": "Textur",
@@ -431,23 +463,8 @@
         "detail": "Detail+",
         "enhance": "KI-Verbesserung",
         "sky": "Himmel",
-        "subject": "Motiv",
-        "style": "Farblook per Text"
-      },
-      "style": {
-        "cloud": "Cloud-Referenz",
-        "cloudApplied": "Cloud-Referenz-Farbabgleich angewendet",
-        "cloudFailed": "Cloud-Referenz-Erzeugung fehlgeschlagen, bitte erneut versuchen",
-        "cloudNeedLogin": "Bitte zuerst im Pro-Konto anmelden",
-        "cloudNoPatch": "Generiertes Bild ist dem aktuellen Foto zu ähnlich – keine Anpassung nötig",
-        "title": "Farblook per Text",
-        "applied": "Stil „{{name}}“ angewendet (Konfidenz {{conf}}%)",
-        "failed": "Kein Stil erkannt — Anpassungen unverändert",
-        "placeholder": "Gewünschten Stil beschreiben, z. B. helles Japanisch, cineastisches Teal-Orange, S/W"
-      },
-      "strength": {
-        "tone": "Ton-Stärke",
-        "color": "Farb-Stärke"
+        "style": "Farblook per Text",
+        "subject": "Motiv"
       }
     },
     "aiRecommend": {
@@ -463,8 +480,10 @@
       "scenes": {
         "food": "Essen",
         "landscape": "Landschaft",
+        "macro": "Makro",
         "night": "Nacht",
         "portrait": "Porträt",
+        "street": "Straße",
         "tele": "Tele"
       },
       "tagExif": "EXIF",
@@ -494,6 +513,12 @@
       "flipH": "Horizontal spiegeln",
       "flipV": "Vertikal spiegeln",
       "free": "Frei",
+      "gestureState": {
+        "draw": "Ziehen, um einen Zuschnitt zu zeichnen",
+        "moveResize": "Zuschnitt verschieben / Größe ändern",
+        "pinch": "Zum Zoomen zusammenziehen"
+      },
+      "immersiveCrop": "Immersiver Zuschnitt",
       "perspectiveH": "Horizontal",
       "perspectiveV": "Vertikal",
       "ratio11": "1:1",
@@ -552,6 +577,7 @@
       "centerX": "Mitte X",
       "centerY": "Mitte Y",
       "dehaze": "Dunst entfernen",
+      "depthBusy": "Tiefenkarte wird erstellt…",
       "depthFailed": "Tiefenkarte konnte nicht erstellt werden",
       "flare": "Blendlaterne",
       "glow": "Glanz",
@@ -588,6 +614,7 @@
       "contour": "Kontur",
       "eyeEnhance": "Augen verbessern",
       "eyeStrength": "Augenstärke",
+      "faceNotApplicable": "Dieses Gesicht eignet sich nicht für Gesichtsformung (Profil/Neigung). Versuche einen anderen Bildwinkel.",
       "faceShape": "Gesichtsformung",
       "glow": "Glanz",
       "jawline": "Kinnlade",
@@ -599,6 +626,11 @@
       "smoothSkin": "Haut glätten",
       "softSkin": "Weiche Haut",
       "teethWhiten": "Zähne aufhellen",
+      "toast": {
+        "failed": "Erkennung fehlgeschlagen – globale Anpassungen beibehalten",
+        "globalOnly": "Globale Anpassungen angewendet – kein Gesicht erkannt",
+        "multiFace": "Gruppenfoto – nur globale und schützende Parameter angewendet"
+      },
       "unifyDone": "Hautton vereinheitlicht",
       "unifyFailed": "Vereinheitlichung fehlgeschlagen",
       "unifySkin": "Hautton vereinheitlichen",
@@ -614,6 +646,7 @@
       "exportEmpty": "Noch keine Voreinstellungen zum Exportieren",
       "exportFailed": "Export fehlgeschlagen",
       "exportSuccess": "Voreinstellung exportiert",
+      "favorites": "Favoriten",
       "import": "Importieren",
       "importFailed": "Import fehlgeschlagen",
       "importSuccess": "Voreinstellungen importiert",
@@ -621,11 +654,14 @@
       "menuApply": "Anwenden",
       "menuDelete": "Löschen",
       "menuExport": "Exportieren",
+      "menuFavorite": "Zu Favoriten hinzufügen",
       "menuOverwrite": "Mit aktuellem Stand aktualisieren",
       "menuRename": "Umbenennen",
+      "menuUnfavorite": "Aus Favoriten entfernen",
       "namePlaceholder": "Name der Voreinstellung",
       "overwriteFailed": "Aktualisierung der Voreinstellung fehlgeschlagen",
       "overwritten": "Voreinstellung aktualisiert",
+      "recent": "Zuletzt verwendet",
       "renameTitle": "Voreinstellung umbenennen",
       "saveCurrent": "Aktuelles speichern",
       "saved": "Voreinstellung gespeichert",
@@ -637,6 +673,15 @@
     "previewLoading": "Wird geladen…",
     "previewRendering": "Rendern…",
     "previewResetZoom": "Zoom zurücksetzen",
+    "recommend": {
+      "evidence": {
+        "clip": "CLIP-Bilderkennung",
+        "exif": "EXIF-Hinweise",
+        "stats": "Pixelstatistik",
+        "statsHint": "Heuristische Pixelstatistik · zur Orientierung"
+      },
+      "titleStats": "Szenenvorschläge"
+    },
     "redo": "Wiederholen",
     "resetConfirm": {
       "message": "Stellt das Original wieder her und baut den Verlauf neu auf.",
@@ -672,6 +717,12 @@
     },
     "title": "Pro-Bearbeitung",
     "tone": {
+      "aggregation": {
+        "buresHint": "Standard · stabil bei kleinen Stichproben",
+        "meanCovHint": "Gemittelte Statistik, am konservativsten",
+        "robustBuresHint": "Robuster bei Ausreißern",
+        "robustGate": "Benötigt ≥3 Muster"
+      },
       "bandAquas": "Türkis",
       "bandBlues": "Blau",
       "bandGreens": "Grün",
@@ -696,6 +747,15 @@
       "hslLuminance": "Luminanz",
       "hslSaturation": "Sättigung",
       "hslTitle": "Farbmixer",
+      "match": {
+        "aspectHint": "Seitenverhältnis von Muster und Bild weicht ab – Metriken sind auf Verteilungsebene",
+        "fitResidual": "Anpassungsrest {{v}}",
+        "hybridBadge": "Enthält LUT-Träger",
+        "hybridConflict": "Eine LUT ist aktiv – bitte zuerst entfernen",
+        "hybridMode": "HiFi-LUT",
+        "paramsMode": "Parametermodus",
+        "residualHint": "Farbtonrotation erkannt – Parameter verlieren Präzision, HiFi-LUT empfohlen"
+      },
       "saturation": "Sättigung",
       "shadows": "Tiefen",
       "tabColor": "Farbe",

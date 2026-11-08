@@ -22,6 +22,11 @@
       "whites": "白レベル"
     },
     "color": {
+      "aggregate": {
+        "bures": "W2 重心",
+        "meanCov": "平均",
+        "robustBures": "ロバスト重心"
+      },
       "ariaSelectColor": "{{name}}色を選択",
       "calibration": {
         "colors": {
@@ -41,6 +46,7 @@
       "colorMatch": "AI カラーマッチ",
       "colorMatchDesc": "サンプル写真の色彩スタイルをこの写真に転送します（非破壊）",
       "colorMatchDone": "カラーマッチを適用 · ΔE {{reduction}}% 低減",
+      "colorMatchDoneMulti_other": "カラーマッチを適用 · {{count}} 枚のリファレンス合成 · ΔE {{reduction}}% 低減",
       "colorMatchFailed": "カラーマッチに失敗しました",
       "colorMatchRunning": "色をマッチング中…",
       "colorMixer": "カラーミキサー",
@@ -57,6 +63,8 @@
       "kelvinModeTooltip": "色温度をケルビンで表示",
       "localHue": "ローカル色相",
       "luminance": "輝度",
+      "matchClearSamples": "リファレンスを消去",
+      "matchSamples_other": "リファレンス {{count}} 枚",
       "mixerColors": {
         "aquas": "アクア",
         "blues": "ブルー",
@@ -77,15 +85,7 @@
       "vibrance": "自然な彩度",
       "wbPickerTooltip": "ホワイトバランススポイト",
       "wbPickerWgpuDisabled": "WBスポイト: 設定でWGPUを無効にしてください。",
-      "whiteBalance": "ホワイトバランス",
-      "colorMatchDoneMulti": "カラーマッチを適用 · {{count}} 枚のリファレンス合成 · ΔE {{reduction}}% 低減",
-      "matchSamples": "リファレンス {{count}} 枚",
-      "matchClearSamples": "リファレンスを消去",
-      "aggregate": {
-        "bures": "W2 重心",
-        "robustBures": "ロバスト重心",
-        "meanCov": "平均"
-      }
+      "whiteBalance": "ホワイトバランス"
     },
     "curves": {
       "channels": {
@@ -418,7 +418,37 @@
       "proceduralSky": "AI空モデル未ダウンロード — プロシージャル空検出を使用しました（AIモデルでより正確に）",
       "removeMask": "選択を解除",
       "skyStrength": "空の強さ",
+      "sourceBadge": {
+        "cloud": "クラウド",
+        "model": "ローカルモデル",
+        "rule": "ローカルルール"
+      },
+      "sourceNote": {
+        "cloud": "クラウド生成をオンラインで呼び出します。アップロードされるのはテキストプロンプトのみです",
+        "model": "端末内のAIモデルで処理します。初回使用時にモデルをダウンロードします。写真は端末の外に出ません",
+        "rule": "ローカルのパラメータルールで計算します。ダウンロードもネット接続も不要"
+      },
+      "strength": {
+        "color": "カラー強度",
+        "tone": "明るさ強度"
+      },
       "structure": "ストラクチャー",
+      "style": {
+        "applied": "「{{name}}」スタイルを適用（信頼度 {{conf}}%）",
+        "cloud": "クラウド参照",
+        "cloudApplied": "クラウド参照のカラーマッチを適用しました",
+        "cloudDesktopOnly": "デスクトップ版の機能 · Proログインが必要",
+        "cloudFailed": "クラウド参照の生成に失敗しました。再試行してください",
+        "cloudNeedLogin": "まず Pro アカウントにログインしてください",
+        "cloudNoPatch": "生成画像が現在の写真に近すぎるため、調整は不要です",
+        "cloudPrivacyNote": "クラウド生成のためオンライン接続が必要です。アップロードされるのはテキストプロンプトのみで、写真は送信されません",
+        "experimental": "実験的機能",
+        "failed": "スタイルを認識できず、調整は変更されていません",
+        "intensity": "強度 {{n}}%",
+        "negatedHint": "否定表現を無視しました：{{terms}}",
+        "placeholder": "希望するスタイルを入力（例：クリアな日系、シネマティック青橙、モノクロ）",
+        "title": "スタイルワード調整"
+      },
       "subjectStrength": "被写体の強さ",
       "textStrength": "テキストの強さ",
       "texture": "テクスチャ",
@@ -428,23 +458,8 @@
         "detail": "ディテール+",
         "enhance": "AI 強化",
         "sky": "空",
-        "subject": "被写体",
-        "style": "一言カラーグレード"
-      },
-      "style": {
-        "cloud": "クラウド参照",
-        "cloudApplied": "クラウド参照のカラーマッチを適用しました",
-        "cloudFailed": "クラウド参照の生成に失敗しました。再試行してください",
-        "cloudNeedLogin": "まず Pro アカウントにログインしてください",
-        "cloudNoPatch": "生成画像が現在の写真に近すぎるため、調整は不要です",
-        "title": "一言カラーグレード",
-        "applied": "「{{name}}」スタイルを適用（信頼度 {{conf}}%）",
-        "failed": "スタイルを認識できず、調整は変更されていません",
-        "placeholder": "希望するスタイルを入力（例：クリアな日系、シネマティック青橙、モノクロ）"
-      },
-      "strength": {
-        "tone": "明るさ強度",
-        "color": "カラー強度"
+        "style": "一言カラーグレード",
+        "subject": "被写体"
       }
     },
     "aiRecommend": {
@@ -460,8 +475,10 @@
       "scenes": {
         "food": "料理",
         "landscape": "風景",
+        "macro": "マクロ",
         "night": "夜景",
         "portrait": "ポートレート",
+        "street": "ストリート",
         "tele": "望遠"
       },
       "tagExif": "EXIF",
@@ -491,6 +508,12 @@
       "flipH": "左右反転",
       "flipV": "上下反転",
       "free": "自由",
+      "gestureState": {
+        "draw": "ドラッグでトリミング枠を描く",
+        "moveResize": "トリミング枠を移動・リサイズ",
+        "pinch": "ピンチでズーム"
+      },
+      "immersiveCrop": "没入型トリミング",
       "perspectiveH": "横透视",
       "perspectiveV": "縦透视",
       "ratio11": "1:1",
@@ -549,6 +572,7 @@
       "centerX": "中心 X",
       "centerY": "中心 Y",
       "dehaze": "かすみ除去",
+      "depthBusy": "深度マップを生成中…",
       "depthFailed": "深度マップの生成に失敗しました",
       "flare": "フレア",
       "glow": "グロー",
@@ -585,6 +609,7 @@
       "contour": "輪郭",
       "eyeEnhance": "目の補正",
       "eyeStrength": "目の強さ",
+      "faceNotApplicable": "この顔はフェイスシェイプに適していません（横向き・見上げ/見下ろし）。別の角度でお試しください",
       "faceShape": "顔の補正",
       "glow": "グロー",
       "jawline": "顎ライン",
@@ -596,6 +621,11 @@
       "smoothSkin": "肌質補正",
       "softSkin": "肌なじみ",
       "teethWhiten": "歯を白く",
+      "toast": {
+        "failed": "検出に失敗しました — 全体調整は維持されました",
+        "globalOnly": "全体調整を適用しました — 顔が検出されませんでした",
+        "multiFace": "集合写真 — 全体と保護パラメータのみ適用"
+      },
       "unifyDone": "肌色を均一化しました",
       "unifyFailed": "肌色の均一化に失敗",
       "unifySkin": "肌色を均一化",
@@ -611,6 +641,7 @@
       "exportEmpty": "エクスポートできるプリセットはまだありません",
       "exportFailed": "プリセットの書き出しに失敗しました",
       "exportSuccess": "プリセットを書き出しました",
+      "favorites": "お気に入り",
       "import": "インポート",
       "importFailed": "プリセットのインポートに失敗しました",
       "importSuccess": "プリセットをインポートしました",
@@ -618,11 +649,14 @@
       "menuApply": "適用",
       "menuDelete": "削除",
       "menuExport": "書き出し",
+      "menuFavorite": "お気に入りに追加",
       "menuOverwrite": "現在の状態で更新",
       "menuRename": "名前を変更",
+      "menuUnfavorite": "お気に入りから削除",
       "namePlaceholder": "プリセット名",
       "overwriteFailed": "プリセットの更新に失敗しました",
       "overwritten": "プリセットを更新しました",
+      "recent": "最近使用",
       "renameTitle": "プリセット名を変更",
       "saveCurrent": "現在の状態を保存",
       "saved": "プリセットを保存しました",
@@ -634,6 +668,15 @@
     "previewLoading": "読み込み中…",
     "previewRendering": "レンダリング中…",
     "previewResetZoom": "ズームをリセット",
+    "recommend": {
+      "evidence": {
+        "clip": "CLIP 視覚認識",
+        "exif": "EXIF手がかり",
+        "stats": "ピクセル統計",
+        "statsHint": "ピクセル統計による推定 · 参考値"
+      },
+      "titleStats": "シーン候補"
+    },
     "redo": "やり直す",
     "resetConfirm": {
       "message": "元の見た目に戻し、履歴を再構築します。",
@@ -669,6 +712,12 @@
     },
     "title": "プロ現像",
     "tone": {
+      "aggregation": {
+        "buresHint": "デフォルト · 少数サンプルで安定",
+        "meanCovHint": "統計量の平均 · 最も保守的",
+        "robustBuresHint": "外れ値サンプルが多い場合に頑健",
+        "robustGate": "サンプルが3枚以上必要"
+      },
       "bandAquas": "水色",
       "bandBlues": "青",
       "bandGreens": "緑",
@@ -693,6 +742,15 @@
       "hslLuminance": "明度",
       "hslSaturation": "饱和度",
       "hslTitle": "カラーミックス",
+      "match": {
+        "aspectHint": "サンプルと画像のアスペクト比が異なるため分布レベルの指標です",
+        "fitResidual": "フィット残差 {{v}}",
+        "hybridBadge": "このモードはLUTキャリアを含む",
+        "hybridConflict": "LUTが既に適用されています — 上書きを避けるため先に解除してください",
+        "hybridMode": "高忠実度LUT",
+        "paramsMode": "パラメータモード",
+        "residualHint": "色相回転が含まれるためパラメータでは精度が失われます — 高忠実度LUTを推奨"
+      },
       "saturation": "彩度",
       "shadows": "シャドウ",
       "tabColor": "色",

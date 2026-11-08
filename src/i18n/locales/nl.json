@@ -22,6 +22,11 @@
       "whites": "Wittinten"
     },
     "color": {
+      "aggregate": {
+        "bures": "W2-barycentrum",
+        "meanCov": "Gemiddelde",
+        "robustBures": "Robuust barycentrum"
+      },
       "ariaSelectColor": "Selecteer {{name}} kleur",
       "calibration": {
         "colors": {
@@ -41,6 +46,8 @@
       "colorMatch": "AI-kleurmatch",
       "colorMatchDesc": "Overzetten van de kleurstijl van een voorbeeldfoto naar deze foto (niet-destructief)",
       "colorMatchDone": "Kleurmatch toegepast · ΔE met {{reduction}}% verminderd",
+      "colorMatchDoneMulti_one": "Kleurmatching toegepast · {{count}} referentie geaggregeerd · ΔE {{reduction}}% verlaagd",
+      "colorMatchDoneMulti_other": "Kleurmatching toegepast · {{count}} referenties geaggregeerd · ΔE {{reduction}}% verlaagd",
       "colorMatchFailed": "Kleurmatch mislukt",
       "colorMatchRunning": "Kleuren worden gematcht…",
       "colorMixer": "Kleurenmixer",
@@ -57,6 +64,9 @@
       "kelvinModeTooltip": "Temperatuur in Kelvin tonen",
       "localHue": "Lokale kleurtoon",
       "luminance": "Luminantie",
+      "matchClearSamples": "Referenties wissen",
+      "matchSamples_one": "{{count}} referentieafbeelding",
+      "matchSamples_other": "{{count}} referentieafbeeldingen",
       "mixerColors": {
         "aquas": "Aqua",
         "blues": "Blauw",
@@ -77,15 +87,7 @@
       "vibrance": "Levendigheid",
       "wbPickerTooltip": "Witbalans pipet",
       "wbPickerWgpuDisabled": "WB-pipet: Schakel WGPU uit in instellingen.",
-      "whiteBalance": "Witbalans",
-      "colorMatchDoneMulti": "Kleurmatching toegepast · {{count}} referenties geaggregeerd · ΔE {{reduction}}% verlaagd",
-      "matchSamples": "{{count}} referentieafbeeldingen",
-      "matchClearSamples": "Referenties wissen",
-      "aggregate": {
-        "bures": "W2-barycentrum",
-        "robustBures": "Robuust barycentrum",
-        "meanCov": "Gemiddelde"
-      }
+      "whiteBalance": "Witbalans"
     },
     "curves": {
       "channels": {
@@ -421,7 +423,37 @@
       "proceduralSky": "AI-luchtmodel niet gedownload — procedurele luchtherkenning gebruikt (download het AI-model voor scherpere maskers)",
       "removeMask": "Selectie verwijderen",
       "skyStrength": "Luchtsterkte",
+      "sourceBadge": {
+        "cloud": "Cloud",
+        "model": "Lokaal model",
+        "rule": "Lokale regel"
+      },
+      "sourceNote": {
+        "cloud": "Roept cloudgeneratie online aan — alleen de tekstprompt wordt geüpload.",
+        "model": "Verwerkt met een AI-model op het toestel; downloadt bij eerste gebruik. Foto's verlaten dit toestel nooit.",
+        "rule": "Berekend door lokale parameterregels — geen download, geen netwerk."
+      },
+      "strength": {
+        "color": "Kleursterkte",
+        "tone": "Toonsterkte"
+      },
       "structure": "Structuur",
+      "style": {
+        "applied": "Stijl \"{{name}}\" toegepast (zekerheid {{conf}}%)",
+        "cloud": "Cloudreferentie",
+        "cloudApplied": "Cloudreferentie-kleurmatching toegepast",
+        "cloudDesktopOnly": "Desktopfunctie · Pro-aanmelding vereist",
+        "cloudFailed": "Cloudreferentie genereren mislukt, probeer opnieuw",
+        "cloudNeedLogin": "Meld je eerst aan bij je Pro-account",
+        "cloudNoPatch": "Gegenereerde beeld lijkt te veel op de huidige foto — geen aanpassing nodig",
+        "cloudPrivacyNote": "Gebruikt online cloudgeneratie — alleen de tekstprompt wordt geüpload, nooit je foto",
+        "experimental": "Experimenteel",
+        "failed": "Geen stijl herkend — aanpassingen ongewijzigd",
+        "intensity": "Intensiteit {{n}}%",
+        "negatedHint": "Genegeerde ontkende beschrijvingen: {{terms}}",
+        "placeholder": "Beschrijf de gewenste stijl, bijv. luchtig Japans, filmisch teal-oranje, zw-w",
+        "title": "Stijlwoorden"
+      },
       "subjectStrength": "Onderwerpsterkte",
       "textStrength": "Tekststerkte",
       "texture": "Textuur",
@@ -431,23 +463,8 @@
         "detail": "Detail+",
         "enhance": "AI-verbetering",
         "sky": "Lucht",
-        "subject": "Onderwerp",
-        "style": "Stijl via tekst"
-      },
-      "style": {
-        "cloud": "Cloudreferentie",
-        "cloudApplied": "Cloudreferentie-kleurmatching toegepast",
-        "cloudFailed": "Cloudreferentie genereren mislukt, probeer opnieuw",
-        "cloudNeedLogin": "Meld je eerst aan bij je Pro-account",
-        "cloudNoPatch": "Gegenereerde beeld lijkt te veel op de huidige foto — geen aanpassing nodig",
-        "title": "Stijl via tekst",
-        "applied": "Stijl \"{{name}}\" toegepast (zekerheid {{conf}}%)",
-        "failed": "Geen stijl herkend — aanpassingen ongewijzigd",
-        "placeholder": "Beschrijf de gewenste stijl, bijv. luchtig Japans, filmisch teal-oranje, zw-w"
-      },
-      "strength": {
-        "tone": "Toonsterkte",
-        "color": "Kleursterkte"
+        "style": "Stijl via tekst",
+        "subject": "Onderwerp"
       }
     },
     "aiRecommend": {
@@ -463,8 +480,10 @@
       "scenes": {
         "food": "eten",
         "landscape": "landschap",
+        "macro": "macro",
         "night": "nacht",
         "portrait": "portret",
+        "street": "straat",
         "tele": "teleobjectief"
       },
       "tagExif": "EXIF",
@@ -494,6 +513,12 @@
       "flipH": "Spiegel H",
       "flipV": "Spiegel V",
       "free": "Vrij",
+      "gestureState": {
+        "draw": "Sleep om een uitsnede te tekenen",
+        "moveResize": "Uitsnede verplaatsen / grootte wijzigen",
+        "pinch": "Knijp om te zoomen"
+      },
+      "immersiveCrop": "Meeslepend uitsnijden",
       "perspectiveH": "Horizontaal",
       "perspectiveV": "Verticaal",
       "ratio11": "1:1",
@@ -552,6 +577,7 @@
       "centerX": "Midden X",
       "centerY": "Midden Y",
       "dehaze": "Nevel verwijderen",
+      "depthBusy": "Dieptekaart wordt gegenereerd…",
       "depthFailed": "Dieptekaart genereren mislukt",
       "flare": "Stralenkrans",
       "glow": "Gloed",
@@ -588,6 +614,7 @@
       "contour": "Contour",
       "eyeEnhance": "Ogen verbeteren",
       "eyeStrength": "Ogensterkte",
+      "faceNotApplicable": "Dit gezicht is niet geschikt voor gezichtsmodellering (profiel/helling). Probeer een andere hoek.",
       "faceShape": "Gezicht vormgeven",
       "glow": "Gloed",
       "jawline": "Kaaklijn",
@@ -599,6 +626,11 @@
       "smoothSkin": "Huid verzachten",
       "softSkin": "Zachte huid",
       "teethWhiten": "Tanden witten",
+      "toast": {
+        "failed": "Detectie mislukt — globale aanpassingen behouden",
+        "globalOnly": "Globale aanpassingen toegepast — geen gezicht gedetecteerd",
+        "multiFace": "Groepsfoto — alleen globale en beschermende parameters toegepast"
+      },
       "unifyDone": "Huidtint gelijkgetrokken",
       "unifyFailed": "Unifieren mislukt",
       "unifySkin": "Huidtint verenigen",
@@ -614,6 +646,7 @@
       "exportEmpty": "Nog geen voorinstellingen om te exporteren",
       "exportFailed": "Exporteren van voorinstelling mislukt",
       "exportSuccess": "Voorinstelling geëxporteerd",
+      "favorites": "Favorieten",
       "import": "Importeren",
       "importFailed": "Importeren van voorinstellingen mislukt",
       "importSuccess": "Voorinstellingen geïmporteerd",
@@ -621,11 +654,14 @@
       "menuApply": "Toepassen",
       "menuDelete": "Verwijderen",
       "menuExport": "Exporteren",
+      "menuFavorite": "Aan favorieten toevoegen",
       "menuOverwrite": "Bijwerken met huidige",
       "menuRename": "Hernoemen",
+      "menuUnfavorite": "Uit favorieten verwijderen",
       "namePlaceholder": "Naam voorinstelling",
       "overwriteFailed": "Bijwerken van voorinstelling mislukt",
       "overwritten": "Voorinstelling bijgewerkt",
+      "recent": "Recent",
       "renameTitle": "Voorinstelling hernoemen",
       "saveCurrent": "Huidige opslaan",
       "saved": "Voorinstelling opgeslagen",
@@ -637,6 +673,15 @@
     "previewLoading": "Laden…",
     "previewRendering": "Renderen…",
     "previewResetZoom": "Zoom herstellen",
+    "recommend": {
+      "evidence": {
+        "clip": "CLIP-beeldherkenning",
+        "exif": "EXIF-aanwijzingen",
+        "stats": "Pixelstatistiek",
+        "statsHint": "Heuristische statistiek · ter referentie"
+      },
+      "titleStats": "Scènesuggesties"
+    },
     "redo": "Opnieuw",
     "resetConfirm": {
       "message": "Herstelt het origineel en bouwt de geschiedenis opnieuw op.",
@@ -672,6 +717,12 @@
     },
     "title": "Pro-bewerking",
     "tone": {
+      "aggregation": {
+        "buresHint": "Standaard · stabiel bij kleine steekproeven",
+        "meanCovHint": "Gemiddelde statistiek, meest conservatief",
+        "robustBuresHint": "Robuuster bij uitschieters",
+        "robustGate": "Vereist ≥3 monsters"
+      },
       "bandAquas": "Turquoise",
       "bandBlues": "Blauw",
       "bandGreens": "Groen",
@@ -696,6 +747,15 @@
       "hslLuminance": "Luminantie",
       "hslSaturation": "Verzadiging",
       "hslTitle": "Kleurmixer",
+      "match": {
+        "aspectHint": "Beeldverhouding monster/afbeelding verschilt — metrieken op verdelingsniveau",
+        "fitResidual": "Fitresidu {{v}}",
+        "hybridBadge": "Bevat LUT-drager",
+        "hybridConflict": "Er is al een LUT actief — verwijder die eerst",
+        "hybridMode": "Hifi-LUT",
+        "paramsMode": "Parametermodus",
+        "residualHint": "Kleurtoonrotatie gedetecteerd — parameters verliezen precisie, hifi-LUT aanbevolen"
+      },
       "saturation": "Verzadiging",
       "shadows": "Schaduwen",
       "tabColor": "Kleur",

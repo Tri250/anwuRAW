@@ -22,6 +22,11 @@
       "whites": "Bílé"
     },
     "color": {
+      "aggregate": {
+        "bures": "W2 barycentrum",
+        "meanCov": "Průměr",
+        "robustBures": "Robustní barycentrum"
+      },
       "ariaSelectColor": "Vybrat barvu {{name}}",
       "calibration": {
         "colors": {
@@ -41,6 +46,10 @@
       "colorMatch": "AI párování barev",
       "colorMatchDesc": "Přenese barevný styl vzorové fotografie na tuto fotografii (nedestruktivní)",
       "colorMatchDone": "Párování použito · ΔE sníženo o {{reduction}}%",
+      "colorMatchDoneMulti_one": "Přizpůsobení barev aplikováno · agregována {{count}} reference · ΔE sníženo o {{reduction}}%",
+      "colorMatchDoneMulti_few": "Přizpůsobení barev aplikováno · agregovány {{count}} reference · ΔE sníženo o {{reduction}}%",
+      "colorMatchDoneMulti_many": "Přizpůsobení barev aplikováno · agregováno referencí: {{count}} · ΔE sníženo o {{reduction}}%",
+      "colorMatchDoneMulti_other": "Přizpůsobení barev aplikováno · agregováno {{count}} referencí · ΔE sníženo o {{reduction}}%",
       "colorMatchFailed": "Párování barev se nezdařilo",
       "colorMatchRunning": "Párování barev…",
       "colorMixer": "Míchání barev",
@@ -57,6 +66,11 @@
       "kelvinModeTooltip": "Zobrazit teplotu v Kelvinech",
       "localHue": "Místní odstín",
       "luminance": "Jas",
+      "matchClearSamples": "Vymazat reference",
+      "matchSamples_one": "{{count}} referenční snímek",
+      "matchSamples_few": "{{count}} referenční snímky",
+      "matchSamples_many": "{{count}} referenčních snímků",
+      "matchSamples_other": "{{count}} referenčního snímku",
       "mixerColors": {
         "aquas": "Tyrkysová",
         "blues": "Modrá",
@@ -77,15 +91,7 @@
       "vibrance": "Živost",
       "wbPickerTooltip": "Výběr vyvážení bílé",
       "wbPickerWgpuDisabled": "Výběr vyvážení bílé: zakažte WGPU v nastavení.",
-      "whiteBalance": "Vyvážení bílé",
-      "colorMatchDoneMulti": "Přizpůsobení barev aplikováno · agregováno referencí: {{count}} · ΔE sníženo o {{reduction}}%",
-      "matchSamples": "{{count}} referenčních snímků",
-      "matchClearSamples": "Vymazat reference",
-      "aggregate": {
-        "bures": "W2 barycentrum",
-        "robustBures": "Robustní barycentrum",
-        "meanCov": "Průměr"
-      }
+      "whiteBalance": "Vyvážení bílé"
     },
     "curves": {
       "channels": {
@@ -461,7 +467,37 @@
       "proceduralSky": "AI model oblohy stažen — použito procedurální rozpoznávání (stáhněte AI model pro přesnější masky)",
       "removeMask": "Odebrat výběr",
       "skyStrength": "Intenzita oblohy",
+      "sourceBadge": {
+        "cloud": "Cloud",
+        "model": "Lokální model",
+        "rule": "Lokální pravidlo"
+      },
+      "sourceNote": {
+        "cloud": "Volá cloudovou generaci online — odesílá se pouze textový prompt.",
+        "model": "Zpracovává AI modelem na zařízení; stáhne se při prvním použití. Fotografie nikdy neopustí zařízení.",
+        "rule": "Počítáno lokálními pravidly parametrů — bez stahování a bez sítě."
+      },
+      "strength": {
+        "color": "Síla barev",
+        "tone": "Síla tónů"
+      },
       "structure": "Struktura",
+      "style": {
+        "applied": "Styl „{{name}}“ aplikován (jistota {{conf}}%)",
+        "cloud": "Cloudová reference",
+        "cloudApplied": "Cloudová reference aplikována",
+        "cloudDesktopOnly": "Funkce pro desktop · vyžaduje přihlášení Pro",
+        "cloudFailed": "Generování cloudové reference selhalo, zkuste to znovu",
+        "cloudNeedLogin": "Nejprve se přihlaste ke svému Pro účtu",
+        "cloudNoPatch": "Generovaný obrázek je příliš podobný aktuální fotce — úprava není nutná",
+        "cloudPrivacyNote": "Používá cloudovou generaci online — odesílá se pouze textový prompt, nikdy ne vaše foto",
+        "experimental": "Experimentální",
+        "failed": "Styl nebyl rozpoznán — úpravy beze změn",
+        "intensity": "Intenzita {{n}}%",
+        "negatedHint": "Negované popisy ignorovány: {{terms}}",
+        "placeholder": "Popište požadovaný styl, např. světlý japonský, filmové teal-orange, č/b",
+        "title": "Slova stylu"
+      },
       "subjectStrength": "Intenzita objektu",
       "textStrength": "Intenzita textu",
       "texture": "Textura",
@@ -471,23 +507,8 @@
         "detail": "Detail+",
         "enhance": "AI vylepšení",
         "sky": "Obloha",
-        "subject": "Objekt",
-        "style": "Styl z textu"
-      },
-      "style": {
-        "cloud": "Cloudová reference",
-        "cloudApplied": "Cloudová reference aplikována",
-        "cloudFailed": "Generování cloudové reference selhalo, zkuste to znovu",
-        "cloudNeedLogin": "Nejprve se přihlaste ke svému Pro účtu",
-        "cloudNoPatch": "Generovaný obrázek je příliš podobný aktuální fotce — úprava není nutná",
-        "title": "Styl z textu",
-        "applied": "Styl „{{name}}“ aplikován (jistota {{conf}}%)",
-        "failed": "Styl nebyl rozpoznán — úpravy beze změn",
-        "placeholder": "Popište požadovaný styl, např. světlý japonský, filmové teal-orange, č/b"
-      },
-      "strength": {
-        "tone": "Síla tónů",
-        "color": "Síla barev"
+        "style": "Styl z textu",
+        "subject": "Objekt"
       }
     },
     "aiRecommend": {
@@ -503,8 +524,10 @@
       "scenes": {
         "food": "jídlo",
         "landscape": "krajina",
+        "macro": "makro",
         "night": "noc",
         "portrait": "portrét",
+        "street": "ulice",
         "tele": "teleobjektiv"
       },
       "tagExif": "EXIF",
@@ -534,6 +557,12 @@
       "flipH": "Překlopit V",
       "flipV": "Překlopit S",
       "free": "Volný",
+      "gestureState": {
+        "draw": "Tažením nakreslete ořez",
+        "moveResize": "Přesunout / změnit velikost ořezu",
+        "pinch": "Přiblížení dvěma prsty"
+      },
+      "immersiveCrop": "Pohlcující ořez",
       "perspectiveH": "Vodorovně",
       "perspectiveV": "Svisle",
       "ratio11": "1:1",
@@ -592,6 +621,7 @@
       "centerX": "Střed X",
       "centerY": "Střed Y",
       "dehaze": "Odstranit opar",
+      "depthBusy": "Generování mapy hloubky…",
       "depthFailed": "Generování mapy hloubky selhalo",
       "flare": "Odlesk",
       "glow": "Záře",
@@ -628,6 +658,7 @@
       "contour": "Kontura",
       "eyeEnhance": "Zvýraznění očí",
       "eyeStrength": "Intenzita očí",
+      "faceNotApplicable": "Tato tvář se nehodí k modelování (profil/naklonění). Zkuste jiný úhel.",
       "faceShape": "Úprava obličeje",
       "glow": "Záře",
       "jawline": "Linie čelisti",
@@ -639,6 +670,11 @@
       "smoothSkin": "Vyhladit pleť",
       "softSkin": "Jemná pleť",
       "teethWhiten": "Vybělit zuby",
+      "toast": {
+        "failed": "Detekce selhala — globální úpravy zachovány",
+        "globalOnly": "Globální úpravy aplikovány — nebyla detekována tvář",
+        "multiFace": "Skupinová fotografie — aplikovány pouze globální a ochranné parametry"
+      },
       "unifyDone": "Tón pleti sjednocen",
       "unifyFailed": "Sjednocení se nezdařilo",
       "unifySkin": "Sjednotit tón pleti",
@@ -654,6 +690,7 @@
       "exportEmpty": "Zatím nejsou žádné předvolby k exportu",
       "exportFailed": "Export přednastavení se nezdařil",
       "exportSuccess": "Přednastavení exportováno",
+      "favorites": "Oblíbené",
       "import": "Importovat",
       "importFailed": "Import přednastavení se nezdařil",
       "importSuccess": "Přednastavení importována",
@@ -661,11 +698,14 @@
       "menuApply": "Použít",
       "menuDelete": "Odstranit",
       "menuExport": "Exportovat",
+      "menuFavorite": "Přidat do oblíbených",
       "menuOverwrite": "Aktualizovat aktuálním",
       "menuRename": "Přejmenovat",
+      "menuUnfavorite": "Odebrat z oblíbených",
       "namePlaceholder": "Název přednastavení",
       "overwriteFailed": "Aktualizace přednastavení se nezdařila",
       "overwritten": "Přednastavení aktualizováno",
+      "recent": "Nedávné",
       "renameTitle": "Přejmenovat přednastavení",
       "saveCurrent": "Uložit aktuální",
       "saved": "Přednastavení uloženo",
@@ -677,6 +717,15 @@
     "previewLoading": "Načítání…",
     "previewRendering": "Vykreslování…",
     "previewResetZoom": "Obnovit přiblížení",
+    "recommend": {
+      "evidence": {
+        "clip": "Vizuální rozpoznávání CLIP",
+        "exif": "Indicie EXIF",
+        "stats": "Statistika pixelů",
+        "statsHint": "Heuristická statistika · pouze orientačně"
+      },
+      "titleStats": "Návrhy scén"
+    },
     "redo": "Znovu",
     "resetConfirm": {
       "message": "Obnoví původní vzhled a znovu sestaví historii.",
@@ -712,6 +761,12 @@
     },
     "title": "Pro úpravy",
     "tone": {
+      "aggregation": {
+        "buresHint": "Výchozí · stabilní u malých vzorků",
+        "meanCovHint": "Zprůměrované statistiky, nejkonzervativnější",
+        "robustBuresHint": "Robustnější při odlehlých vzorcích",
+        "robustGate": "Vyžaduje ≥3 vzorky"
+      },
       "bandAquas": "Azurové",
       "bandBlues": "Modré",
       "bandGreens": "Zelené",
@@ -736,6 +791,15 @@
       "hslLuminance": "Svítivost",
       "hslSaturation": "Sytost",
       "hslTitle": "Barevný mixer",
+      "match": {
+        "aspectHint": "Poměr stran vzorku a obrázku se liší — metriky na úrovni rozdělení",
+        "fitResidual": "Reziduum fitování {{v}}",
+        "hybridBadge": "Obsahuje nosič LUT",
+        "hybridConflict": "LUT je již aktivní — nejprve ji odstraňte",
+        "hybridMode": "Vysokofidelity LUT",
+        "paramsMode": "Režim parametrů",
+        "residualHint": "Zjištěna rotace odstínu — parametry ztrácejí přesnost, doporučena vysokofidelity LUT"
+      },
       "saturation": "Nasycení",
       "shadows": "Stíny",
       "tabColor": "Barva",

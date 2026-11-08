@@ -22,6 +22,11 @@
       "whites": "白色"
     },
     "color": {
+      "aggregate": {
+        "bures": "W2 重心",
+        "meanCov": "平均",
+        "robustBures": "稳健重心"
+      },
       "ariaSelectColor": "选择 {{name}} 颜色",
       "calibration": {
         "colors": {
@@ -41,16 +46,9 @@
       "colorMatch": "AI 追色",
       "colorMatchDesc": "将样片的色彩风格传递到当前照片（非破坏性）",
       "colorMatchDone": "追色已应用 · ΔE 下降 {{reduction}}%",
-      "colorMatchDoneMulti": "追色已应用 · {{count}} 张样片聚合 · ΔE 下降 {{reduction}}%",
+      "colorMatchDoneMulti_other": "追色已应用 · {{count}} 张样片聚合 · ΔE 下降 {{reduction}}%",
       "colorMatchFailed": "追色失败",
       "colorMatchRunning": "正在计算追色…",
-      "matchSamples": "{{count}} 张样片",
-      "matchClearSamples": "清除样片",
-      "aggregate": {
-        "bures": "W2 重心",
-        "robustBures": "稳健重心",
-        "meanCov": "平均"
-      },
       "colorMixer": "颜色混合器",
       "grading": {
         "balance": "平衡",
@@ -65,6 +63,8 @@
       "kelvinModeTooltip": "以开尔文显示色温",
       "localHue": "局部色调",
       "luminance": "亮度",
+      "matchClearSamples": "清除样片",
+      "matchSamples_other": "{{count}} 张样片",
       "mixerColors": {
         "aquas": "青色",
         "blues": "蓝色",
@@ -421,7 +421,37 @@
       "proceduralSky": "AI 天空模型未下载，已改用程序化天空识别（下载 AI 模型可获得更准的掩膜）",
       "removeMask": "移除识别",
       "skyStrength": "天空强度",
+      "sourceBadge": {
+        "cloud": "云端",
+        "model": "本地模型",
+        "rule": "本地规则"
+      },
+      "sourceNote": {
+        "cloud": "此入口联网调用云端生成：仅上传文字提示词，照片不出本机",
+        "model": "本格由设备端 AI 模型处理：首次使用需下载模型，照片不出本机、不联网",
+        "rule": "本格由本地参数规则计算：无需下载模型、不联网"
+      },
+      "strength": {
+        "color": "色彩强度",
+        "tone": "明暗强度"
+      },
       "structure": "结构",
+      "style": {
+        "applied": "已应用「{{name}}」风格（置信度 {{conf}}%）",
+        "cloud": "云参考图",
+        "cloudApplied": "云参考图追色已应用",
+        "cloudDesktopOnly": "桌面版能力 · 需 Pro 登录",
+        "cloudFailed": "云参考图生成失败，请重试",
+        "cloudNeedLogin": "请先登录 Pro 账号",
+        "cloudNoPatch": "生成图与当前照片过于接近，无需调整",
+        "cloudPrivacyNote": "此功能将联网调用云端生成，仅上传文字提示词",
+        "experimental": "实验性",
+        "failed": "未识别到风格描述，调整保持不变",
+        "intensity": "强度 {{n}}%",
+        "negatedHint": "已忽略否定描述：{{terms}}",
+        "placeholder": "描述想要的风格，如：清透日系、电影感青橙、黑白、赛博朋克",
+        "title": "风格词调色"
+      },
       "subjectStrength": "主体强度",
       "textStrength": "文本强度",
       "texture": "纹理",
@@ -431,23 +461,8 @@
         "detail": "细节+",
         "enhance": "AI 增强",
         "sky": "天空识别",
-        "subject": "主体识别",
-        "style": "风格调色"
-      },
-      "style": {
-        "applied": "已应用「{{name}}」风格（置信度 {{conf}}%）",
-        "failed": "未识别到风格描述，调整保持不变",
-        "placeholder": "描述想要的风格，如：清透日系、电影感青橙、黑白、赛博朋克",
-        "title": "一句话调色",
-        "cloud": "云参考图",
-        "cloudApplied": "云参考图追色已应用",
-        "cloudFailed": "云参考图生成失败，请重试",
-        "cloudNeedLogin": "请先登录 Pro 账号",
-        "cloudNoPatch": "生成图与当前照片过于接近，无需调整"
-      },
-      "strength": {
-        "color": "色彩强度",
-        "tone": "明暗强度"
+        "style": "风格调色",
+        "subject": "主体识别"
       }
     },
     "aiRecommend": {
@@ -463,8 +478,10 @@
       "scenes": {
         "food": "美食",
         "landscape": "风光",
+        "macro": "微距",
         "night": "夜景",
         "portrait": "人像",
+        "street": "街拍",
         "tele": "长焦"
       },
       "tagExif": "EXIF",
@@ -494,6 +511,12 @@
       "flipH": "水平翻转",
       "flipV": "垂直翻转",
       "free": "自由",
+      "gestureState": {
+        "draw": "拖动画框",
+        "moveResize": "移动/调整裁剪",
+        "pinch": "双指缩放"
+      },
+      "immersiveCrop": "沉浸裁剪",
       "perspectiveH": "水平透视",
       "perspectiveV": "垂直透视",
       "ratio11": "1:1",
@@ -552,6 +575,7 @@
       "centerX": "中心 X",
       "centerY": "中心 Y",
       "dehaze": "去雾",
+      "depthBusy": "正在生成深度图…",
       "depthFailed": "深度图生成失败",
       "flare": "眩光",
       "glow": "柔光",
@@ -588,6 +612,7 @@
       "contour": "轮廓",
       "eyeEnhance": "眼部增强",
       "eyeStrength": "眼部强度",
+      "faceNotApplicable": "这张脸暂不适合美型（侧脸或俯仰过大），请换个角度",
       "faceShape": "美型",
       "glow": "柔光",
       "jawline": "下颌线",
@@ -599,6 +624,11 @@
       "smoothSkin": "磨皮",
       "softSkin": "柔肤",
       "teethWhiten": "牙齿美白",
+      "toast": {
+        "failed": "识别失败，已保留全局调整",
+        "globalOnly": "已完成全局调整，未检测到人脸",
+        "multiFace": "多人合影，仅应用全局与保护性参数"
+      },
       "unifyDone": "肤色已统一",
       "unifyFailed": "统一肤色失败",
       "unifySkin": "统一肤色",
@@ -614,6 +644,7 @@
       "exportEmpty": "暂无预设可导出",
       "exportFailed": "预设导出失败",
       "exportSuccess": "预设已导出",
+      "favorites": "收藏",
       "import": "导入",
       "importFailed": "预设导入失败",
       "importSuccess": "预设导入成功",
@@ -621,11 +652,14 @@
       "menuApply": "应用",
       "menuDelete": "删除",
       "menuExport": "导出",
+      "menuFavorite": "收藏",
       "menuOverwrite": "覆盖更新",
       "menuRename": "重命名",
+      "menuUnfavorite": "取消收藏",
       "namePlaceholder": "预设名称",
       "overwriteFailed": "预设更新失败",
       "overwritten": "预设已更新",
+      "recent": "最近使用",
       "renameTitle": "重命名预设",
       "saveCurrent": "保存当前",
       "saved": "预设已保存",
@@ -637,6 +671,15 @@
     "previewLoading": "加载中…",
     "previewRendering": "渲染中…",
     "previewResetZoom": "复位缩放",
+    "recommend": {
+      "evidence": {
+        "clip": "CLIP 视觉识别",
+        "exif": "EXIF 线索",
+        "stats": "画面统计",
+        "statsHint": "画面统计启发 · 供参考"
+      },
+      "titleStats": "场景推荐"
+    },
     "redo": "重做",
     "resetConfirm": {
       "message": "将恢复原始画面，并重建撤销历史。",
@@ -672,6 +715,12 @@
     },
     "title": "专业修图",
     "tone": {
+      "aggregation": {
+        "buresHint": "默认 · 小样本稳定",
+        "meanCovHint": "统计量平均，最保守",
+        "robustBuresHint": "离群样张多时更稳",
+        "robustGate": "需 ≥3 张样片"
+      },
       "bandAquas": "青",
       "bandBlues": "蓝",
       "bandGreens": "绿",
@@ -696,6 +745,15 @@
       "hslLuminance": "明度",
       "hslSaturation": "饱和度",
       "hslTitle": "色彩混合",
+      "match": {
+        "aspectHint": "样片与图片比例不同，为分布级度量",
+        "fitResidual": "拟合残差 {{v}}",
+        "hybridBadge": "此模式含 LUT 载体",
+        "hybridConflict": "已有 LUT，为避免覆盖请先清除",
+        "hybridMode": "高保真 LUT",
+        "paramsMode": "参数模式",
+        "residualHint": "含色相旋转，参数表达有精度损失，建议高保真 LUT"
+      },
       "saturation": "饱和度",
       "shadows": "阴影",
       "tabColor": "颜色",

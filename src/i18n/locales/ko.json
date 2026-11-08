@@ -22,6 +22,11 @@
       "whites": "화이트"
     },
     "color": {
+      "aggregate": {
+        "bures": "W2 무게중심",
+        "meanCov": "평균",
+        "robustBures": "강건 무게중심"
+      },
       "ariaSelectColor": "{{name}} 색상 선택",
       "calibration": {
         "colors": {
@@ -41,6 +46,7 @@
       "colorMatch": "AI 색상 매치",
       "colorMatchDesc": "샘플 사진의 색감을 이 사진에 전송합니다(비파괴)",
       "colorMatchDone": "색상 매치 적용 · ΔE {{reduction}}% 감소",
+      "colorMatchDoneMulti_other": "컬러 매치 적용 · 참조 이미지 {{count}}장 결합 · ΔE {{reduction}}% 감소",
       "colorMatchFailed": "색상 매치 실패",
       "colorMatchRunning": "색상 매칭 중…",
       "colorMixer": "컬러 믹서",
@@ -57,6 +63,8 @@
       "kelvinModeTooltip": "색온도를 켈빈으로 표시",
       "localHue": "지역 색조",
       "luminance": "휘도",
+      "matchClearSamples": "참조 이미지 지우기",
+      "matchSamples_other": "참조 이미지 {{count}}장",
       "mixerColors": {
         "aquas": "아쿠아",
         "blues": "블루",
@@ -77,15 +85,7 @@
       "vibrance": "생동감",
       "wbPickerTooltip": "화이트 밸런스 피커",
       "wbPickerWgpuDisabled": "WB 피커: 설정에서 WGPU를 비활성화하세요.",
-      "whiteBalance": "화이트 밸런스",
-      "colorMatchDoneMulti": "컬러 매치 적용 · 참조 이미지 {{count}}장 결합 · ΔE {{reduction}}% 감소",
-      "matchSamples": "참조 이미지 {{count}}장",
-      "matchClearSamples": "참조 이미지 지우기",
-      "aggregate": {
-        "bures": "W2 무게중심",
-        "robustBures": "강건 무게중심",
-        "meanCov": "평균"
-      }
+      "whiteBalance": "화이트 밸런스"
     },
     "curves": {
       "channels": {
@@ -418,7 +418,37 @@
       "proceduralSky": "AI 하늘 모델 미다운로드 — 절차적 하늘 감지 사용(AI 모델 다운로드 시 더 정확)",
       "removeMask": "선택 제거",
       "skyStrength": "하늘 강도",
+      "sourceBadge": {
+        "cloud": "클라우드",
+        "model": "로컬 모델",
+        "rule": "로컬 규칙"
+      },
+      "sourceNote": {
+        "cloud": "온라인으로 클라우드 생성을 호출합니다. 텍스트 프롬프트만 업로드됩니다",
+        "model": "기기 내 AI 모델로 처리합니다. 첫 사용 시 모델을 다운로드합니다. 사진은 기기를 벗어나지 않습니다",
+        "rule": "로컬 파라미터 규칙으로 계산합니다. 다운로드나 네트워크가 필요 없습니다"
+      },
+      "strength": {
+        "color": "색 강도",
+        "tone": "톤 강도"
+      },
       "structure": "구조",
+      "style": {
+        "applied": "\"{{name}}\" 스타일 적용 (신뢰도 {{conf}}%)",
+        "cloud": "클라우드 참조",
+        "cloudApplied": "클라우드 참조 컬러 매치 적용됨",
+        "cloudDesktopOnly": "데스크톱 전용 · Pro 로그인 필요",
+        "cloudFailed": "클라우드 참조 생성 실패, 다시 시도하세요",
+        "cloudNeedLogin": "Pro 계정에 먼저 로그인하세요",
+        "cloudNoPatch": "생성된 이미지가 현재 사진과 너무 유사하여 조정이 필요하지 않습니다",
+        "cloudPrivacyNote": "클라우드 생성을 위해 온라인 연결이 필요합니다. 텍스트 프롬프트만 업로드되며 사진은 전송되지 않습니다",
+        "experimental": "실험적 기능",
+        "failed": "스타일을 인식하지 못했습니다 — 조정 변경 없음",
+        "intensity": "강도 {{n}}%",
+        "negatedHint": "부정 표현 무시됨: {{terms}}",
+        "placeholder": "원하는 스타일을 입력하세요 (예: 맑은 일본풍, 시네마틱 청오렌지, 흑백)",
+        "title": "스타일 워드 컬러"
+      },
       "subjectStrength": "피사체 강도",
       "textStrength": "텍스트 강도",
       "texture": "질감",
@@ -428,23 +458,8 @@
         "detail": "디테일+",
         "enhance": "AI 강화",
         "sky": "하늘",
-        "subject": "피사체",
-        "style": "한마디 컬러"
-      },
-      "style": {
-        "cloud": "클라우드 참조",
-        "cloudApplied": "클라우드 참조 컬러 매치 적용됨",
-        "cloudFailed": "클라우드 참조 생성 실패, 다시 시도하세요",
-        "cloudNeedLogin": "Pro 계정에 먼저 로그인하세요",
-        "cloudNoPatch": "생성된 이미지가 현재 사진과 너무 유사하여 조정이 필요하지 않습니다",
-        "title": "한마디 컬러",
-        "applied": "\"{{name}}\" 스타일 적용 (신뢰도 {{conf}}%)",
-        "failed": "스타일을 인식하지 못했습니다 — 조정 변경 없음",
-        "placeholder": "원하는 스타일을 입력하세요 (예: 맑은 일본풍, 시네마틱 청오렌지, 흑백)"
-      },
-      "strength": {
-        "tone": "톤 강도",
-        "color": "색 강도"
+        "style": "한마디 컬러",
+        "subject": "피사체"
       }
     },
     "aiRecommend": {
@@ -460,8 +475,10 @@
       "scenes": {
         "food": "음식",
         "landscape": "풍경",
+        "macro": "매크로",
         "night": "야경",
         "portrait": "인물",
+        "street": "거리",
         "tele": "망원"
       },
       "tagExif": "EXIF",
@@ -491,6 +508,12 @@
       "flipH": "좌우 반전",
       "flipV": "상하 반전",
       "free": "자유",
+      "gestureState": {
+        "draw": "드래그하여 크롭 그리기",
+        "moveResize": "크롭 이동/크기 조절",
+        "pinch": "핀치하여 확대/축소"
+      },
+      "immersiveCrop": "몰입형 크롭",
       "perspectiveH": "수평",
       "perspectiveV": "수직",
       "ratio11": "1:1",
@@ -549,6 +572,7 @@
       "centerX": "중심 X",
       "centerY": "중심 Y",
       "dehaze": "안개 제거",
+      "depthBusy": "깊이 맵 생성 중…",
       "depthFailed": "깊이 맵 생성 실패",
       "flare": "플레어",
       "glow": "글로우",
@@ -585,6 +609,7 @@
       "contour": "윤곽",
       "eyeEnhance": "눈 보정",
       "eyeStrength": "눈 강도",
+      "faceNotApplicable": "이 얼굴은 보정에 적합하지 않습니다(측면/기울어진 자세). 다른 각도로 시도해 보세요",
       "faceShape": "얼굴 보정",
       "glow": "글로우",
       "jawline": "턱선",
@@ -596,6 +621,11 @@
       "smoothSkin": "피부 매끈하게",
       "softSkin": "부드러운 피부",
       "teethWhiten": "치아 화이트닝",
+      "toast": {
+        "failed": "감지 실패 — 전역 보정이 유지되었습니다",
+        "globalOnly": "전역 보정이 적용되었습니다 — 얼굴이 감지되지 않았습니다",
+        "multiFace": "단체 사진 — 전역 및 보호 파라미터만 적용"
+      },
       "unifyDone": "피부 톤이 통일되었습니다",
       "unifyFailed": "피부 톤 통일 실패",
       "unifySkin": "피부 톤 통일",
@@ -611,6 +641,7 @@
       "exportEmpty": "내보낼 프리셋이 아직 없습니다",
       "exportFailed": "프리셋 내보내기 실패",
       "exportSuccess": "프리셋을 내보냈습니다",
+      "favorites": "즐겨찾기",
       "import": "가져오기",
       "importFailed": "프리셋 가져오기 실패",
       "importSuccess": "프리셋을 가져왔습니다",
@@ -618,11 +649,14 @@
       "menuApply": "적용",
       "menuDelete": "삭제",
       "menuExport": "내보내기",
+      "menuFavorite": "즐겨찾기 추가",
       "menuOverwrite": "현재 상태로 업데이트",
       "menuRename": "이름 변경",
+      "menuUnfavorite": "즐겨찾기 해제",
       "namePlaceholder": "프리셋 이름",
       "overwriteFailed": "프리셋 업데이트 실패",
       "overwritten": "프리셋이 업데이트되었습니다",
+      "recent": "최근 사용",
       "renameTitle": "프리셋 이름 변경",
       "saveCurrent": "현재 상태 저장",
       "saved": "프리셋이 저장되었습니다",
@@ -634,6 +668,15 @@
     "previewLoading": "불러오는 중…",
     "previewRendering": "렌더링 중…",
     "previewResetZoom": "확대 초기화",
+    "recommend": {
+      "evidence": {
+        "clip": "CLIP 시각 인식",
+        "exif": "EXIF 단서",
+        "stats": "픽셀 통계",
+        "statsHint": "픽셀 통계 추정 · 참고용"
+      },
+      "titleStats": "장면 추천"
+    },
     "redo": "다시 실행",
     "resetConfirm": {
       "message": "원본 상태로 되돌리고 기록을 다시 만듭니다.",
@@ -669,6 +712,12 @@
     },
     "title": "프로 보정",
     "tone": {
+      "aggregation": {
+        "buresHint": "기본값 · 소수 샘플에 안정",
+        "meanCovHint": "통계량 평균 · 가장 보수적",
+        "robustBuresHint": "이상치 샘플이 많을 때 더 안정",
+        "robustGate": "샘플 3장 이상 필요"
+      },
       "bandAquas": "청록",
       "bandBlues": "파랑",
       "bandGreens": "초록",
@@ -693,6 +742,15 @@
       "hslLuminance": "명도",
       "hslSaturation": "채도",
       "hslTitle": "컬러 믹서",
+      "match": {
+        "aspectHint": "샘플과 이미지의 비율이 달라 분포 수준 지표입니다",
+        "fitResidual": "피팅 잔차 {{v}}",
+        "hybridBadge": "이 모드는 LUT 캐리어 포함",
+        "hybridConflict": "LUT가 이미 있습니다 — 덮어쓰지 않도록 먼저 지우세요",
+        "hybridMode": "고충실도 LUT",
+        "paramsMode": "파라미터 모드",
+        "residualHint": "색상 회전이 포함되어 파라미터는 정밀도를 잃습니다 — 고충실도 LUT 권장"
+      },
       "saturation": "채도",
       "shadows": "그림자",
       "tabColor": "색상",

@@ -22,6 +22,11 @@
       "whites": "Brancos"
     },
     "color": {
+      "aggregate": {
+        "bures": "Baricentro W2",
+        "meanCov": "Média",
+        "robustBures": "Baricentro robusto"
+      },
       "ariaSelectColor": "Selecionar cor {{name}}",
       "calibration": {
         "colors": {
@@ -41,6 +46,9 @@
       "colorMatch": "Correspondência de cor IA",
       "colorMatchDesc": "Transfere o estilo de cor de uma foto de amostra para esta foto (não destrutivo)",
       "colorMatchDone": "Correspondência aplicada · ΔE reduzido em {{reduction}}%",
+      "colorMatchDoneMulti_one": "Correspondência de cor aplicada · {{count}} referência agregada · ΔE reduzido {{reduction}}%",
+      "colorMatchDoneMulti_many": "Correspondência de cor aplicada · {{count}} referências agregadas · ΔE reduzido {{reduction}}%",
+      "colorMatchDoneMulti_other": "Correspondência de cor aplicada · {{count}} referências agregadas · ΔE reduzido {{reduction}}%",
       "colorMatchFailed": "Falha na correspondência de cor",
       "colorMatchRunning": "Correspondendo cores…",
       "colorMixer": "Misturador de Cores",
@@ -57,6 +65,10 @@
       "kelvinModeTooltip": "Mostrar temperatura em Kelvin",
       "localHue": "Matiz local",
       "luminance": "Luminância",
+      "matchClearSamples": "Limpar referências",
+      "matchSamples_one": "{{count}} imagem de referência",
+      "matchSamples_many": "{{count}} imagens de referência",
+      "matchSamples_other": "{{count}} imagens de referência",
       "mixerColors": {
         "aquas": "Água-marinha",
         "blues": "Azuis",
@@ -77,15 +89,7 @@
       "vibrance": "Vibração",
       "wbPickerTooltip": "Seletor de Balanço de Branco",
       "wbPickerWgpuDisabled": "Seletor de BB: Desative o WGPU nas Configurações.",
-      "whiteBalance": "Balanço de Branco",
-      "colorMatchDoneMulti": "Correspondência de cor aplicada · {{count}} referências agregadas · ΔE reduzido {{reduction}}%",
-      "matchSamples": "{{count}} imagens de referência",
-      "matchClearSamples": "Limpar referências",
-      "aggregate": {
-        "bures": "Baricentro W2",
-        "robustBures": "Baricentro robusto",
-        "meanCov": "Média"
-      }
+      "whiteBalance": "Balanço de Branco"
     },
     "curves": {
       "channels": {
@@ -441,7 +445,37 @@
       "proceduralSky": "Modelo de céu IA não baixado: usada deteção procedural (baixe o modelo IA para máscaras mais precisas)",
       "removeMask": "Remover seleção",
       "skyStrength": "Intensidade do céu",
+      "sourceBadge": {
+        "cloud": "Nuvem",
+        "model": "Modelo local",
+        "rule": "Regra local"
+      },
+      "sourceNote": {
+        "cloud": "Chama a geração em nuvem — apenas o prompt de texto é enviado.",
+        "model": "Processa com um modelo de IA no dispositivo; descarregado na primeira utilização. As fotos nunca saem do dispositivo.",
+        "rule": "Calculado por regras de parâmetros locais — sem descarregamento nem rede."
+      },
+      "strength": {
+        "color": "Intensidade de cor",
+        "tone": "Intensidade de tom"
+      },
       "structure": "Estrutura",
+      "style": {
+        "applied": "Estilo \"{{name}}\" aplicado (confiança {{conf}}%)",
+        "cloud": "Referência na nuvem",
+        "cloudApplied": "Correspondência de referência na nuvem aplicada",
+        "cloudDesktopOnly": "Recurso da versão desktop · requer login Pro",
+        "cloudFailed": "Falha ao gerar referência na nuvem, tente novamente",
+        "cloudNeedLogin": "Entre primeiro na sua conta Pro",
+        "cloudNoPatch": "A imagem gerada é demasiado semelhante à foto atual — sem ajustes",
+        "cloudPrivacyNote": "Usa geração em nuvem — apenas o prompt de texto é enviado, nunca a sua foto",
+        "experimental": "Experimental",
+        "failed": "Nenhum estilo reconhecido — ajustes inalterados",
+        "intensity": "Intensidade {{n}}%",
+        "negatedHint": "Descrições negadas ignoradas: {{terms}}",
+        "placeholder": "Descreva o estilo desejado, ex. japonês arejado, teal-orange cinematográfico, P&B",
+        "title": "Palavras de estilo"
+      },
       "subjectStrength": "Intensidade do sujeito",
       "textStrength": "Intensidade do texto",
       "texture": "Textura",
@@ -451,23 +485,8 @@
         "detail": "Detalhe+",
         "enhance": "Melhoria IA",
         "sky": "Céu",
-        "subject": "Sujeito",
-        "style": "Estilo por texto"
-      },
-      "style": {
-        "cloud": "Referência na nuvem",
-        "cloudApplied": "Correspondência de referência na nuvem aplicada",
-        "cloudFailed": "Falha ao gerar referência na nuvem, tente novamente",
-        "cloudNeedLogin": "Entre primeiro na sua conta Pro",
-        "cloudNoPatch": "A imagem gerada é demasiado semelhante à foto atual — sem ajustes",
-        "title": "Estilo por texto",
-        "applied": "Estilo \"{{name}}\" aplicado (confiança {{conf}}%)",
-        "failed": "Nenhum estilo reconhecido — ajustes inalterados",
-        "placeholder": "Descreva o estilo desejado, ex. japonês arejado, teal-orange cinematográfico, P&B"
-      },
-      "strength": {
-        "tone": "Intensidade de tom",
-        "color": "Intensidade de cor"
+        "style": "Estilo por texto",
+        "subject": "Sujeito"
       }
     },
     "aiRecommend": {
@@ -483,8 +502,10 @@
       "scenes": {
         "food": "comida",
         "landscape": "paisagem",
+        "macro": "macro",
         "night": "noite",
         "portrait": "retrato",
+        "street": "rua",
         "tele": "teleobjetiva"
       },
       "tagExif": "EXIF",
@@ -514,6 +535,12 @@
       "flipH": "Inverter H",
       "flipV": "Inverter V",
       "free": "Livre",
+      "gestureState": {
+        "draw": "Arraste para desenhar um recorte",
+        "moveResize": "Mover / redimensionar recorte",
+        "pinch": "Belisque para ampliar"
+      },
+      "immersiveCrop": "Recorte imersivo",
       "perspectiveH": "Horizontal",
       "perspectiveV": "Vertical",
       "ratio11": "1:1",
@@ -572,6 +599,7 @@
       "centerX": "Centro X",
       "centerY": "Centro Y",
       "dehaze": "Reduzir névoa",
+      "depthBusy": "A gerar mapa de profundidade…",
       "depthFailed": "Falha ao gerar o mapa de profundidade",
       "flare": "Reflexo",
       "glow": "Brilho",
@@ -608,6 +636,7 @@
       "contour": "Contorno",
       "eyeEnhance": "Realce dos olhos",
       "eyeStrength": "Intensidade dos olhos",
+      "faceNotApplicable": "Este rosto não é adequado para remodelação (perfil/inclinado). Tente outro ângulo.",
       "faceShape": "Remodelar rosto",
       "glow": "Brilho",
       "jawline": "Linha do maxilar",
@@ -619,6 +648,11 @@
       "smoothSkin": "Suavizar pele",
       "softSkin": "Pele suave",
       "teethWhiten": "Branquear dentes",
+      "toast": {
+        "failed": "Falha na deteção — ajustes globais mantidos",
+        "globalOnly": "Ajustes globais aplicados — nenhum rosto detetado",
+        "multiFace": "Foto de grupo — aplicados apenas parâmetros globais e de proteção"
+      },
       "unifyDone": "Tom unificado",
       "unifyFailed": "Falha ao unificar",
       "unifySkin": "Unificar tom de pele",
@@ -634,6 +668,7 @@
       "exportEmpty": "Ainda não há predefinições para exportar",
       "exportFailed": "Falha ao exportar predefinição",
       "exportSuccess": "Predefinição exportada",
+      "favorites": "Favoritos",
       "import": "Importar",
       "importFailed": "Falha ao importar predefinições",
       "importSuccess": "Predefinições importadas",
@@ -641,11 +676,14 @@
       "menuApply": "Aplicar",
       "menuDelete": "Eliminar",
       "menuExport": "Exportar",
+      "menuFavorite": "Adicionar aos favoritos",
       "menuOverwrite": "Atualizar com o atual",
       "menuRename": "Renomear",
+      "menuUnfavorite": "Remover dos favoritos",
       "namePlaceholder": "Nome da predefinição",
       "overwriteFailed": "Falha ao atualizar a predefinição",
       "overwritten": "Predefinição atualizada",
+      "recent": "Recentes",
       "renameTitle": "Renomear predefinição",
       "saveCurrent": "Guardar atual",
       "saved": "Predefinição guardada",
@@ -657,6 +695,15 @@
     "previewLoading": "Carregando…",
     "previewRendering": "A renderizar…",
     "previewResetZoom": "Redefinir zoom",
+    "recommend": {
+      "evidence": {
+        "clip": "Reconhecimento visual CLIP",
+        "exif": "Pistas EXIF",
+        "stats": "Estatísticas de píxeis",
+        "statsHint": "Estatísticas heurísticas · para referência"
+      },
+      "titleStats": "Sugestões de cena"
+    },
     "redo": "Refazer",
     "resetConfirm": {
       "message": "Restaura o aspeto original e reconstrói o histórico.",
@@ -692,6 +739,12 @@
     },
     "title": "Edição Pro",
     "tone": {
+      "aggregation": {
+        "buresHint": "Padrão · estável com poucas amostras",
+        "meanCovHint": "Estatísticas médias, o mais conservador",
+        "robustBuresHint": "Mais robusto com amostras atípicas",
+        "robustGate": "Requer ≥3 amostras"
+      },
       "bandAquas": "Cianos",
       "bandBlues": "Azuis",
       "bandGreens": "Verdes",
@@ -716,6 +769,15 @@
       "hslLuminance": "Luminância",
       "hslSaturation": "Saturação",
       "hslTitle": "Mixer de cor",
+      "match": {
+        "aspectHint": "A proporção amostra/imagem difere — métricas ao nível de distribuição",
+        "fitResidual": "Resíduo de ajuste {{v}}",
+        "hybridBadge": "Inclui suporte LUT",
+        "hybridConflict": "Já existe uma LUT ativa — limpe-a primeiro",
+        "hybridMode": "LUT de alta fidelidade",
+        "paramsMode": "Modo parâmetros",
+        "residualHint": "Rotação de matiz detetada — os parâmetros perdem precisão, recomenda-se LUT de alta fidelidade"
+      },
       "saturation": "Saturação",
       "shadows": "Sombras",
       "tabColor": "Cor",
