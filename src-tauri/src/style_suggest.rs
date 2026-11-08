@@ -399,15 +399,15 @@ fn image_luminance_stats(img: &image::DynamicImage) -> ImageStats {
     }
 }
 
-/// 从磁盘加载图片（复用 image_loader 的统一入口，兼容 RAW）并计算亮度统计。
-/// 仅用于统计：任何失败都由调用方静默降级。
+/// 从磁盘加载图片并计算亮度统计。复用 color_transfer::load_analysis_image
+/// 统一入口：Android SAF content:// URI 经 ContentResolver 读取（此前直接
+/// std::fs::read，SAF 导入图的图像自适应在 Android 上静默失效）、iCloud 占位
+/// 检测与 RAW 解码同源。仅用于统计：任何失败都由调用方静默降级。
 fn analyze_image_stats(
     path: &str,
     settings: &crate::app_settings::AppSettings,
 ) -> Result<ImageStats, String> {
-    let bytes = std::fs::read(path).map_err(|e| format!("读取图片失败: {e}"))?;
-    let img = crate::image_loader::load_base_image_from_bytes(&bytes, path, true, settings, None)
-        .map_err(|e| format!("解码图片失败: {e}"))?;
+    let img = crate::color_transfer::load_analysis_image(path, settings)?;
     Ok(image_luminance_stats(&img))
 }
 
