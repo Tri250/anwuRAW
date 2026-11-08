@@ -183,18 +183,15 @@ fn scale_patch_by_intensity(patch: &mut Value, k: f64) {
                             continue;
                         };
                         for p in arr.iter_mut() {
-                            let Some(pair) = p.as_array_mut() else {
+                            let (Some(x), Some(y)) = (
+                                p.get("x").and_then(Value::as_f64),
+                                p.get("y").and_then(Value::as_f64),
+                            ) else {
                                 continue;
                             };
-                            if pair.len() != 2 {
-                                continue;
+                            if let Some(po) = p.as_object_mut() {
+                                po.insert("y".to_string(), json!(x + (y - x) * k));
                             }
-                            let (Some(x), Some(y)) =
-                                (pair[0].as_f64(), pair[1].as_f64())
-                            else {
-                                continue;
-                            };
-                            pair[1] = json!(x + (y - x) * k);
                         }
                     }
                 }
@@ -318,6 +315,8 @@ fn single_zone_value(zone: &Value, w: f64) -> Value {
 
 /// curves 插值：所有风格控制点 x 网格相同（0,64,128,192,255）→ 直接 y 加权
 /// 平均；通道集合或网格不同 → 返回 None（调用方退回仅 best）。
+/// 控制点为渲染端 schema 的 `{"x","y"}` 对象（convert_points_to_aligned 只认
+/// 对象点，数组点会被跳过导致恒 0 黑屏）。
 fn blend_curves(a: &Value, b: &Value, wa: f64, wb: f64) -> Option<Value> {
     let ao = a.as_object()?;
     let bo = b.as_object()?;
@@ -334,14 +333,22 @@ fn blend_curves(a: &Value, b: &Value, wa: f64, wb: f64) -> Option<Value> {
         }
         let mut merged = Vec::with_capacity(pa.len());
         for (pa_pt, pb_pt) in pa.iter().zip(pb.iter()) {
-            let xa = pa_pt.get(0).and_then(Value::as_f64)?;
-            let ya = pa_pt.get(1).and_then(Value::as_f64)?;
-            let xb = pb_pt.get(0).and_then(Value::as_f64)?;
-            let yb = pb_pt.get(1).and_then(Value::as_f64)?;
+            let (Some(xa), Some(ya)) = (
+                pa_pt.get("x").and_then(Value::as_f64),
+                pa_pt.get("y").and_then(Value::as_f64),
+            ) else {
+                return None;
+            };
+            let (Some(xb), Some(yb)) = (
+                pb_pt.get("x").and_then(Value::as_f64),
+                pb_pt.get("y").and_then(Value::as_f64),
+            ) else {
+                return None;
+            };
             if (xa - xb).abs() > 1e-9 {
                 return None;
             }
-            merged.push(json!([xa, ya * wa + yb * wb]));
+            merged.push(json!({ "x": xa, "y": ya * wa + yb * wb }));
         }
         out.insert(ch.clone(), Value::Array(merged));
     }
@@ -546,10 +553,13 @@ const STYLE_DEFS: &[StyleDef] = &[
                     "shadows": ZoneGrade::new(200.0, 8.0, -4.0).to_json(),
                     "highlights": ZoneGrade::new(190.0, 6.0, 2.0).to_json(),
                 },
+                /* 渲染端 convert_points_to_aligned 只识别 {"x","y"} 对象点（0..255）；
+                 * 数组点 [x,y] 会被整体跳过 → 控制点全为 (0,0) → 预览一片黑
+                 * （v2.1.19/v2.1.20 缺陷根因，与 color_transfer 输出同 schema）。 */
                 "curves": {
-                    "red":   [[0, 16], [64, 74], [128, 128], [192, 192], [255, 244]],
-                    "green": [[0, 16], [64, 74], [128, 128], [192, 192], [255, 244]],
-                    "blue":  [[0, 18], [64, 76], [128, 128], [192, 190], [255, 242]],
+                    "red":   [{ "x": 0, "y": 16 }, { "x": 64, "y": 74 }, { "x": 128, "y": 128 }, { "x": 192, "y": 192 }, { "x": 255, "y": 244 }],
+                    "green": [{ "x": 0, "y": 16 }, { "x": 64, "y": 74 }, { "x": 128, "y": 128 }, { "x": 192, "y": 192 }, { "x": 255, "y": 244 }],
+                    "blue":  [{ "x": 0, "y": 18 }, { "x": 64, "y": 76 }, { "x": 128, "y": 128 }, { "x": 192, "y": 190 }, { "x": 255, "y": 242 }],
                 },
             })
         },
@@ -581,9 +591,9 @@ const STYLE_DEFS: &[StyleDef] = &[
                     "highlights": ZoneGrade::new(35.0, 12.0, 2.0).to_json(),
                 },
                 "curves": {
-                    "red":   [[0, 0], [64, 54], [128, 128], [192, 204], [255, 255]],
-                    "green": [[0, 0], [64, 54], [128, 128], [192, 204], [255, 255]],
-                    "blue":  [[0, 0], [64, 52], [128, 128], [192, 206], [255, 255]],
+                    "red":   [{ "x": 0, "y": 0 }, { "x": 64, "y": 54 }, { "x": 128, "y": 128 }, { "x": 192, "y": 204 }, { "x": 255, "y": 255 }],
+                    "green": [{ "x": 0, "y": 0 }, { "x": 64, "y": 54 }, { "x": 128, "y": 128 }, { "x": 192, "y": 204 }, { "x": 255, "y": 255 }],
+                    "blue":  [{ "x": 0, "y": 0 }, { "x": 64, "y": 52 }, { "x": 128, "y": 128 }, { "x": 192, "y": 206 }, { "x": 255, "y": 255 }],
                 },
             })
         },
@@ -616,9 +626,9 @@ const STYLE_DEFS: &[StyleDef] = &[
                     "highlights": ZoneGrade::new(45.0, 4.0, 2.0).to_json(),
                 },
                 "curves": {
-                    "red":   [[0, 22], [64, 82], [128, 130], [192, 196], [255, 246]],
-                    "green": [[0, 22], [64, 82], [128, 130], [192, 196], [255, 246]],
-                    "blue":  [[0, 20], [64, 78], [128, 126], [192, 190], [255, 238]],
+                    "red":   [{ "x": 0, "y": 22 }, { "x": 64, "y": 82 }, { "x": 128, "y": 130 }, { "x": 192, "y": 196 }, { "x": 255, "y": 246 }],
+                    "green": [{ "x": 0, "y": 22 }, { "x": 64, "y": 82 }, { "x": 128, "y": 130 }, { "x": 192, "y": 196 }, { "x": 255, "y": 246 }],
+                    "blue":  [{ "x": 0, "y": 20 }, { "x": 64, "y": 78 }, { "x": 128, "y": 126 }, { "x": 192, "y": 190 }, { "x": 255, "y": 238 }],
                 },
             })
         },
@@ -642,9 +652,9 @@ const STYLE_DEFS: &[StyleDef] = &[
                 "contrast": 12.0,
                 "structure": 8.0,
                 "curves": {
-                    "red":   [[0, 0], [64, 52], [128, 128], [192, 204], [255, 255]],
-                    "green": [[0, 0], [64, 52], [128, 128], [192, 204], [255, 255]],
-                    "blue":  [[0, 0], [64, 52], [128, 128], [192, 204], [255, 255]],
+                    "red":   [{ "x": 0, "y": 0 }, { "x": 64, "y": 52 }, { "x": 128, "y": 128 }, { "x": 192, "y": 204 }, { "x": 255, "y": 255 }],
+                    "green": [{ "x": 0, "y": 0 }, { "x": 64, "y": 52 }, { "x": 128, "y": 128 }, { "x": 192, "y": 204 }, { "x": 255, "y": 255 }],
+                    "blue":  [{ "x": 0, "y": 0 }, { "x": 64, "y": 52 }, { "x": 128, "y": 128 }, { "x": 192, "y": 204 }, { "x": 255, "y": 255 }],
                 },
             })
         },
@@ -674,9 +684,9 @@ const STYLE_DEFS: &[StyleDef] = &[
                     "highlights": ZoneGrade::new(190.0, 15.0, 2.0).to_json(),
                 },
                 "curves": {
-                    "red":   [[0, 4], [64, 56], [128, 128], [192, 200], [255, 255]],
-                    "green": [[0, 4], [64, 56], [128, 128], [192, 200], [255, 255]],
-                    "blue":  [[0, 8], [64, 60], [128, 130], [192, 198], [255, 255]],
+                    "red":   [{ "x": 0, "y": 4 }, { "x": 64, "y": 56 }, { "x": 128, "y": 128 }, { "x": 192, "y": 200 }, { "x": 255, "y": 255 }],
+                    "green": [{ "x": 0, "y": 4 }, { "x": 64, "y": 56 }, { "x": 128, "y": 128 }, { "x": 192, "y": 200 }, { "x": 255, "y": 255 }],
+                    "blue":  [{ "x": 0, "y": 8 }, { "x": 64, "y": 60 }, { "x": 128, "y": 130 }, { "x": 192, "y": 198 }, { "x": 255, "y": 255 }],
                 },
             })
         },
@@ -707,9 +717,9 @@ const STYLE_DEFS: &[StyleDef] = &[
                     "highlights": ZoneGrade::new(90.0, 4.0, 2.0).to_json(),
                 },
                 "curves": {
-                    "red":   [[0, 12], [64, 72], [128, 130], [192, 194], [255, 248]],
-                    "green": [[0, 12], [64, 72], [128, 130], [192, 194], [255, 248]],
-                    "blue":  [[0, 14], [64, 74], [128, 128], [192, 192], [255, 246]],
+                    "red":   [{ "x": 0, "y": 12 }, { "x": 64, "y": 72 }, { "x": 128, "y": 130 }, { "x": 192, "y": 194 }, { "x": 255, "y": 248 }],
+                    "green": [{ "x": 0, "y": 12 }, { "x": 64, "y": 72 }, { "x": 128, "y": 130 }, { "x": 192, "y": 194 }, { "x": 255, "y": 248 }],
+                    "blue":  [{ "x": 0, "y": 14 }, { "x": 64, "y": 74 }, { "x": 128, "y": 128 }, { "x": 192, "y": 192 }, { "x": 255, "y": 246 }],
                 },
             })
         },
@@ -742,9 +752,9 @@ const STYLE_DEFS: &[StyleDef] = &[
                     "highlights": ZoneGrade::new(40.0, 12.0, 2.0).to_json(),
                 },
                 "curves": {
-                    "red":   [[0, 10], [64, 74], [128, 132], [192, 196], [255, 250]],
-                    "green": [[0, 10], [64, 72], [128, 130], [192, 194], [255, 250]],
-                    "blue":  [[0, 6], [64, 66], [128, 124], [192, 186], [255, 240]],
+                    "red":   [{ "x": 0, "y": 10 }, { "x": 64, "y": 74 }, { "x": 128, "y": 132 }, { "x": 192, "y": 196 }, { "x": 255, "y": 250 }],
+                    "green": [{ "x": 0, "y": 10 }, { "x": 64, "y": 72 }, { "x": 128, "y": 130 }, { "x": 192, "y": 194 }, { "x": 255, "y": 250 }],
+                    "blue":  [{ "x": 0, "y": 6 }, { "x": 64, "y": 66 }, { "x": 128, "y": 124 }, { "x": 192, "y": 186 }, { "x": 255, "y": 240 }],
                 },
             })
         },
@@ -778,9 +788,9 @@ const STYLE_DEFS: &[StyleDef] = &[
                     "midtones": ZoneGrade::new(220.0, 4.0, -2.0).to_json(),
                 },
                 "curves": {
-                    "red":   [[0, 0], [64, 48], [128, 126], [192, 200], [255, 252]],
-                    "green": [[0, 0], [64, 48], [128, 126], [192, 200], [255, 252]],
-                    "blue":  [[0, 2], [64, 50], [128, 128], [192, 198], [255, 250]],
+                    "red":   [{ "x": 0, "y": 0 }, { "x": 64, "y": 48 }, { "x": 128, "y": 126 }, { "x": 192, "y": 200 }, { "x": 255, "y": 252 }],
+                    "green": [{ "x": 0, "y": 0 }, { "x": 64, "y": 48 }, { "x": 128, "y": 126 }, { "x": 192, "y": 200 }, { "x": 255, "y": 252 }],
+                    "blue":  [{ "x": 0, "y": 2 }, { "x": 64, "y": 50 }, { "x": 128, "y": 128 }, { "x": 192, "y": 198 }, { "x": 255, "y": 250 }],
                 },
             })
         },
@@ -1055,14 +1065,22 @@ mod tests {
                     }
                 }
             }
-            // curves 控制点必须为 [x, y] 且 x 升序、0..255
+            // curves 控制点必须为渲染端 schema 的 {"x","y"} 对象且 x 升序、0..255
+            // （数组点 [x,y] 会被 convert_points_to_aligned 跳过 → 恒 0 黑屏）
             if let Some(curves) = obj.get("curves") {
                 for (ch, points) in curves.as_object().unwrap() {
                     let pts = points.as_array().unwrap();
                     let mut prev_x = -1.0;
                     for p in pts {
-                        let x = p[0].as_f64().unwrap();
-                        let y = p[1].as_f64().unwrap();
+                        assert!(
+                            p.is_object() && p.get("x").is_some() && p.get("y").is_some(),
+                            "{}/{}/{} 点必须是 {{\"x\",\"y\"}} 对象",
+                            def.id,
+                            ch,
+                            "schema"
+                        );
+                        let x = p["x"].as_f64().unwrap();
+                        let y = p["y"].as_f64().unwrap();
                         assert!((0.0..=255.0).contains(&x), "{}/{}/{} x={}", def.id, ch, "x", x);
                         assert!((0.0..=255.0).contains(&y), "{}/{}/{} y={}", def.id, ch, "y", y);
                         assert!(x > prev_x, "{}/{}/{} x 非升序", def.id, ch, "x");
@@ -1214,8 +1232,8 @@ mod tests {
         assert!((num(patch, &["colorGrading", "shadows", "hue"]) - 200.0).abs() < 1e-9);
         // curves：y' = x + (y-x)·k，x 保持不变（[64,74] → [64,69]）
         let pt = &patch["curves"]["red"][1];
-        assert!((pt[0].as_f64().unwrap() - 64.0).abs() < 1e-9, "curves x 不变");
-        assert!((pt[1].as_f64().unwrap() - 69.0).abs() < 1e-9, "y' = 64 + 10×0.5");
+        assert!((pt["x"].as_f64().unwrap() - 64.0).abs() < 1e-9, "curves x 不变");
+        assert!((pt["y"].as_f64().unwrap() - 69.0).abs() < 1e-9, "y' = 64 + 10×0.5");
     }
 
     #[test]
@@ -1271,7 +1289,7 @@ mod tests {
                 "highlights": { "hue": 190.0, "saturation": 6.0, "luminance": 2.0 }
             },
             "curves": {
-                "red": [[0.0, 16.0], [64.0, 74.0], [128.0, 128.0], [192.0, 192.0], [255.0, 244.0]]
+                "red": [{ "x": 0.0, "y": 16.0 }, { "x": 64.0, "y": 74.0 }, { "x": 128.0, "y": 128.0 }, { "x": 192.0, "y": 192.0 }, { "x": 255.0, "y": 244.0 }]
             }
         });
         let b = json!({
@@ -1281,7 +1299,7 @@ mod tests {
                 "shadows": { "hue": 215.0, "saturation": 14.0, "luminance": -4.0 }
             },
             "curves": {
-                "red": [[0.0, 0.0], [64.0, 54.0], [128.0, 128.0], [192.0, 204.0], [255.0, 255.0]]
+                "red": [{ "x": 0.0, "y": 0.0 }, { "x": 64.0, "y": 54.0 }, { "x": 128.0, "y": 128.0 }, { "x": 192.0, "y": 204.0 }, { "x": 255.0, "y": 255.0 }]
             }
         });
         let m = blend_patches(&a, &b, 0.6, 0.4).expect("同网格应混合");
@@ -1298,16 +1316,16 @@ mod tests {
         assert!((num(&m, &["colorGrading", "highlights", "saturation"]) - 3.6).abs() < 1e-9);
         // curves：x 不变，y 加权平均：74×0.6 + 54×0.4 = 66
         let pt = &m["curves"]["red"][1];
-        assert!((pt[0].as_f64().unwrap() - 64.0).abs() < 1e-9);
-        assert!((pt[1].as_f64().unwrap() - 66.0).abs() < 1e-9);
+        assert!((pt["x"].as_f64().unwrap() - 64.0).abs() < 1e-9);
+        assert!((pt["y"].as_f64().unwrap() - 66.0).abs() < 1e-9);
     }
 
     #[test]
     fn test_blend_grid_mismatch_falls_back() {
-        let a = json!({ "curves": { "red": [[0.0, 16.0], [64.0, 74.0], [128.0, 128.0], [192.0, 192.0], [255.0, 244.0]] } });
-        let b = json!({ "curves": { "red": [[0.0, 0.0], [32.0, 54.0], [128.0, 128.0], [192.0, 204.0], [255.0, 255.0]] } });
+        let a = json!({ "curves": { "red": [{ "x": 0.0, "y": 16.0 }, { "x": 64.0, "y": 74.0 }, { "x": 128.0, "y": 128.0 }, { "x": 192.0, "y": 192.0 }, { "x": 255.0, "y": 244.0 }] } });
+        let b = json!({ "curves": { "red": [{ "x": 0.0, "y": 0.0 }, { "x": 32.0, "y": 54.0 }, { "x": 128.0, "y": 128.0 }, { "x": 192.0, "y": 204.0 }, { "x": 255.0, "y": 255.0 }] } });
         assert!(blend_patches(&a, &b, 0.6, 0.4).is_none(), "x 网格不同不混合");
-        let b = json!({ "curves": { "green": [[0.0, 0.0], [64.0, 54.0], [128.0, 128.0], [192.0, 204.0], [255.0, 255.0]] } });
+        let b = json!({ "curves": { "green": [{ "x": 0.0, "y": 0.0 }, { "x": 64.0, "y": 54.0 }, { "x": 128.0, "y": 128.0 }, { "x": 192.0, "y": 204.0 }, { "x": 255.0, "y": 255.0 }] } });
         assert!(blend_patches(&a, &b, 0.6, 0.4).is_none(), "通道集合不同不混合");
     }
 
