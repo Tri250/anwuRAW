@@ -2085,6 +2085,211 @@ mod curve_points_tests {
         assert!((b[0].x - 0.0).abs() < 1e-6 && (b[0].y - 16.0).abs() < 1e-6);
         assert!((b[1].x - 255.0).abs() < 1e-6 && (b[1].y - 244.0).abs() < 1e-6);
     }
+
+    /// 自动调色回归测试（v2.1.22 审计补充：此前该链路 0 测试覆盖）。
+    ///
+    /// 覆盖四类审计发现：
+    /// 1. 窄直方图（夜景/纯色/灰卡）不得产出满格对比度 + 满格阴影；
+    /// 2. 自动调色不得产出暗角/中心清晰度（旧实现符号反转 + 构图误判）；
+    /// 3. 正常曝光照片的影调修正必须落在温和区间；
+    /// 4. activeTools 必须覆盖全部被写入的工具（否则渲染门控吞掉补丁）。
+    mod auto_adjust_tests {
+        use super::*;
+        use image::{DynamicImage, GrayImage, RgbImage};
+
+        /// 与 perform_auto_analysis 内部的自动档对比度硬顶保持一致。
+        const AUTO_CONTRAST_MAX: f64 = 40.0;
+
+        /// 钟形直方图照片合成器：mean/spread 控制分布，sat 控制彩度偏移。
+        fn synth(mean: f64, spread: f64, sat: f64) -> DynamicImage {
+            let mut img = RgbImage::new(96, 96);
+            let mut seed: u64 = 12345;
+            let mut rnd = || {
+                seed = seed
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
+                ((seed >> 33) as f64) / (u32::MAX as f64)
+            };
+            for p in img.pixels_mut() {
+                let u = (rnd() + rnd() + rnd()) / 3.0;
+                let v = (rnd() + rnd() + rnd()) / 3.0;
+                let l = (mean + (u - 0.5) * spread).clamp(0.0, 255.0);
+                let c = (v - 0.5) * sat * 255.0;
+                *p = image::Rgb([
+                    (l + c).clamp(0.0, 255.0) as u8,
+                    l as u8,
+                    (l - c).clamp(0.0, 255.0) as u8,
+                ]);
+            }
+            DynamicImage::ImageRgb8(img)
+        }
+
+        /// 径向暗角图：中心 255，边缘衰减 `falloff`。
+        fn vignette_image(falloff: f64) -> DynamicImage {
+            let mut img = RgbImage::new(96, 96);
+            for (x, y, p) in img.enumerate_pixels_mut() {
+                let dx = (x as f64 - 47.5) / 47.5;
+                let dy = (y as f64 - 47.5) / 47.5;
+                let r = (dx * dx + dy * dy).sqrt().min(1.0);
+                let v = (255.0 * (1.0 - falloff * r * r)) as u8;
+                *p = image::Rgb([v, v, v]);
+            }
+            DynamicImage::ImageRgb8(img)
+        }
+
+        /// 主体居中构图：中心亮块 + 暗背景（与镜头暗角信号同形）。
+        fn centered_subject_image() -> DynamicImage {
+            let mut img = RgbImage::new(96, 96);
+            for (x, y, p) in img.enumerate_pixels_mut() {
+                let dx = (x as f64 - 48.0) / 22.0;
+                let dy = (y as f64 - 48.0) / 22.0;
+                let v = if dx * dx + dy * dy < 1.0 { 235u8 } else { 60u8 };
+                *p = image::Rgb([v, v, v]);
+            }
+            DynamicImage::ImageRgb8(img)
+        }
+
+        fn flat(v: u8) -> DynamicImage {
+            DynamicImage::ImageLuma8(GrayImage::from_pixel(64, 64, image::Luma([v])))
+        }
+
+        /// 回归 1：窄直方图不得满格。
+        #[test]
+        fn test_narrow_histogram_does_not_max_out() {
+            for (name, img) in [
+                ("night_sky", synth(20.0, 60.0, 0.05)),
+                ("very_hazy", synth(150.0, 55.0, 0.05)),
+                ("pure_black", flat(0)),
+                ("pure_white", flat(255)),
+                ("gray_card", flat(128)),
+            ] {
+                let r = perform_auto_analysis(&img, 0.0);
+                assert!(
+                    r.contrast <= AUTO_CONTRAST_MAX + 1e-9,
+                    "{name}: 对比度 {} 超过自动档上限 {}",
+                    r.contrast,
+                    AUTO_CONTRAST_MAX
+                );
+                assert!(
+                    r.shadows <= 50.0 + 1e-9,
+                    "{name}: 阴影提升 {} 超过上限",
+                    r.shadows
+                );
+                /* 暗图不得「满对比 + 满阴影」双重叠加 */
+                assert!(
+                    !(r.contrast > AUTO_CONTRAST_MAX - 1e-9 && r.shadows > 39.0),
+                    "{name}: 满对比 + 满阴影叠加，夜空/暗部会被拉成灰白"
+                );
+            }
+        }
+
+        /// 回归 2：自动调色不产出暗角/中心清晰度（含自然暗角与居中构图）。
+        #[test]
+        fn test_no_auto_vignette_or_centre() {
+            for (name, img) in [
+                ("natural_vignette", vignette_image(0.55)),
+                ("centered_subject", centered_subject_image()),
+                ("normal_photo", synth(128.0, 200.0, 0.15)),
+            ] {
+                let r = perform_auto_analysis(&img, 0.0);
+                assert_eq!(
+                    r.vignette_amount, 0.0,
+                    "{name}: 自动暗角必须恒为 0（符号曾反转压暗已有暗角，且构图判据不可用）"
+                );
+                assert_eq!(
+                    r.centre, 0.0,
+                    "{name}: 自动中心清晰度必须恒为 0（属创意效果，非影调校正）"
+                );
+            }
+        }
+
+        /// 回归 3：正常曝光照片的影调修正必须温和。
+        #[test]
+        fn test_normal_photo_is_gentle() {
+            let r = perform_auto_analysis(&synth(128.0, 200.0, 0.15), 0.0);
+            assert!(r.exposure.abs() < 0.6, "曝光修正 {} 过强", r.exposure);
+            assert!(r.contrast > 0.0 && r.contrast < 30.0, "对比度 {} 越界", r.contrast);
+            assert!(r.clarity > 0.0, "正常片应获得轻微清晰度");
+            assert!(r.dehaze.abs() < 1e-9, "色阶充足的图不应去雾");
+        }
+
+        /// 回归 3b：欠曝照片应被提亮，过曝应被压暗。
+        #[test]
+        fn test_exposure_direction() {
+            let dark = perform_auto_analysis(&synth(60.0, 140.0, 0.15), 0.0);
+            assert!(dark.exposure > 0.3, "欠曝应提亮，实际 {}", dark.exposure);
+            assert!(dark.shadows > 0.0, "欠曝应提阴影，实际 {}", dark.shadows);
+
+            let bright = perform_auto_analysis(&synth(190.0, 140.0, 0.15), 0.0);
+            assert!(bright.exposure < 0.0, "过曝应压暗，实际 {}", bright.exposure);
+        }
+
+        /// 回归 4：activeTools 覆盖全部被写入的工具（渲染门控 is_tool_active）。
+        #[test]
+        fn test_active_tools_cover_all_outputs() {
+            let j = auto_results_to_json(
+                &perform_auto_analysis(&synth(128.0, 200.0, 0.15), 0.0),
+                AutoAdjustMode::Normal,
+            );
+            let at = j["activeTools"].as_object().expect("activeTools 缺失");
+            for tool in ["basic", "colorPresence", "presence", "vignette"] {
+                assert_eq!(at[tool].as_bool(), Some(true), "{tool} 未激活");
+            }
+            for key in [
+                "exposure",
+                "contrast",
+                "highlights",
+                "shadows",
+                "whites",
+                "blacks",
+                "vibrance",
+                "clarity",
+                "dehaze",
+                "centré",
+                "vignetteAmount",
+            ] {
+                assert!(j[key].is_number(), "输出缺少 {key}");
+            }
+        }
+
+        /// 回归 5：三档强度单调不减，且非零项严格递增。
+        /// 不同图激活不同参数（正常片无 vibrance/dehaze、低饱和片无 dehaze），
+        /// 故跨多幅图汇总校验，确保四个缩调参数都被严格递增覆盖到。
+        #[test]
+        fn test_mode_scaling_monotonic() {
+            let images = [
+                ("normal", synth(128.0, 200.0, 0.15)),
+                ("low_sat", synth(128.0, 200.0, 0.01)),
+                ("hazy", synth(140.0, 90.0, 0.08)),
+                ("underexposed", synth(60.0, 140.0, 0.15)),
+            ];
+            let keys = ["contrast", "clarity", "dehaze", "vibrance"];
+            let mut strict = std::collections::HashMap::new();
+            for (name, img) in &images {
+                let r = perform_auto_analysis(img, 0.0);
+                let subtle = auto_results_to_json(&r, AutoAdjustMode::Subtle);
+                let normal = auto_results_to_json(&r, AutoAdjustMode::Normal);
+                let strong = auto_results_to_json(&r, AutoAdjustMode::Strong);
+                for key in keys {
+                    let s = subtle[key].as_f64().unwrap();
+                    let n = normal[key].as_f64().unwrap();
+                    let g = strong[key].as_f64().unwrap();
+                    assert!(s <= n && n <= g, "{name}/{key}: 三档非单调 ({s} {n} {g})");
+                    assert!(g.abs() <= 100.0, "{name}/{key}: Strong 越界 {g}");
+                    if g.abs() > 1e-9 {
+                        assert!(s < n && n < g, "{name}/{key}: 非零项应严格递增 ({s} {n} {g})");
+                        *strict.entry(key).or_insert(0) += 1;
+                    }
+                }
+            }
+            for key in keys {
+                assert!(
+                    strict.get(key).copied().unwrap_or(0) >= 1,
+                    "{key}: 没有任何样本图激活该参数，三档校验形同虚设"
+                );
+            }
+        }
+    }
 }
 
 pub(crate) const WP_D65: Vec2 = Vec2::new(0.3127, 0.3290);
@@ -4254,6 +4459,17 @@ pub fn perform_auto_analysis(image: &DynamicImage, exposure: f32) -> AutoAdjustm
     const TARGET_RANGE: f64 = 220.0;
     const CONTRAST_SCALE: f64 = 10.0;
     const HIGHLIGHT_CONTRAST_REDUCE: f64 = 0.5;
+    /* 窄直方图保护：p1==p99（纯色/灰卡/空白帧）或极窄分布（夜景）时
+     * range 塌到 1，旧公式 (220/1-1)*10 = 2190 → 对比度满格 100，叠加
+     * 阴影满格 50，夜景被提成灰白、纯色图被拉出伪细节。
+     * 1) range 地板：低于该值视为直方图不可信，不再外推对比度；
+     * 2) 对比度硬顶：自动档对比度超过该值即失真（实测正常片 +19、欠曝 +36，
+     *    极限需求由 Strong 档 1.5× 覆盖）；
+     * 3) 暗区对比度折减：与既有高光折减对称，避免「暗图 = 满对比 + 满阴影」
+     *    双重叠加（night_sky 实测 contrast 100 + shadows 40）。 */
+    const MIN_ANALYSIS_RANGE: f64 = 32.0;
+    const AUTO_CONTRAST_MAX: f64 = 40.0;
+    const SHADOW_CONTRAST_REDUCE: f64 = 0.5;
 
     const SHADOW_LUMA_MAX: usize = 32;
     const SHADOW_PERCENT_THRESHOLD: f64 = 0.05;
@@ -4271,14 +4487,6 @@ pub fn perform_auto_analysis(image: &DynamicImage, exposure: f32) -> AutoAdjustm
     const CLARITY_RANGE_THRESHOLD: f64 = 180.0;
     const CLARITY_SCALE: f64 = 50.0;
 
-    const VIGNETTE_CENTER_LOW: f32 = 0.25;
-    const VIGNETTE_CENTER_HIGH: f32 = 0.75;
-
-    const VIGNETTE_SCALE: f64 = 100.0;
-    const VIGNETTE_CENTRE_DIFF_THRESHOLD: f32 = 0.05;
-    const CENTRE_SCALE: f64 = 100.0;
-    const CENTRE_MAX: f64 = 60.0;
-
     const MID_GRAY: f64 = 128.0;
     const BLACKS_SCALE: f64 = 0.5;
     const WHITES_SCALE: f64 = 0.2;
@@ -4291,20 +4499,10 @@ pub fn perform_auto_analysis(image: &DynamicImage, exposure: f32) -> AutoAdjustm
     let rgb_image = analysis_preview.to_rgb8();
     let total_pixels = (rgb_image.width() * rgb_image.height()) as f64;
 
-    let (width, height) = rgb_image.dimensions();
-    let cx0 = (width as f32 * VIGNETTE_CENTER_LOW) as u32;
-    let cx1 = (width as f32 * VIGNETTE_CENTER_HIGH) as u32;
-    let cy0 = (height as f32 * VIGNETTE_CENTER_LOW) as u32;
-    let cy1 = (height as f32 * VIGNETTE_CENTER_HIGH) as u32;
-
     let mut luma_hist = vec![0u32; 256];
     let mut mean_saturation = 0.0f32;
-    let mut center_sum = 0.0f32;
-    let mut edge_sum = 0.0f32;
-    let mut center_n = 0u32;
-    let mut edge_n = 0u32;
 
-    for (x, y, pixel) in rgb_image.enumerate_pixels() {
+    for pixel in rgb_image.pixels() {
         let r = pixel[0] as f32;
         let g = pixel[1] as f32;
         let b = pixel[2] as f32;
@@ -4320,15 +4518,6 @@ pub fn perform_auto_analysis(image: &DynamicImage, exposure: f32) -> AutoAdjustm
         if max_c > 0.0 {
             let s = (max_c - min_c) / max_c;
             mean_saturation += s;
-        }
-
-        let luma_norm = luma_f / 255.0;
-        if x >= cx0 && x < cx1 && y >= cy0 && y < cy1 {
-            center_sum += luma_norm;
-            center_n += 1;
-        } else {
-            edge_sum += luma_norm;
-            edge_n += 1;
         }
     }
 
@@ -4353,6 +4542,9 @@ pub fn perform_auto_analysis(image: &DynamicImage, exposure: f32) -> AutoAdjustm
     let black_point = p1;
     let white_point = p99;
     let range = (white_point as f64 - black_point as f64).max(1.0);
+    /* 对比度/清晰度/去雾使用的有效色阶：地板值防止窄直方图外推爆炸
+     * （见 MIN_ANALYSIS_RANGE 注释）。 */
+    let effective_range = range.max(MIN_ANALYSIS_RANGE);
 
     let highlight_percent =
         luma_hist[HIGHLIGHT_LUMA_THRESHOLD..256].iter().sum::<u32>() as f64 / total_pixels;
@@ -4374,13 +4566,19 @@ pub fn perform_auto_analysis(image: &DynamicImage, exposure: f32) -> AutoAdjustm
 
     let mut contrast = 0.0f64;
     if range < TARGET_RANGE {
-        contrast = ((TARGET_RANGE / range) - 1.0) * CONTRAST_SCALE;
+        contrast = ((TARGET_RANGE / effective_range) - 1.0) * CONTRAST_SCALE;
     }
     if highlight_percent > HIGHLIGHT_PERCENT_THRESHOLD {
         contrast *= HIGHLIGHT_CONTRAST_REDUCE;
     }
 
     let shadow_percent = luma_hist[0..SHADOW_LUMA_MAX].iter().sum::<u32>() as f64 / total_pixels;
+
+    /* 与高光折减对称：暗图同时拿满对比 + 满阴影会把噪点/夜空拉成灰白，
+     * 先折减对比度再叠阴影提升。 */
+    if shadow_percent > SHADOW_PERCENT_THRESHOLD {
+        contrast *= SHADOW_CONTRAST_REDUCE;
+    }
 
     let mut shadows = 0.0f64;
     if shadow_percent > SHADOW_PERCENT_THRESHOLD {
@@ -4407,22 +4605,20 @@ pub fn perform_auto_analysis(image: &DynamicImage, exposure: f32) -> AutoAdjustm
         clarity = (1.0 - range / CLARITY_RANGE_THRESHOLD) * CLARITY_SCALE;
     }
 
-    let mut vignette_amount = 0.0f64;
-    let mut centre = 0.0f64;
-
-    if center_n > 0 && edge_n > 0 {
-        let c_avg = center_sum / center_n as f32;
-        let e_avg = edge_sum / edge_n as f32;
-
-        if e_avg < c_avg {
-            let diff = c_avg - e_avg;
-            vignette_amount = -(diff as f64 * VIGNETTE_SCALE);
-
-            if diff > VIGNETTE_CENTRE_DIFF_THRESHOLD {
-                centre = (diff as f64 * CENTRE_SCALE).min(CENTRE_MAX);
-            }
-        }
-    }
+    /* 自动调色不产出暗角/中心清晰度（v2.1.22 审计修复）。
+     *
+     * 旧实现按「中心平均亮度 > 边缘平均亮度」输出
+     * vignette_amount = -(c_avg - e_avg) * 100：
+     * 1) 符号反了 —— 渲染端负值 = 压暗边缘（shader.wgsl:2121
+     *    `rgb *= 1 + v_amount * mask`），所以有自然暗角的图被压得更暗；
+     * 2) 判据不可用 —— 「主体居中的普通构图」与「镜头暗角」产生同样的
+     *    中心亮/边缘暗信号，实测 centered_subject 会被强加
+     *    vignetteAmount=-45 + centré=+45，画面被聚光灯化；
+     * 3) 暗角属创意效果而非影调/色彩校正，不在「自动调色」职责内
+     *    （用户有独立暗角工具）。
+     * 因此整块移除，恒输出 0；字段保留以维持 JSON schema 兼容。 */
+    let vignette_amount = 0.0f64;
+    let centre = 0.0f64;
 
     let mut adjusted_luma_hist = vec![0u32; 256];
     for pixel in rgb_image.pixels() {
@@ -4442,7 +4638,7 @@ pub fn perform_auto_analysis(image: &DynamicImage, exposure: f32) -> AutoAdjustm
 
     AutoAdjustmentResults {
         exposure: (exposure / EXPOSURE_OUTPUT_SCALE).clamp(-5.0, 5.0),
-        contrast: contrast.clamp(-100.0, 100.0),
+        contrast: contrast.clamp(-AUTO_CONTRAST_MAX, AUTO_CONTRAST_MAX),
         highlights: highlights.clamp(-100.0, 100.0),
         shadows: shadows.clamp(-100.0, 100.0),
         vibrancy: vibrancy.clamp(-100.0, 100.0),
