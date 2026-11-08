@@ -30,6 +30,10 @@ const SRGB_TO_XYZ: [[f64; 3]; 3] = [
 const WHITE_D65: [f64; 3] = [0.95047, 1.0, 1.08883];
 
 struct ImageStats {
+    /// 原图宽高（空间对应 ΔE 的门控与宽高比诊断用；聚合统计置 0 表示非单图）。
+    /// 配对本身在分析缩略图上进行：原图同尺寸 ⇒ 缩略图必同尺寸，下标直配安全。
+    width: u32,
+    height: u32,
     /// 线性域逐通道均值
     lin_mean: [f64; 3],
     /// 分区（shadows/midtones/highlights）线性均值与像素占比
@@ -821,6 +825,9 @@ fn aggregate_image_stats(stats: &[ImageStats], mode: AggregateMode) -> Result<(I
 
     Ok((
         ImageStats {
+            // 拼接分布：单图宽高不再有意义，置 0（空间配对只看 s_list）
+            width: 0,
+            height: 0,
             lin_mean,
             zone_lin_mean,
             zone_frac,
@@ -859,10 +866,22 @@ fn classify_monochrome(enc_pixels: &[[f32; 3]]) -> bool {
 }
 
 fn analyze_image(img: &DynamicImage) -> ImageStats {
-    let thumb = img.thumbnail(ANALYSIS_DIM, ANALYSIS_DIM);
-    let (width, height) = thumb.dimensions();
+    // 缩略图只降不升：小于 ANALYSIS_DIM 的图保持原尺寸。thumbnail 会把
+    // 小图放大到框内上限，导致不同尺寸的输入被归一成同尺寸缩略图，
+    // 空间级 ΔE“同宽同高才配对”的契约（尺寸不同 ⇒ null）随之失效。
+    let owned_thumb;
+    let thumb = if img.width() > ANALYSIS_DIM || img.height() > ANALYSIS_DIM {
+        owned_thumb = Some(img.thumbnail(ANALYSIS_DIM, ANALYSIS_DIM));
+        owned_thumb.as_ref().unwrap()
+    } else {
+        img
+    };
+    // 门控/诊断用原图尺寸（任务契约“样片与目标图同宽同高”）；统计与配对
+    // 都在缩略图上进行：原图同尺寸 ⇒ 缩略图必同尺寸，下标直配安全。
+    let (width, height) = (img.width(), img.height());
+    let (thumb_width, thumb_height) = thumb.dimensions();
     let enc_f32 = thumb.to_rgb32f();
-    let pixel_count = (width * height) as f64;
+    let pixel_count = (thumb_width * thumb_height) as f64;
 
     let enc_pixels: Vec<[f32; 3]> = enc_f32.as_chunks::<3>().0.to_vec();
 
@@ -922,6 +941,8 @@ fn analyze_image(img: &DynamicImage) -> ImageStats {
     });
 
     ImageStats {
+        width,
+        height,
         lin_mean,
         zone_lin_mean,
         zone_frac: [
@@ -1109,12 +1130,38 @@ fn mkl_delta(
     [out[0] - lin[0], out[1] - lin[1], out[2] - lin[2]]
 }
 
+/// MKL 正向映射算子（阶段 0.5 逐像素增量与 hybrid LUT 烘焙共用，保证数学同源）：
+/// 对线性域像素按 zone_masks 加权合并分区/全局仿射传输（分区缺失回退全局，
+/// 再回退任意可用映射；`mkl_delta` 内含强度三分解），返回映射后的线性域 RGB。
+/// 无任何可用传输时恒等返回。
+fn apply_mkl_forward(
+    transports: &[Option<([[f64; 3]; 3], [f64; 3])>; 4],
+    fallback: Option<([[f64; 3]; 3], [f64; 3])>,
+    k: &TransferStrength,
+    lin: [f64; 3],
+) -> [f64; 3] {
+    let lab = to_oklab(lin);
+    let masks = zone_masks(luma(lin));
+    let mut out = lin;
+    for z in 0..3 {
+        let Some((a, b)) = transports[z + 1].or(transports[0]).or(fallback) else {
+            continue;
+        };
+        let dz = mkl_delta(&a, b, lab, lin, k);
+        for c in 0..3 {
+            out[c] += masks[z] * dz[c];
+        }
+    }
+    out
+}
+
 pub fn compute_color_transfer(
     samples: &[DynamicImage],
     target: &DynamicImage,
     strength: TransferStrength,
     aggregate_mode: AggregateMode,
-) -> Result<(Value, Value), String> {
+    bake_hybrid_lut: bool,
+) -> Result<(Value, Value, Option<String>), String> {
     if samples.is_empty() {
         return Err("No sample image".to_string());
     }
@@ -1204,18 +1251,9 @@ pub fn compute_color_transfer(
         let d = if monochrome {
             [0.0; 3]
         } else if use_mkl {
-            let lab = to_oklab(*lin);
-            let mut d = [0f64; 3];
-            for z in 0..3 {
-                // 分区映射优先 → 全局映射 → 任意可用映射兜底
-                let (a, b) = transports[z + 1]
-                    .or(transports[0])
-                    .or(transport_fallback)
-                    .unwrap();
-                let dz = mkl_delta(&a, b, lab, *lin, &k);
-                for c in 0..3 {
-                    d[c] += masks[z] * dz[c];
-                }
+            let mut d = apply_mkl_forward(&transports, transport_fallback, &k, *lin);
+            for c in 0..3 {
+                d[c] -= lin[c];
             }
             d
         } else {
@@ -1315,8 +1353,30 @@ pub fn compute_color_transfer(
         .iter()
         .map(|p| to_linear([p[0] as f64, p[1] as f64, p[2] as f64]))
         .collect();
+    // 空间对应配对（D-TN-02 度量口径分层）：仅当某张样片与客片原图同宽
+    // 同高时，才能按 (x, y) 一一对应配对计算 ΔE；否则该指标置 null（分布级
+    // 口径仍可用）。配对在分析缩略图上进行：原图同尺寸 ⇒ 缩略图同尺寸，
+    // 行主序像素下标直配。
+    let (t_w, t_h) = (t.width, t.height);
+    let spatial_samples_lin: Vec<Vec<[f64; 3]>> = s_list
+        .iter()
+        .filter(|st| st.width == t_w && st.height == t_h && t_w > 0)
+        .map(|st| {
+            st.enc_pixels
+                .iter()
+                .map(|p| to_linear([p[0] as f64, p[1] as f64, p[2] as f64]))
+                .collect()
+        })
+        .collect();
+    // 宽高比诊断：任一样片与客片原图宽高比不同即为 true
+    //（整数叉积比较，避免浮点除法）
+    let sample_aspect_mismatch = s_list
+        .iter()
+        .any(|st| st.width * t_h != t_w * st.height);
     let mut de_before = 0.0;
     let mut de_after = 0.0;
+    let mut de_spatial_sum = 0.0f64;
+    let mut spatial_pairs = 0u64;
     let mut hist_after = [0f64; 32];
     for i in 0..t_lin.len() {
         let lin_t = t_lin[i];
@@ -1334,19 +1394,27 @@ pub fn compute_color_transfer(
         let bin = ((v[0] * 0.2126 + v[1] * 0.7152 + v[2] * 0.0722) * 32.0) as usize;
         hist_after[bin.min(31)] += 1.0;
         // 抽样计算 ΔE（1/4 像素）控制开销。
-        // 样片与客片缩略图尺寸/张数不同（多样片为拼接分布），按确定性
-        // 跨步配对：i % n 保证不越界且覆盖整条参考分布。
+        // 样片与客片缩略图尺寸/张数不同（多样片为拼接分布），分布级指标按
+        // 确定性跨步配对：i % n 保证不越界且覆盖整条参考分布（口径＝分布级）。
         if i % 4 == 0 {
             let lab_t = linear_to_lab(lin_t);
             let lab_f = linear_to_lab(lin_final);
             let lab_s = linear_to_lab(sample_lin[i % sample_lin.len()]);
             de_before += delta_e76(lab_t, lab_s);
             de_after += delta_e76(lab_f, lab_s);
+            // 空间级口径：同尺寸样片按下标直配（同一 (x, y)）
+            for sp_lin in &spatial_samples_lin {
+                let lab_sp = linear_to_lab(sp_lin[i]);
+                de_spatial_sum += delta_e76(lab_f, lab_sp);
+                spatial_pairs += 1;
+            }
         }
     }
     let sampled = (t_lin.len() / 4).max(1) as f64;
     de_before /= sampled;
     de_after /= sampled;
+    let delta_e_spatial =
+        (spatial_pairs > 0).then(|| de_spatial_sum / spatial_pairs as f64);
 
     // 输出补丁（仅非默认字段）
     let mut patch = serde_json::Map::new();
@@ -1410,8 +1478,84 @@ pub fn compute_color_transfer(
         // 多样片聚合（大师配方）：样片张数与所用聚合模式
         "sampleCount": s_list.len(),
         "aggregateMode": aggregate_mode.as_str(),
+        // 度量口径分层（D-TN-02）：deltaEMean* 为分布级口径（跨步取模配对，
+        // 不要求像素空间对应）；deltaEDistribution 与 deltaEMeanAfter 同值，
+        // 用于前端在语义上显式选择分布级口径。deltaESpatial 仅在样片与客片
+        // 同宽同高时按空间对应像素计算，否则为 null。
+        "deltaEDistribution": de_after,
+        "deltaESpatial": delta_e_spatial,
+        "sampleAspectMismatch": sample_aspect_mismatch,
+        "pairedPixels": spatial_pairs,
     });
-    Ok((Value::Object(patch), metrics))
+    // hybrid 双载体（D-TN-01）：把本次传输烘焙为 33³ .cube 文本。
+    // MKL 可用时烘焙仿射传输本体（与阶段 0.5 共用 apply_mkl_forward，含分区
+    // 掩膜与强度分解）；无原始仿射矩阵时（黑白路由 / 全部 MKL 失败）退化为
+    // 直接求值 params 管线（tint+曲线，与最终模拟同一纯函数），保证 LUT 与
+    // params 输出数学同源。
+    let lut_text = bake_hybrid_lut.then(|| {
+        if use_mkl {
+            bake_cube_lut(|lin| apply_mkl_forward(&transports, transport_fallback, &k, lin))
+        } else {
+            bake_cube_lut(|lin: [f64; 3]| {
+                let masks = zone_masks(luma(lin));
+                let mut enc = [0f64; 3];
+                for c in 0..3 {
+                    let mut x = lin[c] + gs[c];
+                    for z in 0..3 {
+                        x += zone_shifts[z][c] * masks[z];
+                    }
+                    enc[c] = apply_curve_map(srgb_encode(x.clamp(0.0, 1.0)), curves[c].as_deref());
+                }
+                to_linear(enc)
+            })
+        }
+    });
+    Ok((Value::Object(patch), metrics, lut_text))
+}
+
+/// 将线性域→线性域的传输映射烘焙为 33³ 三通道 .cube 文本（纯函数，便于单测）。
+/// 网格点为 sRGB 编码域 0..1（标准 .cube 顺序：r 最快变化，g 次之，b 最慢）；
+/// 每个网格点经 sRGB 解码 → `transfer`（线性域）→ sRGB 编码并截断到 0..1。
+fn bake_cube_lut(transfer: impl Fn([f64; 3]) -> [f64; 3]) -> String {
+    const GRID: usize = 33;
+    let max = (GRID - 1) as f64;
+    let mut out = String::with_capacity(GRID * GRID * GRID * 24);
+    out.push_str("TITLE \"color match hybrid LUT\"\n");
+    out.push_str("# MKL color transfer baked to a 33^3 sRGB grid (color_transfer.rs)\n");
+    out.push_str("LUT_3D_SIZE 33\n");
+    out.push_str("DOMAIN_MIN 0.0 0.0 0.0\n");
+    out.push_str("DOMAIN_MAX 1.0 1.0 1.0\n");
+    for b in 0..GRID {
+        for g in 0..GRID {
+            for r in 0..GRID {
+                let enc_in = [r as f64 / max, g as f64 / max, b as f64 / max];
+                let mapped = to_enc(transfer(to_linear(enc_in)));
+                out.push_str(&format!(
+                    "{:.6} {:.6} {:.6}\n",
+                    mapped[0], mapped[1], mapped[2]
+                ));
+            }
+        }
+    }
+    out
+}
+
+/// 把 hybrid LUT 文本写入缓存目录 `color_match_luts/<纳秒hex>.cube`，返回路径。
+fn write_hybrid_lut(app_handle: &tauri::AppHandle, cube_text: &str) -> Result<String, String> {
+    use tauri::Manager;
+    let dir = app_handle
+        .path()
+        .app_cache_dir()
+        .map_err(|e| e.to_string())?
+        .join("color_match_luts");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_nanos();
+    let path = dir.join(format!("{nanos:x}.cube"));
+    std::fs::write(&path, cube_text).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
 }
 
 /// F-04d：计算掩膜区域内像素的线性域均值（mask ≥ 128 视为选中）。
@@ -1479,6 +1623,10 @@ pub async fn compute_color_match(
     sample_paths: Option<Vec<String>>,
     // 聚合模式：mean-cov / bures / robust-bures（默认 bures）
     aggregate: Option<String>,
+    // 输出载体模式（D-TN-01 双载体）："params"（默认，仅返回非破坏性调整
+    // 参数，行为与旧版完全一致）或 "hybrid"（同时把本次 MKL 仿射传输烘焙为
+    // 33³ .cube LUT 落盘到缓存目录，经 hybridLutPath 返回路径）
+    output_mode: Option<String>,
 ) -> Result<Value, String> {
     let paths = match sample_paths {
         Some(p) if !p.is_empty() => p,
@@ -1492,8 +1640,13 @@ pub async fn compute_color_match(
         Some(s) => AggregateMode::parse(s)
             .ok_or_else(|| format!("Unknown aggregate mode: {s} (mean-cov|bures|robust-bures)"))?,
     };
+    let hybrid = match output_mode.as_deref() {
+        None | Some("params") => false,
+        Some("hybrid") => true,
+        Some(s) => return Err(format!("Unknown output mode: {s} (params|hybrid)")),
+    };
     tokio::task::spawn_blocking(move || -> Result<Value, String> {
-        let settings = crate::app_settings::load_settings(app_handle).unwrap_or_default();
+        let settings = crate::app_settings::load_settings(app_handle.clone()).unwrap_or_default();
         let target = load_analysis_image(&target_path, &settings)?;
         let samples: Vec<DynamicImage> = paths
             .iter()
@@ -1504,8 +1657,34 @@ pub async fn compute_color_match(
             tone_strength: tone_strength.unwrap_or(1.0),
             color_strength: color_strength.unwrap_or(1.0),
         };
-        let (adjustments, metrics) = compute_color_transfer(&samples, &target, strength, mode)?;
-        Ok(json!({ "adjustments": adjustments, "metrics": metrics }))
+        let (adjustments, metrics, lut_text) =
+            compute_color_transfer(&samples, &target, strength, mode, hybrid)?;
+        // fitResidual：把 MKL 协方差不变式诊断值提到顶层（两种模式都返回）
+        let fit_residual = metrics
+            .get("mklInvariantError")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.0);
+        let mut response = json!({
+            "adjustments": adjustments,
+            "metrics": metrics,
+            "fitResidual": fit_residual,
+        });
+        if hybrid {
+            // LUT 落盘失败不阻塞 params 主载体（hybridLutPath 置 null 降级）
+            let lut_path = match lut_text {
+                Some(text) => write_hybrid_lut(&app_handle, &text)
+                    .map(Some)
+                    .unwrap_or_else(|e| {
+                        log::warn!("color match: hybrid LUT write failed: {e}");
+                        None
+                    }),
+                None => None,
+            };
+            response["hybridLutPath"] = lut_path
+                .map(Value::String)
+                .unwrap_or(Value::Null);
+        }
+        Ok(response)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -1561,7 +1740,10 @@ mod tests {
         mode: AggregateMode,
     ) -> (Value, Value) {
         let owned: Vec<DynamicImage> = samples.iter().map(|i| (*i).clone()).collect();
-        compute_color_transfer(&owned, target, strength, mode).expect("transfer should succeed")
+        let (patch, metrics, _lut) =
+            compute_color_transfer(&owned, target, strength, mode, false)
+                .expect("transfer should succeed");
+        (patch, metrics)
     }
 
     #[test]
@@ -2042,5 +2224,240 @@ mod tests {
             patch.get("curves").is_some() || patch.get("colorGrading").is_some(),
             "应仍产出补丁，patch={patch}"
         );
+    }
+
+    /* ------------------------------ hybrid 双载体 LUT（D-TN-01） ------------------------------ */
+
+    /// 解析 .cube 文本：返回 (LUT_3D_SIZE, DOMAIN_MIN, DOMAIN_MAX, 数据行)
+    fn parse_cube(text: &str) -> (u32, [f64; 3], [f64; 3], Vec<[f64; 3]>) {
+        let mut size = 0u32;
+        let mut dmin = [f64::NAN; 3];
+        let mut dmax = [f64::NAN; 3];
+        let mut data = Vec::new();
+        for line in text.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') || line.starts_with("TITLE") {
+                continue;
+            }
+            if let Some(rest) = line.strip_prefix("LUT_3D_SIZE") {
+                size = rest.trim().parse().expect("LUT_3D_SIZE 应为整数");
+                continue;
+            }
+            if let Some(rest) = line.strip_prefix("DOMAIN_MIN") {
+                for (i, v) in rest.split_whitespace().enumerate() {
+                    dmin[i] = v.parse().unwrap();
+                }
+                continue;
+            }
+            if let Some(rest) = line.strip_prefix("DOMAIN_MAX") {
+                for (i, v) in rest.split_whitespace().enumerate() {
+                    dmax[i] = v.parse().unwrap();
+                }
+                continue;
+            }
+            let vals: Vec<f64> = line
+                .split_whitespace()
+                .map(|v| v.parse().expect("数据行应为浮点数"))
+                .collect();
+            assert_eq!(vals.len(), 3, "数据行应为三通道: {line}");
+            data.push([vals[0], vals[1], vals[2]]);
+        }
+        (size, dmin, dmax, data)
+    }
+
+    #[test]
+    fn test_bake_cube_lut_shape_and_domain() {
+        // 恒等传输：校验 33³ 网格、头部关键字、角点值域与 r 最快变化的顺序
+        let text = bake_cube_lut(|lin| lin);
+        let (size, dmin, dmax, data) = parse_cube(&text);
+        assert_eq!(size, 33, "LUT_3D_SIZE 应为 33");
+        assert_eq!(data.len(), 33usize.pow(3), "数据行应为 33³ 条");
+        assert!(dmin.iter().all(|&v| v == 0.0), "DOMAIN_MIN 应为 0 0 0");
+        assert!(dmax.iter().all(|&v| v == 1.0), "DOMAIN_MAX 应为 1 1 1");
+        assert!(
+            data.iter().flatten().all(|&v| (0.0..=1.0).contains(&v)),
+            "所有输出值都应在 0..1 内"
+        );
+        // 角点：第一个点 (0,0,0) → 黑，最后一个点 (1,1,1) → 白
+        for c in 0..3 {
+            assert!(data[0][c] < 1e-6, "首行应为黑，实际 {:?}", data[0]);
+            assert!((data[data.len() - 1][c] - 1.0).abs() < 1e-6, "末行应为白");
+        }
+        // 标准 .cube 顺序：r 最快变化 → 第 2 行输入为 (1/32, 0, 0)
+        let step = 1.0 / 32.0;
+        assert!((data[1][0] - step).abs() < 1e-6 && data[1][1] < 1e-6 && data[1][2] < 1e-6);
+    }
+
+    #[test]
+    fn test_bake_cube_lut_identity_roundtrip() {
+        // 恒等传输烘焙结果应≈恒等：所有网格点往返误差 < 1e-3（含中心点）
+        let text = bake_cube_lut(|lin| lin);
+        let (_, _, _, data) = parse_cube(&text);
+        const GRID: usize = 33;
+        let max = (GRID - 1) as f64;
+        let mut checked = 0usize;
+        for idx in (0..data.len()).step_by(97) {
+            let b = (idx / (GRID * GRID)) as f64;
+            let g = ((idx / GRID) % GRID) as f64;
+            let r = (idx % GRID) as f64;
+            let enc_in = [r / max, g / max, b / max];
+            for c in 0..3 {
+                assert!(
+                    (data[idx][c] - enc_in[c]).abs() < 1e-3,
+                    "恒等烘焙往返误差过大: in={enc_in:?} out={:?}",
+                    data[idx]
+                );
+            }
+            checked += 1;
+        }
+        // 中心点 (16,16,16) = 0.5 灰，显式断言
+        let center = 16 * GRID * GRID + 16 * GRID + 16;
+        for c in 0..3 {
+            assert!(
+                (data[center][c] - 0.5).abs() < 1e-3,
+                "中心点往返误差应 <1e-3，实际 {}",
+                data[center][c]
+            );
+        }
+        assert!(checked > 300, "抽样点过少: {checked}");
+    }
+
+    #[test]
+    fn test_bake_cube_lut_applies_transfer() {
+        // 已知线性域增益（R×1.25）应精确体现在网格点上
+        let text = bake_cube_lut(|mut lin| {
+            lin[0] *= 1.25;
+            lin
+        });
+        let (_, _, _, data) = parse_cube(&text);
+        const GRID: usize = 33;
+        let idx = 16 * GRID * GRID + 16 * GRID + 16; // 输入 (0.5, 0.5, 0.5)
+        let lin_in = to_linear([0.5, 0.5, 0.5]);
+        let expected = to_enc([lin_in[0] * 1.25, lin_in[1], lin_in[2]]);
+        for c in 0..3 {
+            assert!(
+                (data[idx][c] - expected[c]).abs() < 1e-6,
+                "网格点 {c} 通道应等于期望值 {:.6}，实际 {}",
+                expected[c],
+                data[idx][c]
+            );
+        }
+    }
+
+    #[test]
+    fn test_hybrid_bake_returns_cube_text() {
+        // hybrid 开关：返回值第三项应为合法 .cube 文本，params 主载体不受影响
+        let target = gradient_image();
+        let sample = warm_sample(&target);
+        let owned = vec![sample.clone()];
+        let (patch, metrics, lut) = compute_color_transfer(
+            &owned,
+            &target,
+            TransferStrength::default(),
+            AggregateMode::Bures,
+            true,
+        )
+        .expect("transfer should succeed");
+        let text = lut.expect("hybrid 模式应返回 LUT 文本");
+        assert!(text.starts_with("TITLE"));
+        assert!(text.contains("LUT_3D_SIZE 33"));
+        let (size, _, _, data) = parse_cube(&text);
+        assert_eq!(size, 33);
+        assert_eq!(data.len(), 33usize.pow(3));
+        assert!(
+            patch.get("curves").is_some() || patch.get("colorGrading").is_some(),
+            "hybrid 模式仍应返回 params 补丁，patch={patch}"
+        );
+        assert!(metrics["mklUsed"].as_bool().unwrap());
+        assert!(metrics["pairedPixels"].as_u64().unwrap() > 0);
+        // params 模式（开关关闭）不应烘焙 LUT
+        let owned2 = vec![sample.clone()];
+        let (_, _, lut3) = compute_color_transfer(
+            &owned2,
+            &target,
+            TransferStrength::default(),
+            AggregateMode::Bures,
+            false,
+        )
+        .expect("transfer should succeed");
+        assert!(lut3.is_none(), "params 模式不应烘焙 LUT");
+        assert!(metrics["pairedPixels"].as_u64().unwrap() > 0);
+    }
+
+    /* ------------------------------ 度量口径分层（D-TN-02） ------------------------------ */
+
+    #[test]
+    fn test_delta_e_spatial_null_on_aspect_mismatch() {
+        // 宽高比不同（64×128 vs 128×128）：deltaESpatial 必须为 null 且不 panic
+        let mut small = RgbImage::new(64, 128);
+        for (x, _y, p) in small.enumerate_pixels_mut() {
+            let v = (x * 255 / 63) as u8;
+            *p = Rgb([v, (v as u16 * 9 / 10) as u8, (v as u16 * 4 / 5) as u8]);
+        }
+        let small = DynamicImage::ImageRgb8(small);
+        let target = gradient_image();
+        let (_, metrics) =
+            run_transfer(&[&small], &target, TransferStrength::default(), AggregateMode::Bures);
+        assert!(
+            metrics["deltaESpatial"].is_null(),
+            "宽高比不同时 deltaESpatial 应为 null，metrics={metrics}"
+        );
+        assert_eq!(
+            metrics["sampleAspectMismatch"].as_bool().unwrap(),
+            true,
+            "应标记宽高比失配"
+        );
+        assert_eq!(metrics["pairedPixels"].as_u64().unwrap(), 0);
+        // 分布级指标仍为有限值（兼容口径不受影响）
+        assert!(metrics["deltaEDistribution"].as_f64().unwrap().is_finite());
+        assert!(metrics["deltaEMeanAfter"].as_f64().unwrap().is_finite());
+    }
+
+    #[test]
+    fn test_delta_e_spatial_finite_when_same_size() {
+        // 同尺寸（128×128 vs 128×128）：空间级 ΔE 应为有限值且有实际配对
+        let target = gradient_image();
+        let sample = warm_sample(&target);
+        let (_, metrics) =
+            run_transfer(&[&sample], &target, TransferStrength::default(), AggregateMode::Bures);
+        let spatial = metrics["deltaESpatial"]
+            .as_f64()
+            .expect("同尺寸应有空间级 ΔE，metrics={metrics}");
+        assert!(spatial.is_finite(), "deltaESpatial 应为有限值");
+        assert_eq!(metrics["sampleAspectMismatch"].as_bool().unwrap(), false);
+        assert!(
+            metrics["pairedPixels"].as_u64().unwrap() > 0,
+            "应存在实际配对像素，metrics={metrics}"
+        );
+        // deltaEDistribution 与 deltaEMeanAfter 同值（分布级口径别名）
+        assert_eq!(
+            metrics["deltaEDistribution"].as_f64().unwrap(),
+            metrics["deltaEMeanAfter"].as_f64().unwrap()
+        );
+    }
+
+    #[test]
+    fn test_delta_e_spatial_null_same_aspect_different_size() {
+        // 同宽高比（1:1）但尺寸不同（64×64 vs 128×128）：不算宽高比失配，
+        // 但缩略图不同宽高 ⇒ 空间配对不可用、配对数为 0
+        let mut square = RgbImage::new(64, 64);
+        for (x, y, p) in square.enumerate_pixels_mut() {
+            let v = ((x + y) * 255 / 126) as u8;
+            *p = Rgb([v, v, 255 - v]);
+        }
+        let square = DynamicImage::ImageRgb8(square);
+        let target = gradient_image();
+        let (_, metrics) =
+            run_transfer(&[&square], &target, TransferStrength::default(), AggregateMode::Bures);
+        assert!(
+            metrics["deltaESpatial"].is_null(),
+            "尺寸不同时 deltaESpatial 应为 null，metrics={metrics}"
+        );
+        assert_eq!(
+            metrics["sampleAspectMismatch"].as_bool().unwrap(),
+            false,
+            "同宽高比不应标记失配"
+        );
+        assert_eq!(metrics["pairedPixels"].as_u64().unwrap(), 0);
     }
 }

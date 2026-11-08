@@ -5,7 +5,7 @@
 //   best-effort `crs:` mapping for Lightroom interoperability).
 // - §4 P1: watched-folder auto-ingest (lightweight std-only polling watcher).
 // - §4 P0: AI one-click enhance (three intensity tiers over the existing
-//   histogram-based auto analysis) and AI upscale export.
+//   histogram-based auto analysis) and Lanczos upscale export.
 // - E8: editor-interaction awareness helpers shared with thumbnail workers.
 
 use std::collections::{HashMap, HashSet};
@@ -692,7 +692,7 @@ pub enum EnhanceIntensity {
 /// commands execute on the main thread, which on Android is the UI thread —
 /// `perform_auto_analysis` (full-image F32 downscale + per-pixel stats) then
 /// freezes the whole WebView for large images/RAW and every tap "does
-/// nothing". Same pattern as `scene_classify` / `ai_upscale_export`.
+/// nothing". Same pattern as `scene_classify` / `upscale_export_lanczos`.
 #[tauri::command]
 pub async fn ai_auto_enhance(
     app_handle: AppHandle,
@@ -864,17 +864,21 @@ fn run_ai_auto_enhance(
 }
 
 // ---------------------------------------------------------------------------
-// §4 P0: AI upscale export
+// §4 P0: Lanczos upscale export (D-AI-04 正名：插值放大导出，非神经超分)
 // ---------------------------------------------------------------------------
 
 /// Long-edge cap so a 4x request on a 100MP file cannot exhaust memory.
 const UPSCALE_MAX_DIM: u32 = 8192;
 
 /// Renders the currently loaded image through the full pipeline at an
-/// enlarged resolution (Lanczos3 supersampling + the GPU detail/sharpening
-/// chain) and writes it to disk, mirroring the export sidecar behavior.
+/// enlarged resolution and writes it to disk, mirroring the export sidecar
+/// behavior.
+///
+/// 引擎说明（D-AI-04 名实一致）：本命令是 **Lanczos3 插值 + GPU 细节/锐化链，
+/// 非神经超分**——没有使用任何神经网络/Real-ESRGAN 类模型，只是高质量
+/// 重采样后走常规渲染管线。命名 `upscale_export_lanczos` 以如实标注引擎。
 #[tauri::command]
-pub async fn ai_upscale_export(
+pub async fn upscale_export_lanczos(
     app_handle: AppHandle,
     image_path: String,
     js_adjustments: Value,
@@ -884,7 +888,7 @@ pub async fn ai_upscale_export(
     jpeg_quality: Option<u8>,
 ) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        run_ai_upscale_export(
+        run_upscale_export_lanczos(
             &app_handle,
             &image_path,
             &js_adjustments,
@@ -899,7 +903,7 @@ pub async fn ai_upscale_export(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn run_ai_upscale_export(
+fn run_upscale_export_lanczos(
     app_handle: &AppHandle,
     image_path: &str,
     js_adjustments: &Value,
@@ -1018,7 +1022,7 @@ fn run_ai_upscale_export(
             lut,
             roi: None,
         },
-        "ai_upscale_export",
+        "upscale_export_lanczos",
     )?;
 
     let format = file_format.unwrap_or("jpeg").to_lowercase();
@@ -1061,7 +1065,7 @@ fn run_ai_upscale_export(
         crate::exif_processing::write_rrexif_sidecar(&loaded_image.path, Path::new(output_path));
 
     log::info!(
-        "AI upscale export: {}x{} -> {}x{} ({}) written to {}",
+        "Upscale export (Lanczos3): {}x{} -> {}x{} ({}) written to {}",
         src_w,
         src_h,
         target_w,

@@ -2,15 +2,20 @@
 //!
 //! 双通道实现（P0-1，release v2.1.16）：
 //! 1. **CLIP 零样本分类**（首选）：复用文本蒙版 / AI 标签同款
-//!    `clip_model.onnx` + tokenizer（零新增下载），对 4 类场景的 prompt
+//!    `clip_model.onnx` + tokenizer（零新增下载），对 6 类场景的 prompt
 //!    ensemble（每类 8 条英文提示）做一次前向，softmax 概率按类内平均
 //!    得到场景置信度——概率语义替代手工权重合成。
 //! 2. **统计启发式**（降级链）：CLIP 模型未下载（调用方用免下载初始化
 //!    判定）或推理失败时，完整回落到基于真实像素统计的启发式（天空蓝/
-//!    植被绿/暖色/皮肤比例 + 亮度分位）。
+//!    植被绿/暖色/皮肤比例 + 亮度分位）。启发式仅覆盖 4 类（landscape/
+//!    portrait/night/food），street / macro 只能由 CLIP 通道判别。
 //!
-//! 两条通道共用同一展示门槛（`DISPLAY_CONFIDENCE_GATE` = 0.75）：低于
-//! 门槛时 scene 返回空串，前端按「无场景推荐」降级、不阻塞编辑。
+//! 置信度语义统一（D-PS-01）：两通道分数不同构、不可跨通道比较，结果以
+//! `source`（"clip" | "heuristic"）+ `calibrated`（CLIP 通道经批内校准的
+//! 概率语义为 true；启发式手工合成为 false）如实上报。展示门槛
+//! `DISPLAY_CONFIDENCE_GATE` = 0.75 的数值语义锚定在 calibrated 的 CLIP
+//! 通道上；两通道低于门槛时 scene 返回空串，前端按「无场景推荐」降级、
+//! 不阻塞编辑。
 //! CLIP 通道另有批内分位数校准（`batch_calibrate`）：一整组连贯场景
 //! （如夜景相册）的原始概率可能整体落在门槛下方，按最近一批的分布
 //! 校准，避免批次被整体压掉。
@@ -27,18 +32,38 @@ use ort::value::Tensor;
 use serde::Serialize;
 
 /// 与移动端 AiRecommendCard 的展示门槛一致（原方案边界：≥0.75 才展示）。
+/// 数值语义锚定 CLIP 通道的批内校准概率（calibrated=true）；启发式通道
+/// 沿用同一数值仅作历史展示边界，其手工合成分不同构（calibrated=false），
+/// 调用方不应跨通道比较 confidence。
 pub const DISPLAY_CONFIDENCE_GATE: f32 = 0.75;
+
+/// 启发式通道主类信号下限：best_score 低于该值直接视为无可靠判别
+///（原散落字面量 0.3，行为零变化）。
+pub const HEURISTIC_MIN_SIGNAL: f32 = 0.3;
+
+/// 批内校准窗口：保留最近这么多次 CLIP 原始最佳概率（会话内滑动窗口，
+/// 只记录 CLIP 通道——启发式的置信度是另一套手工合成分，语义不同）。
+pub const SCENE_BATCH_WINDOW: usize = 24;
+/// 批次连贯性下限：窗口中位数低于该值视为「混杂相册」，不做批内提升。
+pub const SCENE_BATCH_FLOOR: f32 = 0.6;
+/// 启动批内校准所需的最小样本数（样本不足时只信单图绝对概率）。
+pub const SCENE_BATCH_MIN_SAMPLES: usize = 8;
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SceneClassification {
-    /// "landscape" | "portrait" | "night" | "food"；空串表示无可靠判别。
+    /// "landscape" | "portrait" | "night" | "food" | "street" | "macro"；
+    /// 空串表示无可靠判别（启发式通道只会返回前 4 类）。
     pub scene: String,
     pub confidence: f32,
     /// 判别来源："clip"（零样本 CLIP 通道）|"heuristic"（统计启发式）。
     /// 参照 ZhaJinWenQianCake 的可诊断性契约：能力来源必须如实上报，
     /// 前端与日志据此区分置信度语义（二者 confidence 不可比）。
     pub source: String,
+    /// 置信度口径标注（D-PS-01）：CLIP 通道（softmax 概率 + 批内分位数
+    /// 校准）为 true；启发式通道（手工权重合成分）为 false。0.75 展示
+    /// 门槛的绝对概率语义仅对 calibrated==true 的通道成立。
+    pub calibrated: bool,
     pub tags: Vec<String>,
 }
 
@@ -186,19 +211,40 @@ fn score_food(s: &Stats) -> f32 {
     sig * 0.6 + sat_ok * 0.2 + bright_ok * 0.2
 }
 
+/// 启发式通道结果构造：单点钉死通道契约——source 恒为 "heuristic"、
+/// calibrated 恒为 false（手工权重合成分，非批内校准概率）。
+fn heuristic_result(scene: &str, confidence: f32, tags: Vec<String>) -> SceneClassification {
+    SceneClassification {
+        source: "heuristic".to_string(),
+        scene: scene.to_string(),
+        confidence,
+        calibrated: false,
+        tags,
+    }
+}
+
+/// CLIP 通道结果构造：单点钉死通道契约——source 恒为 "clip"、calibrated
+/// 恒为 true（softmax 概率语义 + 批内校准口径）。
+fn clip_result(scene: &str, confidence: f32, tags: Vec<String>) -> SceneClassification {
+    SceneClassification {
+        source: "clip".to_string(),
+        scene: scene.to_string(),
+        confidence,
+        calibrated: true,
+        tags,
+    }
+}
+
 /// 识别当前已加载原图的场景（统计启发式通道）。置信度 = 主类强度 - 次类惩罚；
 /// 低于展示门槛时 scene 返回空串，前端按"无场景推荐"降级。
+/// 启发式像素信号（天空/植被/暖色/皮肤/亮度）只覆盖 4 类候选，street /
+/// macro 不在候选中，只能由 CLIP 通道判别。
 pub fn classify(img: &DynamicImage) -> SceneClassification {
     // 退化输入（0 尺寸）直接返回无判别；thumbnail 对 0 尺寸会钳制为
     // ≥1 像素，导致全黑 1x1 被误判为夜景，故在入口拦截。
     let (img_w, img_h) = img.dimensions();
     if img_w == 0 || img_h == 0 {
-        return SceneClassification {
-            source: "heuristic".to_string(),
-            scene: String::new(),
-            confidence: 0.0,
-            tags: Vec::new(),
-        };
+        return heuristic_result("", 0.0, Vec::new());
     }
 
     let s = collect_stats(img);
@@ -221,28 +267,20 @@ pub fn classify(img: &DynamicImage) -> SceneClassification {
         .fold(0.0f32, f32::max);
 
     let confidence = clamp01(best_score * 1.15 - second_score * 0.3);
-    if best_score < 0.3 || confidence < DISPLAY_CONFIDENCE_GATE {
-        return SceneClassification {
-            source: "heuristic".to_string(),
-            scene: String::new(),
-            confidence,
-            tags: Vec::new(),
-        };
+    if best_score < HEURISTIC_MIN_SIGNAL || confidence < DISPLAY_CONFIDENCE_GATE {
+        return heuristic_result("", confidence, Vec::new());
     }
 
-    SceneClassification {
-        source: "heuristic".to_string(),
-        scene: best.to_string(),
-        confidence,
-        tags: vec![format!("luma {:.2}", s.mean_luma)],
-    }
+    heuristic_result(best, confidence, vec![format!("luma {:.2}", s.mean_luma)])
 }
 
 /* ------------------------------ CLIP 零样本通道（P0-1） ------------------------------ */
 
-/// CLIP 零样本 prompt ensemble：每类 8 条英文提示（CLIP 论文的提示集成做法，
-/// 与 tokenizer/模型的英文训练分布一致）。类内概率平均作为该类置信度。
-const SCENE_PROMPTS: [(&str, [&str; 8]); 4] = [
+/// CLIP 零样本 prompt ensemble：6 类 × 每类 8 条英文提示（CLIP 论文的提示
+/// 集成做法，与 tokenizer/模型的英文训练分布一致）。类内概率平均作为该类
+/// 置信度。D-PS-01：street / macro 为追加类——旧 4 类的 id 与顺序已被
+/// 前端 SceneKey 引用，只追加、不改旧 id。
+const SCENE_PROMPTS: [(&str, [&str; 8]); 6] = [
     (
         "landscape",
         [
@@ -295,21 +333,39 @@ const SCENE_PROMPTS: [(&str, [&str; 8]); 4] = [
             "a photo of a bowl of soup",
         ],
     ),
+    (
+        "street",
+        [
+            "a photo of a city street",
+            "a city street snapshot with pedestrians",
+            "an urban candid street scene",
+            "a busy crosswalk from above",
+            "a neon shopfront at night street",
+            "a photo of people walking on a sidewalk",
+            "a photo of traffic and buildings in a city",
+            "a candid photo of street life",
+        ],
+    ),
+    (
+        "macro",
+        [
+            "an extreme close-up macro shot",
+            "a dew drop on a flower petal",
+            "an insect macro photography",
+            "a texture detail of a leaf surface",
+            "a macro photo of a flower",
+            "a close-up photo of water drops on a petal",
+            "a macro shot of an insect on a leaf",
+            "an extreme close-up of a surface texture",
+        ],
+    ),
 ];
-
-/// 批内校准窗口：保留最近这么多次 CLIP 原始最佳概率（会话内滑动窗口，
-/// 只记录 CLIP 通道——启发式的置信度是另一套手工合成分，语义不同）。
-const SCENE_BATCH_WINDOW: usize = 24;
-/// 批次连贯性下限：窗口中位数低于该值视为「混杂相册」，不做批内提升。
-const SCENE_BATCH_FLOOR: f32 = 0.6;
-/// 启动批内校准所需的最小样本数（样本不足时只信单图绝对概率）。
-const SCENE_BATCH_MIN_SAMPLES: usize = 8;
 
 static RECENT_SCENE_PROBS: Mutex<VecDeque<f32>> = Mutex::new(VecDeque::new());
 
 /// 纯函数：给定本图原始最佳概率与最近一批原始概率，返回校准后置信度。
 /// - 原始概率已过门槛：原样返回（无需校准）；
-/// - 样本不足或批次不连贯（中位数 < 0.6）：原样返回——宁可不出推荐，
+/// - 样本不足或批次不连贯（中位数 < `SCENE_BATCH_FLOOR`）：原样返回——宁可不出推荐，
 ///   也不把混杂相册里的低置信图推上门槛；
 /// - 本图不低于批次中位数且批次连贯：提升到展示门槛。一整组夜景的
 ///   概率分布通常整体落在 0.75 下方，按批内相对水平仍有推荐价值
@@ -340,12 +396,7 @@ fn push_recent_scene_prob(raw: f32) {
 pub fn classify_with_clip(clip: &ClipModels, img: &DynamicImage) -> SceneClassification {
     let (img_w, img_h) = img.dimensions();
     if img_w == 0 || img_h == 0 {
-        return SceneClassification {
-            source: "clip".to_string(),
-            scene: String::new(),
-            confidence: 0.0,
-            tags: Vec::new(),
-        };
+        return clip_result("", 0.0, Vec::new());
     }
 
     let Some(probs) = clip_scene_probabilities(clip, img) else {
@@ -366,28 +417,18 @@ pub fn classify_with_clip(clip: &ClipModels, img: &DynamicImage) -> SceneClassif
 
     let tags = vec![format!("clip {:.2}", best)];
     if confidence < DISPLAY_CONFIDENCE_GATE {
-        return SceneClassification {
-            source: "clip".to_string(),
-            scene: String::new(),
-            confidence,
-            tags,
-        };
+        return clip_result("", confidence, tags);
     }
 
-    SceneClassification {
-        source: "clip".to_string(),
-        scene: SCENE_PROMPTS[best_idx].0.to_string(),
-        confidence,
-        tags,
-    }
+    clip_result(SCENE_PROMPTS[best_idx].0, confidence, tags)
 }
 
-/// 跑一次 CLIP 前向（图像塔 + 32 条场景提示文本塔），返回 4 类场景概率。
+/// 跑一次 CLIP 前向（图像塔 + 48 条场景提示文本塔），返回 6 类场景概率。
 /// 输入约定与 tagging 的 `generate_tags_with_clip` 完全一致：inputs!
 /// 位置序为 [input_ids, pixel_values, attention_mask]，输出 logits_per_image
 /// （该 ONNX 导出已含训练学得的 logit_scale），softmax 即概率。任何一步
 /// 失败返回 None（调用方降级）。
-fn clip_scene_probabilities(clip: &ClipModels, img: &DynamicImage) -> Option<[f32; 4]> {
+fn clip_scene_probabilities(clip: &ClipModels, img: &DynamicImage) -> Option<[f32; 6]> {
     let image_input = crate::tagging::preprocess_clip_image(img);
 
     let prompts: Vec<String> = SCENE_PROMPTS
@@ -450,7 +491,7 @@ fn clip_scene_probabilities(clip: &ClipModels, img: &DynamicImage) -> Option<[f3
 
     // 类内平均：prompt ensemble 的概率平均（该 ONNX 为图像+文本联合导出，
     // 拿不到裸 embedding，故按 CLIP 论文集成做法的概率形式平均）。
-    let mut probs = [0f32; 4];
+    let mut probs = [0f32; 6];
     let mut idx = 0usize;
     for (slot, (_, ps)) in probs.iter_mut().zip(SCENE_PROMPTS.iter()) {
         let group = &exps[idx..idx + ps.len()];
@@ -560,14 +601,18 @@ mod tests {
         );
     }
 
-    /// P0-1：prompt 表完整性——4 类 × 每类 8 条、类名与前端 SceneKey
+    /// P0-1：prompt 表完整性——6 类 × 每类 8 条、类名与前端 SceneKey
     /// 对齐、无空串。clip_scene_probabilities 按每类固定条数做组内平均，
-    /// 表结构被破坏会静默错分（组边界错位），故钉死。
+    /// 表结构被破坏会静默错分（组边界错位），故钉死。D-PS-01：street /
+    /// macro 为追加类，旧 4 类 id 与顺序不变。
     #[test]
     fn scene_prompt_table_integrity() {
-        assert_eq!(SCENE_PROMPTS.len(), 4);
+        assert_eq!(SCENE_PROMPTS.len(), 6);
         let names: Vec<&str> = SCENE_PROMPTS.iter().map(|(name, _)| *name).collect();
-        assert_eq!(names, vec!["landscape", "portrait", "night", "food"]);
+        assert_eq!(
+            names,
+            vec!["landscape", "portrait", "night", "food", "street", "macro"]
+        );
         for (name, prompts) in SCENE_PROMPTS.iter() {
             assert_eq!(prompts.len(), 8, "{name} must have 8 prompts");
             assert!(
@@ -575,6 +620,59 @@ mod tests {
                 "{name} has an empty prompt"
             );
         }
+    }
+
+    /// D-PS-01：场景 id 无重复——重复 id 会让两个类映射到同一个前端
+    /// SceneKey（后者的配方覆盖前者），故钉死。
+    #[test]
+    fn scene_ids_are_unique() {
+        let mut names: Vec<&str> = SCENE_PROMPTS.iter().map(|(name, _)| *name).collect();
+        let count = names.len();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(names.len(), count, "scene ids must be unique: {names:?}");
+    }
+
+    /// D-PS-01：启发式通道契约——source 恒为 "heuristic" 且 calibrated
+    /// 恒为 false（手工合成分，非批内校准概率）。命中、未命中、退化输入
+    /// 三条路径都必须带上标注，前端/日志据此不与 CLIP 概率互比。
+    #[test]
+    fn heuristic_results_are_marked_uncalibrated() {
+        let night = DynamicImage::ImageRgba8(image::ImageBuffer::from_fn(64, 64, |x, y| {
+            if x > 40 && y > 40 {
+                Rgba([240, 200, 120, 255])
+            } else if x % 9 == 0 && y % 7 == 0 {
+                Rgba([90, 90, 110, 255])
+            } else {
+                Rgba([18, 20, 30, 255])
+            }
+        }));
+        for result in [
+            classify(&night),
+            classify(&solid(64, 64, [128, 128, 128, 255])),
+            classify(&solid(0, 0, [0, 0, 0, 255])),
+        ] {
+            assert_eq!(result.source, "heuristic");
+            assert!(!result.calibrated);
+        }
+    }
+
+    /// D-PS-01：CLIP 通道契约——source 恒为 "clip" 且 calibrated 恒为
+    /// true（softmax 概率 + 批内校准口径）。完整前向需要模型文件，无法在
+    /// 单测内跑通，这里钉死通道结果构造的单点契约（classify_with_clip 的
+    /// 正常路径与退化路径都经 clip_result 产出）。
+    #[test]
+    fn clip_results_are_marked_calibrated() {
+        for result in [
+            clip_result("street", DISPLAY_CONFIDENCE_GATE, vec!["clip 0.80".into()]),
+            clip_result("macro", 0.9, Vec::new()),
+            clip_result("", 0.0, Vec::new()),
+        ] {
+            assert_eq!(result.source, "clip");
+            assert!(result.calibrated);
+        }
+        assert_eq!(clip_result("street", 0.8, Vec::new()).scene, "street");
+        assert_eq!(clip_result("macro", 0.9, Vec::new()).scene, "macro");
     }
 
     /// P0-1：批内校准窗口——push 超过窗口容量必须淘汰最旧样本。批次

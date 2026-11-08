@@ -1108,6 +1108,71 @@ pub async fn generate_liquify_patch(
 /// 瘦脸 = 下颌弧线向面部中轴内收；下颌线 = 下巴/颌线上提。
 /// landmark 在几何 warp 域检测，反解几何映射回基准域后，烘焙为 liquify patch
 /// （color+mask，空间与编码约定同笔刷液化），非破坏、可删除回退。
+
+/// D-PT-02：液化适用性判定阈值——双眼外角/双颧距离比（正脸 ≈0.5-0.85，
+/// 侧脸时近侧颧点塌向鼻部使比值出界）、鼻尖在双颧连线上的投影位置
+/// （正脸居中 ≈0.5，侧脸/大角度偏转时贴向一端）、去旋转（以双眼线为轴）
+/// 后 landmark 包围盒宽高比（大角度俯仰把脸高压扁）。
+const LIQ_EYE_CHEEK_RANGE: (f32, f32) = (0.35, 0.95);
+const LIQ_NOSE_PROJ_RANGE: (f32, f32) = (0.28, 0.72);
+const LIQ_UPRIGHT_ASPECT_RANGE: (f32, f32) = (0.45, 1.30);
+
+/// D-PT-02：液化适用性判定（纯函数，便于测试）。MediaPipe 478 输出无逐点
+/// visibility/置信度（整脸 presence 分数已由 analyze_faces 守门），因此用
+/// 旋转不变的几何启发判断 landmark 几何是否适用于参数化 warp：
+/// 瘦脸/下颌线的位移场都按「正脸解剖比例」缩放（max_disp = slim%×half_w×0.22、
+/// max_lift = jaw%×face_size×0.05），对侧脸/大角度俯仰/遮挡硬跑会产出现实
+/// 中不存在的形变。不达标返回 Err(原因)，调用方不产出该脸的 warp 补丁
+/// （沿用 LaMa 大面积 guidance 的诚实降级模式，guidance 前缀 face_not_applicable）。
+pub(crate) fn face_liquify_applicability(landmarks: &[[f32; 2]]) -> Result<(), String> {
+    // 478 点（含虹膜 5 点 ×2）；landmark 模型异常输出直接判不适用
+    if landmarks.len() < 468 {
+        return Err(format!("landmark_count={}", landmarks.len()));
+    }
+    if landmarks
+        .iter()
+        .any(|p| !p[0].is_finite() || !p[1].is_finite())
+    {
+        return Err("landmark_not_finite".to_string());
+    }
+    let dist = |a: [f32; 2], b: [f32; 2]| (a[0] - b[0]).hypot(a[1] - b[1]);
+    // MediaPipe 索引：33/263 = 左右眼外角，234/454 = 左右耳前颧点，1 = 鼻尖
+    let (eye_r, eye_l) = (landmarks[33], landmarks[263]);
+    let (cheek_l, cheek_r) = (landmarks[234], landmarks[454]);
+    let cheek_dist = dist(cheek_l, cheek_r).max(1e-6);
+    let eye_ratio = dist(eye_l, eye_r) / cheek_dist;
+    if !(LIQ_EYE_CHEEK_RANGE.0..=LIQ_EYE_CHEEK_RANGE.1).contains(&eye_ratio) {
+        return Err(format!("eye_cheek_ratio={eye_ratio:.2}"));
+    }
+    // 鼻尖在颧轴上的投影参数（欧氏量，平面内旋转不变）
+    let nose = landmarks[1];
+    let axis = [cheek_r[0] - cheek_l[0], cheek_r[1] - cheek_l[1]];
+    let axis_len_sq = (axis[0] * axis[0] + axis[1] * axis[1]).max(1e-6);
+    let t = ((nose[0] - cheek_l[0]) * axis[0] + (nose[1] - cheek_l[1]) * axis[1]) / axis_len_sq;
+    if !(LIQ_NOSE_PROJ_RANGE.0..=LIQ_NOSE_PROJ_RANGE.1).contains(&t) {
+        return Err(format!("nose_projection={t:.2}"));
+    }
+    // 去旋转（对齐双眼线，同 fit_landmarks 口径）后的包围盒宽高比
+    let angle = (eye_l[1] - eye_r[1]).atan2(eye_l[0] - eye_r[0]);
+    let center = [(cheek_l[0] + cheek_r[0]) * 0.5, (cheek_l[1] + cheek_r[1]) * 0.5];
+    let (sin, cos) = (-angle).sin_cos();
+    let (mut min_x, mut min_y, mut max_x, mut max_y) =
+        (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+    for p in landmarks {
+        let (dx, dy) = (p[0] - center[0], p[1] - center[1]);
+        let (rx, ry) = (cos * dx - sin * dy, sin * dx + cos * dy);
+        min_x = min_x.min(rx);
+        max_x = max_x.max(rx);
+        min_y = min_y.min(ry);
+        max_y = max_y.max(ry);
+    }
+    let aspect = (max_x - min_x) / (max_y - min_y).max(1e-6);
+    if !(LIQ_UPRIGHT_ASPECT_RANGE.0..=LIQ_UPRIGHT_ASPECT_RANGE.1).contains(&aspect) {
+        return Err(format!("upright_aspect={aspect:.2}"));
+    }
+    Ok(())
+}
+
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn generate_face_liquify_patch(
@@ -1190,8 +1255,16 @@ pub async fn generate_face_liquify_patch(
     }
 
     let mut stakes: Vec<Stake> = Vec::new();
+    // D-PT-02：适用性判定——不达标的脸跳过（不产出该脸的 stake）；
+    // 所有脸都不适用时如实返回 guidance，不硬跑。
+    let mut first_not_applicable: Option<String> = None;
     for face in &analysis.faces {
         let lm_base: Vec<[f32; 2]> = face.landmarks().iter().map(|p| to_base(*p)).collect();
+        if let Err(reason) = face_liquify_applicability(&lm_base) {
+            log::info!("face liquify: face not applicable ({reason}), skipped");
+            first_not_applicable.get_or_insert(reason);
+            continue;
+        }
         let cheek_l = lm_base[FACE_CHEEK_L];
         let cheek_r = lm_base[FACE_CHEEK_R];
         let center_x = (cheek_l[0] + cheek_r[0]) * 0.5;
@@ -1253,6 +1326,11 @@ pub async fn generate_face_liquify_patch(
     }
 
     if stakes.is_empty() {
+        // D-PT-02：全部脸都不适用 → 诚实 guidance（前端按稳定前缀提示本地化
+        // 引导文案），不产出补丁；权重退化为 0 等其余空态维持原错误。
+        if let Some(reason) = first_not_applicable {
+            return Err(format!("face_not_applicable:{reason}"));
+        }
         return Err("No liquify stakes".to_string());
     }
 
@@ -1691,4 +1769,70 @@ pub async fn generate_retouch_patch(
         100,
         false,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 构造 478 点规范正脸 landmark（椭圆轮廓 + 指定解剖点：33/263 眼外角、
+    /// 234/454 颧点、1 鼻尖），可选绕脸心平面内旋转。
+    fn canonical_face_landmarks(angle: f32) -> Vec<[f32; 2]> {
+        let (cx, cy) = (100.0f32, 100.0f32);
+        let mut lm = vec![[0.0f32; 2]; 478];
+        for (i, p) in lm.iter_mut().enumerate() {
+            let t = i as f32 / 478.0 * std::f32::consts::TAU;
+            *p = [cx + 55.0 * t.cos(), cy + 72.0 * t.sin()];
+        }
+        lm[33] = [cx - 30.0, cy - 15.0];
+        lm[263] = [cx + 30.0, cy - 15.0];
+        lm[234] = [cx - 50.0, cy];
+        lm[454] = [cx + 50.0, cy];
+        lm[1] = [cx, cy + 10.0];
+        let (sin, cos) = angle.sin_cos();
+        lm.iter_mut().for_each(|p| {
+            let (dx, dy) = (p[0] - cx, p[1] - cy);
+            *p = [cx + cos * dx - sin * dy, cy + sin * dx + cos * dy];
+        });
+        lm
+    }
+
+    #[test]
+    fn face_liquify_applicability_accepts_frontal_faces() {
+        assert!(face_liquify_applicability(&canonical_face_landmarks(0.0)).is_ok());
+        // 平面内旋转 20° 仍适用（三项判据均旋转不变）
+        let rotated = canonical_face_landmarks(20f32.to_radians());
+        assert!(face_liquify_applicability(&rotated).is_ok());
+    }
+
+    #[test]
+    fn face_liquify_applicability_rejects_degenerate_geometry() {
+        // 侧脸：眼点挤压向近侧颧点 → 双眼/双颧距离比出界
+        let mut profile = canonical_face_landmarks(0.0);
+        profile[33] = [102.0, 87.0];
+        profile[263] = [112.0, 87.0];
+        let err = face_liquify_applicability(&profile).unwrap_err();
+        assert!(err.contains("eye_cheek_ratio"), "got {err}");
+
+        // 大角度偏转：鼻尖贴向一侧颧点 → 颧轴投影位置出界
+        let mut turned = canonical_face_landmarks(0.0);
+        turned[1] = [148.0, 110.0];
+        let err = face_liquify_applicability(&turned).unwrap_err();
+        assert!(err.contains("nose_projection"), "got {err}");
+
+        // 大角度俯仰：脸高压扁 → 去旋转包围盒宽高比出界
+        let mut pitched = canonical_face_landmarks(0.0);
+        for p in pitched.iter_mut() {
+            p[1] = 100.0 + (p[1] - 100.0) * 0.35;
+        }
+        let err = face_liquify_applicability(&pitched).unwrap_err();
+        assert!(err.contains("upright_aspect"), "got {err}");
+
+        // 模型异常输出：点数不足 / 非有限值，直接判不适用
+        let truncated = canonical_face_landmarks(0.0)[..100].to_vec();
+        assert!(face_liquify_applicability(&truncated).is_err());
+        let mut nan = canonical_face_landmarks(0.0);
+        nan[10][0] = f32::NAN;
+        assert!(face_liquify_applicability(&nan).is_err());
+    }
 }

@@ -3045,7 +3045,7 @@ pub fn run() {
             platform_features::set_watched_folders,
             platform_features::get_watched_folder_status,
             platform_features::ai_auto_enhance,
-            platform_features::ai_upscale_export,
+            platform_features::upscale_export_lanczos,
             guided_perspective::calculate_guided_perspective,
             immich::commands::immich_get_api_key,
             immich::commands::immich_set_api_key,

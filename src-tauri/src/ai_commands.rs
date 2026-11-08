@@ -404,6 +404,10 @@ pub fn generate_face_mask(
     }
     let face_parts: Vec<FacePart> = parts.iter().filter_map(|p| FacePart::from_id(p)).collect();
     let mask = compose_face_mask(warped_image, &analysis, &face_parts);
+    // P1（D-PT-01/D-PT-03）：分层反馈元信息——faceCount 为实际产出容器的
+    // 分析脸数，containersApplied 表示效果掩膜确有信号（additive 字段，
+    // 旧前端按缺失走旧逻辑）。
+    let containers_applied = mask.iter().any(|&v| v > 0);
 
     Ok(AiFaceMaskParameters {
         parts: parts.to_vec(),
@@ -413,6 +417,8 @@ pub fn generate_face_mask(
         flip_vertical: Some(transform.flip_vertical),
         orientation_steps: Some(transform.orientation_steps),
         ai_source,
+        face_count: Some(analysis.faces.len() as u32),
+        containers_applied: Some(containers_applied),
     })
 }
 
@@ -771,6 +777,14 @@ pub async fn generate_ai_text_mask(
     Ok(params)
 }
 
+/// P1（D-PT-01/D-PT-03）：无人脸空结果响应附带诚实元信息（faceCount=0 /
+/// containersApplied=false）——支撑一键人像「仅全局生效」的分层提示；
+/// additive 字段，旧前端按缺失走旧逻辑。
+fn attach_no_face_meta(params: &mut Value) {
+    params["faceCount"] = json!(0u32);
+    params["containersApplied"] = json!(false);
+}
+
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn generate_ai_face_mask(
@@ -808,7 +822,7 @@ pub async fn generate_ai_face_mask(
         orientation_steps,
     };
     let ai_source = loaded_source_id(&state);
-    let params = mask_command_result(
+    let mut params = mask_command_result(
         generate_face_mask(
             &state.ai_state,
             &models,
@@ -822,6 +836,9 @@ pub async fn generate_ai_face_mask(
         transform,
         ai_source,
     )?;
+    if params.get("noResult").and_then(|v| v.as_str()) == Some(NO_FACES_FOUND) {
+        attach_no_face_meta(&mut params);
+    }
     check_cancelled(&guard)?;
     Ok(params)
 }
@@ -867,23 +884,45 @@ pub async fn compute_skin_unify(
     if analysis.faces.is_empty() {
         return Err(NO_FACES_FOUND.to_string());
     }
-    let face_mean = crate::color_transfer::region_mean_linear(
-        &warped_image,
-        &compose_face_mask(&warped_image, &analysis, &[FacePart::FaceSkin]),
-    )
-    .ok_or("No face skin pixels found")?;
-    let body_mean = crate::color_transfer::region_mean_linear(
-        &warped_image,
-        &compose_face_mask(&warped_image, &analysis, &[FacePart::BodySkin]),
-    )
-    .ok_or("No body skin pixels found")?;
+    let face_mask = compose_face_mask(&warped_image, &analysis, &[FacePart::FaceSkin]);
+    let body_mask = compose_face_mask(&warped_image, &analysis, &[FacePart::BodySkin]);
+    // D-PT-02：肤色判定归一化——优先以 faceSkin 区域的 YCbCr 肤色簇分位数
+    // 定范围（批内相对统计，任何肤色都以自身簇为中心，替代 R>95 类固定
+    // 阈值对暗色皮肤的系统性漏检）；区域统计不足回退全图分位数；仍失败
+    // 或精修后有效像素不足时回退旧掩膜（诚实降级，签名兼容）。
+    let rgb = warped_image.to_rgb8();
+    let range = crate::face_masking::adaptive_skin_range(&rgb, Some(&face_mask))
+        .or_else(|| crate::face_masking::adaptive_skin_range(&rgb, None));
+    let enough_pixels = |m: &GrayImage| {
+        m.iter().filter(|&&v| v >= 128).count() >= crate::face_masking::SKIN_MIN_SAMPLES
+    };
+    let (face_for_mean, body_for_mean) = match range {
+        Some(range) => {
+            let refined_face =
+                crate::face_masking::refine_mask_by_skin_range(&rgb, &face_mask, &range);
+            let refined_body =
+                crate::face_masking::refine_mask_by_skin_range(&rgb, &body_mask, &range);
+            if enough_pixels(&refined_face) && enough_pixels(&refined_body) {
+                (refined_face, refined_body)
+            } else {
+                (face_mask, body_mask)
+            }
+        }
+        None => (face_mask, body_mask),
+    };
+    let face_mean = crate::color_transfer::region_mean_linear(&warped_image, &face_for_mean)
+        .ok_or("No face skin pixels found")?;
+    let body_mean = crate::color_transfer::region_mean_linear(&warped_image, &body_for_mean)
+        .ok_or("No body skin pixels found")?;
     let (hue, saturation, luminance) = crate::color_transfer::tint_sliders_for_shift([
         face_mean[0] - body_mean[0],
         face_mean[1] - body_mean[1],
         face_mean[2] - body_mean[2],
     ]);
     Ok(json!({
-        "colorGrading": { "global": { "hue": hue, "saturation": saturation, "luminance": luminance } }
+        "colorGrading": { "global": { "hue": hue, "saturation": saturation, "luminance": luminance } },
+        "faceCount": analysis.faces.len(),
+        "containersApplied": true
     }))
 }
 
@@ -1139,5 +1178,50 @@ pub async fn test_ai_connector_connection(address: String) -> Result<(), String>
         Ok(true) => Ok(()),
         Ok(false) => Err("Server reachable but returned bad health status".to_string()),
         Err(e) => Err(e.to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ai_processing::AiFaceMaskParameters;
+
+    #[test]
+    fn face_mask_params_expose_additive_face_meta() {
+        // 命中脸：faceCount / containersApplied 必须以 camelCase 进入 JSON
+        let params = AiFaceMaskParameters {
+            parts: vec!["faceSkin".to_string()],
+            mask_data_base64: Some("png".to_string()),
+            rotation: Some(0.0),
+            flip_horizontal: Some(false),
+            flip_vertical: Some(false),
+            orientation_steps: Some(1),
+            ai_source: None,
+            face_count: Some(3),
+            containers_applied: Some(true),
+        };
+        let value = serde_json::to_value(&params).unwrap();
+        assert_eq!(value["faceCount"], json!(3u32));
+        assert_eq!(value["containersApplied"], json!(true));
+
+        // 旧契约兼容：元信息缺失时键不出现（旧前端按缺失走旧逻辑）
+        let value = serde_json::to_value(&AiFaceMaskParameters::default()).unwrap();
+        assert!(value.get("faceCount").is_none());
+        assert!(value.get("containersApplied").is_none());
+    }
+
+    #[test]
+    fn no_face_result_carries_honest_meta() {
+        // 无人脸空结果：noResult 旧行为保持，同时附带 faceCount=0 /
+        // containersApplied=false，支撑一键人像「仅全局生效」分层提示
+        let mut params = json!({
+            "parts": ["faceSkin"],
+            "noResult": NO_FACES_FOUND,
+            "maskDataBase64": "1x1empty",
+        });
+        attach_no_face_meta(&mut params);
+        assert_eq!(params["faceCount"], json!(0u32));
+        assert_eq!(params["containersApplied"], json!(false));
+        assert_eq!(params["noResult"], json!(NO_FACES_FOUND));
     }
 }

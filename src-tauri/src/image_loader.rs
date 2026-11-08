@@ -105,6 +105,32 @@ pub fn prepare_base_image_cow<'a>(
     }
 }
 
+// D-SYS-01（WYSIWYG）常量集中定义：fast 预览路径过去只做色度降噪，锐度
+// 与导出成片不一致。现在预览以 PREVIEW_SHARPEN_SCALE 的同源系数执行同一
+// 锐化算子（remove_raw_artifacts_and_enhance），方向单调一致、幅度按比例
+// 缩小；小图跳过以保住交互延迟。
+/// 预览锐化相对导出全量的近似系数（约 40%）。
+const PREVIEW_SHARPEN_SCALE: f32 = 0.4;
+/// 最长边 ≤ 该值的图在预览路径直接跳过锐化（小图交互延迟优先）。
+const PREVIEW_SHARPEN_MIN_EDGE: u32 = 512;
+
+/// D-SYS-01 纯函数：fast 预览路径应使用的锐化系数。
+///
+/// - 导出路径永远使用全量 `sharpening_amount`（本函数不参与）；
+/// - 预览按 `PREVIEW_SHARPEN_SCALE` 线性缩小，单调方向与导出一致：
+///   设置越大预览越锐，只是幅度成比例；
+/// - 锐化量为 0（或负）时返回 0，不做无谓增强；
+/// - 最长边 ≤ `PREVIEW_SHARPEN_MIN_EDGE` 的小图返回 0。
+fn preview_sharpen_amount(sharpening_amount: f32, width: u32, height: u32) -> f32 {
+    if sharpening_amount <= 0.0 {
+        return 0.0;
+    }
+    if width.max(height) <= PREVIEW_SHARPEN_MIN_EDGE {
+        return 0.0;
+    }
+    (sharpening_amount * PREVIEW_SHARPEN_SCALE).clamp(0.0, 1.0)
+}
+
 pub fn load_base_image_from_bytes(
     bytes: &[u8],
     path_for_ext_check: &str,
@@ -158,17 +184,29 @@ pub fn load_base_image_from_bytes(
             )
         }) {
             Ok(Ok(mut image)) => {
-                // R1-2: WYSIWYG — the fast preview path still runs chroma noise
-                // reduction (cheap and perceptually critical); luminance detail
-                // enhancement stays export-only to preserve interactive latency.
-                if color_nr_amount > 0.0 || (!use_fast_raw_dev && sharpening_amount > 0.0) {
+                // D-SYS-01: WYSIWYG — the fast preview path runs chroma noise
+                // reduction (cheap and perceptually critical) plus a lightweight
+                // same-operator approximation of the export luminance detail
+                // enhancement (PREVIEW_SHARPEN_SCALE), so preview sharpness now
+                // tracks the export in direction and order of magnitude. The
+                // export path keeps the full amount unchanged; small images
+                // skip preview sharpening to preserve interactive latency.
+                let preview_sharpen = if use_fast_raw_dev {
+                    preview_sharpen_amount(sharpening_amount, image.width(), image.height())
+                } else {
+                    sharpening_amount
+                };
+                if color_nr_amount > 0.0 || preview_sharpen > 0.0 {
                     let start = Instant::now();
-                    let (nr, sharpen) = if use_fast_raw_dev {
-                        (color_nr_amount, 0.0)
-                    } else {
-                        (color_nr_amount, sharpening_amount)
-                    };
-                    remove_raw_artifacts_and_enhance(&mut image, nr, sharpen);
+                    remove_raw_artifacts_and_enhance(&mut image, color_nr_amount, preview_sharpen);
+                    if use_fast_raw_dev && preview_sharpen > 0.0 {
+                        // 诊断信息：预览档锐化实际生效的比例（相对导出全量）。
+                        log::debug!(
+                            "Preview sharpening for '{}' applied at {:.2}x of export amount",
+                            path_for_ext_check,
+                            PREVIEW_SHARPEN_SCALE
+                        );
+                    }
                     let duration = start.elapsed();
                     log::info!(
                         "Raw enhancing for '{}' took {:?}",
@@ -223,17 +261,17 @@ pub fn load_base_image_from_bytes(
     } else {
         let mut image = load_image_with_orientation(bytes, cancel_token)?;
 
-        // R1-2: same WYSIWYG rule for non-RAW files — fast path keeps chroma NR only.
-        if apply_to_non_raws
-            && (color_nr_amount > 0.0 || (!use_fast_raw_dev && sharpening_amount > 0.0))
-        {
+        // D-SYS-01: same WYSIWYG rule for non-RAW files — the fast path keeps
+        // chroma NR plus the lightweight preview sharpening approximation;
+        // the export path keeps the full amount unchanged.
+        let preview_sharpen = if use_fast_raw_dev {
+            preview_sharpen_amount(sharpening_amount, image.width(), image.height())
+        } else {
+            sharpening_amount
+        };
+        if apply_to_non_raws && (color_nr_amount > 0.0 || preview_sharpen > 0.0) {
             let start = Instant::now();
-            let (nr, sharpen) = if use_fast_raw_dev {
-                (color_nr_amount, 0.0)
-            } else {
-                (color_nr_amount, sharpening_amount)
-            };
-            remove_raw_artifacts_and_enhance(&mut image, nr, sharpen);
+            remove_raw_artifacts_and_enhance(&mut image, color_nr_amount, preview_sharpen);
             let duration = start.elapsed();
             log::info!(
                 "Enhancing non-RAW '{}' took {:?}",
@@ -1083,4 +1121,40 @@ pub async fn load_image(
         is_raw,
         as_shot_white_balance: as_shot.white_balance,
     })
+}
+
+// ==== D-SYS-01：预览档锐化近似的纯函数回归 ====
+
+#[cfg(test)]
+mod preview_sharpen_tests {
+    use super::*;
+
+    #[test]
+    fn preview_sharpen_scales_export_amount_monotonically() {
+        // 同源缩放：预览 = 导出全量 × PREVIEW_SHARPEN_SCALE
+        let amount = preview_sharpen_amount(0.35, 2000, 1500);
+        assert!(
+            (amount - 0.35 * PREVIEW_SHARPEN_SCALE).abs() < 1e-6,
+            "preview must be a linear {PREVIEW_SHARPEN_SCALE}x of the export amount, got {amount}"
+        );
+        // 单调方向一致：导出锐化越大，预览近似越大
+        assert!(preview_sharpen_amount(0.8, 2000, 1500) > amount);
+        assert!(preview_sharpen_amount(0.1, 2000, 1500) < amount);
+        // 锐化关闭/非法输入：预览同样不做增强
+        assert_eq!(preview_sharpen_amount(0.0, 2000, 1500), 0.0);
+        assert_eq!(preview_sharpen_amount(-0.5, 2000, 1500), 0.0);
+        // 结果不越过 [0,1] 量纲
+        assert!((0.0..=1.0).contains(&preview_sharpen_amount(2.5, 4000, 3000)));
+    }
+
+    #[test]
+    fn preview_sharpen_skips_small_images_to_preserve_latency() {
+        // 最长边 ≤ PREVIEW_SHARPEN_MIN_EDGE：跳过锐化
+        assert_eq!(preview_sharpen_amount(0.35, 512, 512), 0.0);
+        assert_eq!(preview_sharpen_amount(0.35, 300, 512), 0.0);
+        assert_eq!(preview_sharpen_amount(0.35, 512, 10), 0.0);
+        // 刚好越过阈值：恢复轻量锐化
+        assert!(preview_sharpen_amount(0.35, 513, 10) > 0.0);
+        assert!(preview_sharpen_amount(0.35, 4096, 4096) > 0.0);
+    }
 }

@@ -1298,17 +1298,213 @@ fn ensure_safe_asset_filename(filename: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// A4：诊断日志单行截断。错误串内嵌的大 payload（base64 图片、二进制
-/// 残渣）会把诊断报告撑爆——参照仓库 error.log 的 8000 字符截断契约，
-/// 我们取 2000 字符并追加省略标记。
-fn truncate_log_line(line: &str) -> String {
-    const MAX: usize = 2000;
-    if line.chars().count() <= MAX {
-        line.to_string()
-    } else {
-        let head: String = line.chars().take(MAX).collect();
-        format!("{head} … [truncated {} chars]", line.chars().count() - MAX)
+/// D-SYS-04①：模型下载域名白名单（集中定义）。
+///
+/// 汇总仓库内全部已配置的下载源（grep 全部 `*_URL` 常量）：
+/// - huggingface.co 及其子域（含 CDN 源 cdn-lfs.huggingface.co）；
+/// - hf.co 及其子域（HF 短链域名）；
+/// - github.com 及其子域、*.githubusercontent.com（release 资产源）；
+/// - hf-mirror.com（仓库内置回退镜像，`HF_FALLBACK_HOST`）。
+/// 用户经 `RAPIDRAW_HF_ENDPOINT` 显式配置的自有镜像 host 与静态白名单
+/// 同等信任（它本就是用户自选的自有源，且仍受 sanitize_mirror_base
+/// 格式校验约束）。白名单之外的主机一律拒绝并记日志，防止被篡改的
+/// 清单/镜像把模型流量导向任意主机。
+const ALLOWED_DOWNLOAD_HOSTS: &[&str] = &[
+    "huggingface.co",
+    "hf.co",
+    "cdn-lfs.huggingface.co",
+    "github.com",
+    "githubusercontent.com",
+    "hf-mirror.com",
+];
+
+/// 静态白名单 + 当前配置的自定义镜像 host（如有）。
+fn download_allowlist() -> Vec<String> {
+    let custom = std::env::var(HF_ENDPOINT_ENV).ok();
+    download_allowlist_with_custom(custom.as_deref())
+}
+
+/// D-SYS-04① 的可测内核：静态白名单 + 指定的自定义镜像 host。
+fn download_allowlist_with_custom(custom: Option<&str>) -> Vec<String> {
+    let mut hosts: Vec<String> = ALLOWED_DOWNLOAD_HOSTS
+        .iter()
+        .map(|host| host.to_string())
+        .collect();
+    if let Some(custom) = custom
+        && let Some(base) = sanitize_mirror_base(custom)
+        && let Ok(url) = reqwest::Url::parse(&base)
+        && let Some(host) = url.host_str()
+    {
+        hosts.push(host.to_ascii_lowercase());
     }
+    hosts
+}
+
+/// host 是否命中白名单（精确匹配或以 `.allowed` 结尾的子域）。
+fn host_allowed(host: &str, allowed: &[String]) -> bool {
+    let host = host.trim_end_matches('.').to_ascii_lowercase();
+    // 去掉端口（模型下载源均为域名，不需要 IPv6 字面量特判）。
+    let host = match host.rsplit_once(':') {
+        // `:port` 只在最后一段是纯数字时才算端口，避免误伤怪异 host。
+        Some((h, port)) if port.chars().all(|c| c.is_ascii_digit()) && !port.is_empty() => h,
+        _ => host.as_str(),
+    };
+    allowed
+        .iter()
+        .any(|a| host == a.as_str() || host.ends_with(&format!(".{a}")))
+}
+
+/// D-SYS-04①：校验单条下载 URL（HTTPS + 域名白名单）。违规返回原因。
+fn validate_download_url_against(url: &str, allowed: &[String]) -> Result<(), String> {
+    let parsed = reqwest::Url::parse(url).map_err(|e| format!("invalid URL {url:?}: {e}"))?;
+    if parsed.scheme() != "https" {
+        return Err(format!(
+            "model download URL must use HTTPS, got {:?}",
+            parsed.scheme()
+        ));
+    }
+    let host = parsed.host_str().unwrap_or("");
+    if host.is_empty() {
+        return Err(format!("model download URL {url:?} has no host"));
+    }
+    if !host_allowed(host, allowed) {
+        return Err(format!(
+            "model download host {host:?} is not in the download allowlist"
+        ));
+    }
+    Ok(())
+}
+
+/// 用生效白名单（静态 + 自定义镜像）校验下载 URL。
+fn validate_download_url(url: &str) -> Result<(), String> {
+    validate_download_url_against(url, &download_allowlist())
+}
+
+/// D-SYS-04②：下载落盘路径防穿越。
+///
+/// 目标父目录 canonicalize 后必须仍位于（canonicalize 后的）模型根目录
+/// 之内，否则拒绝写盘——`models_dir.join("../../etc/passwd")` 这类构造
+/// 会在 canonicalize 后逃出根目录而被拦下。文件名本身另由
+/// `ensure_safe_asset_filename` 把关。
+fn ensure_dest_within_models_dir(models_root: &Path, dest: &Path) -> anyhow::Result<()> {
+    let root = models_root.canonicalize().map_err(|e| {
+        anyhow::anyhow!("models dir {} unavailable: {e}", models_root.display())
+    })?;
+    let Some(filename) = dest.file_name() else {
+        anyhow::bail!("invalid model destination {}", dest.display());
+    };
+    ensure_safe_asset_filename(filename.to_str().unwrap_or(""))
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
+    let Some(parent) = dest.parent() else {
+        anyhow::bail!("invalid model destination {}", dest.display());
+    };
+    fs::create_dir_all(parent)?;
+    let parent_canon = parent.canonicalize()?;
+    if !parent_canon.starts_with(&root) {
+        log::warn!(
+            "refusing model destination {} outside models dir {}",
+            dest.display(),
+            root.display()
+        );
+        anyhow::bail!(
+            "model destination {} escapes the models directory",
+            dest.display()
+        );
+    }
+    Ok(())
+}
+
+/// D-SYS-04③：下载完成后按 Content-Length 对账（纯函数，便于单测）。
+///
+/// 响应声明了总长度且与实际写入字节数不符 → 报错（调用方负责删除半
+/// 成品，避免残缺文件冒充成品或污染 Range 续传基线）；响应未声明
+/// Content-Length → 如实跳过对账，不虚构期望长度。
+fn verify_downloaded_size(written: u64, expected: Option<u64>) -> Result<(), String> {
+    match expected {
+        Some(total) if written != total => {
+            Err(format!("Incomplete download: received {written} of {total} bytes"))
+        }
+        _ => Ok(()),
+    }
+}
+
+/// D-SYS-06：AI 错误日志/诊断治理常量（集中定义）。
+/// - 单条错误入列前按 chars 截 2KB（多字节安全，不产生半个码点）；
+/// - 错误链/堆栈类文本截 8000 字符（对齐仓库 error.log 截断契约）；
+/// - 聚合诊断报告 JSON 体积上限 64KB，超限截断并注明。
+const MAX_AI_ERROR_ENTRY_CHARS: usize = 2048;
+const MAX_AI_STACK_CHARS: usize = 8000;
+const MAX_DIAGNOSTICS_JSON_BYTES: usize = 64 * 1024;
+
+/// D-SYS-06：按字符数截断并追加省略标记（纯函数）。错误串内嵌的大
+/// payload（base64 图片、二进制残渣）会把诊断报告撑爆。
+fn truncate_chars(text: &str, max_chars: usize) -> String {
+    if text.chars().count() <= max_chars {
+        return text.to_string();
+    }
+    let head: String = text.chars().take(max_chars).collect();
+    format!(
+        "{head} … [truncated {} chars]",
+        text.chars().count() - max_chars
+    )
+}
+
+/// A4/D-SYS-06：诊断日志单条截断（2KB，按 chars）。`recent_ai_logs`
+/// 入列前统一走这里。
+fn truncate_log_line(line: &str) -> String {
+    truncate_chars(line, MAX_AI_ERROR_ENTRY_CHARS)
+}
+
+/// D-SYS-06：堆栈/错误链截断（8000 字符）。
+fn truncate_stack(stack: &str) -> String {
+    truncate_chars(stack, MAX_AI_STACK_CHARS)
+}
+
+/// D-SYS-06：聚合诊断报告体积上限（64KB，纯函数）。
+///
+/// 超限时按序回收体积：先丢最旧的 AI 日志条目（`recent_ai_logs` 为
+/// newest-first，队尾最旧），仍超则截断自由文本字段（`note`/`issues`）；
+/// 预算中预留注明行的空间，最终注入注明行让用户知道报告被裁剪过，
+/// 不虚构完整性。返回是否发生过截断。
+fn cap_diagnostics_report_size(report: &mut AiDiagnostics) -> bool {
+    cap_diagnostics_report_size_to(report, MAX_DIAGNOSTICS_JSON_BYTES)
+}
+
+fn cap_diagnostics_report_size_to(report: &mut AiDiagnostics, max_bytes: usize) -> bool {
+    const ANNOTATION: &str = "[diagnostics report truncated to fit the 64 KB cap]";
+    let budget = max_bytes.saturating_sub(ANNOTATION.len() + 1);
+    let serialized_len = |report: &AiDiagnostics| {
+        serde_json::to_string(report)
+            .map(|s| s.len())
+            .unwrap_or(usize::MAX)
+    };
+
+    let mut truncated = false;
+    while serialized_len(report) > budget && !report.recent_ai_logs.is_empty() {
+        report.recent_ai_logs.pop(); // newest-first：队尾是最旧条目
+        truncated = true;
+    }
+    if serialized_len(report) > budget {
+        for model in &mut report.models {
+            if let Some(note) = &model.note {
+                let capped = truncate_chars(note, 256);
+                if capped != *note {
+                    model.note = Some(capped);
+                }
+            }
+        }
+        for issue in &mut report.issues {
+            let capped = truncate_chars(issue, 256);
+            if capped != *issue {
+                *issue = capped;
+            }
+        }
+        truncated = true;
+    }
+    if truncated {
+        report.recent_ai_logs.push(ANNOTATION.to_string());
+    }
+    truncated
 }
 
 static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> = std::sync::LazyLock::new(|| {
@@ -1368,10 +1564,11 @@ async fn try_download_model(
     }
     let mut response = response.error_for_status()?;
     let resume = response.status().as_u16() == 206;
+    // D-SYS-04③：Content-Length 对账——声明了长度才对账，未声明则如实
+    // 跳过（None），不虚构期望字节数。
     let total = response
         .content_length()
-        .map(|len| len + if resume { start_offset } else { 0 })
-        .unwrap_or(0);
+        .map(|len| len + if resume { start_offset } else { 0 });
 
     let mut file = fs::OpenOptions::new()
         .create(true)
@@ -1388,7 +1585,9 @@ async fn try_download_model(
     while let Some(chunk) = response.chunk().await? {
         file.write_all(&chunk)?;
         written += chunk.len() as u64;
-        if total > 0 && last_progress.elapsed() >= Duration::from_millis(200) {
+        if let Some(total) = total
+            && last_progress.elapsed() >= Duration::from_millis(200)
+        {
             last_progress = Instant::now();
             let _ = app_handle.emit(
                 "ai-model-download-progress",
@@ -1397,10 +1596,12 @@ async fn try_download_model(
         }
     }
     file.sync_all()?;
-    if total > 0 && written != total {
-        return Err(anyhow::anyhow!(
-            "Incomplete download: received {written} of {total} bytes"
-        ));
+    drop(file);
+    if let Err(reason) = verify_downloaded_size(written, total) {
+        // 对账不符：删除半成品。残缺文件既不能冒充成品，也会污染下一轮
+        // Range 续传的基线偏移——宁可重传，不可带病续传。
+        let _ = fs::remove_file(tmp_path);
+        return Err(anyhow::anyhow!("{reason}"));
     }
     Ok(())
 }
@@ -1425,7 +1626,32 @@ async fn download_model(
     fs::create_dir_all(parent)?;
 
     let mut failures: Vec<String> = Vec::new();
+    // D-SYS-04①：域名白名单——白名单外的候选（被篡改的清单/镜像）直接
+    // 拒绝并记日志，不发起请求。
+    let mut allowed_endpoints: Vec<&String> = Vec::new();
     for url in &endpoints {
+        match validate_download_url(url) {
+            Ok(()) => allowed_endpoints.push(url),
+            Err(reason) => {
+                log::warn!("refusing model download endpoint {url}: {reason}");
+                failures.push(format!("{url}: refused by download policy ({reason})"));
+            }
+        }
+    }
+    if allowed_endpoints.is_empty() {
+        anyhow::bail!(
+            "Failed to download the {} model ({}).\n{}\n\
+             Every candidate endpoint was rejected by the download allowlist. \
+             Check the model manifest / RAPIDRAW_HF_ENDPOINT configuration, or \
+             download the file manually and place it at {} (expected SHA256: {}).",
+            asset.name,
+            asset.filename,
+            failures.join("\n"),
+            dest.display(),
+            asset.sha256.unwrap_or("not verified"),
+        );
+    }
+    for url in allowed_endpoints {
         for attempt in 1..=MAX_ENDPOINT_ATTEMPTS {
             match try_download_model(app_handle, asset, &tmp_path, url).await {
                 Ok(()) => {
@@ -1445,18 +1671,23 @@ async fn download_model(
             }
         }
     }
+    // D-SYS-06：聚合错误链（相当于本资产的失败堆栈）在进入错误日志前按
+    // 8000 字符契约截断，防止超大响应残片撑爆日志与诊断报告。
     Err(anyhow::anyhow!(
-        "Failed to download the {} model ({}).\n{}\n\
-         Every endpoint was unreachable. You can:\n\
-         - check your network connection or proxy settings,\n\
-         - set the {} environment variable to a reachable mirror (e.g. {HF_FALLBACK_HOST}), or\n\
-         - download the file manually and place it at {} (expected SHA256: {}).",
-        asset.name,
-        asset.filename,
-        failures.join("\n"),
-        HF_ENDPOINT_ENV,
-        dest.display(),
-        asset.sha256.unwrap_or("not verified"),
+        "{}",
+        truncate_stack(&format!(
+            "Failed to download the {} model ({}).\n{}\n\
+             Every endpoint was unreachable. You can:\n\
+             - check your network connection or proxy settings,\n\
+             - set the {} environment variable to a reachable mirror (e.g. {HF_FALLBACK_HOST}), or\n\
+             - download the file manually and place it at {} (expected SHA256: {}).",
+            asset.name,
+            asset.filename,
+            failures.join("\n"),
+            HF_ENDPOINT_ENV,
+            dest.display(),
+            asset.sha256.unwrap_or("not verified"),
+        ))
     ))
 }
 
@@ -1494,6 +1725,8 @@ async fn download_and_verify_model(
 ) -> Result<()> {
     ensure_safe_asset_filename(asset.filename).map_err(|e| anyhow::anyhow!(e))?;
     let dest_path = models_dir.join(asset.filename);
+    // D-SYS-04②：落盘路径防穿越——canonicalize 后必须仍在模型根目录内。
+    ensure_dest_within_models_dir(models_dir, &dest_path)?;
     let is_valid = match asset.sha256 {
         Some(expected_hash) => verify_sha256(&dest_path, expected_hash)?,
         None => dest_path.exists(),
@@ -3408,6 +3641,12 @@ pub struct AiFaceMaskParameters {
     pub orientation_steps: Option<u8>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ai_source: Option<String>,
+    /// P1（D-PT-01/D-PT-03）：分层反馈元信息——参与容器的分析脸数（additive）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub face_count: Option<u32>,
+    /// P1（D-PT-01/D-PT-03）：效果掩膜是否确有信号、容器实际生效（additive）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub containers_applied: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -3882,7 +4121,7 @@ pub async fn diagnose_ai(
     .await
     .map_err(|e| e.to_string())?;
 
-    Ok(AiDiagnostics {
+    let mut diagnostics = AiDiagnostics {
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         platform: platform_name().to_string(),
         platform_gpu_ep: platform_ep.to_string(),
@@ -3898,7 +4137,10 @@ pub async fn diagnose_ai(
         manifest_healthy,
         issues: manifest_issues,
         recent_ai_logs: recent_ai_logs(&app_handle),
-    })
+    };
+    // D-SYS-06：聚合报告出队前统一过 64KB 体积上限，超限截断并注明。
+    cap_diagnostics_report_size(&mut diagnostics);
+    Ok(diagnostics)
 }
 
 #[tauri::command]
@@ -3984,7 +4226,7 @@ mod tests {
         assert!(ensure_safe_asset_filename("").is_err());
     }
 
-    // A4：诊断日志单行截断（防大 payload 灌爆报告）
+    // A4/D-SYS-06：诊断日志单条截断（2KB 按 chars，防大 payload 灌爆报告）
     #[test]
     fn truncate_log_line_caps_length_and_marks_omission() {
         let short = "[ERROR] model download failed".to_string();
@@ -3992,13 +4234,199 @@ mod tests {
 
         let big: String = "A".repeat(5000);
         let out = truncate_log_line(&big);
-        assert!(out.chars().count() < 2100, "must cap near 2000 chars");
-        assert!(out.contains("[truncated 3000 chars]"));
+        assert!(
+            out.chars().count() < 2100,
+            "must cap at the 2KB (2048 chars) entry limit"
+        );
+        assert!(out.contains("[truncated 2952 chars]"));
 
         // 多字节字符按字符数截断，不产生半个码点
         let wide: String = "表".repeat(3000);
         let out = truncate_log_line(&wide);
-        assert!(out.contains("[truncated 1000 chars]"));
+        assert!(out.contains("[truncated 952 chars]"));
+    }
+
+    // D-SYS-06：堆栈/错误链 8000 字符截断
+    #[test]
+    fn truncate_stack_caps_at_8000_chars() {
+        let short = "chain: a | b".to_string();
+        assert_eq!(truncate_stack(&short), short);
+
+        let huge: String = "#0 frame()\n".repeat(2000);
+        let out = truncate_stack(&huge);
+        assert!(
+            out.chars().count() < 8100,
+            "stack must cap at the 8000-char contract"
+        );
+        assert!(out.contains("[truncated"));
+    }
+
+    // ==== D-SYS-04：模型下载加固 ====
+
+    #[test]
+    fn download_url_allowlist_accepts_configured_hosts() {
+        let allowlist = ALLOWED_DOWNLOAD_HOSTS
+            .iter()
+            .map(|h| h.to_string())
+            .collect::<Vec<_>>();
+        for url in [
+            TEST_URL,
+            "https://cdn-lfs.huggingface.co/stingy/blob/path",
+            "https://sub.hf.co/models/x.onnx",
+            "https://hf.co/x",
+            "https://github.com/CyberTimon/RapidRAW/releases/download/v1/x.onnx",
+            "https://objects.githubusercontent.com/x.onnx",
+            "https://raw.githubusercontent.com/x/y/main/z.json",
+            "https://hf-mirror.com/CyberTimon/RapidRAW-Models/resolve/main/x.onnx",
+            "https://HUGGINGFACE.CO/x.onnx",
+        ] {
+            assert!(
+                validate_download_url_against(url, &allowlist).is_ok(),
+                "{url} must be allowed"
+            );
+        }
+    }
+
+    #[test]
+    fn download_url_allowlist_rejects_foreign_and_spoofed_hosts() {
+        let allowlist = ALLOWED_DOWNLOAD_HOSTS
+            .iter()
+            .map(|h| h.to_string())
+            .collect::<Vec<_>>();
+        for url in [
+            "http://huggingface.co/x.onnx", // 非 HTTPS
+            "ftp://huggingface.co/x.onnx",  // 非法协议
+            "https://evil.example.com/x.onnx",
+            "https://huggingface.co.evil.com/x.onnx", // 后缀伪装
+            "https://huggingface.co:8080@evil.com/x", // userinfo 伪装
+            "not a url at all",
+        ] {
+            assert!(
+                validate_download_url_against(url, &allowlist).is_err(),
+                "{url} must be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn download_allowlist_trusts_configured_custom_mirror_host() {
+        // 用户显式配置的自有镜像 host 与静态白名单同等信任（保持既有功能）。
+        // 走注入式内核而非改环境变量，避免与并行测试产生 env 竞争。
+        let hosts = download_allowlist_with_custom(Some("https://my-mirror.example.org"));
+        assert!(hosts.iter().any(|h| h == "my-mirror.example.org"));
+        assert!(
+            validate_download_url_against(
+                "https://my-mirror.example.org/x.onnx",
+                &hosts
+            )
+            .is_ok()
+        );
+        // 自定义镜像格式非法（注入串）时不得混入白名单
+        let hosts = download_allowlist_with_custom(Some("https://evil.com/?x="));
+        assert!(!hosts.iter().any(|h| h.contains("evil.com")));
+    }
+
+    // D-SYS-04②：落盘路径防穿越（canonicalize 后必须仍在模型根目录内）
+    #[test]
+    fn ensure_dest_within_models_dir_blocks_traversal() {
+        let root = std::env::temp_dir().join(format!(
+            "rapidraw-models-root-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        // 正常落点：允许
+        assert!(ensure_dest_within_models_dir(&root, &root.join("sam.onnx")).is_ok());
+        // 穿越：必须被拒（用例 "../../etc/passwd"）
+        assert!(ensure_dest_within_models_dir(&root, &root.join("../../etc/passwd")).is_err());
+        // 根目录之外的任意目录：也必须被拒
+        let other = std::env::temp_dir().join(format!(
+            "rapidraw-models-other-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        fs::create_dir_all(&other).unwrap();
+        assert!(ensure_dest_within_models_dir(&root, &other.join("sam.onnx")).is_err());
+        // 非法文件名：拒绝
+        assert!(ensure_dest_within_models_dir(&root, &root.join("..\\evil.onnx")).is_err());
+        fs::remove_dir_all(&root).ok();
+        fs::remove_dir_all(&other).ok();
+    }
+
+    // D-SYS-04③：Content-Length 对账（不符报错；未声明长度如实跳过）
+    #[test]
+    fn verify_downloaded_size_flags_mismatch_and_allows_unknown_length() {
+        assert!(verify_downloaded_size(1024, Some(1024)).is_ok());
+        // 少收 / 多收都算对账不符
+        assert!(verify_downloaded_size(1000, Some(1024)).is_err());
+        assert!(verify_downloaded_size(2048, Some(1024)).is_err());
+        let err = verify_downloaded_size(100, Some(512)).unwrap_err();
+        assert!(err.contains("received 100 of 512 bytes"));
+        // 无 Content-Length：如实跳过对账，不虚构期望长度
+        assert!(verify_downloaded_size(0, None).is_ok());
+        assert!(verify_downloaded_size(12345, None).is_ok());
+    }
+
+    // ==== D-SYS-06：聚合诊断报告 64KB 体积上限 ====
+
+    fn diagnostics_report_with_logs(logs: Vec<String>) -> AiDiagnostics {
+        AiDiagnostics {
+            app_version: "test".into(),
+            platform: "linux".into(),
+            platform_gpu_ep: "none".into(),
+            gpu_enabled_setting: false,
+            gpu_runtime_status: "idle".into(),
+            deep: false,
+            models_dir: "/models".into(),
+            device_tier: "desktop".into(),
+            cpu_cores: 4,
+            total_ram_mb: 8192,
+            intra_op_threads: "default".into(),
+            models: vec![],
+            manifest_healthy: true,
+            issues: vec![],
+            recent_ai_logs: logs,
+        }
+    }
+
+    #[test]
+    fn cap_diagnostics_report_drops_oldest_logs_and_annotates() {
+        // newest-first：log 0 最新，log 7 最旧。超限时应丢最旧的。
+        let logs: Vec<String> = (0..8)
+            .map(|i| format!("[ERROR] log {i} {}", "x".repeat(2048)))
+            .collect();
+        let mut report = diagnostics_report_with_logs(logs);
+        let truncated = cap_diagnostics_report_size_to(&mut report, 8192);
+        assert!(truncated);
+        let size = serde_json::to_string(&report).unwrap().len();
+        assert!(size <= 8192, "capped report must fit the budget, got {size}");
+        // 最新的条目保留、注明行入列队尾
+        assert!(report.recent_ai_logs[0].starts_with("[ERROR] log 0"));
+        assert_eq!(
+            report.recent_ai_logs.last().unwrap(),
+            "[diagnostics report truncated to fit the 64 KB cap]"
+        );
+    }
+
+    #[test]
+    fn cap_diagnostics_report_truncates_oversized_issues_and_annotates() {
+        let mut report = diagnostics_report_with_logs(vec![]);
+        report.issues = vec!["y".repeat(20_000)];
+        let truncated = cap_diagnostics_report_size_to(&mut report, 1024);
+        assert!(truncated);
+        let size = serde_json::to_string(&report).unwrap().len();
+        assert!(size <= 1024, "capped report must fit the budget, got {size}");
+        assert!(report.issues[0].contains("[truncated"));
+        assert_eq!(
+            report.recent_ai_logs.last().unwrap(),
+            "[diagnostics report truncated to fit the 64 KB cap]"
+        );
+    }
+
+    #[test]
+    fn cap_diagnostics_report_is_noop_under_budget() {
+        let mut report = diagnostics_report_with_logs(vec!["[WARN] clip session".into()]);
+        let before = serde_json::to_string(&report).unwrap();
+        assert!(!cap_diagnostics_report_size_to(&mut report, 64 * 1024));
+        assert_eq!(serde_json::to_string(&report).unwrap(), before);
     }
 
     // ==== A1：整图级质量回归（参照仓库 locality/单调性方法论的移植） ====

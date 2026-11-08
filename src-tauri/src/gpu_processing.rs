@@ -246,6 +246,39 @@ impl WgpuDisplay {
 
 static GPU_DEVICE_LOST: AtomicBool = AtomicBool::new(false);
 
+/// D-SYS-02：把「GPU 可用性」与「offscreen 渲染决策」拆成显式决策点。
+/// 该决策只决定是否创建窗口呈现 surface；GPU 计算（adapter/device 请求）不受影响。
+/// Android/Linux 在真机 A/B 验证达标前维持现状（强制 Offscreen），此处仅让决策可诊断。
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum SurfaceMode {
+    /// 创建窗口呈现 surface（桌面默认）
+    Window,
+    /// 不创建呈现 surface，仅 compute/offscreen（Android/Linux 现状）
+    Offscreen,
+}
+
+/// 纯决策函数（可单测）：`platform_offscreen_forced` 为平台现状开关，
+/// `use_wgpu_renderer` 为用户设置（缺省 true），`has_main_window` 为外部事实。
+pub fn decide_surface_mode(
+    platform_offscreen_forced: bool,
+    use_wgpu_renderer: bool,
+    has_main_window: bool,
+) -> SurfaceMode {
+    if platform_offscreen_forced {
+        log::info!("Surface mode: Offscreen (forced on this platform; GPU compute still available)");
+        return SurfaceMode::Offscreen;
+    }
+    if !use_wgpu_renderer {
+        log::info!("Surface mode: Offscreen (wgpu renderer disabled in settings)");
+        return SurfaceMode::Offscreen;
+    }
+    if !has_main_window {
+        log::warn!("Surface mode: Offscreen (main window unavailable)");
+        return SurfaceMode::Offscreen;
+    }
+    SurfaceMode::Window
+}
+
 pub fn get_or_init_gpu_context(
     state: &tauri::State<AppState>,
     _app_handle: &tauri::AppHandle,
@@ -298,33 +331,40 @@ pub fn get_or_init_gpu_context(
     #[cfg(not(any(target_os = "android", target_os = "linux")))]
     let surface_opt = {
         let settings = crate::app_settings::load_settings(app_handle.clone()).unwrap_or_default();
-        let use_wgpu_renderer = settings.use_wgpu_renderer.unwrap_or(true);
-
-        if use_wgpu_renderer {
-            if let Some(window) = app_handle.get_webview_window("main") {
-                match instance.create_surface(window) {
-                    Ok(surface) => Some(surface),
-                    Err(e) => {
-                        log::warn!(
-                            "Failed to create surface, falling back to compute-only: {}",
-                            e
-                        );
-                        if let Some(p) = &flag_path {
-                            let _ = std::fs::remove_file(p);
+        let has_main_window = app_handle.get_webview_window("main").is_some();
+        // D-SYS-02：offscreen 决策显式化（桌面行为与此前一致）
+        let mode = decide_surface_mode(false, settings.use_wgpu_renderer.unwrap_or(true), has_main_window);
+        match mode {
+            SurfaceMode::Offscreen => None,
+            SurfaceMode::Window => {
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    match instance.create_surface(window) {
+                        Ok(surface) => Some(surface),
+                        Err(e) => {
+                            log::warn!(
+                                "Failed to create surface, falling back to compute-only: {}",
+                                e
+                            );
+                            if let Some(p) = &flag_path {
+                                let _ = std::fs::remove_file(p);
+                            }
+                            None
                         }
-                        None
                     }
+                } else {
+                    None
                 }
-            } else {
-                None
             }
-        } else {
-            None
         }
     };
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    let surface_opt: Option<wgpu::Surface> = None;
+    let surface_opt: Option<wgpu::Surface> = {
+        // D-SYS-02：Android/Linux 维持强制 offscreen（决策显式化，真机 A/B 达标后再评估放开）
+        let _mode = decide_surface_mode(true, true, false);
+        debug_assert_eq!(_mode, SurfaceMode::Offscreen);
+        None
+    };
 
     let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::HighPerformance,
@@ -4007,6 +4047,29 @@ fn process_and_get_dynamic_image_inner(
                 .ok_or("Failed to create 16-bit image buffer from GPU data")?;
             Ok(DynamicImage::ImageRgba16(img_buf))
         }
+    }
+}
+
+#[cfg(test)]
+mod surface_mode_decision {
+    use super::*;
+
+    #[test]
+    fn forced_offscreen_platforms_stay_offscreen() {
+        // Android/Linux 现状：强制 offscreen，不受设置/窗口影响（行为零变化）
+        assert_eq!(decide_surface_mode(true, true, true), SurfaceMode::Offscreen);
+        assert_eq!(decide_surface_mode(true, false, false), SurfaceMode::Offscreen);
+    }
+
+    #[test]
+    fn desktop_defaults_to_window_surface() {
+        assert_eq!(decide_surface_mode(false, true, true), SurfaceMode::Window);
+    }
+
+    #[test]
+    fn desktop_falls_back_to_offscreen_for_setting_or_window() {
+        assert_eq!(decide_surface_mode(false, false, true), SurfaceMode::Offscreen);
+        assert_eq!(decide_surface_mode(false, true, false), SurfaceMode::Offscreen);
     }
 }
 

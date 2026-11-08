@@ -179,6 +179,9 @@ pub struct DetectedFace {
     center: [f32; 2],
     angle: f32,
     size: f32,
+    /// P1（D-PT-01）：该脸拟合所用检测框在 `FaceAnalysis::boxes` 中的下标，
+    /// 供多脸保护区在扣除"他人头区"时排除自身。
+    box_index: usize,
     segment_frame: FaceFrame,
     hair: Vec<f32>,
     skin: Vec<f32>,
@@ -202,6 +205,9 @@ pub struct FaceAnalysis {
     pub path_hash: String,
     pub faces: Vec<DetectedFace>,
     body: Vec<(FaceFrame, Vec<f32>)>,
+    /// P1（D-PT-01）：去重后的检测框（归一化 `[x0, y0, x1, y1]`），
+    /// 供人像链路构造多脸头区保护带。
+    pub boxes: Vec<[f32; 4]>,
 }
 
 fn inside(x: f32, y: f32, width: usize, height: usize) -> bool {
@@ -381,7 +387,9 @@ pub fn analyze_faces(
 ) -> Result<FaceAnalysis> {
     let (width, height) = image.dimensions();
     let mut boxes: Vec<[f32; 4]> = Vec::new();
+    let mut boxes_norm: Vec<[f32; 4]> = Vec::new();
     for (_, b) in detections {
+        let b_norm = *b;
         let b = [
             b[0] * width as f32,
             b[1] * height as f32,
@@ -393,12 +401,14 @@ pub fn analyze_faces(
             .any(|kept| box_overlap(kept, &b) > DUPLICATE_BOX_OVERLAP)
         {
             boxes.push(b);
+            boxes_norm.push(b_norm);
         }
     }
     let mut analysis = FaceAnalysis {
         path_hash,
         faces: Vec::new(),
         body: Vec::new(),
+        boxes: boxes_norm,
     };
     if boxes.is_empty() {
         return Ok(analysis);
@@ -406,11 +416,11 @@ pub fn analyze_faces(
 
     let rgb = image.to_rgb8();
     let faces = &mut analysis.faces;
-    for face_box in boxes {
+    for (box_index, face_box) in boxes.iter().enumerate() {
         let mut fitted = None;
         for quarter in 0..4 {
             let angle = base_angle + quarter as f32 * FRAC_PI_2;
-            let (landmarks, score, angle) = fit_landmarks(landmark_session, &rgb, face_box, angle)?;
+            let (landmarks, score, angle) = fit_landmarks(landmark_session, &rgb, *face_box, angle)?;
             if score >= FACE_PRESENCE_THRESHOLD {
                 fitted = Some((landmarks, angle));
                 break;
@@ -448,6 +458,7 @@ pub fn analyze_faces(
             center,
             angle,
             size,
+            box_index,
             segment_frame,
             hair,
             skin,
@@ -832,6 +843,20 @@ fn segment_probabilities(
     values
 }
 
+/// P1（D-PT-01）：从整幅掩膜中扣除 `boxes` 对应的头区保护带（多脸并集，
+/// 羽化遵循 head_zone_from_boxes 的边缘柔化；与天空替换路径同一乘法口径：
+/// keep = 1 - zone/255，只压低绝不抬升）。boxes 为归一化 `[x0, y0, x1, y1]`。
+pub fn subtract_head_zones(mask: &mut GrayImage, boxes: &[[f32; 4]]) {
+    if boxes.is_empty() {
+        return;
+    }
+    let zone = head_zone_from_boxes(mask.width(), mask.height(), boxes);
+    for (m, z) in mask.pixels_mut().zip(zone.pixels()) {
+        let keep = 1.0 - z[0] as f32 / 255.0;
+        m[0] = (m[0] as f32 * keep).round() as u8;
+    }
+}
+
 pub fn compose_face_mask(
     image: &DynamicImage,
     analysis: &FaceAnalysis,
@@ -863,6 +888,13 @@ pub fn compose_face_mask(
             radius.round() as usize,
             REFINE_EPS,
         );
+        // P1（D-PT-01）：多脸合影时身体皮肤组件扣除所有头区保护带——
+        // 单主体分割模型（selfie_multiclass）在 oversized 帧里会把邻近主角
+        // 误标进 bodySkin，检测框推导的头区是可靠几何，直接扣除；
+        // 单脸/无多框时不动，保持既有行为。
+        if analysis.boxes.len() > 1 {
+            subtract_head_zones(&mut mask, &analysis.boxes);
+        }
     }
     if parts.iter().all(|&part| part == FacePart::BodySkin) {
         return mask;
@@ -872,12 +904,38 @@ pub fn compose_face_mask(
         .iter()
         .map(|face| face_region(face, width, height))
         .collect();
-    let face_masks: Vec<GrayImage> = analysis
+    let mut face_masks: Vec<GrayImage> = analysis
         .faces
         .par_iter()
         .zip(&regions)
         .map(|(face, &region)| face_parts_mask(image, face, parts, region))
         .collect();
+    // P1（D-PT-01）：多脸保护区——对每张脸，用其余检测框的头区保护带
+    // （解剖比例 + 边缘柔化）扣除该脸掩膜串入邻近头区的分量：每张脸的
+    // 美容效果只落 own 头内，绝不下沉到合影里其他主角的头上。
+    for ((face_mask, &(x0, y0, _, _)), face) in face_masks
+        .iter_mut()
+        .zip(&regions)
+        .zip(&analysis.faces)
+    {
+        let others: Vec<[f32; 4]> = analysis
+            .boxes
+            .iter()
+            .enumerate()
+            .filter(|&(i, _)| i != face.box_index)
+            .map(|(_, b)| *b)
+            .collect();
+        if others.is_empty() {
+            continue;
+        }
+        let zone = head_zone_from_boxes(width, height, &others);
+        for (x, y, pixel) in face_mask.enumerate_pixels_mut() {
+            let zx = (x0 + x).min(width.saturating_sub(1));
+            let zy = (y0 + y).min(height.saturating_sub(1));
+            let keep = 1.0 - zone.get_pixel(zx, zy)[0] as f32 / 255.0;
+            pixel[0] = (pixel[0] as f32 * keep).round() as u8;
+        }
+    }
     for (face_mask, &(x0, y0, _, _)) in face_masks.iter().zip(&regions) {
         for (x, y, pixel) in face_mask.enumerate_pixels() {
             let out = mask.get_pixel_mut(x0 + x, y0 + y);
@@ -887,9 +945,118 @@ pub fn compose_face_mask(
     mask
 }
 
+/// D-PT-02：自适应肤色判定的最小统计样本数——低于该值视为统计不可信，
+/// 调用方诚实降级（回退全图分位数或旧掩膜/旧阈值）。
+pub const SKIN_MIN_SAMPLES: usize = 64;
+
+/// D-PT-02：YCbCr 肤色簇范围（BT.601 全量程，128 为中性）。
+/// 由批内分位数（p10–p90）圈定并带软边沿，替代 R>95 类固定阈值——
+/// 固定阈值对暗色皮肤系统性漏检（R 通道整体低于 95）、对高光皮肤误检，
+/// 而批内相对统计对任何肤色都以其自身簇为中心。
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SkinChromaRange {
+    cb_lo: f32,
+    cb_hi: f32,
+    cr_lo: f32,
+    cr_hi: f32,
+}
+
+/// BT.601 全量程 Cb/Cr（0-255 域，128 为中性）。
+fn ycbcr_chroma([r, g, b]: [u8; 3]) -> (f32, f32) {
+    let (r, g, b) = (r as f32, g as f32, b as f32);
+    (
+        128.0 - 0.168736 * r - 0.331264 * g + 0.5 * b,
+        128.0 + 0.5 * r - 0.418688 * g - 0.081312 * b,
+    )
+}
+
+impl SkinChromaRange {
+    /// 软成员度：Cb/Cr 双轴梯形窗的乘积（簇内 1，边沿按半簇宽线性衰减），
+    /// 用于掩膜乘法精修时不引入硬截断。
+    pub fn membership(&self, cb: f32, cr: f32) -> f32 {
+        let axis = |v: f32, lo: f32, hi: f32| {
+            let ramp = ((hi - lo) * 0.5).max(1.0);
+            (((v - (lo - ramp)) / ramp).clamp(0.0, 1.0))
+                .min((((hi + ramp) - v) / ramp).clamp(0.0, 1.0))
+        };
+        axis(cb, self.cb_lo, self.cb_hi) * axis(cr, self.cr_lo, self.cr_hi)
+    }
+}
+
+/// D-PT-02：自适应肤色范围。`region` 提供时只统计掩膜内像素（优先：检测
+/// 人脸区域的肤色簇），为 None 时统计全图（无人脸回退路径）。样本不足或
+/// 簇退化（近单色、无判别力）返回 None，由调用方诚实降级。
+pub fn adaptive_skin_range(rgb: &RgbImage, region: Option<&GrayImage>) -> Option<SkinChromaRange> {
+    let (w, h) = rgb.dimensions();
+    if w == 0 || h == 0 {
+        return None;
+    }
+    // 步进采样把样本量控制在 ~26 万内（24MP 全图也不至于分配数百 MB）。
+    let stride = (((w as u64 * h as u64) / 262_144).max(1) as f64)
+        .sqrt()
+        .max(1.0) as usize;
+    let mut cb_samples: Vec<f32> = Vec::new();
+    let mut cr_samples: Vec<f32> = Vec::new();
+    for y in (0..h).step_by(stride) {
+        for x in (0..w).step_by(stride) {
+            if let Some(mask) = region {
+                if mask.get_pixel(x, y)[0] < 128 {
+                    continue;
+                }
+            }
+            let (cb, cr) = ycbcr_chroma(rgb.get_pixel(x, y).0);
+            cb_samples.push(cb);
+            cr_samples.push(cr);
+        }
+    }
+    if cb_samples.len() < SKIN_MIN_SAMPLES {
+        return None;
+    }
+    let quantile = |values: &mut Vec<f32>, q: f32| -> f32 {
+        let idx = ((values.len() as f32 - 1.0) * q).round() as usize;
+        values.select_nth_unstable_by(idx, f32::total_cmp);
+        values[idx]
+    };
+    let cb_lo = quantile(&mut cb_samples, 0.10);
+    let cb_hi = quantile(&mut cb_samples, 0.90);
+    let cr_lo = quantile(&mut cr_samples, 0.10);
+    let cr_hi = quantile(&mut cr_samples, 0.90);
+    // 簇退化（近单色）时范围无判别力：宁可诚实失败回退，也不产出一个
+    // 会把整幅图判成"皮肤"或"非皮肤"的伪范围。
+    if cb_hi - cb_lo < 2.0 || cr_hi - cr_lo < 2.0 {
+        return None;
+    }
+    Some(SkinChromaRange {
+        cb_lo,
+        cb_hi,
+        cr_lo,
+        cr_hi,
+    })
+}
+
+/// D-PT-02：用自适应肤色范围精修掩膜（成员度乘法，软边）。
+/// 精修后有效像素是否充足由调用方判定并降级，本函数不做截断决策。
+pub fn refine_mask_by_skin_range(
+    rgb: &RgbImage,
+    mask: &GrayImage,
+    range: &SkinChromaRange,
+) -> GrayImage {
+    let mut out = mask.clone();
+    for (x, y, pixel) in out.enumerate_pixels_mut() {
+        if pixel[0] == 0 {
+            continue;
+        }
+        let (cb, cr) = ycbcr_chroma(rgb.get_pixel(x, y).0);
+        let keep = range.membership(cb, cr);
+        pixel[0] = (pixel[0] as f32 * keep).round() as u8;
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use image::Rgb;
 
     #[test]
     fn head_zone_covers_anatomical_ratios() {
@@ -932,5 +1099,110 @@ mod tests {
         assert!(zone.iter().all(|&v| v == 0));
         // 空列表同样安全
         assert!(head_zone_from_boxes(100, 100, &[]).iter().all(|&v| v == 0));
+    }
+
+    #[test]
+    fn foreign_head_zone_subtraction_removes_cross_face_bleed() {
+        // P1（D-PT-01）：合影两脸，face A 的分割掩膜串脸到 face B 头区（
+        // selfie_multiclass 单主体模型在 oversized 帧里的典型病理）。
+        // 扣除 B 的头区保护带后：B 头区深处效果∩保护区≈0，A 自身头区信号不动。
+        let other = [0.75, 0.30, 0.95, 0.70]; // B：px x∈[300,380], y∈[60,140]
+        let mut mask = GrayImage::new(400, 200);
+        for (x, y, p) in mask.enumerate_pixels_mut() {
+            let in_a = x >= 20 && x < 100 && y >= 60 && y < 140;
+            let in_b = x >= 300 && x < 380 && y >= 60 && y < 140;
+            p[0] = if in_a || in_b { 255 } else { 0 };
+        }
+        subtract_head_zones(&mut mask, &[other]);
+        // B 头区深处（中心及左上内侧，距边沿远大于 3σ 羽化）：信号必须归零
+        assert!(
+            mask.get_pixel(340, 100)[0] <= 2,
+            "effect inside protected head zone must be removed, got {}",
+            mask.get_pixel(340, 100)[0]
+        );
+        assert!(mask.get_pixel(310, 80)[0] <= 2);
+        // A 自身头区（远离 B）效果保持原信号——磨皮/亮眼仍作用于自己的脸
+        assert_eq!(mask.get_pixel(60, 100)[0], 255);
+        assert_eq!(mask.get_pixel(25, 70)[0], 255);
+    }
+
+    /// 仓库旧固定启发式（scene_classify 肤色判定同款条件）：R>95 对暗色
+    /// 皮肤系统性漏检。测试图按深肤色调构造，断言固定阈值全漏检。
+    fn fixed_threshold_says_skin([r, g, b]: [u8; 3]) -> bool {
+        let (r, g, b) = (r as i32, g as i32, b as i32);
+        r > 95 && g > 40 && b > 20 && r.max(g).max(b) - r.min(g).min(b) > 15 && (r - g).abs() > 15
+            && r > g && r > b
+    }
+
+    #[test]
+    fn adaptive_skin_range_covers_dark_skin() {
+        // 64x64：蓝色背景 + 深肤色脸块（R≤93，全部低于固定阈值 95）
+        let (w, h) = (64u32, 64u32);
+        let mut rgb = RgbImage::new(w, h);
+        let mut region = GrayImage::new(w, h);
+        for (x, y, p) in rgb.enumerate_pixels_mut() {
+            if (8..32).contains(&x) && (8..32).contains(&y) {
+                // 深肤色簇（带簇内变化，保证 Cb/Cr 分位数范围非退化）
+                *p = Rgb([90 + (y % 4) as u8, 50 + (x % 11) as u8 * 2, 45]);
+            } else {
+                *p = Rgb([30, 60, 180]);
+            }
+        }
+        for (x, y, p) in region.enumerate_pixels_mut() {
+            if (8..32).contains(&x) && (8..32).contains(&y) {
+                p[0] = 255;
+            }
+        }
+        for y in 8..32 {
+            for x in 8..32 {
+                assert!(
+                    !fixed_threshold_says_skin(rgb.get_pixel(x, y).0),
+                    "fixed R>95 heuristic must miss dark skin (precondition)"
+                );
+            }
+        }
+        // 新逻辑：以人脸区域统计定范围 → 深肤色命中、蓝背景不命中
+        let range = adaptive_skin_range(&rgb, Some(&region))
+            .expect("face-region stats must yield a skin range");
+        let (cb_skin, cr_skin) = ycbcr_chroma(rgb.get_pixel(16, 16).0);
+        assert!(
+            range.membership(cb_skin, cr_skin) >= 0.99,
+            "dark skin must be covered by adaptive range"
+        );
+        let (cb_bg, cr_bg) = ycbcr_chroma([30, 60, 180]);
+        assert!(
+            range.membership(cb_bg, cr_bg) <= 0.01,
+            "blue background must be excluded"
+        );
+        // 精修：脸块掩膜保留，背景串入被压掉
+        let mut mask = GrayImage::new(w, h);
+        for (_, _, p) in mask.enumerate_pixels_mut() {
+            p[0] = 255;
+        }
+        let refined = refine_mask_by_skin_range(&rgb, &mask, &range);
+        assert!(refined.get_pixel(16, 16)[0] >= 250);
+        assert!(refined.get_pixel(48, 48)[0] <= 2);
+    }
+
+    #[test]
+    fn adaptive_skin_range_falls_back_honestly() {
+        // 无人脸回退路径：region=None 用全图分位数，有效图必须能给出范围
+        let mut rgb = RgbImage::new(64, 64);
+        for (x, y, p) in rgb.enumerate_pixels_mut() {
+            if x < 32 {
+                *p = Rgb([120, 85, 70]);
+            } else {
+                *p = Rgb([40, 90, 160]);
+            }
+        }
+        assert!(adaptive_skin_range(&rgb, None).is_some());
+        // 簇退化（近单色图）→ 无判别力，诚实返回 None（调用方回退旧阈值）
+        let flat = RgbImage::from_pixel(64, 64, Rgb([90, 60, 48]));
+        assert!(adaptive_skin_range(&flat, None).is_none());
+        // 区域统计样本不足（空掩膜）→ None
+        let region = GrayImage::new(64, 64);
+        assert!(adaptive_skin_range(&rgb, Some(&region)).is_none());
+        // 零尺寸防御
+        assert!(adaptive_skin_range(&RgbImage::new(0, 0), None).is_none());
     }
 }
