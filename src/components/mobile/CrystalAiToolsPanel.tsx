@@ -34,7 +34,7 @@ import { CxSliderRow, awaitImageReady, haptic, useCrystalAdjust, useCrystalAiMas
  * ------------------------------------------------------------------------- */
 
 type EnhanceIntensity = 'subtle' | 'standard' | 'strong';
-type AiBusyKind = 'enhance' | 'auto' | 'sky' | 'subject' | 'text' | 'depth' | 'styleRef';
+type AiBusyKind = 'enhance' | 'auto' | 'sky' | 'subject' | 'text' | 'depth' | 'style' | 'styleRef';
 
 const INTENSITIES: ReadonlyArray<{ id: EnhanceIntensity; labelKey: ParseKeys }> = [
   { id: 'subtle', labelKey: 'editor.aiEnhance.intensities.subtle' },
@@ -78,16 +78,19 @@ const DEPTH_DEFAULTS = { minDepth: 20, maxDepth: 80, minFade: 15, maxFade: 15, f
 /* 审计修复（AI-提示词）：移动端切分类即卸载面板，未生成的提示词随之丢失。
  * localStorage 持久化（容器内已有 prompt 时以容器为准），跨分类/重启均保留。 */
 const TEXT_PROMPT_STORAGE_KEY = 'crystal.ai.textPrompt';
-const loadStoredTextPrompt = (): string => {
+/* 风格词调色提示词同源持久化（审计修复 AI-风格链路）：此前仅驻内存，切分类
+ * 卸载面板即丢输入；结果即时生效无跨会话保留必要，但输入中的提示词应保留。 */
+const STYLE_PROMPT_STORAGE_KEY = 'crystal.ai.stylePrompt';
+const loadStoredPrompt = (key: string): string => {
   try {
-    return localStorage.getItem(TEXT_PROMPT_STORAGE_KEY) ?? '';
+    return localStorage.getItem(key) ?? '';
   } catch {
     return '';
   }
 };
-const storeTextPrompt = (value: string) => {
+const storePrompt = (key: string, value: string) => {
   try {
-    localStorage.setItem(TEXT_PROMPT_STORAGE_KEY, value);
+    localStorage.setItem(key, value);
   } catch {
     /* storage 不可用：仅保留内存态 */
   }
@@ -128,10 +131,11 @@ export default function CrystalAiToolsPanel() {
   const cancelRef = useRef(false);
   /* 程序化天空降级提示只弹一次（会话级），避免每次重复识别都打扰 */
   const proceduralNotified = useRef(false);
-  const [textPrompt, setTextPrompt] = useState(loadStoredTextPrompt);
+  const [textPrompt, setTextPrompt] = useState(() => loadStoredPrompt(TEXT_PROMPT_STORAGE_KEY));
   const [showTextInput, setShowTextInput] = useState(false);
-  /* 风格词调色：提示词仅驻内存（风格结果即时生效，无跨会话保留必要） */
-  const [stylePrompt, setStylePrompt] = useState('');
+  /* 风格词调色：提示词 localStorage 持久化（跨分类/重启保留，同文本提示词）；
+   * 结果卡仅驻内存（随图切换失效，见下方 effect）。 */
+  const [stylePrompt, setStylePrompt] = useState(() => loadStoredPrompt(STYLE_PROMPT_STORAGE_KEY));
   const [showStyleInput, setShowStyleInput] = useState(false);
   /* 最近一次风格词调色结果（结果卡数据：风格名/强度/被忽略否定词） */
   const [styleResult, setStyleResult] = useState<StyleSuggestResult | null>(null);
@@ -148,7 +152,11 @@ export default function CrystalAiToolsPanel() {
   const noteRemoveTimerRef = useRef<number | null>(null);
   const updateTextPrompt = useCallback((value: string) => {
     setTextPrompt(value);
-    storeTextPrompt(value);
+    storePrompt(TEXT_PROMPT_STORAGE_KEY, value);
+  }, []);
+  const updateStylePrompt = useCallback((value: string) => {
+    setStylePrompt(value);
+    storePrompt(STYLE_PROMPT_STORAGE_KEY, value);
   }, []);
 
   /* D-AI-06：首次点击某格 → 面板底部滑入对应来源说明（model/rule/cloud 三选一，
@@ -249,24 +257,35 @@ export default function CrystalAiToolsPanel() {
 
   /* 风格词调色 —— 本地词库映射（后端 ai_style_suggest，无网络/模型依赖）：
    * 自然语言 → 风格 + 非破坏性参数补丁；未命中时不改动当前调整。
-   * imagePath（后端新增可选参数）：携带当前图路径供后端按图上下文微调建议，
-   * 无图时传 null（旧后端忽略未知参数，向前兼容）。 */
+   * imagePath（后端新增可选参数）：携带当前图路径供后端按图上下文微调建议
+   * （Android SAF content:// 亦经统一加载入口读取），无图时提示不可用。
+   * 审计修复（AI-风格链路）：
+   * 1) 写入改走 applyPatch（统一移动端写入语义）：补丁触及 basic/whiteBalance/
+   *    colorPresence/presence/curves/colorGrading 工具时按 owning-tools 映射
+   *    激活——此前裸 setAdjustments，用户关闭过对应工具（含桌面编辑 XMP 带
+   *    activeTools:false 的图）时渲染门控会吞掉风格补丁，看似「应用了没效果」；
+   * 2) busy 用独立 'style' 档：此前错挂 'enhance'，处理中转圈的是 AI 增强 tile；
+   * 3) 无图发起时提示不可用（与增强/自动色调一致），不再静默应用空上下文补丁。 */
   const runStyleSuggest = useCallback(async () => {
     const prompt = stylePrompt.trim();
     if (!prompt || busy) return;
-    setBusy('enhance');
     const startPath = useEditorStore.getState().selectedImage?.path;
+    if (!startPath) {
+      toast.info(t('crystal.aiRecommend.notReady'));
+      return;
+    }
+    setBusy('style');
     try {
       const result = await invoke<StyleSuggestResult>(Invokes.AiStyleSuggest, {
         prompt,
-        imagePath: startPath ?? null,
+        imagePath: startPath,
       });
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (!result.adjustments || !result.styleId) {
         toast.info(t('crystal.ai.style.failed'));
         return;
       }
-      setAdjustments((prev) => ({ ...prev, ...result.adjustments }));
+      applyPatch(result.adjustments);
       setStyleResult(result);
       setShowStyleInput(false);
       toast.success(
@@ -281,7 +300,14 @@ export default function CrystalAiToolsPanel() {
     } finally {
       setBusy(null);
     }
-  }, [busy, setAdjustments, stylePrompt, t]);
+  }, [busy, applyPatch, stylePrompt, t]);
+
+  /* 审计修复（AI-风格链路）：结果卡只描述「当前图」的风格建议——切图后 adjustments
+   * 已随图更换，旧结果卡继续展示会误导（以为新图也应用了该风格）。随图切换清除。 */
+  const selectedImagePath = useEditorStore((s) => s.selectedImage?.path);
+  useEffect(() => {
+    setStyleResult(null);
+  }, [selectedImagePath]);
 
   /* 方案 B 云参考图：提示词 → 云端文生图（ai_generate_style_reference，
    * 命中词库风格时用风格英文生成提示）→ 生成图作为样片走 MKL 追色
@@ -615,6 +641,7 @@ export default function CrystalAiToolsPanel() {
       source: 'rule',
       onClick: () => setShowStyleInput((v) => !v),
       active: showStyleInput,
+      busy: busy === 'style',
     },
     {
       id: 'text',
@@ -782,9 +809,9 @@ export default function CrystalAiToolsPanel() {
                   disabled={Boolean(busy)}
                   autoFocus
                   enterKeyHint="go"
-                  onChange={(e) => setStylePrompt(e.target.value)}
+                  onChange={(e) => updateStylePrompt(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') void runStyleSuggest();
+                    if (e.key === 'Enter' && !busy) void runStyleSuggest();
                   }}
                 />
                 <button

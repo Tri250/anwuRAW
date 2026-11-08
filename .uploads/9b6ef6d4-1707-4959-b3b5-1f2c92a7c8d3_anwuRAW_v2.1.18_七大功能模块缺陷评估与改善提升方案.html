@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>anwuRAW v2.1.18 · 七大功能模块缺陷评估与改善提升方案</title>
+<style>
+:root{
+  --bg:#0b0b09; --bg2:#121210; --card:#171714; --rule:#2e2e28;
+  --ink:#f0f0e8; --muted:#a8a89a; --faint:#8a8a7d;
+  --gold:#f5c842; --gold-soft:rgba(245,200,66,.12);
+  --teal:#2fd6bf; --teal-soft:rgba(47,214,191,.12);
+  --ren:#b39dff; --tone:#6ec1ff; --comp:#7ed97e; --ai:#5fd4e8; --fx:#ff6b5e;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,'PingFang SC','HarmonyOS Sans SC','MiSans','Noto Sans SC','Microsoft YaHei',sans-serif;
+  font-size:15.5px; line-height:1.85;
+  background-image:radial-gradient(1100px 520px at 82% -8%,var(--gold-soft),transparent 62%),
+                   radial-gradient(900px 520px at 0% 100%,var(--teal-soft),transparent 60%);
+  background-attachment:fixed;
+}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:32px;max-width:1400px;margin:0 auto;padding:0 28px}
+aside{position:sticky;top:0;height:100vh;overflow-y:auto;padding:32px 0 48px;border-right:1px solid var(--rule)}
+aside::-webkit-scrollbar{width:6px}
+aside::-webkit-scrollbar-thumb{background:#3a3a34;border-radius:3px}
+.aside-kicker{font-size:11px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;margin:0 0 6px}
+.aside-title{font-size:15px;font-weight:700;margin:0 0 4px}
+.aside-sub{font-size:12px;color:var(--faint);margin:0 0 22px;line-height:1.6}
+aside .toc ul{list-style:none;margin:0;padding:0}
+aside .toc>ul>li>a{font-weight:600;color:var(--ink);font-size:13px}
+aside .toc ul ul{padding-left:12px;border-left:1px solid var(--rule);margin:2px 0 8px}
+aside .toc ul ul a{font-size:12px;color:var(--muted)}
+aside .toc a{display:block;padding:4px 8px;text-decoration:none;border-radius:5px;transition:background .15s,color .15s}
+aside .toc a:hover{background:var(--gold-soft);color:var(--gold)}
+main{padding:44px 0 96px;min-width:0}
+h1{font-size:29px;line-height:1.35;margin:0 0 6px;letter-spacing:-.01em}
+h1+h2{border:0;margin-top:2px;color:var(--gold);font-size:19px;font-weight:600}
+h2{font-size:21px;margin:52px 0 16px;padding-bottom:10px;border-bottom:1px solid var(--rule);scroll-margin-top:20px}
+h3{font-size:17px;margin:32px 0 12px;color:var(--teal);scroll-margin-top:20px}
+h4{font-size:15px;margin:24px 0 10px;color:var(--ink)}
+p{margin:10px 0}
+blockquote{margin:16px 0;padding:12px 18px;background:var(--card);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;color:var(--muted);font-size:14px}
+blockquote p{margin:4px 0}
+strong{color:#fff;font-weight:650}
+em{color:var(--teal);font-style:normal}
+code{font-family:var(--mono);font-size:.86em;background:#22221d;border:1px solid var(--rule);padding:1px 5px;border-radius:4px;color:var(--gold)}
+pre{background:#141411;border:1px solid var(--rule);border-radius:10px;padding:14px 16px;overflow-x:auto}
+pre code{background:none;border:0;padding:0;color:var(--ink)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:13.4px;display:block;overflow-x:auto}
+thead th{background:#20201b;color:var(--gold);text-align:left;font-weight:650;white-space:nowrap}
+th,td{border:1px solid var(--rule);padding:9px 11px;vertical-align:top;min-width:92px}
+tbody tr:nth-child(even){background:rgba(255,255,255,.018)}
+td strong{color:var(--gold)}
+ul,ol{padding-left:22px}
+li{margin:5px 0}
+hr{border:0;border-top:1px solid var(--rule);margin:38px 0}
+a{color:var(--teal)}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;letter-spacing:.04em;background:var(--gold-soft);color:var(--gold);border:1px solid rgba(245,200,66,.3);margin-bottom:14px}
+.meta{font-size:12.5px;color:var(--faint);margin:0 0 22px}
+@media(max-width:980px){.layout{grid-template-columns:1fr;padding:0 18px}aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);padding:22px 0}main{padding-top:26px}body{font-size:15px}}
+@media print{body{background:#fff;color:#111}aside{display:none}.layout{display:block}h1,h2,h3{color:#111}table{font-size:11px}th{background:#eee;color:#111}code{background:#f2f2f2;color:#333}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside>
+  <p class="aside-kicker">Crystal / anwuRAW</p>
+  <p class="aside-title">v2.1.18 功能缺陷与改善方案</p>
+  <p class="aside-sub">基于真实源码复核 · 2026-11-07<br>预设 / 调色 / 滤镜 / 构图 / AI工具 / 特效 / 人像</p>
+  <nav class="toc"><div class="toc">
+<ul>
+<li><a href="#_1">七大功能模块缺陷评估与改善提升方案（资深开发视角）</a></li>
+<li><a href="#0">0. 执行摘要</a><ul>
+<li><a href="#01">0.1 现状总评（先肯定底座，避免"为改而改"）</a></li>
+<li><a href="#02">0.2 结论先行：现存问题不在"有没有"，而在四个层次</a></li>
+<li><a href="#03">0.3 严重度定义</a></li>
+</ul>
+</li>
+<li><a href="#1">1. 分析基线与模块全景</a><ul>
+<li><a href="#11">1.1 版本事实校准</a></li>
+<li><a href="#12-zh-cnjson-411-640">1.2 七大模块与子功能清单（取自 zh-CN.json 411-640 行 + 面板实现，非设计稿臆测）</a></li>
+</ul>
+</li>
+<li><a href="#2">2. 逐模块缺陷与改善方案</a><ul>
+<li><a href="#21-presets">2.1 预设模块（Presets）</a></li>
+<li><a href="#22-tone">2.2 调色模块（Tone）</a></li>
+<li><a href="#23-filters">2.3 滤镜模块（Filters）</a></li>
+<li><a href="#24-compose">2.4 构图模块（Compose）</a></li>
+<li><a href="#25-ai-ai-tools">2.5 AI 工具模块（AI Tools）——本版问题最集中</a></li>
+<li><a href="#26-fx">2.6 特效模块（FX）</a></li>
+<li><a href="#27-portrait">2.7 人像模块（Portrait）</a></li>
+</ul>
+</li>
+<li><a href="#3">3. 跨模块系统性缺陷（工程与渲染）</a></li>
+<li><a href="#4">4. 可行性差 / 明确不建议做的诚实清单</a></li>
+<li><a href="#5">5. 优先级路线图</a></li>
+<li><a href="#6-uiux">6. UI/UX 交互卡片与动效规格</a><ul>
+<li><a href="#61">6.1 「风格词调色」卡片（替代一句话调色）</a></li>
+<li><a href="#62-ai">6.2 AI 推荐卡（证据分级）</a></li>
+<li><a href="#63">6.3 多样片追色卡片</a></li>
+<li><a href="#64">6.4 沉浸式裁剪卡片</a></li>
+<li><a href="#65-ai">6.5 AI 能力来源角标与说明条</a></li>
+<li><a href="#66">6.6 导出成功浮层</a></li>
+<li><a href="#67">6.7 动效统一规范</a></li>
+</ul>
+</li>
+<li><a href="#7">7. 验收与质量门禁</a></li>
+<li><a href="#8-crystal">8. 结语：与透影 Crystal 品牌调性对齐</a></li>
+<li><a href="#a">附录 A · 证据索引（本次实际复核的文件与行号）</a></li>
+<li><a href="#b">附录 B · 已修复、明确不要重复施工的清单</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<main>
+  <span class="badge">资深开发视角 · 全量源码取证</span>
+  <h1 id="anwuraw-crystal-release-v2118">anwuRAW / 透影 Crystal Release v2.1.18</h1>
+<h2 id="_1">七大功能模块缺陷评估与改善提升方案（资深开发视角）</h2>
+<blockquote>
+<p>仓库：<code>https://github.com/Tri250/anwuRAW</code> · 基线：<code>v2.1.18</code>（HEAD <code>b2e5172</code>，2026-11-07）
+剖析对象：预设 / 调色 / 滤镜 / 构图 / AI 工具 / 特效 / 人像 七大功能模块及其全部子功能
+取证方式：完整源码包静态复核（<code>src/components/mobile/</code> 7 个文件 7043 行、<code>src-tauri/src/</code> 相关后端 8119 行、<code>src/i18n/locales/zh-CN.json</code> 的 <code>crystal</code> 全键表）+ 仓库自带 7 份审计/方案文档交叉验证 + Release v2.1.18 说明
+纪律：本文所有缺陷均附「文件:行号」或仓库自审结论出处；凡属推断、待真机验证或已被前序版本修复的事项，均单独标注，不与"现存缺陷"混淆。文中不含任何虚构的功能、指标或测试结果。</p>
+</blockquote>
+<hr />
+<h2 id="0">0. 执行摘要</h2>
+<h3 id="01">0.1 现状总评（先肯定底座，避免"为改而改"）</h3>
+<p>v2.1.18 的底座在同类开源项目中属上乘，且比外界对"个人定制分支"的预期扎实得多：</p>
+<ul>
+<li><strong>不是空壳原型</strong>。仓库自带《v2.1.13-android-crystal-audit》两轮逐链路复核的结论是「其余链路验证为真实管线接线，无假按钮」；<code>functional-modules-audit.md</code> 第十八/二十/二十一轮的机器化矩阵显示：160 条后端命令全部注册且有定义、55 个 emit 事件与 55 个 listen 双向匹配、84 个设置字段 100% 有 Rust 承载、16 个弹窗全部挂载。</li>
+<li><strong>非破坏性链路是真的</strong>。七大模块的调参最终都落到 <code>adjustments</code> → <code>apply_adjustments</code> → WGSL/CPU 同源管线 → <code>.rrdata</code> sidecar，撤销栈 50 步、AI patch 标记同步、跨图守卫（<code>startPath</code>）、取消语义等工程细节在 v2.1.13 已被集中修过 19 项缺陷。</li>
+<li><strong>v2.1.18 新增的 AI 调色有真算法</strong>。<code>color_transfer.rs</code>（2046 行）实现了 Oklab + MKL 分区协方差传输、3×3 Jacobi 特征分解、bures / robust-bures / mean-cov 三种多样片聚合、黑白参考路由、tone/color 双强度分解；数学层有 114/114 单测覆盖（仓库《language-guided-lut 与透影 Crystal·AI 调色算法深度对比》§六）。</li>
+<li><strong>诚实降级是项目既有优点</strong>。场景分类 CLIP 未下载时回落像素启发式、LaMa 大面积洞区返回 guidance 而非硬跑、AI 天空模型缺失时走 <code>procedural_sky.rs</code>、未命中风格不猜测。这条纪律应当延续，本方案的所有建议都以「不破坏诚实降级」为前提。</li>
+</ul>
+<h3 id="02">0.2 结论先行：现存问题不在"有没有"，而在四个层次</h3>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>一句话判断</th>
+<th>典型证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>L1 名实不符</strong></td>
+<td>部分挂「AI」标签的能力实际是确定性规则/传统重采样，语义理解能力被高估</td>
+<td><code>style_suggest.rs:7-15</code>、<code>platform_features.rs:874-965</code></td>
+</tr>
+<tr>
+<td><strong>L2 端侧可行性落差</strong></td>
+<td>若干功能在 Android 真机上不可达、或只在桌面可用、或依赖未验证的云端契约</td>
+<td><code>CrystalAiToolsPanel.tsx:106-108</code>、<code>platform_features.rs:181-201</code></td>
+</tr>
+<tr>
+<td><strong>L3 功能深度不足</strong></td>
+<td>原型承诺的子功能被压缩，交互退化为"能点但不够用"</td>
+<td><code>crystal.css:127-129</code>、<code>CrystalPreview.tsx:287-289</code></td>
+</tr>
+<tr>
+<td><strong>L4 验证闭环缺失</strong></td>
+<td>无真机矩阵、无像素级 golden、无质量回归断言，导致"绿了 CI ≠ 好用"</td>
+<td><code>functional-modules-audit.md:535</code>、<code>crystal-boundary-items-implementation-plan.md:165-182</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>最需要优先处理的 5 件事</strong>：① 一句话调色的语义能力（D-AI-01）；② Android 云参考图入口不可达（D-AI-02）；③ AI 超分名实不符（D-AI-04）；④ 构图全屏沉浸裁剪未落地且自由裁剪只有"拖拽画框"（D-CP-01）；⑤ 预览与导出在锐化维度仍不一致（D-SYS-01）。</p>
+<h3 id="03">0.3 严重度定义</h3>
+<table>
+<thead>
+<tr>
+<th>级别</th>
+<th>含义</th>
+<th>处置节奏</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P0</strong></td>
+<td>名实不符 / 功能不可达 / 用户可感知的错误结果</td>
+<td>本迭代必须修</td>
+</tr>
+<tr>
+<td><strong>P1</strong></td>
+<td>可用性明显不足、效果天花板低、跨端行为不一致</td>
+<td>本迭代排期</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>打磨、体验、可观测性、长期维护成本</td>
+<td>下迭代</td>
+</tr>
+<tr>
+<td><strong>观察</strong></td>
+<td>需真机/云端数据才能决策，不做无依据的静默改动</td>
+<td>先埋点或 A/B</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1">1. 分析基线与模块全景</h2>
+<h3 id="11">1.1 版本事实校准</h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>核实结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Release v2.1.18</td>
+<td>2026-11-07 发布；新增「一句话调色 / 多样片聚合 / 云参考图」，修复 zh-CN 尾随逗号、13 语言补齐 91 词条、移动端多样片提示对齐；自检声称 Rust 114/114 测试通过、tsc 零错误</td>
+</tr>
+<tr>
+<td>用户常引用的 v2.1.3 / v2.1.13 / v2.1.16 / v2.1.17</td>
+<td>均为本仓真实存在的历史基线；本方案只把<strong>在 v2.1.18 源码中仍成立</strong>的结论列为现存缺陷</td>
+</tr>
+<tr>
+<td>技术栈</td>
+<td>Tauri 2 + React 19 + Zustand + Rust + WGSL/WGPU + ONNX Runtime；桌面五平台 + Android arm64-v8a</td>
+</tr>
+<tr>
+<td>Android 硬约束</td>
+<td><code>minSdk 29</code> / <code>targetSdk 36</code>（<code>functional-modules-audit.md:517</code>）；<strong>无 GPU EP，纯 CPU 推理</strong>；仅 arm64-v8a（<code>:533</code>）；模型按需下载 980MB 级</td>
+</tr>
+</tbody>
+</table>
+<h3 id="12-zh-cnjson-411-640">1.2 七大模块与子功能清单（取自 <code>zh-CN.json</code> 411-640 行 + 面板实现，非设计稿臆测）</h3>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>子功能（真实 UI 键 / 代码锚点）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>预设</strong></td>
+<td>分类子标签（推荐/自然/胶片/电影/人像/夜景/航拍）、AI 推荐卡（场景配方，5 类：风光/人像/夜景/美食/长焦）、缩略图横滑 + 强度滑杆、保存当前 / 导入 / 导出全部 / 重命名 / 删除 / 覆盖更新、大师配方、胶片配方</td>
+</tr>
+<tr>
+<td><strong>调色</strong></td>
+<td>光 / 色 / 曲线 三 Tab；HSL 8 频段（红橙黄绿青蓝紫洋红）；色彩分级 4 区（阴影/中间调/高光/全局）；校准 3 原色；参数化曲线 + 点曲线；AI 追色（多样片 + bures / robust-bures / mean-cov 聚合 + 明暗/色彩双强度）</td>
+</tr>
+<tr>
+<td><strong>滤镜</strong></td>
+<td>14 款内置（日系/冷调/赛博/褪色/胶片/黑金/暖阳/通透/黑白/柔雾/复古/鲜艳等）+ 4 分组（全部/风景/人像/胶片/黑白）+ 缩略图 + 强度；与预设共用 <code>CrystalPresetsPanel</code> 实例</td>
+</tr>
+<tr>
+<td><strong>构图</strong></td>
+<td>自由 / 1:1 / 4:3 / 3:2 / 16:9 / 9:16 比例 chip；旋转 90°；拉直；水平/垂直透视；水平/垂直翻转；自动拉直；自动镜头校正；重置构图；预览区拖拽裁剪、双指缩放、双击复位</td>
+</tr>
+<tr>
+<td><strong>AI 工具</strong></td>
+<td>9 格：AI 增强（三档）、自动色调、AI 降噪、细节+、天空识别、主体识别、风格调色、文本识别、景深识别；一句话调色输入框 + 云参考图；明暗/色彩双强度滑杆；天空/主体/文本/深度强度滑杆；取消出口、模型下载进度胶囊</td>
+</tr>
+<tr>
+<td><strong>特效</strong></td>
+<td>LUT（导入 / 大师 LUT / 清除 / 强度 0-200）；柔光 / 光晕(halation) / 眩光(flare) / 去雾；颗粒（大小 / 粗糙度）；暗角（中点 / 圆度 / 羽化 / 中心 X/Y）；镜头模糊（4 种光圈形状）；雾化；重打光（点 / 聚光 / 方向光，光源增删复制）</td>
+</tr>
+<tr>
+<td><strong>人像</strong></td>
+<td>一键人像；磨皮；牙齿美白；眼部增强；统一肤色；美型（瘦脸 / 下颌线）；背景虚化（虚化强度）；轮廓 / 柔肤 / 暖调 / 清晰度；算子强度滑杆；移除识别</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>对照设计原型</strong>（<code>crystal-app-prototype/crystal-app-prototype.html:2144-2430</code>）可发现三处原型→实现的裁剪：原型「AI 工具」有「超分辨率」「去雾」「画面增强」，真实面板为 9 格另有取舍；原型「特效」有「荧光」「色彩氛围」「晕影」，真实实现由 halation/flare/vignette/LUT 参数族承载；原型「人像」8 格中「重度磨皮」「亮眼」被合并进算子强度体系。这些属<strong>产品范围收敛</strong>，不算缺陷，但「超分辨率」的名实问题见 D-AI-04。</p>
+</blockquote>
+<hr />
+<h2 id="2">2. 逐模块缺陷与改善方案</h2>
+<h3 id="21-presets">2.1 预设模块（Presets）</h3>
+<h4 id="211">2.1.1 已达到的水位（不要重复施工）</h4>
+<p><code>usePresetPreviewQueue</code> 缩略图 ≤4 并发 + 代次守卫 + URL 全量 revoke；应用走 <code>applyPresetObject</code> → <code>setAdjustments</code> 进 50 步撤销栈；含 AI 蒙版预设走 <code>ApplyAdjustmentsToPaths</code> + <code>LoadMetadata</code> 重跑蒙版；强度滑杆对蒙版型预设 0% 隐藏、恢复还原；长按卡菜单（450ms）收藏/重命名/删除/覆写/导出；Android <code>content://</code> 导入导出已在 <code>file_management.rs</code> 修复（<code>functional-modules-audit.md:545-546</code>）；大师 LUT 缺失与 Android APK 资源物化问题已修（<code>:615-655</code>）。</p>
+<h4 id="212">2.1.2 现存缺陷</h4>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>现象与证据</th>
+<th>根因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D-PS-01</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>AI 推荐卡的场景语义只有 4 类，且置信度门槛是硬编码常数</strong>。<code>scene_classify.rs:245</code> 为 <code>SCENE_PROMPTS: [(&amp;str, [&amp;str; 8]); 4]</code>，即风景/人像/夜景/美食；<code>zh-CN.json:463-469</code> 却定义了 5 个场景（多一个「长焦」）；设计目标 W3 原本是 6 类（含街拍/微距，<code>crystal-mobile-improvement-plan.md:294</code>）。<code>DISPLAY_CONFIDENCE_GATE = 0.75</code>（<code>scene_classify.rs:30</code>）为固定值，批内校准只在 CLIP 通道用 24 张窗口 + 中位数兜底（<code>:302-330</code>），启发式通道仍是手工合成分（<code>best_score*…</code>），无概率语义</td>
+<td>场景分类以「4 类够用」上线，长焦/街拍/微距未接入；启发式通道与 CLIP 通道置信度语义不统一</td>
+</tr>
+<tr>
+<td><strong>D-PS-02</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>推荐理由与真实依据可能脱节</strong>。<code>aiRecommend.sceneBasis</code>「疑似{{scene}} · 依据 {{basis}}」允许 <code>basis = EXIF / 画面分析</code>，而"AI 推荐"标题会让用户以为是视觉识别；仓库《AI功能与其他方面优化改善方案》P0-1 自承启发式对室内人像、暗调美食、夜景人像必然误判，皮肤阈值 <code>R&gt;95</code> 对暗色皮肤系统性偏低</td>
+<td>产品文案未区分「EXIF 启发」「像素启发」「CLIP 视觉」三档证据强度</td>
+</tr>
+<tr>
+<td><strong>D-PS-03</strong></td>
+<td><strong>P2</strong></td>
+<td><strong>预设 ↔ 滤镜共用组件实例的状态耦合是"打补丁"式修复</strong>。v2.1.13 审计缺陷-预设-1 记录：切分类后 <code>activeId</code> 前缀（<code>preset:</code>/<code>filter:</code>）在另一模式解析不到，状态条/强度/取消入口整体消失而参数仍生效；修复方式是 <code>activeSourceRef</code> 快照回落，而非把两类状态拆成独立实例</td>
+<td>组件复用带来的状态域混用，快照回落是兜底不是根治</td>
+</tr>
+<tr>
+<td><strong>D-PS-04</strong></td>
+<td><strong>P2</strong></td>
+<td><strong>配方体系缺数据驱动的校准回路</strong>。大师配方 14 条 LUT 为「参考辅助精修 + prior + CanonCGT 伪监督」生成（仓库《language-guided-lut…》§1.1），无样张组学习；同文档 P1-2 提出用 bures 聚合精修大师配方，但 v2.1.18 的 bures 只用于<strong>单次追色多样片</strong>，未反哺配方资产</td>
+<td>配方资产是静态 JSON + 静态 LUT，没有从用户样张回流更新的机制</td>
+</tr>
+</tbody>
+</table>
+<h4 id="213">2.1.3 改善方案</h4>
+<ol>
+<li><strong>场景体系扩到 6 类并统一置信度语义（P1）</strong>：在 <code>SCENE_PROMPTS</code> 增加街拍/微距两类（每类 8 条中英 prompt ensemble），同步 <code>zh-CN.json</code> 及 15 语言；把启发式通道的 <code>confidence</code> 改造为「与 CLIP 通道同口径的归一化后验」或明确标注 <code>source: heuristic</code> 且不参与 0.75 门槛比较——当前两条通道共用同一门槛但分数不同构，是数值契约错误。保留批内分位数校准，但把窗口参数（<code>SCENE_BATCH_WINDOW=24</code>、<code>FLOOR=0.6</code>、<code>MIN_SAMPLES=8</code>）外提为可配置项并写入诊断报告。</li>
+<li><strong>推荐卡证据分级 UI（P1）</strong>：<code>AiRecommendCard</code> 增加三态角标——<code>CLIP 视觉识别</code> / <code>画面统计</code> / <code>EXIF 线索</code>，文案由 <code>basis</code> 精确映射，禁止在低证据档显示"AI 识别"字样；置信度 &lt;0.75 时按既有诚实降级显示"暂无高置信度场景"（<code>zh-CN.json:458</code> 已有文案，直接复用）。</li>
+<li><strong>拆分预设/滤镜状态域（P2）</strong>：<code>CrystalPresetsPanel</code> 按 <code>mode</code> 维护两个独立的 <code>activeSource</code> 与 <code>activeId</code> 命名空间（如 <code>useReducer</code> 按 mode 分桶），删除 <code>activeSourceRef</code> 快照回落；补一条回归测试：A 模式应用 → 切 B 模式 → 切回 A，状态条、强度、取消入口三者全部保持可达。</li>
+<li><strong>配方校准回路（P2，观察项）</strong>：复用已有 <code>AggregateMode::bures</code>，新增「从 N 张同风格样张生成/精修配方」的离线工具（CLI 即可，不进移动端 UI），输出 <code>.cube</code> + 参数补丁草稿，人工评审后入库。此项依赖真实样张集，<strong>不得在无数据时生成配方</strong>。</li>
+</ol>
+<h4 id="214">2.1.4 验收</h4>
+<ul>
+<li>6 类场景 × 每类 20 张离线样张，top-1 准确率与校准前后对比表（真实数据，不填估算值）；</li>
+<li>三态角标与 <code>source</code> 字段逐图一致，低证据档不出现「AI 识别」；</li>
+<li>预设/滤镜交叉切换 10 轮，无状态丢失；</li>
+<li>15 语言 <code>i18n:check</code> 零缺失。</li>
+</ul>
+<hr />
+<h3 id="22-tone">2.2 调色模块（Tone）</h3>
+<h4 id="221">2.2.1 已达到的水位</h4>
+<p>光/色/曲线三 Tab、HSL 8 频段、分级 4 区、校准 3 原色、参数化/点曲线与桌面同构；全部滑杆走 <code>applyPatch → setAdjustments → debounced pushHistory</code>；v2.1.13 两轮已修 HSL/分级/校准/参数化曲线的嵌套 patch 闭包竞态（改用 <code>getState()</code> 实时读）；色彩匹配样片 <code>content://</code> 由后端 ContentResolver 读取；v2.1.18 的 MKL 传输层数学正确（Oklab 往返 &lt;1e-6、特征分解重建 &lt;1e-10、不变式误差 2.8e-11，均为仓库实测记录）。</p>
+<h4 id="222">2.2.2 现存缺陷</h4>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>现象与证据</th>
+<th>根因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D-TN-01</strong></td>
+<td><strong>P0</strong></td>
+<td><strong>二阶传输结果被"反解"成 12+ 个语义滑杆，存在不可逆的信息损失</strong>。仓库《language-guided-lut…》§2.1/§2.2 自承：MKL 的 <code>A</code> 矩阵表达"缩放+旋转+平移"（含通道相关性），而本地把任意传输都反解为 <code>colorGrading</code> + <code>curves</code> 控制点，「有信息损失但获得完全可编辑性」；曲线是事后全局单调修正，<strong>无法表达色相旋转</strong></td>
+<td>非破坏性参数输出与二阶传输精度是内在矛盾，当前只有"反解"一条路径</td>
+</tr>
+<tr>
+<td><strong>D-TN-02</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>多样片聚合的鲁棒性边界未被真实验证</strong>。<code>color_transfer.rs</code> 已修两个真 bug（黑白判定 0..255/0..1 域错配、ΔE 下标配对在宽高比不同时越界 panic，见该对比文档 §六），但修复方式是「确定性跨步取模配对」——这解决了崩溃，<strong>没有解决统计配对失真</strong>：样片与客片尺寸/长宽比不同时，配对像素并非空间对应，ΔE 度量退化为分布采样而非逐像素误差</td>
+<td>度量口径为规避 panic 而妥协，缺少「分布级度量」的明确定义</td>
+</tr>
+<tr>
+<td><strong>D-TN-03</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>聚合模式对移动端是"看得见但选不明"</strong>。三档 chips（bures / robust-bures / mean-cov，<code>CrystalCategoryPanel.tsx:76-79</code>）无一句适用场景说明；默认 bures，但 <code>robust-bures</code> 的 MAD 软截尾需要 ≥3 张样片才有意义，UI 未做最少样片数提示</td>
+<td>高级算法直接暴露给用户，缺适用性引导</td>
+</tr>
+<tr>
+<td><strong>D-TN-04</strong></td>
+<td><strong>P2</strong></td>
+<td><strong>双强度（明暗/色彩）分组是手工枚举</strong>。<code>platform_features.rs</code> 的 <code>run_ai_auto_enhance</code> 把 vibrance/saturation/temperature/tint 归色彩组、其余归明暗组（该对比文档 §六），而追色路径的 tone/color 分解作用于 <code>f(x)-x</code> 的 L 轴与 a/b 轴；两条链路的"色彩"语义并不完全对齐，同名滑杆在不同入口效果口径不同</td>
+<td>缺少统一的强度语义契约</td>
+</tr>
+</tbody>
+</table>
+<h4 id="223">2.2.3 改善方案</h4>
+<ol>
+<li><strong>双载体输出（P0，核心架构改进）</strong>：为 <code>compute_color_match</code> 增加 <code>outputMode: "params" | "hybrid"</code>。
+   - <code>params</code> 保持现状（可编辑、可撤销），但<strong>在返回值中明确上报拟合残差</strong>（<code>mklInvariantError</code> 已在，<code>color_transfer.rs</code> 已有诊断字段），UI 在残差超阈值时提示"该风格含色相旋转，参数化表达会损失精度，建议改用 LUT 载体"。
+   - <code>hybrid</code> 新增：把 MKL 仿射传输烘焙成<strong>一张 33³ <code>.cube</code> 附属 LUT</strong>，写入 <code>adjustments.lutId/lutStrength</code>（复用现有 tetrahedral LUT 链），同时保留参数补丁作为可编辑基底。这样既不破坏非破坏性工作流，又把二阶精度完整保留。前端追色结果卡提供「参数模式 / 高保真 LUT 模式」切换，切换写一次历史。
+   - 严禁把 LUT 直接覆盖用户已有 <code>lutId</code>；采用 <code>colorMatchLut</code> 独立字段或在 <code>aiPatches</code> 中挂载，避免与特效模块 LUT 冲突。</li>
+<li><strong>度量口径分层（P1）</strong>：把 <code>deltaE</code> 明确重命名为 <code>deltaEDistribution</code>（分布级），新增 <code>deltaESpatial</code>（仅在样片与客片同尺寸同取景时计算，否则返回 <code>null</code> 并在 UI 标注"分布度量"）；在返回值补 <code>sampleAspectMismatch</code>、<code>pairedPixels</code> 两个可诊断字段。不再用"取模配对"伪装成逐像素误差。</li>
+<li><strong>聚合模式门禁（P1）</strong>：样片数 &lt;3 时禁用 <code>robust-bures</code> chip 并给出本地化说明（新增 1 键 ×15 语言）；<code>bures</code> 默认不变；为每个 chip 加一行副标题说明（"默认/离群样张多时/统计量平均"）。</li>
+<li><strong>统一强度契约（P2）</strong>：抽 <code>StrengthDomain</code> 枚举到共享模块，<code>run_ai_auto_enhance</code> 与 <code>compute_color_transfer</code> 共用同一分组定义，并在诊断报告中输出生效的强度系数，保证同名滑杆口径一致。</li>
+</ol>
+<h4 id="224">2.2.4 验收</h4>
+<ul>
+<li>同一组样片在 <code>params</code> / <code>hybrid</code> 两模式下导出图，与 MKL 解析解的固定抽样像素 RMSE（8bit）对比表；<code>hybrid</code> 必须显著更接近解析解；</li>
+<li>宽高比差异样片对：不 panic、<code>deltaESpatial = null</code>、诊断字段齐全；</li>
+<li>样片数 1/2/3/5 的聚合模式 UI 门禁行为；</li>
+<li><code>cargo test</code> 新增 ≥6 例（残差上报、LUT 载体、度量分层、门禁），全绿。</li>
+</ul>
+<hr />
+<h3 id="23-filters">2.3 滤镜模块（Filters）</h3>
+<h4 id="231">2.3.1 现存缺陷</h4>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>现象与证据</th>
+<th>根因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D-FL-01</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>滤镜与预设是同一实现的两套门面</strong>。<code>CrystalPresetsPanel</code> 以 <code>presets/filter</code> 双模式共用实例（v2.1.13 审计 §1.1），14 款滤镜本质是预置参数包/LUT，与「预设」分类在心智模型上重叠；原型中「预设（配方卡）」与「滤镜（缩略图条）」是两种不同交互，实现上被压缩成同一种</td>
+<td>为复用而复用，产品区分度丢失</td>
+</tr>
+<tr>
+<td><strong>D-FL-02</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>滤镜无「实时预览队列」的失效反馈</strong>。缩略图队列有代次守卫与 URL revoke（链路正确），但生成失败时只影响缩略图，用户点击后主预览走的是完整管线——缩略图与成片在强度滑杆非线性区可能观感不一致；仓库《crystal-mobile-improvement-plan.md》G13 已把「CSS 预览与 Rust 导出 WYSIWYG 偏差」列为中等风险</td>
+<td>缩略图预览与最终渲染不是同一管线</td>
+</tr>
+<tr>
+<td><strong>D-FL-03</strong></td>
+<td><strong>P2</strong></td>
+<td><strong>分组与 14 款滤镜的映射不可配置</strong>。<code>zh-CN.json:533-550</code> 定义 4 分组 + 14 款，但无「自定义分组 / 收藏排序 / 隐藏不常用」能力；移动端屏幕小，横滑找常用滤镜成本高</td>
+<td>缺用户级组织能力</td>
+</tr>
+</tbody>
+</table>
+<h4 id="232">2.3.2 改善方案</h4>
+<ol>
+<li><strong>区分两个门面（P1）</strong>：预设模式保留「配方卡 + 强度 + 已应用状态条」语义；滤镜模式改为「实时缩略图条 + 点击即应用 + 长按对比」语义，二者共享渲染队列与参数应用逻辑，但<strong>状态与历史独立</strong>（与 D-PS-03 同一重构）。</li>
+<li><strong>缩略图与成片同源（P1）</strong>：缩略图生成改调用与实际预览相同的 <code>GeneratePresetPreview</code> 参数路径（当前已是），补一条像素级 golden：固定样张 + 固定滤镜 + 固定强度，缩略图与主预览（缩至同尺寸）的 ΔE 上限定为可验收值；超限时改为「主预览降采样缓存」而非独立小图渲染。</li>
+<li><strong>滤镜组织（P2）</strong>：新增「最近使用 / 收藏」置顶，收藏状态复用导出预设存储结构（原型 app.js 已有收藏语义），不新增后端命令。</li>
+</ol>
+<hr />
+<h3 id="24-compose">2.4 构图模块（Compose）</h3>
+<h4 id="241">2.4.1 已达到的水位</h4>
+<p>比例 chip 面积保持居中裁剪、旋转 90° 比例取逆、自动拉直走 <code>CalculateAutoStraighten</code>、自动镜头校正 <code>ApplyAutoLensCorrectionToPaths</code>、重置构图键集与桌面一致；<code>CrystalPreview</code> 的裁剪拖动边界钳制、双指缩放、双击 1:1、三分网格对齐图像实际显示区均闭环（<code>v2.1.13-android-crystal-audit.md</code> §6.4 判定"无需修复"）。</p>
+<h4 id="242">2.4.2 现存缺陷</h4>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>现象与证据</th>
+<th>根因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D-CP-01</strong></td>
+<td><strong>P0</strong></td>
+<td><strong>全屏沉浸裁剪未落地，且 CSS 预留类是死代码</strong>。<code>crystal.css:127-129</code> 定义 <code>.cx-app.is-fullscreen-crop { z-index: 60 }</code>，全仓 <code>.tsx</code> <strong>零引用</strong>（本次全量 grep 确认）；<code>crystal-boundary-items-implementation-plan.md</code> P6 与 <code>crystal-mobile-improvement-plan.md</code> G8 都把「移动端全屏沉浸裁剪」列为待实施项，至今未做</td>
+<td>规划项未排期；原型 G8 的沉浸式体验没兑现</td>
+</tr>
+<tr>
+<td><strong>D-CP-02</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>自由裁剪只有"从零拖拽画框"，无法调整已有裁剪框尺寸</strong>。<code>CrystalPreview.tsx:287-289</code>：<code>canCropDrag = atOneX &amp;&amp; Boolean(crop)</code>、<code>canCropDraw = atOneX &amp;&amp; !crop</code>——有 crop 时单指只能<strong>平移</strong>（<code>:315-319</code> <code>moveCropBy</code> 只改位置不改宽高）；<code>:239-241</code> 注释自承此前「自由比例将 crop 置 null 后无任何起框手段，自由裁剪链路为死端」，v2.1.18 补的是最基础画框，<strong>没有角点/边手柄</strong>。<code>v2.1.13</code> 审计 §6.4 也记录「移动端裁剪窗仅支持平移与比例 chip 换比例，不支持双指捏合改尺寸」</td>
+<td>桌面 CropPanel 的手柄交互未移植到触屏</td>
+</tr>
+<tr>
+<td><strong>D-CP-03</strong></td>
+<td><strong>P2</strong></td>
+<td><strong>裁剪手势与缩放手势在 1x 下互斥，用户无显式模式提示</strong>。<code>atOneX</code> 是隐式条件：1x 时单指 = 裁剪，放大后单指 = 平移，双指 = 缩放；<code>cropHint</code>「拖动画面移动裁剪区域」（<code>zh-CN.json:493</code>）只描述了其中一种状态</td>
+<td>手势状态机无可视化反馈</td>
+</tr>
+</tbody>
+</table>
+<h4 id="243">2.4.3 改善方案</h4>
+<ol>
+<li><strong>落地沉浸式裁剪（P0）</strong>：启用 <code>.cx-app.is-fullscreen-crop</code>，进入态隐藏 catnav / bottombar / 二级面板，预览区放大为全屏；提供「取消 / 确认 / 重置」三胶囊与比例 chips 浮层；Android 返回键注册为顶层 exit layer（返回=退出裁剪，不跳库）。复用 <code>cropUtils.isCropWithinBounds</code> 与现有 <code>calculateCenteredCrop</code>。</li>
+<li><strong>补齐裁剪框手柄（P1）</strong>：在 <code>CrystalPreview</code> 的裁剪覆盖层增加 4 角 + 4 边命中区（触控半径 ≥44px，对齐既有触控规范），<code>onPointerDown</code> 按命中区切换 <code>cropResize</code> 模式；<code>onPointerMove</code> 中按 <code>aspectRatio</code> 锁比例、按 <code>moveCropInsideBounds</code> 钳制；与 <code>pinch</code> / <code>pan</code> 三态互斥。保留现有 <code>cropDraw</code> 作为"无框时起框"入口。</li>
+<li><strong>手势状态可视化（P2）</strong>：预览区左上角增加一枚轻量状态胶囊，文案随 <code>atOneX</code>/<code>crop</code> 状态在「拖动画框 / 移动裁剪 / 双指缩放」间切换（3 键 ×15 语言），淡入淡出 150ms，<code>prefers-reduced-motion</code> 下取消动效。</li>
+</ol>
+<h4 id="244">2.4.4 验收</h4>
+<ul>
+<li>沉浸态进入/取消/确认/返回键四条路径无状态残留；</li>
+<li>8 个手柄在 1:1、4:3、9:16、旋转 90° 后的比例锁定与越界钳制，各 1 组单测；</li>
+<li>手势状态胶囊与实际生效模式逐帧一致（可截图人工回归）；</li>
+<li>裁剪结果预览与导出像素级一致（既有 WYSIWYG 结论覆盖）。</li>
+</ul>
+<hr />
+<h3 id="25-ai-ai-tools">2.5 AI 工具模块（AI Tools）——本版问题最集中</h3>
+<h4 id="251">2.5.1 已达到的水位</h4>
+<p>9 格 tile 全部真实接线：一键增强三档 → <code>AiAutoEnhance</code>（直方图 + CLIP 场景偏置）、自动色调 → <code>CalculateAutoAdjustments</code>、AI 降噪（ai-free 回落 BM3D）、天空/主体/文本/景深识别 + 容器级强度 + <code>CancelAiTask</code> 取消出口；文本提示词 localStorage 持久化；<code>procedural_sky.rs</code>（306 行）已实现无模型降级（<code>zh-CN.json:421</code> 有对应提示）；跨图守卫与取消≠失败的语义在 v2.1.13 已修。</p>
+<h4 id="252">2.5.2 现存缺陷</h4>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>现象与证据</th>
+<th>根因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D-AI-01</strong></td>
+<td><strong>P0</strong></td>
+<td><strong>「一句话调色」不是语义理解，是关键词子串匹配</strong>。<code>style_suggest.rs:7-15</code> 明确记录：项目 CLIP 为「图文联合」ONNX 导出（forward 必须同时喂图），无纯文本编码通路，text→text 零样本不可行，故改为「确定性的本地双语词库映射」；<code>:358-361</code> 的 <code>contains_term</code> 就是 <code>haystack_lower.contains(term_lower)</code>；<code>:88-356</code> 为 8 风格 × 双语词表 + <strong>固定参数配方</strong>；<code>:54-62</code> 置信度是 <code>score/(score+0.75)</code> 的手工换算（1 词≈0.57、2 词≈0.73、3+≈0.8）。由此产生四类可复现失效：<br>① <strong>否定语义反转</strong>：「不要日系」「别太清透」仍命中「日系 / 清透」，输出相反风格；<br>② <strong>程度副词无效</strong>：「稍微一点电影感」与「强烈电影感」得到同一组参数；<br>③ <strong>复合描述丢失</strong>：「日系但暗一点」只取最高分风格，第二意图被丢弃；<br>④ <strong>与图像内容无关</strong>：<code>ai_style_suggest(prompt)</code> 只接收字符串（<code>:411</code>），<strong>不看当前照片</strong>，同一句话在任何曝光/色温的照片上都是同一组固定参数</td>
+<td>语言→风格的语义通道缺失；用规则映射冒充语言理解，且未做输入约束提示</td>
+</tr>
+<tr>
+<td><strong>D-AI-02</strong></td>
+<td><strong>P0</strong></td>
+<td><strong>「云参考图」在 Android 上入口不可达，且整条链路未经真机验证</strong>。<code>CrystalAiToolsPanel.tsx:106-108</code> 注释直书「Android 无 Clerk 登录态，cloudUser 恒为 null → 按钮隐藏」，<code>canCloudStyle = aiProvider === 'cloud' &amp;&amp; Boolean(cloudUser)</code>；<code>:691</code> 条件渲染。即 Release v2.1.18 宣传的「云参考图」是<strong>桌面限定能力</strong>，Android 用户永远看不到。此外《language-guided-lut…》§六明确：方案 B 用「空白画布 + 全白 mask」复用 <code>/inpaint</code> 契约表达整幅重绘，「<strong>沙箱内无 token 无法实测，上线前需一次真机验证</strong>」</td>
+<td>能力依赖云端账号体系，Android 未接；借用 inpaint 契约做文生图是未验证的取巧路径</td>
+</tr>
+<tr>
+<td><strong>D-AI-03</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>云链路与「照片不出本机」的隐私姿态存在表述冲突</strong>。<code>ai_generate_style_reference</code>（<code>style_suggest.rs:438-468</code>）把提示词送云端生成参考图；对比文档原设计是「原图缩 1080px JPEG + guardrails 提示词 → 云返回参考小图」，当前实现虽只传提示词、把生成图存本地缓存（<code>:452-462</code>），但 README 的 AI Strategy 以「100% Local / 照片不出本机」为卖点，云参考图链路未在 UI 明确标注「此功能需联网并调用云端生成」</td>
+<td>能力分级与隐私声明未同步</td>
+</tr>
+<tr>
+<td><strong>D-AI-04</strong></td>
+<td><strong>P0</strong></td>
+<td><strong>「AI 超分」名实不符</strong>。<code>platform_features.rs:874-965</code> 的 <code>ai_upscale_export</code> 是 <strong>Lanczos3 重采样 + GPU 细节/锐化链</strong>（<code>:965</code> <code>FilterType::Lanczos3</code>），仓库《AI算法与AI能力改善提升分析》§0 自承「<strong>无</strong>神经超分，<code>ai_upscale_export</code> 是 Lanczos3 + GPU 细节/锐化链，非 NN 超分」。原型「AI 工具」格中有「超分辨率」（原型 HTML:2391），移动端真实 9 格 tile 已无此项，但导出侧仍以 <code>ai_upscale_export</code> 命名并在能力清单中计入 AI 能力</td>
+<td>命名与实现不符；神经超分（RealESRGAN ONNX）在该文档 B1 中被列为 P1 待办，至今未落地</td>
+</tr>
+<tr>
+<td><strong>D-AI-05</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>Android 端侧 AI 的算力天花板未被治理</strong>。<code>ai_perf.rs</code>（223 行）已实现机型分档与 LaMa 像素预算分级（旗舰 768² / 中端 576² / 低端 448²）、intra-op 线程 1~2；但《AI功能与其他方面优化改善方案》P0-2 的<strong>机型分级性能基线表仍是空表（_ms 待填）</strong>，XNNPACK EP 仅静态评估未真机 A/B，降噪 tile 尺寸因 UTNet 尺寸敏感性未验证而<strong>明确不改</strong>。即：分级策略有了，但"每档到底多快"没有真实数据</td>
+<td>无真机采集，性能策略缺少闭环校准</td>
+</tr>
+<tr>
+<td><strong>D-AI-06</strong></td>
+<td><strong>P2</strong></td>
+<td><strong>AI 面板的能力标签未区分"本地模型 / 规则 / 云端"</strong>。9 格中「AI 增强」是直方图统计 + CLIP 偏置、「细节+」只是把 structure/clarity 提到 ≥10（<code>CrystalAiToolsPanel.tsx:499-509</code>）、「风格调色」是词库、「天空/主体/文本/景深」才是 ONNX 模型；用户无法分辨哪些需要下载 300MB+ 模型、哪些瞬时可用</td>
+<td>缺能力来源标识，与 D-PS-02 同源问题</td>
+</tr>
+</tbody>
+</table>
+<h4 id="253">2.5.3 改善方案（本版最高优先级）</h4>
+<p><strong>D-AI-01 三步走（不引入新模型、不破坏零依赖优势）：</strong></p>
+<ol>
+<li><strong>诚实命名 + 输入约束（P0，立即）</strong>：UI 标题由「一句话调色」改为「风格词调色」，placeholder 明确列出 8 个风格词（现有 <code>crystal.ai.style.placeholder</code> 已列举示例，需补齐完整词表并标注"输入风格关键词"）；未命中时保持 <code>crystal.ai.style.failed</code>「未识别到风格描述，调整保持不变」的诚实行为。诊断/关于页如实写明实现为「本地词库映射，非语义模型」。</li>
+<li><strong>规则层加固（P0）</strong>：
+   - 否定词前置检测：维护 <code>不/别/不要/避免/无需/去掉/非</code> 前缀表，命中则该风格的该词条不计分，并在结果卡提示「已忽略否定描述」；
+   - 程度副词映射：把 <code>稍微/轻微/略</code> → 0.5、<code>很/非常/强烈/重度</code> → 1.3 作为<strong>强度系数</strong>作用于配方参数（不改风格选择），复用现有 <code>strength</code> 语义；
+   - 多意图混合：当 top-2 风格得分差 &lt;阈值时，按得分权重对两组配方做线性插值（配方均为同构 JSON，逐键加权即可），而非丢弃第二意图；
+   - 平票规则保留现有「取词库更靠前」（<code>style_suggest.rs:366-367</code>）。</li>
+<li><strong>图像自适应（P1）</strong>：<code>ai_style_suggest</code> 增加可选 <code>path</code> 参数，用当前已加载图的 1024px 直方图（<code>run_ai_auto_enhance</code> 已有现成统计代码）对配方做<strong>曝光/动态范围归一化</strong>：暗片不叠加 <code>-contrast</code>、高光已裁剪片压低 <code>+exposure</code>。这一步让同一句话在不同照片上得到合理强度，而不改变"风格"本身。</li>
+<li><strong>真正的语义通道（P2，观察项）</strong>：若未来要兑现「一句话」，需引入<strong>纯文本编码器</strong>（独立 CLIP text tower ONNX 或轻量文本模型），当前「图文联合」导出不支持；亦可用云端参考图链路（方案 B）承载语义。此项列<strong>立项调研</strong>，不在本迭代承诺。</li>
+</ol>
+<p><strong>D-AI-02 / D-AI-03：</strong></p>
+<ol>
+<li>Android 上把云参考图入口<strong>明确置灰并标注「桌面版能力 / 需 Pro 登录」</strong>，而不是静默隐藏（隐藏会让用户以为功能不存在，与"诚实"纪律相悖）；或接入 Android 端登录态后再开放，二选一并写入产品决策记录。</li>
+<li>上线前必须完成一次<strong>带 token 的真机/真实云端验证</strong>：验证 <code>/inpaint</code> 对全白 mask 的接受度、返回图宽高比、生成图与提示词的一致性、失败与超时降级。未验证前在 Release 说明中标注「实验性」。</li>
+<li>云链路 UI 增加「此功能将调用云端生成，仅上传文字提示与压缩参考图」说明（1 键 ×15 语言），并把隐私声明同步进 README 的 AI Strategy 表。</li>
+</ol>
+<p><strong>D-AI-04：</strong> 把 <code>ai_upscale_export</code> 重命名为 <code>upscale_export_lanczos</code>，能力清单中从「AI」移入「导出/插值」；若保留 AI 档，按《AI算法与AI能力改善提升分析》B1 的规格实现 RealESRGAN fp16 ONNX + <strong>valid-center tile</strong>（不能用降噪的 smoothstep 全混合），且模型未下载/低端机时<strong>诚实回落 Lanczos 并在导出结果标注引擎</strong>。</p>
+<p><strong>D-AI-05：</strong> 用现有「设置 → 数据管理 → AI 诊断 → 深度诊断」（<code>sessionBuildMs</code> / <code>probeInferenceMs</code> / <code>deviceTier</code>）在旗舰/中端/低端各 ≥1 台真机采集，把《AI功能与其他方面优化改善方案》§2 的空表填成真实基线；表中数值未采集前不得写估算值。XNNPACK EP 与降噪 tile 分级维持「先 A/B 后决定」的既有纪律。</p>
+<p><strong>D-AI-06：</strong> 每个 tile 增加一枚来源角标：<code>本地模型</code> / <code>本地规则</code> / <code>云端</code>，首次使用时以 150ms 淡入的说明条解释该来源的含义（是否需要下载模型、是否联网）。</p>
+<hr />
+<h3 id="26-fx">2.6 特效模块（FX）</h3>
+<h4 id="261">2.6.1 已达到的水位</h4>
+<p>LUT 全链路（<code>list_luts</code> / <code>import_luts</code> / <code>load_and_parse_lut</code> / <code>generate_lut_previews</code>，Android <code>content://</code> 双端支持，缓存按图限容 6 组）；镜头模糊/雾化共用 <code>generate_full_image_depth_map</code>、重打光用 <code>generate_relight_normal_map</code>，均有跨图守卫与失败回退开关；<code>functional-modules-audit.md:677-679</code> 已修「蒙版级 flare 完全失效」这一渲染管线关键缺陷；v2.1.13 已修重打光光源双滑杆闭包竞态。</p>
+<h4 id="262">2.6.2 现存缺陷</h4>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>现象与证据</th>
+<th>根因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D-FX-01</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>空间 AI 三件套在 Android 上是 CPU 重负载且无进度/取消粒度</strong>。深度图/法线图生成走 ONNX CPU，<code>CrystalCategoryPanel</code> 有 busy 与失败回退，但《AI功能与其他方面优化改善方案》P1-3/P0-2 指出 LaMa 与深度首推在中低端机可达 10s 级，特效面板未见按机型降级分辨率或提供中途取消</td>
+<td>生成任务与 AI 工具面板的 <code>CancelAiTask</code> 出口未统一</td>
+</tr>
+<tr>
+<td><strong>D-FX-02</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>深度图/法线图以 base64 随 adjustments 持久化</strong>。<code>v2.1.13-android-crystal-audit.md</code> §6.7 确认"深度图/法线图（base64）随 adjustments 持久化属桌面同构设计，sidecar 落盘一致"——这在桌面可接受，在 Android 上会把每张图的 <code>.rrdata</code> 撑大数 MB，且<strong>换机型/换版本后缓存复用策略未定义</strong></td>
+<td>桌面同构设计直接搬到移动端，未考虑存储与跨设备</td>
+</tr>
+<tr>
+<td><strong>D-FX-03</strong></td>
+<td><strong>P2</strong></td>
+<td><strong>特效与「人像-背景虚化」「AI 工具-景深」三处重复暴露同一深度能力</strong>。<code>CrystalCategoryPanel</code> 的 FxPanel、人像 <code>bgBlur</code>（<code>:1191-1192</code>）、<code>CrystalAiToolsPanel</code> 的 <code>runDepth</code> 都调用 <code>generate_full_image_depth_map</code>；已有"识别复用不重推理"，但三个入口的状态提示、强度语义、失败文案各自独立</td>
+<td>能力复用但状态与文案未统一</td>
+</tr>
+</tbody>
+</table>
+<h4 id="263">2.6.3 改善方案</h4>
+<ol>
+<li><strong>统一生成任务出口（P1）</strong>：抽 <code>useAiEffectMapTask</code>（<code>crystalShared.tsx</code>）统一管理深度图/法线图/LUT 预览的提交、<code>startPath</code> 守卫、进度、取消（复用 <code>CancelAiTask</code>）、失败回退；三个入口共享同一 busy 态与文案。按 <code>ai_perf::classify_tier</code> 对生成输入分辨率分档（旗舰 1024 / 中端 768 / 低端 512 长边），并如实标注降级。</li>
+<li><strong>深度图持久化治理（P1）</strong>：sidecar 中改为存<strong>内容 hash + 生成参数</strong>，深度图本体放 <code>app_cache_dir</code> 并纳入 LRU 容量上限（复用 <code>storage.rs</code> 缓存统计）；加载时按 hash 命中缓存，未命中则异步重算并明确提示「正在重建深度图」。禁止把 base64 直接写进 <code>.rrdata</code>。此项需同时做<strong>旧 sidecar 兼容读取</strong>（红线：未知枚举/缺字段 serde 回退默认）。</li>
+<li><strong>能力入口收敛（P2）</strong>：把「背景虚化」「景深识别」「镜头模糊」整理为同一能力的不同作用域，UI 上用一处「深度」卡片 + 作用域切换（背景 / 选区 / 全图），减少三套状态。</li>
+</ol>
+<hr />
+<h3 id="27-portrait">2.7 人像模块（Portrait）</h3>
+<h4 id="271">2.7.1 已达到的水位</h4>
+<p>一键人像三层链路（全局参数 → AI 磨皮容器 → 统一肤色）、算子参数与桌面 <code>RETOUCH_OPERATORS</code> 逐值一致、美型（瘦脸/下颌线）走 <code>GenerateFaceLiquifyPatch</code> + 600ms 防抖 + 双 0 清补丁、背景虚化深度图复用；v2.1.13 已修人脸识别失败残留空容器、跨图污染、增量回滚、误报成功等 4 项。</p>
+<h4 id="272">2.7.2 现存缺陷</h4>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>现象与证据</th>
+<th>根因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D-PT-01</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>多人合影与暗肤色是已知但未治理的质量盲区</strong>。《AI功能与其他方面优化改善方案》P1-2 记录 <code>selfie_multiclass</code> 是<strong>单主体</strong>模型（8 人合影实测 2/3 主角被误删）、皮肤启发式固定阈值 <code>R&gt;95</code> 对暗色皮肤系统性偏低；该方案的落地记录只把「多人合影强制保护区」接到了<strong>天空替换路径</strong>，明确写明「前景/主体路径的并集保护：经评估暂缓」。人像模块的磨皮/美齿/亮眼/统一肤色恰好都走人脸路径，风险未被覆盖</td>
+<td>保护措施只覆盖天空，未覆盖人像核心链路</td>
+</tr>
+<tr>
+<td><strong>D-PT-02</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>美型（液化）依赖 478 landmark 的固定几何假设</strong>。仓库 <code>functional-modules-audit.md:723</code> 描述瘦脸沿脸颊径向内收 <code>max_disp = slim% × half_w × 0.22</code>、下颌线上提 <code>max_lift = jaw% × face_size × 0.05</code>，均为解剖比例常量；对侧脸、大角度俯仰、戴口罩/墨镜、儿童脸型无适用性判定，也无「不适用就如实空态」的降级</td>
+<td>参数化 warp 缺适用性与失败检测</td>
+</tr>
+<tr>
+<td><strong>D-PT-03</strong></td>
+<td><strong>P2</strong></td>
+<td><strong>「一键人像」的成功判定是分层的，用户只看到一次 toast</strong>。代码注释（<code>:1055-1060</code>）自承无人脸/识别失败时容器被清理、仅全局层生效并提示——即"一键人像"可能只完成了 1/3 的效果，但 toast 语义未区分"完整成功 / 仅全局参数生效"</td>
+<td>结果与预期不一致时反馈粒度不足</td>
+</tr>
+</tbody>
+</table>
+<h4 id="273">2.7.3 改善方案</h4>
+<ol>
+<li><strong>人像链路接入多脸保护区（P1）</strong>：复用已有 <code>face_masking::head_zone_from_boxes</code>（已实现解剖比例 + 多脸并集 + 边缘柔化），在磨皮/美齿/亮眼/统一肤色出掩膜后扣除保护区；增加「人脸数 ≥3 时提示『多人合影，局部精修已限制为全局参数』」的诚实空态。成本仅是 ESAM3 特征缓存上的一次 decoder 查询（该方案已论证边际成本）。</li>
+<li><strong>暗肤色与肤色统一归一化（P1）</strong>：<code>compute_skin_unify</code> 的肤色判定改用以 LAB/HSV 相对统计 + 批内分位数，替代固定 <code>R&gt;95</code> 类阈值；补一组不同肤色的合成/真实样张回归（真实数据，不伪造 PSNR/ΔE 基线）。</li>
+<li><strong>液化适用性判定（P1）</strong>：在生成 warp 前增加 <code>facePoseConfidence</code> / <code>landmarkVisibility</code> 门槛，低于门槛返回 <code>guidance:face_not_applicable</code> 而非硬跑（复用 LaMa 大面积 guidance 的成熟模式），前端弹本地化引导。</li>
+<li><strong>分层结果反馈（P2）</strong>：一键人像 toast 三态——「完整精修完成」/「已完成全局调整，未检测到人脸」/「识别失败，已保留全局调整」，3 键 ×15 语言。</li>
+</ol>
+<hr />
+<h2 id="3">3. 跨模块系统性缺陷（工程与渲染）</h2>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>现象与证据</th>
+<th>改善方案</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D-SYS-01</strong></td>
+<td><strong>P0</strong></td>
+<td><strong>预览与导出在「锐化」维度仍不一致</strong>。<code>image_loader.rs:161-171</code> 的 R1-2 注释直书：fast preview 路径仍执行色度降噪（"cheap and perceptually critical"），但 <strong>luminance detail enhancement（sharpening）保持 export-only 以保交互延迟</strong>。即用户在预览里判断的锐度，与导出成片不同；仓库《v2.0 功能改善实施方案》§2.1 的 B1/B2 断点中，B1（高光头程）已由 <code>raw_processing.rs:372-378</code> 的 8x headroom 修复、B2 的色度降噪已补，但锐化残留未闭环</td>
+<td>把 sharpening 拆成「轻量预览近似 + 导出全量」两档，预览档必须保证<strong>单调方向一致</strong>；或提供「精渲预览」按钮（松手后按导出参数重渲一次），并在设置中明示默认预览为交互档。补 golden：同 adjustments 下预览降采样图 vs 导出降采样图的锐度指标差上限</td>
+</tr>
+<tr>
+<td><strong>D-SYS-02</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>Android 全路径 CPU，GPU 能力被硬编码关闭</strong>。<code>platform_features.rs:181-201</code> 在 <code>#[cfg(any(target_os = "linux", target_os = "android"))]</code> 下<strong>恒返回 <code>false</code></strong>，即使探测到硬件适配器也只回一句"display-surface integration is not enabled"；<code>crystal-boundary-items-implementation-plan.md</code> P5 提出把 <code>preview_decision</code> 与 <code>offscreen_decision</code> 拆分、让导出/缩略图走 offscreen GPU compute，至今未落地</td>
+<td>按 P5 拆分决策函数；Android 导出/缩略图 offscreen 路径独立启用，显示层维持禁用；真机 A/B（4K CPU vs GPU 耗时 + 像素级 golden 一致）达标后再默认开，软件渲染器自动回落 CPU</td>
+</tr>
+<tr>
+<td><strong>D-SYS-03</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>无真机质量回归与像素级 golden</strong>。<code>functional-modules-audit.md:535</code> 自承「沙箱无 Android 真机/模拟器，未做真机启动与导出回归」；<code>crystal-boundary-items-implementation-plan.md</code> P7 的 25 步手动回归清单、Crash-free ≥99.8%、200×3 张批量导出零 OOM 均属待实施。《AI算法与AI能力改善提升分析》A1 指出 79/114 个 cargo 单测全是<strong>逻辑级</strong>断言，没有「喂已知图 → 跑链路 → assert 窗外像素逐位不变」的整图级 locality 测试</td>
+<td>建立三层质量门禁：① 整图级 locality + 参数单调性（掩膜外逐位相等，不用近似容差）；② 固定样张 + 固定 adjustments 的导出 golden hash（含水印/EXIF 信息栏/相框）；③ 真机矩阵（Android 12/13/14/15/16 各 ≥1 台）跑 25 步回归并归档 Crash-free 数据</td>
+</tr>
+<tr>
+<td><strong>D-SYS-04</strong></td>
+<td><strong>P1</strong></td>
+<td><strong>模型分发与许可治理未闭环</strong>。《AI功能与其他方面优化改善方案》P1-5 记录：下载体积精确值因沙箱 HF CDN 不返回 Content-Length 而未写入 manifest（如实不写估算值）、Wi-Fi 限制开关因 WebView 无法可靠区分网络类型而暂缓；3.3 节要求建 <code>THIRD_PARTY.md</code> 逐模型许可表（SAM / LaMa / DepthAnything / MoGe 各自许可需核对）；《AI算法与AI能力改善提升分析》A2 指出下载链路<strong>无域名白名单、无路径穿越防护</strong></td>
+<td>① manifest 内置 URL 钉域名 + <code>realpath</code> 前缀校验 + 下载前 Content-Length 与 size 对账（三项各配单测）；② 建 <code>THIRD_PARTY.md</code> 逐模型许可表，选型即查许可；③ 下载体积总览页展示真实 <code>installed_bytes_total</code>，Wi-Fi 开关改走 Tauri 原生 ConnectivityManager 或「下载前显式确认弹窗」，不用不可靠的 <code>navigator.connection</code></td>
+</tr>
+<tr>
+<td><strong>D-SYS-05</strong></td>
+<td><strong>P2</strong></td>
+<td><strong>双 UI（桌面 / Crystal 移动层）长期维护成本</strong>。<code>crystal-mobile-improvement-plan.md</code> §7 把「双 UI 长期维护成本」列为中风险；移动层 7 个文件 7043 行与桌面面板存在大量同构逻辑（算子参数、裁剪、LUT、导出），v2.1.13 的 19 项缺陷中「闭包旧值 / 跨图污染」类在两套 UI 上反复出现</td>
+<td>抽 L2 共享层：<code>useCrystalAdjust</code> 的实时读 <code>getState()</code> 模式、<code>startPath</code> 跨图守卫、AI patch 生命周期、强度映射常量，桌面与移动共用；产品差异只留在 L4 视图层</td>
+</tr>
+<tr>
+<td><strong>D-SYS-06</strong></td>
+<td><strong>P2</strong></td>
+<td><strong>AI 错误日志无轮转/截断</strong>。《AI算法与AI能力改善提升分析》A4：诊断报告拼「最近 5 条 AI 错误」，错误串内嵌大 payload 会撑爆报告；全仓无日志轮转</td>
+<td>错误入列前截断至 2KB、报告体积上限、堆栈截断 8000 字符；设置页「复制诊断报告」闭环（与 P0-3 合并）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4">4. 可行性差 / 明确不建议做的诚实清单</h2>
+<p>这一节刻意与"改善方案"分开：从资深工程判断，<strong>有些能力当前不该做、或做了也达不到宣传效果</strong>。把它们写清楚，比列一堆漂亮待办更有价值。以下结论均可回溯到仓库自审文档或真实代码约束。</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>判定</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Android 端生成式填充 / 扩散式重绘</strong></td>
+<td><strong>不可行，不投入</strong></td>
+<td>《AI算法与AI能力改善提升分析》C4：Android 纯 CPU 下 SD1.5 单次数十秒，参照仓库 CPU 病理 1000s+ 教训；<code>functional-modules-audit.md:562/576</code> 也确认生成式修复在 Android 依赖云端订阅或局域网 ai-connector，<strong>均非离线能力</strong>。桌面可作为远期可选外挂</td>
+</tr>
+<tr>
+<td><strong>CLIP 纯文本零样本风格识别（当前导出形态）</strong></td>
+<td><strong>技术上不可行，除非换模型</strong></td>
+<td><code>style_suggest.rs:7-9</code>：项目 CLIP 为图文联合 ONNX 导出，forward 必须同时喂图，无纯文本编码通路。要做真语义，须引入独立 text tower / 轻量文本模型，属立项调研，不是"改几行代码"</td>
+</tr>
+<tr>
+<td><strong>WebView 侧 Wi-Fi 限制开关</strong></td>
+<td><strong>不建议用现有 API 实现</strong></td>
+<td>《AI功能与其他方面优化改善方案》P1-5：<code>navigator.connection.effectiveType</code> 把 Wi-Fi 5G 与蜂窝 4G 都报 <code>'4g'</code>，<code>connection.type</code> 非标准；可靠实现需 Tauri 原生 ConnectivityManager 插件</td>
+</tr>
+<tr>
+<td><strong>Android wgpu 显示层 present-to-webview</strong></td>
+<td><strong>维持不做</strong></td>
+<td><code>crystal-boundary-items-implementation-plan.md</code>「明确不做」：<code>platform_features.rs:170-176</code> 说明 GPU context 无 surface，翻默认值=白屏；收益仅预览帧率，导出/缩略图 offscreen GPU 化（D-SYS-02）才是主要价值</td>
+</tr>
+<tr>
+<td><strong>降噪 tile 尺寸按机型分级</strong></td>
+<td><strong>暂缓，先 A/B</strong></td>
+<td>《AI功能与其他方面优化改善方案》P1-3：UTNet 含 transformer 组件，输入尺寸变化对质量的影响未经真机回归验证，<strong>不做无依据的静默改动</strong>。项目已有的这条纪律应当保持</td>
+</tr>
+<tr>
+<td><strong>XNNPACK EP 默认开启</strong></td>
+<td><strong>暂缓，先真机 A/B</strong></td>
+<td>同文档 P1-4：XNNPACK 用独立线程池，不受 <code>SetIntraOpNumThreads</code> 约束，会与已落地的 1~2 线程分级冲突；且可能改变 fp16 数值路径。决策门槛是「中端机首推不劣于现状 &gt;15%、峰值内存不增」</td>
+</tr>
+<tr>
+<td><strong>神经超分实时预览</strong></td>
+<td><strong>不做实时，只做导出级</strong></td>
+<td>《AI算法与AI能力改善提升分析》B1 明确定位为「导出级功能，后台任务 + 进度 + 可取消，不做实时预览」</td>
+</tr>
+<tr>
+<td><strong>大师配方自训练 / ColorFM-L 学习型后端</strong></td>
+<td><strong>远期，不建议</strong></td>
+<td>对比文档 §三 P2：需 PyTorch 级运行时，本地是 ONNX Runtime；当前 MKL 统计方案在无训练数据、无新增模型体积前提下已覆盖主要收益</td>
+</tr>
+<tr>
+<td><strong>自训练多噪声水平降噪模型</strong></td>
+<td><strong>远期</strong></td>
+<td>《AI算法与AI能力改善提升分析》C3：NIND UTNet 是单域模型，无噪声等级条件输入（核查见 <code>ai_processing.rs</code> 单输入推理），"strength→噪声水平先验"语义不可直接套用</td>
+</tr>
+<tr>
+<td><strong>用估算值填充性能基线表 / PSNR 基线</strong></td>
+<td><strong>禁止</strong></td>
+<td>项目既有纪律：沙箱无真机、HF CDN 不返回 Content-Length 时如实留空（两个方案文档均写明"不写估算值误导用户"）。本方案所有待采集数据同样留空</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5">5. 优先级路线图</h2>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>事项</th>
+<th>涉及缺陷</th>
+<th>依赖</th>
+<th>工作量</th>
+<th>完成判据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P0 · 本迭代必改</strong></td>
+<td>风格词调色：诚实命名 + 否定/程度/多意图 + 图像自适应</td>
+<td>D-AI-01</td>
+<td>无</td>
+<td>M</td>
+<td>4 类失效输入全部有回归用例；同一句话在暗片/亮片强度合理</td>
+</tr>
+<tr>
+<td></td>
+<td>云参考图：Android 置灰标注 + 真机带 token 验证 / inpaint 全白 mask 契约</td>
+<td>D-AI-02 / 03</td>
+<td>云端 token + 真机</td>
+<td>M</td>
+<td>一次真实云端调用录屏与失败降级记录；未验证前标注"实验性"</td>
+</tr>
+<tr>
+<td></td>
+<td>超分正名 + 引擎标注（或按 B1 规格落地 RealESRGAN 导出级）</td>
+<td>D-AI-04</td>
+<td>若做 NN 档需模型资产</td>
+<td>S / L</td>
+<td>能力清单与实现一致；回落在导出结果可查</td>
+</tr>
+<tr>
+<td></td>
+<td>追色双载体输出（params / hybrid LUT）</td>
+<td>D-TN-01</td>
+<td>现有 tetrahedral LUT 链</td>
+<td>M</td>
+<td>固定样张 RMSE 对比表；非破坏性与撤销回归通过</td>
+</tr>
+<tr>
+<td></td>
+<td>沉浸式裁剪 + 裁剪框手柄</td>
+<td>D-CP-01 / 02</td>
+<td>无</td>
+<td>M</td>
+<td>8 手柄 × 4 比例 × 旋转后钳制单测；返回键四路径无残留</td>
+</tr>
+<tr>
+<td></td>
+<td>预览-导出锐化一致性</td>
+<td>D-SYS-01</td>
+<td>无</td>
+<td>M</td>
+<td>golden 锐度差达标；或提供"精渲预览"并明示档位</td>
+</tr>
+<tr>
+<td><strong>P1 · 本迭代排期</strong></td>
+<td>场景分类扩 6 类 + 置信度语义统一 + 推荐卡证据分级</td>
+<td>D-PS-01 / 02、D-AI-06</td>
+<td>15 语言</td>
+<td>M</td>
+<td>6 类 ×20 张离线准确率表；三态角标与 <code>source</code> 一致</td>
+</tr>
+<tr>
+<td></td>
+<td>多样片度量分层 + 聚合模式门禁 + 统一强度契约</td>
+<td>D-TN-02 / 03 / 04</td>
+<td>无</td>
+<td>S</td>
+<td>尺寸不匹配时 <code>deltaESpatial=null</code>；&lt;3 张禁用 robust-bures</td>
+</tr>
+<tr>
+<td></td>
+<td>预设/滤镜状态域拆分 + 缩略图-成片 golden</td>
+<td>D-PS-03、D-FL-01 / 02</td>
+<td>无</td>
+<td>M</td>
+<td>交叉切换 10 轮无状态丢失；ΔE 达标</td>
+</tr>
+<tr>
+<td></td>
+<td>人像多脸保护区 + 肤色归一化 + 液化适用性判定 + 分层反馈</td>
+<td>D-PT-01 / 02 / 03</td>
+<td>已有 <code>head_zone_from_boxes</code></td>
+<td>M</td>
+<td>多人/暗肤色/侧脸三组真实样张回归</td>
+</tr>
+<tr>
+<td></td>
+<td>特效生成任务统一出口 + 深度图持久化治理 + 能力入口收敛</td>
+<td>D-FX-01 / 02 / 03</td>
+<td><code>storage.rs</code></td>
+<td>M</td>
+<td>sidecar 不再含 base64 深度图；旧 sidecar 兼容读取</td>
+</tr>
+<tr>
+<td></td>
+<td>Android offscreen GPU 决策拆分</td>
+<td>D-SYS-02</td>
+<td>真机 A/B</td>
+<td>M</td>
+<td>像素级 golden 一致 + 4K 耗时对比；软件渲染回落</td>
+</tr>
+<tr>
+<td></td>
+<td>三层质量门禁（locality / golden / 真机矩阵）</td>
+<td>D-SYS-03</td>
+<td>真机设备</td>
+<td>L</td>
+<td>≥3 个整图级测试、golden hash、25 步回归报告归档</td>
+</tr>
+<tr>
+<td></td>
+<td>模型下载安全加固 + THIRD_PARTY + 诊断报告闭环</td>
+<td>D-SYS-04 / 06、D-AI-05</td>
+<td>无</td>
+<td>M</td>
+<td>恶意 URL / 穿越 / size 不符三单测；基线表真机填实</td>
+</tr>
+<tr>
+<td><strong>P2 · 下迭代</strong></td>
+<td>配方校准回路（bures 反哺）、滤镜收藏组织、手势状态胶囊、双 UI L2 共享层抽离</td>
+<td>D-PS-04、D-FL-03、D-CP-03、D-SYS-05</td>
+<td>P0/P1 稳定后</td>
+<td>L</td>
+<td>各模块单测与 15 语言门禁</td>
+</tr>
+<tr>
+<td><strong>观察 · 不承诺</strong></td>
+<td>纯文本语义通道、XNNPACK EP、降噪 tile 分级、Wi-Fi 原生开关、生成式外挂</td>
+<td>§4</td>
+<td>真机/模型/产品决策</td>
+<td>—</td>
+<td>有真实数据后再决策，禁止静默改动</td>
+</tr>
+</tbody>
+</table>
+<p><strong>排期依赖硬约束</strong>：Rust 侧改动需 <code>rust-toolchain.toml</code> 钉的 1.98 工具链（<code>crystal-boundary-items-implementation-plan.md:21</code> 记录沙箱不可用）；任何新增 <code>adjustments</code> 键必须五层同步——<code>adjustments.ts</code> → 面板控件 → schema 再生成 → EXIF/持久化往返 → 15 语言 i18n（<code>crystal-mobile-improvement-plan.md:93</code>）。这两条是项目红线，不得为了赶进度绕过。</p>
+<hr />
+<h2 id="6-uiux">6. UI/UX 交互卡片与动效规格</h2>
+<p>以下规格用于把 P0/P1 改善落到可交付的交互层，遵循项目既有 Design Token（<code>src/crystal.css</code>：<code>--cx-gold</code> 金 / <code>--cx-teal</code> 青绿双流程强调色、分类专属色、44px 触控、<code>env(safe-area-inset-*)</code>）与「触屏优先、诚实反馈」的既有基调。</p>
+<h3 id="61">6.1 「风格词调色」卡片（替代一句话调色）</h3>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>交互与视觉</th>
+<th>动效</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>收起</td>
+<td>AI 工具面板内一行金色 chip「风格词调色」，带 <code>Palette</code> 图标</td>
+<td>无</td>
+</tr>
+<tr>
+<td>展开</td>
+<td>上滑展开输入区：输入框 + 8 个风格词快捷 chip（点击追加关键词）+ 结果预览条；高度由内容决定，最大 40vh</td>
+<td><code>fade + translateY(8px→0)</code>，<strong>180ms</strong> <code>cubic-bezier(.2,.8,.2,1)</code></td>
+</tr>
+<tr>
+<td>输入中</td>
+<td>实时显示已命中词（金色高亮 pill）；否定词自动加删除线与「已忽略」小字</td>
+<td>pill 入场 <code>scale(.9→1)</code> <strong>120ms</strong>，逐个错峰 30ms</td>
+</tr>
+<tr>
+<td>应用</td>
+<td>结果条显示「清透日系 · 强度 80% · 依据 3 个关键词」，附「明暗 / 色彩」双强度与「移除」入口</td>
+<td>主预览参数过渡由既有渲染管线承担，不加 CSS 滤镜假动画；结果条 <code>fade</code> <strong>150ms</strong></td>
+</tr>
+<tr>
+<td>未命中</td>
+<td>保持输入、显示「未识别到风格描述，调整保持不变」+「试试风格词」引导，<strong>不写任何 adjustments</strong></td>
+<td>提示 <code>fade</code> <strong>150ms</strong>，无震动</td>
+</tr>
+<tr>
+<td>反馈</td>
+<td>应用成功 <code>haptic(8)</code>，未命中不震动</td>
+<td>与项目 <code>haptic()</code> try-catch 静默降级一致</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>关键取舍：<strong>不用 CSS <code>filter</code> 做预览假动画</strong>。原型 <code>app.js</code> 用 <code>data-filter</code> CSS 滤镜模拟 LUT，真实应用必须走 <code>setAdjustments</code> 渲染管线，否则预览与导出不一致（与 D-SYS-01 同一原则）。</p>
+</blockquote>
+<h3 id="62-ai">6.2 AI 推荐卡（证据分级）</h3>
+<ul>
+<li>卡片三态角标：<code>CLIP 视觉识别</code>（青绿实心点）/ <code>画面统计</code>（空心点）/ <code>EXIF 线索</code>（灰色虚线点），角标与 <code>scene_classify</code> 返回的 <code>source</code> 字段<strong>单一数据源</strong>绑定，禁止前端自行推断。</li>
+<li>置信度 &lt;0.75 → 卡片降级为「暂无高置信度场景 — 试试 AI 增强」（复用既有 zh-CN 文案），不显示「AI 识别」字样，应用按钮置灰。</li>
+<li>切图瞬间：卡片先进入 <code>skeleton</code>（模糊缩略图占位，200ms 淡入），等 <code>selectedImage.isReady</code>（v2.1.13 已修的时序门控）再发起分类；避免旧图场景配方误挂新图。</li>
+<li>应用配方：金色胶囊按压态 → <code>pushHistory</code> → 主预览渲染 → toast，全程 <strong>不重复弹二次确认</strong>（低风险可撤销操作）。</li>
+</ul>
+<h3 id="63">6.3 多样片追色卡片</h3>
+<ul>
+<li>样片选择区为横向缩略条，每张带「×」移除；数量徽标实时显示 <code>n/5</code>。</li>
+<li>聚合模式 chips（bures / robust-bures / mean-cov）：每枚下方 10px 副标题说明适用场景；样片 &lt;3 时 <code>robust-bures</code> 置灰并显示「需 ≥3 张样片」。</li>
+<li>「参数模式 / 高保真 LUT 模式」分段控件：切换时结果条同步显示拟合残差 <code>mklInvariantError</code>；高保真模式角标标注「此模式含 LUT 载体」。</li>
+<li>追色进行中：进度按 <code>samplePaths</code> 数量分段，取消按钮常驻（复用 <code>CancelAiTask</code> 语义，取消不误报失败）。</li>
+</ul>
+<h3 id="64">6.4 沉浸式裁剪卡片</h3>
+<ul>
+<li>进入：当前预览区以 <code>transform: scale</code> 平滑放大至全屏（<strong>240ms</strong>），catnav / bottombar / 二级面板 <code>fade-out</code> <strong>150ms</strong> 并 <code>pointer-events: none</code>；<code>.cx-app.is-fullscreen-crop</code> 生效。</li>
+<li>内容：三分网格（透明度 0.35，仅手势期间显示，静止 800ms 后淡出至 0.15）、4 角 + 4 边手柄（触控命中 ≥44px，命中时手柄放大 1.15× + 金色描边，120ms）、底部「取消 / 重置 / 确认」三胶囊 + 比例 chips 浮层。</li>
+<li>手势：单指拖拽手柄改尺寸（比例锁定）、单指拖框内平移、双指缩放预览、双击 1:1；三态互斥，左上角状态胶囊显示当前模式（见 D-CP-03）。</li>
+<li>退出：确认 → 裁剪参数写入并 <code>pushHistory</code>，面板 <code>fade-in</code> <strong>180ms</strong>；取消 → 回滚到进入时快照；Android 返回键 = 取消（注册为顶层 exit layer，<strong>优先于</strong> <code>confirmModalState</code> 判断，避免 <code>v2.1.3</code> 审计 FD-1 的弹窗冲突回归）。</li>
+</ul>
+<h3 id="65-ai">6.5 AI 能力来源角标与说明条</h3>
+<ul>
+<li>每格 tile 右上角 6px 圆点：<code>本地模型</code>（青）/ <code>本地规则</code>（金）/ <code>云端</code>（紫）；首次点击某类能力时，面板底部滑入一条说明条，<strong>150ms</strong> <code>fade+slide</code>，说明「是否需要下载模型 / 是否联网 / 是否消耗云端额度」，3 秒后自动收起或用户手动关闭。</li>
+<li>模型下载进度复用全局 <code>aiModelDownloadStatus</code> 顶栏胶囊，不在每个 tile 重复画进度条。</li>
+</ul>
+<h3 id="66">6.6 导出成功浮层</h3>
+<ul>
+<li>成功后不只用 toast：底部升起卡片（<strong>220ms</strong> <code>translateY(24px→0)</code> + 弹性缓动），含成片缩略图与三选一「查看 / 分享 / 返回图库」；<code>查看</code> 走系统相册 Intent、<code>分享</code> 走 <code>ACTION_SEND</code>（对齐 <code>v2.1.3</code> 审计 FD-5 / OC-4 的历史建议，本仓是否已实现需以当前 <code>WatermarkExportPage.tsx</code> 为准，未实现则列为 P2）。</li>
+<li>导出中：进度行 + 「取消导出」按钮（v2.1.13 已补），返回键轻提示「导出进行中…」而非静默消费。</li>
+</ul>
+<h3 id="67">6.7 动效统一规范</h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>规格</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>时长</td>
+<td>微反馈 120ms；面板/卡片展开 180–240ms；转场 ≤240ms</td>
+</tr>
+<tr>
+<td>缓动</td>
+<td><code>cubic-bezier(.2,.8,.2,1)</code>（进入）/ <code>cubic-bezier(.4,0,1,1)</code>（退出）</td>
+</tr>
+<tr>
+<td>触觉</td>
+<td>应用/确认 <code>haptic(8~12)</code>，切换 <code>haptic(6)</code>，失败/未命中不震动</td>
+</tr>
+<tr>
+<td>无障碍</td>
+<td>全部动效在 <code>prefers-reduced-motion: reduce</code> 下降级为 <code>opacity</code> 0ms；角标不能仅靠颜色区分，必须带文字或形状差异；<code>--cx-faint</code> 提亮至 ≥<code>#8a8a7d</code> 以满足 AA 4.5:1（<code>v2.1.3</code> 审计 UX-9）</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>动效只用 <code>opacity</code> / <code>transform</code>，不触发重排；预览区 <code>will-change: transform</code> + <code>touch-action: none</code>（既有实现）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7">7. 验收与质量门禁</h2>
+<p>延续项目既有六门禁（<code>crystal-mobile-improvement-plan.md:91</code>），本方案新增三项：</p>
+<table>
+<thead>
+<tr>
+<th>门禁</th>
+<th>内容</th>
+<th>判据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>既有六门禁</td>
+<td><code>tsc --noEmit</code> / <code>eslint</code> / <code>prettier --check</code> / <code>i18n:check</code>（15 语言 0 空键）/ <code>lint:e9</code> / <code>vite build</code></td>
+<td>全绿</td>
+</tr>
+<tr>
+<td>后端门禁</td>
+<td><code>cargo check --all-targets</code> + <code>clippy -D warnings</code> + <code>cargo test</code> + <code>consistency_determinism</code> + <code>wgsl_validation</code></td>
+<td>零告警；v2.1.18 基线 114/114，新增用例后不得回退</td>
+</tr>
+<tr>
+<td><strong>新增① 整图级 locality</strong></td>
+<td>构造 64×64 已知渐变 + 已知圆形掩膜，跑 guided filter / 头区扣除 / LaMa 回贴，断言掩膜外（含羽化带宽补偿）像素<strong>逐位相等</strong>（<code>bit_eq</code>，不用近似容差）；人为注入全帧 clip 缺陷验证测试能抓住</td>
+<td>≥3 个用例，注入缺陷必须被捕获</td>
+</tr>
+<tr>
+<td><strong>新增② 参数单调性 + 导出 golden</strong></td>
+<td>强度/档位增大 → 输出与原图 L1 距离单调不减；固定样张 + 固定 adjustments（含水印 / EXIF 信息栏 / 相框 / 色彩空间）导出 hash 断言</td>
+<td>golden 失败自动上传对比图（对齐参照仓库 CI 做法）</td>
+</tr>
+<tr>
+<td><strong>新增③ 真机矩阵</strong></td>
+<td>Android 12/13/14/15/16 各 ≥1 台，25 步手动回归（图库 → 七分类 → 导出全链路）+ 200×3 张批量导出零崩溃 / 零 OOM；AI 深度诊断回填机型性能基线表</td>
+<td>Crash-free ≥99.8%；基线表填<strong>真实</strong>数值，未采集留空</td>
+</tr>
+</tbody>
+</table>
+<p><strong>每批次落地的固定动作</strong>（项目既有纪律，且必须延续）：单测覆盖 → 诚实降级字段 → i18n 15 语言 → 诊断报告同步字段 → 桌面端行为零变化。任何一项缺失都不算完成。</p>
+<hr />
+<h2 id="8-crystal">8. 结语：与透影 Crystal 品牌调性对齐</h2>
+<p>这套方案的主线不是"堆功能"，而是把 v2.1.18 已经具备的专业底座，从<strong>「能用」推到「名副其实、可验证、端侧可达」</strong>：</p>
+<ol>
+<li><strong>诚实是最高优先级的产品资产</strong>。项目已经用「未命中不猜测」「模型缺失走程序化天空」「大面积洞区返回 guidance」「不写估算值」建立了很稀缺的信任感。当前最伤这份信任的不是能力弱，而是<strong>「一句话调色」被当成语义 AI、「AI 超分」实为 Lanczos、云参考图在 Android 不可达却写在 Release 里</strong>。P0 的第一件事就是把名字和能力对齐——这比补十个新功能更能守住品牌。</li>
+<li><strong>非破坏性 + 可编辑性是差异化优势，不该为了精度牺牲</strong>。所以 D-TN-01 给的是「双载体」而非「全量烘焙 LUT」：参数模式继续可撤销可微调，高保真模式把二阶传输精度补回来，让用户自己选，而不是替他决定。</li>
+<li><strong>移动端要按移动端做，而不是把桌面同构搬过来</strong>。深度图 base64 进 sidecar、Android 恒 CPU、云能力依赖桌面登录态、全屏裁剪 CSS 死代码——这四项的共同根因都是"桌面成立即认为移动端成立"。D-SYS-02 / D-FX-02 / D-CP-01 都指向同一条整改原则。</li>
+<li><strong>没有真机数据就不做静默改动</strong>。《AI功能与其他方面优化改善方案》对降噪 tile、XNNPACK、Wi-Fi 开关的处理方式是这份仓库最专业的部分之一；本方案把它写进 §4 并继续保持，所有 <code>_ms</code> / PSNR / Crash-free 数值留待真机采集，不填估算。</li>
+</ol>
+<p>按 §5 路线落地 P0 + P1 后，七大模块在「名实相符 / 端侧可达 / 交互深度 / 验证闭环」四个层次上均可对齐 2026 年移动修图主流标杆；而 §4 的"不做清单"能确保团队把资源集中在真正产生用户价值的地方。</p>
+<hr />
+<h2 id="a">附录 A · 证据索引（本次实际复核的文件与行号）</h2>
+<table>
+<thead>
+<tr>
+<th>主题</th>
+<th>文件:行号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一句话调色=词库映射、置信度公式、8 风格配方、云参考图</td>
+<td><code>src-tauri/src/style_suggest.rs:7-15, 54-62, 88-356, 358-413, 432-468</code></td>
+</tr>
+<tr>
+<td>云参考图 Android 隐藏条件、run 函数、9 格 tile</td>
+<td><code>src/components/mobile/CrystalAiToolsPanel.tsx:106-108, 187-258, 465-556, 691-708</code></td>
+</tr>
+<tr>
+<td>场景分类 4 类 / 0.75 门槛 / 批内校准 / CLIP 降级</td>
+<td><code>src-tauri/src/scene_classify.rs:5-13, 29-30, 189-235, 245, 302-390</code></td>
+</tr>
+<tr>
+<td>Android/Linux wgpu 恒 false</td>
+<td><code>src-tauri/src/platform_features.rs:170-203</code></td>
+</tr>
+<tr>
+<td>AI 超分 = Lanczos3</td>
+<td><code>src-tauri/src/platform_features.rs:874-965</code>（<code>:965</code> <code>FilterType::Lanczos3</code>）</td>
+</tr>
+<tr>
+<td>预览-导出锐化断裂（R1-2）</td>
+<td><code>src-tauri/src/image_loader.rs:161-171</code></td>
+</tr>
+<tr>
+<td>预览高光头程已修（R1-1，勿重复施工）</td>
+<td><code>src-tauri/src/raw_processing.rs:372-378</code></td>
+</tr>
+<tr>
+<td>自由裁剪画框 / 手势互斥 / 无尺寸手柄</td>
+<td><code>src/components/mobile/CrystalPreview.tsx:239-276, 287-289, 315-324</code></td>
+</tr>
+<tr>
+<td>全屏沉浸裁剪死 CSS</td>
+<td><code>src/crystal.css:127-129</code>（全仓 <code>.tsx</code> 零引用）</td>
+</tr>
+<tr>
+<td>聚合模式 / HSL / 分级 / 校准 / 比例 chips / 光圈与光源枚举</td>
+<td><code>src/components/mobile/CrystalCategoryPanel.tsx:76-79, 112-151, 833-851, 1432-1438, 1734-1744, 1191-1192</code></td>
+</tr>
+<tr>
+<td>七大模块全部子功能中文键表</td>
+<td><code>src/i18n/locales/zh-CN.json:411-640</code></td>
+</tr>
+<tr>
+<td>原型七大分类与子功能（对照用）</td>
+<td><code>crystal-app-prototype/crystal-app-prototype.html:2144-2430</code></td>
+</tr>
+<tr>
+<td>仓库自审结论</td>
+<td><code>v2.1.13-android-crystal-audit.md</code>（19 项修复）、<code>crystal-boundary-items-implementation-plan.md</code>（P1–P7 边界）、<code>language-guided-lut与透影Crystal·AI调色算法深度对比与借鉴方案.md</code>（§一/§二/§六）、<code>AI功能与其他方面优化改善方案.md</code>（P0-1~P1-5 落地记录）、<code>AI算法与AI能力改善提升分析.md</code>（A1–C5 候选）、<code>crystal-mobile-improvement-plan.md</code>（§2.1 能力矩阵 / §7 边界）、<code>functional-modules-audit.md</code>（22 轮、160 命令 / 55 事件 / 84 字段矩阵）</td>
+</tr>
+<tr>
+<td>版本事实</td>
+<td>Release <code>v2.1.18</code> 正文；HEAD <code>b2e5172</code>；<code>minSdk 29</code>/<code>targetSdk 36</code> 见 <code>functional-modules-audit.md:517</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="b">附录 B · 已修复、明确不要重复施工的清单</h2>
+<p>以下事项在历史版本中已被修复或核实通过，本次源码复核确认仍然成立，<strong>不列入缺陷、不建议再改</strong>：</p>
+<ul>
+<li>底栏「原图长按恒加载 / 对比死键 / 重置撤销栈污染 / 导出页按住看原图半失效 / 导出中无取消出口」（v2.1.13 第一轮 5 项）；</li>
+<li>预设↔滤镜状态丢失、人像空容器死开关、HSL/分级/校准/曲线闭包竞态、构图拉直抖动、AI 景深钳制、AI 推荐卡时序竞态、背景虚化跨图污染、文本提示词持久化（v2.1.13 两轮共 19 项）；</li>
+<li>大师配方 LUT 缺失、Android APK 内 LUT 资源物化、<code>content://</code> 预设/水印导入导出、<code>minSdk 24→29</code>、签名与 16KB 页对齐（<code>functional-modules-audit.md</code> 第 9–17 轮）；</li>
+<li>蒙版级 flare 完全失效、右键「合并」死入口、AI 打标并发入口（第 18 轮 59–62）；</li>
+<li>预览高光头程断裂（R1-1 8x headroom）、fast 路径色度降噪缺失（R1-2，锐化部分见 D-SYS-01 仍待闭环）；</li>
+<li>LaMa 输出量程自检、洞内清零、窗口化执行、大面积 guidance、程序化天空降级、机型分档与 LaMa 像素预算分级（v2.1.16 落地记录）；</li>
+<li>160 命令注册 / 55 事件双向 / 84 设置字段 / 16 弹窗挂载 / 124 参数 schema 全消费（第 18、20、21 轮机器化矩阵）；</li>
+<li><code>cargo test</code> 114/114、<code>tsc</code> 零错误、15 语言 i18n 齐备（v2.1.18 Release 自检声明）。</li>
+</ul>
+<blockquote>
+<p>本文所有"现存缺陷"均以 v2.1.18 源码为准；凡仓库自审标注「已落地」「暂缓」「待真机」的事项，已在对应条目中如实转述其状态，未把待办伪装成缺陷、也未把缺陷伪装成已修。</p>
+</blockquote>
+</main>
+</div>
+</body>
+</html>

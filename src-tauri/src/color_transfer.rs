@@ -1587,7 +1587,10 @@ pub fn tint_sliders_for_shift(v: [f64; 3]) -> (f64, f64, f64) {
     (fit.hue, fit.sat * 500.0, fit.lum * 500.0)
 }
 
-fn load_analysis_image(
+/// 统一的「分析用图加载」入口：iCloud 占位检测 + Android content:// URI
+/// （SAF）分支 + 常规磁盘读取，RAW 经 image_loader 兼容解码。
+/// 追色（compute_color_match）与风格词调色图像自适应（style_suggest）共用。
+pub(crate) fn load_analysis_image(
     path: &str,
     settings: &crate::app_settings::AppSettings,
 ) -> Result<DynamicImage, String> {
