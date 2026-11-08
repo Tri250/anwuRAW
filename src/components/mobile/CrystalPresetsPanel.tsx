@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import { Check, FileDown, FileUp, Loader2, Pencil, Plus, Save, Sparkles, Trash2, Wand2, X } from 'lucide-react';
+import { Check, FileDown, FileUp, Loader2, Pencil, Plus, Save, Sparkles, Star, Trash2, Wand2, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { usePresets, UserPreset } from '../../hooks/usePresets';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -25,7 +25,12 @@ import { CxSliderRow, awaitImageReady, haptic, summarizeExif, useCrystalAdjust }
  *   Android content URI 过滤）/ 导出（单个与全部，Android 落 Downloads/RapidRaw）/
  *   长按动作面板（覆盖更新 / 重命名 / 删除）。含 AI 蒙版的预设与桌面同源：
  *   先剥离结果占位，再异步按当前图重新解析（ApplyAdjustmentsToPaths → LoadMetadata）。
- * - filter 模式：内置风格滤镜矩阵，全部为真实管线参数组合。
+ * - filter 模式：内置风格滤镜矩阵，全部为真实管线参数组合；收藏/最近使用置顶
+ *   分组（localStorage：cx_filter_favs / cx_filter_recent，D-FL-03）。
+ * - D-PS-03：presets/filter 共用本实例（mode 切换不重挂载），应用态（激活卡 +
+ *   强度）按 mode 分桶为两个独立命名空间，交叉切换互不解析对方 id 前缀——
+ *   v2.1.13 的 activeSourceRef 快照回落兜底已删除。
+ * - D-PS-02：AI 推荐卡证据分级角标与后端 source/calibrated 字段绑定，前端不推断。
  * 缩略图与桌面 PresetsPanel 同源：GeneratePresetPreview 渲染队列。
  * ------------------------------------------------------------------------- */
 
@@ -136,6 +141,28 @@ const FILTER_GROUPS: ReadonlyArray<{ id: 'landscape' | 'portrait' | 'film' | 'mo
   { id: 'mono', labelKey: 'crystal.filters.groupMono' },
 ];
 
+/* ---------------------------- 滤镜收藏 / 最近使用（D-FL-03，纯本地持久化） ---------------------------- */
+const FILTER_FAVS_KEY = 'cx_filter_favs';
+const FILTER_RECENT_KEY = 'cx_filter_recent';
+const FILTER_RECENT_LIMIT = 5;
+
+function readStringList(key: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(key) ?? '[]');
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStringList(key: string, list: string[]): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch {
+    /* 存储不可用（隐私模式等）：收藏/最近使用退化为内存态，不阻塞编辑 */
+  }
+}
+
 /* ---------------------------- 缩略图渲染队列（同桌面 PresetsPanel） ---------------------------- */
 function usePresetPreviewQueue() {
   const [previews, setPreviews] = useState<Record<string, string | null>>({});
@@ -242,13 +269,17 @@ interface SceneClassification {
   scene: string;
   confidence: number;
   tags: string[];
-  /** 判别来源："clip" | "heuristic"（后端如实上报，二者置信度语义不同） */
+  /** 判别来源："clip"（零样本 CLIP 通道）| "heuristic"（统计启发式），后端如实上报 */
   source?: string;
+  /** 置信度口径（D-PS-01 契约）：CLIP 批内校准概率为 true；启发式手工合成为 false。
+   *  0.75 展示门槛的绝对概率语义仅对 calibrated==true 成立。 */
+  calibrated?: boolean;
 }
 
-/* W3 边界：置信度 ≥0.75 才展示场景推荐（scene_classify 后端同门槛，前端二次门控） */
+/* W3 边界：置信度 ≥0.75 才展示场景推荐（scene_classify 后端同门槛，前端二次门控）。
+ * 该数值语义锚定 calibrated 的 CLIP 通道——门槛判断仅对 calibrated==true 应用。 */
 const SCENE_CONFIDENCE_GATE = 0.75;
-type SceneKey = 'landscape' | 'portrait' | 'night' | 'food';
+type SceneKey = 'landscape' | 'portrait' | 'night' | 'food' | 'street' | 'macro';
 
 function AiRecommendCard() {
   const { t } = useTranslation();
@@ -285,8 +316,22 @@ function AiRecommendCard() {
     };
   }, [selectedImage?.path, selectedImage?.isReady]);
 
+  const isCalibrated = scene?.calibrated === true;
+  // D-PS-01/D-PS-02：0.75 展示门槛仅对 calibrated==true（CLIP 校准概率）应用；
+  // 启发式（calibrated==false）不进场景推荐，降级为证据提示（见下方副文案）。
   const sceneKey: SceneKey | null =
-    scene && scene.confidence >= SCENE_CONFIDENCE_GATE ? (scene.scene as SceneKey) : null;
+    scene && isCalibrated && scene.confidence >= SCENE_CONFIDENCE_GATE ? (scene.scene as SceneKey) : null;
+  // D-PS-02 证据分级角标：档位与后端 source 字段绑定，禁止前端自行推断。
+  // calibrated==false 时不展示「CLIP 视觉识别」这类 AI 识别字样，统一降级为
+  // 「画面统计」空心点 + 「供参考」副文案。
+  const evidenceTier: 'clip' | 'stats' | null = !scene
+    ? null
+    : scene.source === 'clip' && isCalibrated
+      ? 'clip'
+      : 'stats';
+  // EXIF 线索角标（第三态）：仅当现有 basis 的 EXIF 分支真实命中（ISO/焦距存在）
+  // 时展示，作为与来源角标并列的证据（灰色虚线点），不替代 source 角标。
+  const hasExifBasis = iso !== null || Boolean(exif.focal);
 
   const runAiEnhance = async () => {
     if (isEnhancing) return;
@@ -363,6 +408,14 @@ function AiRecommendCard() {
     } else if (sceneKey === 'food') {
       applyPatch({ vibrance: 16, saturation: 6, temperature: 6, contrast: 6, shadows: 8 });
       toast.success(t('crystal.aiRecommend.recipeApplied', { scene: t('crystal.aiRecommend.scenes.food') }));
+    } else if (sceneKey === 'street') {
+      // 街拍：中高对比 + 轻去饱和 + 细颗粒（真实管线参数，与滤镜矩阵同源）
+      applyPatch({ contrast: 12, clarity: 10, shadows: 8, saturation: -6, grainAmount: 12 });
+      toast.success(t('crystal.aiRecommend.recipeApplied', { scene: t('crystal.aiRecommend.scenes.street') }));
+    } else if (sceneKey === 'macro') {
+      // 微距：近摄主体以纹理为主——细节/结构增强 + 自然饱和
+      applyPatch({ clarity: 16, structure: 12, vibrance: 12, shadows: 6 });
+      toast.success(t('crystal.aiRecommend.recipeApplied', { scene: t('crystal.aiRecommend.scenes.macro') }));
     } else {
       // 防御：后端返回未映射场景时按钮仍会渲染（sceneKey 非空），不得静默
       toast.info(t('crystal.aiRecommend.noScene'));
@@ -375,24 +428,79 @@ function AiRecommendCard() {
   return (
     <div className="cx-ai-card">
       <div className="grow min-w-0">
-        <div className="cx-ai-title">{t('crystal.aiRecommend.title')}</div>
+        {/* D-PS-02：calibrated==false（启发式）不写「AI 识别」类标题 */}
+        <div className="cx-ai-title">
+          {scene && !isCalibrated ? t('crystal.recommend.titleStats' as ParseKeys) : t('crystal.aiRecommend.title')}
+        </div>
         <div className="cx-ai-desc">
           {sceneKey
             ? t('crystal.aiRecommend.sceneBasis', {
                 scene: t(`crystal.aiRecommend.scenes.${sceneKey}`),
                 basis,
               })
-            : t('crystal.aiRecommend.noScene')}
+            : scene && !isCalibrated
+              ? // 启发式有判别但非校准概率：画面统计启发，供参考
+                t('crystal.recommend.evidence.statsHint' as ParseKeys)
+              : // 无判别 / CLIP 通道低于 0.75 门槛：复用既有「暂无高置信度场景」文案
+                t('crystal.aiRecommend.noScene')}
         </div>
         <div className="cx-ai-tags">
-          {/* 名实一致（自检修复 4）：「AI」标签不再无条件硬编码——后端
-              scene.source 如实区分 CLIP 零样本（AI）与统计启发式（非 AI），
-              启发式结果标注为像素统计，不冒充 AI 识别。 */}
-          <span className="cx-ai-tag">{scene?.source === 'heuristic' ? t('crystal.aiRecommend.tagStats') : 'AI'}</span>
-          {sceneKey && scene?.source !== 'heuristic' && (
-            <span className="cx-ai-tag">{t('crystal.aiRecommend.tagStats')}</span>
+          {/* D-PS-02 三态证据角标：与 source 字段绑定（clip=青绿实心点 /
+              heuristic=空心点），EXIF 线索为并列证据（灰色虚线点，仅 EXIF
+              分支命中时显示）。原硬编码「AI」字样与无条件 EXIF 标签删除。 */}
+          {evidenceTier === 'clip' && (
+            <span
+              className="cx-ai-tag"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              title={t('crystal.recommend.evidence.clip' as ParseKeys)}
+              aria-label={t('crystal.recommend.evidence.clip' as ParseKeys)}
+            >
+              <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: '#2dd4bf', flex: 'none' }} />
+              {t('crystal.recommend.evidence.clip' as ParseKeys)}
+            </span>
           )}
-          <span className="cx-ai-tag">{t('crystal.aiRecommend.tagExif')}</span>
+          {evidenceTier === 'stats' && (
+            <span
+              className="cx-ai-tag"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              title={t('crystal.recommend.evidence.stats' as ParseKeys)}
+              aria-label={t('crystal.recommend.evidence.stats' as ParseKeys)}
+            >
+              <span
+                aria-hidden
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 999,
+                  border: '1.5px solid currentColor',
+                  background: 'transparent',
+                  flex: 'none',
+                }}
+              />
+              {t('crystal.recommend.evidence.stats' as ParseKeys)}
+            </span>
+          )}
+          {hasExifBasis && (
+            <span
+              className="cx-ai-tag"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              title={t('crystal.recommend.evidence.exif' as ParseKeys)}
+              aria-label={t('crystal.recommend.evidence.exif' as ParseKeys)}
+            >
+              <span
+                aria-hidden
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 999,
+                  border: '1px dashed var(--cx-faint, #9aa3af)',
+                  background: 'transparent',
+                  flex: 'none',
+                }}
+              />
+              {t('crystal.recommend.evidence.exif' as ParseKeys)}
+            </span>
+          )}
         </div>
       </div>
       <button
@@ -426,6 +534,89 @@ function AiRecommendCard() {
   );
 }
 
+/* ---------------------------- 应用态分桶 + 共用缩略卡 ---------------------------- */
+
+/** D-PS-03：presets/filter 共用本组件实例但 mode 切换不重挂载，应用态
+ * （激活卡 + 强度）按 mode 分桶成两个独立命名空间——交叉切换只在当前模式
+ * 命名空间内解析，从根上消除 v2.1.13 的 activeSourceRef 快照回落兜底。 */
+interface ModeApplyState {
+  activeId: string | null;
+  activeSource: PreviewSource | null;
+  intensity: number;
+}
+
+const EMPTY_APPLY_STATE: ModeApplyState = { activeId: null, activeSource: null, intensity: 100 };
+
+/** 滤镜/预设缩略卡：主列表与「收藏/最近使用」置顶分组共用（收藏角标仅滤镜模式传入） */
+function SourceThumbCard({
+  source,
+  previewUrl,
+  isActive,
+  isFavorite,
+  onActivate,
+  onPressStart,
+  onPressMove,
+  onPressClear,
+  onOpenSheet,
+}: {
+  source: PreviewSource;
+  previewUrl: string | null | undefined;
+  isActive: boolean;
+  isFavorite: boolean;
+  onActivate: (source: PreviewSource) => void;
+  onPressStart: (source: PreviewSource, e: React.PointerEvent) => void;
+  onPressMove: (e: React.PointerEvent) => void;
+  onPressClear: () => void;
+  onOpenSheet: (source: PreviewSource) => void;
+}) {
+  return (
+    <button
+      className={`cx-thumb-card ${isActive ? 'is-active' : ''}`}
+      style={{ position: 'relative' }}
+      onClick={() => onActivate(source)}
+      onPointerDown={(e) => onPressStart(source, e)}
+      onPointerMove={onPressMove}
+      onPointerUp={onPressClear}
+      onPointerCancel={onPressClear}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onPressClear();
+        onOpenSheet(source);
+      }}
+    >
+      <span className="cx-thumb-img flex items-center justify-center overflow-hidden">
+        {previewUrl ? (
+          <img src={previewUrl} alt={source.name} draggable={false} className="w-full h-full object-cover rounded-[10px]" />
+        ) : (
+          <Loader2 size={16} className="animate-spin" style={{ color: 'var(--cx-faint)' }} />
+        )}
+      </span>
+      {isFavorite && (
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: 6,
+            right: 6,
+            width: 18,
+            height: 18,
+            borderRadius: 999,
+            background: 'rgba(15, 18, 22, 0.55)',
+            color: 'var(--cx-accent)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <Star size={10} fill="currentColor" />
+        </span>
+      )}
+      <span className="cx-thumb-name">{source.name}</span>
+    </button>
+  );
+}
+
 /* ---------------------------- 主面板 ---------------------------- */
 export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   const { t } = useTranslation();
@@ -444,17 +635,29 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   } = usePresets(adjustments);
   const { previews, enqueue, resetGeneration, invalidate } = usePresetPreviewQueue();
 
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [intensity, setIntensity] = useState(100);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   /** 图片是否就绪：缩略图渲染依赖后端已加载原图，未就绪时的入队会整体失败 */
   const selectedImageIsReady = useEditorStore((s) => s.selectedImage?.isReady);
-  const baseRef = useRef<Adjustments | null>(null);
-  /** 当前应用中的滤镜/预设源：取消/换卡时用于取参数键集（activeId 的伴生 ref，二者同生命周期） */
-  const activeSourceRef = useRef<PreviewSource | null>(null);
-  /** 强度 0 时暂存的蒙版（与桌面 hiddenPresetMasks 同语义），>0 时还原 */
-  const hiddenMasksRef = useRef<Array<MaskContainer> | null>(null);
-  /** 长按动作面板目标（仅 presets 模式） */
+  /** D-PS-03：应用态按 mode 分桶（presets/filter 独立命名空间），交叉切换不丢 */
+  const [applyStates, setApplyStates] = useState<Record<PanelMode, ModeApplyState>>(() => ({
+    presets: EMPTY_APPLY_STATE,
+    filter: EMPTY_APPLY_STATE,
+  }));
+  const applyStatesRef = useRef(applyStates);
+  /** 同步更新分桶状态与 ref 镜像：同一事件序列内连续 apply/cancel 不读陈旧桶 */
+  const updateApplyStates = useCallback(
+    (updater: (prev: Record<PanelMode, ModeApplyState>) => Record<PanelMode, ModeApplyState>) => {
+      const next = updater(applyStatesRef.current);
+      applyStatesRef.current = next;
+      setApplyStates(next);
+    },
+    [],
+  );
+  /** 应用态参数基线（每模式独立快照）：取消/换卡时按参数键还原 */
+  const baseRef = useRef<Record<PanelMode, Adjustments | null>>({ presets: null, filter: null });
+  /** 强度 0 时暂存的蒙版（与桌面 hiddenPresetMasks 同语义），>0 时还原（每模式独立） */
+  const hiddenMasksRef = useRef<Record<PanelMode, Array<MaskContainer> | null>>({ presets: null, filter: null });
+  /** 长按动作面板目标（预设管理 / 滤镜收藏切换，两模式共用） */
   const [sheetSource, setSheetSource] = useState<PreviewSource | null>(null);
   const [nameDialog, setNameDialog] = useState<{ kind: 'save' | 'rename'; presetId?: string; initial: string } | null>(
     null,
@@ -465,6 +668,29 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   const pressTimer = useRef<number | null>(null);
   const pressStart = useRef<{ x: number; y: number } | null>(null);
   const longPressFired = useRef(false);
+
+  /* D-FL-03：滤镜收藏 / 最近使用。ref 为唯一真源（同步写），state 仅驱动渲染，
+   * 避免同一事件序列内连续读写丢更新；localStorage 持久化，不新增后端命令。 */
+  const filterFavsRef = useRef<string[]>(readStringList(FILTER_FAVS_KEY));
+  const [filterFavs, setFilterFavs] = useState<string[]>(filterFavsRef.current);
+  const filterRecentRef = useRef<string[]>(readStringList(FILTER_RECENT_KEY));
+  const [filterRecent, setFilterRecent] = useState<string[]>(filterRecentRef.current);
+
+  const toggleFilterFavorite = useCallback((sourceId: string) => {
+    const next = filterFavsRef.current.includes(sourceId)
+      ? filterFavsRef.current.filter((id) => id !== sourceId)
+      : [sourceId, ...filterFavsRef.current];
+    filterFavsRef.current = next;
+    writeStringList(FILTER_FAVS_KEY, next);
+    setFilterFavs(next);
+  }, []);
+
+  const recordFilterRecent = useCallback((sourceId: string) => {
+    const next = [sourceId, ...filterRecentRef.current.filter((id) => id !== sourceId)].slice(0, FILTER_RECENT_LIMIT);
+    filterRecentRef.current = next;
+    writeStringList(FILTER_RECENT_KEY, next);
+    setFilterRecent(next);
+  }, []);
 
   // G5: 按文件夹分组（保持首次出现顺序），'' 为未分组。
   const presetGroups = useMemo(() => {
@@ -517,19 +743,34 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     [allSources, selectedGroup],
   );
 
+  // D-FL-03：收藏 / 最近使用置顶分组数据源（仅滤镜模式使用；按 id 顺序还原，
+  // 收藏保持收藏先后、最近保持最新在前；已失效 id 自然过滤）
+  const favoriteFilterSources = useMemo(
+    () => filterFavs.map((id) => allSources.find((s) => s.id === id)).filter((s): s is PreviewSource => Boolean(s)),
+    [filterFavs, allSources],
+  );
+  const recentFilterSources = useMemo(
+    () => filterRecent.map((id) => allSources.find((s) => s.id === id)).filter((s): s is PreviewSource => Boolean(s)),
+    [filterRecent, allSources],
+  );
+  /** 置顶分组跟随当前子标签过滤：选中分组时只显示该分组内的收藏/最近项 */
+  const pinnedGroupFilter = useCallback(
+    (list: Array<PreviewSource>) => (selectedGroup ? list.filter((s) => s.group === selectedGroup) : list),
+    [selectedGroup],
+  );
+
   // v2.1.13: 切图后缩略图队列整体作废并按新图重建（必须在 enqueue 效果之前声明）
   useEffect(() => {
     resetGeneration();
   }, [selectedImagePath, resetGeneration]);
 
-  // v2.1.13: 切图后应用态一并复位，防止上一张图的 baseRef/强度/蒙版暂存泄漏到新图
+  // v2.1.13: 切图后应用态一并复位（D-PS-03：两个模式命名空间同时清空），
+  // 防止上一张图的 base 快照/强度/蒙版暂存泄漏到新图
   useEffect(() => {
-    setActiveId(null);
-    setIntensity(100);
-    baseRef.current = null;
-    activeSourceRef.current = null;
-    hiddenMasksRef.current = null;
-  }, [selectedImagePath]);
+    updateApplyStates(() => ({ presets: EMPTY_APPLY_STATE, filter: EMPTY_APPLY_STATE }));
+    baseRef.current = { presets: null, filter: null };
+    hiddenMasksRef.current = { presets: null, filter: null };
+  }, [selectedImagePath, updateApplyStates]);
 
   // 缩略图入队。审计修复（滤镜-缩略图死队列）：GeneratePresetPreview 依赖后端
   // original_image，图片未 ready 时入队的请求全部抛 "No original image loaded"
@@ -552,12 +793,16 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     return () => removeExitLayer(handler);
   }, [sheetSource, nameDialog, deleteTarget]);
 
-  // 已应用源按全量列表解析：分组过滤/卡片滚出视口时不丢状态条、强度滑杆与取消入口。
-  // 审计修复（预设↔滤镜）：两模式共用本组件实例，mode 切换不重挂载；此时 activeId
-  // 属于另一模式的 id 前缀（preset: / filter:），在全量列表中解析不到 → 状态条与
-  // 取消入口整体消失，而滤镜参数仍在生效。回落到 activeSourceRef 快照，保证跨模式
-  // 切换后仍可调强度/取消，链路闭环。
-  const activeSource = activeId ? (allSources.find((s) => s.id === activeId) ?? activeSourceRef.current) : null;
+  // D-PS-03 根治：activeId/activeSource/intensity 按 mode 分桶，交叉切换只在
+  // 当前模式命名空间内解析（A 应用 → 切 B → 切回 A，状态条/强度/取消入口保持
+  // 可达），v2.1.13 的 activeSourceRef 快照回落兜底已删除。同模式内优先按全量
+  // 列表解析（重命名/覆写后名称与参数即时刷新），列表暂缺时（库重载间隙）回落
+  // 到分桶内保存的源对象。
+  const activeState = applyStates[mode];
+  const activeSource = useMemo(() => {
+    if (!activeState.activeId) return null;
+    return allSources.find((s) => s.id === activeState.activeId) ?? activeState.activeSource;
+  }, [activeState, allSources]);
   const rawId = useCallback((sourceId: string) => sourceId.replace(/^preset:/, ''), []);
 
   /** 与桌面 resolvePresetAiMasks 同源：按当前图重跑 AI 蒙版并合并结果（不进撤销栈） */
@@ -587,62 +832,72 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
   }, []);
 
   /** 取消应用：仅还原该滤镜/预设涉及的参数键（从 base 快照），保留用户对其余键的手动调整。
-   *  供「再次点击同卡取消」与强度滑杆旁的显式取消按钮共用（分组过滤会隐藏激活卡，后者是唯一入口）。 */
-  const cancelActive = useCallback(() => {
-    const base = baseRef.current;
-    const source = activeSourceRef.current;
-    baseRef.current = null;
-    activeSourceRef.current = null;
-    hiddenMasksRef.current = null;
-    setActiveId(null);
-    setIntensity(100);
-    if (base && source) {
-      const patch: Record<string, unknown> = {};
-      for (const key of Object.keys(source.adjustments)) {
-        patch[key] = (base as Record<string, unknown>)[key];
+   *  供「再次点击同卡取消」、强度滑杆旁的显式取消按钮与跨模式换卡共用；
+   *  targetMode 指向要退出的命名空间（分组过滤隐藏激活卡时显式按钮是唯一入口）。 */
+  const cancelModeActive = useCallback(
+    (targetMode: PanelMode) => {
+      const bucket = applyStatesRef.current[targetMode];
+      const source = bucket.activeSource;
+      if (!bucket.activeId || !source) return;
+      const base = baseRef.current[targetMode];
+      baseRef.current[targetMode] = null;
+      hiddenMasksRef.current[targetMode] = null;
+      updateApplyStates((prev) => ({ ...prev, [targetMode]: EMPTY_APPLY_STATE }));
+      if (base) {
+        const patch: Record<string, unknown> = {};
+        for (const key of Object.keys(source.adjustments)) {
+          patch[key] = (base as Record<string, unknown>)[key];
+        }
+        setAdjustments({ ...useEditorStore.getState().adjustments, ...patch } as Adjustments);
       }
-      setAdjustments({ ...useEditorStore.getState().adjustments, ...patch } as Adjustments);
-    }
-  }, [setAdjustments]);
+    },
+    [setAdjustments, updateApplyStates],
+  );
 
-  // 模式切换（滤镜↔预设）：复位分组 + 完整复位应用态。
-  // 审计修复（滤镜-激活态泄漏）：两库独立，共用组件实例但 mode 切换不重挂载。
-  // 此前 activeId 属于另一模式 id 前缀（filter:/preset:）解析不到时回落 ref 快照
-  // ——切到预设模式后状态条仍显示「已应用 <滤镜> · 100%」。此处按 base 快照还原
-  // 参数（cancelActive）并清空应用态，同时避免随后在预设模式应用新预设时
-  // 两套参数叠加污染。cancelActive 读 ref 快照、不依赖渲染态。
+  // 模式切换（滤镜↔预设）：仅复位分组选择。D-PS-03：应用态按 mode 分桶保留——
+  // A 模式应用 → 切 B → 切回 A，状态条/强度/取消入口保持可达；跨模式参数互斥
+  // （避免两套参数叠加污染）改由 handleApply 在应用时按另一模式 base 快照还原。
   useEffect(() => {
-    cancelActive();
     setSelectedGroup(null);
   }, [mode]);
 
   const handleApply = useCallback(
     (source: PreviewSource) => {
       haptic(8);
-      if (activeId === source.id) {
-        // 再次点击取消：按参数键还原（见 cancelActive）
-        cancelActive();
+      if (applyStatesRef.current[mode].activeId === source.id) {
+        // 再次点击取消：按参数键还原（见 cancelModeActive）
+        cancelModeActive(mode);
         return;
       }
+      // D-PS-03 互斥：两模式写入同一份 adjustments，应用前先退出另一模式的
+      // 激活源（按其 base 快照还原参数键），避免两套参数叠加污染——这是原
+      // 「mode 切换即 cancelActive」的根治替代：状态保留在各自命名空间。
+      const otherMode: PanelMode = mode === 'presets' ? 'filter' : 'presets';
+      if (applyStatesRef.current[otherMode].activeId) cancelModeActive(otherMode);
+
       const current = useEditorStore.getState().adjustments;
-      const base = baseRef.current;
+      const prevBucket = applyStatesRef.current[mode];
+      const prevSource = prevBucket.activeSource;
+      const prevBase = baseRef.current[mode];
       // 换卡：先还原上一个滤镜的参数键，避免两套滤镜参数叠加污染
       // （如 A 的 saturation -100 会压过 B 的 -12）；再以还原后状态为新基线。
       let workingBase = current;
-      const prevSource = activeId ? activeSourceRef.current : null;
-      if (prevSource && base) {
+      if (prevBucket.activeId && prevSource && prevBase) {
         const patch: Record<string, unknown> = {};
         for (const key of Object.keys(prevSource.adjustments)) {
-          patch[key] = (base as Record<string, unknown>)[key];
+          patch[key] = (prevBase as Record<string, unknown>)[key];
         }
         workingBase = { ...current, ...patch } as Adjustments;
         setAdjustments(workingBase);
       }
-      baseRef.current = workingBase;
-      activeSourceRef.current = source;
-      setActiveId(source.id);
-      setIntensity(100);
-      hiddenMasksRef.current = null;
+      baseRef.current[mode] = workingBase;
+      hiddenMasksRef.current[mode] = null;
+      updateApplyStates((prev) => ({
+        ...prev,
+        [mode]: { activeId: source.id, activeSource: source, intensity: 100 },
+      }));
+      // D-FL-03：滤镜最近使用记录（最近 5 个，localStorage 持久化）
+      if (mode === 'filter') recordFilterRecent(source.id);
       // 含 AI 子蒙版的预设不能直接套用（结果属于创建时的图）：先剥离结果占位，
       // 再按当前图异步重新解析（与桌面 handleApplyPreset 同链路）。
       const presetMasks = (source.adjustments.masks ?? null) as Array<MaskContainer> | null;
@@ -652,24 +907,25 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         hasAi && presetMasks ? { ...source.adjustments, masks: stripAiMaskResults(presetMasks) } : source.adjustments,
       );
     },
-    [activeId, applyPresetObject, cancelActive, resolvePresetAiMasks, setAdjustments],
+    [cancelModeActive, mode, recordFilterRecent, applyPresetObject, resolvePresetAiMasks, setAdjustments, updateApplyStates],
   );
 
   const handleIntensity = useCallback(
     (val: number) => {
-      setIntensity(val);
+      updateApplyStates((prev) => ({ ...prev, [mode]: { ...prev[mode], intensity: val } }));
       if (!activeSource) return;
       // 蒙版不参与强度混合（与桌面一致）：仅 0% 时隐藏，回升时还原并重解析 AI 蒙版
       const { masks: presetMasks, ...presetAdj } = activeSource.adjustments as Record<string, unknown>;
       const mixed = applyStrength(presetAdj, val) as Record<string, unknown>;
       if (presetMasks !== undefined) {
         const currentMasks = useEditorStore.getState().adjustments.masks;
+        const hiddenMasks = hiddenMasksRef.current[mode];
         if (val === 0) {
-          if (currentMasks?.length) hiddenMasksRef.current = currentMasks;
+          if (currentMasks?.length) hiddenMasksRef.current[mode] = currentMasks;
           mixed.masks = INITIAL_ADJUSTMENTS.masks;
-        } else if (hiddenMasksRef.current || !currentMasks?.length) {
+        } else if (hiddenMasks || !currentMasks?.length) {
           const restored: Array<MaskContainer> = (
-            hiddenMasksRef.current ?? stripAiMaskResults((presetMasks ?? []) as Array<MaskContainer>)
+            hiddenMasks ?? stripAiMaskResults((presetMasks ?? []) as Array<MaskContainer>)
           ).map((container: MaskContainer) => ({
             ...container,
             adjustments: applyStrength(
@@ -677,7 +933,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
               val,
             ) as MaskContainer['adjustments'],
           }));
-          hiddenMasksRef.current = null;
+          hiddenMasksRef.current[mode] = null;
           if (
             hasAiSubMasks(restored, true) &&
             Array.isArray(presetMasks) &&
@@ -690,7 +946,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
       }
       applyPresetObject(mixed as Partial<Adjustments> as Record<string, unknown>);
     },
-    [activeSource, applyPresetObject, resolvePresetAiMasks],
+    [activeSource, applyPresetObject, mode, resolvePresetAiMasks, updateApplyStates],
   );
 
   /* ---------------------------- 管理闭环（保存/导入/导出/覆盖/重命名/删除） ---------------------------- */
@@ -846,9 +1102,13 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
             group: source.group,
           };
           enqueue([nextSource]);
-          // 若该预设正在应用中：刷新 activeSourceRef 快照，使强度滑杆/取消入口
+          // 若该预设正在应用中：刷新分桶内的源对象，使强度滑杆/取消入口
           // 按覆写后的新参数键工作（否则旧快照与卡片显示不符）。
-          if (activeId === source.id) activeSourceRef.current = nextSource;
+          updateApplyStates((prev) =>
+            prev.presets.activeId === source.id && prev.presets.activeSource
+              ? { ...prev, presets: { ...prev.presets, activeSource: nextSource } }
+              : prev,
+          );
           toast.success(t('crystal.presets.overwritten'));
         } else {
           // 目标不存在（已被删/库未加载）——此前静默无反馈，用户以为更新成功
@@ -860,23 +1120,21 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         toast.error(t('crystal.presets.overwriteFailed'));
       }
     },
-    [activeId, enqueue, invalidate, overwritePreset, rawId, t],
+    [enqueue, invalidate, overwritePreset, rawId, t, updateApplyStates],
   );
 
   const handleDelete = useCallback(
     (source: PreviewSource) => {
       deleteItem(rawId(source.id));
       invalidate(source.id);
-      if (activeId === source.id) {
+      if (applyStatesRef.current.presets.activeId === source.id) {
         // 删除正在应用的预设：仅退出应用态，不回滚已写入的编辑
-        setActiveId(null);
-        setIntensity(100);
-        baseRef.current = null;
-        activeSourceRef.current = null;
-        hiddenMasksRef.current = null;
+        baseRef.current.presets = null;
+        hiddenMasksRef.current.presets = null;
+        updateApplyStates((prev) => ({ ...prev, presets: EMPTY_APPLY_STATE }));
       }
     },
-    [activeId, deleteItem, invalidate, rawId],
+    [deleteItem, invalidate, rawId, updateApplyStates],
   );
 
   /* 长按预设卡 → 管理动作面板（横滑超过阈值视为滚动，取消触发） */
@@ -890,7 +1148,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
 
   const startPress = useCallback(
     (source: PreviewSource, e: React.PointerEvent) => {
-      if (mode !== 'presets') return;
+      // D-FL-03：滤镜模式同样支持长按动作面板（收藏切换入口），与预设模式同交互
       longPressFired.current = false;
       clearPress();
       pressStart.current = { x: e.clientX, y: e.clientY };
@@ -900,7 +1158,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         setSheetSource(source);
       }, 450);
     },
-    [clearPress, mode],
+    [clearPress],
   );
 
   const movePress = useCallback(
@@ -910,6 +1168,24 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
     },
     [clearPress],
   );
+
+  const openSheetFor = useCallback((source: PreviewSource) => setSheetSource(source), []);
+
+  /** 卡片点击 = 应用/取消；长按弹出的动作面板会派生 click，此处吞掉避免误应用 */
+  const handleCardActivate = useCallback(
+    (source: PreviewSource) => {
+      if (longPressFired.current) {
+        longPressFired.current = false;
+        return;
+      }
+      handleApply(source);
+    },
+    [handleApply],
+  );
+
+  // D-FL-03：置顶分组渲染数据（仅滤镜模式；跟随当前子标签过滤）
+  const favoritePinned = mode === 'filter' ? pinnedGroupFilter(favoriteFilterSources) : [];
+  const recentPinned = mode === 'filter' ? pinnedGroupFilter(recentFilterSources) : [];
 
   if (mode === 'presets' && isLoading && totalPresetCount === 0) {
     return (
@@ -1012,49 +1288,69 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         </div>
       )}
 
+      {/* D-FL-03：滤镜收藏 / 最近使用置顶分组（跟随机子标签过滤，空组不显示） */}
+      {mode === 'filter' && favoritePinned.length > 0 && (
+        <div className="mt-3">
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--cx-muted)', margin: '0 2px 6px' }}>
+            {t('crystal.presets.favorites' as ParseKeys)}
+          </div>
+          <div className="cx-hstrip">
+            {favoritePinned.map((source) => (
+              <SourceThumbCard
+                key={`fav-${source.id}`}
+                source={source}
+                previewUrl={previews[source.id]}
+                isActive={activeState.activeId === source.id}
+                isFavorite
+                onActivate={handleCardActivate}
+                onPressStart={startPress}
+                onPressMove={movePress}
+                onPressClear={clearPress}
+                onOpenSheet={openSheetFor}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      {mode === 'filter' && recentPinned.length > 0 && (
+        <div className="mt-3">
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--cx-muted)', margin: '0 2px 6px' }}>
+            {t('crystal.presets.recent' as ParseKeys)}
+          </div>
+          <div className="cx-hstrip">
+            {recentPinned.map((source) => (
+              <SourceThumbCard
+                key={`recent-${source.id}`}
+                source={source}
+                previewUrl={previews[source.id]}
+                isActive={activeState.activeId === source.id}
+                isFavorite={filterFavs.includes(source.id)}
+                onActivate={handleCardActivate}
+                onPressStart={startPress}
+                onPressMove={movePress}
+                onPressClear={clearPress}
+                onOpenSheet={openSheetFor}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="cx-hstrip mt-3">
-        {sources.map((source) => {
-          const url = previews[source.id];
-          const isActive = activeId === source.id;
-          return (
-            <button
-              key={source.id}
-              className={`cx-thumb-card ${isActive ? 'is-active' : ''}`}
-              onClick={() => {
-                // 长按弹出的动作面板会派生 click，此处吞掉避免误应用
-                if (longPressFired.current) {
-                  longPressFired.current = false;
-                  return;
-                }
-                handleApply(source);
-              }}
-              onPointerDown={(e) => startPress(source, e)}
-              onPointerMove={movePress}
-              onPointerUp={clearPress}
-              onPointerCancel={clearPress}
-              onContextMenu={(e) => {
-                if (mode !== 'presets') return;
-                e.preventDefault();
-                clearPress();
-                setSheetSource(source);
-              }}
-            >
-              <span className="cx-thumb-img flex items-center justify-center overflow-hidden">
-                {url ? (
-                  <img
-                    src={url}
-                    alt={source.name}
-                    draggable={false}
-                    className="w-full h-full object-cover rounded-[10px]"
-                  />
-                ) : (
-                  <Loader2 size={16} className="animate-spin" style={{ color: 'var(--cx-faint)' }} />
-                )}
-              </span>
-              <span className="cx-thumb-name">{source.name}</span>
-            </button>
-          );
-        })}
+        {sources.map((source) => (
+          <SourceThumbCard
+            key={source.id}
+            source={source}
+            previewUrl={previews[source.id]}
+            isActive={activeState.activeId === source.id}
+            isFavorite={mode === 'filter' && filterFavs.includes(source.id)}
+            onActivate={handleCardActivate}
+            onPressStart={startPress}
+            onPressMove={movePress}
+            onPressClear={clearPress}
+            onOpenSheet={openSheetFor}
+          />
+        ))}
         {mode === 'presets' && sources.length === 0 && (
           <div className="text-[11.5px] py-4 px-1" style={{ color: 'var(--cx-faint)' }}>
             {t('crystal.presets.empty')}
@@ -1067,28 +1363,28 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
           {/* OC-6: 已应用预设状态条（卡位滚出视口时仍可见当前预设与强度） */}
           <div className="cx-applied-bar" role="status">
             <Check size={12} />
-            {t('crystal.presets.appliedBar', { name: activeSource.name })} · {intensity}%
+            {t('crystal.presets.appliedBar', { name: activeSource.name })} · {activeState.intensity}%
           </div>
           <CxSliderRow
             label={t('crystal.presets.intensity')}
             min={0}
             max={200}
             step={1}
-            value={intensity}
+            value={activeState.intensity}
             defaultValue={100}
             suffix="%"
             onChange={handleIntensity}
           />
           {/* 显式取消入口：分组过滤隐藏激活卡时，「再点同卡取消」不可达，此处兜底闭环
               （activeSource 按全量列表解析，切分组后本按钮与强度滑杆保持可见） */}
-          <button className="cx-mask-remove mt-2 w-full" onClick={cancelActive}>
+          <button className="cx-mask-remove mt-2 w-full" onClick={() => cancelModeActive(mode)}>
             <X size={11} />
             {t('modals.confirm.cancel')}
           </button>
         </div>
       )}
 
-      {/* 长按动作面板：单条预设管理（与国内主流修图 App 交互一致） */}
+      {/* 长按动作面板：预设管理 / 滤镜收藏切换（与国内主流修图 App 交互一致） */}
       {sheetSource &&
         createPortal(
           <div className="cx-sheet-backdrop" onClick={() => setSheetSource(null)}>
@@ -1096,7 +1392,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
               <div className="cx-sheet-title">{sheetSource.name}</div>
               <button
                 className="cx-sheet-row"
-                style={sheetSource.id === activeId ? { color: 'var(--cx-accent)' } : undefined}
+                style={sheetSource.id === activeState.activeId ? { color: 'var(--cx-accent)' } : undefined}
                 onClick={() => {
                   handleApply(sheetSource);
                   setSheetSource(null);
@@ -1105,50 +1401,69 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
                 <Check size={15} />
                 {t('crystal.presets.menuApply')}
               </button>
-              <button
-                className="cx-sheet-row"
-                onClick={() => {
-                  haptic(6);
-                  void handleOverwrite(sheetSource);
-                  setSheetSource(null);
-                }}
-              >
-                <Save size={15} />
-                {t('crystal.presets.menuOverwrite')}
-              </button>
-              <button
-                className="cx-sheet-row"
-                onClick={() => {
-                  haptic(6);
-                  setNameDialog({ kind: 'rename', presetId: rawId(sheetSource.id), initial: sheetSource.name });
-                  setSheetSource(null);
-                }}
-              >
-                <Pencil size={15} />
-                {t('crystal.presets.menuRename')}
-              </button>
-              <button
-                className="cx-sheet-row"
-                onClick={() => {
-                  haptic(6);
-                  void handleExportSingle(sheetSource);
-                  setSheetSource(null);
-                }}
-              >
-                <FileDown size={15} />
-                {t('crystal.presets.menuExport')}
-              </button>
-              <button
-                className="cx-sheet-row cx-danger"
-                onClick={() => {
-                  haptic(6);
-                  setDeleteTarget(sheetSource);
-                  setSheetSource(null);
-                }}
-              >
-                <Trash2 size={15} />
-                {t('crystal.presets.menuDelete')}
-              </button>
+              {mode === 'filter' ? (
+                /* D-FL-03：滤镜长按菜单提供收藏切换（持久化 cx_filter_favs） */
+                <button
+                  className="cx-sheet-row"
+                  onClick={() => {
+                    haptic(6);
+                    toggleFilterFavorite(sheetSource.id);
+                    setSheetSource(null);
+                  }}
+                >
+                  <Star size={15} />
+                  {filterFavs.includes(sheetSource.id)
+                    ? t('crystal.presets.menuUnfavorite' as ParseKeys)
+                    : t('crystal.presets.menuFavorite' as ParseKeys)}
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="cx-sheet-row"
+                    onClick={() => {
+                      haptic(6);
+                      void handleOverwrite(sheetSource);
+                      setSheetSource(null);
+                    }}
+                  >
+                    <Save size={15} />
+                    {t('crystal.presets.menuOverwrite')}
+                  </button>
+                  <button
+                    className="cx-sheet-row"
+                    onClick={() => {
+                      haptic(6);
+                      setNameDialog({ kind: 'rename', presetId: rawId(sheetSource.id), initial: sheetSource.name });
+                      setSheetSource(null);
+                    }}
+                  >
+                    <Pencil size={15} />
+                    {t('crystal.presets.menuRename')}
+                  </button>
+                  <button
+                    className="cx-sheet-row"
+                    onClick={() => {
+                      haptic(6);
+                      void handleExportSingle(sheetSource);
+                      setSheetSource(null);
+                    }}
+                  >
+                    <FileDown size={15} />
+                    {t('crystal.presets.menuExport')}
+                  </button>
+                  <button
+                    className="cx-sheet-row cx-danger"
+                    onClick={() => {
+                      haptic(6);
+                      setDeleteTarget(sheetSource);
+                      setSheetSource(null);
+                    }}
+                  >
+                    <Trash2 size={15} />
+                    {t('crystal.presets.menuDelete')}
+                  </button>
+                </>
+              )}
               <button className="cx-sheet-row cx-sheet-cancel" onClick={() => setSheetSource(null)}>
                 {t('modals.confirm.cancel')}
               </button>

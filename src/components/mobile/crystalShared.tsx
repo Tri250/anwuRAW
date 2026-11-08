@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
+import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Adjustments,
@@ -19,6 +20,39 @@ import { useEditorActions, getOriginalAdjustments } from '../../hooks/useEditorA
 
 /** 长按阈值（G10：原图按下即看 / 对比稍延迟区分两种手势） */
 export const CRYSTAL_LONG_PRESS_MS = 450;
+
+/* --------------------------------------------------------------------------
+ * D-CP-01/P0 沉浸式裁剪共享态（构图面板入口 ↔ 编辑壳全屏响应 的固定契约）。
+ * 调用方契约：{ active, enter, exit } ——
+ *   enter(): 进入沉浸态，记录进入前快照（所选图路径标识 + 完整 adjustments，
+ *            含 crop/aspectRatio），供「取消」整体回滚；
+ *   exit():  退出沉浸态（仅清除 active/快照，不回滚——回滚是取消动作的职责）。
+ * snapshot 为壳层（CrystalMobileApp）内部消费字段，构图面板无需感知。
+ * ------------------------------------------------------------------------ */
+export interface ImmersiveCropSnapshot {
+  /** 进入时快照标识（所选图路径）：切图后取消不回写他图参数 */
+  imagePath: string | null;
+  /** 进入前完整 adjustments，取消时整体还原 */
+  adjustments: Adjustments;
+}
+
+interface ImmersiveCropState {
+  active: boolean;
+  snapshot: ImmersiveCropSnapshot | null;
+  enter: () => void;
+  exit: () => void;
+}
+
+export const useImmersiveCropStore = create<ImmersiveCropState>()((set, get) => ({
+  active: false,
+  snapshot: null,
+  enter: () => {
+    if (get().active) return;
+    const { selectedImage, adjustments } = useEditorStore.getState();
+    set({ active: true, snapshot: { imagePath: selectedImage?.path ?? null, adjustments } });
+  },
+  exit: () => set({ active: false, snapshot: null }),
+}));
 
 /* --------------------------------------------------------------------------
  * 持久化偏好（水印模板收藏/默认/文案/字体/画质），localStorage 即可，

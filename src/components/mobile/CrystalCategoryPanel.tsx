@@ -15,6 +15,7 @@ import {
   Hexagon,
   ImageOff,
   Loader2,
+  Maximize2,
   Octagon,
   Plus,
   RotateCcw,
@@ -62,6 +63,7 @@ import {
   haptic,
   useCrystalAdjust,
   useCrystalAiMasks,
+  useImmersiveCropStore,
 } from './crystalShared';
 import { Mask } from '../panel/right/Masks';
 import type { CrystalCategory } from './CrystalMobileApp';
@@ -73,11 +75,82 @@ import CrystalAiToolsPanel from './CrystalAiToolsPanel';
  * mean-cov = 协方差直接平均（无迭代，最稳）。 */
 type MatchAggregate = 'bures' | 'robust-bures' | 'mean-cov';
 
-const MATCH_AGGREGATES: ReadonlyArray<{ id: MatchAggregate; labelKey: ParseKeys }> = [
-  { id: 'bures', labelKey: 'adjustments.color.aggregate.bures' },
-  { id: 'robust-bures', labelKey: 'adjustments.color.aggregate.robustBures' },
-  { id: 'mean-cov', labelKey: 'adjustments.color.aggregate.meanCov' },
+/* 本轮新增文案键受控宽化：en/zh-CN 词条由本地化流程并行补齐（键清单见变更报告），
+ * ParseKeys 严格校验基于 en.json 现有键，词条入库后此助手引用即自然收敛为字面量类型。 */
+const i18nKey = (key: string): ParseKeys => key as ParseKeys;
+
+/* D-TN-03：robust-bures 的 MAD 软截尾需 ≥3 张样片才有统计意义，不足时 chip 置禁用 */
+const ROBUST_BURES_MIN_SAMPLES = 3;
+const ROBUST_GATE_KEY = i18nKey('crystal.tone.aggregation.robustGate');
+
+const MATCH_AGGREGATES: ReadonlyArray<{
+  id: MatchAggregate;
+  labelKey: ParseKeys;
+  /** 适用场景副标题（D-TN-03：原 chips 无场景说明） */
+  hintKey: ParseKeys;
+  minSamples: number;
+}> = [
+  { id: 'bures', labelKey: 'adjustments.color.aggregate.bures', hintKey: i18nKey('crystal.tone.aggregation.buresHint'), minSamples: 0 },
+  {
+    id: 'robust-bures',
+    labelKey: 'adjustments.color.aggregate.robustBures',
+    hintKey: i18nKey('crystal.tone.aggregation.robustBuresHint'),
+    minSamples: ROBUST_BURES_MIN_SAMPLES,
+  },
+  { id: 'mean-cov', labelKey: 'adjustments.color.aggregate.meanCov', hintKey: i18nKey('crystal.tone.aggregation.meanCovHint'), minSamples: 0 },
 ];
+
+/* D-TN-01：追色双载体结果卡文案键（参数模式 / 高保真 LUT） */
+const TONE_MATCH_KEYS = {
+  paramsMode: i18nKey('crystal.tone.match.paramsMode'),
+  hybridMode: i18nKey('crystal.tone.match.hybridMode'),
+  hybridBadge: i18nKey('crystal.tone.match.hybridBadge'),
+  hybridConflict: i18nKey('crystal.tone.match.hybridConflict'),
+  fitResidual: i18nKey('crystal.tone.match.fitResidual'),
+  residualHint: i18nKey('crystal.tone.match.residualHint'),
+  aspectHint: i18nKey('crystal.tone.match.aspectHint'),
+} as const;
+
+/* D-PT-03：一键人像分层反馈文案键（faceCount/containersApplied 可能缺失→按旧逻辑处理） */
+const PORTRAIT_TOAST_KEYS = {
+  globalOnly: i18nKey('crystal.portrait.toast.globalOnly'),
+  failed: i18nKey('crystal.portrait.toast.failed'),
+  multiFace: i18nKey('crystal.portrait.toast.multiFace'),
+} as const;
+
+/* D-PT-02：美型不适用 guidance（后端 Err 稳定前缀 face_not_applicable:<原因>） */
+const LIQUIFY_GUIDANCE_PREFIX = 'face_not_applicable';
+const LIQUIFY_GUIDANCE_KEY = i18nKey('crystal.portrait.faceNotApplicable');
+
+/* D-FX-01：深度图生成 busy 共享文案（失败 crystal.fx.depthFailed 已在词条内，直接引用） */
+const FX_DEPTH_BUSY_KEY = i18nKey('crystal.fx.depthBusy');
+/** 人像背景虚化无内联 busy 槽位，以固定 id toast 展示共享 busy 文案，完成后 dismiss */
+const DEPTH_BUSY_TOAST_ID = 'crystal.fx.depthBusy';
+
+/* 沉浸裁剪入口文案键（词条由本地化流程并行补齐：zh-CN「沉浸裁剪」/ en "Immersive crop"） */
+const COMPOSE_IMMERSIVE_KEY = i18nKey('crystal.compose.immersiveCrop');
+
+/* D-TN-01：上次追色成功运行的上下文与指标（结果卡 / 双载体切换复用） */
+interface MatchOutcome {
+  samplePaths: string[];
+  targetPath: string;
+  aggregate: MatchAggregate;
+  fitResidual: number | null;
+  aspectMismatch: boolean;
+  carrier: 'params' | 'hybrid';
+  /** hybrid 载体写入的 LUT 路径（用于区分用户自选 LUT 的冲突门禁） */
+  hybridLutPath: string | null;
+}
+
+/* D-PT-03：GenerateAiFaceMask 响应经 useAiMasking 合并进 subMask.parameters，
+ * faceCount/containersApplied 为本轮后端新增（旧后端缺失 → null，按旧逻辑处理）。 */
+const readFaceMeta = (container: { subMasks: Array<{ parameters?: Record<string, unknown> }> } | null) => {
+  const p = container?.subMasks[0]?.parameters;
+  return {
+    faceCount: typeof p?.faceCount === 'number' && Number.isFinite(p.faceCount) ? p.faceCount : null,
+    containersApplied: typeof p?.containersApplied === 'boolean' ? p.containersApplied : null,
+  };
+};
 
 /* ---------------------------------------------------------------------------
  * 参数面板骨架：标题 + 滑杆组。所有值读写真实 store.adjustments。
@@ -227,6 +300,18 @@ function TonePanel() {
   /** 上次追色实际使用的样片集合（UI 展示张数/聚合模式用） */
   const [matchSamples, setMatchSamples] = useState<string[]>([]);
   const [matchAggregate, setMatchAggregate] = useState<MatchAggregate>('bures');
+  /** D-TN-01：上次成功追色的上下文与指标（结果卡双载体切换复用），换图即失效 */
+  const [matchOutcome, setMatchOutcome] = useState<MatchOutcome | null>(null);
+  const [hybridBusy, setHybridBusy] = useState(false);
+  const selectedPath = useEditorStore((s) => s.selectedImage?.path);
+
+  /* D-TN-03 门禁兜底：robust-bures 需 ≥3 张样片，样片被清除/替换后不足时自动回落默认聚合，
+   * 避免「已选中的禁用 chip」把无效聚合静默带入下一次追色。 */
+  useEffect(() => {
+    if (matchAggregate === 'robust-bures' && matchSamples.length < ROBUST_BURES_MIN_SAMPLES) {
+      setMatchAggregate('bures');
+    }
+  }, [matchAggregate, matchSamples.length]);
   const handleColorMatch = useCallback(async () => {
     const img = useEditorStore.getState().selectedImage;
     if (!img || matchBusy) return;
@@ -266,9 +351,13 @@ function TonePanel() {
       const paths = Array.isArray(selected) ? selected : selected ? [selected] : [];
       if (paths.length === 0) return;
       setMatchSamples(paths);
+      /* D-TN-01/D-PT-03 契约：响应新增 fitResidual / sampleAspectMismatch（旧后端缺省，
+       * 可选字段按缺失处理）；outputMode 缺省即 params，此处不传。 */
       const result = await invoke<{
         adjustments?: { colorGrading?: Record<string, unknown>; curves?: Record<string, unknown> };
         metrics?: { deltaEReduction?: number };
+        fitResidual?: number;
+        sampleAspectMismatch?: boolean;
       }>(Invokes.ComputeColorMatch, {
         samplePaths: paths,
         targetPath: img.path,
@@ -311,13 +400,71 @@ function TonePanel() {
               reduction: Math.round(result.metrics?.deltaEReduction ?? 0),
             }),
       );
+      // D-TN-01：记录本次运行上下文与指标，供结果卡双载体切换（重算 hybrid）复用
+      setMatchOutcome({
+        samplePaths: paths,
+        targetPath: img.path,
+        aggregate: matchAggregate,
+        fitResidual: typeof result.fitResidual === 'number' ? result.fitResidual : null,
+        aspectMismatch: result.sampleAspectMismatch === true,
+        carrier: 'params',
+        hybridLutPath: null,
+      });
     } catch (e) {
       console.error('Color match failed:', e);
+      // 失败则上一张结果卡已失效（输入/后端状态不可信），避免残留旧指标误导
+      setMatchOutcome(null);
       toast.error(t('adjustments.color.colorMatchFailed'));
     } finally {
       setMatchBusy(false);
     }
   }, [applyPatch, matchBusy, matchAggregate, t]);
+
+  /* D-TN-01 双载体：切到「高保真 LUT」——同一样片集以 outputMode:'hybrid' 重算，
+   * 后端产出混合 LUT 文件（hybridLutPath），用户当前无自选 LUT 时写入 lutPath
+   * 并沿用现有 LUT 强度（applyPatch → setAdjustments + pushHistory，与 LUT 面板同链路）；
+   * 参数分量（colorGrading/curves）保留不动，LUT 承载参数无法表达的高保真分量。
+   * 期间切图或用户已选 LUT 时放弃写入，避免覆盖/错配。 */
+  const applyHybridCarrier = useCallback(async () => {
+    const meta = matchOutcome;
+    if (!meta || hybridBusy) return;
+    setHybridBusy(true);
+    try {
+      const result = await invoke<{ hybridLutPath?: string }>(Invokes.ComputeColorMatch, {
+        samplePaths: meta.samplePaths,
+        targetPath: meta.targetPath,
+        aggregate: meta.aggregate,
+        outputMode: 'hybrid',
+      });
+      const hybridLutPath = result.hybridLutPath;
+      if (!hybridLutPath || useEditorStore.getState().selectedImage?.path !== meta.targetPath) return;
+      const cur = useEditorStore.getState().adjustments;
+      if (cur.lutPath) return; // 期间用户已选 LUT：与门禁一致，不覆盖
+      applyPatch({ lutPath: hybridLutPath, lutIntensity: Number(cur.lutIntensity ?? 100) });
+      setMatchOutcome({ ...meta, carrier: 'hybrid', hybridLutPath });
+    } catch (e) {
+      console.error('Hybrid LUT match failed:', e);
+      toast.error(t('adjustments.color.colorMatchFailed'));
+    } finally {
+      setHybridBusy(false);
+    }
+  }, [applyPatch, hybridBusy, matchOutcome, t]);
+
+  /* D-TN-01：切回「参数模式」——仅移除 LUT 载体（字段与 FxPanel clearLut 同源），
+   * 参数分量保留，不留半开启状态。 */
+  const applyParamsCarrier = useCallback(() => {
+    const meta = matchOutcome;
+    if (!meta || meta.carrier === 'params' || hybridBusy) return;
+    applyPatch({
+      lutPath: null,
+      lutName: null,
+      lutData: null,
+      lutSize: 0,
+      lutIntensity: 100,
+      lutIsSceneReferred: false,
+    });
+    setMatchOutcome({ ...meta, carrier: 'params', hybridLutPath: null });
+  }, [applyPatch, hybridBusy, matchOutcome]);
 
   /* 参数化曲线：按通道滑杆实时换算为点曲线（后端渲染 curves[channel]），与桌面 Curves 同一套数学。
    * 审计修复（调色-曲线）：嵌套 patch 一律从 store 实时读取——闭包旧值在快速拖动时
@@ -567,20 +714,30 @@ function TonePanel() {
                 <span className="text-[10px] cx-text-dim">
                   {t('adjustments.color.matchSamples', { count: matchSamples.length })}
                 </span>
+                {/* D-TN-03：聚合 chips 加适用场景副标题；robust-bures 的 MAD 软截尾
+                    需 ≥3 张样片，不足时置灰并以门禁文案替代副标题 */}
                 {matchSamples.length > 1 &&
-                  MATCH_AGGREGATES.map((m) => (
-                    <button
-                      key={m.id}
-                      className={`cx-chip shrink-0 ${matchAggregate === m.id ? 'is-active' : ''}`}
-                      onClick={() => {
-                        haptic(5);
-                        setMatchAggregate(m.id);
-                      }}
-                      aria-pressed={matchAggregate === m.id}
-                    >
-                      {t(m.labelKey)}
-                    </button>
-                  ))}
+                  MATCH_AGGREGATES.map((m) => {
+                    const gated = m.minSamples > 0 && matchSamples.length < m.minSamples;
+                    const subText = gated ? t(ROBUST_GATE_KEY) : t(m.hintKey);
+                    return (
+                      <button
+                        key={m.id}
+                        className={`cx-chip shrink-0${matchAggregate === m.id ? ' is-active' : ''}`}
+                        style={{ height: 'auto', padding: '5px 12px', textAlign: 'left' }}
+                        onClick={() => {
+                          haptic(5);
+                          setMatchAggregate(m.id);
+                        }}
+                        disabled={gated}
+                        aria-pressed={matchAggregate === m.id}
+                        title={subText}
+                      >
+                        <span className="block leading-tight">{t(m.labelKey)}</span>
+                        <span className="block text-[9px] font-normal leading-tight opacity-75">{subText}</span>
+                      </button>
+                    );
+                  })}
                 <button
                   className="cx-chip shrink-0"
                   title={t('adjustments.color.matchClearSamples')}
@@ -591,6 +748,61 @@ function TonePanel() {
                 >
                   <X size={10} />
                 </button>
+              </div>
+            )}
+            {/* D-TN-01 追色结果卡（换图即失效）：双载体分段控件 + 拟合质量提示。
+                hybrid 与用户自选 LUT 互斥（避免覆盖）；fitResidual>0.01 提示参数精度损失。 */}
+            {matchOutcome && matchOutcome.targetPath === selectedPath && (
+              <div className="cx-hsl">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    className={`cx-chip${matchOutcome.carrier === 'params' ? ' is-active' : ''}`}
+                    disabled={hybridBusy}
+                    onClick={() => {
+                      haptic(5);
+                      applyParamsCarrier();
+                    }}
+                    aria-pressed={matchOutcome.carrier === 'params'}
+                  >
+                    {t(TONE_MATCH_KEYS.paramsMode)}
+                  </button>
+                  <button
+                    className={`cx-chip${matchOutcome.carrier === 'hybrid' ? ' is-active' : ''}`}
+                    disabled={hybridBusy || (Boolean(adjustments.lutPath) && adjustments.lutPath !== matchOutcome.hybridLutPath)}
+                    onClick={() => {
+                      haptic(5);
+                      void applyHybridCarrier();
+                    }}
+                    aria-pressed={matchOutcome.carrier === 'hybrid'}
+                  >
+                    {hybridBusy && <Loader2 size={11} className="animate-spin inline mr-1" />}
+                    {t(TONE_MATCH_KEYS.hybridMode)}
+                  </button>
+                  {matchOutcome.carrier === 'hybrid' && (
+                    <span
+                      className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'var(--cx-accent-soft)', color: 'var(--cx-accent)' }}
+                    >
+                      {t(TONE_MATCH_KEYS.hybridBadge)}
+                    </span>
+                  )}
+                </div>
+                {Boolean(adjustments.lutPath) && adjustments.lutPath !== matchOutcome.hybridLutPath && (
+                  <div className="text-[10px] cx-text-dim mt-1.5">{t(TONE_MATCH_KEYS.hybridConflict)}</div>
+                )}
+                {matchOutcome.fitResidual !== null && (
+                  <div className="text-[10px] cx-text-dim mt-1.5">
+                    {t(TONE_MATCH_KEYS.fitResidual, { v: matchOutcome.fitResidual.toFixed(4) })}
+                    {matchOutcome.fitResidual > 0.01 && (
+                      <span className="block mt-0.5" style={{ color: 'var(--cx-accent)' }}>
+                        {t(TONE_MATCH_KEYS.residualHint)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {matchOutcome.aspectMismatch && (
+                  <div className="text-[10px] cx-text-dim mt-1.5">{t(TONE_MATCH_KEYS.aspectHint)}</div>
+                )}
               </div>
             )}
             <CxSliderRow
@@ -910,29 +1122,34 @@ function PortraitPanel() {
     [findContainerByKind, removeContainerByKind, setAdjustments],
   );
 
-  /* 算子开关：未开启 → 建独立 AiFace 容器（parts 限定作用域）并识别；已开启 → 移除。 */
+  /* 算子开关：未开启 → 建独立 AiFace 容器（parts 限定作用域）并识别；已开启 → 移除。
+   * D-PT-03：返回本次识别结果元信息（faceCount/containersApplied，旧后端缺省为 null）
+   * 供一键人像分层反馈；suppressFailureToast 供一键链路单源提示（避免双 toast）。 */
   const runOperator = useCallback(
-    async (op: RetouchOp) => {
-      if (opBusy) return;
+    async (
+      op: RetouchOp,
+      opts?: { suppressFailureToast?: boolean },
+    ): Promise<{ ok: boolean; faceCount: number | null; containersApplied: boolean | null } | null> => {
+      if (opBusy) return null;
       if (findContainerByKind(op.kind)) {
         // 自检修复（人像-切换关闭）：瓦片关闭此前直接 removeContainerByKind，
         // 不清理该容器承载的美型补丁——美型宿主选取兼容旧数据时可落到带
         // retouchKind 的容器（跨设备 sidecar 场景），残留补丁会继续生效。
         removeOperator(op);
-        return;
+        return null;
       }
       setOpBusy(op.kind);
       try {
         // 闭环修复（人像-激活）：人脸识别依赖后端已加载原图，图片未就绪时点击
         // 会立即失败并闪断激活态。先等待就绪（busy 转圈反馈），超时/切图则放弃。
         const startPath = useEditorStore.getState().selectedImage?.path;
-        if (!startPath) return;
+        if (!startPath) return null;
         if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) {
           // 自检修复（人像-反馈闭环）：静默 return 会被感知为死键（AI 面板同文案）
           toast.info(t('crystal.aiRecommend.notReady'));
-          return;
+          return null;
         }
-        if (useEditorStore.getState().selectedImage?.path !== startPath) return;
+        if (useEditorStore.getState().selectedImage?.path !== startPath) return null;
         const { selectedImage: img } = useEditorStore.getState();
         const subMask = createSubMask(Mask.AiFace, { width: img?.width ?? 1000, height: img?.height ?? 1000 });
         subMask.parameters = {
@@ -967,8 +1184,11 @@ function PortraitPanel() {
             ...prev,
             masks: (prev.masks || []).filter((c) => c.id !== containerId),
           }));
-          toast.error(t('crystal.ai.maskFailed'));
+          if (!opts?.suppressFailureToast) toast.error(t('crystal.ai.maskFailed'));
+          return { ok: false, ...readFaceMeta(created) };
         }
+        if (!created) return null;
+        return { ok: true, ...readFaceMeta(created) };
       } catch {
         // 异常路径同样清理可能已入库的容器（识别调用抛错时机不固定）
         const latest = useEditorStore.getState().adjustments;
@@ -978,8 +1198,11 @@ function PortraitPanel() {
             ...prev,
             masks: (prev.masks || []).filter((c) => c.id !== created.id),
           }));
+          if (!opts?.suppressFailureToast) toast.error(t('crystal.ai.maskFailed'));
+          return { ok: false, ...readFaceMeta(created) };
         }
         toast.error(t('crystal.ai.maskFailed'));
+        return null;
       } finally {
         setOpBusy(null);
       }
@@ -1058,7 +1281,11 @@ function PortraitPanel() {
    * 2) AI 磨皮：未开启则自动识别人脸并建立磨皮容器（复用 runOperator 全链路）；
    * 3) 统一肤色：磨皮就绪后自动执行（复用 handleUnifySkin）。
    * 无人脸/识别失败时容器被清理并提示，全局层仍有效；美型/背景虚化属强主观
-   * 与构图选择，不默认开启。 */
+   * 与构图选择，不默认开启。
+   * D-PT-03 分层反馈：读取识别响应 faceCount/containersApplied（旧后端缺失
+   * → null，按旧逻辑只走统一肤色的成功/失败文案）：
+   * faceCount===0（或仅全局生效）→ globalOnly；识别失败 → failed；
+   * faceCount>=3 → multiFace；其余维持现有成功文案（unifyDone）。 */
   const oneTapPortrait = useCallback(async () => {
     if (oneTapBusy) return;
     setOneTapBusy(true);
@@ -1074,7 +1301,17 @@ function PortraitPanel() {
       });
       const smoothingOp = RETOUCH_OPS.find((op) => op.kind === 'smoothing');
       if (smoothingOp && !findContainerByKind('smoothing')) {
-        await runOperator(smoothingOp);
+        const outcome = await runOperator(smoothingOp, { suppressFailureToast: true });
+        if (outcome && !outcome.ok) {
+          if (outcome.faceCount === 0 || (outcome.faceCount === null && outcome.containersApplied === false)) {
+            // 后端明确「未检测到人脸」/仅应用全局层：全局调整已生效，非错误
+            toast.info(t(PORTRAIT_TOAST_KEYS.globalOnly));
+          } else {
+            toast.error(t(PORTRAIT_TOAST_KEYS.failed));
+          }
+        } else if (outcome && outcome.faceCount !== null && outcome.faceCount >= 3) {
+          toast.info(t(PORTRAIT_TOAST_KEYS.multiFace));
+        }
       }
       if (findContainerByKind('smoothing')?.subMasks[0]?.parameters?.maskDataBase64) {
         await handleUnifySkin();
@@ -1082,7 +1319,7 @@ function PortraitPanel() {
     } finally {
       setOneTapBusy(false);
     }
-  }, [applyPatch, findContainerByKind, handleUnifySkin, oneTapBusy, runOperator]);
+  }, [applyPatch, findContainerByKind, handleUnifySkin, oneTapBusy, runOperator, t]);
 
   /* 美型（瘦脸/下颌线）：值存宿主 AiFace 容器 submask.parameters.liquify（与桌面一致），
    * 防抖 600ms 调 GenerateFaceLiquifyPatch → aiPatches upsert；双 0 自动移除补丁。 */
@@ -1171,7 +1408,13 @@ function PortraitPanel() {
         ...prev,
         aiPatches: (prev.aiPatches || []).map((p) => (p.id === patchId ? { ...p, isLoading: false } : p)),
       }));
-      toast.error(t('crystal.portrait.liquifyFailed'));
+      // D-PT-02：适用性 guidance（侧脸/俯仰过大）是明确反馈而非故障——单独文案
+      const msg = typeof e === 'string' ? e : e instanceof Error ? e.message : String(e ?? '');
+      if (msg.startsWith(LIQUIFY_GUIDANCE_PREFIX)) {
+        toast.info(t(LIQUIFY_GUIDANCE_KEY));
+      } else {
+        toast.error(t('crystal.portrait.liquifyFailed'));
+      }
     }
   }, [findLiquifyHost, setAdjustments, t]);
 
@@ -1209,6 +1452,8 @@ function PortraitPanel() {
     const startPath = useEditorStore.getState().selectedImage?.path;
     if (!startPath) return;
     setBlurBusy(true);
+    // D-FX-01：深度图生成 busy 共享文案（无内联槽位，以固定 id toast 呈现，完成后 dismiss）
+    toast.info(t(FX_DEPTH_BUSY_KEY), { toastId: DEPTH_BUSY_TOAST_ID, autoClose: false });
     try {
       // 闭环修复（人像-激活）：深度图推理依赖后端原图，未就绪时先等待。
       if (!useEditorStore.getState().selectedImage?.isReady && !(await awaitImageReady(startPath))) {
@@ -1222,9 +1467,11 @@ function PortraitPanel() {
       applyPatch({ lensBlurDepthMap: b64, lensBlurEnabled: true, lensBlurAmount: 50 });
     } catch {
       if (useEditorStore.getState().selectedImage?.path === startPath) {
-        toast.error(t('crystal.portrait.blurFailed'));
+        // D-FX-01：失败文案统一引用共享键（原 crystal.portrait.blurFailed 语义相同）
+        toast.error(t('crystal.fx.depthFailed'));
       }
     } finally {
+      toast.dismiss(DEPTH_BUSY_TOAST_ID);
       setBlurBusy(false);
     }
   }, [applyPatch, blurBusy, t]);
@@ -1445,6 +1692,8 @@ function ComposePanel() {
   const isAutoStraightening = useEditorStore((s) => s.isAutoStraightening);
   const { applyPatch } = useCrystalAdjust();
   const { handleAutoStraighten, handleAutoLensCorrection } = useEditorActions();
+  /* 沉浸裁剪入口：active 时置灰（壳层浮层已展开，避免重复进入） */
+  const immersiveCropActive = useImmersiveCropStore((s) => s.active);
 
   /* 旋转 90°：与桌面 handleRotate 同源 —— 比例取逆、裁剪按新朝向重算、拉直归零 */
   const rotate90 = useCallback(() => {
@@ -1618,6 +1867,19 @@ function ComposePanel() {
         >
           <Aperture size={14} className="inline mr-1 -mt-0.5" />
           {t('contextMenus.editor.autoLensCorrection')}
+        </button>
+        {/* 沉浸裁剪：转交壳层浮层（比例 chips/取消/重置/确认）与预览手柄手势；
+            store.enter 自带 active 防重入，此处再按 active 置灰避免重复触发 */}
+        <button
+          className="cx-chip"
+          disabled={immersiveCropActive}
+          onClick={() => {
+            haptic(6);
+            useImmersiveCropStore.getState().enter();
+          }}
+        >
+          <Maximize2 size={14} className="inline mr-1 -mt-0.5" />
+          {t(COMPOSE_IMMERSIVE_KEY)}
         </button>
       </div>
       <CxSliderRow
@@ -2242,7 +2504,8 @@ function FxPanel() {
               <div className="cx-gen-busy">
                 <Loader2 size={13} className="animate-spin" />
                 <span className={aiDownloadStatus ? 'gen-status' : undefined}>
-                  {aiDownloadStatus || t('editor.ai.generatingDepthMap')}
+                  {/* D-FX-01：busy 文案统一引用共享键（原 editor.ai.generatingDepthMap 语义相同） */}
+                  {aiDownloadStatus || t(FX_DEPTH_BUSY_KEY)}
                 </span>
               </div>
             ) : adjustments.lensBlurEnabled ? (
@@ -2575,7 +2838,8 @@ function FxPanel() {
               <div className="cx-gen-busy">
                 <Loader2 size={13} className="animate-spin" />
                 <span className={aiDownloadStatus ? 'gen-status' : undefined}>
-                  {aiDownloadStatus || t('editor.ai.generatingDepthMap')}
+                  {/* D-FX-01：busy 文案统一引用共享键（原 editor.ai.generatingDepthMap 语义相同） */}
+                  {aiDownloadStatus || t(FX_DEPTH_BUSY_KEY)}
                 </span>
               </div>
             ) : adjustments.fogEnabled ? (

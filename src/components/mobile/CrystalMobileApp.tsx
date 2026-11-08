@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -27,7 +27,14 @@ import { Invokes } from '../ui/AppProperties';
 import { Status } from '../ui/ExportImportProperties';
 import ConfirmModal from '../modals/ConfirmModal';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
-import { haptic, summarizeExif, useShowOriginalHold } from './crystalShared';
+import { calculateCenteredCrop } from '../../utils/cropUtils';
+import {
+  haptic,
+  summarizeExif,
+  useCrystalAdjust,
+  useImmersiveCropStore,
+  useShowOriginalHold,
+} from './crystalShared';
 import { debouncedSetHistory } from '../../hooks/useEditorActions';
 import { selectAiModelDownloadStatus } from '../../store/useProcessStore';
 import CrystalCategoryPanel from './CrystalCategoryPanel';
@@ -188,6 +195,109 @@ function CrystalBottomBar({
  * 编辑域（黑金）/ 导出域（青绿）双流程；复用全局 ImageProcessingManager
  * 渲染管线与 50 步撤销栈，仅 UI 全新。
  */
+
+/* D-CP-01: 沉浸裁剪浮层比例 chips —— 与构图面板 ASPECT_CHIPS 同值同 key
+ * （面板文件不在本次改动范围，枚举镜像；labelKey 复用既有词条，无新增 key）。 */
+const IMMERSIVE_ASPECT_CHIPS: Array<{ labelKey: ParseKeys; value: number | null }> = [
+  { labelKey: 'crystal.compose.free', value: null },
+  { labelKey: 'crystal.compose.ratio11', value: 1 },
+  { labelKey: 'crystal.compose.ratio43', value: 4 / 3 },
+  { labelKey: 'crystal.compose.ratio32', value: 3 / 2 },
+  { labelKey: 'crystal.compose.ratio169', value: 16 / 9 },
+  { labelKey: 'crystal.compose.ratio916', value: 9 / 16 },
+];
+
+/** 沉浸式裁剪浮层：底部比例 chips + 取消/重置/确认三胶囊（不拦截预览手势） */
+function ImmersiveCropOverlay({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
+  const { t } = useTranslation();
+  const selectedImage = useEditorStore((s) => s.selectedImage);
+  const aspectRatio = useEditorStore((s) => s.adjustments.aspectRatio ?? null);
+  const { applyPatch } = useCrystalAdjust();
+
+  /* 与构图面板 activeAspect 同源：按用户所选宽比做正/逆双向匹配以高亮 chip */
+  const activeAspect = useMemo(() => {
+    if (!aspectRatio) return null;
+    const hit = IMMERSIVE_ASPECT_CHIPS.find(
+      (c) => c.value && (Math.abs(c.value - aspectRatio) < 0.01 || Math.abs(1 / c.value - aspectRatio) < 0.01),
+    );
+    return hit ? hit.value : aspectRatio;
+  }, [aspectRatio]);
+
+  /* 与构图面板 rotateChip / 桌面 CropPanel.applyAspectRatio 同源：面积保持的居中裁剪。
+   * 选「自由」时清空 aspectRatio 与裁剪框（与面板行为一致），随后可单指重新画框。 */
+  const applyAspect = useCallback(
+    (value: number | null) => {
+      const fresh = useEditorStore.getState().adjustments;
+      const newCrop =
+        value && selectedImage?.width && selectedImage?.height
+          ? calculateCenteredCrop(
+              selectedImage.width,
+              selectedImage.height,
+              fresh.orientationSteps || 0,
+              value,
+              fresh.rotation || 0,
+            )
+          : null;
+      applyPatch({ aspectRatio: value, crop: newCrop }, { enableTools: false });
+    },
+    [applyPatch, selectedImage],
+  );
+
+  /* 重置：仅清除裁剪框（保留比例选择），无框时为 no-op 避免空历史条目 */
+  const resetCrop = useCallback(() => {
+    if (!useEditorStore.getState().adjustments.crop) return;
+    applyPatch({ crop: null }, { enableTools: false });
+  }, [applyPatch]);
+
+  return (
+    <div className="cx-imm">
+      <div className="cx-imm-chips">
+        {IMMERSIVE_ASPECT_CHIPS.map(({ labelKey, value }) => (
+          <button
+            key={labelKey}
+            className={`cx-chip ${activeAspect === value ? 'is-active' : ''}`}
+            onClick={() => {
+              haptic(6);
+              applyAspect(value);
+            }}
+          >
+            {t(labelKey)}
+          </button>
+        ))}
+      </div>
+      <div className="cx-imm-actions">
+        <button
+          className="cx-imm-btn"
+          onClick={() => {
+            haptic(6);
+            onCancel();
+          }}
+        >
+          {t('modals.confirm.cancel')}
+        </button>
+        <button
+          className="cx-imm-btn"
+          onClick={() => {
+            haptic(6);
+            resetCrop();
+          }}
+        >
+          {t('crystal.bottom.reset')}
+        </button>
+        <button
+          className="cx-imm-btn cx-imm-btn-primary"
+          onClick={() => {
+            haptic([8, 20, 8]);
+            onConfirm();
+          }}
+        >
+          {t('modals.confirm.confirm')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary: () => void }) {
   const { t } = useTranslation();
   const [flow, setFlow] = useState<'edit' | 'export'>('edit');
@@ -222,18 +332,45 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
   );
 
   // 离开编辑域（切导出/回图库/卸载）时强制退出对比态，防 store 残留。
+  // 沉浸裁剪态同理：退出壳层即放弃（不回滚——编辑域已整体离开）。
   useEffect(
     () => () => {
       useEditorStore.getState().setEditor({ compareView: 'off', showOriginal: false, previewOverride: null });
+      useImmersiveCropStore.getState().exit();
     },
     [],
   );
+
+  /* D-CP-01: 沉浸裁剪取消 —— 按进入前快照整体回滚（含 crop/aspectRatio）。
+   * 先冲销会话内防抖历史推送，避免回滚值又被补进撤销栈；回滚走 setEditor
+   * 直写（不产生新撤销点）。快照标识（所选图路径）不匹配时丢弃回滚。 */
+  const cancelImmersive = useCallback(() => {
+    const { snapshot, exit } = useImmersiveCropStore.getState();
+    exit();
+    if (!snapshot) return;
+    const sel = useEditorStore.getState().selectedImage;
+    if (snapshot.imagePath && sel && sel.path !== snapshot.imagePath) return;
+    debouncedSetHistory.cancel();
+    useEditorStore.getState().setEditor({ adjustments: snapshot.adjustments });
+  }, []);
+
+  /* D-CP-01: 沉浸裁剪确认 —— 裁剪参数已在会话内实时写入（applyPatch →
+   * 既有 debounced pushHistory），确认即冲刷撤销点并退出沉浸态。 */
+  const confirmImmersive = useCallback(() => {
+    debouncedSetHistory.flush();
+    useImmersiveCropStore.getState().exit();
+  }, []);
 
   // Android 返回键闭环：对比视图 → 回编辑；导出域 → 回编辑域；编辑域 → 回图库。
   // UX：导出进行中消费返回事件但不切域——进度反馈在导出页内，离开即丢失。
   useEffect(() => {
     if (osPlatform !== 'android') return;
     const handler = () => {
+      // D-CP-01: 沉浸裁剪激活时为顶层退出层——返回键 = 取消回滚（不跳库、不透传）
+      if (useImmersiveCropStore.getState().active) {
+        cancelImmersive();
+        return;
+      }
       // FD-1: 确认弹窗打开时，返回键优先关闭弹窗，而非穿透到流程切换/退出图库
       if (isResetConfirmOpen) {
         setIsResetConfirmOpen(false);
@@ -260,7 +397,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     };
     pushExitLayer(handler);
     return () => removeExitLayer(handler);
-  }, [flow, isCompareOpen, isExporting, isResetConfirmOpen, onBackToLibrary, osPlatform, setCompareOpen, t]);
+  }, [cancelImmersive, flow, isCompareOpen, isExporting, isResetConfirmOpen, onBackToLibrary, osPlatform, setCompareOpen, t]);
 
   const handleReset = useCallback(() => {
     const sel = useEditorStore.getState().selectedImage;
@@ -281,12 +418,15 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     setFlow('export');
   }, [setCompareOpen]);
 
+  // D-CP-01: 沉浸裁剪激活态（.cx-app 挂 is-fullscreen-crop + 渲染浮层）
+  const immersiveActive = useImmersiveCropStore((s) => s.active);
+
   if (!selectedImage) return null;
 
   return (
     <div className="crystal-shell" data-flow={flow}>
       {flow === 'edit' ? (
-        <div className="cx-app">
+        <div className={`cx-app${immersiveActive ? ' is-fullscreen-crop' : ''}`}>
           <CrystalTopBar camera={cameraSubtitle} onBack={onBackToLibrary} onSave={goExport} />
           {modelDownloadStatus && (
             <div className="cx-dl-pill" role="status">
@@ -302,6 +442,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
             onReset={() => setIsResetConfirmOpen(true)}
             onCompare={() => setCompareOpen(!isCompareOpen)}
           />
+          {immersiveActive && <ImmersiveCropOverlay onCancel={cancelImmersive} onConfirm={confirmImmersive} />}
           <ConfirmModal
             isOpen={isResetConfirmOpen}
             title={t('crystal.resetConfirm.title')}

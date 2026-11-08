@@ -157,7 +157,7 @@ export enum Invokes {
   SceneClassify = 'scene_classify',
   AiStyleSuggest = 'ai_style_suggest',
   AiGenerateStyleReference = 'ai_generate_style_reference',
-  AiUpscaleExport = 'ai_upscale_export',
+  UpscaleExportLanczos = 'upscale_export_lanczos',
   ExportXmpSidecar = 'export_xmp_sidecar',
   ImportXmpSidecar = 'import_xmp_sidecar',
   SetWatchedFolders = 'set_watched_folders',

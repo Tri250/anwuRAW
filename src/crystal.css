@@ -124,8 +124,280 @@ html.android body > .global-tooltip {
     transform: translateY(0);
   }
 }
+/* ==========================================================================
+   D-CP-01: 沉浸式裁剪（useImmersiveCropStore.active → .cx-app.is-fullscreen-crop）。
+   进入态隐藏顶栏/下载胶囊/分类导航/二级面板/底栏（opacity + visibility 视觉隐藏 +
+   pointer-events:none，布局不动）；预览区 absolute inset:0 放大为全屏，入场动画
+   仅用 transform/opacity（240ms cubic-bezier(.2,.8,.2,1)）；浮层（比例 chips +
+   取消/重置/确认三胶囊）挂 .cx-imm，底部遵循 env(safe-area-inset-bottom)。
+   ========================================================================== */
 .cx-app.is-fullscreen-crop {
   z-index: 60;
+}
+.cx-app.is-fullscreen-crop .cx-topbar,
+.cx-app.is-fullscreen-crop .cx-dl-pill,
+.cx-app.is-fullscreen-crop .cx-catnav,
+.cx-app.is-fullscreen-crop .cx-panel,
+.cx-app.is-fullscreen-crop .cx-bottombar {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease-out,
+    visibility 0s 0.18s;
+}
+.cx-app.is-fullscreen-crop .cx-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  animation: cx-immersive-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes cx-immersive-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* 沉浸浮层容器：不拦截预览手势，仅按钮/chip 可点 */
+.cx-imm {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  pointer-events: none;
+  animation: cx-fade-in 0.24s ease-out;
+}
+.cx-imm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 480px;
+}
+.cx-imm .cx-chip {
+  pointer-events: auto;
+  height: 34px;
+  background: rgba(20, 17, 6, 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.cx-imm-actions {
+  display: flex;
+  gap: 10px;
+}
+.cx-imm-btn {
+  min-width: 88px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--cx-border);
+  background: rgba(20, 17, 6, 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--cx-ink);
+  font-size: 13.5px;
+  font-weight: 700;
+  pointer-events: auto;
+}
+.cx-imm-btn:active {
+  background: rgba(212, 175, 55, 0.28);
+}
+.cx-imm-btn-primary {
+  border-color: transparent;
+  background: var(--cx-accent);
+  color: #171503;
+}
+.cx-imm-btn-primary:active {
+  filter: brightness(0.92);
+}
+
+/* ==========================================================================
+   D-CP-02: 裁剪框与手柄（1x 构图态）。框外压暗用 9999px box-shadow 外扩，
+   由 .cx-preview overflow:hidden 裁剪；手柄为 44px 触控命中区 + 轻量视觉标。
+   ========================================================================== */
+.cx-crop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.cx-crop-frame {
+  position: absolute;
+  border: 1px solid rgba(126, 217, 126, 0.9);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+.cx-crop-handle {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+}
+/* 角手柄：44×44 命中区，L 形视觉标收在框角 */
+.cx-crop-corner {
+  width: 44px;
+  height: 44px;
+}
+.cx-crop-corner.cx-crop-nw {
+  left: -22px;
+  top: -22px;
+  cursor: nwse-resize;
+}
+.cx-crop-corner.cx-crop-ne {
+  right: -22px;
+  top: -22px;
+  cursor: nesw-resize;
+}
+.cx-crop-corner.cx-crop-sw {
+  left: -22px;
+  bottom: -22px;
+  cursor: nesw-resize;
+}
+.cx-crop-corner.cx-crop-se {
+  right: -22px;
+  bottom: -22px;
+  cursor: nwse-resize;
+}
+.cx-crop-corner::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 0 solid #b8f0b8;
+}
+.cx-crop-nw::before {
+  left: 21px;
+  top: 21px;
+  border-left-width: 2.5px;
+  border-top-width: 2.5px;
+}
+.cx-crop-ne::before {
+  right: 21px;
+  top: 21px;
+  border-right-width: 2.5px;
+  border-top-width: 2.5px;
+}
+.cx-crop-sw::before {
+  left: 21px;
+  bottom: 21px;
+  border-left-width: 2.5px;
+  border-bottom-width: 2.5px;
+}
+.cx-crop-se::before {
+  right: 21px;
+  bottom: 21px;
+  border-right-width: 2.5px;
+  border-bottom-width: 2.5px;
+}
+/* 边手柄：拖动轴向 44px 命中，短条视觉标 */
+.cx-crop-edge.cx-crop-n {
+  left: 50%;
+  top: -22px;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 44px;
+  cursor: ns-resize;
+}
+.cx-crop-edge.cx-crop-s {
+  left: 50%;
+  bottom: -22px;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 44px;
+  cursor: ns-resize;
+}
+.cx-crop-edge.cx-crop-w {
+  left: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 56px;
+  cursor: ew-resize;
+}
+.cx-crop-edge.cx-crop-e {
+  right: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 56px;
+  cursor: ew-resize;
+}
+.cx-crop-edge::before {
+  content: '';
+  position: absolute;
+  border-radius: 2px;
+  background: rgba(126, 217, 126, 0.85);
+}
+.cx-crop-n::before,
+.cx-crop-s::before {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 3px;
+}
+.cx-crop-n::before {
+  top: 20px;
+}
+.cx-crop-s::before {
+  bottom: 20px;
+}
+.cx-crop-w::before,
+.cx-crop-e::before {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 26px;
+}
+.cx-crop-w::before {
+  left: 20px;
+}
+.cx-crop-e::before {
+  right: 20px;
+}
+
+/* ==========================================================================
+   D-CP-03: 手势状态胶囊（预览区左上角，fade 150ms；reduced-motion 无动效）
+   ========================================================================== */
+.cx-gesture-capsule {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  left: 10px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(126, 217, 126, 0.45);
+  background: rgba(9, 26, 10, 0.66);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #b8f0b8;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: cx-fade-in 0.15s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-app.is-fullscreen-crop .cx-preview {
+    /* 降级为纯 opacity 淡入（去除 transform 位移/缩放动效） */
+    animation: cx-fade-in 240ms ease-out;
+  }
+  .cx-imm,
+  .cx-gesture-capsule {
+    animation: none;
+  }
 }
 
 /* ================= 顶栏 ================= */

@@ -25,6 +25,12 @@ import { CxSliderRow, awaitImageReady, haptic, useCrystalAdjust, useCrystalAiMas
  * - 文本识别蒙版：AiText 提示词 → GenerateAiTextMask（桌面 MasksPanel 同源）。
  * - 景深蒙版：AiDepth 生成 + 近/远/羽化渲染期参数（DepthRangePicker 同构）。
  * - 生成中：busy 蒙层显示模型下载进度并提供 CancelAiTask 取消出口。
+ * - 风格词调色（原「一句话调色」）：ai_style_suggest 携带当前图路径（imagePath）；
+ *   结果卡展示强度 / 混合风格名 / 被忽略的否定描述。
+ * - 云参考图（实验性）：入口不可达时置灰展示而非静默隐藏（D-AI-02），操作区
+ *   常驻联网隐私说明条（D-AI-03）。
+ * - 9 格 tile 右上角来源圆点（青=本地模型 / 金=本地规则 / 紫=云端），首次点击
+ *   某格时面板底部滑入来源说明条（D-AI-06）。
  * ------------------------------------------------------------------------- */
 
 type EnhanceIntensity = 'subtle' | 'standard' | 'strong';
@@ -36,15 +42,35 @@ const INTENSITIES: ReadonlyArray<{ id: EnhanceIntensity; labelKey: ParseKeys }> 
   { id: 'strong', labelKey: 'editor.aiEnhance.intensities.strong' },
 ];
 
-/** 一句话调色返回结构（与后端 style_suggest::StyleSuggestion::to_json 对齐） */
+/** 风格词调色（原「一句话调色」）返回结构（与后端 style_suggest::StyleSuggestion::to_json
+ * 对齐；negatedTerms/intensity/blended 为后端新增可选字段，旧后端缺省不传） */
 interface StyleSuggestResult {
   styleId: string | null;
+  /** 命中风格名；混合风格时后端已拼接好完整名称（如「清透日系 × 暗调情绪」） */
   styleName: string | null;
   confidence: number;
   scores: Array<{ id: string; score: number }>;
   matchedTerms: string[];
   adjustments: Partial<Adjustments> | null;
+  /** 用户提示词中被忽略的否定描述（非空时结果卡提示） */
+  negatedTerms?: string[] | null;
+  /** 后端最终采用的建议强度（0..100，结果卡显示「强度 n%」） */
+  intensity?: number | null;
+  /** 混合风格名（存在即本次为混合结果；展示以 styleName 为准，其已拼接混合名） */
+  blended?: string | null;
 }
+
+/** Tile 能力来源（D-AI-06）：model=本地 AI 模型（需下载模型、不联网上传）、
+ * rule=本地参数规则（无需下载、不联网）、cloud=云端调用（联网）。 */
+type AiSourceKind = 'model' | 'rule' | 'cloud';
+
+/** 来源角标：6px 圆点颜色 + 文字说明 key。颜色之外必须提供 title/aria 文字
+ * （不能单靠颜色区分）；badge/note key 为新增 i18n key，经 tKey 宽松调用。 */
+const AI_SOURCE_BADGES: Record<AiSourceKind, { color: string; badgeKey: string; noteKey: string }> = {
+  model: { color: '#22d3ee', badgeKey: 'crystal.ai.sourceBadge.model', noteKey: 'crystal.ai.sourceNote.model' },
+  rule: { color: '#f0b429', badgeKey: 'crystal.ai.sourceBadge.rule', noteKey: 'crystal.ai.sourceNote.rule' },
+  cloud: { color: '#a78bfa', badgeKey: 'crystal.ai.sourceBadge.cloud', noteKey: 'crystal.ai.sourceNote.cloud' },
+};
 
 /** 深度蒙版默认参数（与桌面 MasksPanel.createMaskLogic 同源） */
 const DEPTH_DEFAULTS = { minDepth: 20, maxDepth: 80, minFade: 15, maxFade: 15, feather: 10 } as const;
@@ -69,6 +95,10 @@ const storeTextPrompt = (value: string) => {
 
 export default function CrystalAiToolsPanel() {
   const { t } = useTranslation();
+  /* 本文件新增 i18n key 尚未合入 locale JSON（key 清单见缺陷报告）：仓库 t 为
+   * en.json 严格 key 类型，与 useAppContextMenus 等处动态 key `as ParseKeys`
+   * 惯例同理，这里对未落库 key 走宽松签名调用，key 落库后可收敛回严格 t。 */
+  const tKey = t as unknown as (key: string, opts?: Record<string, unknown>) => string;
   const adjustments = useEditorStore((s) => s.adjustments);
   const aiProvider = useSettingsStore((s) => s.appSettings?.aiProvider);
   const cloudUser = useCloudStore((s) => s.user);
@@ -100,16 +130,51 @@ export default function CrystalAiToolsPanel() {
   const proceduralNotified = useRef(false);
   const [textPrompt, setTextPrompt] = useState(loadStoredTextPrompt);
   const [showTextInput, setShowTextInput] = useState(false);
-  /* 一句话调色：提示词仅驻内存（风格结果即时生效，无跨会话保留必要） */
+  /* 风格词调色：提示词仅驻内存（风格结果即时生效，无跨会话保留必要） */
   const [stylePrompt, setStylePrompt] = useState('');
   const [showStyleInput, setShowStyleInput] = useState(false);
-  /* 方案 B 云参考图入口：仅 cloud 提供商且已登录 Pro 时可见
-   * （Android 无 Clerk 登录态，cloudUser 恒为 null → 按钮隐藏）。 */
+  /* 最近一次风格词调色结果（结果卡数据：风格名/强度/被忽略否定词） */
+  const [styleResult, setStyleResult] = useState<StyleSuggestResult | null>(null);
+  /* 方案 B 云参考图入口：cloud 提供商 + 已登录 Pro 才可用（Android 无 Clerk
+   * 登录态，cloudUser 恒为 null）。D-AI-02：不可达时不再静默隐藏入口——按钮
+   * 置灰禁用并配「桌面版能力 · 需 Pro 登录」角标，保留能力可发现性。 */
   const canCloudStyle = aiProvider === 'cloud' && Boolean(cloudUser);
+  /* D-AI-06：来源说明条状态 —— 每格仅首次点击触发；入场 150ms fade+slide，
+   * 3 秒后自动收起（先淡出再卸载节点）。 */
+  const [sourceNoteKind, setSourceNoteKind] = useState<AiSourceKind | null>(null);
+  const [noteShown, setNoteShown] = useState(false);
+  const noteSeenTilesRef = useRef<Set<string>>(new Set());
+  const noteHideTimerRef = useRef<number | null>(null);
+  const noteRemoveTimerRef = useRef<number | null>(null);
   const updateTextPrompt = useCallback((value: string) => {
     setTextPrompt(value);
     storeTextPrompt(value);
   }, []);
+
+  /* D-AI-06：首次点击某格 → 面板底部滑入对应来源说明（model/rule/cloud 三选一，
+   * 说明是否需下载模型 / 是否联网）。双 rAF 让隐藏初始态先完成一次布局再切到
+   * 可见态以触发 150ms 过渡；3 秒后淡出，过渡结束即卸载节点。 */
+  const showSourceNote = useCallback((tileId: string, source: AiSourceKind) => {
+    if (noteSeenTilesRef.current.has(tileId)) return;
+    noteSeenTilesRef.current.add(tileId);
+    if (noteHideTimerRef.current !== null) clearTimeout(noteHideTimerRef.current);
+    if (noteRemoveTimerRef.current !== null) clearTimeout(noteRemoveTimerRef.current);
+    setSourceNoteKind(source);
+    setNoteShown(false);
+    requestAnimationFrame(() => requestAnimationFrame(() => setNoteShown(true)));
+    noteHideTimerRef.current = window.setTimeout(() => {
+      setNoteShown(false);
+      noteRemoveTimerRef.current = window.setTimeout(() => setSourceNoteKind(null), 180);
+    }, 3000);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (noteHideTimerRef.current !== null) clearTimeout(noteHideTimerRef.current);
+      if (noteRemoveTimerRef.current !== null) clearTimeout(noteRemoveTimerRef.current);
+    },
+    [],
+  );
 
   const runEnhance = useCallback(async () => {
     if (busy) return;
@@ -182,21 +247,27 @@ export default function CrystalAiToolsPanel() {
 
   const denoiseOn = Boolean(adjustments.aiDenoiseEnabled);
 
-  /* 一句话调色 —— 本地词库映射（后端 ai_style_suggest，无网络/模型依赖）：
-   * 自然语言 → 风格 + 非破坏性参数补丁；未命中时不改动当前调整。 */
+  /* 风格词调色 —— 本地词库映射（后端 ai_style_suggest，无网络/模型依赖）：
+   * 自然语言 → 风格 + 非破坏性参数补丁；未命中时不改动当前调整。
+   * imagePath（后端新增可选参数）：携带当前图路径供后端按图上下文微调建议，
+   * 无图时传 null（旧后端忽略未知参数，向前兼容）。 */
   const runStyleSuggest = useCallback(async () => {
     const prompt = stylePrompt.trim();
     if (!prompt || busy) return;
     setBusy('enhance');
     const startPath = useEditorStore.getState().selectedImage?.path;
     try {
-      const result = await invoke<StyleSuggestResult>(Invokes.AiStyleSuggest, { prompt });
+      const result = await invoke<StyleSuggestResult>(Invokes.AiStyleSuggest, {
+        prompt,
+        imagePath: startPath ?? null,
+      });
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (!result.adjustments || !result.styleId) {
         toast.info(t('crystal.ai.style.failed'));
         return;
       }
       setAdjustments((prev) => ({ ...prev, ...result.adjustments }));
+      setStyleResult(result);
       setShowStyleInput(false);
       toast.success(
         t('crystal.ai.style.applied', {
@@ -467,6 +538,8 @@ export default function CrystalAiToolsPanel() {
     label: string;
     icon: typeof Sparkles;
     color: string;
+    /** D-AI-06 来源：model=本地 AI 模型 / rule=本地参数规则 / cloud=云端 */
+    source: AiSourceKind;
     onClick: () => void;
     active?: boolean;
     busy?: boolean;
@@ -476,6 +549,7 @@ export default function CrystalAiToolsPanel() {
       label: t('crystal.ai.tiles.enhance'),
       icon: Sparkles,
       color: 'var(--cx-cat-ai)',
+      source: 'model',
       onClick: runEnhance,
       busy: busy === 'enhance',
     },
@@ -484,6 +558,7 @@ export default function CrystalAiToolsPanel() {
       label: t('crystal.ai.tiles.auto'),
       icon: Wand2,
       color: 'var(--cx-cat-presets)',
+      source: 'rule',
       onClick: runAuto,
       busy: busy === 'auto',
     },
@@ -492,6 +567,7 @@ export default function CrystalAiToolsPanel() {
       label: t('crystal.ai.tiles.denoise'),
       icon: Eraser,
       color: 'var(--cx-cat-tone)',
+      source: 'model',
       onClick: toggleDenoise,
       active: denoiseOn,
     },
@@ -500,6 +576,7 @@ export default function CrystalAiToolsPanel() {
       label: t('crystal.ai.tiles.detail'),
       icon: Waves,
       color: 'var(--cx-cat-filter)',
+      source: 'rule',
       onClick: () =>
         applyPatch({
           structure: Math.max(Number(adjustments.structure ?? 0), 10),
@@ -513,6 +590,7 @@ export default function CrystalAiToolsPanel() {
       label: t('crystal.ai.tiles.sky'),
       icon: CloudSun,
       color: 'var(--cx-cat-tone)',
+      source: 'model',
       onClick: runSky,
       active: skyReady,
       busy: busy === 'sky',
@@ -523,6 +601,7 @@ export default function CrystalAiToolsPanel() {
       icon: User,
       /* 审计 AI-色：原 --cx-cat-ren 未定义（回退金色），改人像紫贴合主体识别语义 */
       color: 'var(--cx-cat-portrait)',
+      source: 'model',
       onClick: runSubject,
       active: subjectReady,
       busy: busy === 'subject',
@@ -532,6 +611,8 @@ export default function CrystalAiToolsPanel() {
       label: t('crystal.ai.tiles.style'),
       icon: Palette,
       color: 'var(--cx-cat-presets)',
+      /* 风格调色 tile：本地词库规则映射（cloud 云参考图为输入行内的独立入口） */
+      source: 'rule',
       onClick: () => setShowStyleInput((v) => !v),
       active: showStyleInput,
     },
@@ -540,6 +621,7 @@ export default function CrystalAiToolsPanel() {
       label: t('masks.types.text'),
       icon: TextSearch,
       color: 'var(--cx-cat-presets)',
+      source: 'model',
       onClick: () => (textPrompt.trim() ? void runText() : setShowTextInput(true)),
       active: textReady,
       busy: busy === 'text',
@@ -549,6 +631,7 @@ export default function CrystalAiToolsPanel() {
       label: t('masks.types.depth'),
       icon: BringToFront,
       color: 'var(--cx-cat-filter)',
+      source: 'model',
       onClick: runDepth,
       active: depthReady,
       busy: busy === 'depth',
@@ -607,29 +690,54 @@ export default function CrystalAiToolsPanel() {
           </div>
 
           <div className="cx-grid-tiles mb-2">
-            {tiles.map(({ id, label, icon: Icon, color, onClick, active, busy: isBusy }) => (
-              <button
-                key={id}
-                className={`cx-tile ${active ? 'is-active' : ''} ${isBusy ? 'is-busy' : ''}`}
-                onClick={() => {
-                  haptic(6);
-                  onClick();
-                }}
-                disabled={Boolean(busy)}
-              >
-                {isBusy ? (
-                  <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
-                ) : (
+            {tiles.map(({ id, label, icon: Icon, color, source, onClick, active, busy: isBusy }) => {
+              const badge = AI_SOURCE_BADGES[source];
+              const badgeText = tKey(badge.badgeKey);
+              return (
+                <button
+                  key={id}
+                  className={`cx-tile ${active ? 'is-active' : ''} ${isBusy ? 'is-busy' : ''}`}
+                  /* D-AI-06：来源文字随 label 一并进入可访问名称与悬浮提示（不单靠颜色） */
+                  aria-label={`${label} · ${badgeText}`}
+                  title={`${label} · ${badgeText}`}
+                  onClick={() => {
+                    haptic(6);
+                    showSourceNote(id, source);
+                    onClick();
+                  }}
+                  disabled={Boolean(busy)}
+                  style={{ position: 'relative' }}
+                >
+                  {isBusy ? (
+                    <Loader2 size={20} className="animate-spin" style={{ color: 'var(--cx-accent)' }} />
+                  ) : (
+                    <span
+                      className="cx-tile-color flex items-center justify-center"
+                      style={{ ['--cx-tile-color' as string]: color }}
+                    >
+                      <Icon size={13} />
+                    </span>
+                  )}
+                  {/* 来源角标：右上角 6px 圆点（青=本地模型 / 金=本地规则 / 紫=云端），
+                      自带 role/aria-label/title 文字说明 */}
                   <span
-                    className="cx-tile-color flex items-center justify-center"
-                    style={{ ['--cx-tile-color' as string]: color }}
-                  >
-                    <Icon size={13} />
-                  </span>
-                )}
-                {label}
-              </button>
-            ))}
+                    role="img"
+                    aria-label={badgeText}
+                    title={badgeText}
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: badge.color,
+                    }}
+                  />
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           {/* 文本识别：提示词输入 + 生成（桌面 MasksPanel isTextMask 区块同构） */}
@@ -662,49 +770,124 @@ export default function CrystalAiToolsPanel() {
             </div>
           )}
 
-          {/* 一句话调色：风格描述输入 + 应用（后端 ai_style_suggest 本地词库映射） */}
+          {/* 风格词调色：风格描述输入 + 应用（后端 ai_style_suggest 本地词库映射） */}
           {showStyleInput && (
-            <div className="flex items-center gap-2 mb-2">
-              <input
-                className="cx-input grow"
-                type="text"
-                value={stylePrompt}
-                placeholder={t('crystal.ai.style.placeholder')}
-                disabled={Boolean(busy)}
-                autoFocus
-                enterKeyHint="go"
-                onChange={(e) => setStylePrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') void runStyleSuggest();
-                }}
-              />
-              <button
-                className="cx-chip is-active shrink-0"
-                disabled={Boolean(busy) || !stylePrompt.trim()}
-                onClick={() => {
-                  haptic(6);
-                  void runStyleSuggest();
-                }}
-              >
-                {t('crystal.ai.style.title')}
-              </button>
-              {canCloudStyle && (
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  className="cx-input grow"
+                  type="text"
+                  value={stylePrompt}
+                  placeholder={t('crystal.ai.style.placeholder')}
+                  disabled={Boolean(busy)}
+                  autoFocus
+                  enterKeyHint="go"
+                  onChange={(e) => setStylePrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void runStyleSuggest();
+                  }}
+                />
                 <button
-                  className="cx-chip shrink-0"
-                  title={t('crystal.ai.style.cloud')}
-                  aria-label={t('crystal.ai.style.cloud')}
+                  className="cx-chip is-active shrink-0"
                   disabled={Boolean(busy) || !stylePrompt.trim()}
                   onClick={() => {
                     haptic(6);
-                    void runStyleReference();
+                    void runStyleSuggest();
                   }}
                 >
-                  {busy === 'styleRef' ? (
-                    <Loader2 size={12} className="animate-spin" />
-                  ) : (
-                    <CloudSun size={12} />
-                  )}
+                  {t('crystal.ai.style.title')}
                 </button>
+                {/* D-AI-02：云参考图入口不可达（非 cloud 提供商 / 未登录 Pro，
+                 * Android 恒为后者）时置灰禁用而非静默隐藏；可达时首次点击
+                 * 触发底部「云端」来源说明。 */}
+                <span className="relative inline-flex shrink-0">
+                  <button
+                    className="cx-chip shrink-0"
+                    title={`${t('crystal.ai.style.cloud')} · ${tKey(AI_SOURCE_BADGES.cloud.badgeKey)}`}
+                    aria-label={`${t('crystal.ai.style.cloud')} · ${tKey(AI_SOURCE_BADGES.cloud.badgeKey)}`}
+                    disabled={Boolean(busy) || !stylePrompt.trim() || !canCloudStyle}
+                    style={canCloudStyle ? undefined : { opacity: 0.45 }}
+                    onClick={() => {
+                      haptic(6);
+                      showSourceNote('cloudRef', 'cloud');
+                      void runStyleReference();
+                    }}
+                  >
+                    {busy === 'styleRef' ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <CloudSun size={12} />
+                    )}
+                  </button>
+                  {/* D-AI-06：云参考图入口同样带来源角标（紫=云端） */}
+                  <span
+                    role="img"
+                    aria-label={tKey(AI_SOURCE_BADGES.cloud.badgeKey)}
+                    title={tKey(AI_SOURCE_BADGES.cloud.badgeKey)}
+                    style={{
+                      position: 'absolute',
+                      top: -2,
+                      right: -2,
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: AI_SOURCE_BADGES.cloud.color,
+                    }}
+                  />
+                </span>
+              </div>
+              {/* D-AI-02/D-AI-03：云参考图说明条 —— 「实验性」标注置于功能标题旁；
+               * 不可达时补「桌面版能力 · 需 Pro 登录」角标；联网隐私说明小字、
+               * 诚实克制（仅上传文字提示词，不上传照片）。 */}
+              <div className="mb-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10.5px] font-medium" style={{ color: 'var(--cx-muted)' }}>
+                    {t('crystal.ai.style.cloud')}
+                  </span>
+                  <span
+                    className="text-[9px] px-1 rounded"
+                    style={{ color: 'var(--cx-faint)', border: '1px solid var(--cx-border)', lineHeight: '14px' }}
+                  >
+                    {tKey('crystal.ai.style.experimental')}
+                  </span>
+                  {!canCloudStyle && (
+                    <span
+                      className="text-[9px] px-1 rounded"
+                      style={{ color: 'var(--cx-faint)', border: '1px solid var(--cx-border)', lineHeight: '14px' }}
+                    >
+                      {tKey('crystal.ai.style.cloudDesktopOnly')}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[10px] mt-0.5" style={{ color: 'var(--cx-faint)' }}>
+                  {tKey('crystal.ai.style.cloudPrivacyNote')}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* 风格词调色结果卡：展示后端返回的风格名（blended 混合时 styleName 已
+           * 拼接完整混合名）、建议强度与被忽略的否定描述（可选字段，旧后端缺省不显示） */}
+          {styleResult && (
+            <div
+              className="mb-2 rounded-lg px-2.5 py-2"
+              style={{ background: 'var(--cx-card2)', border: '1px solid var(--cx-border)' }}
+            >
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Sparkles size={11} style={{ color: 'var(--cx-accent)', flexShrink: 0 }} />
+                <span className="text-[12px] font-semibold" style={{ color: 'var(--cx-ink)' }}>
+                  {styleResult.styleName ?? styleResult.blended ?? styleResult.styleId}
+                </span>
+                {typeof styleResult.intensity === 'number' && (
+                  <span className="text-[10px]" style={{ color: 'var(--cx-faint)' }}>
+                    {tKey('crystal.ai.style.intensity', { n: Math.round(styleResult.intensity) })}
+                  </span>
+                )}
+              </div>
+              {styleResult.negatedTerms && styleResult.negatedTerms.length > 0 && (
+                <div className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--cx-faint)' }}>
+                  {tKey('crystal.ai.style.negatedHint', { terms: styleResult.negatedTerms.join(', ') })}
+                </div>
               )}
             </div>
           )}
@@ -950,6 +1133,37 @@ export default function CrystalAiToolsPanel() {
                 {t('editor.ai.settings.cancelGeneration')}
               </button>
             )}
+          </div>
+        )}
+        {/* D-AI-06：首次点击 tile 后底部滑入来源说明条（150ms fade+slide，
+         * 3 秒自动收起；圆点颜色与说明文字同源，文字说明是否需下载模型/是否联网） */}
+        {sourceNoteKind && (
+          <div
+            role="note"
+            className="absolute left-2 right-2 bottom-2 z-20 flex items-start gap-2 rounded-lg px-3 py-2 pointer-events-none"
+            style={{
+              background: 'var(--cx-card2)',
+              border: '1px solid var(--cx-border)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+              opacity: noteShown ? 1 : 0,
+              transform: noteShown ? 'translateY(0)' : 'translateY(8px)',
+              transition: 'opacity 150ms ease-out, transform 150ms ease-out',
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                marginTop: 5,
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: AI_SOURCE_BADGES[sourceNoteKind].color,
+                flexShrink: 0,
+              }}
+            />
+            <span className="text-[11px] leading-snug" style={{ color: 'var(--cx-muted)' }}>
+              {tKey(AI_SOURCE_BADGES[sourceNoteKind].noteKey)}
+            </span>
           </div>
         )}
       </div>

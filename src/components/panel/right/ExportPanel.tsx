@@ -787,7 +787,7 @@ export default function ExportPanel({
         progress: { current: 0, total: 1 },
         status: Status.Exporting,
       });
-      await invoke(Invokes.AiUpscaleExport, {
+      await invoke(Invokes.UpscaleExportLanczos, {
         imagePath,
         jsAdjustments: adjustmentsRef.current || {},
         scaleFactor: upscaleFactor,

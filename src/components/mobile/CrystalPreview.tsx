@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import type { Crop } from 'react-image-crop';
 import { ChevronsLeftRight, Loader2, Move, RotateCcw, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useEditorStore } from '../../store/useEditorStore';
-import { getOrientedDimensions, moveCropInsideBounds } from '../../utils/cropUtils';
-import { useCrystalAdjust, haptic } from './crystalShared';
+import { getOrientedDimensions, isCropWithinBounds, moveCropInsideBounds } from '../../utils/cropUtils';
+import { useCrystalAdjust, haptic, useImmersiveCropStore } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * P2 预览区升级：双指缩放 + 平移 + 双击缩放 + 前后对比分割滑杆。
@@ -13,6 +14,9 @@ import { useCrystalAdjust, haptic } from './crystalShared';
  * 平移按 contain 适配尺寸钳制边界，切图/切分类/进对比自动复位。
  * v2.1.13：构图模式下支持单指拖动平移裁剪窗口（moveCropInsideBounds 边界钳制），
  * 预览叠加三分构图网格；修复对比滑杆悬空跟随、缩放过渡不复位等问题。
+ * v2.1.19（D-CP-02/P1）：裁剪框 4 角 + 4 边手柄（命中半径 ≥44px）八向调整尺寸，
+ * 锁定比例时以对角/对边中点为锚点等比缩放；cropResize 与 pan/pinch/crop/cropDraw
+ * 五种手势模式互斥。D-CP-03：左上角手势状态胶囊消除 atOneX 隐式条件。
  * ------------------------------------------------------------------------- */
 
 const MIN_SCALE = 1;
@@ -22,6 +26,11 @@ const TAP_SLOP = 14;
 const ZOOM_STEP = 2;
 const CROP_HINT_MS = 6000;
 
+/** 裁剪手柄方向：4 角 + 4 边（八向） */
+type CropHandleDir = 'nw' | 'ne' | 'sw' | 'se' | 'n' | 'w' | 's' | 'e';
+const CORNER_DIRS: ReadonlyArray<CropHandleDir> = ['nw', 'ne', 'sw', 'se'];
+const EDGE_DIRS: ReadonlyArray<CropHandleDir> = ['n', 'w', 's', 'e'];
+
 interface Transform {
   scale: number;
   x: number;
@@ -30,12 +39,14 @@ interface Transform {
 const IDENTITY: Transform = { scale: 1, x: 0, y: 0 };
 
 interface GestureState {
-  mode: 'none' | 'pan' | 'pinch' | 'crop' | 'cropDraw';
+  mode: 'none' | 'pan' | 'pinch' | 'crop' | 'cropDraw' | 'cropResize';
   startT: Transform;
   startPt: { x: number; y: number };
   startDist: number;
   startCrop: Crop | null;
   moved: boolean;
+  /** cropResize 模式下的手柄方向（其余模式为 null） */
+  resizeDir: CropHandleDir | null;
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -89,6 +100,11 @@ export default function CrystalPreview({
   const crop = useEditorStore((s) => s.adjustments.crop ?? null);
   const orientationSteps = useEditorStore((s) => s.adjustments.orientationSteps ?? 0);
   const rotation = useEditorStore((s) => s.adjustments.rotation ?? 0);
+  /* D-CP-02: 比例锁定来源。与移动构图面板 chip 语义一致：正数比例锁比例，
+   * null/0（默认原比例在面板中显示为「自由」）不锁。 */
+  const aspectRatio = useEditorStore((s) => s.adjustments.aspectRatio ?? null);
+  /* D-CP-01: 沉浸式裁剪激活态（进入时复位缩放，保证手柄/网格可见） */
+  const immersive = useImmersiveCropStore((s) => s.active);
   const { applyPatch } = useCrystalAdjust();
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -115,6 +131,7 @@ export default function CrystalPreview({
     startDist: 0,
     startCrop: null,
     moved: false,
+    resizeDir: null,
   });
   const lastTap = useRef<{ t: number; x: number; y: number } | null>(null);
   const dividerDragging = useRef(false);
@@ -159,6 +176,22 @@ export default function CrystalPreview({
     return () => window.clearTimeout(timer);
   }, [cropActive, compare, selectedPath]);
 
+  /* D-CP-02: 裁剪框屏幕矩形（1x 布局坐标、相对容器）。
+   * 映射与 drawCropTo/moveCropBy 同源：裁剪坐标 = 定向坐标系源像素，
+   * 显示区 = img contain 适配矩形（imgRect 已按 ≤1x 测量）。 */
+  const cropFrameRect = useMemo(() => {
+    if (!crop || !imgRect || compare) return null;
+    const [W, H] = orientedSize(selectedImage?.width ?? 0, selectedImage?.height ?? 0, orientationSteps);
+    const px = toPxCrop(crop, W, H);
+    if (!px || !W || !H) return null;
+    return {
+      left: imgRect.left + (px.x / W) * imgRect.width,
+      top: imgRect.top + (px.y / H) * imgRect.height,
+      width: (px.width / W) * imgRect.width,
+      height: (px.height / H) * imgRect.height,
+    };
+  }, [crop, imgRect, compare, selectedImage, orientationSteps]);
+
   /* 边界钳制：按 contain 适配尺寸计算可平移范围 */
   const clampPan = useCallback((next: Transform): Transform => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -192,10 +225,10 @@ export default function CrystalPreview({
 
   const resetZoom = useCallback(() => setTransform(IDENTITY), []);
 
-  /* 切图 / 切分类 / 进入对比 → 复位缩放；进入对比 → 分割线回中 */
+  /* 切图 / 切分类 / 进入对比 / 进入沉浸裁剪 → 复位缩放；进入对比 → 分割线回中 */
   useEffect(() => {
     setTransform(IDENTITY);
-  }, [compare, activeCategory, selectedPath]);
+  }, [compare, activeCategory, selectedPath, immersive]);
   useEffect(() => {
     if (compare) setDivider(0.5);
   }, [compare]);
@@ -275,6 +308,155 @@ export default function CrystalPreview({
     [applyPatch, orientationSteps, rotation],
   );
 
+  /* D-CP-02: 裁剪框手柄调整（八向）。屏幕指针 → 定向坐标源像素，锚点 =
+   * 对角（角手柄）/ 对边中点（边手柄）；锁定比例时以拖动主导轴等比推导
+   * 另一边，自由比例各轴独立。越界钳制：rotation=0 直接夹取；有拉直角时
+   * 以 isCropWithinBounds 判定、等比向中心二分收缩（与 zoomCrop 同策略）。 */
+  const resizeCropTo = useCallback(
+    (startCrop: Crop, dir: CropHandleDir, clientX: number, clientY: number) => {
+      const img = imgRef.current;
+      const sel = useEditorStore.getState().selectedImage;
+      if (!img || !sel?.width || !sel?.height) return;
+      const rect = img.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return;
+      const { width: W, height: H } = getOrientedDimensions(sel.width, sel.height, orientationSteps);
+      const sx = W / rect.width;
+      const sy = H / rect.height;
+      const px = clamp((clientX - rect.left) * sx, 0, W);
+      const py = clamp((clientY - rect.top) * sy, 0, H);
+      const c = startCrop;
+      const right = c.x + c.width;
+      const bottom = c.y + c.height;
+      const midX = c.x + c.width / 2;
+      const midY = c.y + c.height / 2;
+      const aspect = aspectRatio && aspectRatio > 0 ? aspectRatio : null;
+      /* 最小尺寸：24px 或 5% 取大（与 drawCropTo 同阈值），避免收缩成碎片框 */
+      const minW = Math.min(Math.max(24, W * 0.05), W);
+      const minH = Math.min(Math.max(24, H * 0.05), H);
+      const isCorner = dir.length === 2;
+      let next: Crop;
+
+      if (isCorner) {
+        const ax = dir.includes('w') ? right : c.x;
+        const ay = dir.includes('n') ? bottom : c.y;
+        const dw = px - ax;
+        const dh = py - ay;
+        let w: number;
+        let h: number;
+        if (aspect) {
+          /* 以对角为固定点、拖动主导轴定宽，等比推导高 */
+          w = clamp(Math.max(Math.abs(dw), Math.abs(dh) * aspect, minW), minW, Math.min(W, H * aspect));
+          h = w / aspect;
+        } else {
+          w = Math.max(Math.abs(dw), minW);
+          h = Math.max(Math.abs(dh), minH);
+        }
+        next = { unit: 'px', x: dw >= 0 ? ax : ax - w, y: dh >= 0 ? ay : ay - h, width: w, height: h };
+      } else if (dir === 'w' || dir === 'e') {
+        const ax = dir === 'w' ? right : c.x;
+        let w = Math.max(Math.abs(px - ax), minW);
+        w = aspect ? clamp(w, minW, Math.min(W, H * aspect)) : Math.min(w, W);
+        const h = aspect ? w / aspect : c.height;
+        next = {
+          unit: 'px',
+          x: dir === 'e' ? ax : ax - w,
+          y: aspect ? midY - h / 2 : c.y,
+          width: w,
+          height: h,
+        };
+      } else {
+        const ay = dir === 'n' ? bottom : c.y;
+        let h = Math.max(Math.abs(py - ay), minH);
+        h = aspect ? clamp(h, minH, Math.min(H, W / aspect)) : Math.min(h, H);
+        const w = aspect ? h * aspect : c.width;
+        next = {
+          unit: 'px',
+          x: aspect ? midX - w / 2 : c.x,
+          y: dir === 's' ? ay : ay - h,
+          width: w,
+          height: h,
+        };
+      }
+
+      let final = next;
+      if (rotation === 0) {
+        final = {
+          unit: 'px',
+          x: clamp(next.x, 0, Math.max(0, W - next.width)),
+          y: clamp(next.y, 0, Math.max(0, H - next.height)),
+          width: Math.min(next.width, W),
+          height: Math.min(next.height, H),
+        };
+      } else if (!isCropWithinBounds(next, W, H, rotation)) {
+        /* 拉直角下直接夹取不合法：以矩形中心等比收缩至四角回到图内 */
+        const cx = next.x + next.width / 2;
+        const cy = next.y + next.height / 2;
+        let lo = 0;
+        let hi = 1;
+        let best: Crop | null = null;
+        for (let i = 0; i < 14; i++) {
+          const t = (lo + hi) / 2;
+          const w = next.width * t;
+          const h = next.height * t;
+          const test: Crop = { unit: 'px', x: cx - w / 2, y: cy - h / 2, width: w, height: h };
+          if (w >= minW && h >= minH && isCropWithinBounds(test, W, H, rotation)) {
+            best = test;
+            lo = t;
+          } else {
+            hi = t;
+          }
+        }
+        final =
+          best ??
+          {
+            unit: 'px',
+            x: clamp(next.x, 0, Math.max(0, W - next.width)),
+            y: clamp(next.y, 0, Math.max(0, H - next.height)),
+            width: next.width,
+            height: next.height,
+          };
+      }
+
+      const rounded: Crop = {
+        unit: 'px',
+        x: Math.round(final.x),
+        y: Math.round(final.y),
+        width: Math.round(final.width),
+        height: Math.round(final.height),
+      };
+      rounded.x = clamp(rounded.x, 0, Math.max(0, W - rounded.width));
+      rounded.y = clamp(rounded.y, 0, Math.max(0, H - rounded.height));
+      applyPatch({ crop: rounded }, { enableTools: false });
+    },
+    [applyPatch, aspectRatio, orientationSteps, rotation],
+  );
+
+  /* D-CP-02: 手柄按下 → cropResize 模式。stopPropagation 阻断容器
+   * pan/crop/cropDraw 判定；指针捕获到容器，后续 move/up 走容器统一处理，
+   * 保证同一时间仅一个手势模式（与 pinch/pan/单指平移互斥）。 */
+  const onHandlePointerDown = useCallback(
+    (dir: CropHandleDir) => (e: React.PointerEvent<HTMLDivElement>) => {
+      if (compareRef.current || !urlRef.current) return;
+      e.stopPropagation();
+      e.preventDefault();
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      containerRef.current?.setPointerCapture(e.pointerId);
+      const g = gesture.current;
+      g.mode = 'cropResize';
+      g.resizeDir = dir;
+      g.startPt = { x: e.clientX, y: e.clientY };
+      g.startT = transformRef.current;
+      g.startCrop = toPxCrop(
+        crop,
+        ...orientedSize(selectedImage?.width ?? 0, selectedImage?.height ?? 0, orientationSteps),
+      );
+      g.moved = false;
+      setGesturing(true);
+      haptic(5);
+    },
+    [crop, orientationSteps, selectedImage],
+  );
+
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (compareRef.current || !urlRef.current) return;
@@ -282,6 +464,10 @@ export default function CrystalPreview({
       pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
       e.currentTarget.setPointerCapture(e.pointerId);
       const g = gesture.current;
+      if (g.mode === 'cropResize') {
+        // D-CP-02: 手柄调整进行中忽略新触点（单手势互斥），仅记录点位供 up 清理
+        return;
+      }
       if (pointers.current.size === 1) {
         const atOneX = transformRef.current.scale <= 1;
         const canCropDrag = activeCategory === 'compose' && atOneX && Boolean(crop);
@@ -317,6 +503,9 @@ export default function CrystalPreview({
         const dy = e.clientY - g.startPt.y;
         if (Math.hypot(dx, dy) > TAP_SLOP) g.moved = true;
         moveCropBy(g.startCrop, dx, dy);
+      } else if (g.mode === 'cropResize' && g.startCrop && g.resizeDir) {
+        /* D-CP-02: 手柄八向调整（单指，与其他手势互斥） */
+        resizeCropTo(g.startCrop, g.resizeDir, e.clientX, e.clientY);
       } else if (g.mode === 'cropDraw' && pointers.current.size === 1) {
         /* 自由裁剪绘制：超过点击阈值才开始画框，保留双击缩放语义 */
         if (Math.hypot(e.clientX - g.startPt.x, e.clientY - g.startPt.y) > TAP_SLOP) g.moved = true;
@@ -348,7 +537,7 @@ export default function CrystalPreview({
         );
       }
     },
-    [clampPan, moveCropBy, drawCropTo],
+    [clampPan, moveCropBy, drawCropTo, resizeCropTo],
   );
 
   const onPointerUp = useCallback(
@@ -368,6 +557,8 @@ export default function CrystalPreview({
       }
       if (pointers.current.size === 0) {
         g.mode = 'none';
+        g.resizeDir = null;
+        g.startCrop = null;
         setGesturing(false);
         if (wasSingleTap) {
           const now = performance.now();
@@ -480,6 +671,48 @@ export default function CrystalPreview({
           <RotateCcw size={11} />
           {transform.scale.toFixed(1)}×
         </button>
+      )}
+
+      {/* D-CP-02: 裁剪框 + 4角/4边手柄（仅构图分类 1x 态显示；框外压暗，手柄 ≥44px 命中） */}
+      {cropFrameRect && activeCategory === 'compose' && !compare && transform.scale <= 1.01 && (
+        <div className="cx-crop-overlay">
+          <div
+            className="cx-crop-frame"
+            style={{
+              left: cropFrameRect.left,
+              top: cropFrameRect.top,
+              width: cropFrameRect.width,
+              height: cropFrameRect.height,
+            }}
+          >
+            {CORNER_DIRS.map((dir) => (
+              <div
+                key={dir}
+                className={`cx-crop-handle cx-crop-corner cx-crop-${dir}`}
+                onPointerDown={onHandlePointerDown(dir)}
+              />
+            ))}
+            {EDGE_DIRS.map((dir) => (
+              <div
+                key={dir}
+                className={`cx-crop-handle cx-crop-edge cx-crop-${dir}`}
+                onPointerDown={onHandlePointerDown(dir)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* D-CP-03: 手势状态胶囊——消除 1x 下裁剪/缩放互斥的隐式条件（左上角，fade 150ms）。
+          三个 gestureState key 待主控统一补入 en.json 词条，先按仓库惯例 as ParseKeys。 */}
+      {activeCategory === 'compose' && !compare && url && (
+        <div className="cx-gesture-capsule" role="status">
+          {transform.scale > 1.01
+            ? t('crystal.compose.gestureState.pinch' as ParseKeys)
+            : crop
+              ? t('crystal.compose.gestureState.moveResize' as ParseKeys)
+              : t('crystal.compose.gestureState.draw' as ParseKeys)}
+        </div>
       )}
 
       {/* 审计 UX-3/FD-3: 「原图｜对比」浮层已移除（与底栏重复且遮挡画面），
