@@ -4785,4 +4785,235 @@ mod tests {
             None => assert_eq!(crate::ai_perf::intra_op_threads_label(), "default"),
         }
     }
+
+    /// ==== AI 降噪「实际效果」实测探针（v2.1.19 Android 审计） ====
+    ///
+    /// 走生产同款路径：candidate_urls 镜像链下载 NIND UTNet 模型 →
+    /// sha256 校验（与 DENOISE_SHA256 钉死值一致）→ CPU 会话 →
+    /// run_ai_denoise 完整管线（504 分块 + 镜像填充 + smoothstep 拼合）。
+    /// 在合成场景（渐变/圆形主体/棋盘细节区）上量化：
+    /// PSNR 提升、推理耗时、接缝伪影、细节保持、BM3D 对照、峰值内存。
+    /// 模型缓存在 target/tmp/nind_probe，重复运行免下载。
+    #[tokio::test]
+    async fn zz_probe_nind_real_effect() {
+        use std::io::Write as _;
+
+        let models_dir = PathBuf::from(env!("CARGO_TARGET_TMP_DIR")).join("nind_probe");
+        fs::create_dir_all(&models_dir).unwrap();
+        let model_path = models_dir.join(DENOISE_FILENAME);
+
+        // 1) 下载（镜像链同生产：官方 → hf-mirror），sha256 校验
+        let download_started = Instant::now();
+        if !verify_sha256(&model_path, DENOISE_SHA256).unwrap_or(false) {
+            let client = reqwest::Client::new();
+            let mut downloaded = false;
+            for url in candidate_urls(TEST_URL) {
+                println!("PROBE trying {url}");
+                let Ok(resp) = client.get(&url).send().await else {
+                    continue;
+                };
+                if !resp.status().is_success() {
+                    continue;
+                }
+                let bytes = match resp.bytes().await {
+                    Ok(b) => b,
+                    Err(_) => continue,
+                };
+                let mut f = fs::File::create(&model_path).unwrap();
+                f.write_all(&bytes).unwrap();
+                if verify_sha256(&model_path, DENOISE_SHA256).unwrap_or(false) {
+                    downloaded = true;
+                    break;
+                }
+                let _ = fs::remove_file(&model_path);
+            }
+            assert!(downloaded, "模型下载失败（网络不可用？）");
+        }
+        let model_bytes = fs::metadata(&model_path).unwrap().len();
+        println!(
+            "PROBE model: {} bytes, ready in {:.1}s (sha256 verified)",
+            model_bytes,
+            download_started.elapsed().as_secs_f64()
+        );
+
+        // 2) CPU 会话（Android 无 GPU EP，与生产 Android 路径一致）
+        let _ = ort::init().with_name("probe-nind").commit();
+        let build_started = Instant::now();
+        let session = build_session(
+            &model_path,
+            SessionKind::OneShot,
+            false,
+            Some(denoise_crop_as_slice),
+        )
+        .expect("session build");
+        let session = Mutex::new(session);
+        println!(
+            "PROBE session build (CPU): {:.2}s",
+            build_started.elapsed().as_secs_f64()
+        );
+
+        // 3) 合成场景 1024×1024：水平渐变 + 圆形亮主体 + 棋盘细节区
+        let (w, h) = (1024usize, 1024usize);
+        let clean = Rgb32FImage::from_fn(w as u32, h as u32, |x, y| {
+            let (x, y) = (x as usize, y as usize);
+            let base = 0.12 + 0.55 * (x as f32 / (w - 1) as f32);
+            let dx = x as f32 - 512.0;
+            let dy = y as f32 - 620.0;
+            let subject = if dx * dx + dy * dy < 120.0 * 120.0 { 0.25 } else { 0.0 };
+            let checker = if (x >= 700 && x < 950 && y >= 50 && y < 300)
+                && ((x / 8 + y / 8) % 2 == 0)
+            {
+                0.13
+            } else if x >= 700 && x < 950 && y >= 50 && y < 300 {
+                -0.13
+            } else {
+                0.0
+            };
+            let v = (base + subject + checker).clamp(0.0, 1.0);
+            image::Rgb([v; 3])
+        });
+
+        // 确定性高斯噪声 σ=25/255（手机夜景典型噪声档）
+        let sigma = 25.0f32 / 255.0;
+        let mut seed: u64 = 0x9E3779B97F4A7C15;
+        let mut rnd = move || {
+            seed = seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            ((seed >> 33) as f64) / (u32::MAX as f64)
+        };
+        let mut noisy = clean.clone();
+        for p in noisy.pixels_mut() {
+            let u1 = ((rnd() as f32) + 1e-6).min(1.0);
+            let u2 = rnd() as f32;
+            let g = (-2.0 * u1.ln()).sqrt() * (std::f32::consts::TAU * u2).cos();
+            let n = g * sigma;
+            for c in 0..3 {
+                p[c] = (p[c] + n).clamp(0.0, 1.0);
+            }
+        }
+
+        let psnr = |a: &Rgb32FImage, b: &Rgb32FImage| -> f64 {
+            let mut se = 0.0f64;
+            let mut n = 0u64;
+            for (pa, pb) in a.pixels().zip(b.pixels()) {
+                for c in 0..3 {
+                    let d = (pa[c] - pb[c]) as f64;
+                    se += d * d;
+                    n += 1;
+                }
+            }
+            let mse = se / n as f64;
+            -10.0 * mse.log10()
+        };
+        let luma = |img: &Rgb32FImage| -> Vec<f32> {
+            img.pixels()
+                .map(|p| 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2])
+                .collect()
+        };
+
+        let psnr_noisy = psnr(&noisy, &clean);
+
+        // 4) 全管线推理 + 峰值内存
+        let peak_rss_mb = || -> f64 {
+            std::fs::read_to_string("/proc/self/status")
+                .ok()
+                .and_then(|s| {
+                    s.lines()
+                        .find(|l| l.starts_with("VmHWM"))
+                        .and_then(|l| l.split_whitespace().nth(1).map(|k| k.parse::<f64>().ok()))
+                        .flatten()
+                })
+                .unwrap_or(0.0)
+                / 1024.0
+        };
+        let rss_before = peak_rss_mb();
+        let infer_started = Instant::now();
+        let out = run_ai_denoise(&noisy, &session, &|_| {}).expect("inference");
+        let infer_secs = infer_started.elapsed().as_secs_f64();
+        let rss_after = peak_rss_mb();
+
+        let out32 = match &out {
+            DynamicImage::ImageRgb32F(img) => img.clone(),
+            _ => out.to_rgb32f(),
+        };
+        let psnr_out = psnr(&out32, &clean);
+
+        // 5) 接缝伪影：相邻列亮度均差（max/median 比值 + 峰值列位置）
+        let seam_stats = |img: &Rgb32FImage| -> (f32, f32, usize) {
+            let l = luma(img);
+            let mut col = vec![0.0f32; w - 1];
+            for x in 0..w - 1 {
+                let mut s = 0.0f32;
+                for y in 0..h {
+                    s += (l[y * w + x + 1] - l[y * w + x]).abs();
+                }
+                col[x] = s / h as f32;
+            }
+            let mut sorted = col.clone();
+            sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            let median = sorted[sorted.len() / 2];
+            let (mut max, mut maxi) = (0.0f32, 0usize);
+            for (i, &c) in col.iter().enumerate() {
+                if c > max {
+                    max = c;
+                    maxi = i;
+                }
+            }
+            (max, median, maxi)
+        };
+        let (noisy_max, noisy_med, _) = seam_stats(&noisy);
+        let (out_max, out_med, out_spike_x) = seam_stats(&out32);
+
+        // 6) 细节保持：棋盘区亮度标准差（clean ≈ 0.13/√2… 噪声污染后升高，
+        //    去噪后应回落且不为 0 = 细节仍在）
+        let checker_std = |img: &Rgb32FImage| -> f32 {
+            let l = luma(img);
+            let mut vals = Vec::new();
+            for y in 60..290 {
+                for x in 710..940 {
+                    vals.push(l[y * w + x]);
+                }
+            }
+            let mean = vals.iter().sum::<f32>() / vals.len() as f32;
+            (vals.iter().map(|v| (v - mean).powi(2)).sum::<f32>() / vals.len() as f32).sqrt()
+        };
+
+        // 7) BM3D 对照（ai-free 方法，intensity 0.15 = BM3D_INTENSITY）
+        let bm3d_started = Instant::now();
+        let bm3d_out = crate::bm3d::denoise(&noisy, 0.15, &|_| {});
+        let bm3d_secs = bm3d_started.elapsed().as_secs_f64();
+        let psnr_bm3d = psnr(&bm3d_out, &clean);
+
+        println!("==== NIND 实测（1024×1024, σ=25/255, CPU, 9 tiles） ====");
+        println!("PROBE model size: {:.2} MB", model_bytes as f64 / 1048576.0);
+        println!("PROBE PSNR noisy      : {:.2} dB", psnr_noisy);
+        println!("PROBE PSNR NIND out   : {:.2} dB (Δ {:+.2})", psnr_out, psnr_out - psnr_noisy);
+        println!("PROBE PSNR BM3D 0.15  : {:.2} dB (Δ {:+.2})", psnr_bm3d, psnr_bm3d - psnr_noisy);
+        println!("PROBE NIND infer      : {:.2}s ({:.2}s/tile, 9 tiles)", infer_secs, infer_secs / 9.0);
+        println!("PROBE BM3D infer      : {:.2}s", bm3d_secs);
+        println!("PROBE peak RSS        : {:.0} MB -> {:.0} MB (Δ {:.0})", rss_before, rss_after, rss_after - rss_before);
+        println!("PROBE seam  noisy     : max/med = {:.2}/{:.4}", noisy_max, noisy_med);
+        println!("PROBE seam  NIND out  : max/med = {:.2}/{:.4} spike@x={}", out_max, out_med, out_spike_x);
+        println!("PROBE checker std     : clean={:.3} noisy={:.3} nind={:.3} bm3d={:.3}",
+            checker_std(&clean), checker_std(&noisy), checker_std(&out32), checker_std(&bm3d_out));
+
+        // 最低门槛断言（真实降噪必须显著优于噪声基线）
+        assert!(psnr_out > psnr_noisy + 3.0, "NIND 提升 {:+.2}dB 不足", psnr_out - psnr_noisy);
+        assert!(psnr_bm3d > psnr_noisy + 1.0, "BM3D 提升 {:+.2}dB 不足", psnr_bm3d - psnr_noisy);
+        // 接缝：输出列差峰值不应超过噪声基线的 3 倍（噪声本身就有列差）
+        assert!(
+            out_max < noisy_max * 3.0,
+            "接缝伪影：max {:.4} > 噪声基线 {:.4} ×3",
+            out_max,
+            noisy_max
+        );
+        // 细节：去噪后棋盘对比度必须保留（低于 clean 的 60% 视为过度涂抹）
+        let nind_std = checker_std(&out32);
+        assert!(
+            nind_std > checker_std(&clean) * 0.6,
+            "细节过度损失：棋盘 std {:.4} < clean 的 60%",
+            nind_std
+        );
+    }
 }
