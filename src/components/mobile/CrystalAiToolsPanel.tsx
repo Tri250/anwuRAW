@@ -228,7 +228,9 @@ export default function CrystalAiToolsPanel() {
     } finally {
       setBusy(null);
     }
-  }, [busy, intensity, setAdjustments, t]);
+    /* 审计修复（AI-增强-stale）：toneStrength/colorStrength 此前未列入 deps——
+     * 拖动双强度滑杆后回调仍闭包旧值，点击增强按旧档应用（滑杆形同虚设）。 */
+  }, [busy, intensity, toneStrength, colorStrength, setAdjustments, t]);
 
   const runAuto = useCallback(async () => {
     if (busy) return;
@@ -316,8 +318,10 @@ export default function CrystalAiToolsPanel() {
     const prompt = stylePrompt.trim();
     if (!prompt || busy) return;
     const startPath = useEditorStore.getState().selectedImage?.path;
+    /* 审计修复（AI-云参考-闭环）：无图发起此前静默 return，用户不知道为什么
+     * 没反应；补 notReady 提示保持闭环（与本地风格词调色同语义）。 */
     if (!startPath) {
-      setBusy(null);
+      toast.info(t('crystal.aiRecommend.notReady'));
       return;
     }
     setBusy('styleRef');
@@ -363,6 +367,11 @@ export default function CrystalAiToolsPanel() {
     /* 审计修复（AI-跨图）：记录发起时图片，完成后已切图则静默丢弃，
      * 避免在新图上下文里误报「识别失败」或写入默认强度。 */
     const startPath = useEditorStore.getState().selectedImage?.path;
+    /* 审计修复（AI-重跑-保旧）：发起前记录旧蒙版存在性——已有蒙版时重跑失败
+     * 必须保留旧容器（invoke 抛错不触碰 store，旧蒙版仍生效），仅 toast；
+     * 首次运行失败才清理空容器（v2.1.13 闭环语义，不留死开关）。此前 catch
+     * 无条件 removeContainer 会把用户已有蒙版+已调强度静默销毁。 */
+    const hadMask = maskReady(Mask.AiSky);
     try {
       const container = ensureContainer(Mask.AiSky);
       const subMaskId = container.subMasks[0].id;
@@ -377,18 +386,22 @@ export default function CrystalAiToolsPanel() {
         // 名实一致（自检修复 3）：ESAM3 未下载时后端自动降级程序化天空
         // 识别（颜色+地平线，aiSource="procedural"）——名称仍是「天空识别」，
         // 但必须如实告知用户当前走的是哪条路线，不能静默冒充 AI。
-        const usedProcedural = String(container.subMasks[0]?.parameters?.aiSource ?? '') === 'procedural';
+        // 审计修复（AI-降级提示）：此前读 ensureContainer 返回的旧快照——
+        // 生成结果经 updateSubMask 不可变更新写入新对象，快照永远无 aiSource，
+        // 程序化降级提示实际从未触发过。改为从 store 实时读取。
+        const fresh = useEditorStore.getState().adjustments.masks?.find((c) => c.id === container.id);
+        const usedProcedural = String(fresh?.subMasks[0]?.parameters?.aiSource ?? '') === 'procedural';
         if (usedProcedural && !proceduralNotified.current) {
           proceduralNotified.current = true;
           toast.info(t('crystal.ai.proceduralSky'));
         }
       } else {
         // 闭环修复：识别失败清理空容器，tile 状态回归「未开启」，下次点击干净重试。
-        removeContainer(Mask.AiSky);
+        if (!hadMask) removeContainer(Mask.AiSky);
         toast.error(t('crystal.ai.maskFailed'));
       }
     } catch {
-      removeContainer(Mask.AiSky);
+      if (!hadMask) removeContainer(Mask.AiSky);
       toast.error(t('crystal.ai.maskFailed'));
     } finally {
       setBusy(null);
@@ -403,6 +416,8 @@ export default function CrystalAiToolsPanel() {
     setBusy('subject');
     cancelRef.current = false;
     const startPath = useEditorStore.getState().selectedImage?.path;
+    // 审计修复（AI-重跑-保旧）：与天空同模式——重跑失败保留旧蒙版，仅首次失败清空容器。
+    const hadMask = maskReady(Mask.AiForeground);
     try {
       const container = ensureContainer(Mask.AiForeground);
       const subMaskId = container.subMasks[0].id;
@@ -415,11 +430,11 @@ export default function CrystalAiToolsPanel() {
         if (!Number(container.adjustments.clarity ?? 0)) setMaskAdjustments(container.id, { clarity: 10 });
       } else {
         // 闭环修复：识别失败清理空容器（与天空同模式）。
-        removeContainer(Mask.AiForeground);
+        if (!hadMask) removeContainer(Mask.AiForeground);
         toast.error(t('crystal.ai.maskFailed'));
       }
     } catch {
-      removeContainer(Mask.AiForeground);
+      if (!hadMask) removeContainer(Mask.AiForeground);
       toast.error(t('crystal.ai.maskFailed'));
     } finally {
       setBusy(null);
@@ -459,6 +474,8 @@ export default function CrystalAiToolsPanel() {
     setBusy('text');
     cancelRef.current = false;
     const startPath = useEditorStore.getState().selectedImage?.path;
+    // 审计修复（AI-重跑-保旧）：与天空同模式——重跑失败保留旧蒙版，仅首次失败清空容器。
+    const hadMask = maskReady(Mask.AiText);
     try {
       const container = ensureContainer(Mask.AiText);
       const subMaskId = container.subMasks[0].id;
@@ -474,11 +491,15 @@ export default function CrystalAiToolsPanel() {
         setShowTextInput(false);
       } else {
         // 闭环修复：识别失败清理空容器；输入与持久化 prompt 保留供直接重试。
-        removeContainer(Mask.AiText);
+        if (!hadMask) removeContainer(Mask.AiText);
+        setShowTextInput(true);
         toast.error(t('crystal.ai.maskFailed'));
       }
     } catch {
-      removeContainer(Mask.AiText);
+      if (!hadMask) removeContainer(Mask.AiText);
+      // 审计修复（AI-文本-重试）：tile 直接发起时输入行从未展开，失败后行随
+      // 容器消失而隐藏，用户失去编辑重试入口——失败时保持输入行可见。
+      setShowTextInput(true);
       toast.error(t('crystal.ai.maskFailed'));
     } finally {
       setBusy(null);
@@ -511,6 +532,8 @@ export default function CrystalAiToolsPanel() {
     setBusy('depth');
     cancelRef.current = false;
     const startPath = useEditorStore.getState().selectedImage?.path;
+    // 审计修复（AI-重跑-保旧）：与天空同模式——重跑失败保留旧蒙版，仅首次失败清空容器。
+    const hadMask = maskReady(Mask.AiDepth);
     try {
       const container = ensureContainer(Mask.AiDepth, { ...DEPTH_DEFAULTS });
       const subMaskId = container.subMasks[0].id;
@@ -531,7 +554,7 @@ export default function CrystalAiToolsPanel() {
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       if (!maskReady(Mask.AiDepth)) {
         // 闭环修复：识别失败清理空容器（与天空/主体/文本同模式）。
-        removeContainer(Mask.AiDepth);
+        if (!hadMask) removeContainer(Mask.AiDepth);
         toast.error(t('crystal.ai.maskFailed'));
       } else if (!Number(container.adjustments.clarity ?? 0)) {
         // 死代码激活：深度强度（容器级 clarity，与天空/主体/文本同模式）。
@@ -540,7 +563,9 @@ export default function CrystalAiToolsPanel() {
         setMaskAdjustments(container.id, { clarity: 10 });
       }
     } catch {
-      removeContainer(Mask.AiDepth);
+      // 审计修复（AI-重跑-保旧）：重跑失败保留旧蒙版（invoke 抛错不触碰 store，
+      // 旧蒙版与已调参数仍生效）；仅首次运行失败清理空容器。
+      if (!hadMask) removeContainer(Mask.AiDepth);
       toast.error(t('crystal.ai.maskFailed'));
     } finally {
       setBusy(null);
@@ -593,7 +618,10 @@ export default function CrystalAiToolsPanel() {
       label: t('crystal.ai.tiles.denoise'),
       icon: Eraser,
       color: 'var(--cx-cat-tone)',
-      source: 'model',
+      /* 审计修复（AI-降噪-名实）：ai-free 提供商下 getAiDenoiseEnablePatch 落
+       * BM3D（纯本地算法，无需模型），角标应标「本地规则」而非「本地模型」，
+       * 与说明条「首次使用需下载模型」文案名实一致。 */
+      source: aiProvider === 'ai-free' ? 'rule' : 'model',
       onClick: toggleDenoise,
       active: denoiseOn,
     },
@@ -640,7 +668,10 @@ export default function CrystalAiToolsPanel() {
       /* 风格调色 tile：本地词库规则映射（cloud 云参考图为输入行内的独立入口） */
       source: 'rule',
       onClick: () => setShowStyleInput((v) => !v),
-      active: showStyleInput,
+      /* 审计修复（AI-风格-闭环）：应用成功后输入行收起、结果卡仍在展示，
+       * 此前 tile 高亮随之消失，视觉上与「未应用」无法区分——激活态应
+       * 覆盖结果卡可见期（styleResult 随图切换自动清空，二者同步）。 */
+      active: showStyleInput || Boolean(styleResult),
       busy: busy === 'style',
     },
     {
