@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -30,12 +30,13 @@ import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry'
 import { calculateCenteredCrop } from '../../utils/cropUtils';
 import {
   haptic,
+  matchAspectChip,
   summarizeExif,
   useCrystalAdjust,
   useImmersiveCropStore,
   useShowOriginalHold,
 } from './crystalShared';
-import { debouncedSetHistory } from '../../hooks/useEditorActions';
+import { debouncedSave, debouncedSetHistory } from '../../hooks/useEditorActions';
 import { selectAiModelDownloadStatus } from '../../store/useProcessStore';
 import CrystalCategoryPanel from './CrystalCategoryPanel';
 import CrystalPreview from './CrystalPreview';
@@ -214,14 +215,13 @@ function ImmersiveCropOverlay({ onCancel, onConfirm }: { onCancel: () => void; o
   const aspectRatio = useEditorStore((s) => s.adjustments.aspectRatio ?? null);
   const { applyPatch } = useCrystalAdjust();
 
-  /* 与构图面板 activeAspect 同源：按用户所选宽比做正/逆双向匹配以高亮 chip */
-  const activeAspect = useMemo(() => {
-    if (!aspectRatio) return null;
-    const hit = IMMERSIVE_ASPECT_CHIPS.find(
-      (c) => c.value && (Math.abs(c.value - aspectRatio) < 0.01 || Math.abs(1 / c.value - aspectRatio) < 0.01),
-    );
-    return hit ? hit.value : aspectRatio;
-  }, [aspectRatio]);
+  /* 与构图面板 activeAspect 同源：按用户所选宽比做正/逆双向匹配以高亮 chip。
+   * C-1（v2.1.22 审计）：匹配口径与 crystalShared.matchAspectChip 统一——
+   * 先精确、再倒数（排除 1:1 自倒数），避免竖构图高亮跳到横构图。 */
+  const activeAspect = useMemo(
+    () => matchAspectChip(IMMERSIVE_ASPECT_CHIPS, aspectRatio),
+    [aspectRatio],
+  );
 
   /* 与构图面板 rotateChip / 桌面 CropPanel.applyAspectRatio 同源：面积保持的居中裁剪。
    * 选「自由」时清空 aspectRatio 与裁剪框（与面板行为一致），随后可单指重新画框。 */
@@ -341,6 +341,20 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     [],
   );
 
+  // S-2（v2.1.22 审计）：离开编辑域的统一清理。App.tsx 返回图库时编辑壳只是
+  // CSS hidden 并不卸载，仅靠 unmount 清理无法覆盖「回图库」路径——compareView
+  // 残留会让主管线在图库界面继续渲染原图预览，重进编辑还带着对比态。
+  // 切导出/回图库/卸载三条路径都显式走这里。
+  const leaveEditDomain = useCallback(() => {
+    useEditorStore.getState().setEditor({ compareView: 'off', showOriginal: false, previewOverride: null });
+    useImmersiveCropStore.getState().exit();
+  }, []);
+
+  const handleBackToLibrary = useCallback(() => {
+    leaveEditDomain();
+    onBackToLibrary();
+  }, [leaveEditDomain, onBackToLibrary]);
+
   /* D-CP-01: 沉浸裁剪取消 —— 按进入前快照整体回滚（含 crop/aspectRatio）。
    * 先冲销会话内防抖历史推送，避免回滚值又被补进撤销栈；回滚走 setEditor
    * 直写（不产生新撤销点）。快照标识（所选图路径）不匹配时丢弃回滚。 */
@@ -363,60 +377,83 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
 
   // Android 返回键闭环：对比视图 → 回编辑；导出域 → 回编辑域；编辑域 → 回图库。
   // UX：导出进行中消费返回事件但不切域——进度反馈在导出页内，离开即丢失。
+  // G-4（v2.1.22 审计）：handler 逻辑走 ref 读取每次渲染的最新闭包，effect
+  // 只注册/注销一次（原实现依赖 9 项含 t/flow/isExporting，任何变化都会
+  // remove+push 把本层顶到栈顶，破坏与其他注册层的 LIFO 约定）。
+  const backActionRef = useRef<() => void>(() => {});
+  backActionRef.current = () => {
+    // D-CP-01: 沉浸裁剪激活时为顶层退出层——返回键 = 取消回滚（不跳库、不透传）
+    if (useImmersiveCropStore.getState().active) {
+      cancelImmersive();
+      return;
+    }
+    // FD-1: 确认弹窗打开时，返回键优先关闭弹窗，而非穿透到流程切换/退出图库
+    if (isResetConfirmOpen) {
+      setIsResetConfirmOpen(false);
+      return;
+    }
+    if (isCompareOpen) {
+      setCompareOpen(false);
+      return;
+    }
+    if (useEditorStore.getState().showOriginal) {
+      useEditorStore.getState().setEditor({ showOriginal: false, previewOverride: null });
+      return;
+    }
+    if (flow === 'export') {
+      if (isExporting) {
+        // FD-7: 导出进行中不静默吞掉返回事件，给出进度提示（复用 CTA 文案键）
+        toast.info(t('crystal.export.exporting'));
+        return;
+      }
+      setFlow('edit');
+      return;
+    }
+    handleBackToLibrary();
+  };
   useEffect(() => {
     if (osPlatform !== 'android') return;
-    const handler = () => {
-      // D-CP-01: 沉浸裁剪激活时为顶层退出层——返回键 = 取消回滚（不跳库、不透传）
-      if (useImmersiveCropStore.getState().active) {
-        cancelImmersive();
-        return;
-      }
-      // FD-1: 确认弹窗打开时，返回键优先关闭弹窗，而非穿透到流程切换/退出图库
-      if (isResetConfirmOpen) {
-        setIsResetConfirmOpen(false);
-        return;
-      }
-      if (isCompareOpen) {
-        setCompareOpen(false);
-        return;
-      }
-      if (useEditorStore.getState().showOriginal) {
-        useEditorStore.getState().setEditor({ showOriginal: false, previewOverride: null });
-        return;
-      }
-      if (flow === 'export') {
-        if (isExporting) {
-          // FD-7: 导出进行中不静默吞掉返回事件，给出进度提示（复用 CTA 文案键）
-          toast.info(t('crystal.export.exporting'));
-          return;
-        }
-        setFlow('edit');
-        return;
-      }
-      onBackToLibrary();
-    };
+    const handler = () => backActionRef.current();
     pushExitLayer(handler);
     return () => removeExitLayer(handler);
-  }, [cancelImmersive, flow, isCompareOpen, isExporting, isResetConfirmOpen, onBackToLibrary, osPlatform, setCompareOpen, t]);
+  }, [osPlatform]);
 
-  const handleReset = useCallback(() => {
+  // S-1（v2.1.22 审计）：重置=先落盘成功、再动内存态。
+  // 旧实现 `.catch(() => {})` 吞错：sidecar 写失败后内存已重置，下次切回
+  // 编辑 LoadMetadata 会带回旧参数，用户的重置"悄悄失效"。现与桌面
+  // handleResetAdjustments 同序：await invoke，失败 toast 且保持内存态不变；
+  // 成功后再重置内存与撤销栈。同时冲销待写入的 sidecar 防抖，避免旧参数
+  // 在重置落盘后又追写回 sidecar。
+  const handleReset = useCallback(async () => {
     const sel = useEditorStore.getState().selectedImage;
     // 与桌面重置语义一致：恢复初始参数、清 AI patch、重建历史栈，并持久化到 sidecar。
     // 审计修复：先取消待写入的历史推送（500ms 防抖），否则重置后旧参数会被
     // 补推进撤销栈——重置后撤销键可用且"撤销"会复活重置前的编辑。
     debouncedSetHistory.cancel();
+    if (!sel) {
+      const resetData = { ...INITIAL_ADJUSTMENTS, aiPatches: [] } as Adjustments;
+      resetHistory(resetData);
+      setEditor({ adjustments: resetData, showOriginal: false, previewOverride: null });
+      return;
+    }
+    debouncedSave.cancel();
+    try {
+      await invoke(Invokes.ResetAdjustmentsForPaths, { paths: [sel.path] });
+    } catch (err) {
+      console.error('[crystal] reset sidecar write failed:', err);
+      toast.error(t('crystal.resetFailed'));
+      return;
+    }
     const resetData = { ...INITIAL_ADJUSTMENTS, aiPatches: [] } as Adjustments;
     resetHistory(resetData);
     setEditor({ adjustments: resetData, showOriginal: false, previewOverride: null });
-    if (sel) {
-      invoke(Invokes.ResetAdjustmentsForPaths, { paths: [sel.path] }).catch(() => {});
-    }
-  }, [resetHistory, setEditor]);
+  }, [resetHistory, setEditor, t]);
 
   const goExport = useCallback(() => {
     setCompareOpen(false);
+    leaveEditDomain();
     setFlow('export');
-  }, [setCompareOpen]);
+  }, [leaveEditDomain, setCompareOpen]);
 
   // D-CP-01: 沉浸裁剪激活态（.cx-app 挂 is-fullscreen-crop + 渲染浮层）
   const immersiveActive = useImmersiveCropStore((s) => s.active);
@@ -427,7 +464,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     <div className="crystal-shell" data-flow={flow}>
       {flow === 'edit' ? (
         <div className={`cx-app${immersiveActive ? ' is-fullscreen-crop' : ''}`}>
-          <CrystalTopBar camera={cameraSubtitle} onBack={onBackToLibrary} onSave={goExport} />
+          <CrystalTopBar camera={cameraSubtitle} onBack={handleBackToLibrary} onSave={goExport} />
           {modelDownloadStatus && (
             <div className="cx-dl-pill" role="status">
               <Loader2 size={11} className="animate-spin" />
@@ -453,7 +490,7 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
           />
         </div>
       ) : (
-        <WatermarkExportPage onBackToEdit={() => setFlow('edit')} onBackToLibrary={onBackToLibrary} />
+        <WatermarkExportPage onBackToEdit={() => setFlow('edit')} onBackToLibrary={handleBackToLibrary} />
       )}
     </div>
   );

@@ -704,6 +704,10 @@ pub struct AppSettings {
     /// E4: default interval (ms) between tethered interval captures.
     #[serde(default)]
     pub tether_capture_interval_ms: Option<u64>,
+    /// G-5：Crystal 移动端水印/导出偏好（前端自由 JSON，桌面端忽略）。
+    /// 随 settings.json 持久化，避免 WebView localStorage 被系统清理后丢失。
+    #[serde(default)]
+    pub crystal_watermark_prefs: Option<serde_json::Value>,
 }
 
 impl Default for AppSettings {
@@ -823,6 +827,7 @@ impl Default for AppSettings {
             immich: crate::immich::ImmichSettings::default(),
             watched_folders: Vec::new(),
             tether_capture_interval_ms: None,
+            crystal_watermark_prefs: None,
         }
     }
 }

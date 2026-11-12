@@ -16,6 +16,7 @@ import { Mask } from '../panel/right/Masks';
 import type { SubMask } from '../panel/right/Masks';
 import { useAiMasking } from '../../hooks/useAiMasking';
 import { useEditorStore } from '../../store/useEditorStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { useEditorActions, getOriginalAdjustments } from '../../hooks/useEditorActions';
 
 /** 长按阈值（G10：原图按下即看 / 对比稍延迟区分两种手势） */
@@ -55,8 +56,12 @@ export const useImmersiveCropStore = create<ImmersiveCropState>()((set, get) => 
 }));
 
 /* --------------------------------------------------------------------------
- * 持久化偏好（水印模板收藏/默认/文案/字体/画质），localStorage 即可，
- * 与桌面 appSettings 解耦，避免 Android 端大对象写入。
+ * 持久化偏好（水印模板收藏/默认/文案/字体/画质/导出格式）。
+ * G-5（v2.1.22 审计）：v2.1.22 只写 WebView localStorage，系统清理缓存即丢。
+ * 现升级为随桌面 settings.json（appSettings.crystalWatermarkPrefs）持久化：
+ *  - 首次运行把旧 localStorage 数据一次性迁移进 settings；
+ *  - settings 未就绪/缺失时回退读 localStorage（保证冷启动即时可用）；
+ *  - 仍镜像写 localStorage，便于回滚与旧版本兼容。
  * ------------------------------------------------------------------------ */
 export interface CrystalWatermarkPrefs {
   favoriteTemplateId: string | null;
@@ -68,6 +73,10 @@ export interface CrystalWatermarkPrefs {
   savedTemplateId: string | null;
   /** 导出文件名后缀（默认 _crystal，可编辑；非法字符在导出时清洗） */
   filenameSuffix: string;
+  /** E-5：导出格式/画质与信息栏描边随偏好持久化 */
+  exportFormat?: 'jpeg' | 'png';
+  exportQuality?: number;
+  showInfoBarFrame?: boolean;
 }
 
 const PREFS_KEY = 'crystal.watermark.prefs.v1';
@@ -80,6 +89,9 @@ export const DEFAULT_WM_PREFS: CrystalWatermarkPrefs = {
   fontFamily: 'builtin',
   savedTemplateId: null,
   filenameSuffix: '_crystal',
+  exportFormat: 'jpeg',
+  exportQuality: 100,
+  showInfoBarFrame: true,
 };
 
 /** 轻量触觉反馈（Android WebView 支持 navigator.vibrate；其余平台静默忽略） */
@@ -91,6 +103,7 @@ export const haptic = (pattern: number | number[] = 8) => {
   }
 };
 
+/** 旧版（v2.1.22-）数据源：localStorage。仅作迁移源与回退读取。 */
 export function loadWmPrefs(): CrystalWatermarkPrefs {
   try {
     const raw = localStorage.getItem(PREFS_KEY);
@@ -101,20 +114,51 @@ export function loadWmPrefs(): CrystalWatermarkPrefs {
   }
 }
 
+/** 写穿 localStorage（镜像，兼容旧版回滚），失败静默。 */
+function mirrorWmPrefsToStorage(prefs: CrystalWatermarkPrefs): void {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    /* storage full / disabled: keep in settings.json only */
+  }
+}
+
 export function useWmPrefs(): [CrystalWatermarkPrefs, (patch: Partial<CrystalWatermarkPrefs>) => void] {
-  const [prefs, setPrefs] = useState<CrystalWatermarkPrefs>(() => loadWmPrefs());
+  const appSettings = useSettingsStore((s) => s.appSettings);
+  const stored = appSettings?.crystalWatermarkPrefs as CrystalWatermarkPrefs | undefined;
+
+  // settings 未就绪时以 localStorage 快照兜底；该快照在首帧同步读取一次。
+  const fallbackRef = useRef<CrystalWatermarkPrefs | null>(null);
+  if (fallbackRef.current === null) fallbackRef.current = loadWmPrefs();
+  const migratedRef = useRef(false);
+
+  // 一次性迁移：settings 就绪且尚无水印偏好时，把 localStorage 旧值写入 settings。
+  useEffect(() => {
+    if (!appSettings || stored || migratedRef.current) return;
+    migratedRef.current = true;
+    const legacy = fallbackRef.current;
+    if (legacy && JSON.stringify(legacy) !== JSON.stringify(DEFAULT_WM_PREFS)) {
+      mirrorWmPrefsToSettings(legacy);
+    }
+  }, [appSettings, stored]);
+
+  const latestRef = useRef<CrystalWatermarkPrefs>(stored ? { ...DEFAULT_WM_PREFS, ...stored } : fallbackRef.current!);
+  latestRef.current = stored ? { ...DEFAULT_WM_PREFS, ...stored } : fallbackRef.current!;
+
   const update = useCallback((patch: Partial<CrystalWatermarkPrefs>) => {
-    setPrefs((prev) => {
-      const next = { ...prev, ...patch };
-      try {
-        localStorage.setItem(PREFS_KEY, JSON.stringify(next));
-      } catch {
-        /* storage full / disabled: keep in-memory */
-      }
-      return next;
-    });
+    const next = { ...latestRef.current, ...patch };
+    mirrorWmPrefsToStorage(next);
+    mirrorWmPrefsToSettings(next);
   }, []);
-  return [prefs, update];
+
+  return [latestRef.current, update];
+}
+
+/** 写入 appSettings.crystalWatermarkPrefs 并走既有 SaveSettings 管线落盘。 */
+function mirrorWmPrefsToSettings(prefs: CrystalWatermarkPrefs): void {
+  const { appSettings, handleSettingsChange } = useSettingsStore.getState();
+  if (!appSettings) return; // settings 未加载（启动早期）：仅 localStorage 镜像生效
+  void handleSettingsChange({ ...appSettings, crystalWatermarkPrefs: prefs });
 }
 
 /* --------------------------------------------------------------------------
@@ -219,12 +263,46 @@ export function summarizeExif(exif: Record<string, unknown> | null | undefined):
   return {
     camera,
     lens: EXIF_STR(e.LensModel) || EXIF_STR(e.LensMake) || '',
-    focal: EXIF_STR(e.FocalLength) || EXIF_STR(e.FocalLengthIn35mmFilm) || '',
+    // EX-1（v2.1.22 审计）：与后端烧录格式对齐（export_processing::apply_exif_frame），
+    // 保证「所见即所得」——焦距补 mm、快门去掉 "1/200 s" 中的空格。
+    focal: formatFocal(EXIF_STR(e.FocalLength) || EXIF_STR(e.FocalLengthIn35mmFilm)),
     aperture: EXIF_STR(e.FNumber) || EXIF_STR(e.ApertureValue) || '',
-    shutter: EXIF_STR(e.ExposureTime) || '',
+    shutter: formatShutter(EXIF_STR(e.ExposureTime)),
     iso: EXIF_STR(e.PhotographicSensitivity) || EXIF_STR(e.ISOSpeedRatings) || EXIF_STR(e.ISO) || '',
     taken: EXIF_STR(e.DateTimeOriginal) || EXIF_STR(e.CreateDate) || EXIF_STR(e.DateTime) || '',
   };
+}
+
+/** "38" / "38.5" → "38mm" / "38.5mm"；已带单位或非数值原样返回（与后端一致）。 */
+function formatFocal(v: string): string {
+  if (!v) return '';
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return v;
+  return `${n % 1 === 0 ? n.toFixed(0) : n.toFixed(1)}mm`;
+}
+
+/** "1/200 s" → "1/200s"；后端烧录时会替换掉 " s"，预览需同步。 */
+function formatShutter(v: string): string {
+  return v ? v.replace(/\s*s$/i, 's') : '';
+}
+
+/* --------------------------------------------------------------------------
+ * C-1（v2.1.22 审计）：构图比例芯片高亮匹配。
+ * rotate90 会把 aspectRatio 取倒数（4:3 → 3:4），而芯片表只登记正向值，
+ * 高亮判断必须先精确匹配、再按倒数匹配（1:1 是自倒数，需排除避免歧义）。
+ * 修正此前「先扫倒数」导致 9:16 竖构图高亮跳到 16:9 的错误。
+ * ------------------------------------------------------------------------ */
+export function matchAspectChip(
+  chips: { value: number | null }[],
+  ratio: number | null | undefined,
+): number | null | undefined {
+  if (!ratio) return ratio === null ? null : undefined;
+  const exact = chips.find((c) => c.value != null && Math.abs(c.value - ratio) < 0.01);
+  if (exact) return exact.value;
+  const inverse = chips.find(
+    (c) => c.value != null && Math.abs(c.value - 1) > 0.01 && Math.abs(1 / c.value - ratio) < 0.01,
+  );
+  return inverse ? inverse.value : ratio;
 }
 
 /* --------------------------------------------------------------------------
@@ -321,6 +399,13 @@ export function useShowOriginalHold(showDelayMs = 0) {
   const holdActive = useRef(false);
 
   const start = useCallback(() => {
+    // P-3（v2.1.22 审计）：多点触控时 start 会被再次调用，旧计时器若不清理，
+    // 其引用被覆盖后永远无法取消——第一根手指的计时器仍会触发，把预览
+    // 永久钉在原图态。进入新按压前先取消任何在途计时器。
+    if (holdTimer.current !== null) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
     holdTimer.current = window.setTimeout(() => {
       holdActive.current = true;
       haptic(5);
@@ -498,7 +583,12 @@ function CrystalRangeSlider({
 }) {
   const { t } = useTranslation();
   const frac = max !== min ? (value - min) / (max - min) : 0;
-  const zeroFrac = max !== min && min < 0 && max > 0 ? -min / (max - min) : 0;
+  // SL-2（v2.1.22 审计）：零点分式须覆盖三种区间——
+  //   全负区间（max<=0）：零点在右端之外，取 1（填充条贴右端）；
+  //   跨零区间（min<0<max）：-min/(max-min)；
+  //   全正区间（min>=0）：0。
+  // 旧写法在全负区间恒取 0，负值滑杆的填充条起点错位。
+  const zeroFrac = max !== min ? (min < 0 && max > 0 ? -min / (max - min) : max <= 0 ? 1 : 0) : 0;
   const left = Math.min(frac, zeroFrac) * 100;
   const width = Math.abs(frac - zeroFrac) * 100;
   /* 触摸滚动修复（调色-上滑阻力）：滑杆输入层此前 touchAction:'none'，
@@ -512,8 +602,15 @@ function CrystalRangeSlider({
     /* 自检修复（预设-强度滑杆）：双击复位此前硬编码归 0——强度滑杆（默认
      * 100）、AI 蒙版强度（50）、深度远近（20/80）、AI 降噪量（100）等非零
      * 默认值滑杆双击会瞬间打到 0 而非复位默认值。改为复位到 defaultValue
-     * （未传时回落 0，与既有调整量滑杆行为一致）。 */
-    <div className="relative h-9 flex items-center" onDoubleClick={() => onChange(defaultValue ?? 0)}>
+     * （未传时回落 0，与既有调整量滑杆行为一致）。
+     * SL-1（v2.1.22 审计）：容器层补 touch-action: manipulation——
+     * 关闭 300ms 双击缩放仲裁后，移动端双击才能稳定产生 dblclick 事件，
+     * 且不会与页面级双击缩放互相冲突（输入层 pan-y 只管轴向仲裁）。 */
+    <div
+      className="relative h-9 flex items-center"
+      style={{ touchAction: 'manipulation' }}
+      onDoubleClick={() => onChange(defaultValue ?? 0)}
+    >
       <div className="absolute left-0 right-0 h-1.5 rounded-full" style={{ background: 'var(--cx-card2)' }} />
       <div
         className="absolute h-1.5 rounded-full"
@@ -577,13 +674,17 @@ export function useCrystalAiMasks() {
   }, []);
 
   const ensureContainer = useCallback(
-    (type: Mask, parameters?: Record<string, unknown>): AiContainer => {
+    (type: Mask, parameters?: Record<string, unknown>): AiContainer | null => {
       const existing = findContainer(type);
       if (existing) return existing;
       const { selectedImage } = useEditorStore.getState();
+      // PT-3（v2.1.22 审计）：图片尺寸缺失时绝不以 1000×1000 兜底创建容器——
+      // 蒙版坐标空间会与真实图像错位，后续生成/应用全部失真。调用方
+      // （CrystalAiToolsPanel / 液化入口）对 null 做提示并中止流程。
+      if (!selectedImage?.width || !selectedImage?.height) return null;
       const subMask = createSubMask(type, {
-        width: selectedImage?.width ?? 1000,
-        height: selectedImage?.height ?? 1000,
+        width: selectedImage.width,
+        height: selectedImage.height,
       });
       if (parameters) subMask.parameters = { ...subMask.parameters, ...parameters };
       const container: AiContainer = {
@@ -649,11 +750,16 @@ export function useCrystalAiMasks() {
     [setAdjustments],
   );
 
-  // 蒙版生成成功的判定：后端已把 maskDataBase64 写入 subMask 参数
+  // 蒙版生成成功的判定：后端已把 maskDataBase64 写入 subMask 参数。
+  // PT-1（v2.1.22 审计）：findContainer 用 .some 匹配任意子蒙版，这里却只看
+  // subMasks[0]——多子蒙版容器（如桌面导入数据）会误报未就绪。统一按
+  // 「匹配类型且带位图」的子蒙版判定，与 findContainer 口径一致。
   const maskReady = useCallback(
     (type: Mask) => {
       const container = findContainer(type);
-      return Boolean(container?.subMasks[0]?.parameters?.maskDataBase64);
+      return Boolean(
+        container?.subMasks.some((sm: SubMask) => sm.type === type && sm.parameters?.maskDataBase64),
+      );
     },
     [findContainer],
   );
@@ -670,13 +776,17 @@ export function useCrystalAiMasks() {
 
   /* 美型（liquify）专用宿主：与磨皮/牙齿/眼部算子容器隔离。
    * 若挂在算子容器上，移除该算子会连带清掉美型值与补丁（滑杆静默归零、效果消失）。
-   * 选取顺序：已承载 liquify 值的 AiFace 容器（兼容旧数据）→ 无 retouchKind 的
-   * AiFace 容器 → null（由 createLiquifyHost 新建独立容器）。 */
+   * 选取顺序（PT-2，v2.1.22 审计）：显式 isLiquifyHost 标记的容器（新数据，
+   * 精确复用宿主，避免「美型调回 0 后再次拖动又新建宿主」的堆积）→
+   * 已承载 liquify 值的 AiFace 容器（兼容旧数据）→ 无 retouchKind 的
+   * AiFace 容器 → null（由 createLiquifyHost 新建独立容器并打标记）。 */
   const findLiquifyHost = useCallback((): AiContainer | null => {
     const { adjustments } = useEditorStore.getState();
     const aiFaces = (adjustments.masks || []).filter((c: MaskContainer) =>
       c.subMasks.some((sm: SubMask) => sm.type === Mask.AiFace),
     );
+    const marked = aiFaces.find((c: MaskContainer) => c.subMasks[0]?.parameters?.isLiquifyHost === true);
+    if (marked) return marked;
     const holder = aiFaces.find((c: MaskContainer) => {
       const liq = c.subMasks[0]?.parameters?.liquify as { slimFace?: number; jawline?: number } | undefined;
       return Boolean(liq && ((liq.slimFace ?? 0) > 0 || (liq.jawline ?? 0) > 0));
@@ -686,14 +796,17 @@ export function useCrystalAiMasks() {
   }, []);
 
   /* 新建独立美型宿主：parts=faceSkin，不参与任何算子开关，也不触发表情识别
-   * （人脸液化补丁由后端 generate_face_liquify_patch 自行定位人脸，不依赖蒙版数据）。 */
-  const createLiquifyHost = useCallback((): AiContainer => {
+   * （人脸液化补丁由后端 generate_face_liquify_patch 自行定位人脸，不依赖蒙版数据）。
+   * PT-3（v2.1.22 审计）：图片尺寸缺失时返回 null，绝不以 1000×1000 兜底。 */
+  const createLiquifyHost = useCallback((): AiContainer | null => {
     const { selectedImage } = useEditorStore.getState();
+    if (!selectedImage?.width || !selectedImage?.height) return null;
     const subMask = createSubMask(Mask.AiFace, {
-      width: selectedImage?.width ?? 1000,
-      height: selectedImage?.height ?? 1000,
+      width: selectedImage.width,
+      height: selectedImage.height,
     });
-    subMask.parameters = { ...subMask.parameters, parts: ['faceSkin'] };
+    // PT-2：显式宿主标记，供 findLiquifyHost 精确复用（值归零后仍认领同一容器）。
+    subMask.parameters = { ...subMask.parameters, parts: ['faceSkin'], isLiquifyHost: true };
     const container: AiContainer = {
       ...INITIAL_MASK_CONTAINER,
       id: uuidv4(),

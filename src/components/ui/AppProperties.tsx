@@ -320,6 +320,8 @@ export interface AppSettings {
   libraryDisplayMode?: LibraryDisplayMode;
   /** Crystal 移动视图层（透影）：Android 默认启用，桌面端忽略。 */
   crystalMobile?: boolean;
+  /** G-5：Crystal 移动端水印/导出偏好（JSON 原样透传，随 settings.json 持久化）。 */
+  crystalWatermarkPrefs?: Record<string, unknown> | null;
   grouping?: GroupingMode;
   requireMatchingExif?: boolean;
   groupEditedFiles?: boolean;

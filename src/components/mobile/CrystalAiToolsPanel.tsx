@@ -365,6 +365,11 @@ export default function CrystalAiToolsPanel() {
     const startPath = useEditorStore.getState().selectedImage?.path;
     try {
       const container = ensureContainer(Mask.AiSky);
+      // PT-3（v2.1.22 审计）：图片尺寸缺失（未加载完）时拒绝创建蒙版容器
+      if (!container) {
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       const subMaskId = container.subMasks[0].id;
       setBusyTaskId(subMaskId);
       await handleGenerateAiSkyMask(subMaskId, { silent: true });
@@ -405,6 +410,11 @@ export default function CrystalAiToolsPanel() {
     const startPath = useEditorStore.getState().selectedImage?.path;
     try {
       const container = ensureContainer(Mask.AiForeground);
+      // PT-3（v2.1.22 审计）：图片尺寸缺失（未加载完）时拒绝创建蒙版容器
+      if (!container) {
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       const subMaskId = container.subMasks[0].id;
       setBusyTaskId(subMaskId);
       await handleGenerateAiForegroundMask(subMaskId, { silent: true });
@@ -461,6 +471,11 @@ export default function CrystalAiToolsPanel() {
     const startPath = useEditorStore.getState().selectedImage?.path;
     try {
       const container = ensureContainer(Mask.AiText);
+      // PT-3（v2.1.22 审计）：图片尺寸缺失（未加载完）时拒绝创建蒙版容器
+      if (!container) {
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       const subMaskId = container.subMasks[0].id;
       // 桌面语义：生成前把 prompt 写入 subMask.parameters（getSubMaskName 亦用它命名）。
       updateSubMaskParameters(container.id, subMaskId, { prompt });
@@ -513,6 +528,11 @@ export default function CrystalAiToolsPanel() {
     const startPath = useEditorStore.getState().selectedImage?.path;
     try {
       const container = ensureContainer(Mask.AiDepth, { ...DEPTH_DEFAULTS });
+      // PT-3（v2.1.22 审计）：图片尺寸缺失（未加载完）时拒绝创建蒙版容器
+      if (!container) {
+        toast.info(t('crystal.aiRecommend.notReady'));
+        return;
+      }
       const subMaskId = container.subMasks[0].id;
       const p = container.subMasks[0].parameters || {};
       setBusyTaskId(subMaskId);

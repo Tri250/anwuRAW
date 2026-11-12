@@ -61,6 +61,7 @@ import {
   CxSwitch,
   awaitImageReady,
   haptic,
+  matchAspectChip,
   useCrystalAdjust,
   useCrystalAiMasks,
   useImmersiveCropStore,
@@ -1088,6 +1089,8 @@ function PortraitPanel() {
   const [blurBusy, setBlurBusy] = useState(false);
   const [oneTapBusy, setOneTapBusy] = useState(false);
   const liquifyTimerRef = useRef<number | null>(null);
+  // PT-3：「图片未就绪」toast 节流（滑杆连续触发时避免刷屏）
+  const notReadyToastAtRef = useRef(0);
   const liquifyGenRef = useRef(0);
 
   useEffect(
@@ -1423,12 +1426,22 @@ function PortraitPanel() {
       // 美型值存专用宿主（非算子容器）：移除磨皮/牙齿/眼部不会连带清掉美型
       let host = findLiquifyHost();
       if (!host) host = createLiquifyHost();
+      // PT-3（v2.1.22 审计）：图片未就绪时拒绝创建 1000×1000 兜底宿主——
+      // 滑杆值无处落地，节流提示一次，等图片就绪后拖动自然生效。
+      if (!host) {
+        const now = Date.now();
+        if (now - notReadyToastAtRef.current > 2500) {
+          notReadyToastAtRef.current = now;
+          toast.info(t('crystal.aiRecommend.notReady'));
+        }
+        return;
+      }
       const liq = (host.subMasks[0]?.parameters?.liquify ?? {}) as { slimFace?: number; jawline?: number };
       updateSubMaskParameters(host.id, host.subMasks[0].id, { liquify: { ...liq, [key]: v } });
       if (liquifyTimerRef.current) window.clearTimeout(liquifyTimerRef.current);
       liquifyTimerRef.current = window.setTimeout(() => void runFaceLiquify(), 600);
     },
-    [createLiquifyHost, findLiquifyHost, runFaceLiquify, updateSubMaskParameters],
+    [createLiquifyHost, findLiquifyHost, runFaceLiquify, updateSubMaskParameters, t],
   );
 
   /* 背景虚化 —— 复用桌面 Effects 链路（generate_full_image_depth_map
@@ -1710,13 +1723,10 @@ function ComposePanel() {
   }, [adjustments.orientationSteps, adjustments.aspectRatio, applyPatch, selectedImage]);
 
   const activeAspect = useMemo(() => {
-    const ratio = adjustments.aspectRatio;
-    if (!ratio) return null;
-    /* 审计 C-状态：旋转 90° 后比例取逆（4:3 → 3:4），chip 高亮按用户所选宽比做正/逆双向匹配 */
-    const hit = ASPECT_CHIPS.find(
-      (c) => c.value && (Math.abs(c.value - ratio) < 0.01 || Math.abs(1 / c.value - ratio) < 0.01),
-    );
-    return hit ? hit.value : ratio;
+    /* 审计 C-状态 / C-1（v2.1.22 审计）：旋转 90° 后比例取逆（4:3 → 3:4），
+     * chip 高亮先精确、再倒数匹配（1:1 自倒数排除）——统一走共享 helper，
+     * 修正旧实现「先扫倒数」导致 9:16 竖构图高亮跳到 16:9 的问题。 */
+    return matchAspectChip(ASPECT_CHIPS, adjustments.aspectRatio);
   }, [adjustments.aspectRatio]);
 
   // 与桌面 CropPanel.applyAspectRatio 同源：面积保持的居中裁剪。

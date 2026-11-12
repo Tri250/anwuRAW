@@ -50,6 +50,96 @@ interface InteractivePatch {
   normH: number;
 }
 
+// ---------------------------------------------------------------------------
+// G-2（v2.1.22 审计）：AI 效果图（深度/雾度/法线）与蒙版位图以 base64 大字段
+// 形式驻留在 Adjustments 中。撤销栈保存 50 份完整快照时，这些几 MB 级的
+// 字段被成倍复制，是 Android 端 OOM 的主要来源。
+// 处理策略：入栈前剥离大字段（栈内只留结构），恢复时按内容重新注水；
+// 活动的 adjustments 状态始终保持完整数据，管线行为不变。
+// 效果图对同一张源图是确定性结果，蒙版位图按 subMask.id 索引，撤销/重做
+// 语义与全量快照完全一致。
+// ---------------------------------------------------------------------------
+const HISTORY_EFFECT_MAP_KEYS = ['lensBlurDepthMap', 'fogDepthMap', 'relightNormalMap'] as const;
+type HistoryEffectMapKey = (typeof HISTORY_EFFECT_MAP_KEYS)[number];
+
+const effectMapRehydrate: Record<HistoryEffectMapKey, string | null> = {
+  lensBlurDepthMap: null,
+  fogDepthMap: null,
+  relightNormalMap: null,
+};
+const maskDataRehydrate = new Map<string, string>();
+
+const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+
+const captureHeavyFields = (adj: Adjustments): void => {
+  HISTORY_EFFECT_MAP_KEYS.forEach((key) => {
+    if (isNonEmptyString(adj[key])) effectMapRehydrate[key] = adj[key] as string;
+  });
+  (adj.masks || []).forEach((container) =>
+    (container.subMasks || []).forEach((sm: any) => {
+      const b64 = sm?.parameters?.maskDataBase64;
+      if (isNonEmptyString(b64) && sm?.id) maskDataRehydrate.set(sm.id, b64);
+    })
+  );
+};
+
+const stripHeavyFields = (adj: Adjustments): Adjustments => {
+  const hasEffectMap = HISTORY_EFFECT_MAP_KEYS.some((key) => isNonEmptyString(adj[key]));
+  const hasMaskData = (adj.masks || []).some((container) =>
+    (container.subMasks || []).some((sm: any) => isNonEmptyString(sm?.parameters?.maskDataBase64))
+  );
+  if (!hasEffectMap && !hasMaskData) return adj;
+  const out: any = { ...adj };
+  HISTORY_EFFECT_MAP_KEYS.forEach((key) => {
+    out[key] = null;
+  });
+  if (hasMaskData) {
+    out.masks = (adj.masks || []).map((container) => ({
+      ...container,
+      subMasks: (container.subMasks || []).map((sm: any) => {
+        const b64 = sm?.parameters?.maskDataBase64;
+        if (isNonEmptyString(b64)) {
+          return { ...sm, parameters: { ...sm.parameters, maskDataBase64: null } };
+        }
+        return sm;
+      }),
+    }));
+  }
+  return out;
+};
+
+const rehydrateHeavyFields = (adj: Adjustments): Adjustments => {
+  let out = adj;
+  HISTORY_EFFECT_MAP_KEYS.forEach((key) => {
+    if (out[key] == null && effectMapRehydrate[key]) {
+      if (out === adj) out = { ...adj };
+      out[key] = effectMapRehydrate[key];
+    }
+  });
+  const masks = out.masks;
+  if (masks && masks.length) {
+    let changed = false;
+    const nextMasks = masks.map((container) => {
+      let containerChanged = false;
+      const subMasks = (container.subMasks || []).map((sm: any) => {
+        const p = sm?.parameters;
+        if (p && p.maskDataBase64 == null && sm?.id && maskDataRehydrate.has(sm.id)) {
+          containerChanged = true;
+          return { ...sm, parameters: { ...p, maskDataBase64: maskDataRehydrate.get(sm.id) } };
+        }
+        return sm;
+      });
+      if (containerChanged) {
+        changed = true;
+        return { ...container, subMasks };
+      }
+      return container;
+    });
+    if (changed) out = { ...out, masks: nextMasks };
+  }
+  return out;
+};
+
 interface BaseRenderSize extends ImageDimensions {
   containerHeight: number;
   containerWidth: number;
@@ -204,7 +294,9 @@ export const useEditorStore = create<EditorState>((set) => ({
   pushHistory: (newAdj) =>
     set((state) => {
       const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(newAdj);
+      captureHeavyFields(newAdj);
+      // G-2: 大字段不入栈，恢复时由 rehydrateHeavyFields 注水。
+      newHistory.push(stripHeavyFields(newAdj));
       if (newHistory.length > 50) newHistory.shift();
       return { history: newHistory, historyIndex: newHistory.length - 1 };
     }),
@@ -213,8 +305,9 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((state) => {
       if (state.historyIndex > 0) {
         const newIndex = state.historyIndex - 1;
-        syncSentPatchMarkers(state.adjustments, state.history[newIndex], state.patchesSentToBackend);
-        return { historyIndex: newIndex, adjustments: state.history[newIndex] };
+        const restored = rehydrateHeavyFields(state.history[newIndex]);
+        syncSentPatchMarkers(state.adjustments, restored, state.patchesSentToBackend);
+        return { historyIndex: newIndex, adjustments: restored };
       }
       return state;
     }),
@@ -223,15 +316,16 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((state) => {
       if (state.historyIndex < state.history.length - 1) {
         const newIndex = state.historyIndex + 1;
-        syncSentPatchMarkers(state.adjustments, state.history[newIndex], state.patchesSentToBackend);
-        return { historyIndex: newIndex, adjustments: state.history[newIndex] };
+        const restored = rehydrateHeavyFields(state.history[newIndex]);
+        syncSentPatchMarkers(state.adjustments, restored, state.patchesSentToBackend);
+        return { historyIndex: newIndex, adjustments: restored };
       }
       return state;
     }),
 
   resetHistory: (initialState) =>
     set({
-      history: [initialState],
+      history: [stripHeavyFields(captureAndResetHeavy(initialState))],
       historyIndex: 0,
       adjustments: initialState,
     }),
@@ -239,8 +333,9 @@ export const useEditorStore = create<EditorState>((set) => ({
   goToHistoryIndex: (index) =>
     set((state) => {
       if (index >= 0 && index < state.history.length) {
-        syncSentPatchMarkers(state.adjustments, state.history[index], state.patchesSentToBackend);
-        return { historyIndex: index, adjustments: state.history[index] };
+        const restored = rehydrateHeavyFields(state.history[index]);
+        syncSentPatchMarkers(state.adjustments, restored, state.patchesSentToBackend);
+        return { historyIndex: index, adjustments: restored };
       }
       return state;
     }),
@@ -253,7 +348,9 @@ export const useEditorStore = create<EditorState>((set) => ({
       if (revision === state.adjustments) return state;
       syncSentPatchMarkers(state.adjustments, revision, state.patchesSentToBackend);
       const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(revision);
+      captureHeavyFields(revision);
+      // G-2: 同 pushHistory，栈内剥离大字段；当前 adjustments 保留完整数据。
+      newHistory.push(stripHeavyFields(revision));
       if (newHistory.length > 50) newHistory.shift();
       return {
         adjustments: revision,
@@ -264,3 +361,14 @@ export const useEditorStore = create<EditorState>((set) => ({
       };
     }),
 }));
+
+// G-2: resetHistory 时换图/清空编辑，先清掉上一张图的大字段缓存再记录新
+// 快照，避免跨图累积内存，也防止旧图的效果图被注水进新图的状态。
+const captureAndResetHeavy = (initialState: Adjustments): Adjustments => {
+  maskDataRehydrate.clear();
+  effectMapRehydrate.lensBlurDepthMap = null;
+  effectMapRehydrate.fogDepthMap = null;
+  effectMapRehydrate.relightNormalMap = null;
+  captureHeavyFields(initialState);
+  return initialState;
+};

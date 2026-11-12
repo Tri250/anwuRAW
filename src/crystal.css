@@ -1805,26 +1805,30 @@ html.android body > .global-tooltip {
   font-weight: 600;
 }
 
-/* OC-2: 导出页按住对照原图 */
-.cx-export-origin {
+/* C-2（v2.1.22 审计）：对比视图缩放。
+ * cx-compare-clip 未变换、承担 clip-path（分割边缘恒贴分割线）；
+ * cx-compare-zoom 承担共享变换，两图层内容同步缩放/平移。 */
+.cx-compare-clip {
   position: absolute;
   inset: 0;
-  z-index: 2;
-  object-fit: contain;
-  pointer-events: none;
 }
-.cx-export-origin-badge {
+.cx-compare-zoom {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 3;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.62);
+  inset: 0;
+}
+/* C-3（v2.1.22 审计）：进入对比但原图预览尚未渲染时的加载反馈 */
+.cx-compare-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   color: var(--cx-ink);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  pointer-events: none;
 }
 
 /* FD-6: PNG 无损时画质档禁用态 */

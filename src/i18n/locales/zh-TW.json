@@ -486,6 +486,7 @@
       "title": "AI 推薦"
     },
     "backToLibrary": "返回圖庫",
+    "resetFailed": "重設失敗：無法寫入磁碟，已保留目前編輯。",
     "bottom": {
       "compare": "比較",
       "original": "原圖",

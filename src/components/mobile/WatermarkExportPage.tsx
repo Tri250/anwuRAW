@@ -6,10 +6,19 @@ import { toast } from 'react-toastify';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useProcessStore } from '../../store/useProcessStore';
 import { useLibraryStore } from '../../store/useLibraryStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { BorderBasis, ExportSettings, Status, WatermarkAnchor } from '../ui/ExportImportProperties';
 import { Invokes } from '../ui/AppProperties';
-import { WATERMARK_TEMPLATES, WatermarkTemplate, haptic, summarizeExif, useWmPrefs, CxSwitch } from './crystalShared';
+import {
+  WATERMARK_TEMPLATES,
+  WatermarkTemplate,
+  CrystalWatermarkPrefs,
+  haptic,
+  summarizeExif,
+  useWmPrefs,
+  CxSwitch,
+} from './crystalShared';
 import { getOriginalAdjustments } from '../../hooks/useEditorActions';
 import { pushExitLayer, removeExitLayer } from '../../utils/androidBackRegistry';
 
@@ -72,9 +81,11 @@ export default function WatermarkExportPage({
   const { t } = useTranslation();
   const [prefs, updatePrefs] = useWmPrefs();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(prefs.defaultTemplateId ?? 'pro');
-  const [showInfoBarFrame, setShowInfoBarFrame] = useState(true);
-  const [format, setFormat] = useState<'jpeg' | 'png'>('jpeg');
-  const [quality, setQuality] = useState(100);
+  // E-5（v2.1.22 审计）：信息栏描边 / 导出格式 / 画质此前是纯内存态，重进导出页
+  // 即丢——现随 CrystalWatermarkPrefs 持久化（settings.json + localStorage 镜像）。
+  const [showInfoBarFrame, setShowInfoBarFrame] = useState(prefs.showInfoBarFrame ?? true);
+  const [format, setFormat] = useState<'jpeg' | 'png'>(prefs.exportFormat ?? 'jpeg');
+  const [quality, setQuality] = useState(prefs.exportQuality ?? 100);
   const [signatureDraft, setSignatureDraft] = useState(prefs.signature);
 
   const { finalPreviewUrl, originalPreview, adjustments } = useEditorStore(
@@ -192,17 +203,70 @@ export default function WatermarkExportPage({
   const signatureText = (signatureDraft || prefs.signature).trim();
   const sigMargin = imgRect ? Math.round(0.025 * Math.min(imgRect.w, imgRect.h)) : 8;
 
+  // E-4（v2.1.22 审计）：签名/后缀输入此前每个按键都同步写偏好（localStorage，
+  // 现为 settings.json 落盘），长文本输入会造成密集 IPC/序列化，低端机输入卡顿。
+  // 改为：输入态即时回显，落盘防抖 400ms，卸载时冲刷最后值。
+  const pendingPrefsRef = useRef<Partial<CrystalWatermarkPrefs> | null>(null);
+  const prefsSaveTimerRef = useRef<number | null>(null);
+  const flushPendingPrefs = useCallback(() => {
+    if (prefsSaveTimerRef.current !== null) {
+      window.clearTimeout(prefsSaveTimerRef.current);
+      prefsSaveTimerRef.current = null;
+    }
+    if (pendingPrefsRef.current) {
+      updatePrefs(pendingPrefsRef.current);
+      pendingPrefsRef.current = null;
+    }
+  }, [updatePrefs]);
+  useEffect(
+    () => () => {
+      if (prefsSaveTimerRef.current !== null) window.clearTimeout(prefsSaveTimerRef.current);
+      if (pendingPrefsRef.current) {
+        const { appSettings, handleSettingsChange } = useSettingsStore.getState();
+        if (appSettings && handleSettingsChange) {
+          // 卸载冲刷：直接走 settings 管线，避免闭包里的 updatePrefs 已失效
+          const next = { ...appSettings.crystalWatermarkPrefs, ...pendingPrefsRef.current } as Record<string, unknown>;
+          void handleSettingsChange({ ...appSettings, crystalWatermarkPrefs: next }).catch(() => {});
+        }
+      }
+    },
+    // 仅卸载时执行
+    [],
+  );
+  const queuePrefsWrite = useCallback(
+    (patch: Partial<CrystalWatermarkPrefs>) => {
+      pendingPrefsRef.current = { ...(pendingPrefsRef.current ?? {}), ...patch };
+      if (prefsSaveTimerRef.current !== null) window.clearTimeout(prefsSaveTimerRef.current);
+      prefsSaveTimerRef.current = window.setTimeout(flushPendingPrefs, 400);
+    },
+    [flushPendingPrefs],
+  );
+
   const commitSignature = (value: string) => {
     setSignatureDraft(value);
-    updatePrefs({ signature: value });
+    queuePrefsWrite({ signature: value });
   };
+  // 后缀输入为受控（value=prefs.filenameSuffix），同样需要本地草稿即时回显，
+  // 落盘走 400ms 防抖（与签名同一队列）。
+  const [suffixDraft, setSuffixDraft] = useState(prefs.filenameSuffix);
+  const commitSuffix = (value: string) => {
+    setSuffixDraft(value);
+    queuePrefsWrite({ filenameSuffix: value });
+  };
+
+  // E-2（v2.1.22 审计）：成功/失败/取消横幅只在「本次挂载内发起过导出」时显示。
+  // store 的结果状态会跨页面滞留（导出成功后回编辑域再进导出页，旧实现仍显示
+  // "已完成"），与用户当下状态矛盾。
+  const didExportThisMountRef = useRef(false);
 
   const handleExport = async () => {
     if (!selectedImage || isExporting) return;
+    flushPendingPrefs();
+    didExportThisMountRef.current = true;
 
     const signature = (signatureDraft || prefs.signature).trim();
     // FD-6: 后缀可编辑（清洗文件名非法字符；允许为空 = 保持原名导出到相册目录，不覆盖源文件）
-    const suffix = (prefs.filenameSuffix ?? '_crystal').replace(/[\\/:*?"<>|]/g, '');
+    const suffix = (suffixDraft || prefs.filenameSuffix || '_crystal').replace(/[\\/:*?"<>|]/g, '');
     const exportSettings: CrystalExportSettings = {
       filenameTemplate: `{original_filename}${suffix}`,
       jpegQuality: quality,
@@ -237,7 +301,20 @@ export default function WatermarkExportPage({
       dpi: 300,
     };
 
-    const originalFilename = selectedImage.path.split(/[\\/]/).pop() || '';
+    // E-1（v2.1.22 审计）：Android SAF 导入的图片 path 是 content:// URI，
+    // 直接 split(/[\\/]/) 会拿到一串无扩展名的 URI 尾段，导出文件名成乱码。
+    // 与分享/另存等 5 处入口同口径：经 resolve_android_content_uri_name 解析
+    // 真实显示名（含扩展名）后再取词干；解析失败回落尾段并告警。
+    let originalFilename = selectedImage.path.split(/[\\/]/).pop() || '';
+    if (selectedImage.path.startsWith('content://')) {
+      try {
+        originalFilename =
+          (await invoke<string>('resolve_android_content_uri_name', { uriStr: selectedImage.path })) ||
+          originalFilename;
+      } catch (e) {
+        console.warn('[crystal] resolve content uri display name failed, fallback to uri tail:', e);
+      }
+    }
     const stem = originalFilename.substring(0, originalFilename.lastIndexOf('.')) || originalFilename;
     const outputFileName = `${stem}${suffix}.${format === 'jpeg' ? 'jpg' : 'png'}`;
 
@@ -313,15 +390,10 @@ export default function WatermarkExportPage({
               <span className="cx-dot" />
               {holdOriginal ? t('crystal.originalBadge') : t('crystal.export.livePreview')}
             </span>
-            {/* OC-2: 按住预览图时叠加原图对照层 */}
-            {holdOriginal && originalPreview && (
-              <img
-                className="cx-export-origin"
-                src={originalPreview}
-                alt={t('crystal.originalBadge')}
-                draggable={false}
-              />
-            )}
+            {/* E-3（v2.1.22 审计）：已删除旧「叠加原图对照层」——移动端
+                originalPreview 恒为 null（该层永不渲染的死代码），且若未来开启
+                renderOriginal 会与主管线原图渲染形成双图同显、内存翻倍。
+                按住对照由主管线 previewOverride 机制独立完成。 */}
             <span className="cx-preview-badge" style={{ top: 10, right: 10 }}>
               {t(tpl.nameKey)}
             </span>
@@ -373,7 +445,11 @@ export default function WatermarkExportPage({
             </span>
             <CxSwitch
               checked={showInfoBarFrame}
-              onChange={setShowInfoBarFrame}
+              onChange={(v) => {
+                // E-5：随偏好持久化
+                setShowInfoBarFrame(v);
+                queuePrefsWrite({ showInfoBarFrame: v });
+              }}
               label={t('crystal.export.infoFrameLabel')}
               labelHidden
             />
@@ -470,10 +546,22 @@ export default function WatermarkExportPage({
         <div className="cx-export-section">
           <div className="cx-export-label">{t('crystal.export.format')}</div>
           <div className="cx-seg">
-            <button className={format === 'jpeg' ? 'is-active' : ''} onClick={() => setFormat('jpeg')}>
+            <button
+              className={format === 'jpeg' ? 'is-active' : ''}
+              onClick={() => {
+                setFormat('jpeg');
+                queuePrefsWrite({ exportFormat: 'jpeg' });
+              }}
+            >
               JPEG
             </button>
-            <button className={format === 'png' ? 'is-active' : ''} onClick={() => setFormat('png')}>
+            <button
+              className={format === 'png' ? 'is-active' : ''}
+              onClick={() => {
+                setFormat('png');
+                queuePrefsWrite({ exportFormat: 'png' });
+              }}
+            >
               PNG
             </button>
           </div>
@@ -481,8 +569,9 @@ export default function WatermarkExportPage({
             <div className="cx-export-label">{t('crystal.export.filenameSuffix')}</div>
             <input
               className="cx-input mt-1"
-              value={prefs.filenameSuffix}
-              onChange={(e) => updatePrefs({ filenameSuffix: e.target.value })}
+              value={suffixDraft}
+              onChange={(e) => commitSuffix(e.target.value)}
+              onBlur={flushPendingPrefs}
               placeholder="_crystal"
               maxLength={24}
               aria-label={t('crystal.export.filenameSuffix')}
@@ -497,7 +586,11 @@ export default function WatermarkExportPage({
               <button
                 key={q}
                 className={`cx-quality-btn ${quality === q ? 'is-active' : ''}`}
-                onClick={() => setQuality(q)}
+                onClick={() => {
+                  // E-5：画质随偏好持久化
+                  setQuality(q);
+                  queuePrefsWrite({ exportQuality: q });
+                }}
                 aria-disabled={format === 'png'}
               >
                 {q}
@@ -536,17 +629,19 @@ export default function WatermarkExportPage({
             {t('export.status.cancelExport')}
           </button>
         )}
-        {exportState.status === Status.Error && (
+        {/* E-2（v2.1.22 审计）：结果横幅仅在本挂载内发起过导出后才显示——
+            Success/Error/Cancelled 状态会滞留在 store 里跨页面存活。 */}
+        {exportState.status === Status.Error && didExportThisMountRef.current && (
           <div className="cx-export-progress" style={{ color: 'var(--cx-danger)' }}>
             {exportState.errorMessage || t('export.status.failed')}
           </div>
         )}
-        {exportState.status === Status.Cancelled && (
+        {exportState.status === Status.Cancelled && didExportThisMountRef.current && (
           <div className="cx-export-progress" style={{ color: 'var(--cx-muted)' }}>
             {t('export.status.cancelled')}
           </div>
         )}
-        {exportState.status === Status.Success && (
+        {exportState.status === Status.Success && didExportThisMountRef.current && (
           <div className="cx-export-progress" style={{ color: 'var(--cx-teal)' }}>
             {t('crystal.export.done')}
           </div>

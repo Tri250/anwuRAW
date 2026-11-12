@@ -494,6 +494,7 @@
       "title": "AI Recommend"
     },
     "backToLibrary": "Back to library",
+    "resetFailed": "Reset failed: could not save to disk. Your previous edits are kept.",
     "bottom": {
       "compare": "Compare",
       "original": "Original",
