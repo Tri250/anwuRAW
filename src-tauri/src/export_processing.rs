@@ -621,7 +621,7 @@ fn apply_text_watermark(
 /// 「相机型号 | 品牌(红) | 38mm f/5.6 1/200s ISO 200」，拍摄参数从
 /// 源文件 EXIF 实时读取，缺失的段落自动省略。EXIF 读取失败仅降级为
 /// 纯品牌栏（或跳过），不阻断导出。
-/// 注意：需 cargo 1.98 环境编译验证（沙箱 toolchain 1.94.1 不可用）。
+/// 注：cargo 1.98 校验已通过（v2.1.22 审计轮）。
 fn apply_exif_frame(
     base_image: &mut DynamicImage,
     frame: &ExifFrameOptions,

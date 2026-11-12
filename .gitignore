@@ -50,3 +50,6 @@ __pycache__/
 
 # Agent/browser test screenshots (not part of the app)
 .screenshots/
+
+# user uploads (not source)
+.uploads/
