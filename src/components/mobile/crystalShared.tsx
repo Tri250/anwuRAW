@@ -63,7 +63,7 @@ export const useImmersiveCropStore = create<ImmersiveCropState>()((set, get) => 
  *  - settings 未就绪/缺失时回退读 localStorage（保证冷启动即时可用）；
  *  - 仍镜像写 localStorage，便于回滚与旧版本兼容。
  * ------------------------------------------------------------------------ */
-export interface CrystalWatermarkPrefs {
+export type CrystalWatermarkPrefs = {
   favoriteTemplateId: string | null;
   defaultTemplateId: string | null;
   signature: string;
