@@ -91,14 +91,24 @@ const MATCH_AGGREGATES: ReadonlyArray<{
   hintKey: ParseKeys;
   minSamples: number;
 }> = [
-  { id: 'bures', labelKey: 'adjustments.color.aggregate.bures', hintKey: i18nKey('crystal.tone.aggregation.buresHint'), minSamples: 0 },
+  {
+    id: 'bures',
+    labelKey: 'adjustments.color.aggregate.bures',
+    hintKey: i18nKey('crystal.tone.aggregation.buresHint'),
+    minSamples: 0,
+  },
   {
     id: 'robust-bures',
     labelKey: 'adjustments.color.aggregate.robustBures',
     hintKey: i18nKey('crystal.tone.aggregation.robustBuresHint'),
     minSamples: ROBUST_BURES_MIN_SAMPLES,
   },
-  { id: 'mean-cov', labelKey: 'adjustments.color.aggregate.meanCov', hintKey: i18nKey('crystal.tone.aggregation.meanCovHint'), minSamples: 0 },
+  {
+    id: 'mean-cov',
+    labelKey: 'adjustments.color.aggregate.meanCov',
+    hintKey: i18nKey('crystal.tone.aggregation.meanCovHint'),
+    minSamples: 0,
+  },
 ];
 
 /* D-TN-01：追色双载体结果卡文案键（参数模式 / 高保真 LUT） */
@@ -769,7 +779,9 @@ function TonePanel() {
                   </button>
                   <button
                     className={`cx-chip${matchOutcome.carrier === 'hybrid' ? ' is-active' : ''}`}
-                    disabled={hybridBusy || (Boolean(adjustments.lutPath) && adjustments.lutPath !== matchOutcome.hybridLutPath)}
+                    disabled={
+                      hybridBusy || (Boolean(adjustments.lutPath) && adjustments.lutPath !== matchOutcome.hybridLutPath)
+                    }
                     onClick={() => {
                       haptic(5);
                       void applyHybridCarrier();

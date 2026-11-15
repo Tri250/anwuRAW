@@ -218,10 +218,7 @@ function ImmersiveCropOverlay({ onCancel, onConfirm }: { onCancel: () => void; o
   /* 与构图面板 activeAspect 同源：按用户所选宽比做正/逆双向匹配以高亮 chip。
    * C-1（v2.1.22 审计）：匹配口径与 crystalShared.matchAspectChip 统一——
    * 先精确、再倒数（排除 1:1 自倒数），避免竖构图高亮跳到横构图。 */
-  const activeAspect = useMemo(
-    () => matchAspectChip(IMMERSIVE_ASPECT_CHIPS, aspectRatio),
-    [aspectRatio],
-  );
+  const activeAspect = useMemo(() => matchAspectChip(IMMERSIVE_ASPECT_CHIPS, aspectRatio), [aspectRatio]);
 
   /* 与构图面板 rotateChip / 桌面 CropPanel.applyAspectRatio 同源：面积保持的居中裁剪。
    * 选「自由」时清空 aspectRatio 与裁剪框（与面板行为一致），随后可单指重新画框。 */

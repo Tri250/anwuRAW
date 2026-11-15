@@ -423,15 +423,13 @@ export default function CrystalPreview({
             hi = t;
           }
         }
-        final =
-          best ??
-          {
-            unit: 'px',
-            x: clamp(next.x, 0, Math.max(0, W - next.width)),
-            y: clamp(next.y, 0, Math.max(0, H - next.height)),
-            width: next.width,
-            height: next.height,
-          };
+        final = best ?? {
+          unit: 'px',
+          x: clamp(next.x, 0, Math.max(0, W - next.width)),
+          y: clamp(next.y, 0, Math.max(0, H - next.height)),
+          width: next.width,
+          height: next.height,
+        };
       }
 
       const rounded: Crop = {

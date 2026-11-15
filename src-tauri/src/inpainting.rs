@@ -1108,7 +1108,7 @@ pub async fn generate_liquify_patch(
 /// 瘦脸 = 下颌弧线向面部中轴内收；下颌线 = 下巴/颌线上提。
 /// landmark 在几何 warp 域检测，反解几何映射回基准域后，烘焙为 liquify patch
 /// （color+mask，空间与编码约定同笔刷液化），非破坏、可删除回退。
-
+///
 /// D-PT-02：液化适用性判定阈值——双眼外角/双颧距离比（正脸 ≈0.5-0.85，
 /// 侧脸时近侧颧点塌向鼻部使比值出界）、鼻尖在双颧连线上的投影位置
 /// （正脸居中 ≈0.5，侧脸/大角度偏转时贴向一端）、去旋转（以双眼线为轴）
@@ -1154,10 +1154,17 @@ pub(crate) fn face_liquify_applicability(landmarks: &[[f32; 2]]) -> Result<(), S
     }
     // 去旋转（对齐双眼线，同 fit_landmarks 口径）后的包围盒宽高比
     let angle = (eye_l[1] - eye_r[1]).atan2(eye_l[0] - eye_r[0]);
-    let center = [(cheek_l[0] + cheek_r[0]) * 0.5, (cheek_l[1] + cheek_r[1]) * 0.5];
+    let center = [
+        (cheek_l[0] + cheek_r[0]) * 0.5,
+        (cheek_l[1] + cheek_r[1]) * 0.5,
+    ];
     let (sin, cos) = (-angle).sin_cos();
-    let (mut min_x, mut min_y, mut max_x, mut max_y) =
-        (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+    let (mut min_x, mut min_y, mut max_x, mut max_y) = (
+        f32::INFINITY,
+        f32::INFINITY,
+        f32::NEG_INFINITY,
+        f32::NEG_INFINITY,
+    );
     for p in landmarks {
         let (dx, dy) = (p[0] - center[0], p[1] - center[1]);
         let (rx, ry) = (cos * dx - sin * dy, sin * dx + cos * dy);

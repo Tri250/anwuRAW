@@ -79,14 +79,14 @@ const captureHeavyFields = (adj: Adjustments): void => {
     (container.subMasks || []).forEach((sm: any) => {
       const b64 = sm?.parameters?.maskDataBase64;
       if (isNonEmptyString(b64) && sm?.id) maskDataRehydrate.set(sm.id, b64);
-    })
+    }),
   );
 };
 
 const stripHeavyFields = (adj: Adjustments): Adjustments => {
   const hasEffectMap = HISTORY_EFFECT_MAP_KEYS.some((key) => isNonEmptyString(adj[key]));
   const hasMaskData = (adj.masks || []).some((container) =>
-    (container.subMasks || []).some((sm: any) => isNonEmptyString(sm?.parameters?.maskDataBase64))
+    (container.subMasks || []).some((sm: any) => isNonEmptyString(sm?.parameters?.maskDataBase64)),
   );
   if (!hasEffectMap && !hasMaskData) return adj;
   const out: any = { ...adj };

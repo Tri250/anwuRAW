@@ -1205,7 +1205,7 @@ mod tests {
         assert_eq!(value["containersApplied"], json!(true));
 
         // 旧契约兼容：元信息缺失时键不出现（旧前端按缺失走旧逻辑）
-        let value = serde_json::to_value(&AiFaceMaskParameters::default()).unwrap();
+        let value = serde_json::to_value(AiFaceMaskParameters::default()).unwrap();
         assert!(value.get("faceCount").is_none());
         assert!(value.get("containersApplied").is_none());
     }

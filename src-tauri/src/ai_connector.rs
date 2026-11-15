@@ -244,10 +244,6 @@ pub async fn process_cloud_generation(
         GEN_SIZE,
         Rgb([128, 128, 128]),
     ));
-    let mask = DynamicImage::ImageLuma8(GrayImage::from_pixel(
-        GEN_SIZE,
-        GEN_SIZE,
-        Luma([255]),
-    ));
+    let mask = DynamicImage::ImageLuma8(GrayImage::from_pixel(GEN_SIZE, GEN_SIZE, Luma([255])));
     process_cloud_inpainting(base_url, &blank, &mask, prompt, token).await
 }

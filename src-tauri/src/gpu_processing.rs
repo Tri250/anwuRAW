@@ -265,7 +265,9 @@ pub fn decide_surface_mode(
     has_main_window: bool,
 ) -> SurfaceMode {
     if platform_offscreen_forced {
-        log::info!("Surface mode: Offscreen (forced on this platform; GPU compute still available)");
+        log::info!(
+            "Surface mode: Offscreen (forced on this platform; GPU compute still available)"
+        );
         return SurfaceMode::Offscreen;
     }
     if !use_wgpu_renderer {
@@ -333,7 +335,11 @@ pub fn get_or_init_gpu_context(
         let settings = crate::app_settings::load_settings(app_handle.clone()).unwrap_or_default();
         let has_main_window = app_handle.get_webview_window("main").is_some();
         // D-SYS-02：offscreen 决策显式化（桌面行为与此前一致）
-        let mode = decide_surface_mode(false, settings.use_wgpu_renderer.unwrap_or(true), has_main_window);
+        let mode = decide_surface_mode(
+            false,
+            settings.use_wgpu_renderer.unwrap_or(true),
+            has_main_window,
+        );
         match mode {
             SurfaceMode::Offscreen => None,
             SurfaceMode::Window => {
@@ -4057,8 +4063,14 @@ mod surface_mode_decision {
     #[test]
     fn forced_offscreen_platforms_stay_offscreen() {
         // Android/Linux 现状：强制 offscreen，不受设置/窗口影响（行为零变化）
-        assert_eq!(decide_surface_mode(true, true, true), SurfaceMode::Offscreen);
-        assert_eq!(decide_surface_mode(true, false, false), SurfaceMode::Offscreen);
+        assert_eq!(
+            decide_surface_mode(true, true, true),
+            SurfaceMode::Offscreen
+        );
+        assert_eq!(
+            decide_surface_mode(true, false, false),
+            SurfaceMode::Offscreen
+        );
     }
 
     #[test]
@@ -4068,8 +4080,14 @@ mod surface_mode_decision {
 
     #[test]
     fn desktop_falls_back_to_offscreen_for_setting_or_window() {
-        assert_eq!(decide_surface_mode(false, false, true), SurfaceMode::Offscreen);
-        assert_eq!(decide_surface_mode(false, true, false), SurfaceMode::Offscreen);
+        assert_eq!(
+            decide_surface_mode(false, false, true),
+            SurfaceMode::Offscreen
+        );
+        assert_eq!(
+            decide_surface_mode(false, true, false),
+            SurfaceMode::Offscreen
+        );
     }
 }
 

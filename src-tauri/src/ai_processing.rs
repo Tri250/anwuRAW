@@ -1305,6 +1305,7 @@ fn ensure_safe_asset_filename(filename: &str) -> Result<(), String> {
 /// - hf.co 及其子域（HF 短链域名）；
 /// - github.com 及其子域、*.githubusercontent.com（release 资产源）；
 /// - hf-mirror.com（仓库内置回退镜像，`HF_FALLBACK_HOST`）。
+///
 /// 用户经 `RAPIDRAW_HF_ENDPOINT` 显式配置的自有镜像 host 与静态白名单
 /// 同等信任（它本就是用户自选的自有源，且仍受 sanitize_mirror_base
 /// 格式校验约束）。白名单之外的主机一律拒绝并记日志，防止被篡改的
@@ -1387,9 +1388,9 @@ fn validate_download_url(url: &str) -> Result<(), String> {
 /// 会在 canonicalize 后逃出根目录而被拦下。文件名本身另由
 /// `ensure_safe_asset_filename` 把关。
 fn ensure_dest_within_models_dir(models_root: &Path, dest: &Path) -> anyhow::Result<()> {
-    let root = models_root.canonicalize().map_err(|e| {
-        anyhow::anyhow!("models dir {} unavailable: {e}", models_root.display())
-    })?;
+    let root = models_root
+        .canonicalize()
+        .map_err(|e| anyhow::anyhow!("models dir {} unavailable: {e}", models_root.display()))?;
     let Some(filename) = dest.file_name() else {
         anyhow::bail!("invalid model destination {}", dest.display());
     };
@@ -1421,9 +1422,9 @@ fn ensure_dest_within_models_dir(models_root: &Path, dest: &Path) -> anyhow::Res
 /// Content-Length → 如实跳过对账，不虚构期望长度。
 fn verify_downloaded_size(written: u64, expected: Option<u64>) -> Result<(), String> {
     match expected {
-        Some(total) if written != total => {
-            Err(format!("Incomplete download: received {written} of {total} bytes"))
-        }
+        Some(total) if written != total => Err(format!(
+            "Incomplete download: received {written} of {total} bytes"
+        )),
         _ => Ok(()),
     }
 }
@@ -4315,11 +4316,7 @@ mod tests {
         let hosts = download_allowlist_with_custom(Some("https://my-mirror.example.org"));
         assert!(hosts.iter().any(|h| h == "my-mirror.example.org"));
         assert!(
-            validate_download_url_against(
-                "https://my-mirror.example.org/x.onnx",
-                &hosts
-            )
-            .is_ok()
+            validate_download_url_against("https://my-mirror.example.org/x.onnx", &hosts).is_ok()
         );
         // 自定义镜像格式非法（注入串）时不得混入白名单
         let hosts = download_allowlist_with_custom(Some("https://evil.com/?x="));
@@ -4397,7 +4394,10 @@ mod tests {
         let truncated = cap_diagnostics_report_size_to(&mut report, 8192);
         assert!(truncated);
         let size = serde_json::to_string(&report).unwrap().len();
-        assert!(size <= 8192, "capped report must fit the budget, got {size}");
+        assert!(
+            size <= 8192,
+            "capped report must fit the budget, got {size}"
+        );
         // 最新的条目保留、注明行入列队尾
         assert!(report.recent_ai_logs[0].starts_with("[ERROR] log 0"));
         assert_eq!(
@@ -4413,7 +4413,10 @@ mod tests {
         let truncated = cap_diagnostics_report_size_to(&mut report, 1024);
         assert!(truncated);
         let size = serde_json::to_string(&report).unwrap().len();
-        assert!(size <= 1024, "capped report must fit the budget, got {size}");
+        assert!(
+            size <= 1024,
+            "capped report must fit the budget, got {size}"
+        );
         assert!(report.issues[0].contains("[truncated"));
         assert_eq!(
             report.recent_ai_logs.last().unwrap(),

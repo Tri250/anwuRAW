@@ -371,8 +371,8 @@ impl GaussianAccumulator {
                 }
             }
         }
-        for i in 0..3 {
-            cov[i][i] += COV_REG;
+        for (i, row) in cov.iter_mut().enumerate() {
+            row[i] += COV_REG;
         }
         Gaussian {
             mean,
@@ -389,10 +389,10 @@ fn sym_eigen(m: &[[f64; 3]; 3]) -> ([f64; 3], [[f64; 3]; 3]) {
     for _ in 0..64 {
         // 找最大非对角元
         let (mut p, mut q, mut max_off) = (0usize, 1usize, 0.0f64);
-        for i in 0..3 {
-            for j in (i + 1)..3 {
-                if a[i][j].abs() > max_off {
-                    max_off = a[i][j].abs();
+        for (i, row) in a.iter().enumerate() {
+            for (j, &val) in row.iter().enumerate().skip(i + 1) {
+                if val.abs() > max_off {
+                    max_off = val.abs();
                     p = i;
                     q = j;
                 }
@@ -413,21 +413,23 @@ fn sym_eigen(m: &[[f64; 3]; 3]) -> ([f64; 3], [[f64; 3]; 3]) {
         let c = 1.0 / (1.0 + t * t).sqrt();
         let s = t * c;
         // 旋转 A
-        for i in 0..3 {
-            let (aip, aiq) = (a[i][p], a[i][q]);
-            a[i][p] = c * aip - s * aiq;
-            a[i][q] = s * aip + c * aiq;
+        for row in a.iter_mut() {
+            let (aip, aiq) = (row[p], row[q]);
+            row[p] = c * aip - s * aiq;
+            row[q] = s * aip + c * aiq;
         }
-        for j in 0..3 {
-            let (apj, aqj) = (a[p][j], a[q][j]);
-            a[p][j] = c * apj - s * aqj;
-            a[q][j] = s * apj + c * aqj;
+        // 旋转 A 的第 p、q 两行（p < q 恒成立，split 后逐列同步更新）
+        let (rows_before_q, rows_from_q) = a.split_at_mut(q);
+        for (apj, aqj) in rows_before_q[p].iter_mut().zip(rows_from_q[0].iter_mut()) {
+            let (apj_v, aqj_v) = (*apj, *aqj);
+            *apj = c * apj_v - s * aqj_v;
+            *aqj = s * apj_v + c * aqj_v;
         }
         // 旋转 V（累积特征向量）
-        for i in 0..3 {
-            let (vip, viq) = (v[i][p], v[i][q]);
-            v[i][p] = c * vip - s * viq;
-            v[i][q] = s * vip + c * viq;
+        for row in v.iter_mut() {
+            let (vip, viq) = (row[p], row[q]);
+            row[p] = c * vip - s * viq;
+            row[q] = s * vip + c * viq;
         }
     }
     ([a[0][0], a[1][1], a[2][2]], v)
@@ -451,10 +453,15 @@ fn psd_power(m: &[[f64; 3]; 3], exponent: f64) -> [[f64; 3]; 3] {
     mat3_mul(&mat3_mul(&evec, &d), &mat3_transpose(&evec))
 }
 
+/// MKL 求解结果：(仿射矩阵 A, 平移向量 b, 协方差不变式相对误差)
+type TransportResult = Result<([[f64; 3]; 3], [f64; 3], f64), String>;
+/// MKL 传输映射对：(仿射矩阵 A, 平移向量 b)，按分区槽位存 Option
+type TransportSlot = Option<([[f64; 3]; 3], [f64; 3])>;
+
 /// MKL 线性 Monge-Kantorovitch 传输（Pitié & Kokaram 2007）：
 /// `A = C_s^(-1/2)·(C_s^(1/2)·C_t·C_s^(1/2))^(1/2)·C_s^(-1/2)`，`b = μ_t - A·μ_s`。
 /// 返回 (A, b, 协方差不变式相对误差)。不变量超阈值时返回 Err（调用方降级）。
-fn mkl_transport(src: &Gaussian, dst: &Gaussian) -> Result<([[f64; 3]; 3], [f64; 3], f64), String> {
+fn mkl_transport(src: &Gaussian, dst: &Gaussian) -> TransportResult {
     let cs_half = psd_power(&src.cov, 0.5);
     let cs_inv_half = psd_power(&src.cov, -0.5);
     let mid = mat3_mul(&mat3_mul(&cs_half, &dst.cov), &cs_half);
@@ -462,9 +469,21 @@ fn mkl_transport(src: &Gaussian, dst: &Gaussian) -> Result<([[f64; 3]; 3], [f64;
     let a = mat3_mul(&mat3_mul(&cs_inv_half, &mid_sqrt), &cs_inv_half);
     // 对称化，消掉特征分解/迭代的数值不对称
     let a = [
-        [a[0][0], (a[0][1] + a[1][0]) / 2.0, (a[0][2] + a[2][0]) / 2.0],
-        [(a[1][0] + a[0][1]) / 2.0, a[1][1], (a[1][2] + a[2][1]) / 2.0],
-        [(a[2][0] + a[0][2]) / 2.0, (a[2][1] + a[1][2]) / 2.0, a[2][2]],
+        [
+            a[0][0],
+            (a[0][1] + a[1][0]) / 2.0,
+            (a[0][2] + a[2][0]) / 2.0,
+        ],
+        [
+            (a[1][0] + a[0][1]) / 2.0,
+            a[1][1],
+            (a[1][2] + a[2][1]) / 2.0,
+        ],
+        [
+            (a[2][0] + a[0][2]) / 2.0,
+            (a[2][1] + a[1][2]) / 2.0,
+            a[2][2],
+        ],
     ];
     let acsa = mat3_mul(&mat3_mul(&a, &src.cov), &mat3_transpose(&a));
     let denom = mat3_frobenius(&dst.cov).max(1e-15);
@@ -548,7 +567,11 @@ fn mat3_sub(a: &[[f64; 3]; 3], b: &[[f64; 3]; 3]) -> [[f64; 3]; 3] {
 /// 两个 Oklab 高斯的 Bures/Wasserstein-2 距离平方：
 /// ‖μa-μb‖² + tr(Ca + Cb - 2·(Ca^½·Cb·Ca^½)^½)。
 fn gaussian_w2_sq(a: &Gaussian, b: &Gaussian) -> f64 {
-    let d = [a.mean[0] - b.mean[0], a.mean[1] - b.mean[1], a.mean[2] - b.mean[2]];
+    let d = [
+        a.mean[0] - b.mean[0],
+        a.mean[1] - b.mean[1],
+        a.mean[2] - b.mean[2],
+    ];
     let mean_sq = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
     let root = psd_power(&a.cov, 0.5);
     let mid = mat3_mul(&mat3_mul(&root, &b.cov), &root);
@@ -605,6 +628,8 @@ fn covariance_barycenter(covs: &[[[f64; 3]; 3]], weights: &[f64]) -> Result<[[f6
         let sq = mat3_mul(&roots, &roots);
         let mut following = mat3_mul(&mat3_mul(&inv, &sq), &inv);
         // 对称化，消掉幂运算的数值不对称
+        // 对称矩阵三角遍历，[r][c] 与 [c][r] 索引耦合读写，保持 range 循环
+        #[allow(clippy::needless_range_loop)]
         for r in 0..3 {
             for c in (r + 1)..3 {
                 let v = (following[r][c] + following[c][r]) / 2.0;
@@ -612,8 +637,8 @@ fn covariance_barycenter(covs: &[[[f64; 3]; 3]], weights: &[f64]) -> Result<[[f6
                 following[c][r] = v;
             }
         }
-        let delta = mat3_frobenius(&mat3_sub(&following, &current))
-            / mat3_frobenius(&current).max(1e-15);
+        let delta =
+            mat3_frobenius(&mat3_sub(&following, &current)) / mat3_frobenius(&current).max(1e-15);
         current = following;
         if delta < 1e-9 {
             let residual = mat3_frobenius(&mat3_sub(&current, &mean_root(&current)))
@@ -629,7 +654,11 @@ fn covariance_barycenter(covs: &[[[f64; 3]; 3]], weights: &[f64]) -> Result<[[f6
 /// 加权中位数（权重累积过半的第一个顺序样本，stable）。
 fn weighted_median(values: &[f64], weights: &[f64]) -> f64 {
     let mut order: Vec<usize> = (0..values.len()).collect();
-    order.sort_by(|&a, &b| values[a].partial_cmp(&values[b]).unwrap_or(std::cmp::Ordering::Equal));
+    order.sort_by(|&a, &b| {
+        values[a]
+            .partial_cmp(&values[b])
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     let total: f64 = weights.iter().sum();
     let mut acc = 0.0;
     for &i in &order {
@@ -716,21 +745,21 @@ fn aggregate_gaussians(
     let mut mean = [0.0f64; 3];
     let mut count = 0u64;
     for &i in &active {
-        for c in 0..3 {
-            mean[c] += weights[i] * gaussians[i].mean[c];
+        for (c, m) in mean.iter_mut().enumerate() {
+            *m += weights[i] * gaussians[i].mean[c];
         }
         count += gaussians[i].count;
     }
-    for c in 0..3 {
-        mean[c] /= wsum;
+    for m in mean.iter_mut() {
+        *m /= wsum;
     }
     let cov = match mode {
         AggregateMode::MeanCov => {
             let mut cov = [[0.0; 3]; 3];
             for &i in &active {
-                for r in 0..3 {
-                    for c in 0..3 {
-                        cov[r][c] += weights[i] * gaussians[i].cov[r][c];
+                for (r, cov_row) in cov.iter_mut().enumerate() {
+                    for (c, cell) in cov_row.iter_mut().enumerate() {
+                        *cell += weights[i] * gaussians[i].cov[r][c];
                     }
                 }
             }
@@ -755,7 +784,10 @@ fn aggregate_gaussians(
 /// - 一阶矩（`lin_mean`/`zone_*`）：按像素数加权（仅 MKL 不可用的 legacy 降级路径消费）；
 /// - Oklab 高斯：每张样片等权（与 language-guided-lut 默认权重一致），按模式聚合；
 /// - 黑白判定：多数票（过半样片近中性 → 走黑白路由）。
-fn aggregate_image_stats(stats: &[ImageStats], mode: AggregateMode) -> Result<(ImageStats, bool), String> {
+fn aggregate_image_stats(
+    stats: &[ImageStats],
+    mode: AggregateMode,
+) -> Result<(ImageStats, bool), String> {
     let n = stats.len();
     let weights = vec![1.0 / n as f64; n];
     let px: Vec<f64> = stats.iter().map(|s| s.enc_pixels.len() as f64).collect();
@@ -783,13 +815,13 @@ fn aggregate_image_stats(stats: &[ImageStats], mode: AggregateMode) -> Result<(I
     let mut zone_frac = [0.0f64; 3];
     for (i, s) in stats.iter().enumerate() {
         let w = w_px(i);
-        for c in 0..3 {
-            lin_mean[c] += w * s.lin_mean[c];
+        for (c, m) in lin_mean.iter_mut().enumerate() {
+            *m += w * s.lin_mean[c];
         }
         for z in 0..3 {
             zone_frac[z] += w * s.zone_frac[z];
-            for c in 0..3 {
-                zone_lin_mean[z][c] += w * s.zone_lin_mean[z][c];
+            for (c, cell) in zone_lin_mean[z].iter_mut().enumerate() {
+                *cell += w * s.zone_lin_mean[z][c];
             }
         }
     }
@@ -800,11 +832,14 @@ fn aggregate_image_stats(stats: &[ImageStats], mode: AggregateMode) -> Result<(I
     if active_global.is_empty() {
         return Err("Empty image".to_string());
     }
-    let gaussians: Vec<Gaussian> = active_global.iter().map(|&i| stats[i].global_gauss).collect();
+    let gaussians: Vec<Gaussian> = active_global
+        .iter()
+        .map(|&i| stats[i].global_gauss)
+        .collect();
     let g_weights: Vec<f64> = active_global.iter().map(|&i| weights[i]).collect();
     let global_gauss = aggregate_gaussians(&gaussians, &g_weights, mode)?;
     let mut zone_gauss = [Gaussian::default(); 3];
-    for z in 0..3 {
+    for (z, zg) in zone_gauss.iter_mut().enumerate() {
         let az: Vec<usize> = (0..n)
             .filter(|&i| !stats[i].zone_gauss[z].is_empty())
             .collect();
@@ -813,7 +848,7 @@ fn aggregate_image_stats(stats: &[ImageStats], mode: AggregateMode) -> Result<(I
         }
         let gz: Vec<Gaussian> = az.iter().map(|&i| stats[i].zone_gauss[z]).collect();
         let wz: Vec<f64> = az.iter().map(|&i| weights[i]).collect();
-        zone_gauss[z] = aggregate_gaussians(&gz, &wz, mode)?;
+        *zg = aggregate_gaussians(&gz, &wz, mode)?;
     }
 
     // 黑白多数票：过半样片近中性才走黑白路由（混合样片集按主基调判定）
@@ -1099,7 +1134,13 @@ impl Default for TransferStrength {
 
 impl TransferStrength {
     fn sanitized(&self) -> Self {
-        let clamp01 = |v: f64| if v.is_finite() { v.clamp(0.0, 1.0) } else { 1.0 };
+        let clamp01 = |v: f64| {
+            if v.is_finite() {
+                v.clamp(0.0, 1.0)
+            } else {
+                1.0
+            }
+        };
         Self {
             strength: clamp01(self.strength),
             tone_strength: clamp01(self.tone_strength),
@@ -1135,7 +1176,7 @@ fn mkl_delta(
 /// 再回退任意可用映射；`mkl_delta` 内含强度三分解），返回映射后的线性域 RGB。
 /// 无任何可用传输时恒等返回。
 fn apply_mkl_forward(
-    transports: &[Option<([[f64; 3]; 3], [f64; 3])>; 4],
+    transports: &[TransportSlot; 4],
     fallback: Option<([[f64; 3]; 3], [f64; 3])>,
     k: &TransferStrength,
     lin: [f64; 3],
@@ -1180,7 +1221,7 @@ pub fn compute_color_transfer(
     // 目标 = 样片（期望风格，多样片时已按聚合模式合并）。任何分区不变量
     // 校验失败只丢弃该分区，全部失败时整体降级为一阶矩（Reinhard 均值差）路径。
     // transports[0] = 全局，transports[1..=3] = shadow/mid/highlight。
-    let mut transports: [Option<([[f64; 3]; 3], [f64; 3])>; 4] = [None; 4];
+    let mut transports: [TransportSlot; 4] = [None; 4];
     let mut invariant_err_max = 0.0f64;
     let mut mkl_error: Option<String> = None;
     if !monochrome {
@@ -1194,10 +1235,7 @@ pub fn compute_color_transfer(
             }
         }
         for z in 0..3 {
-            if t.zone_frac[z] < 0.02
-                || t.zone_gauss[z].is_empty()
-                || s.zone_gauss[z].is_empty()
-            {
+            if t.zone_frac[z] < 0.02 || t.zone_gauss[z].is_empty() || s.zone_gauss[z].is_empty() {
                 continue;
             }
             match mkl_transport(&t.zone_gauss[z], &s.zone_gauss[z]) {
@@ -1370,9 +1408,7 @@ pub fn compute_color_transfer(
         .collect();
     // 宽高比诊断：任一样片与客片原图宽高比不同即为 true
     //（整数叉积比较，避免浮点除法）
-    let sample_aspect_mismatch = s_list
-        .iter()
-        .any(|st| st.width * t_h != t_w * st.height);
+    let sample_aspect_mismatch = s_list.iter().any(|st| st.width * t_h != t_w * st.height);
     let mut de_before = 0.0;
     let mut de_after = 0.0;
     let mut de_spatial_sum = 0.0f64;
@@ -1413,8 +1449,7 @@ pub fn compute_color_transfer(
     let sampled = (t_lin.len() / 4).max(1) as f64;
     de_before /= sampled;
     de_after /= sampled;
-    let delta_e_spatial =
-        (spatial_pairs > 0).then(|| de_spatial_sum / spatial_pairs as f64);
+    let delta_e_spatial = (spatial_pairs > 0).then(|| de_spatial_sum / spatial_pairs as f64);
 
     // 输出补丁（仅非默认字段）
     let mut patch = serde_json::Map::new();
@@ -1610,6 +1645,8 @@ pub(crate) fn load_analysis_image(
         .map_err(|e| e.to_string())
 }
 
+// Tauri command 平铺参数即前端 invoke 协议，保持签名不改
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn compute_color_match(
     app_handle: tauri::AppHandle,
@@ -1683,9 +1720,7 @@ pub async fn compute_color_match(
                     }),
                 None => None,
             };
-            response["hybridLutPath"] = lut_path
-                .map(Value::String)
-                .unwrap_or(Value::Null);
+            response["hybridLutPath"] = lut_path.map(Value::String).unwrap_or(Value::Null);
         }
         Ok(response)
     })
@@ -1743,9 +1778,8 @@ mod tests {
         mode: AggregateMode,
     ) -> (Value, Value) {
         let owned: Vec<DynamicImage> = samples.iter().map(|i| (*i).clone()).collect();
-        let (patch, metrics, _lut) =
-            compute_color_transfer(&owned, target, strength, mode, false)
-                .expect("transfer should succeed");
+        let (patch, metrics, _lut) = compute_color_transfer(&owned, target, strength, mode, false)
+            .expect("transfer should succeed");
         (patch, metrics)
     }
 
@@ -1841,14 +1875,24 @@ mod tests {
         // 简单确定性伪随机（LCG），避免引入 rand 依赖
         let mut seed = 42u64;
         let mut next = || {
-            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            seed = seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             ((seed >> 33) as f64 / (u32::MAX as f64)) * 2.0 - 1.0
         };
         for _ in 0..20000 {
             // 源：a/b 平面较窄、整体偏负 a（偏青）
-            let s = [0.5 + 0.03 * next(), -0.05 + 0.02 * next(), -0.04 + 0.02 * next()];
+            let s = [
+                0.5 + 0.03 * next(),
+                -0.05 + 0.02 * next(),
+                -0.04 + 0.02 * next(),
+            ];
             // 目标：a/b 平面更宽、整体偏正 a（偏暖）
-            let t = [0.55 + 0.08 * next(), 0.06 + 0.06 * next(), 0.05 + 0.06 * next()];
+            let t = [
+                0.55 + 0.08 * next(),
+                0.06 + 0.06 * next(),
+                0.05 + 0.06 * next(),
+            ];
             acc_s.push(s);
             acc_t.push(t);
         }
@@ -1868,9 +1912,9 @@ mod tests {
         }
         // 传输后的协方差应贴近目标协方差（MKL 的核心保证）
         let acsa = mat3_mul(&mat3_mul(&a, &src.cov), &mat3_transpose(&a));
-        for i in 0..3 {
-            for j in 0..3 {
-                let rel = (acsa[i][j] - dst.cov[i][j]).abs() / dst.cov[i][j].abs().max(1e-6);
+        for (i, row) in acsa.iter().enumerate() {
+            for (j, v) in row.iter().enumerate() {
+                let rel = (v - dst.cov[i][j]).abs() / dst.cov[i][j].abs().max(1e-6);
                 assert!(rel < 1e-3, "协方差元素 [{i}][{j}] 相对误差 {rel:.2e}");
             }
         }
@@ -1886,7 +1930,13 @@ mod tests {
         }
         let gray_pixels: Vec<[f32; 3]> = gray
             .pixels()
-            .map(|p| [p[0] as f32 / 255.0, p[1] as f32 / 255.0, p[2] as f32 / 255.0])
+            .map(|p| {
+                [
+                    p[0] as f32 / 255.0,
+                    p[1] as f32 / 255.0,
+                    p[2] as f32 / 255.0,
+                ]
+            })
             .collect();
         assert!(classify_monochrome(&gray_pixels), "灰度图应判定为黑白");
         // 彩色图不应判定为黑白
@@ -1896,7 +1946,13 @@ mod tests {
         }
         let color_pixels: Vec<[f32; 3]> = color
             .pixels()
-            .map(|p| [p[0] as f32 / 255.0, p[1] as f32 / 255.0, p[2] as f32 / 255.0])
+            .map(|p| {
+                [
+                    p[0] as f32 / 255.0,
+                    p[1] as f32 / 255.0,
+                    p[2] as f32 / 255.0,
+                ]
+            })
             .collect();
         assert!(!classify_monochrome(&color_pixels), "彩色图不应判定为黑白");
     }
@@ -1992,10 +2048,11 @@ mod tests {
     #[test]
     fn test_mkl_invariant_rejects_degenerate() {
         // 非有限协方差必须被拒绝，而不是产出错误传输
-        let mut g = Gaussian::default();
-        g.count = 10;
-        g.mean = [0.5, 0.0, 0.0];
-        g.cov = [[f64::NAN, 0.0, 0.0], [0.0, 1e-6, 0.0], [0.0, 0.0, 1e-6]];
+        let g = Gaussian {
+            count: 10,
+            mean: [0.5, 0.0, 0.0],
+            cov: [[f64::NAN, 0.0, 0.0], [0.0, 1e-6, 0.0], [0.0, 0.0, 1e-6]],
+        };
         let h = Gaussian {
             mean: [0.5, 0.0, 0.0],
             cov: [[1e-6, 0.0, 0.0], [0.0, 1e-6, 0.0], [0.0, 0.0, 1e-6]],
@@ -2022,7 +2079,7 @@ mod tests {
     fn gray_image(size: u32) -> DynamicImage {
         let mut gray = RgbImage::new(size, size);
         for (x, y, p) in gray.enumerate_pixels_mut() {
-            let v = ((x + y) * 255 / (2 * size as u32 - 2).max(1)) as u8;
+            let v = ((x + y) * 255 / (2 * size - 2).max(1)) as u8;
             *p = Rgb([v, v, v]);
         }
         DynamicImage::ImageRgb8(gray)
@@ -2056,7 +2113,10 @@ mod tests {
 
     #[test]
     fn test_aggregate_mode_parse() {
-        assert_eq!(AggregateMode::parse("mean-cov"), Some(AggregateMode::MeanCov));
+        assert_eq!(
+            AggregateMode::parse("mean-cov"),
+            Some(AggregateMode::MeanCov)
+        );
         assert_eq!(AggregateMode::parse("bures"), Some(AggregateMode::Bures));
         assert_eq!(
             AggregateMode::parse("robust-bures"),
@@ -2072,15 +2132,15 @@ mod tests {
         let a = gauss([0.5, 0.0, 0.0], [1.0, 1.0, 1.0], 100);
         let b = gauss([0.5, 0.0, 0.0], [4.0, 4.0, 4.0], 100);
         let cov = covariance_barycenter(&[a.cov, b.cov], &[0.5, 0.5]).expect("应收敛");
-        for i in 0..3 {
+        for (i, row) in cov.iter().enumerate() {
             assert!(
-                (cov[i][i] - 2.25).abs() < 1e-6,
+                (row[i] - 2.25).abs() < 1e-6,
                 "特征值重心应≈2.25，实际 {}",
-                cov[i][i]
+                row[i]
             );
-            for j in 0..3 {
+            for (j, v) in row.iter().enumerate() {
                 if i != j {
-                    assert!(cov[i][j].abs() < 1e-9, "非对角应保持为 0");
+                    assert!(v.abs() < 1e-9, "非对角应保持为 0");
                 }
             }
         }
@@ -2091,21 +2151,21 @@ mod tests {
         // 单样本原样返回
         let a = gauss([0.5, 0.1, 0.0], [0.8, 0.4, 0.2], 100);
         let cov = covariance_barycenter(&[a.cov], &[1.0]).expect("单样本应直接返回");
-        for i in 0..3 {
-            for j in 0..3 {
-                assert!((cov[i][j] - a.cov[i][j]).abs() < 1e-12);
+        for (i, row) in cov.iter().enumerate() {
+            for (j, v) in row.iter().enumerate() {
+                assert!((v - a.cov[i][j]).abs() < 1e-12);
             }
         }
         // 重心逐特征值介于输入之间（不会超出极值）
         let b = gauss([0.5, 0.1, 0.0], [3.0, 0.9, 0.05], 100);
         let cov = covariance_barycenter(&[a.cov, b.cov], &[0.5, 0.5]).expect("应收敛");
-        for i in 0..3 {
+        for (i, row) in cov.iter().enumerate() {
             let lo = a.cov[i][i].min(b.cov[i][i]);
             let hi = a.cov[i][i].max(b.cov[i][i]);
             assert!(
-                (lo - 1e-9..=hi + 1e-9).contains(&cov[i][i]),
+                (lo - 1e-9..=hi + 1e-9).contains(&row[i]),
                 "重心特征值 {} 应介于 {lo} 与 {hi} 之间",
-                cov[i][i]
+                row[i]
             );
         }
     }
@@ -2120,11 +2180,7 @@ mod tests {
             &[inlier_a, inlier_b, outlier],
             &[1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0],
         );
-        assert!(
-            eff[2] < 0.05,
-            "离群样片权重应被压到 <0.05，实际 {:?}",
-            eff
-        );
+        assert!(eff[2] < 0.05, "离群样片权重应被压到 <0.05，实际 {:?}", eff);
         assert!(
             (eff[0] - eff[1]).abs() < 0.02 && eff[0] > 0.4,
             "两个近邻应均分剩余权重，实际 {:?}",
@@ -2315,12 +2371,8 @@ mod tests {
         }
         // 中心点 (16,16,16) = 0.5 灰，显式断言
         let center = 16 * GRID * GRID + 16 * GRID + 16;
-        for c in 0..3 {
-            assert!(
-                (data[center][c] - 0.5).abs() < 1e-3,
-                "中心点往返误差应 <1e-3，实际 {}",
-                data[center][c]
-            );
+        for &v in &data[center] {
+            assert!((v - 0.5).abs() < 1e-3, "中心点往返误差应 <1e-3，实际 {}", v);
         }
         assert!(checked > 300, "抽样点过少: {checked}");
     }
@@ -2399,15 +2451,18 @@ mod tests {
         }
         let small = DynamicImage::ImageRgb8(small);
         let target = gradient_image();
-        let (_, metrics) =
-            run_transfer(&[&small], &target, TransferStrength::default(), AggregateMode::Bures);
+        let (_, metrics) = run_transfer(
+            &[&small],
+            &target,
+            TransferStrength::default(),
+            AggregateMode::Bures,
+        );
         assert!(
             metrics["deltaESpatial"].is_null(),
             "宽高比不同时 deltaESpatial 应为 null，metrics={metrics}"
         );
-        assert_eq!(
+        assert!(
             metrics["sampleAspectMismatch"].as_bool().unwrap(),
-            true,
             "应标记宽高比失配"
         );
         assert_eq!(metrics["pairedPixels"].as_u64().unwrap(), 0);
@@ -2421,13 +2476,17 @@ mod tests {
         // 同尺寸（128×128 vs 128×128）：空间级 ΔE 应为有限值且有实际配对
         let target = gradient_image();
         let sample = warm_sample(&target);
-        let (_, metrics) =
-            run_transfer(&[&sample], &target, TransferStrength::default(), AggregateMode::Bures);
+        let (_, metrics) = run_transfer(
+            &[&sample],
+            &target,
+            TransferStrength::default(),
+            AggregateMode::Bures,
+        );
         let spatial = metrics["deltaESpatial"]
             .as_f64()
             .expect("同尺寸应有空间级 ΔE，metrics={metrics}");
         assert!(spatial.is_finite(), "deltaESpatial 应为有限值");
-        assert_eq!(metrics["sampleAspectMismatch"].as_bool().unwrap(), false);
+        assert!(!metrics["sampleAspectMismatch"].as_bool().unwrap());
         assert!(
             metrics["pairedPixels"].as_u64().unwrap() > 0,
             "应存在实际配对像素，metrics={metrics}"
@@ -2450,15 +2509,18 @@ mod tests {
         }
         let square = DynamicImage::ImageRgb8(square);
         let target = gradient_image();
-        let (_, metrics) =
-            run_transfer(&[&square], &target, TransferStrength::default(), AggregateMode::Bures);
+        let (_, metrics) = run_transfer(
+            &[&square],
+            &target,
+            TransferStrength::default(),
+            AggregateMode::Bures,
+        );
         assert!(
             metrics["deltaESpatial"].is_null(),
             "尺寸不同时 deltaESpatial 应为 null，metrics={metrics}"
         );
-        assert_eq!(
-            metrics["sampleAspectMismatch"].as_bool().unwrap(),
-            false,
+        assert!(
+            !metrics["sampleAspectMismatch"].as_bool().unwrap(),
             "同宽高比不应标记失配"
         );
         assert_eq!(metrics["pairedPixels"].as_u64().unwrap(), 0);

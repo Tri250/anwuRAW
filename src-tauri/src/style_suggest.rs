@@ -22,7 +22,7 @@
 //! `crate::color_transfer` 的 MKL 拟合，本模块的词库可作为提示词构造器
 //! （见 `ai_generate_style_reference`）。
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use tauri::Manager;
 
 /// 分区色光参数（colorGrading 分区）
@@ -114,11 +114,11 @@ fn is_negated_before(chars: &[char], start: usize) -> bool {
     let en_tail: String = before[before.len() - en_len..].iter().collect();
     let trimmed = en_tail.trim_end();
     for word in EN_NEGATION_WORDS {
-        if trimmed.ends_with(word) {
-            let boundary_ok = trimmed[..trimmed.len() - word.len()]
+        if let Some(stripped) = trimmed.strip_suffix(word) {
+            let boundary_ok = stripped
                 .chars()
                 .next_back()
-                .map_or(true, |c| !c.is_ascii_alphanumeric());
+                .is_none_or(|c| !c.is_ascii_alphanumeric());
             if boundary_ok {
                 return true;
             }
@@ -489,11 +489,12 @@ impl StyleSuggestion {
         obj.insert("confidence".into(), json!(self.confidence));
         obj.insert(
             "scores".into(),
-            json!(self
-                .scores
-                .iter()
-                .map(|(id, s)| json!({ "id": id, "score": s }))
-                .collect::<Vec<_>>()),
+            json!(
+                self.scores
+                    .iter()
+                    .map(|(id, s)| json!({ "id": id, "score": s }))
+                    .collect::<Vec<_>>()
+            ),
         );
         obj.insert("matchedTerms".into(), json!(self.matched_terms));
         obj.insert("adjustments".into(), json!(self.adjustments));
@@ -863,20 +864,21 @@ pub fn suggest_style(text: &str) -> StyleSuggestion {
     let mut patch = (def.patch)();
     let mut style_name = def.name.to_string();
     let mut blended = None;
-    if let Some((second_id, second_score)) = scores.get(1).copied() {
-        if second_score > 0.0 && (best_score - second_score) / best_score < 0.35 {
-            let second_def = STYLE_DEFS.iter().find(|d| d.id == second_id).unwrap();
-            let total = best_score + second_score;
-            let w1 = best_score / total;
-            let w2 = second_score / total;
-            if let Some(merged) = blend_patches(&patch, &(second_def.patch)(), w1, w2) {
-                patch = merged;
-                style_name = format!("{} × {}", def.name, second_def.name);
-                blended = Some(BlendInfo {
-                    with_id: second_id,
-                    weights: [w1, w2],
-                });
-            }
+    if let Some((second_id, second_score)) = scores.get(1).copied()
+        && second_score > 0.0
+        && (best_score - second_score) / best_score < 0.35
+    {
+        let second_def = STYLE_DEFS.iter().find(|d| d.id == second_id).unwrap();
+        let total = best_score + second_score;
+        let w1 = best_score / total;
+        let w2 = second_score / total;
+        if let Some(merged) = blend_patches(&patch, &(second_def.patch)(), w1, w2) {
+            patch = merged;
+            style_name = format!("{} × {}", def.name, second_def.name);
+            blended = Some(BlendInfo {
+                with_id: second_id,
+                weights: [w1, w2],
+            });
         }
     }
 
@@ -913,12 +915,11 @@ pub async fn ai_style_suggest(
 
     if let Some(path) = image_path.filter(|p| !p.trim().is_empty()) {
         let settings = crate::app_settings::load_settings(app_handle).unwrap_or_default();
-        let stats = tauri::async_runtime::spawn_blocking(move || {
-            analyze_image_stats(&path, &settings)
-        })
-        .await
-        .ok()
-        .and_then(|r| r.ok());
+        let stats =
+            tauri::async_runtime::spawn_blocking(move || analyze_image_stats(&path, &settings))
+                .await
+                .ok()
+                .and_then(|r| r.ok());
         if let Some(stats) = stats {
             if let Some(patch) = suggestion.adjustments.as_mut() {
                 scale_patch_by_image_stats(patch, &stats);
@@ -977,7 +978,9 @@ pub async fn ai_generate_style_reference(
         .map(|d| d.as_nanos())
         .unwrap_or(0);
     let path = cache_dir.join(format!("style_reference_{nanos:x}.png"));
-    image.save(&path).map_err(|e| format!("保存参考图失败: {e}"))?;
+    image
+        .save(&path)
+        .map_err(|e| format!("保存参考图失败: {e}"))?;
     Ok(json!({
         "path": path.to_string_lossy(),
         "styleId": style_id,
@@ -993,9 +996,7 @@ mod tests {
     fn num(v: &Value, path: &[&str]) -> f64 {
         let mut cur = v;
         for p in path {
-            cur = cur
-                .get(p)
-                .unwrap_or_else(|| panic!("路径存在: {path:?}"));
+            cur = cur.get(p).unwrap_or_else(|| panic!("路径存在: {path:?}"));
         }
         cur.as_f64().expect("应为数值")
     }
@@ -1054,8 +1055,18 @@ mod tests {
                 for zone in ["shadows", "midtones", "highlights"] {
                     if let Some(z) = cg.get(zone) {
                         assert!(z.get("hue").is_some(), "{}/{} 缺 hue", def.id, zone);
-                        assert!(z.get("saturation").is_some(), "{}/{} 缺 saturation", def.id, zone);
-                        assert!(z.get("luminance").is_some(), "{}/{} 缺 luminance", def.id, zone);
+                        assert!(
+                            z.get("saturation").is_some(),
+                            "{}/{} 缺 saturation",
+                            def.id,
+                            zone
+                        );
+                        assert!(
+                            z.get("luminance").is_some(),
+                            "{}/{} 缺 luminance",
+                            def.id,
+                            zone
+                        );
                         let hue = z["hue"].as_f64().unwrap();
                         assert!((0.0..=360.0).contains(&hue), "{} hue={hue}", def.id);
                         let sat = z["saturation"].as_f64().unwrap();
@@ -1081,8 +1092,22 @@ mod tests {
                         );
                         let x = p["x"].as_f64().unwrap();
                         let y = p["y"].as_f64().unwrap();
-                        assert!((0.0..=255.0).contains(&x), "{}/{}/{} x={}", def.id, ch, "x", x);
-                        assert!((0.0..=255.0).contains(&y), "{}/{}/{} y={}", def.id, ch, "y", y);
+                        assert!(
+                            (0.0..=255.0).contains(&x),
+                            "{}/{}/{} x={}",
+                            def.id,
+                            ch,
+                            "x",
+                            x
+                        );
+                        assert!(
+                            (0.0..=255.0).contains(&y),
+                            "{}/{}/{} y={}",
+                            def.id,
+                            ch,
+                            "y",
+                            y
+                        );
                         assert!(x > prev_x, "{}/{}/{} x 非升序", def.id, ch, "x");
                         prev_x = x;
                     }
@@ -1106,7 +1131,11 @@ mod tests {
     fn test_prompt_en_present_for_cloud_generation() {
         // 方案 B 云参考图消费：每个风格都必须有非空英文生成提示
         for def in STYLE_DEFS {
-            assert!(!def.prompt_en.trim().is_empty(), "{} 缺英文生成提示", def.id);
+            assert!(
+                !def.prompt_en.trim().is_empty(),
+                "{} 缺英文生成提示",
+                def.id
+            );
             assert!(def.prompt_en.len() >= 20, "{} 英文提示过短", def.id);
         }
     }
@@ -1137,7 +1166,11 @@ mod tests {
         ];
         for text in cases {
             let s = suggest_style(text);
-            assert!(s.style_id.is_none(), "{text} 不应命中风格，实际 {:?}", s.style_id);
+            assert!(
+                s.style_id.is_none(),
+                "{text} 不应命中风格，实际 {:?}",
+                s.style_id
+            );
             assert!(s.adjustments.is_none(), "{text} 不应产出补丁");
             assert!(!s.negated_terms.is_empty(), "{text} 应记录被否定词条");
             assert!(s.matched_terms.is_empty(), "{text} 不应有活词条");
@@ -1232,8 +1265,14 @@ mod tests {
         assert!((num(patch, &["colorGrading", "shadows", "hue"]) - 200.0).abs() < 1e-9);
         // curves：y' = x + (y-x)·k，x 保持不变（[64,74] → [64,69]）
         let pt = &patch["curves"]["red"][1];
-        assert!((pt["x"].as_f64().unwrap() - 64.0).abs() < 1e-9, "curves x 不变");
-        assert!((pt["y"].as_f64().unwrap() - 69.0).abs() < 1e-9, "y' = 64 + 10×0.5");
+        assert!(
+            (pt["x"].as_f64().unwrap() - 64.0).abs() < 1e-9,
+            "curves x 不变"
+        );
+        assert!(
+            (pt["y"].as_f64().unwrap() - 69.0).abs() < 1e-9,
+            "y' = 64 + 10×0.5"
+        );
     }
 
     #[test]
@@ -1269,7 +1308,10 @@ mod tests {
         assert!(s.adjustments.is_some(), "混合后仍应产出补丁");
         let b = s.blended.expect("应产生混合");
         assert_eq!(b.with_id, "moody_dark");
-        assert!((b.weights[0] + b.weights[1] - 1.0).abs() < 1e-9, "权重和为 1");
+        assert!(
+            (b.weights[0] + b.weights[1] - 1.0).abs() < 1e-9,
+            "权重和为 1"
+        );
         assert!(b.weights[0] > b.weights[1], "best 权重更大");
         assert_eq!(s.style_name.as_deref(), Some("清透日系 × 暗调情绪"));
         // 第二意图进入 scores 且有分
@@ -1324,9 +1366,15 @@ mod tests {
     fn test_blend_grid_mismatch_falls_back() {
         let a = json!({ "curves": { "red": [{ "x": 0.0, "y": 16.0 }, { "x": 64.0, "y": 74.0 }, { "x": 128.0, "y": 128.0 }, { "x": 192.0, "y": 192.0 }, { "x": 255.0, "y": 244.0 }] } });
         let b = json!({ "curves": { "red": [{ "x": 0.0, "y": 0.0 }, { "x": 32.0, "y": 54.0 }, { "x": 128.0, "y": 128.0 }, { "x": 192.0, "y": 204.0 }, { "x": 255.0, "y": 255.0 }] } });
-        assert!(blend_patches(&a, &b, 0.6, 0.4).is_none(), "x 网格不同不混合");
+        assert!(
+            blend_patches(&a, &b, 0.6, 0.4).is_none(),
+            "x 网格不同不混合"
+        );
         let b = json!({ "curves": { "green": [{ "x": 0.0, "y": 0.0 }, { "x": 64.0, "y": 54.0 }, { "x": 128.0, "y": 128.0 }, { "x": 192.0, "y": 204.0 }, { "x": 255.0, "y": 255.0 }] } });
-        assert!(blend_patches(&a, &b, 0.6, 0.4).is_none(), "通道集合不同不混合");
+        assert!(
+            blend_patches(&a, &b, 0.6, 0.4).is_none(),
+            "通道集合不同不混合"
+        );
     }
 
     // ---------------- 图像自适应 ----------------
@@ -1400,11 +1448,8 @@ mod tests {
         assert!((s.shadow_clip - 0.0).abs() < 1e-9);
 
         // 纯黑图：mean=0.0，shadow_clip=1.0
-        let black = image::DynamicImage::ImageRgb8(image::RgbImage::from_pixel(
-            64,
-            32,
-            Rgb([0, 0, 0]),
-        ));
+        let black =
+            image::DynamicImage::ImageRgb8(image::RgbImage::from_pixel(64, 32, Rgb([0, 0, 0])));
         let s = image_luminance_stats(&black);
         assert!((s.mean_luminance - 0.0).abs() < 1e-9);
         assert!((s.shadow_clip - 1.0).abs() < 1e-9);

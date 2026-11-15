@@ -12,12 +12,12 @@
 
 AI 调色共四条链路，全部输出**非破坏性调整参数**（可撤销、可继续编辑）：
 
-| 链路 | 入口 | 核心算法 | 输出 |
-|---|---|---|---|
-| AI 一键增强 | `AiAutoEnhance` → [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs#L697-L833) `run_ai_auto_enhance` | 直方图统计自动分析 + CLIP 场景偏置 | exposure/contrast/highlights/shadows/vibrance/structure/sharpness 等 12 参数 |
-| 自动色调 | `CalculateAutoAdjustments` → [image_processing.rs](file:///workspace/src-tauri/src/image_processing.rs#L4205-L4465) `perform_auto_analysis` | 1024px 降采样亮度直方图 + p1/p50/p99 分位 + 饱和度均值 + 中心/边缘亮度差 | 同上（无场景偏置） |
-| AI 追色 | `ComputeColorMatch` → [color_transfer.rs](file:///workspace/src-tauri/src/color_transfer.rs#L408-L574) `compute_color_transfer` | CIE Lab 均值匹配（全局 tint + 三分区 tint 反解为 colorGrading 滑杆）+ 逐通道分位数匹配曲线 | colorGrading + curves 补丁 + ΔE/卡方度量 |
-| 场景配方推荐 | `scene_classify` → [scene_classify.rs](file:///workspace/src-tauri/src/scene_classify.rs) | CLIP 零样本 4 类 × 8 prompt ensemble（softmax 类内平均、批内分位数校准、门槛 0.75）；启发式降级（天空蓝/植被绿/暖色/皮肤比例） | 场景标签 → 大师配方推荐 |
+| 链路         | 入口                                                                                                                                        | 核心算法                                                                                                                       | 输出                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| AI 一键增强  | `AiAutoEnhance` → [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs#L697-L833) `run_ai_auto_enhance`              | 直方图统计自动分析 + CLIP 场景偏置                                                                                             | exposure/contrast/highlights/shadows/vibrance/structure/sharpness 等 12 参数 |
+| 自动色调     | `CalculateAutoAdjustments` → [image_processing.rs](file:///workspace/src-tauri/src/image_processing.rs#L4205-L4465) `perform_auto_analysis` | 1024px 降采样亮度直方图 + p1/p50/p99 分位 + 饱和度均值 + 中心/边缘亮度差                                                       | 同上（无场景偏置）                                                           |
+| AI 追色      | `ComputeColorMatch` → [color_transfer.rs](file:///workspace/src-tauri/src/color_transfer.rs#L408-L574) `compute_color_transfer`             | CIE Lab 均值匹配（全局 tint + 三分区 tint 反解为 colorGrading 滑杆）+ 逐通道分位数匹配曲线                                     | colorGrading + curves 补丁 + ΔE/卡方度量                                     |
+| 场景配方推荐 | `scene_classify` → [scene_classify.rs](file:///workspace/src-tauri/src/scene_classify.rs)                                                   | CLIP 零样本 4 类 × 8 prompt ensemble（softmax 类内平均、批内分位数校准、门槛 0.75）；启发式降级（天空蓝/植被绿/暖色/皮肤比例） | 场景标签 → 大师配方推荐                                                      |
 
 **AI 一键增强的完整数据流**（`run_ai_auto_enhance`）：
 
@@ -49,6 +49,7 @@ AI 调色共四条链路，全部输出**非破坏性调整参数**（可撤销�
    ```
 
    协方差不变式校验 `A C_s Aᵀ ≈ C_t`（相对误差阈值 1e-5）；
+
 3. **导出与应用**：65³ `.cube`（编码 sRGB 全域），三线性插值套回原分辨率；**从磁盘重载 LUT 后再渲染**，2048 抽样像素复核保存 PNG 与 LUT 一致；记录解析-vs-LUT 的 RMSE/p95（8bit）与色域裁切比例。
 
 多图聚合六法（`color_match_lut.py` `METHODS`）：`pooled`（混合分布统计）、`mean-cov`（统计量算术平均）、`bures`（高斯 Wasserstein 重心，Álvarez-Esteban 2016 固定点，≤256 次迭代、残差 <1e-7）、`robust-bures`（W2 medoid + MAD 软截断降权）、`pairwise`（全组合映射按 `w_i·v_j` 平均）、`anchor`（单图基线）。
@@ -63,20 +64,20 @@ AI 调色共四条链路，全部输出**非破坏性调整参数**（可撤销�
 
 ### 2.1 逐维度对照
 
-| 维度 | 本地 v2.1.17 | language-guided-lut | 差距判定 |
-|---|---|---|---|
-| 颜色空间 | CIE Lab（追色）/ 亮度直方图 + HSV（场景） | Oklab（感知均匀，解析闭式） | Oklab 对青-黄轴预测更准，Lab 的 a/b 在蓝区非线性畸变更明显 |
-| 传输阶数 | **一阶矩**（均值匹配，Reinhard 2001） | **二阶矩**（MKL：均值 + 协方差） | 核心差距：协方差传输可表达"对比度结构 + 色通道相关性"（如日系青透 = a/b 分布整体旋转收缩），均值差 + tint 无法表达 |
-| 通道相关性 | 无（各通道独立均值差） | 有（3×3 矩阵整体作用，保持 R/G/B 联合分布形状） | 核心差距 |
-| 空间结构 | 三分区 tint（smoothstep 手工权重）+ 逐通道曲线 | 全局高斯（无分区概念） | 本地分区化对"阴影偏青、高光暖"类需求是优势，应保留并与 MKL 结合 |
-| 强度控制 | 全局 k（增强）/ 滑杆天然可调 | 强度 × 色调(L) × 色彩(a/b) 分解 | 可借鉴：让"只调氛围不改明暗"成为一阶能力 |
-| 语言输入 | **无**（CLIP 仅做 4 类场景分类，不解析调色语言） | 提示词工程 + guardrails → AI 参考图 | 最大功能缺口：本地没有"一句话调色"入口 |
-| 场景感知 | CLIP 4 类 + 偏置（portrait/night/landscape/food） | 无显式场景；仅黑白/彩色路由 | 本地优势，保持 |
-| 肤色/局部保护 | 场景偏置粗粒度（portrait 纹理收敛） | guardrails 语义级约束参考图生成 | 可借鉴提示词层，本地可转化"分区强度上限" |
-| 输出载体 | 非破坏性参数补丁（colorGrading + curves，可撤销/可微调） | 烘焙 3D LUT（跨图一致、可复用、不可再编辑） | 本地优势（可编辑性）；LUT 优势（一致性）二者可融合 |
-| 多图融合 | 无（单参考图） | 6 种聚合（bures 默认） | 可借鉴：大师配方自动精修、样张组学习 |
-| 验证体系 | ΔE before/after + 卡方（拟合质量） | 哈希溯源、重载校验、解析-vs-LUT RMSE/p95、PNG 2048 像素复核、协方差不变式 | 可借鉴：给现有追色补不变式与一致性校验 |
-| LUT 插值 | **四面体插值**（wgsl，GPU 实时） | 三线性插值（CPU） | 本地优势，无需改 |
+| 维度          | 本地 v2.1.17                                             | language-guided-lut                                                       | 差距判定                                                                                                           |
+| ------------- | -------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 颜色空间      | CIE Lab（追色）/ 亮度直方图 + HSV（场景）                | Oklab（感知均匀，解析闭式）                                               | Oklab 对青-黄轴预测更准，Lab 的 a/b 在蓝区非线性畸变更明显                                                         |
+| 传输阶数      | **一阶矩**（均值匹配，Reinhard 2001）                    | **二阶矩**（MKL：均值 + 协方差）                                          | 核心差距：协方差传输可表达"对比度结构 + 色通道相关性"（如日系青透 = a/b 分布整体旋转收缩），均值差 + tint 无法表达 |
+| 通道相关性    | 无（各通道独立均值差）                                   | 有（3×3 矩阵整体作用，保持 R/G/B 联合分布形状）                           | 核心差距                                                                                                           |
+| 空间结构      | 三分区 tint（smoothstep 手工权重）+ 逐通道曲线           | 全局高斯（无分区概念）                                                    | 本地分区化对"阴影偏青、高光暖"类需求是优势，应保留并与 MKL 结合                                                    |
+| 强度控制      | 全局 k（增强）/ 滑杆天然可调                             | 强度 × 色调(L) × 色彩(a/b) 分解                                           | 可借鉴：让"只调氛围不改明暗"成为一阶能力                                                                           |
+| 语言输入      | **无**（CLIP 仅做 4 类场景分类，不解析调色语言）         | 提示词工程 + guardrails → AI 参考图                                       | 最大功能缺口：本地没有"一句话调色"入口                                                                             |
+| 场景感知      | CLIP 4 类 + 偏置（portrait/night/landscape/food）        | 无显式场景；仅黑白/彩色路由                                               | 本地优势，保持                                                                                                     |
+| 肤色/局部保护 | 场景偏置粗粒度（portrait 纹理收敛）                      | guardrails 语义级约束参考图生成                                           | 可借鉴提示词层，本地可转化"分区强度上限"                                                                           |
+| 输出载体      | 非破坏性参数补丁（colorGrading + curves，可撤销/可微调） | 烘焙 3D LUT（跨图一致、可复用、不可再编辑）                               | 本地优势（可编辑性）；LUT 优势（一致性）二者可融合                                                                 |
+| 多图融合      | 无（单参考图）                                           | 6 种聚合（bures 默认）                                                    | 可借鉴：大师配方自动精修、样张组学习                                                                               |
+| 验证体系      | ΔE before/after + 卡方（拟合质量）                       | 哈希溯源、重载校验、解析-vs-LUT RMSE/p95、PNG 2048 像素复核、协方差不变式 | 可借鉴：给现有追色补不变式与一致性校验                                                                             |
+| LUT 插值      | **四面体插值**（wgsl，GPU 实时）                         | 三线性插值（CPU）                                                         | 本地优势，无需改                                                                                                   |
 
 ### 2.2 关键算法差异的本质
 
@@ -152,27 +153,28 @@ ColorFM-L / D-LUT / ModFlows 需要 PyTorch 级运行时。本地推理设施是
 
 ## 五、落地路线建议
 
-| 阶段 | 内容 | 依赖 |
-|---|---|---|
-| 1 | P0-1 MKL/Oklab 分区传输替换 `compute_color_transfer` 偏移量来源 + 不变式校验 + 测试 | 无新增依赖（ndarray 已有） |
-| 2 | P0-3 方案 A：CLIP 风格零样本 + 参数配方（一句话调色本地版） | 无（复用现有 CLIP） |
-| 3 | P0-2 明暗/色彩双强度（追色 + 增强 + 前端双滑杆） | 阶段 1 |
-| 4 | P1-1/P1-3 校验体系 + 黑白路由 | 阶段 1 |
-| 5 | P0-3 方案 B 云参考图链路（可选）+ P1-2 大师配方 bures 精修 | aiProvider 云通道 |
+| 阶段 | 内容                                                                                | 依赖                       |
+| ---- | ----------------------------------------------------------------------------------- | -------------------------- |
+| 1    | P0-1 MKL/Oklab 分区传输替换 `compute_color_transfer` 偏移量来源 + 不变式校验 + 测试 | 无新增依赖（ndarray 已有） |
+| 2    | P0-3 方案 A：CLIP 风格零样本 + 参数配方（一句话调色本地版）                         | 无（复用现有 CLIP）        |
+| 3    | P0-2 明暗/色彩双强度（追色 + 增强 + 前端双滑杆）                                    | 阶段 1                     |
+| 4    | P1-1/P1-3 校验体系 + 黑白路由                                                       | 阶段 1                     |
+| 5    | P0-3 方案 B 云参考图链路（可选）+ P1-2 大师配方 bures 精修                          | aiProvider 云通道          |
 
 ---
 
 ## 六、落地记录（v2.1.17，已实施）
 
-| 阶段 | 内容 | 落点 |
-|---|---|---|
-| 1 | Oklab + MKL 分区协方差传输：`to_oklab/from_oklab`、3×3 对称特征分解（Jacobi）、`psd_power`、`mkl_transport`（A,b + 不变式校验 ≤1e-5）、逐像素分区加权增量、强度三分解（strength/tone/color）、协方差/均值不可用时降级一阶矩 | [color_transfer.rs](file:///workspace/src-tauri/src/color_transfer.rs)（新增数学层 ~260 行 + 重写 `compute_color_transfer` 阶段 0-3） |
-| 4 | 黑白参考路由（通道 spread 统计，跳过 tint 仅走曲线）+ MKL 诊断度量（mklUsed / mklInvariantError / monochromeReference） | 同文件 `classify_monochrome` 与 metrics |
-| 3 | AI 一键增强明暗/色彩双强度：`ai_auto_enhance(toneStrength, colorStrength)`，色彩组 = vibrance/saturation/temperature/tint，其余归明暗组 | [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs) `run_ai_auto_enhance` + [CrystalAiToolsPanel.tsx](file:///workspace/src/components/mobile/CrystalAiToolsPanel.tsx) 双滑杆 |
-| 2 | 一句话调色（方案 A 本地实现）：8 风格 × 双语词库（加权命中 + 置信度换算）+ 非破坏性参数配方（colorGrading + curves + 基础滑杆）；未命中不猜测 | 新增 [style_suggest.rs](file:///workspace/src-tauri/src/style_suggest.rs)（含命令 `ai_style_suggest`）+ 移动端输入 UI |
-| 5 | P1-2 大师配方 bures 聚合：多样片入口（像素分布拼接 + 高斯 W2 重心/稳健截尾/直接平均，黑白多数票）+ 移动端多样片拾取与聚合模式切换；方案 B 云参考图：提示词 → 云端整幅重绘（复用 `/inpaint` 全 mask 形态）→ 生成图作样片走 MKL 追色（仅 cloud 登录用户可见入口） | [color_transfer.rs](file:///workspace/src-tauri/src/color_transfer.rs) `AggregateMode`/聚合层 + [ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs) `process_cloud_generation` + [style_suggest.rs](file:///workspace/src-tauri/src/style_suggest.rs) `ai_generate_style_reference` + [CrystalCategoryPanel.tsx](file:///workspace/src/components/mobile/CrystalCategoryPanel.tsx) 多样片 UI |
+| 阶段 | 内容                                                                                                                                                                                                                                                            | 落点                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Oklab + MKL 分区协方差传输：`to_oklab/from_oklab`、3×3 对称特征分解（Jacobi）、`psd_power`、`mkl_transport`（A,b + 不变式校验 ≤1e-5）、逐像素分区加权增量、强度三分解（strength/tone/color）、协方差/均值不可用时降级一阶矩                                     | [color_transfer.rs](file:///workspace/src-tauri/src/color_transfer.rs)（新增数学层 ~260 行 + 重写 `compute_color_transfer` 阶段 0-3）                                                                                                                                                                                                                                                                       |
+| 4    | 黑白参考路由（通道 spread 统计，跳过 tint 仅走曲线）+ MKL 诊断度量（mklUsed / mklInvariantError / monochromeReference）                                                                                                                                         | 同文件 `classify_monochrome` 与 metrics                                                                                                                                                                                                                                                                                                                                                                     |
+| 3    | AI 一键增强明暗/色彩双强度：`ai_auto_enhance(toneStrength, colorStrength)`，色彩组 = vibrance/saturation/temperature/tint，其余归明暗组                                                                                                                         | [platform_features.rs](file:///workspace/src-tauri/src/platform_features.rs) `run_ai_auto_enhance` + [CrystalAiToolsPanel.tsx](file:///workspace/src/components/mobile/CrystalAiToolsPanel.tsx) 双滑杆                                                                                                                                                                                                      |
+| 2    | 一句话调色（方案 A 本地实现）：8 风格 × 双语词库（加权命中 + 置信度换算）+ 非破坏性参数配方（colorGrading + curves + 基础滑杆）；未命中不猜测                                                                                                                   | 新增 [style_suggest.rs](file:///workspace/src-tauri/src/style_suggest.rs)（含命令 `ai_style_suggest`）+ 移动端输入 UI                                                                                                                                                                                                                                                                                       |
+| 5    | P1-2 大师配方 bures 聚合：多样片入口（像素分布拼接 + 高斯 W2 重心/稳健截尾/直接平均，黑白多数票）+ 移动端多样片拾取与聚合模式切换；方案 B 云参考图：提示词 → 云端整幅重绘（复用 `/inpaint` 全 mask 形态）→ 生成图作样片走 MKL 追色（仅 cloud 登录用户可见入口） | [color_transfer.rs](file:///workspace/src-tauri/src/color_transfer.rs) `AggregateMode`/聚合层 + [ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs) `process_cloud_generation` + [style_suggest.rs](file:///workspace/src-tauri/src/style_suggest.rs) `ai_generate_style_reference` + [CrystalCategoryPanel.tsx](file:///workspace/src/components/mobile/CrystalCategoryPanel.tsx) 多样片 UI |
 
 **实现说明与偏差**：
+
 - 方案 A 原设计为 CLIP 零样本风格识别，实施时发现项目 CLIP 为图文联合 ONNX 导出（forward 必须同时喂图），无纯文本编码通路，text→text 比对不可行；故改为确定性双语词库映射（零依赖、瞬时、可测试），CLIP 场景通道保持不变。云端参考图链路（方案 B）已作为阶段 5 落地，见下文。
 - 追色强度参数通过 `compute_color_match(strength/toneStrength/colorStrength)` 暴露，移动端调用向后兼容（默认 1.0）。
 - 数学层独立验证：Oklab 往返 <1e-6、特征分解重建 <1e-10、MKL 不变式误差 2.8e-11、协方差映射最大相对误差 5.3e-9、强度分解冻结语义正确、退化输入拒绝。
@@ -180,6 +182,7 @@ ColorFM-L / D-LUT / ModFlows 需要 PyTorch 级运行时。本地推理设施是
 **测试暴露并修复的真 bug**：`classify_monochrome` 的 spread 阈值（2/4/12）为 0..255 域，而生产路径传入 0..1 归一化像素，会导致所有彩色照片被误判为黑白、跳过 tint 拟合；已在函数内统一换算至 0..255 域（`test_monochrome_classification` 回归覆盖）。
 
 **阶段 5 落地（P1-2 多样片聚合 + 方案 B 云参考图）**：
+
 - **P1-2 bures 聚合**（[color_transfer.rs](file:///workspace/src-tauri/src/color_transfer.rs)）：新增 `AggregateMode`（mean-cov / bures / robust-bures，默认 bures）、W2 距离、Alvarez-Esteban 协方差重心不动点（tol 1e-9 / 256 轮 / 残差 1e-7）、W2 medoid 软截尾稳健权重；`compute_color_transfer` 改为多样片入口（像素分布拼接 + 高斯等权聚合 + 黑白多数票）；命令 `compute_color_match` 新增 `samplePaths`/`aggregate` 参数（旧 `samplePath` 单参调用向后兼容）；移动端追色改为可多选样片 + 聚合模式切换 chips。
 - **修复第二个真 bug**：ΔE 度量按 `sample_lin[i]` 直接下标配对参考分布，样片与客片缩略图宽高比不同（或多样片必然不同）时越界 panic；已改为确定性跨步取模配对（`test_delta_e_pairing_survives_size_mismatch` 回归覆盖）。该 bug 在改动前的单样片路径即存在（git 9d051ab 起）。
 - **方案 B 云参考图**（[ai_connector.rs](file:///workspace/src-tauri/src/ai_connector.rs) / [style_suggest.rs](file:///workspace/src-tauri/src/style_suggest.rs)）：`process_cloud_generation` 以「空白画布 + 全白 mask」复用现有 `/inpaint` 契约表达整幅重绘（SD 修复系的全 mask 退化形态，无需后端新增端点）；新命令 `ai_generate_style_reference`（提示词 → 命中词库风格时用风格英文生成提示 → 云生成 → 缓存目录 PNG → 返回路径），前端拿路径作多样片走 MKL 追色；入口仅在 cloud 提供商且已登录 Pro 时可见（Android 无 Clerk 登录态，按钮自动隐藏——云能力实际为桌面限定）。**注意**：全 mask 生成依赖后端 `/inpaint` 对全白 mask 的接受度，沙箱内无 token 无法实测，上线前需一次真机验证。

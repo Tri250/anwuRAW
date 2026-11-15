@@ -414,7 +414,10 @@ mod tests {
         let preset = convert_xmp_to_preset(SAMPLE_XMP).expect("XMP conversion must succeed");
         let adj = &preset.adjustments;
 
-        let hsl = adj.get("hsl").and_then(|v| v.get("reds")).expect("HSL reds");
+        let hsl = adj
+            .get("hsl")
+            .and_then(|v| v.get("reds"))
+            .expect("HSL reds");
         assert_eq!(hsl.get("hue").and_then(|v| v.as_f64()), Some(6.0)); // 8 × 0.75
         assert_eq!(hsl.get("saturation").and_then(|v| v.as_f64()), Some(15.0));
         assert_eq!(hsl.get("luminance").and_then(|v| v.as_f64()), Some(-5.0));
@@ -424,7 +427,10 @@ mod tests {
             .and_then(|v| v.get("shadows"))
             .expect("colorGrading.shadows");
         assert_eq!(shadows.get("hue").and_then(|v| v.as_f64()), Some(215.0));
-        assert_eq!(shadows.get("saturation").and_then(|v| v.as_f64()), Some(12.0));
+        assert_eq!(
+            shadows.get("saturation").and_then(|v| v.as_f64()),
+            Some(12.0)
+        );
 
         let luma = adj
             .get("curves")
@@ -451,7 +457,10 @@ mod tests {
         );
         assert!(adj.get("tint").and_then(|v| v.as_f64()).is_some());
         // 冷色偏移（5350K < asShot 5500K）应映射为负向色温
-        assert!(temp < 0.0, "expected negative relative temperature, got {temp}");
+        assert!(
+            temp < 0.0,
+            "expected negative relative temperature, got {temp}"
+        );
     }
 
     #[test]

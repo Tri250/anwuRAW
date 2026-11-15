@@ -455,7 +455,10 @@ function AiRecommendCard() {
               title={t('crystal.recommend.evidence.clip' as ParseKeys)}
               aria-label={t('crystal.recommend.evidence.clip' as ParseKeys)}
             >
-              <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: '#2dd4bf', flex: 'none' }} />
+              <span
+                aria-hidden
+                style={{ width: 6, height: 6, borderRadius: 999, background: '#2dd4bf', flex: 'none' }}
+              />
               {t('crystal.recommend.evidence.clip' as ParseKeys)}
             </span>
           )}
@@ -586,7 +589,12 @@ function SourceThumbCard({
     >
       <span className="cx-thumb-img flex items-center justify-center overflow-hidden">
         {previewUrl ? (
-          <img src={previewUrl} alt={source.name} draggable={false} className="w-full h-full object-cover rounded-[10px]" />
+          <img
+            src={previewUrl}
+            alt={source.name}
+            draggable={false}
+            className="w-full h-full object-cover rounded-[10px]"
+          />
         ) : (
           <Loader2 size={16} className="animate-spin" style={{ color: 'var(--cx-faint)' }} />
         )}
@@ -907,7 +915,15 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         hasAi && presetMasks ? { ...source.adjustments, masks: stripAiMaskResults(presetMasks) } : source.adjustments,
       );
     },
-    [cancelModeActive, mode, recordFilterRecent, applyPresetObject, resolvePresetAiMasks, setAdjustments, updateApplyStates],
+    [
+      cancelModeActive,
+      mode,
+      recordFilterRecent,
+      applyPresetObject,
+      resolvePresetAiMasks,
+      setAdjustments,
+      updateApplyStates,
+    ],
   );
 
   const handleIntensity = useCallback(

@@ -2,7 +2,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
-import { BringToFront, CloudSun, Loader2, Sparkles, TextSearch, User, Wand2, Waves, Eraser, X, Palette } from 'lucide-react';
+import {
+  BringToFront,
+  CloudSun,
+  Loader2,
+  Sparkles,
+  TextSearch,
+  User,
+  Wand2,
+  Waves,
+  Eraser,
+  X,
+  Palette,
+} from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useEditorStore } from '../../store/useEditorStore';
 import { selectAiModelDownloadStatus, useProcessStore } from '../../store/useProcessStore';
@@ -327,10 +339,10 @@ export default function CrystalAiToolsPanel() {
         toast.error(t('crystal.ai.style.cloudNeedLogin'));
         return;
       }
-      const generated = await invoke<{ path: string; styleId: string | null }>(
-        Invokes.AiGenerateStyleReference,
-        { prompt, token },
-      );
+      const generated = await invoke<{ path: string; styleId: string | null }>(Invokes.AiGenerateStyleReference, {
+        prompt,
+        token,
+      });
       // 跨图守卫：生成期间切图则丢弃，避免把参考图追色落到新图上
       if (useEditorStore.getState().selectedImage?.path !== startPath) return;
       const match = await invoke<{ adjustments: Partial<Adjustments> }>(Invokes.ComputeColorMatch, {
@@ -860,11 +872,7 @@ export default function CrystalAiToolsPanel() {
                       void runStyleReference();
                     }}
                   >
-                    {busy === 'styleRef' ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <CloudSun size={12} />
-                    )}
+                    {busy === 'styleRef' ? <Loader2 size={12} className="animate-spin" /> : <CloudSun size={12} />}
                   </button>
                   {/* D-AI-06：云参考图入口同样带来源角标（紫=云端） */}
                   <span

@@ -180,9 +180,7 @@ const ColorGradingPanel = ({ adjustments, setAdjustments, onDragStateChange }: C
     running: false,
   });
   /** 多样片聚合模式（与后端 AggregateMode 对应；单样片时后端忽略） */
-  const [colorMatchAggregate, setColorMatchAggregate] = useState<'bures' | 'robust-bures' | 'mean-cov'>(
-    'bures',
-  );
+  const [colorMatchAggregate, setColorMatchAggregate] = useState<'bures' | 'robust-bures' | 'mean-cov'>('bures');
 
   const handleColorMatch = async () => {
     if (!selectedImage || colorMatchState.running) return;

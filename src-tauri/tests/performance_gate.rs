@@ -182,7 +182,9 @@ fn metrics_budgets_hold() {
         black_box(metrics::ssim(&small.data, &small.data, 240, 135));
     });
     let delta_ms = median_ms(11, || {
-        black_box(metrics::mean_delta_e_2000(&card.data, &card.data, 96, 64, 1));
+        black_box(metrics::mean_delta_e_2000(
+            &card.data, &card.data, 96, 64, 1,
+        ));
     });
     let hash_ms = median_ms(11, || {
         black_box(metrics::hash_u8_image(1200, 675, &bytes));

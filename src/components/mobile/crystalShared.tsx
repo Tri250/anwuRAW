@@ -77,7 +77,7 @@ export type CrystalWatermarkPrefs = {
   exportFormat?: 'jpeg' | 'png';
   exportQuality?: number;
   showInfoBarFrame?: boolean;
-}
+};
 
 const PREFS_KEY = 'crystal.watermark.prefs.v1';
 
@@ -757,9 +757,7 @@ export function useCrystalAiMasks() {
   const maskReady = useCallback(
     (type: Mask) => {
       const container = findContainer(type);
-      return Boolean(
-        container?.subMasks.some((sm: SubMask) => sm.type === type && sm.parameters?.maskDataBase64),
-      );
+      return Boolean(container?.subMasks.some((sm: SubMask) => sm.type === type && sm.parameters?.maskDataBase64));
     },
     [findContainer],
   );

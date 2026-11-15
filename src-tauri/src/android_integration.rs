@@ -712,7 +712,9 @@ mod tests {
 
     #[test]
     fn android_content_uri_predicate_rejects_filesystem_paths() {
-        assert!(!is_android_content_uri("/storage/emulated/0/Pictures/a.jpg"));
+        assert!(!is_android_content_uri(
+            "/storage/emulated/0/Pictures/a.jpg"
+        ));
         assert!(!is_android_content_uri("file:///home/user/IMG_0001.RAF"));
         assert!(!is_android_content_uri(""));
         assert!(!is_android_content_uri("https://example.com/image.jpg"));

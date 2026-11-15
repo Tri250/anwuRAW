@@ -420,7 +420,8 @@ pub fn analyze_faces(
         let mut fitted = None;
         for quarter in 0..4 {
             let angle = base_angle + quarter as f32 * FRAC_PI_2;
-            let (landmarks, score, angle) = fit_landmarks(landmark_session, &rgb, *face_box, angle)?;
+            let (landmarks, score, angle) =
+                fit_landmarks(landmark_session, &rgb, *face_box, angle)?;
             if score >= FACE_PRESENCE_THRESHOLD {
                 fitted = Some((landmarks, angle));
                 break;
@@ -913,10 +914,8 @@ pub fn compose_face_mask(
     // P1（D-PT-01）：多脸保护区——对每张脸，用其余检测框的头区保护带
     // （解剖比例 + 边缘柔化）扣除该脸掩膜串入邻近头区的分量：每张脸的
     // 美容效果只落 own 头内，绝不下沉到合影里其他主角的头上。
-    for ((face_mask, &(x0, y0, _, _)), face) in face_masks
-        .iter_mut()
-        .zip(&regions)
-        .zip(&analysis.faces)
+    for ((face_mask, &(x0, y0, _, _)), face) in
+        face_masks.iter_mut().zip(&regions).zip(&analysis.faces)
     {
         let others: Vec<[f32; 4]> = analysis
             .boxes
@@ -999,10 +998,10 @@ pub fn adaptive_skin_range(rgb: &RgbImage, region: Option<&GrayImage>) -> Option
     let mut cr_samples: Vec<f32> = Vec::new();
     for y in (0..h).step_by(stride) {
         for x in (0..w).step_by(stride) {
-            if let Some(mask) = region {
-                if mask.get_pixel(x, y)[0] < 128 {
-                    continue;
-                }
+            if let Some(mask) = region
+                && mask.get_pixel(x, y)[0] < 128
+            {
+                continue;
             }
             let (cb, cr) = ycbcr_chroma(rgb.get_pixel(x, y).0);
             cb_samples.push(cb);
@@ -1109,8 +1108,8 @@ mod tests {
         let other = [0.75, 0.30, 0.95, 0.70]; // B：px x∈[300,380], y∈[60,140]
         let mut mask = GrayImage::new(400, 200);
         for (x, y, p) in mask.enumerate_pixels_mut() {
-            let in_a = x >= 20 && x < 100 && y >= 60 && y < 140;
-            let in_b = x >= 300 && x < 380 && y >= 60 && y < 140;
+            let in_a = (20..100).contains(&x) && (60..140).contains(&y);
+            let in_b = (300..380).contains(&x) && (60..140).contains(&y);
             p[0] = if in_a || in_b { 255 } else { 0 };
         }
         subtract_head_zones(&mut mask, &[other]);
@@ -1130,8 +1129,13 @@ mod tests {
     /// 皮肤系统性漏检。测试图按深肤色调构造，断言固定阈值全漏检。
     fn fixed_threshold_says_skin([r, g, b]: [u8; 3]) -> bool {
         let (r, g, b) = (r as i32, g as i32, b as i32);
-        r > 95 && g > 40 && b > 20 && r.max(g).max(b) - r.min(g).min(b) > 15 && (r - g).abs() > 15
-            && r > g && r > b
+        r > 95
+            && g > 40
+            && b > 20
+            && r.max(g).max(b) - r.min(g).min(b) > 15
+            && (r - g).abs() > 15
+            && r > g
+            && r > b
     }
 
     #[test]
@@ -1188,7 +1192,7 @@ mod tests {
     fn adaptive_skin_range_falls_back_honestly() {
         // 无人脸回退路径：region=None 用全图分位数，有效图必须能给出范围
         let mut rgb = RgbImage::new(64, 64);
-        for (x, y, p) in rgb.enumerate_pixels_mut() {
+        for (x, _y, p) in rgb.enumerate_pixels_mut() {
             if x < 32 {
                 *p = Rgb([120, 85, 70]);
             } else {

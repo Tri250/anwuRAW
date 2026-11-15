@@ -2208,7 +2208,11 @@ mod curve_points_tests {
         fn test_normal_photo_is_gentle() {
             let r = perform_auto_analysis(&synth(128.0, 200.0, 0.15), 0.0);
             assert!(r.exposure.abs() < 0.6, "曝光修正 {} 过强", r.exposure);
-            assert!(r.contrast > 0.0 && r.contrast < 30.0, "对比度 {} 越界", r.contrast);
+            assert!(
+                r.contrast > 0.0 && r.contrast < 30.0,
+                "对比度 {} 越界",
+                r.contrast
+            );
             assert!(r.clarity > 0.0, "正常片应获得轻微清晰度");
             assert!(r.dehaze.abs() < 1e-9, "色阶充足的图不应去雾");
         }
@@ -2221,7 +2225,11 @@ mod curve_points_tests {
             assert!(dark.shadows > 0.0, "欠曝应提阴影，实际 {}", dark.shadows);
 
             let bright = perform_auto_analysis(&synth(190.0, 140.0, 0.15), 0.0);
-            assert!(bright.exposure < 0.0, "过曝应压暗，实际 {}", bright.exposure);
+            assert!(
+                bright.exposure < 0.0,
+                "过曝应压暗，实际 {}",
+                bright.exposure
+            );
         }
 
         /// 回归 4：activeTools 覆盖全部被写入的工具（渲染门控 is_tool_active）。
@@ -2277,7 +2285,10 @@ mod curve_points_tests {
                     assert!(s <= n && n <= g, "{name}/{key}: 三档非单调 ({s} {n} {g})");
                     assert!(g.abs() <= 100.0, "{name}/{key}: Strong 越界 {g}");
                     if g.abs() > 1e-9 {
-                        assert!(s < n && n < g, "{name}/{key}: 非零项应严格递增 ({s} {n} {g})");
+                        assert!(
+                            s < n && n < g,
+                            "{name}/{key}: 非零项应严格递增 ({s} {n} {g})"
+                        );
                         *strict.entry(key).or_insert(0) += 1;
                     }
                 }

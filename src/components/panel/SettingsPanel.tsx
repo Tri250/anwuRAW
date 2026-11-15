@@ -188,7 +188,10 @@ const localizeGpuReason = (reason: string | null | undefined, t: GpuReasonTransl
   }
   if (raw.startsWith('Hardware adapter:')) {
     return t('settings.processing.gpuReasonHardware', {
-      adapter: raw.slice('Hardware adapter:'.length).trim().replace(/[.;。]+$/, ''),
+      adapter: raw
+        .slice('Hardware adapter:'.length)
+        .trim()
+        .replace(/[.;。]+$/, ''),
     });
   }
   return raw;
