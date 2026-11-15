@@ -494,7 +494,6 @@
       "title": "AI Recommend"
     },
     "backToLibrary": "Back to library",
-    "resetFailed": "Reset failed: could not save to disk. Your previous edits are kept.",
     "bottom": {
       "compare": "Compare",
       "original": "Original",
@@ -691,6 +690,7 @@
       "message": "This restores the original look and rebuilds the undo history.",
       "title": "Reset all edits?"
     },
+    "resetFailed": "Reset failed: could not save to disk. Your previous edits are kept.",
     "save": "Export",
     "subtitleFallback": "Photo",
     "templates": {
@@ -2739,6 +2739,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "Hardware adapter ({{adapter}}) detected, but the wgpu display-surface integration is not enabled on this platform yet; using the CPU preview path.",
+      "gpuReasonHardware": "Hardware adapter: {{adapter}}.",
+      "gpuReasonNoAdapter": "No wgpu adapter available; using the CPU preview path.",
+      "gpuReasonPlatformDisabled": "wgpu preview disabled on this platform (adapter: {{adapter}}).",
+      "gpuReasonSettingDisabled": "wgpu preview disabled in settings.",
+      "gpuReasonSoftware": "Software renderer detected ({{adapter}}); falling back to the CPU preview path.",
       "highDpi": "High-DPI Rendering",
       "highDpiDesc": "Render previews at your screen's native {{dpr}}x physical pixel resolution. Produces the sharpest possible preview but uses significantly more memory.",
       "highDpiDescStandard": "This setting only affects high-DPI displays. Your current display is standard resolution.",

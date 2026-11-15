@@ -709,6 +709,7 @@
       "message": "Restaura el aspecto original y reconstruye el historial.",
       "title": "¿Restablecer todas las ediciones?"
     },
+    "resetFailed": "Error al restablecer: no se pudo guardar en el disco. Tus ediciones anteriores se conservan.",
     "save": "Exportar",
     "subtitleFallback": "Foto",
     "templates": {
@@ -2732,6 +2733,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "Se detectó un adaptador de hardware ({{adapter}}), pero la integración de la capa de visualización wgpu aún no está habilitada en esta plataforma; se usa la ruta de vista previa por CPU.",
+      "gpuReasonHardware": "Adaptador de hardware: {{adapter}}.",
+      "gpuReasonNoAdapter": "No hay ningún adaptador wgpu disponible; se usa la ruta de vista previa por CPU.",
+      "gpuReasonPlatformDisabled": "Vista previa wgpu desactivada en esta plataforma (adaptador: {{adapter}}).",
+      "gpuReasonSettingDisabled": "Vista previa wgpu desactivada en la configuración.",
+      "gpuReasonSoftware": "Renderizador por software detectado ({{adapter}}); se recurre a la ruta de vista previa por CPU.",
       "highDpi": "Renderizado de alto DPI",
       "highDpiDesc": "Renderizar vistas previas en la resolución de píxeles físicos nativa de {{dpr}}x de tu pantalla. Produce la vista previa más nítida posible, pero utiliza mucha más memoria.",
       "highDpiDescStandard": "Este ajuste solo afecta a las pantallas de alto DPI. Tu pantalla actual tiene resolución estándar.",

@@ -709,6 +709,7 @@
       "message": "Restaure l'aspect d'origine et reconstruit l'historique.",
       "title": "Réinitialiser toutes les retouches ?"
     },
+    "resetFailed": "Échec de la réinitialisation : impossible d'enregistrer sur le disque. Vos modifications précédentes sont conservées.",
     "save": "Exporter",
     "subtitleFallback": "Photo",
     "templates": {
@@ -2733,6 +2734,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "Adaptateur matériel ({{adapter}}) détecté, mais l'intégration de la couche d'affichage wgpu n'est pas encore activée sur cette plateforme ; le chemin d'aperçu CPU est utilisé.",
+      "gpuReasonHardware": "Adaptateur matériel : {{adapter}}.",
+      "gpuReasonNoAdapter": "Aucun adaptateur wgpu disponible ; le chemin d'aperçu CPU est utilisé.",
+      "gpuReasonPlatformDisabled": "Aperçu wgpu désactivé sur cette plateforme (adaptateur : {{adapter}}).",
+      "gpuReasonSettingDisabled": "Aperçu wgpu désactivé dans les paramètres.",
+      "gpuReasonSoftware": "Moteur de rendu logiciel détecté ({{adapter}}) ; repli sur le chemin d'aperçu CPU.",
       "highDpi": "Rendu haute résolution (DPI)",
       "highDpiDesc": "Rendez les aperçus à la résolution native de {{dpr}}x pixels physiques de votre écran. Produit l'aperçu le plus net possible mais utilise beaucoup plus de mémoire.",
       "highDpiDescStandard": "Ce paramètre affecte uniquement les écrans à haute résolution (DPI). Votre écran actuel a une résolution standard.",

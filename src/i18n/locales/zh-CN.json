@@ -489,7 +489,6 @@
       "title": "AI 推荐"
     },
     "backToLibrary": "返回图库",
-    "resetFailed": "重置失败：无法写入磁盘，已保留当前编辑。",
     "bottom": {
       "compare": "对比",
       "original": "原图",
@@ -686,6 +685,7 @@
       "message": "将恢复原始画面，并重建撤销历史。",
       "title": "重置全部修改？"
     },
+    "resetFailed": "重置失败：无法写入磁盘，已保留当前编辑。",
     "save": "导出",
     "subtitleFallback": "照片",
     "templates": {
@@ -2727,6 +2727,12 @@
       "gpuAdapterStatus": "{{name}}（{{backend}}）· {{status}}",
       "gpuAdapterUnknown": "无法获取适配器信息",
       "gpuFallbackNotice": "GPU 渲染不可用：{{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "已检测到硬件适配器（{{adapter}}），但 wgpu 显示层集成尚未在该平台启用；当前使用 CPU 预览路径。",
+      "gpuReasonHardware": "硬件适配器：{{adapter}}。",
+      "gpuReasonNoAdapter": "无可用的 wgpu 适配器；正在使用 CPU 预览路径。",
+      "gpuReasonPlatformDisabled": "该平台已禁用 wgpu 预览（适配器：{{adapter}}）。",
+      "gpuReasonSettingDisabled": "已在设置中禁用 wgpu 预览。",
+      "gpuReasonSoftware": "检测到软件渲染器（{{adapter}}）；已回退到 CPU 预览路径。",
       "highDpi": "高 DPI 渲染",
       "highDpiDesc": "以屏幕原生 {{dpr}}x 物理像素分辨率渲染预览。产生最清晰的预览，但会显著增加内存使用。",
       "highDpiDescStandard": "此设置仅影响高 DPI 显示器。您当前的显示器为标准分辨率。",

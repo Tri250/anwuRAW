@@ -92,6 +92,40 @@ jobs:
             echo "::warning::Golden snapshot missing — run the test suite locally once (it bootstraps tests/golden/golden_snapshot.json) and commit the file to activate the drift ratchet."
           fi
 
+  performance-gate:
+    name: Performance regression gate (release budgets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ''
+          rust-src-dir: src-tauri
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            pkg-config \
+            libgphoto2-dev
+
+      # Structural ratios are machine-independent; absolute ceilings are set
+      # 10–100× above healthy release timings so only catastrophic
+      # regressions trip (never runner jitter). Budgets live in
+      # src-tauri/tests/performance_gate.rs.
+      - name: Run performance gate (release build)
+        working-directory: src-tauri
+        run: cargo test --release --test performance_gate -- --nocapture
+
   frontend-quality-gate:
     name: Frontend quality gate (tsc, eslint, build)
     runs-on: ubuntu-latest

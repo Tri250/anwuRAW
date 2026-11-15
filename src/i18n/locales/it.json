@@ -709,6 +709,7 @@
       "message": "Ripristina l'aspetto originale e ricostruisce la cronologia.",
       "title": "Reimpostare tutte le modifiche?"
     },
+    "resetFailed": "Reimpostazione non riuscita: impossibile salvare su disco. Le modifiche precedenti sono conservate.",
     "save": "Esporta",
     "subtitleFallback": "Foto",
     "templates": {
@@ -2732,6 +2733,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "Rilevato adattatore hardware ({{adapter}}), ma l'integrazione del livello di visualizzazione wgpu non è ancora abilitata su questa piattaforma; viene usato il percorso di anteprima CPU.",
+      "gpuReasonHardware": "Adattatore hardware: {{adapter}}.",
+      "gpuReasonNoAdapter": "Nessun adattatore wgpu disponibile; viene usato il percorso di anteprima CPU.",
+      "gpuReasonPlatformDisabled": "Anteprima wgpu disabilitata su questa piattaforma (adattatore: {{adapter}}).",
+      "gpuReasonSettingDisabled": "Anteprima wgpu disabilitata nelle impostazioni.",
+      "gpuReasonSoftware": "Renderer software rilevato ({{adapter}}); ripristino al percorso di anteprima CPU.",
       "highDpi": "Rendering High-DPI",
       "highDpiDesc": "Renderizza le anteprime alla risoluzione nativa in pixel fisici {{dpr}}x del tuo schermo. Produce l'anteprima più nitida possibile ma utilizza molta più memoria.",
       "highDpiDescStandard": "Questa impostazione ha effetto solo sui display ad alta risoluzione (High-DPI). Il tuo display attuale ha una risoluzione standard.",

@@ -731,6 +731,7 @@
       "message": "Obnoví původní vzhled a znovu sestaví historii.",
       "title": "Obnovit všechny úpravy?"
     },
+    "resetFailed": "Resetování selhalo: nelze uložit na disk. Předchozí úpravy zůstaly zachovány.",
     "save": "Exportovat",
     "subtitleFallback": "Foto",
     "templates": {
@@ -2785,6 +2786,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "Zjištěn hardwarový adaptér ({{adapter}}), ale integrace vrstvy zobrazení wgpu na této platformě zatím není povolena; používá se cesta náhledu na CPU.",
+      "gpuReasonHardware": "Hardwarový adaptér: {{adapter}}.",
+      "gpuReasonNoAdapter": "Není k dispozici žádný adaptér wgpu; používá se cesta náhledu na CPU.",
+      "gpuReasonPlatformDisabled": "Náhled wgpu je na této platformě vypnutý (adaptér: {{adapter}}).",
+      "gpuReasonSettingDisabled": "Náhled wgpu je vypnutý v nastavení.",
+      "gpuReasonSoftware": "Zjištěn softwarový renderer ({{adapter}}); přechod na cestu náhledu na CPU.",
       "highDpi": "High-DPI rendering",
       "highDpiDesc": "Vykreslovat náhledy v nativním {{dpr}}x fyzickém rozlišení pixelů obrazovky. Poskytuje nejostřejší možný náhled, ale spotřebovává výrazně více paměti.",
       "highDpiDescStandard": "Toto nastavení ovlivňuje pouze displeje s vysokým DPI. Váš aktuální displej má standardní rozlišení.",

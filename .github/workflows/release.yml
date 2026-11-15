@@ -145,6 +145,50 @@ jobs:
           REQUIRE_SIGNATURES: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' && 'true' || 'false' }}
         run: bash .github/scripts/check-release-assets.sh precheck
 
+      # 前置校验签名 secrets（交付项④）：缺失不再只在构建阶段静默降级为
+      # 一行 warning，而是进入 precheck 的 GITHUB_STEP_SUMMARY 与告警注记。
+      # 硬失败为可选开关：仓库设置变量 REQUIRE_SIGNING_SECRETS=true 时，
+      # 任一签名 secrets 缺失将终止发布（默认仅警告，兼容无密钥的 fork）。
+      - name: Audit signing configuration
+        env:
+          UPDATER_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          UPDATER_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          REQUIRE_SIGNING_SECRETS: ${{ vars.REQUIRE_SIGNING_SECRETS }}
+        run: |
+          set -euo pipefail
+          missing=0
+          {
+            echo "## 签名配置审计 (release precheck)"
+            echo ""
+            if [ -n "$UPDATER_KEY" ]; then
+              if [ -n "$UPDATER_KEY_PASSWORD" ]; then
+                echo "- updater 签名密钥: ✅ 已配置（含口令）"
+              else
+                echo "- updater 签名密钥: ⚠️ 已配置但未配置口令（若密钥加密，更新器产物将在构建阶段失败）"
+              fi
+            else
+              echo "- updater 签名密钥: ❌ 未配置 — 本次产物将无自动更新（latest.json/updater 静默降级）"
+              echo "::warning::TAURI_SIGNING_PRIVATE_KEY 未配置：updater 产物与 latest.json 将被禁用（交付阻断项，发布前请配置）"
+              missing=1
+            fi
+            if [ -n "$ANDROID_KEY_BASE64" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+              echo "- Android 正式签名: ✅ 已配置"
+            else
+              echo "- Android 正式签名: ❌ 未配置 — APK 将回退 debug keystore，不能上架 Play"
+              echo "::warning::ANDROID_KEY_* 未配置：APK 将使用生成的 debug keystore 签名（交付阻断项，发布前请配置）"
+              missing=1
+            fi
+            echo ""
+            echo "_硬失败开关：仓库变量 \`REQUIRE_SIGNING_SECRETS=true\` 时，签名缺失将终止发布。_"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$missing" -eq 1 ] && [ "$REQUIRE_SIGNING_SECRETS" = "true" ]; then
+            echo "::error::REQUIRE_SIGNING_SECRETS=true 且签名 secrets 缺失 — 按发布门禁终止（见 Step Summary）"
+            exit 1
+          fi
+
   release:
     needs: [prepare, precheck]
     # 只有 precheck 成功且资产不完整（或手动 dispatch）才构建：

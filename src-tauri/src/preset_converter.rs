@@ -347,3 +347,136 @@ pub fn convert_xmp_to_preset(xmp_content: &str) -> Result<Preset, String> {
         preset_type: Some("style".to_string()),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    // 回归锚点：Android 上用户报告的 XMP 导入失败族（第十四/十五轮修复）
+    // 依赖本模块的解析行为，这里把核心映射钉死，防止后续改动静默破坏
+    // Android 导入链路（宿主即可运行，无需真机）。
+    const SAMPLE_XMP: &str = r#"
+<x:xmpmeta xmlns:x="adobe:ns:meta/">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+    crs:Name="Android Import Smoke"
+    crs:Exposure2012="+0.45"
+    crs:Contrast2012="+12"
+    crs:Highlights2012="-35"
+    crs:Shadows2012="+20"
+    crs:Saturation="+8"
+    crs:Temperature="5350"
+    crs:AsShotTemperature="5500"
+    crs:Tint="+10"
+    crs:HueAdjustmentRed="+8"
+    crs:SaturationAdjustmentRed="+15"
+    crs:LuminanceAdjustmentRed="-5"
+    crs:SplitToningShadowHue="215"
+    crs:SplitToningShadowSaturation="12"
+    crs:PostCropVignetteAmount="-18"
+    crs:GrainAmount="25">
+   <crs:ToneCurvePV2012>
+    <rdf:Seq>
+     <rdf:li>0, 0</rdf:li>
+     <rdf:li>128, 140</rdf:li>
+     <rdf:li>255, 255</rdf:li>
+    </rdf:Seq>
+   </crs:ToneCurvePV2012>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>"#;
+
+    #[test]
+    fn converts_core_adjustments_from_crs_attrs() {
+        let preset = convert_xmp_to_preset(SAMPLE_XMP).expect("XMP conversion must succeed");
+        let adj = &preset.adjustments;
+
+        let expect_f64 = |key: &str, value: f64| {
+            assert_eq!(
+                adj.get(key).and_then(|v| v.as_f64()),
+                Some(value),
+                "adjustment `{key}` mismatch"
+            );
+        };
+        expect_f64("exposure", 0.45);
+        expect_f64("contrast", 12.0);
+        expect_f64("highlights", -35.0);
+        expect_f64("shadows", 30.0); // Shadows2012=+20 经 1.5× 放大映射
+        expect_f64("saturation", 8.0);
+        expect_f64("vignetteAmount", -18.0);
+        expect_f64("grainAmount", 25.0);
+    }
+
+    #[test]
+    fn converts_hsl_color_grading_and_curves() {
+        let preset = convert_xmp_to_preset(SAMPLE_XMP).expect("XMP conversion must succeed");
+        let adj = &preset.adjustments;
+
+        let hsl = adj.get("hsl").and_then(|v| v.get("reds")).expect("HSL reds");
+        assert_eq!(hsl.get("hue").and_then(|v| v.as_f64()), Some(6.0)); // 8 × 0.75
+        assert_eq!(hsl.get("saturation").and_then(|v| v.as_f64()), Some(15.0));
+        assert_eq!(hsl.get("luminance").and_then(|v| v.as_f64()), Some(-5.0));
+
+        let shadows = adj
+            .get("colorGrading")
+            .and_then(|v| v.get("shadows"))
+            .expect("colorGrading.shadows");
+        assert_eq!(shadows.get("hue").and_then(|v| v.as_f64()), Some(215.0));
+        assert_eq!(shadows.get("saturation").and_then(|v| v.as_f64()), Some(12.0));
+
+        let luma = adj
+            .get("curves")
+            .and_then(|v| v.get("luma"))
+            .and_then(|v| v.as_array())
+            .expect("curves.luma");
+        assert_eq!(luma.len(), 3);
+        assert_eq!(luma[1].get("x").and_then(|v| v.as_i64()), Some(128));
+        assert_eq!(luma[1].get("y").and_then(|v| v.as_i64()), Some(140));
+    }
+
+    #[test]
+    fn derives_white_balance_within_clamps() {
+        let preset = convert_xmp_to_preset(SAMPLE_XMP).expect("XMP conversion must succeed");
+        let adj = &preset.adjustments;
+
+        let temp = adj
+            .get("temperature")
+            .and_then(|v| v.as_f64())
+            .expect("temperature derived from Kelvin delta");
+        assert!(
+            (-100.0..=100.0).contains(&temp),
+            "temperature out of clamp range: {temp}"
+        );
+        assert!(adj.get("tint").and_then(|v| v.as_f64()).is_some());
+        // 冷色偏移（5350K < asShot 5500K）应映射为负向色温
+        assert!(temp < 0.0, "expected negative relative temperature, got {temp}");
+    }
+
+    #[test]
+    fn preset_envelope_matches_export_schema() {
+        let preset = convert_xmp_to_preset(SAMPLE_XMP).expect("XMP conversion must succeed");
+        assert_eq!(preset.preset_type.as_deref(), Some("style"));
+        assert_eq!(preset.include_masks, Some(false));
+        assert_eq!(preset.include_crop_transform, Some(false));
+        assert!(!preset.id.is_empty(), "uuid id required by import path");
+        // 序列化往返（导出 → parse_preset_file 的 JSON 结构）必须稳定
+        let round_trip: Preset =
+            serde_json::from_value(serde_json::to_value(&preset).expect("serialize"))
+                .expect("deserialize");
+        assert_eq!(round_trip.name, preset.name);
+        assert_eq!(round_trip.adjustments, preset.adjustments);
+    }
+
+    #[test]
+    fn empty_input_yields_fallback_preset() {
+        let preset = convert_xmp_to_preset("<no crs attributes here>").expect("never errors");
+        assert_eq!(preset.name, "Imported Preset");
+        assert!(
+            preset.adjustments.as_object().expect("object").is_empty(),
+            "no crs attrs must produce an empty adjustment set, not garbage"
+        );
+        assert_eq!(preset.adjustments, json!({}));
+    }
+}

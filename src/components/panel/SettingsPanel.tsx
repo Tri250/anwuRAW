@@ -31,6 +31,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { check, Update, DownloadEvent } from '@tauri-apps/plugin-updater';
+import type { TFunction } from 'i18next';
 import { getVersion } from '@tauri-apps/api/app';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import clsx from 'clsx';
@@ -148,6 +149,50 @@ const zoomMultiplierOptions: OptionItem<number>[] = [
   { value: 0.5, label: '0.50x (Half)' },
   { value: 0.25, label: '0.25x' },
 ];
+
+type GpuReasonTranslate = TFunction<'translation', undefined>;
+
+// GPU 降级诊断的本地化（交付项⑤）：后端 wgpu 能力判定返回的是结构化英文
+// 原因串（platform_features.rs），此处按已知前缀匹配翻译，未知串原样透传，
+// 保证后端新增诊断不会因缺少翻译而显示为空。
+const localizeGpuReason = (reason: string | null | undefined, t: GpuReasonTranslate): string => {
+  const raw = (reason || '').trim();
+  if (!raw) return '';
+  const adapterInParens = (after: string): string => {
+    const idx = raw.indexOf(after);
+    if (idx === -1) return '';
+    const rest = raw.slice(idx + after.length);
+    const match = rest.match(/[(（]([^)）]+)[)）]/);
+    return match ? match[1].trim() : rest.trim().replace(/[.;。]+$/, '');
+  };
+  if (raw.startsWith('Hardware adapter detected')) {
+    return t('settings.processing.gpuReasonDisplayPending', {
+      adapter: adapterInParens('detected'),
+    });
+  }
+  if (raw.startsWith('wgpu preview disabled on this platform')) {
+    return t('settings.processing.gpuReasonPlatformDisabled', {
+      adapter: adapterInParens('adapter:'),
+    });
+  }
+  if (raw.startsWith('wgpu preview disabled in settings')) {
+    return t('settings.processing.gpuReasonSettingDisabled');
+  }
+  if (raw.startsWith('No wgpu adapter available')) {
+    return t('settings.processing.gpuReasonNoAdapter');
+  }
+  if (raw.startsWith('Software renderer detected')) {
+    return t('settings.processing.gpuReasonSoftware', {
+      adapter: adapterInParens('detected'),
+    });
+  }
+  if (raw.startsWith('Hardware adapter:')) {
+    return t('settings.processing.gpuReasonHardware', {
+      adapter: raw.slice('Hardware adapter:'.length).trim().replace(/[.;。]+$/, ''),
+    });
+  }
+  return raw;
+};
 
 const KeybindRow = ({
   def,
@@ -2301,7 +2346,7 @@ export default function SettingsPanel({
                                 color={TextColors.secondary}
                                 className="leading-relaxed"
                               >
-                                {gpuReport.reason}
+                                {localizeGpuReason(gpuReport.reason, t)}
                               </Text>
                             </>
                           ) : (

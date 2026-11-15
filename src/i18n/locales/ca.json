@@ -709,6 +709,7 @@
       "message": "Recupera l'aspecte original i reconstrueix l'historial.",
       "title": "Restableir totes les edicions?"
     },
+    "resetFailed": "Error en restablir: no s'ha pogut desar al disc. Les edicions anteriors es mantenen.",
     "save": "Exporta",
     "subtitleFallback": "Foto",
     "templates": {
@@ -2732,6 +2733,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "S'ha detectat un adaptador de maquinari ({{adapter}}), però la integració de la capa de visualització wgpu encara no està habilitada en aquesta plataforma; s'utilitza el camí de previsualització per CPU.",
+      "gpuReasonHardware": "Adaptador de maquinari: {{adapter}}.",
+      "gpuReasonNoAdapter": "No hi ha cap adaptador wgpu disponible; s'utilitza el camí de previsualització per CPU.",
+      "gpuReasonPlatformDisabled": "Previsualització wgpu desactivada en aquesta plataforma (adaptador: {{adapter}}).",
+      "gpuReasonSettingDisabled": "Previsualització wgpu desactivada a la configuració.",
+      "gpuReasonSoftware": "Renderitzador per programari detectat ({{adapter}}); es passa al camí de previsualització per CPU.",
       "highDpi": "Renderització High-DPI",
       "highDpiDesc": "Renderitzar vistes prèvies a la resolució nativa de {{dpr}}x píxels de la pantalla. Produeix la vista prèvia més nítida possible, però utilitza molta més memòria.",
       "highDpiDescStandard": "Aquesta configuració només afecta pantalles d'alta densitat (High-DPI). La vostra pantalla actual té una resolució estàndard.",

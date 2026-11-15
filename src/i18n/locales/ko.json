@@ -682,6 +682,7 @@
       "message": "원본 상태로 되돌리고 기록을 다시 만듭니다.",
       "title": "모든 편집을 초기화할까요?"
     },
+    "resetFailed": "재설정 실패: 디스크에 저장하지 못했습니다. 이전 편집 내용은 유지됩니다.",
     "save": "내보내기",
     "subtitleFallback": "사진",
     "templates": {
@@ -2667,6 +2668,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "하드웨어 어댑터({{adapter}})가 감지되었지만, 이 플랫폼에서는 wgpu 디스플레이 통합이 아직 활성화되지 않았습니다. CPU 미리보기를 사용합니다.",
+      "gpuReasonHardware": "하드웨어 어댑터: {{adapter}}.",
+      "gpuReasonNoAdapter": "사용 가능한 wgpu 어댑터가 없습니다. CPU 미리보기를 사용합니다.",
+      "gpuReasonPlatformDisabled": "이 플랫폼에서는 wgpu 미리보기가 비활성화되어 있습니다(어댑터: {{adapter}}).",
+      "gpuReasonSettingDisabled": "설정에서 wgpu 미리보기가 비활성화되어 있습니다.",
+      "gpuReasonSoftware": "소프트웨어 렌더러({{adapter}})가 감지되어 CPU 미리보기로 전환합니다.",
       "highDpi": "고해상도(High-DPI) 렌더링",
       "highDpiDesc": "화면의 네이티브 {{dpr}}배 물리적 픽셀 해상도로 미리보기를 렌더링합니다. 가능한 가장 선명한 미리보기를 제공하지만 메모리를 훨씬 많이 사용합니다.",
       "highDpiDescStandard": "이 설정은 고해상도 디스플레이에만 영향을 줍니다. 현재 디스플레이는 표준 해상도입니다.",

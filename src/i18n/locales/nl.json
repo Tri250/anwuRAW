@@ -687,6 +687,7 @@
       "message": "Herstelt het origineel en bouwt de geschiedenis opnieuw op.",
       "title": "Alle bewerkingen herstellen?"
     },
+    "resetFailed": "Reset mislukt: kon niet op de schijf worden opgeslagen. Uw eerdere bewerkingen zijn bewaard.",
     "save": "Exporteren",
     "subtitleFallback": "Foto",
     "templates": {
@@ -2679,6 +2680,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "Hardware-adapter ({{adapter}}) gedetecteerd, maar de wgpu-weergavelaag-integratie is op dit platform nog niet ingeschakeld; het CPU-voorvertoningspad wordt gebruikt.",
+      "gpuReasonHardware": "Hardware-adapter: {{adapter}}.",
+      "gpuReasonNoAdapter": "Geen wgpu-adapter beschikbaar; het CPU-voorvertoningspad wordt gebruikt.",
+      "gpuReasonPlatformDisabled": "wgpu-voorvertoning uitgeschakeld op dit platform (adapter: {{adapter}}).",
+      "gpuReasonSettingDisabled": "wgpu-voorvertoning uitgeschakeld in de instellingen.",
+      "gpuReasonSoftware": "Software-renderer gedetecteerd ({{adapter}}); terugval op het CPU-voorvertoningspad.",
       "highDpi": "High-DPI-rendering",
       "highDpiDesc": "Voorbeelden renderen op de native {{dpr}}x fysieke pixelresolutie van uw scherm. Produceert het scherpste mogelijk voorbeeld maar gebruikt aanzienlijk meer geheugen.",
       "highDpiDescStandard": "Deze instelling is alleen van invloed op high-DPI-beeldschermen. Uw huidige beeldscherm heeft een standaardresolutie.",

@@ -687,6 +687,7 @@
       "message": "Stellt das Original wieder her und baut den Verlauf neu auf.",
       "title": "Alle Bearbeitungen zurücksetzen?"
     },
+    "resetFailed": "Zurücksetzen fehlgeschlagen: Konnte nicht auf die Festplatte gespeichert werden. Ihre bisherigen Bearbeitungen bleiben erhalten.",
     "save": "Exportieren",
     "subtitleFallback": "Foto",
     "templates": {
@@ -2679,6 +2680,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "Hardware-Adapter ({{adapter}}) erkannt, aber die wgpu-Anzeigeebenen-Integration ist auf dieser Plattform noch nicht aktiviert; der CPU-Vorschaupfad wird verwendet.",
+      "gpuReasonHardware": "Hardware-Adapter: {{adapter}}.",
+      "gpuReasonNoAdapter": "Kein wgpu-Adapter verfügbar; der CPU-Vorschaupfad wird verwendet.",
+      "gpuReasonPlatformDisabled": "wgpu-Vorschau auf dieser Plattform deaktiviert (Adapter: {{adapter}}).",
+      "gpuReasonSettingDisabled": "wgpu-Vorschau in den Einstellungen deaktiviert.",
+      "gpuReasonSoftware": "Software-Renderer erkannt ({{adapter}}); Rückfall auf den CPU-Vorschaupfad.",
       "highDpi": "High-DPI Rendering",
       "highDpiDesc": "Rendern Sie Vorschauen in der nativen {{dpr}}x Auflösung Ihres Bildschirms. Erzeugt die schärfste Vorschau, verbraucht aber mehr Speicher.",
       "highDpiDescStandard": "Diese Einstellung betrifft nur High-DPI-Displays. Ihr aktuelles Display hat Standardauflösung.",

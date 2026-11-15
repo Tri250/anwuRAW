@@ -45,6 +45,9 @@ npm run i18n:check     # 15 语言键完整
 npm run build          # 前端构建
 npm run schema:generate && git diff --exit-code src-tauri/resources/adjustments-schema.json
                        # schema 产物无漂移（drift = 有人改了单源没重新生成）
+cargo test --release --test performance_gate
+                       # 性能门禁：结构性比值（机器无关）+ 灾难性绝对上限；
+                       # CI 的 performance-gate job 同步执行（③）
 ```
 
 ## 3. 样张冒烟（👤，发布前必做）
@@ -75,7 +78,9 @@ Ubuntu 22.04/24.04 ×64/arm64、Ubuntu tethering ×2、Android arm64）：
   push tag 与 `workflow_dispatch` 共用同一套解析逻辑；
 - ⚙ **precheck**：所有事件均生效，按 `.github/scripts/check-release-assets.sh` 的
   **产物名称**逐项核对（不再使用已过时的"资产数 ≥ 30"硬编码计数），
-  齐全则跳过矩阵，避免重复构建；
+  齐全则跳过矩阵，避免重复构建；同时执行**签名配置审计**（④）：updater /
+  Android 签名 secrets 缺失写入 `GITHUB_STEP_SUMMARY` 并发 `::warning::` 注记
+  （不再静默降级为一行日志），仓库变量 `REQUIRE_SIGNING_SECRETS=true` 时缺失即硬失败；
 - ⚙ **release**：13 平台矩阵，新增/修改的功能（tethering 变体、Android arm64、
   updater 签名、`latest.json`）全部纳入；
 - ⚙ **verify**：矩阵成功后断言全部主产物 + `.sig` + `latest.json` 到位；
@@ -137,3 +142,17 @@ Ubuntu 22.04/24.04 ×64/arm64、Ubuntu tethering ×2、Android arm64）：
 - [ ] 旧缓存目录（`*_v<旧版本>`）在首次新版本渲染后被自动清理
 - [ ] 旧版本编辑记录（sidecar 缺 `processingVersion`）打开后渲染不变
 ```
+
+## 8. Android 真机回归（👤，发布含 Android 改动时必做）
+
+CI 仅有构建与静态产物审核；以下清单必须在真机或模拟器实测（覆盖历史上出现
+用户报告回归的区域，第十二轮配方整体回归即此清单存在的原因）：
+
+- [ ] 安装包启动 → 图库加载 `.library` 目录 → 打开 RAW（任一已验证样张）渲染；
+- [ ] 预设：经 SAF（content://）导入预设包 → 应用 → 强度滑块 → 重启后预设仍在；
+- [ ] 大师/胶片配方：应用一条大师配方 → 强度 0–200% → 再点回滚（第十二轮回归位）；
+- [ ] LUT：导入 `.cube` → 预览缩略图生成 → 删除自定义 LUT → 内置 LUT 删除保护提示；
+- [ ] 导出：照片导出到相册（MediaStore）、文件导出到 Downloads，文件名含中文/特殊字符；
+- [ ] AI 蒙版：生成一次 subject / face 蒙版（覆盖首次模型下载与后续缓存路径）；
+- [ ] 触屏手势：捏合缩放、裁剪手柄拖拽、蒙版项长按菜单、渐变蒙版拖拽；
+- [ ] 覆盖安装升级（旧版本 sidecar 数据）后打开旧图，编辑记录无丢失。

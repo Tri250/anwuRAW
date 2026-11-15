@@ -709,6 +709,7 @@
       "message": "Restaura o aspeto original e reconstrói o histórico.",
       "title": "Repor todas as edições?"
     },
+    "resetFailed": "Falha ao redefinir: não foi possível guardar no disco. As suas edições anteriores foram mantidas.",
     "save": "Exportar",
     "subtitleFallback": "Foto",
     "templates": {
@@ -2732,6 +2733,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "Adaptador de hardware ({{adapter}}) detetado, mas a integração da camada de visualização wgpu ainda não está ativada nesta plataforma; é usado o caminho de pré-visualização por CPU.",
+      "gpuReasonHardware": "Adaptador de hardware: {{adapter}}.",
+      "gpuReasonNoAdapter": "Nenhum adaptador wgpu disponível; é usado o caminho de pré-visualização por CPU.",
+      "gpuReasonPlatformDisabled": "Pré-visualização wgpu desativada nesta plataforma (adaptador: {{adapter}}).",
+      "gpuReasonSettingDisabled": "Pré-visualização wgpu desativada nas configurações.",
+      "gpuReasonSoftware": "Renderizador por software detetado ({{adapter}}); a recorrer ao caminho de pré-visualização por CPU.",
       "highDpi": "Renderização de Alto DPI",
       "highDpiDesc": "Renderizar visualizações na resolução de pixel físico nativa {{dpr}}x da tela. Produz a visualização mais nítida possível, mas usa significativamente mais memória.",
       "highDpiDescStandard": "Esta configuração afeta apenas telas de alto DPI. Sua tela atual tem resolução padrão.",

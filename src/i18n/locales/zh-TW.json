@@ -486,7 +486,6 @@
       "title": "AI 推薦"
     },
     "backToLibrary": "返回圖庫",
-    "resetFailed": "重設失敗：無法寫入磁碟，已保留目前編輯。",
     "bottom": {
       "compare": "比較",
       "original": "原圖",
@@ -683,6 +682,7 @@
       "message": "將恢復原始畫面，並重建復原歷史。",
       "title": "重設所有編輯？"
     },
+    "resetFailed": "重設失敗：無法寫入磁碟，已保留目前編輯。",
     "save": "匯出",
     "subtitleFallback": "照片",
     "templates": {
@@ -2693,6 +2693,12 @@
       "gpuAdapterStatus": "{{name}}（{{backend}}）· {{status}}",
       "gpuAdapterUnknown": "無法取得轉接器資訊",
       "gpuFallbackNotice": "GPU 渲染無法使用：{{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "已偵測到硬體轉接器（{{adapter}}），但 wgpu 顯示層整合尚未在此平台啟用；目前使用 CPU 預覽路徑。",
+      "gpuReasonHardware": "硬體轉接器：{{adapter}}。",
+      "gpuReasonNoAdapter": "無可用的 wgpu 轉接器；正在使用 CPU 預覽路徑。",
+      "gpuReasonPlatformDisabled": "此平台已停用 wgpu 預覽（轉接器：{{adapter}}）。",
+      "gpuReasonSettingDisabled": "已在設定中停用 wgpu 預覽。",
+      "gpuReasonSoftware": "偵測到軟體渲染器（{{adapter}}）；已回退到 CPU 預覽路徑。",
       "highDpi": "高 DPI 渲染",
       "highDpiDesc": "以螢幕原生 {{dpr}}x 物理畫素解析度渲染預覽。產生最清晰的預覽，但會顯著增加記憶體使用。",
       "highDpiDescStandard": "此設定僅影響高 DPI 顯示器。您當前的顯示器為標準解析度。",

@@ -731,6 +731,7 @@
       "message": "Przywróci oryginalny wygląd i odbuduje historię.",
       "title": "Zresetować wszystkie edycje?"
     },
+    "resetFailed": "Resetowanie nie powiodło się: nie można zapisać na dysku. Poprzednie edycje zostały zachowane.",
     "save": "Eksportuj",
     "subtitleFallback": "Zdjęcie",
     "templates": {
@@ -2785,6 +2786,12 @@
       "gpuAdapterStatus": "{{name}} ({{backend}}) · {{status}}",
       "gpuAdapterUnknown": "Adapter information unavailable",
       "gpuFallbackNotice": "GPU rendering unavailable: {{name}} — {{reason}}",
+      "gpuReasonDisplayPending": "Wykryto adapter sprzętowy ({{adapter}}), ale integracja warstwy wyświetlania wgpu nie jest jeszcze włączona na tej platformie; używana jest ścieżka podglądu na CPU.",
+      "gpuReasonHardware": "Adapter sprzętowy: {{adapter}}.",
+      "gpuReasonNoAdapter": "Brak dostępnego adaptera wgpu; używana jest ścieżka podglądu na CPU.",
+      "gpuReasonPlatformDisabled": "Podgląd wgpu wyłączony na tej platformie (adapter: {{adapter}}).",
+      "gpuReasonSettingDisabled": "Podgląd wgpu wyłączony w ustawieniach.",
+      "gpuReasonSoftware": "Wykryto renderer programowy ({{adapter}}); przejście do ścieżki podglądu na CPU.",
       "highDpi": "Renderowanie High-DPI",
       "highDpiDesc": "Renderuj podglądy w natywnej {{dpr}}x rozdzielczości pikseli fizycznych twojego ekranu. Zapewnia najostrzejszy z możliwych podglądów, ale zużywa znacznie więcej pamięci.",
       "highDpiDescStandard": "To ustawienie wpływa tylko na wyświetlacze high-DPI (np. Retina). Twój obecny wyświetlacz ma standardową rozdzielczość.",

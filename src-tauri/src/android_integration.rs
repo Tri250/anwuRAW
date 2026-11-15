@@ -692,3 +692,29 @@ pub fn get_android_internal_library_root() -> Result<PathBuf, String> {
     }
     Ok(library_dir)
 }
+
+// 宿主可运行的 Android 路径回归锚点（交付项①）：SAF content:// 判定是
+// 所有 Android 导入/导出分支的第一道分流，误判会把 content:// URI 直接
+// 塞进文件系统 API（第十四轮用户报告失败族的根因形态）。
+#[cfg(test)]
+mod tests {
+    use super::is_android_content_uri;
+
+    #[test]
+    fn android_content_uri_predicate_matches_saf_results() {
+        assert!(is_android_content_uri(
+            "content://com.android.providers.media.documents/document/image:37"
+        ));
+        assert!(is_android_content_uri(
+            "content://com.android.externalstorage.documents/document/primary%3ADCID%2FCamera%2FIMG_0001.RAF"
+        ));
+    }
+
+    #[test]
+    fn android_content_uri_predicate_rejects_filesystem_paths() {
+        assert!(!is_android_content_uri("/storage/emulated/0/Pictures/a.jpg"));
+        assert!(!is_android_content_uri("file:///home/user/IMG_0001.RAF"));
+        assert!(!is_android_content_uri(""));
+        assert!(!is_android_content_uri("https://example.com/image.jpg"));
+    }
+}
