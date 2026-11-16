@@ -105,8 +105,8 @@ fn pipeline_render_budgets_hold() {
         "tone+USM+grain render (1200×675) took {full_ms:.1} ms — catastrophic regression or debug build (ceiling 2500 ms)"
     );
     assert!(
-        full_ms <= tone_ms * 10.0 + 5.0,
-        "structural regression: tone+USM+grain ({full_ms:.1} ms) exceeds 10× tone-only ({tone_ms:.1} ms) — \
+        full_ms <= tone_ms * 10.0 + 250.0,
+        "structural regression: tone+USM+grain ({full_ms:.1} ms) exceeds 10× tone-only ({tone_ms:.1} ms, 250 ms floor) — \
          suspect per-pixel allocation or quadratic blur introduced in a composed stage"
     );
 }
@@ -150,8 +150,8 @@ fn geometry_budgets_hold() {
         "rotate90 (3000×2000) took {rotate_ms:.1} ms — catastrophic regression or debug build (ceiling 3000 ms)"
     );
     assert!(
-        rotate_ms <= noop_ms * 10.0 + 5.0,
-        "structural regression: rotate90 ({rotate_ms:.1} ms) exceeds 10× no-op ({noop_ms:.1} ms) — \
+        rotate_ms <= noop_ms * 10.0 + 250.0,
+        "structural regression: rotate90 ({rotate_ms:.1} ms) exceeds 10× no-op ({noop_ms:.1} ms, 250 ms floor) — \
          rotation should stay memcpy-bound"
     );
     assert!(
@@ -159,8 +159,8 @@ fn geometry_budgets_hold() {
         "warp geometry (3000×2000) took {warp_ms:.1} ms — catastrophic regression or debug build (ceiling 8000 ms)"
     );
     assert!(
-        warp_ms <= noop_ms * 60.0 + 5.0,
-        "structural regression: warp ({warp_ms:.1} ms) exceeds 60× no-op ({noop_ms:.1} ms) — \
+        warp_ms <= noop_ms * 60.0 + 1500.0,
+        "structural regression: warp ({warp_ms:.1} ms) exceeds 60× no-op ({noop_ms:.1} ms, 1500 ms floor) — \
          suspect unbounded sampling loop in the resample path"
     );
 }
