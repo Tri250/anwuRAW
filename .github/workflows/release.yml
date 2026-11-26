@@ -272,10 +272,115 @@ jobs:
     permissions:
       contents: write
 
+  # 发布溯源（RawLab 0.13 borrow）：下载本 Release 全部资产，生成
+  # SHA256SUMS.txt（sha256sum 标准格式）与 BUILD-PROVENANCE.json
+  # （tag/ref/commit/触发事件/UTC 时间戳/逐资产 sha256+size）后回传。
+  # dispatch 重跑场景先删同名旧资产再上传，避免 asset name conflict。
+  # release 被跳过（资产已齐全）时仍执行，可为旧格式 Release 补齐溯源。
+  provenance:
+    name: Generate SHA256SUMS + build provenance
+    needs: [prepare, release]
+    if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release-id }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          gh api --paginate \
+            "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets?per_page=100" \
+            --jq '.[] | [.id, .name] | @tsv' > assets.tsv
+          if [ ! -s assets.tsv ]; then
+            echo "::error::Release ${RELEASE_ID} has no assets to fingerprint."
+            exit 1
+          fi
+          while IFS=$'\t' read -r asset_id asset_name; do
+            case "${asset_name}" in
+              SHA256SUMS.txt|BUILD-PROVENANCE.json) continue ;;
+            esac
+            echo "Downloading ${asset_name}"
+            gh api "repos/${REPOSITORY}/releases/assets/${asset_id}" \
+              -H "Accept: application/octet-stream" > "dist/${asset_name}"
+          done < assets.tsv
+          if [ -z "$(ls -A dist)" ]; then
+            echo "::error::No assets downloaded; nothing to fingerprint."
+            exit 1
+          fi
+
+      - name: Generate SHA256SUMS.txt and BUILD-PROVENANCE.json
+        env:
+          REPOSITORY: ${{ github.repository }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          REF: ${{ needs.prepare.outputs.ref }}
+          COMMIT: ${{ github.sha }}
+          EVENT: ${{ github.event_name }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          ( cd dist && sha256sum -- * ) > SHA256SUMS.txt
+
+          assets_json='[]'
+          while IFS= read -r -d '' f; do
+            name="${f#dist/}"
+            hash="$(sha256sum -- "${f}" | cut -d' ' -f1)"
+            size="$(stat -c%s "${f}")"
+            assets_json="$(jq -cn --arg n "${name}" --arg h "${hash}" --argjson s "${size}" \
+              '$args + [{name: $n, sha256: $h, size_bytes: $s}]' \
+              --argjson args "${assets_json}")"
+          done < <(find dist -maxdepth 1 -type f -print0 | sort -z)
+
+          jq -cn \
+            --arg repo "${REPOSITORY}" \
+            --arg tag "${TAG}" \
+            --arg ref "${REF}" \
+            --arg commit "${COMMIT}" \
+            --arg event "${EVENT}" \
+            --arg run_id "${RUN_ID}" \
+            --arg run_url "${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}" \
+            --arg built_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --argjson assets "${assets_json}" \
+            '{schema: "build-provenance/v1",
+              repository: $repo, tag: $tag, ref: $ref, commit: $commit,
+              event: $event, run_id: $run_id, run_url: $run_url,
+              built_at: $built_at,
+              generator: ".github/workflows/release.yml (provenance job)",
+              assets: $assets}' > BUILD-PROVENANCE.json
+          cat BUILD-PROVENANCE.json
+
+      - name: Upload provenance assets (clobber stale copies)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release-id }}
+        run: |
+          set -euo pipefail
+          upload_asset() {
+            local name="$1" file="$2" ctype="$3"
+            local existing_id
+            existing_id="$(gh api \
+              "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets?per_page=100" \
+              --jq ".[] | select(.name == \"${name}\") | .id" | head -n 1 || true)"
+            if [ -n "${existing_id}" ]; then
+              echo "Deleting stale ${name} (asset ${existing_id})"
+              gh api -X DELETE "repos/${REPOSITORY}/releases/assets/${existing_id}"
+            fi
+            gh api -X POST "repos/${REPOSITORY}/releases/${RELEASE_ID}/assets?name=${name}" \
+              -H "Content-Type: ${ctype}" --input "${file}"
+            echo "Uploaded ${name}"
+          }
+          upload_asset "SHA256SUMS.txt" SHA256SUMS.txt "text/plain"
+          upload_asset "BUILD-PROVENANCE.json" BUILD-PROVENANCE.json "application/json"
+
   # 闭环闸门：所有平台产物（含签名与 latest.json）到达 release 页才放行发布。
   verify:
     name: Verify release assets
-    needs: [prepare, precheck, release]
+    needs: [prepare, precheck, release, provenance]
     if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:

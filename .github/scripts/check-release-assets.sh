@@ -109,10 +109,23 @@ signature_patterns=(
   '^latest\.json$'
 )
 
+# Build provenance (RawLab 0.13 borrow): checksums + provenance manifest.
+# Gated on verify only: precheck drives the rebuild decision for bundles, and
+# folding provenance into it would force a full 13-platform matrix rerun just
+# because an older release predates the provenance job.
+provenance_patterns=(
+  '^SHA256SUMS\.txt$'
+  '^BUILD-PROVENANCE\.json$'
+)
+
 if [ "${REQUIRE_SIGNATURES:-true}" = "true" ]; then
   required_patterns+=("${signature_patterns[@]}")
 else
   echo "::warning::Signing key not configured: skipping .sig / latest.json checks (builds have no auto-update capability)."
+fi
+
+if [ "${mode}" = "verify" ]; then
+  required_patterns+=("${provenance_patterns[@]}")
 fi
 
 missing=()

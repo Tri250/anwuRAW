@@ -14,8 +14,8 @@
 | 核心形态 | 单一 C++17 处理核心，四客户端全部复用（SwiftUI/AppKit、WPF、Compose、iOS） | Rust 核心（Tauri IPC 160 命令）+ React 前端 + WGSL 着色器单源 | 各有道理；Crystal 架构更薄，RawLab 跨端一致性靠"一个核心"硬保证 |
 | GPU 后端 | CPU / Metal / D3D11 / GLES 四后端 + 自动 CPU 回退 | wgpu（Vulkan/Metal/DX12/WebGPU）+ CPU 回退；**Linux/Android 展示层未接入 → CPU 预览** | RawLab 在移动端 GPU 覆盖上完胜——GLES 正是 Crystal 缺的那块 |
 | 一致性保障 | 跨 4 客户端 24 个 spec 字段对齐 + 颜色渲染契约（color-contract） | 编译期 45264 字节布局断言 + 124 参数 CPU/GPU 一致性测试 + golden 回归 | Crystal 的自动化更强；RawLab 的"契约文档 + 字段对齐"值得补进 docs/contracts |
-| 持久化 | `CanonicalEditState` 统一编辑态、`PinnedSourceFile`、`AtomicOutputTransaction`、schema 按需选版（SDR 18 / HDR 19）、**版本不符拒绝而非误读** | sidecar JSON + 84 设置字段；版本纪律未文档化 | RawLab 的事务化与版本拒绝机制是低成本高收益的借鉴点 |
-| 自动化接口 | lutools CLI + `rawlab_mcp` MCP 服务器 + Agent 配方 + 公开 Edit JSON 契约，与 App 共用同一核心 | 无 headless 出口（只有 Tauri IPC + AI 连接器） | Crystal 可以用同一 Rust core 打 `cargo bin` 出 CLI/MCP，成本低 |
+| 持久化 | `CanonicalEditState` 统一编辑态、`PinnedSourceFile`、`AtomicOutputTransaction`、schema 按需选版（SDR 18 / HDR 19）、**版本不符拒绝而非误读** | sidecar JSON + 84 设置字段；**版本门已借成**（[exif_processing.rs](file:///workspace/src-tauri/src/exif_processing.rs#L292) `probe_future_sidecar_version`，新版拒绝读取；注释即 "RawLab 0.13 borrow"）；`write_file_atomic` 原子写已覆盖导出/缓存/sidecar | 版本拒绝已对齐；剩余：PinnedSourceFile、按需选最低版本 |
+| 自动化接口 | lutools CLI + `rawlab_mcp` MCP 服务器 + Agent 配方 + 公开 Edit JSON 契约，与 App 共用同一核心 | **已具备同构能力**：[cli.rs](file:///workspace/src-tauri/src/cli.rs)（capabilities / validate / image-info / export，内嵌 adjustments-schema.json）+ [tools/mcp](file:///workspace/tools/mcp/server.py) MCP 服务器（与 RawLab 5 工具同契约） | 已对齐；可继续扩展 MCP 工具面（如 headless 曲线/批量编辑） |
 | 移动架构 | 3-way Android JNI 拆分、Apple `RawLabKit` 双轨 | Android 为主端（React 面板）+ Rust 复用 | Crystal 无 iOS；RawLab 无 Linux。平台哲学不同，不互借 |
 
 ---
@@ -48,9 +48,9 @@
 | 追色/参考图调色 | ❌ | ⭐ Lab 均值+分位曲线追色（ΔE 指标） | Crystal 独有 |
 | 软打样 | ❌ | ⭐ 4 色域 × 4 渲染意图（WebGPU 平台受限） | Crystal 独有 |
 | **相机连接** | ⭐ Android Wi-Fi PTP/IP 导入 + 实时取景遥拍（点击对焦/焦点框），iOS preview；0.13 加 SSH 隧道 + α7M5 双卡槽；增量导入断点续传 | ⚠️ 桌面 tethering（gphoto2 路线，mac/Linux 发布物） | 互补：Crystal 有桌面 USB、无移动 Wi-Fi。借 RawLab 的 Sony PTP/IP + SSH 隧道补移动端 |
-| 图库/工作流 | collections、每图编辑记忆、铅笔标记缩略图、Edited/Unedited 过滤、**可续传批量导出（冻结设置/取消/重试）**、Open With/拖放/分享 | masonry 图库、批量重命名、Immich 集成、AI 选片/CLIP 标签、pick/reject | 互补：借"可续传批量导出 + 铅笔标记"；Crystal 的 AI 图库智能化 RawLab 没有 |
+| 图库/工作流 | collections、每图编辑记忆、铅笔标记缩略图、Edited/Unedited 过滤、**可续传批量导出（冻结设置/取消/重试）**、Open With/拖放/分享 | masonry 图库、批量重命名、Immich 集成、AI 选片/CLIP 标签、pick/reject；**可续传批量导出已具备**（[export_journal.rs](file:///workspace/src-tauri/src/export_journal.rs) G5：冻结设置 + pending/failed 续跑） | 基本对齐；剩余可借"铅笔标记缩略图"；Crystal 的 AI 图库智能化 RawLab 没有 |
 | 预设/配方 | 内置 film looks + 14 master recipes，0–200% 强度；CUBE/**RLOOK** 导入；分类/搜索/最近 | 0–200% 强度；26 胶片 LUT + 14 大师配方；CUBE/.3dl/HALD 导入 | 齐平；**RLOOK（Sony 相机创意外观）导入是 Crystal 缺的增量** |
-| 导出 | JPEG / 16-bit PNG / **渲染 DNG（嵌预览）**；临时文件+完成后替换；分阶段导出不损已有文件 | 多格式 + 超分 2×/4× + ICC + XMP 元数据 + DPI/边框 | 互补：借 **DNG 导出 + 原子输出事务**；Crystal 的超分/边框 RawLab 没有 |
+| 导出 | JPEG / 16-bit PNG / **渲染 DNG（嵌预览）**；临时文件+完成后替换；分阶段导出不损已有文件 | 多格式 + 超分 2×/4× + ICC + XMP 元数据 + DPI/边框；**原子输出已具备**（[export_processing.rs L1663](file:///workspace/src-tauri/src/export_processing.rs#L1663) 最终图像走 `write_file_atomic`） | 剩余可借 **DNG 导出**；Crystal 的超分/边框 RawLab 没有 |
 | 平台覆盖 | macOS/Windows/iOS/Android 四原生 | Windows/macOS/Linux ×（tethering 变体）+ Android arm64 | 各补对方短板；iOS 非短期目标 |
 | 语言 | 6 语 | 15 语 | Crystal 领先 |
 | 诊断与隐私 | ⭐ 选择性诊断会话（脱敏）+ ZIP 导出 + 可选云上传；匿名 RUM 统计可关 | 无诊断会话机制 | 借本地部分（脱敏会话录制 + ZIP），不做云上传 |
@@ -66,7 +66,7 @@
 | 2 | **高光/阴影（局部照明）** | "Local-illumination highlights/shadows"——按局部亮度感知做分区影调，是全端核心卖点 | 全局软压缩 + 细节增益（WGSL），上游另有保色高光重建与中间尺度细节回注 | **最值得借的影调算法**：局部照明式 tone mapping 可复用 Crystal 已有的 5 级 mip 金字塔（glow 管线）做亮度引导，边缘感知权重防晕轮 |
 | 3 | **降噪（经典）** | **线性光小波降噪**：亮度/色度/粗色度三通道独立控制 + 确定性颗粒 | BM3D（非破坏）+ ISO 联动 sigma 噪声模型 | 互补：小波 NR 无模型依赖、CPU/GPU 皆快、结果稳定——正好补 AI-Free 模式与移动端 CPU 路径的第三条路（BM3D 慢、NIND 要模型） |
 | 4 | 降噪（AI） | DualDn/Restormer（CoreML/DirectML，授权模型包，**无 CPU 回退**，Intel mac 排除） | NIND（开源模型）+ AI-Free 自动落 BM3D | 保留 Crystal 设计：可降级优于硬依赖；不引入 RawLab 的授权模型 |
-| 5 | **曲线** | 0.13 自由端点 X：`x0`/`x_{n-1}` 可内移，越界平钳到端点 Y；主曲线+RGB 通道；点/参数画布隔离；schema 18/19 按需版本化 | 点曲线（luma/R/G/B 各 16 点）+ 参数化曲线双模式；端点固定 0/1 | **0.13 头号可移植特性**：WGSL 侧需在曲线求值处加"范围外平钳"分支；前端 CurvesControl 加端点拖拽；sidecar 记录端点坐标并按需升 schema |
+| 5 | **曲线** | 0.13 自由端点 X：`x0`/`x_{n-1}` 可内移，越界平钳到端点 Y；主曲线+RGB 通道；点/参数画布隔离；schema 18/19 按需版本化 | 点曲线（luma/R/G/B 各 16 点）+ 参数化曲线双模式；**自由端点已具备**：拖拽钳制允许端点内移（[Curves.tsx L382-387](file:///workspace/src/components/adjustments/Curves.tsx#L382-L387)），WGSL 端点平钳（[shader.wgsl L458-461](file:///workspace/src-tauri/src/shaders/shader.wgsl#L458-L461)）与 CPU 参考 `eval_curve`（[harness.rs L412-425](file:///workspace/src-tauri/src/testing/harness.rs#L412-L425)）逐行等价 | **基本已对齐（首版清单误判为"端点固定 0/1"，已修正）**。剩余交互细节：非精细模式 5px 吸附使端点在 0/255 附近偏"粘"；删除为右键菜单（RawLab 为双击删除） |
 | 6 | HDR 处理 | gain-map 编辑 + HDR→SDR 统一编码 + HDR 峰值限制 + `rawlab_hdr` 处理版本 10 | 包围曝光合成（特征对齐 + 去鬼影 + 曝光融合） | 不同赛道：gain-map 编辑需解码器 + 分离编辑态 + HDR 导出编码三件套，工程量大，见 P1 |
 | 7 | 去雾/清晰度 | processing v3 重调 | 边缘感知去雾（上游重写版）+ log 空间引导滤波局部调整 | 齐平偏 Crystal |
 | 8 | 胶片颗粒 | 确定性 grain（跨帧稳定） | 颗粒（量/尺寸/粗糙度） | 齐平；"确定性"（种子化、缩放无关）值得核对 Crystal 实现是否跨分辨率稳定 |
@@ -84,26 +84,28 @@
 | 1 | 后端矩阵与回退 | CPU/Metal/GLES/D3D11 四后端，曲线等新特性**四端四后端同日齐发**（特性 parity 纪律） | wgpu 单源 WGSL + CPU 回退；Linux/Android 展示层缺失 → CPU 预览降档 | **借纪律不借代码**：为每个渲染特性建立"后端 × 平台 parity 清单"；中期用 wgpu 的 GL 后端补 Android GLES |
 | 2 | 视口引擎 | `ViewportRenderEngine` 统一抽象 + 移动端 1:1 ROI 分块渐进缩放 + 检视叠加层 | gpu_processing + 5 级缓存管线 + 自适应画质 0.3–0.5 + 预览变换缓存 | 借"统一视口引擎 + ROI 分块渐进"思路优化 Crystal 移动端 1:1 缩放 |
 | 3 | 位深/编码 | 核心 HDR→SDR 统一 `RGBA8/BGRA8` 编码；**RGBA16 诊断 C API**；ProRAW/显示预览 ABI | CPU/GPU 双路径 45264 字节布局断言；无 HDR 编码核心 | RGBA16 诊断出口可低成本加入 Crystal（导出中间缓冲做 CPU/GPU 漂移取证），与其一致性测试体系天然互补 |
-| 4 | 编辑态与持久化 | `CanonicalEditState` 单一真相 + `PinnedSourceFile`（防编辑中文件被替换）+ `AtomicOutputTransaction`（导出原子化）+ Android/Windows 文档协调器统一 | sidecar + 设置持久化；导出直写 | 三件套全部低成本可借：源文件锁、导出临时文件+替换、编辑态单一结构体 |
-| 5 | schema 版本纪律 | 写端选"满足特性的最低 schema"（18/19）；读端版本不符**拒绝而非误读** | 有 schema 单源防漂移测试；版本拒绝策略未明确 | 直接借策略：升 sidecar 版本 + 读端硬校验，防旧版本静默错读 |
+| 4 | 编辑态与持久化 | `CanonicalEditState` 单一真相 + `PinnedSourceFile`（防编辑中文件被替换）+ `AtomicOutputTransaction`（导出原子化）+ Android/Windows 文档协调器统一 | sidecar + 设置持久化；**原子写已具备**（`write_file_atomic` 覆盖最终导出、journal、sidecar、缓存） | 剩余可借：PinnedSourceFile（源文件编辑锁）、编辑态单一结构体 |
+| 5 | schema 版本纪律 | 写端选"满足特性的最低 schema"（18/19）；读端版本不符**拒绝而非误读** | **读端版本门已借成**（`probe_future_sidecar_version`，新版 sidecar 拒绝读取并告警，不做降级覆写） | 剩余：写端按需选最低版本（当前恒写当前版本） |
 | 6 | 同步/热重载 | Windows `sync_photo_edit` 热重载；`gui_store` 统一锁 | Tauri 事件 55 发送/55 监听双向匹配 | 齐平 |
-| 7 | 自动化出口 | CLI + MCP + Agent 配方共用同一核心与 Edit JSON 契约 | 无 headless 出口 | Rust 加 `[[bin]]`（复用 image_processing 管线）出 CLI/MCP 是 Crystal 的低成本增量 |
-| 8 | 发布溯源 | `BUILD-PROVENANCE.json` + `SHA256SUMS` + Hosted CI 限制记录 | 签名审计 + golden/performance 门禁，无 provenance 文件 | 低成本直接借：发布产物附溯源 JSON |
+| 7 | 自动化出口 | CLI + MCP + Agent 配方共用同一核心与 Edit JSON 契约 | **已具备**：[cli.rs](file:///workspace/src-tauri/src/cli.rs) 四子命令 + 内嵌参数 schema + [tools/mcp](file:///workspace/tools/mcp/server.py)（RawLab 同契约 5 工具） | 已对齐；首版清单误判为"无 headless 出口"，已修正 |
+| 8 | 发布溯源 | `BUILD-PROVENANCE.json` + `SHA256SUMS` + Hosted CI 限制记录 | 签名审计 + golden/performance 门禁，无 provenance 文件 | **本次已补**：release.yml 新增 `provenance` job（SHA256SUMS.txt + BUILD-PROVENANCE.json），verify 纳入门禁 |
 | 9 | 更新体系 | Sparkle EdDSA + P-256 manifest + 最低版本门控 | Tauri updater + 签名 secrets 审计 | 齐平，不借 |
 
 ---
 
 ## 六、取长补短建议（按优先级）
 
-### P0 —— 低成本高收益，可直接排期
+### P0 —— 低成本高收益（2026-11-26 复核后修订）
 
-| # | 事项 | 来源特性 | Crystal 落点 | 预估工作量 |
-| --- | --- | --- | --- | --- |
-| 1 | **曲线自由端点 X**（拖拽内移 + 越界平钳 + 点/参数画布隔离） | 0.13 头号特性 | [shader.wgsl](file:///workspace/src-tauri/src/shaders/shader.wgsl) 曲线求值分支 + CurvesControl.tsx 端点交互 + sidecar 端点字段 | 中（含 124 参数一致性测试扩展） |
-| 2 | 原子导出事务（临时文件 → 完成后替换） | AtomicOutputTransaction | export 链路（file_management） | 小 |
-| 3 | sidecar schema 按需选版 + 读端版本拒绝 | SDR 18/HDR 19 机制 | preset_converter / sidecar 读写 | 小 |
-| 4 | 发布溯源 BUILD-PROVENANCE.json + SHA256SUMS | Release 资产 | [release.yml](file:///workspace/.github/workflows/release.yml) | 小 |
-| 5 | 源文件编辑锁（PinnedSourceFile 思路） | 0.13 架构 | 打开文档流程 | 小 |
+> 复核结论：首版清单中 4 项其实**已在仓库中落地**（部分为先前会话按 RawLab 思路实施，代码注释留有 "RawLab 0.13 borrow" 痕迹），本次核实并修正，剩余 P0 仅 2 项。
+
+| # | 事项 | 复核状态 | 说明 / Crystal 落点 |
+| --- | --- | --- | --- |
+| 1 | 曲线自由端点 X（拖拽内移 + 越界平钳） | ✅ **已存在（首版误判）** | 拖拽钳制 [Curves.tsx L382-387](file:///workspace/src/components/adjustments/Curves.tsx#L382-L387)、WGSL 平钳 [shader.wgsl L458-461](file:///workspace/src-tauri/src/shaders/shader.wgsl#L458-L461)、CPU [harness.rs L412-425](file:///workspace/src-tauri/src/testing/harness.rs#L412-L425) 三处齐备 |
+| 2 | 原子导出事务 | ✅ **已存在** | [export_processing.rs L1663](file:///workspace/src-tauri/src/export_processing.rs#L1663) 最终图像走 `write_file_atomic`；journal/缓存/sidecar 亦然 |
+| 3 | 读端 sidecar 版本拒绝 | ✅ **已存在** | [exif_processing.rs L292-319](file:///workspace/src-tauri/src/exif_processing.rs#L292-L319) `probe_future_sidecar_version`；剩余"写端按需选最低版本"为可选增强 |
+| 4 | 发布溯源 BUILD-PROVENANCE.json + SHA256SUMS | ✅ **本次已实施** | [release.yml](file:///workspace/.github/workflows/release.yml) 新增 `provenance` job；[check-release-assets.sh](file:///workspace/.github/scripts/check-release-assets.sh) 门禁同步 |
+| 5 | 源文件编辑锁（PinnedSourceFile 思路） | ⬜ 待办 | 防编辑中文件被外部替换/移动；打开文档流程加句柄持有或打开时快照校验 |
 
 ### P1 —— 战略级补强（1–2 个月）
 
@@ -114,7 +116,6 @@
 | 8 | **gain-map HDR 读取 + 编辑**（iPhone/安卓 HDR 照片直读 → HDR/SDR 分离编辑 → gain-map JPEG 导出） | §四-6 | 最大功能差距；建议分三步：先解码显示 → 再分离编辑态 → 最后 HDR 导出编码 |
 | 9 | **RLOOK 导入**（Sony 相机创意外观文件） | §三 预设行 | 与现有 CUBE/.3dl/HALD 解析器同构，增量小；对 Sony 用户吸引力大 |
 | 10 | **Android GLES 展示层**（wgpu GL 后端） | §五-1 | 解决 Crystal 最大的平台缺口（Android CPU 预览降档）；借 RawLab"移动端 GPU 必达"的纪律 |
-| 11 | 无头 CLI + Edit JSON 契约（同核复用） | lutools / rawlab_mcp | Rust `[[bin]]` 复用 image_processing；为未来 MCP/批量脚本铺路 |
 
 ### P2 —— 长线观察
 
@@ -152,4 +153,25 @@
 
 ## 七、一句话总结
 
-RawLab 0.13 是一个"**渲染纪律与工作流纵深**"型项目（四端一核、HDR、相机无线链路、事务化持久化），Crystal 是一个"**AI 能力与调色科学纵深**"型项目（蒙版/生成/特效/四映射器）。短期最划算的五笔"取长"：**曲线自由端点、小波降噪、局部照明影调、RLOOK 导入、原子导出+溯源**；中期战略一笔：**gain-map HDR**；同时守牢 AI 蒙版、生成修复、空间特效、可降级设计这四条 Crystal 独有的护城河。
+RawLab 0.13 是一个"**渲染纪律与工作流纵深**"型项目（四端一核、HDR、相机无线链路、事务化持久化），Crystal 是一个"**AI 能力与调色科学纵深**"型项目（蒙版/生成/特效/四映射器）。经 2026-11-26 代码级复核，两仓自动化底座（CLI/MCP/原子写/版本门/续传导出/曲线端点）**已实质对齐**；真正值得继续"取长"的是：**发布溯源（本次已补）、小波降噪、局部照明影调、RLOOK 导入、Android GLES、gain-map HDR**；同时守牢 AI 蒙版、生成修复、空间特效、可降级设计这四条 Crystal 独有的护城河。
+
+---
+
+## 八、实施记录（2026-11-26）
+
+### 8.1 复核修正（首版清单误判 4 处）
+
+| # | 首版判断 | 复核结论 | 证据 |
+| --- | --- | --- | --- |
+| 1 | Crystal 曲线端点固定 0/1，自由端点需完整移植 | **已具备**：拖拽钳制/WGSL 平钳/CPU 参考三处齐备 | [Curves.tsx](file:///workspace/src/components/adjustments/Curves.tsx#L382-L387)、[shader.wgsl](file:///workspace/src-tauri/src/shaders/shader.wgsl#L455-L461)、[harness.rs](file:///workspace/src-tauri/src/testing/harness.rs#L409-L425) |
+| 2 | 导出直写，无原子事务 | **已具备** `write_file_atomic`（最终导出 + journal + sidecar + 缓存 13 处调用） | [export_processing.rs L1663](file:///workspace/src-tauri/src/export_processing.rs#L1663)、[file_management.rs L1392](file:///workspace/src-tauri/src/file_management.rs#L1392) |
+| 3 | sidecar 无版本拒绝策略 | **已具备**，且注释明示 "RawLab 0.13 borrow" | [exif_processing.rs L292-319](file:///workspace/src-tauri/src/exif_processing.rs#L292-L319) |
+| 4 | 无 headless 出口（CLI/MCP） | **已具备** CLI 四子命令 + MCP 服务器（与 RawLab 5 工具同契约） | [cli.rs](file:///workspace/src-tauri/src/cli.rs)、[tools/mcp/README.md](file:///workspace/tools/mcp/README.md) |
+
+另核实：可续传批量导出（export_journal G5）、大师配方/LUT 集成（functional-modules-audit 第十三轮，含 RawLab GPL 归属文件）均为既有落地项。
+
+### 8.2 本次新增实施：发布溯源（P0-4）
+
+- [release.yml](file:///workspace/.github/workflows/release.yml)：新增 `provenance` job（needs: prepare + release），下载本 Release 全部资产 → 生成 `SHA256SUMS.txt`（sha256sum 标准格式）与 `BUILD-PROVENANCE.json`（tag/ref/commit/run/触发事件/UTC 时间戳/逐资产 sha256+size）→ 删除同名旧资产后回传 Release；`verify` 改为依赖 provenance 完成后执行。
+- [check-release-assets.sh](file:///workspace/.github/scripts/check-release-assets.sh)：`required_patterns` 增加 `SHA256SUMS.txt` 与 `BUILD-PROVENANCE.json`，使 precheck/verify 门禁覆盖溯源资产；dispatch 重跑场景由 provenance job 先删旧再传，避免资产名冲突。
+- 兼容性说明：仅对本次改动之后的新构建生效；旧 Release 走 dispatch 重跑时会自动补齐溯源资产。
