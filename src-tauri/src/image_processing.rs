@@ -65,6 +65,14 @@ where
     Ok(serde_json::from_value(Value::deserialize(deserializer)?).unwrap_or(None))
 }
 
+/// Sidecar edit schema version (RawLab 0.13 discipline). Writers stamp the
+/// lowest schema version required by the edit — bump this constant together
+/// with `ImageMetadata::default().version` when an edit field changes meaning.
+/// Readers refuse sidecars written by a higher version instead of silently
+/// misreading them, and writers refuse to overwrite them with downgrade edits
+/// (see the version gates in `exif_processing::read_sidecar`/`update_sidecar`).
+pub const SIDECAR_SCHEMA_VERSION: u32 = 1;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(default)]
 pub struct ImageMetadata {

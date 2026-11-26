@@ -30,7 +30,7 @@ use crate::baseline_exposure::BaselineOptions;
 use crate::color_profiles::{self, ExportColorSpace};
 use crate::exif_processing;
 use crate::file_management::{
-    generate_filename_from_template, parse_virtual_path, read_file_mapped,
+    generate_filename_from_template, parse_virtual_path, read_file_mapped, write_file_atomic,
 };
 use crate::formats::is_raw_file;
 use crate::image_loader::{load_and_composite, load_base_image_from_bytes, prepare_base_image_cow};
@@ -1657,7 +1657,10 @@ fn save_image_with_metadata(
     }
 
     #[cfg(not(target_os = "android"))]
-    fs::write(output_path, image_bytes)
+    // AtomicOutputTransaction (RawLab 0.13 borrow): export bytes are written to a
+    // sibling temp file, fsynced, then renamed over the target — a cancelled or
+    // crashed export never damages an existing file.
+    write_file_atomic(output_path, &image_bytes)
         .map_err(|e| format!("Failed to write file to '{}': {}", output_path.display(), e))?;
 
     Ok(())
@@ -2054,7 +2057,7 @@ fn export_masks_for_image(
             }
 
             #[cfg(not(target_os = "android"))]
-            fs::write(&mask_alpha_path, alpha_bytes).map_err(|e| e.to_string())?;
+            write_file_atomic(&mask_alpha_path, &alpha_bytes).map_err(|e| e.to_string())?;
             ensure_export_not_cancelled(cancellation_token)?;
         }
     }
@@ -2453,7 +2456,7 @@ pub(crate) async fn export_images_impl(
                             )?;
                         }
                         #[cfg(not(target_os = "android"))]
-                        fs::write(&output_path, cube_bytes).map_err(|e| e.to_string())?;
+                        write_file_atomic(&output_path, &cube_bytes).map_err(|e| e.to_string())?;
                         ensure_export_not_cancelled(&cancellation_token_clone)?;
                         return Ok(());
                     }

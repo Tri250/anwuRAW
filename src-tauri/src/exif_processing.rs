@@ -289,6 +289,16 @@ fn quarantine_sidecar(sidecar_path: &Path, error: &serde_json::Error) {
     }
 }
 
+/// Version gate (RawLab 0.13 borrow): a sidecar written by a newer schema
+/// version must never be silently misread (dropping unknown fields) nor
+/// overwritten with downgrade edits. Returns the offending version when the
+/// sidecar is newer than this build supports.
+fn probe_future_sidecar_version(content: &str, sidecar_path: &Path) -> Option<u32> {
+    let value: serde_json::Value = serde_json::from_str(content).ok()?;
+    let version = value.get("version")?.as_u64()? as u32;
+    (version > crate::image_processing::SIDECAR_SCHEMA_VERSION).then_some(version)
+}
+
 fn read_sidecar(sidecar_path: &Path) -> std::io::Result<(ImageMetadata, bool)> {
     let content = match fs::read_to_string(sidecar_path) {
         Ok(content) => content,
@@ -297,6 +307,16 @@ fn read_sidecar(sidecar_path: &Path) -> std::io::Result<(ImageMetadata, bool)> {
         }
         Err(e) => return Err(e),
     };
+
+    if let Some(future) = probe_future_sidecar_version(&content, sidecar_path) {
+        log::warn!(
+            "Sidecar {} was written by schema v{} (this build supports v{}); refusing to read it instead of misreading newer edits",
+            sidecar_path.display(),
+            future,
+            crate::image_processing::SIDECAR_SCHEMA_VERSION
+        );
+        return Ok((ImageMetadata::default(), false));
+    }
 
     match serde_json::from_str::<ImageMetadata>(&content) {
         Ok(mut meta) => {
@@ -379,6 +399,20 @@ pub fn update_sidecar(
     update: impl FnOnce(&mut ImageMetadata),
 ) -> std::io::Result<ImageMetadata> {
     let _guard = lock_sidecar(sidecar_path);
+    // Downgrade protection (RawLab 0.13 borrow): never overwrite a sidecar
+    // written by a newer schema version with edits this build understands.
+    if let Ok(content) = fs::read_to_string(sidecar_path)
+        && let Some(future) = probe_future_sidecar_version(&content, sidecar_path)
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!(
+                "sidecar {} was written by schema v{future} (supported v{}); refusing to overwrite with downgrade edits",
+                sidecar_path.display(),
+                crate::image_processing::SIDECAR_SCHEMA_VERSION
+            ),
+        ));
+    }
     let (mut metadata, _) = read_sidecar(sidecar_path)?;
     update(&mut metadata);
     if crate::immich::is_placeholder(source_path)
@@ -2209,4 +2243,84 @@ pub fn write_rrexif_sidecar(source_path_str: &str, target_image_path: &Path) -> 
         metadata.exif = Some(exif_data);
     })
     .map_err(|e| format!("Failed to write sidecar: {}", e))
+}
+
+#[cfg(test)]
+mod sidecar_version_tests {
+    use super::*;
+    use crate::image_processing::SIDECAR_SCHEMA_VERSION;
+
+    const FUTURE_SIDECAR: &str = r#"{
+        "version": 99,
+        "rating": 4,
+        "adjustments": { "exposure": 2.5, "futureOnlyField": { "nested": true } }
+    }"#;
+
+    fn write_sidecar_fixture(dir: &tempfile::TempDir, content: &str) -> (PathBuf, PathBuf, Vec<u8>) {
+        let source = dir.path().join("photo.jpg");
+        std::fs::write(&source, b"fake-image-bytes").expect("write source fixture");
+        let sidecar = dir.path().join("photo.jpg.json");
+        std::fs::write(&sidecar, content).expect("write sidecar fixture");
+        (source, sidecar, b"fake-image-bytes".to_vec())
+    }
+
+    /// RawLab 0.13 downgrade discipline: a sidecar written by a newer schema
+    /// version is never misread — the reader returns defaults (and the raw
+    /// bytes stay untouched on disk for the newer app).
+    #[test]
+    fn future_version_sidecar_is_refused_not_misread() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (_source, sidecar, _bytes) = write_sidecar_fixture(&dir, FUTURE_SIDECAR);
+
+        let meta = load_sidecar(&sidecar);
+        assert_eq!(meta.rating, 0, "future sidecar fields must not leak into metadata");
+        assert!(meta.adjustments.is_null(), "future adjustments must not be misread");
+        assert_eq!(
+            std::fs::read(&sidecar).expect("reread sidecar"),
+            FUTURE_SIDECAR.as_bytes(),
+            "refused sidecar must stay untouched on disk"
+        );
+    }
+
+    /// Writers refuse to overwrite a future-version sidecar with downgrade
+    /// edits (InvalidData), leaving the newer app's edits intact.
+    #[test]
+    fn update_sidecar_refuses_to_downgrade_future_version() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (source, sidecar, _bytes) = write_sidecar_fixture(&dir, FUTURE_SIDECAR);
+
+        let result = update_sidecar(&sidecar, &source, |metadata| {
+            metadata.rating = 5;
+        });
+
+        let err = result.expect_err("must refuse to overwrite newer schema");
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
+        assert_eq!(
+            std::fs::read(&sidecar).expect("reread sidecar"),
+            FUTURE_SIDECAR.as_bytes(),
+            "refused sidecar must stay untouched on disk"
+        );
+    }
+
+    /// Current-version sidecars keep round-tripping normally.
+    #[test]
+    fn current_version_sidecar_round_trips() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (source, sidecar, _bytes) = write_sidecar_fixture(
+            &dir,
+            &format!(
+                r#"{{ "version": {SIDECAR_SCHEMA_VERSION}, "rating": 0, "adjustments": null }}"#
+            ),
+        );
+
+        let updated = update_sidecar(&sidecar, &source, |metadata| {
+            metadata.rating = 3;
+        })
+        .expect("current schema must keep working");
+        assert_eq!(updated.rating, 3);
+
+        let reloaded = load_sidecar(&sidecar);
+        assert_eq!(reloaded.rating, 3);
+        assert_eq!(reloaded.version, SIDECAR_SCHEMA_VERSION);
+    }
 }
