@@ -240,6 +240,9 @@ pub struct AppState {
     pub window_setup_complete: AtomicBool,
     pub gpu_crash_flag_path: Mutex<Option<PathBuf>>,
     pub original_image: Mutex<Option<LoadedImage>>,
+    /// PinnedSourceFile（RawLab 0.13 borrow）：编辑器当前打开照片的源文件
+    /// 身份快照。库内移动/重命名/删除该文件的操作会被 source_pin 拒绝。
+    pub pinned_source: crate::source_pin::PinnedSourceSlot,
     pub cached_preview: Mutex<Option<CachedPreview>>,
     pub gpu_context: Mutex<Option<GpuContext>>,
     pub gpu_image_cache: Mutex<Option<GpuImageCache>>,

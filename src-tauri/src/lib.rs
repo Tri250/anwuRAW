@@ -32,6 +32,7 @@ mod ai_processing;
 mod android_integration;
 mod app_settings;
 mod app_state;
+mod source_pin;
 mod apple_raw;
 mod as_shot;
 mod auto_straighten;
@@ -2836,6 +2837,7 @@ pub fn run() {
             window_setup_complete: AtomicBool::new(false),
             gpu_crash_flag_path: Mutex::new(None),
             original_image: Mutex::new(None),
+            pinned_source: Mutex::new(None),
             cached_preview: Mutex::new(None),
             gpu_context: Mutex::new(None),
             gpu_image_cache: Mutex::new(None),

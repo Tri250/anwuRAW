@@ -2352,12 +2352,39 @@ pub fn create_folder(path: String) -> Result<(), String> {
     fs::create_dir_all(&path).map_err(|e| e.to_string())
 }
 
+// ==== PinnedSourceFile（RawLab 0.13 borrow）：编辑器打开中的源文件守卫 ====
+
+fn guard_not_pinned(app_handle: &AppHandle, path: &Path, verb: &str) -> Result<(), String> {
+    let state = app_handle.state::<crate::AppState>();
+    if crate::source_pin::is_pinned(&state.pinned_source, path) {
+        return Err(format!(
+            "Source file is open in the editor and cannot be {}: {}",
+            verb,
+            path.display()
+        ));
+    }
+    Ok(())
+}
+
+fn guard_folder_not_pinned(app_handle: &AppHandle, folder: &Path, verb: &str) -> Result<(), String> {
+    let state = app_handle.state::<crate::AppState>();
+    if crate::source_pin::is_pinned_under(&state.pinned_source, folder) {
+        return Err(format!(
+            "Folder contains the file currently open in the editor and cannot be {}: {}",
+            verb,
+            folder.display()
+        ));
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn rename_folder(path: String, new_name: String, app_handle: AppHandle) -> Result<(), String> {
     let p = Path::new(&path);
     if !p.is_dir() {
         return Err("Path is not a directory.".to_string());
     }
+    guard_folder_not_pinned(&app_handle, p, "renamed")?;
     if let Some(parent) = p.parent() {
         for entry in fs::read_dir(parent).map_err(|e| e.to_string())? {
             if let Ok(entry) = entry
@@ -2381,6 +2408,7 @@ pub fn rename_folder(path: String, new_name: String, app_handle: AppHandle) -> R
 
 #[tauri::command]
 pub fn delete_folder(path: String, app_handle: AppHandle) -> Result<(), String> {
+    guard_folder_not_pinned(&app_handle, Path::new(&path), "deleted")?;
     #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
     {
         if let Err(trash_error) = trash::delete(&path) {
@@ -2623,6 +2651,12 @@ pub async fn move_files(
         .iter()
         .map(|p| parse_virtual_path(p).0)
         .collect();
+
+    // PinnedSourceFile：编辑器打开中的源文件禁止移动，避免 sidecar 与
+    // 编辑态落到旧路径。
+    for source_image_path in &unique_source_images {
+        guard_not_pinned(&app_handle, source_image_path, "moved")?;
+    }
 
     for source_image_path in &unique_source_images {
         crate::immich::ensure_local(&app_handle, source_image_path).await?;
@@ -3775,6 +3809,15 @@ pub fn delete_files_from_disk(paths: Vec<String>, app_handle: AppHandle) -> Resu
     let mut files_to_trash = HashSet::new();
     let mut deletions = HashSet::new();
 
+    // PinnedSourceFile：编辑器打开中的源文件禁止删除（虚拟副本仅清 sidecar，
+    // 不触碰实体文件，因此不受限）。
+    for path_str in &paths {
+        if !path_str.contains("?vc=") {
+            let (source_path, _) = parse_virtual_path(path_str);
+            guard_not_pinned(&app_handle, &source_path, "deleted")?;
+        }
+    }
+
     for path_str in paths {
         let (source_path, sidecar_path) = parse_virtual_path(&path_str);
         deletions.insert(path_str.clone());
@@ -3879,6 +3922,13 @@ pub fn delete_files_with_associated(
     let paths = crate::immich::trash_remote(&app_handle, paths, true)?;
     if paths.is_empty() {
         return Ok(());
+    }
+
+    // PinnedSourceFile：该删除路径按 stem 连带清理实体文件（含虚拟副本的
+    // 共享原图），因此对全部路径做编辑器占用检查。
+    for path_str in &paths {
+        let (source_path, _) = parse_virtual_path(path_str);
+        guard_not_pinned(&app_handle, &source_path, "deleted")?;
     }
 
     let mut stems_by_dir: HashMap<PathBuf, HashSet<String>> = HashMap::new();
@@ -4281,6 +4331,11 @@ pub fn rename_files(
         if !original_paths.contains(&original_path) {
             original_paths.push(original_path);
         }
+    }
+
+    // PinnedSourceFile：编辑器打开中的源文件禁止重命名（含批量重命名）。
+    for original_path in &original_paths {
+        guard_not_pinned(&app_handle, original_path, "renamed")?;
     }
 
     let mut operations: Vec<(PathBuf, PathBuf)> = Vec::new();

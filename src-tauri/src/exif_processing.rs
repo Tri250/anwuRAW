@@ -293,7 +293,7 @@ fn quarantine_sidecar(sidecar_path: &Path, error: &serde_json::Error) {
 /// version must never be silently misread (dropping unknown fields) nor
 /// overwritten with downgrade edits. Returns the offending version when the
 /// sidecar is newer than this build supports.
-fn probe_future_sidecar_version(content: &str, sidecar_path: &Path) -> Option<u32> {
+fn probe_future_sidecar_version(content: &str, _sidecar_path: &Path) -> Option<u32> {
     let value: serde_json::Value = serde_json::from_str(content).ok()?;
     let version = value.get("version")?.as_u64()? as u32;
     (version > crate::image_processing::SIDECAR_SCHEMA_VERSION).then_some(version)

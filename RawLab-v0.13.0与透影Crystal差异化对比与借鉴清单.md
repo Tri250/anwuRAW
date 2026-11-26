@@ -105,7 +105,7 @@
 | 2 | 原子导出事务 | ✅ **已存在** | [export_processing.rs L1663](file:///workspace/src-tauri/src/export_processing.rs#L1663) 最终图像走 `write_file_atomic`；journal/缓存/sidecar 亦然 |
 | 3 | 读端 sidecar 版本拒绝 | ✅ **已存在** | [exif_processing.rs L292-319](file:///workspace/src-tauri/src/exif_processing.rs#L292-L319) `probe_future_sidecar_version`；剩余"写端按需选最低版本"为可选增强 |
 | 4 | 发布溯源 BUILD-PROVENANCE.json + SHA256SUMS | ✅ **本次已实施** | [release.yml](file:///workspace/.github/workflows/release.yml) 新增 `provenance` job；[check-release-assets.sh](file:///workspace/.github/scripts/check-release-assets.sh) 门禁同步 |
-| 5 | 源文件编辑锁（PinnedSourceFile 思路） | ⬜ 待办 | 防编辑中文件被外部替换/移动；打开文档流程加句柄持有或打开时快照校验 |
+| 5 | 源文件编辑锁（PinnedSourceFile 思路） | ✅ **本次已实施** | [source_pin.rs](file:///workspace/src-tauri/src/source_pin.rs)：快照钉住 + 移动/重命名/删除/文件夹守卫 + 漂移检测 API，详见 §8.3 |
 
 ### P1 —— 战略级补强（1–2 个月）
 
@@ -175,3 +175,15 @@ RawLab 0.13 是一个"**渲染纪律与工作流纵深**"型项目（四端一�
 - [release.yml](file:///workspace/.github/workflows/release.yml)：新增 `provenance` job（needs: prepare + release），下载本 Release 全部资产 → 生成 `SHA256SUMS.txt`（sha256sum 标准格式）与 `BUILD-PROVENANCE.json`（tag/ref/commit/run/触发事件/UTC 时间戳/逐资产 sha256+size）→ 删除同名旧资产后回传 Release；`verify` 改为依赖 provenance 完成后执行。
 - [check-release-assets.sh](file:///workspace/.github/scripts/check-release-assets.sh)：`required_patterns` 增加 `SHA256SUMS.txt` 与 `BUILD-PROVENANCE.json`，使 precheck/verify 门禁覆盖溯源资产；dispatch 重跑场景由 provenance job 先删旧再传，避免资产名冲突。
 - 兼容性说明：仅对本次改动之后的新构建生效；旧 Release 走 dispatch 重跑时会自动补齐溯源资产。
+
+### 8.3 本次新增实施：源文件编辑锁 PinnedSourceFile（P0-5）
+
+- 新模块 [source_pin.rs](file:///workspace/src-tauri/src/source_pin.rs)：打开照片时记录源文件身份快照（size + mtime，Unix 下另含 dev/inode），提供 `pin/unpin/is_pinned/is_pinned_under/drifted`；`drifted()` 是后续任何"写回源文件"路径的前置校验入口（当前仓库无原地写原图路径，API 与测试先行）。
+- 钉住生命周期：[image_loader.rs](file:///workspace/src-tauri/src/image_loader.rs) `load_image` 成功后钉住新源文件、开头解除上一张的钉住（单槽，与 `original_image` 同步）。
+- 库内破坏性操作守卫（[file_management.rs](file:///workspace/src-tauri/src/file_management.rs)）：
+  - `move_files` / `rename_files`（含批量重命名）→ 拒绝移动/重命名钉住文件；
+  - `delete_files_from_disk` → 拒绝删除钉住文件（虚拟副本仅清 sidecar，不触碰实体文件，不受限）；
+  - `delete_files_with_associated` → 该路径按 stem 连带清理实体文件，对全部路径做占用检查；
+  - `rename_folder` / `delete_folder` → 钉住文件位于目标目录内时拒绝。
+- 状态槽：[app_state.rs](file:///workspace/src-tauri/src/app_state.rs) `AppState.pinned_source`（单槽 `Mutex<Option<PinnedSourceFile>>`）。
+- 单测：模块内 4 例（缺失文件 capture 失败、pin/unpin/is_pinned 往返、size 变化与文件缺失的漂移检测、目录包含判定）。

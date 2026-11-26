@@ -1013,6 +1013,8 @@ pub async fn load_image(
             .original_image
             .lock()
             .unwrap_or_else(|e| e.into_inner()) = None;
+        // 换图前解除上一张照片的源文件钉住（PinnedSourceFile）。
+        crate::source_pin::unpin(&state.pinned_source);
         *state
             .cached_preview
             .lock()
@@ -1110,6 +1112,10 @@ pub async fn load_image(
         is_raw,
         as_shot,
     });
+
+    // 钉住当前源文件（PinnedSourceFile，RawLab 0.13 borrow）：加载成功后
+    // 记录身份快照，库内移动/重命名/删除该文件将被拒绝。钉住失败不阻断加载。
+    crate::source_pin::pin(&state.pinned_source, &source_path);
 
     crate::ai_jobs::prioritize(&app_handle, &path);
 
