@@ -129,7 +129,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-          key: ${{ inputs.mobile == '' && inputs.platform || format('{0}-{1}', inputs.platform, inputs.mobile) }}-${{ contains(inputs.build-args, 'tethering') && 'tethering' || 'standard' }}
+          # The Android ABI must be part of the key: arm64-v8a and x86_64 jobs
+          # otherwise share one cache and cross-pollute target/ artifacts.
+          key: ${{ inputs.mobile == '' && inputs.platform || format('{0}-{1}-{2}', inputs.platform, inputs.mobile, inputs.android-abi) }}-${{ contains(inputs.build-args, 'tethering') && 'tethering' || 'standard' }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
