@@ -180,6 +180,15 @@ fn runtime_libraries(
             "libonnxruntime.so",
             "999ecfdb5b5a13e4097487773b6d71ce8a075408a237daab072e8f5e817bd78e",
         )],
+        // x86_64 Android has no blob in the RapidRAW-Models HF repo; the CI
+        // workflow ("Fetch ONNX Runtime for Android") pre-fetches it from the
+        // official onnxruntime-android Maven AAR into src-tauri/libs/x86_64/.
+        // The hash pins the AAR-extracted library for supply-chain safety.
+        ("android", "x86_64") => vec![(
+            "libonnxruntime-android-x86_64.so",
+            "libonnxruntime.so",
+            "e3e67500ac56271802355bad3a46dcfcb90ce6392d9c4793b5a2c48da0d2a4e9",
+        )],
         _ => panic!("Unsupported target: {}-{}", target_os, target_arch),
     }
 }
@@ -262,8 +271,17 @@ fn main() {
 
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
+    // Android JNI folder name for the target ABI (gradle.properties abiList is
+    // patched to the same value by the release workflow).
+    let android_jni = match (target_os.as_str(), target_arch.as_str()) {
+        ("android", "aarch64") => "arm64-v8a",
+        ("android", "x86_64") => "x86_64",
+        ("android", other) => panic!("Unsupported Android ABI arch: {other}"),
+        _ => "",
+    };
+
     let dest_dir = if target_os == "android" {
-        manifest_dir.join("libs").join("arm64-v8a")
+        manifest_dir.join("libs").join(android_jni)
     } else {
         manifest_dir.join("resources")
     };
@@ -278,7 +296,9 @@ fn main() {
         .collect();
 
     if target_os == "android" {
-        let jni_libs_dir = manifest_dir.join("gen/android/app/src/main/jniLibs/arm64-v8a");
+        let jni_libs_dir = manifest_dir
+            .join("gen/android/app/src/main/jniLibs")
+            .join(android_jni);
         fs::create_dir_all(&jni_libs_dir).unwrap();
         for lib_path in &lib_paths {
             fs::copy(lib_path, jni_libs_dir.join(lib_path.file_name().unwrap())).unwrap();
