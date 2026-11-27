@@ -108,13 +108,12 @@ jobs:
             rid="${existing}"
             echo "复用已有 Release #${rid} (${tag})"
           else
-            body="Automated release for ${tag}. Built and verified by .github/workflows/release.yml; see the audit report in docs/contracts/."
-            rid="$(gh api "repos/${REPOSITORY}/releases" \
-              -f tag_name="${tag}" \
-              -f name="anwuRAW ${tag}" \
-              -F draft=true \
-              -F prerelease=false \
-              -f body="${body}" --jq '.id')"
+            # Draft body: the Android ABI download guide is mandatory since
+            # v2.1.25 ships two APKs — installing the x86_64 bundle on an
+            # arm64 phone surfaces as "解析包出现问题" (INSTALL_FAILED_
+            # NO_MATCHING_ABIS) on many OEM installers. The body travels as
+            # base64: heredocs cannot be indented inside a run: | block.
+            body="$(printf '%s' 'IyMgRG93bmxvYWRzIC8g5LiL6L295oyH5byVCgo+ICoqQW5kcm9pZCDmiYvmnLror7fkuIvovb0gYCpfYW5kcm9pZF9hcm02NC12OGEuYXBrYCoq77ybYCpfYW5kcm9pZF94ODZfNjQuYXBrYCDku4XnlKjkuo7mqKHmi5/lmaggLyBDaHJvbWVib29rIC8geDg2IOW5s+advyDigJQg6KOF6ZSZIEFCSSDkvJrlh7rnjrDjgIzop6PmnpDljIXlh7rnjrDpl67popjjgI3jgIIKCnwg5bmz5Y+wIHwg5paH5Lu2IHwKfC0tLXwtLS18CnwgV2luZG93cyB4NjQgLyBBUk02NCB8IGAwMV/igKZfd2luZG93c194NjQuZXhlYCAvIGAwMV/igKZfd2luZG93cy0xMS1hcm1fYXJtNjQuZXhlYCB8CnwgbWFjT1MgQXBwbGUgU2lsaWNvbiAvIEludGVsIHwgYDAyX+KApl9tYWNvcy0xNV9hYXJjaDY0LmRtZ2AgLyBgMDJf4oCmX21hY29zLTE1LWludGVsX3g2NC5kbWdgIHwKfCBMaW51eCB4NjQgLyBBUk02NCB8IGAwM1/igKZfdWJ1bnR1LSouQXBwSW1hZ2VgIC8gYC5kZWJgIC8gYC5ycG1g77yIMjIuMDQgPSBnbGliYyAyLjM177yMMjQuMDQgPSBnbGliYyAyLjM577yJIHwKfCAqKkFuZHJvaWQg5omL5py677yIYXJtNjTvvIkqKiB8ICoqYDA0X+KApl9hbmRyb2lkX2FybTY0LXY4YS5hcGtgKiogfAp8IEFuZHJvaWQg5qih5ouf5ZmoL0Nocm9tZWJvb2sgfCBgMDRf4oCmX2FuZHJvaWRfeDg2XzY0LmFwa2AgfAoK6IGU5py65ouN5pGE77yIdGV0aGVyaW5n77yJ5Y+Y5L2T55qE5paH5Lu25ZCN5ZCrIGB0ZXRoZXJpbmdg44CCCgojIyMg5a6J6KOF5o6S6ZSZCi0g44CM6Kej5p6Q5YyF5Ye6546w6Zeu6aKY44CN77ya56Gu6K6k5omL5py65LiL6L2955qE5pivIGBhcm02NC12OGFgIOWMhe+8jOS4lOaWh+S7tuWkp+Wwj+S4jui1hOS6p+mhteS4gOiHtO+8iOS4i+i9veS4jeWujOaVtOS8muino+aekOWksei0pe+8ieOAggotIOimhuebluWuieijheaKpeetvuWQjeWGsueqge+8muWFiOWNuOi9veaXp+eJiOacrOOAggotIHg4Nl82NCBBUEsg5Zyo5omL5py65LiK5oql6ZSZ5bGe6aKE5pyf6KGM5Li677yM6K+l5YyF5LiN5ZCrIEFSTSDljp/nlJ/lupPjgIIKCkF1dG9tYXRlZCByZWxlYXNlIGJ1aWx0IGFuZCB2ZXJpZmllZCBieSAuZ2l0aHViL3dvcmtmbG93cy9yZWxlYXNlLnltbC4K' | base64 -d)"
             echo "已创建 draft Release #${rid} (${tag})"
           fi
 
