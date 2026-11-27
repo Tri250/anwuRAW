@@ -14,6 +14,7 @@ import {
   WATERMARK_TEMPLATES,
   WatermarkTemplate,
   CrystalWatermarkPrefs,
+  CrystalExportFormat,
   haptic,
   summarizeExif,
   useWmPrefs,
@@ -36,6 +37,20 @@ type CrystalExportSettings = ExportSettings & {
 
 /* G18: 画质三档映射到真实 JPEG 质量 100/80/60。 */
 const QUALITIES = [100, 80, 60];
+
+/* P1-1: 导出格式全量放开（后端 encode_image_to_bytes 均已支持）。
+ * ext=输出文件扩展名，backend=ExportImages 的 outputFormat。 */
+const EXPORT_FORMATS: Array<{ id: CrystalExportFormat; label: string; ext: string; backend: string }> = [
+  { id: 'jpeg', label: 'JPEG', ext: 'jpg', backend: 'jpg' },
+  { id: 'png', label: 'PNG', ext: 'png', backend: 'png' },
+  { id: 'webp', label: 'WebP', ext: 'webp', backend: 'webp' },
+  { id: 'avif', label: 'AVIF', ext: 'avif', backend: 'avif' },
+  { id: 'jxl', label: 'JXL', ext: 'jxl', backend: 'jxl' },
+  { id: 'tiff', label: 'TIFF', ext: 'tiff', backend: 'tiff' },
+  { id: 'dng', label: 'DNG', ext: 'dng', backend: 'dng' },
+];
+/** 无损格式：画质档不参与压缩（PNG/TIFF/线性 DNG） */
+const LOSSLESS_FORMATS: CrystalExportFormat[] = ['png', 'tiff', 'dng'];
 
 function TemplateDemo({ tpl }: { tpl: WatermarkTemplate }) {
   return (
@@ -84,7 +99,7 @@ export default function WatermarkExportPage({
   // E-5（v2.1.22 审计）：信息栏描边 / 导出格式 / 画质此前是纯内存态，重进导出页
   // 即丢——现随 CrystalWatermarkPrefs 持久化（settings.json + localStorage 镜像）。
   const [showInfoBarFrame, setShowInfoBarFrame] = useState(prefs.showInfoBarFrame ?? true);
-  const [format, setFormat] = useState<'jpeg' | 'png'>(prefs.exportFormat ?? 'jpeg');
+  const [format, setFormat] = useState<CrystalExportFormat>(prefs.exportFormat ?? 'jpeg');
   const [quality, setQuality] = useState(prefs.exportQuality ?? 100);
   const [signatureDraft, setSignatureDraft] = useState(prefs.signature);
 
@@ -316,7 +331,8 @@ export default function WatermarkExportPage({
       }
     }
     const stem = originalFilename.substring(0, originalFilename.lastIndexOf('.')) || originalFilename;
-    const outputFileName = `${stem}${suffix}.${format === 'jpeg' ? 'jpg' : 'png'}`;
+    const fmt = EXPORT_FORMATS.find((f) => f.id === format) ?? EXPORT_FORMATS[0];
+    const outputFileName = `${stem}${suffix}.${fmt.ext}`;
 
     try {
       setExportState({
@@ -331,7 +347,7 @@ export default function WatermarkExportPage({
         isExplicitFilePath: true,
         baseOriginFolders: useLibraryStore.getState().rootPaths,
         exportSettings,
-        outputFormat: format === 'jpeg' ? 'jpg' : 'png',
+        outputFormat: fmt.backend,
         currentEditPath: selectedImage.path,
         currentEditAdjustments: adjustments || null,
       });
@@ -545,25 +561,20 @@ export default function WatermarkExportPage({
         {/* 格式 + 画质 */}
         <div className="cx-export-section">
           <div className="cx-export-label">{t('crystal.export.format')}</div>
-          <div className="cx-seg">
-            <button
-              className={format === 'jpeg' ? 'is-active' : ''}
-              onClick={() => {
-                setFormat('jpeg');
-                queuePrefsWrite({ exportFormat: 'jpeg' });
-              }}
-            >
-              JPEG
-            </button>
-            <button
-              className={format === 'png' ? 'is-active' : ''}
-              onClick={() => {
-                setFormat('png');
-                queuePrefsWrite({ exportFormat: 'png' });
-              }}
-            >
-              PNG
-            </button>
+          {/* P1-1: 七种格式全量放开；cx-seg 换行避免窄屏溢出 */}
+          <div className="cx-seg" style={{ flexWrap: 'wrap' }}>
+            {EXPORT_FORMATS.map((f) => (
+              <button
+                key={f.id}
+                className={format === f.id ? 'is-active' : ''}
+                onClick={() => {
+                  setFormat(f.id);
+                  queuePrefsWrite({ exportFormat: f.id });
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
           <div className="mt-2">
             <div className="cx-export-label">{t('crystal.export.filenameSuffix')}</div>
@@ -580,8 +591,8 @@ export default function WatermarkExportPage({
         </div>
         <div className="cx-export-section">
           <div className="cx-export-label">{t('crystal.export.quality')}</div>
-          {/* FD-6: PNG 为无损格式，画质档不参与压缩 —— 视觉降禁用 + 说明 */}
-          <div className={`cx-quality-row ${format === 'png' ? 'is-disabled' : ''}`}>
+          {/* FD-6: 无损格式画质档不参与压缩 —— 视觉降禁用 + 说明 */}
+          <div className={`cx-quality-row ${LOSSLESS_FORMATS.includes(format) ? 'is-disabled' : ''}`}>
             {QUALITIES.map((q) => (
               <button
                 key={q}
@@ -591,13 +602,15 @@ export default function WatermarkExportPage({
                   setQuality(q);
                   queuePrefsWrite({ exportQuality: q });
                 }}
-                aria-disabled={format === 'png'}
+                aria-disabled={LOSSLESS_FORMATS.includes(format)}
               >
                 {q}
               </button>
             ))}
           </div>
-          {format === 'png' && <div className="cx-frame-hint mt-1">{t('crystal.export.pngLossless')}</div>}
+          {LOSSLESS_FORMATS.includes(format) && (
+            <div className="cx-frame-hint mt-1">{t('crystal.export.pngLossless')}</div>
+          )}
         </div>
 
         {/* 导出 CTA */}

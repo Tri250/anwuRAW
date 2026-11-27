@@ -56,6 +56,41 @@ export const useImmersiveCropStore = create<ImmersiveCropState>()((set, get) => 
 }));
 
 /* --------------------------------------------------------------------------
+ * P1-3: HSL 取样探针。
+ * tone 面板 arm → CrystalPreview 下一次单击取样（后端 sample_point_color 做
+ * 裁剪/翻转/方向逆映射）→ 结果写回 store，tone 面板显示色板并自动选中
+ * 对应色相带。一次性模式：取样完成或换图即解除。
+ * ------------------------------------------------------------------------ */
+export interface HslProbeResult {
+  r: number;
+  g: number;
+  b: number;
+  hue: number;
+  saturation: number;
+  lightness: number;
+}
+
+interface HslProbeState {
+  armed: boolean;
+  sampling: boolean;
+  result: HslProbeResult | null;
+  arm: () => void;
+  disarm: () => void;
+  setSampling: (v: boolean) => void;
+  setResult: (r: HslProbeResult | null) => void;
+}
+
+export const useHslProbeStore = create<HslProbeState>()((set) => ({
+  armed: false,
+  sampling: false,
+  result: null,
+  arm: () => set({ armed: true, result: null }),
+  disarm: () => set({ armed: false, sampling: false }),
+  setSampling: (v) => set({ sampling: v }),
+  setResult: (r) => set({ result: r }),
+}));
+
+/* --------------------------------------------------------------------------
  * 持久化偏好（水印模板收藏/默认/文案/字体/画质/导出格式）。
  * G-5（v2.1.22 审计）：v2.1.22 只写 WebView localStorage，系统清理缓存即丢。
  * 现升级为随桌面 settings.json（appSettings.crystalWatermarkPrefs）持久化：
@@ -74,12 +109,15 @@ export type CrystalWatermarkPrefs = {
   /** 导出文件名后缀（默认 _crystal，可编辑；非法字符在导出时清洗） */
   filenameSuffix: string;
   /** E-5：导出格式/画质与信息栏描边随偏好持久化 */
-  exportFormat?: 'jpeg' | 'png';
+  exportFormat?: CrystalExportFormat;
   exportQuality?: number;
   showInfoBarFrame?: boolean;
 };
 
 const PREFS_KEY = 'crystal.watermark.prefs.v1';
+
+/** P1-1: 移动导出支持的格式（后端 export_processing 全部支持；dng=线性 DNG） */
+export type CrystalExportFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'jxl' | 'tiff' | 'dng';
 
 export const DEFAULT_WM_PREFS: CrystalWatermarkPrefs = {
   favoriteTemplateId: null,

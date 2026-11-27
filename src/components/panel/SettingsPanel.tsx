@@ -767,6 +767,8 @@ interface GpuAdapterReport {
   backend: string;
   isSoftware: boolean;
   wgpuRenderingActive: boolean;
+  /** "surface" | "compute" | "cpu" — 预览的产出方式。 */
+  previewMode?: string;
   reason: string;
 }
 
@@ -941,8 +943,10 @@ export default function SettingsPanel({
     linuxGpuOptimization: appSettings?.linuxGpuOptimization ?? false,
     highResZoomMultiplier: appSettings?.highResZoomMultiplier || 1.0,
     useFullDpiRendering: appSettings?.useFullDpiRendering ?? false,
+    // P0-1: 前端缺省值与后端 AppSettings::default 保持一致（Android 默认尝试
+    // GPU compute 预览，探测失败由后端自动回退 CPU；Linux 维持默认关闭）。
     useWgpuRenderer:
-      appSettings?.useWgpuRenderer ?? (osPlatform === 'linux' || osPlatform === 'android' ? false : true),
+      appSettings?.useWgpuRenderer ?? (osPlatform === 'linux' ? false : true),
     thumbnailWorkerThreads: appSettings?.thumbnailWorkerThreads ?? 4,
     imageCacheSize: appSettings?.imageCacheSize ?? 5,
     rawPreprocessingColorNr: appSettings?.rawPreprocessingColorNr ?? 0.5,
@@ -1071,7 +1075,7 @@ export default function SettingsPanel({
       linuxGpuOptimization: restartRequired ? prev.linuxGpuOptimization : (appSettings?.linuxGpuOptimization ?? false),
       useWgpuRenderer: restartRequired
         ? prev.useWgpuRenderer
-        : (appSettings?.useWgpuRenderer ?? (osPlatform === 'linux' || osPlatform === 'android' ? false : true)),
+        : (appSettings?.useWgpuRenderer ?? (osPlatform === 'linux' ? false : true)),
       thumbnailWorkerThreads: restartRequired
         ? prev.thumbnailWorkerThreads
         : (appSettings?.thumbnailWorkerThreads ?? 4),

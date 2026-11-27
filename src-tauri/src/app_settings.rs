@@ -767,7 +767,12 @@ impl Default for AppSettings {
             is_waveform_visible: Some(false),
             waveform_height: Some(220),
             active_waveform_channel: Some("luma".to_string()),
-            #[cfg(any(target_os = "linux", target_os = "android"))]
+            // P0-1: Android 默认尝试 GPU compute 预览（无显示 surface，管线
+            // offscreen 计算后 JPEG 回读）。探测失败/软渲染由
+            // wgpu_rendering_decision 自动回退 CPU，存量用户已存值不受影响。
+            #[cfg(target_os = "android")]
+            use_wgpu_renderer: Some(true),
+            #[cfg(target_os = "linux")]
             use_wgpu_renderer: Some(false),
             #[cfg(not(any(target_os = "linux", target_os = "android")))]
             use_wgpu_renderer: Some(true),

@@ -59,6 +59,10 @@ pub struct GpuAdapterReport {
     pub is_software: bool,
     /// Whether the preview path will actually use the wgpu renderer now.
     pub wgpu_rendering_active: bool,
+    /// How the preview will be produced: "surface" (presented to a native
+    /// swapchain, frontend watchdog applies), "compute" (offscreen GPU compute
+    /// + JPEG readback — no native presentation, no watchdog) or "cpu".
+    pub preview_mode: String,
     /// Human-readable explanation of the decision (user-facing reporting).
     pub reason: String,
 }
@@ -114,6 +118,15 @@ fn probe_gpu_adapter() -> GpuAdapterProbe {
                 info.driver_info,
                 is_software
             );
+            crate::diagnostics::record_diagnostic(
+                "gpu_probe",
+                serde_json::json!({
+                    "name": info.name,
+                    "backend": format!("{:?}", info.backend),
+                    "deviceType": format!("{:?}", info.device_type),
+                    "software": is_software,
+                }),
+            );
             GpuAdapterProbe {
                 success: true,
                 backend: format!("{:?}", info.backend),
@@ -168,66 +181,121 @@ pub fn get_or_probe_adapter(state: &AppState) -> GpuAdapterProbe {
 /// addition: a detected software rasterizer gracefully falls back to the CPU
 /// encode path instead of pushing interactive frames through llvmpipe.
 ///
-/// On Linux/Android the preview path stays disabled for now: the GPU compute
-/// pipeline works there, but the present-to-webview display layer is not wired
-/// up for these platforms yet (the GPU context is created without a surface),
-/// so enabling it would yield blank previews. The probe still runs and its
-/// result is reported to the frontend so the situation is user-visible and the
-/// display-layer enablement (R1-3 follow-up) can flip the decision later.
+/// P0-1 (Android GPU 预览接通): Android has no display surface, but the GPU
+/// compute pipeline runs offscreen just fine. When a real hardware adapter is
+/// available the preview now runs the full adjustment stack on the GPU and the
+/// result is read back and JPEG-encoded for the webview (`preview_mode =
+/// "compute"`). Probe failure or a software adapter still falls back to CPU.
+/// Linux keeps the old decision until its own display layer is validated.
+pub struct WgpuDecision {
+    pub active: bool,
+    /// "surface" | "compute" | "cpu" — see `GpuAdapterReport::preview_mode`.
+    pub preview_mode: &'static str,
+    pub reason: String,
+}
+
 pub fn wgpu_rendering_decision(
     probe: &GpuAdapterProbe,
     settings: &crate::app_settings::AppSettings,
-) -> (bool, String) {
+) -> WgpuDecision {
     #[cfg(any(target_os = "linux", target_os = "android"))]
     {
         let adapter = describe_adapter(probe);
-        if settings.use_wgpu_renderer == Some(true) && probe.success && !probe.is_software {
-            (
-                false,
-                format!(
-                    "Hardware adapter detected ({}), but the wgpu display-surface integration is not enabled on this platform yet; using the CPU preview path.",
+
+        #[cfg(target_os = "android")]
+        {
+            if settings.use_wgpu_renderer == Some(false) {
+                return WgpuDecision {
+                    active: false,
+                    preview_mode: "cpu",
+                    reason: "wgpu preview disabled in settings.".to_string(),
+                };
+            }
+            if probe.success && !probe.is_software {
+                return WgpuDecision {
+                    active: true,
+                    preview_mode: "compute",
+                    reason: format!(
+                        "Hardware adapter detected ({}): using the offscreen GPU compute preview path.",
+                        adapter
+                    ),
+                };
+            }
+            return WgpuDecision {
+                active: false,
+                preview_mode: "cpu",
+                reason: format!(
+                    "No usable hardware GPU adapter ({}); using the CPU preview path.",
                     adapter
                 ),
-            )
-        } else {
-            (
-                false,
-                format!(
-                    "wgpu preview disabled on this platform (adapter: {}).",
-                    adapter
-                ),
-            )
+            };
+        }
+
+        #[cfg(not(target_os = "android"))]
+        {
+            let (active, reason) = if settings.use_wgpu_renderer == Some(true)
+                && probe.success
+                && !probe.is_software
+            {
+                (
+                    false,
+                    format!(
+                        "Hardware adapter detected ({}), but the wgpu display-surface integration is not enabled on this platform yet; using the CPU preview path.",
+                        adapter
+                    ),
+                )
+            } else {
+                (
+                    false,
+                    format!(
+                        "wgpu preview disabled on this platform (adapter: {}).",
+                        adapter
+                    ),
+                )
+            };
+            WgpuDecision {
+                active,
+                preview_mode: "cpu",
+                reason,
+            }
         }
     }
 
     #[cfg(not(any(target_os = "linux", target_os = "android")))]
     {
         if !settings.use_wgpu_renderer.unwrap_or(true) {
-            return (false, "wgpu preview disabled in settings.".to_string());
+            return WgpuDecision {
+                active: false,
+                preview_mode: "cpu",
+                reason: "wgpu preview disabled in settings.".to_string(),
+            };
         }
         if !probe.success {
-            return (
-                false,
-                "No wgpu adapter available; using the CPU preview path.".to_string(),
-            );
+            return WgpuDecision {
+                active: false,
+                preview_mode: "cpu",
+                reason: "No wgpu adapter available; using the CPU preview path.".to_string(),
+            };
         }
         if probe.is_software {
-            return (
-                false,
-                format!(
+            return WgpuDecision {
+                active: false,
+                preview_mode: "cpu",
+                reason: format!(
                     "Software renderer detected ({}); falling back to the CPU preview path.",
                     probe.name
                 ),
-            );
+            };
         }
-        (
-            true,
-            format!("Hardware adapter: {}.", describe_adapter(probe)),
-        )
+        WgpuDecision {
+            active: true,
+            preview_mode: "surface",
+            reason: format!("Hardware adapter: {}.", describe_adapter(probe)),
+        }
     }
 }
 
-fn report_from_probe(probe: &GpuAdapterProbe, active: bool, reason: String) -> GpuAdapterReport {
+fn report_from_probe(probe: &GpuAdapterProbe, decision: &WgpuDecision) -> GpuAdapterReport {
     GpuAdapterReport {
         probed: probe.success,
         backend: probe.backend.clone(),
@@ -238,8 +306,9 @@ fn report_from_probe(probe: &GpuAdapterProbe, active: bool, reason: String) -> G
         driver_info: probe.driver_info.clone(),
         device_type: probe.device_type.clone(),
         is_software: probe.is_software,
-        wgpu_rendering_active: active,
-        reason,
+        wgpu_rendering_active: decision.active,
+        preview_mode: decision.preview_mode.to_string(),
+        reason: decision.reason.clone(),
     }
 }
 
@@ -259,11 +328,11 @@ pub fn resolve_wgpu_rendering(
         return false;
     }
     let probe = get_or_probe_adapter(state);
-    let (active, reason) = wgpu_rendering_decision(&probe, settings);
-    if !active {
-        log::debug!("wgpu preview renderer not used: {}", reason);
+    let decision = wgpu_rendering_decision(&probe, settings);
+    if !decision.active {
+        log::debug!("wgpu preview renderer not used: {}", decision.reason);
     }
-    active
+    decision.active
 }
 
 #[tauri::command]
@@ -271,8 +340,8 @@ pub fn get_gpu_adapter_info(app_handle: AppHandle) -> Result<GpuAdapterReport, S
     let state = app_handle.state::<AppState>();
     let probe = get_or_probe_adapter(&state);
     let settings = crate::app_settings::load_settings(app_handle.clone())?;
-    let (active, reason) = wgpu_rendering_decision(&probe, &settings);
-    Ok(report_from_probe(&probe, active, reason))
+    let decision = wgpu_rendering_decision(&probe, &settings);
+    Ok(report_from_probe(&probe, &decision))
 }
 
 /// v2.1.16 Windows 灰屏自检修复：前端 wgpu 显示看门狗的上报入口。前端在
@@ -301,12 +370,14 @@ pub fn start_adapter_reporting(app_handle: AppHandle) {
         let state = app_handle.state::<AppState>();
         let probe = get_or_probe_adapter(&state);
         let settings = crate::app_settings::load_settings(app_handle.clone()).unwrap_or_default();
-        let (active, reason) = wgpu_rendering_decision(&probe, &settings);
-        log::info!("Preview renderer decision: wgpu={} ({})", active, reason);
-        let _ = app_handle.emit(
-            "gpu-adapter-report",
-            report_from_probe(&probe, active, reason),
+        let decision = wgpu_rendering_decision(&probe, &settings);
+        log::info!(
+            "Preview renderer decision: wgpu={} mode={} ({})",
+            decision.active,
+            decision.preview_mode,
+            decision.reason
         );
+        let _ = app_handle.emit("gpu-adapter-report", report_from_probe(&probe, &decision));
     });
 }
 

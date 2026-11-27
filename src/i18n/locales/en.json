@@ -608,6 +608,14 @@
       "vignetteMidpoint": "Midpoint",
       "vignetteRoundness": "Roundness"
     },
+    "inspect": {
+      "camera": "Camera",
+      "dimensions": "Dimensions",
+      "file": "File",
+      "lens": "Lens",
+      "shortcuts": "Shortcuts",
+      "title": "Inspect"
+    },
     "originalBadge": "ORIGINAL",
     "portrait": {
       "bgBlur": "Background blur",
@@ -760,6 +768,8 @@
         "paramsMode": "Params mode",
         "residualHint": "Hue rotation detected — params lose precision, high-fidelity LUT recommended"
       },
+      "probe": "Sample",
+      "probeArmed": "Tap preview to sample",
       "saturation": "Saturation",
       "shadows": "Shadows",
       "tabColor": "Color",
@@ -2405,6 +2415,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "Back",
+    "connect": "Connect",
+    "connecting": "Connecting…",
+    "disconnect": "Disconnect",
+    "download": "Download",
+    "downloaded": "Imported {{name}} to the library.",
+    "empty": "No photos found on the camera.",
+    "failed": "Camera import failed: {{message}}",
+    "folder": "Folder",
+    "help": "Turn on Wi-Fi on your camera and join the same network, then enter the address shown in the camera's network menu (PTP/IP, port 15740).",
+    "hostLabel": "Camera IP address",
+    "hostPlaceholder": "e.g. 192.168.1.1",
+    "openCamera": "Wireless camera import",
+    "refresh": "Refresh"
   },
   "settings": {
     "categories": {

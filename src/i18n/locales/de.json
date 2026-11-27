@@ -605,6 +605,14 @@
       "vignetteMidpoint": "Mittelpunkt",
       "vignetteRoundness": "Rundung"
     },
+    "inspect": {
+      "camera": "Kamera",
+      "dimensions": "Abmessungen",
+      "file": "Datei",
+      "lens": "Objektiv",
+      "shortcuts": "Schnellzugriff",
+      "title": "Prüfen"
+    },
     "originalBadge": "ORIGINAL",
     "portrait": {
       "bgBlur": "Hintergrund-Unschärfe",
@@ -757,6 +765,8 @@
         "paramsMode": "Parametermodus",
         "residualHint": "Farbtonrotation erkannt – Parameter verlieren Präzision, HiFi-LUT empfohlen"
       },
+      "probe": "Pipette",
+      "probeArmed": "Vorschau antippen zum Samplen",
       "saturation": "Sättigung",
       "shadows": "Tiefen",
       "tabColor": "Farbe",
@@ -2346,6 +2356,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "Zurück",
+    "connect": "Verbinden",
+    "connecting": "Verbindung wird hergestellt…",
+    "disconnect": "Trennen",
+    "download": "Herunterladen",
+    "downloaded": "{{name}} wurde in die Bibliothek importiert.",
+    "empty": "Keine Fotos auf der Kamera gefunden.",
+    "failed": "Kamera-Import fehlgeschlagen: {{message}}",
+    "folder": "Ordner",
+    "help": "Aktivieren Sie WLAN an der Kamera und verbinden Sie sich mit demselben Netzwerk, dann geben Sie die im Kameramenü angezeigte Adresse ein (PTP/IP, Port 15740).",
+    "hostLabel": "Kamera-IP-Adresse",
+    "hostPlaceholder": "z. B. 192.168.1.1",
+    "openCamera": "Kabellosen Kamera-Import",
+    "refresh": "Aktualisieren"
   },
   "settings": {
     "categories": {

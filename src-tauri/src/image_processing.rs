@@ -69,6 +69,11 @@ where
 #[serde(default)]
 pub struct ImageMetadata {
     pub version: u32,
+    /// P2-4: sidecar schema 版本。写入时始终带上；读取方遇到**更高主版本**
+    /// 的 sidecar 时拒绝加载（返回默认元数据，不隔离、不改写文件），
+    /// 避免旧版本应用误解新字段破坏数据。
+    #[serde(default = "default_sidecar_schema_version")]
+    pub schema_version: u32,
     pub rating: u8,
     #[serde(
         default,
@@ -83,10 +88,19 @@ pub struct ImageMetadata {
     pub exif: Option<std::collections::HashMap<String, String>>,
 }
 
+/// 当前 sidecar schema 版本（P2-4）。字段级不兼容变更递增次版本；
+/// 读取语义变更（旧应用会误解）递增主版本。
+pub const SIDECAR_SCHEMA_VERSION: u32 = 2;
+
+fn default_sidecar_schema_version() -> u32 {
+    SIDECAR_SCHEMA_VERSION
+}
+
 impl Default for ImageMetadata {
     fn default() -> Self {
         ImageMetadata {
             version: 1,
+            schema_version: SIDECAR_SCHEMA_VERSION,
             rating: 0,
             flag: None,
             adjustments: Value::Null,
@@ -4912,6 +4926,143 @@ pub async fn sample_white_balance(
             loaded_image.as_shot.white_balance,
             &corners,
         )
+    })
+    .await
+    .map_err(|e| format!("Task execution failed: {}", e))?
+}
+
+// ---------------------------------------------------------------------------
+// P1-3: HSL 取样探针
+// ---------------------------------------------------------------------------
+
+/// 取样结果：sRGB 8-bit 颜色 + HSL（h 0-360 / s、l 0-100），前端直接用于
+/// 色板展示与 HSL 色相带定位。
+#[derive(serde::Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ColorProbeSample {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub hue: f32,
+    pub saturation: f32,
+    pub lightness: f32,
+}
+
+fn rgb_to_hsl(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
+    let (r, g, b) = (r / 255.0, g / 255.0, b / 255.0);
+    let max = r.max(g).max(b);
+    let min = r.min(g).min(b);
+    let delta = max - min;
+    let lightness = (max + min) / 2.0;
+    if delta < 1e-6 {
+        return (0.0, 0.0, lightness * 100.0);
+    }
+    let saturation = if lightness > 0.5 {
+        delta / (2.0 - max - min)
+    } else {
+        delta / (max + min)
+    };
+    let hue = if max == r {
+        60.0 * (((g - b) / delta) % 6.0)
+    } else if max == g {
+        60.0 * ((b - r) / delta + 2.0)
+    } else {
+        60.0 * ((r - g) / delta + 4.0)
+    };
+    let hue = ((hue % 360.0) + 360.0) % 360.0;
+    (hue, saturation * 100.0, lightness * 100.0)
+}
+
+/// HSL 探针：预览显示区归一化坐标 (u,v) → 裁剪偏移 → 翻转/粗旋转逆映射 →
+/// 原图像素（3×3 均值抗噪）→ HSL。
+/// 说明：细旋转与几何变形（透视/镜头校正）不做逆映射——探针用于 HSL 色相带
+/// 定位，几何通常恒等且对色相带判定影响可忽略。
+#[tauri::command]
+pub async fn sample_point_color(
+    u: f32,
+    v: f32,
+    js_adjustments: Option<Value>,
+    state: tauri::State<'_, AppState>,
+) -> Result<ColorProbeSample, String> {
+    let loaded_image = state
+        .original_image
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone()
+        .ok_or("No original image loaded")?;
+    let adjustments = js_adjustments.unwrap_or_default();
+
+    tokio::task::spawn_blocking(move || {
+        let image = crate::negative_conversion::apply_negative_conversion(
+            Cow::Borrowed(loaded_image.image.as_ref()),
+            &adjustments,
+        );
+        let rgb = image.to_rgb8();
+        let (w0, h0) = rgb.dimensions();
+
+        let steps = (adjustments["orientationSteps"].as_u64().unwrap_or(0) % 4) as u8;
+        let (w_or, h_or) = if steps % 2 == 1 { (h0, w0) } else { (w0, h0) };
+
+        // 裁剪（有方向空间坐标）：显示区 = 裁剪矩形。
+        let crop: Option<Crop> = serde_json::from_value(adjustments["crop"].clone()).ok();
+        let (cx0, cy0, cw, ch) = crop
+            .filter(|c| c.width > 0.0 && c.height > 0.0)
+            .map(|c| (c.x.max(0.0), c.y.max(0.0), c.width, c.height))
+            .unwrap_or((0.0, 0.0, w_or as f64, h_or as f64));
+
+        let u = u.clamp(0.0, 1.0) as f64;
+        let v = v.clamp(0.0, 1.0) as f64;
+        let mut x = cx0 + u * cw;
+        let mut y = cy0 + v * ch;
+
+        // 有向空间 → 原图：先撤销翻转（管线顺序 粗旋转→翻转→裁剪），
+        // 再撤销粗旋转（镜像 inverse_transform_point 的维度交换循环）。
+        if adjustments["flipHorizontal"].as_bool().unwrap_or(false) {
+            x = w_or as f64 - x;
+        }
+        if adjustments["flipVertical"].as_bool().unwrap_or(false) {
+            y = h_or as f64 - y;
+        }
+        let mut curr_w = w_or as f64;
+        let mut curr_h = h_or as f64;
+        for _ in 0..((4 - steps) % 4) {
+            let nx = curr_h - y;
+            let ny = x;
+            x = nx;
+            y = ny;
+            std::mem::swap(&mut curr_w, &mut curr_h);
+        }
+
+        // 原图归一化 → 像素（带 3×3 均值）。
+        let fx = ((x / curr_w) * w0 as f64).round().clamp(0.0, (w0.saturating_sub(1)) as f64) as i64;
+        let fy = ((y / curr_h) * h0 as f64).round().clamp(0.0, (h0.saturating_sub(1)) as f64) as i64;
+        let mut acc = [0f64; 3];
+        let mut n = 0f64;
+        for dy in -1i64..=1 {
+            for dx in -1i64..=1 {
+                let sx = (fx + dx).clamp(0, (w0 - 1) as i64) as u32;
+                let sy = (fy + dy).clamp(0, (h0 - 1) as i64) as u32;
+                let px = rgb.get_pixel(sx, sy);
+                acc[0] += px[0] as f64;
+                acc[1] += px[1] as f64;
+                acc[2] += px[2] as f64;
+                n += 1.0;
+            }
+        }
+        let (r, g, b) = (
+            (acc[0] / n).round() as u8,
+            (acc[1] / n).round() as u8,
+            (acc[2] / n).round() as u8,
+        );
+        let (hue, saturation, lightness) = rgb_to_hsl(r as f32, g as f32, b as f32);
+        Ok(ColorProbeSample {
+            r,
+            g,
+            b,
+            hue,
+            saturation,
+            lightness,
+        })
     })
     .await
     .map_err(|e| format!("Task execution failed: {}", e))?

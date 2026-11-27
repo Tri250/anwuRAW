@@ -627,6 +627,14 @@
       "vignetteMidpoint": "Punt mitjà",
       "vignetteRoundness": "Rodonesa"
     },
+    "inspect": {
+      "camera": "Càmera",
+      "dimensions": "Dimensions",
+      "file": "Fitxer",
+      "lens": "Objectiu",
+      "shortcuts": "Dreceres",
+      "title": "Inspecciona"
+    },
     "originalBadge": "ORIGINAL",
     "portrait": {
       "bgBlur": "Difuminat de fons",
@@ -779,6 +787,8 @@
         "paramsMode": "Mode paràmetres",
         "residualHint": "Rotació de to detectada — els paràmetres perden precisió, es recomana LUT d'alta fidelitat"
       },
+      "probe": "Comptagotes",
+      "probeArmed": "Toca la previsualització per mostrejar",
       "saturation": "Saturació",
       "shadows": "Ombres",
       "tabColor": "Color",
@@ -2395,6 +2405,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "Enrere",
+    "connect": "Connecta",
+    "connecting": "S'està connectant…",
+    "disconnect": "Desconnecta",
+    "download": "Baixa",
+    "downloaded": "{{name}} s'ha importat a la biblioteca.",
+    "empty": "No s'han trobat fotos a la càmera.",
+    "failed": "Ha fallat la importació de la càmera: {{message}}",
+    "folder": "Carpeta",
+    "help": "Activa el Wi-Fi de la càmera i connecta't a la mateixa xarxa; després introdueix l'adreça que es mostra al menú de xarxa de la càmera (PTP/IP, port 15740).",
+    "hostLabel": "Adreça IP de la càmera",
+    "hostPlaceholder": "p. ex. 192.168.1.1",
+    "openCamera": "Importació sense fil de la càmera",
+    "refresh": "Actualitza"
   },
   "settings": {
     "categories": {

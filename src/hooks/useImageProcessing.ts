@@ -17,6 +17,24 @@ import { prepareAdjustmentsPayload } from '../utils/backendPayload';
 const isWgpuRender = (buffer: ArrayBuffer) => new TextDecoder().decode(buffer.slice(0, 11)) === 'WGPU_RENDER';
 
 // ---------------------------------------------------------------------------
+// P0-1: 最近一次 GPU 适配器报告的预览模式（由 useTauriListeners 写入）。
+// 仅 "surface"（原生 swapchain 直显）模式需要 wgpu 显示看门狗；"compute"
+// （Android offscreen GPU + JPEG 回读）与 "cpu" 模式每帧都返回真实图像
+// 字节，不存在静默灰屏，不需要看门狗。
+// ---------------------------------------------------------------------------
+let lastGpuPreviewMode: string | null = null;
+
+/** 返回后端最近上报的预览模式（探测完成前为 null，视为 CPU 路径处理）。 */
+export function getGpuPreviewMode(): string | null {
+  return lastGpuPreviewMode;
+}
+
+/** @internal 仅供 useTauriListeners 在收到 gpu-adapter-report 时写入。 */
+export function setGpuPreviewMode(mode: string | null) {
+  lastGpuPreviewMode = mode;
+}
+
+// ---------------------------------------------------------------------------
 // v2.1.16 Windows 灰屏自检修复：wgpu 显示看门狗。
 // 后端 apply_adjustments 走 wgpu 路径时只返回 "WGPU_RENDER" 标记（前端不再
 // 持有 JPEG），画面完全依赖原生 surface 呈现。Windows 上 D3D12 合成层丢失、
@@ -120,13 +138,12 @@ export function useImageProcessing(
   }, []);
 
   const calculateROI = useCallback(() => {
-    if (!transformWrapperRef.current) return null;
-    const state = transformWrapperRef.current.instance.transformState;
-    if (!state) return null;
+    // P0-2: 移动端（CrystalMobileApp 无 react-zoom-pan-pinch）回退到
+    // CrystalPreview 手势结束上报的归一化视口 ROI。
+    const wrapper: any = transformWrapperRef.current;
+    if (!wrapper?.instance?.transformState || !baseRenderSize) return useEditorStore.getState().mobileRoi;
 
-    if (!baseRenderSize) return null;
-
-    const { scale, positionX, positionY } = state;
+    const { scale, positionX, positionY } = wrapper.instance.transformState;
     const { width: baseW, height: baseH, offsetX, offsetY, containerWidth, containerHeight } = baseRenderSize;
 
     if (!baseW || !baseH || !containerWidth || !containerHeight) return null;
@@ -240,7 +257,11 @@ export function useImageProcessing(
         if (!dragging) renderOriginal(targetRes);
         // v2.1.16 灰屏自检修复：wgpu 请求一发出即启动显示看门狗，收到
         // wgpu-frame-ready 即消除；超时判定显示失效并自动降级 CPU 渲染。
-        armWgpuDisplayWatchdog(currentPath);
+        // P0-1: 仅在 "surface" 直显模式下才需要看门狗；"compute"（Android
+        // offscreen GPU）与 "cpu" 模式每帧都返回真实图像字节，不会静默灰屏。
+        if (useSettingsStore.getState().appSettings?.useWgpuRenderer !== false && getGpuPreviewMode() === 'surface') {
+          armWgpuDisplayWatchdog(currentPath);
+        }
         const buffer = await request;
 
         markSent();
@@ -449,6 +470,17 @@ export function useImageProcessing(
       generateUncroppedPreview(adjustments);
     }
   }, [activeView, adjustments, activePanel, selectedImage?.isReady, generateUncroppedPreview]);
+
+  // P0-2: 移动端手势结束（mobileRoiVersion 自增）后按当前缩放分辨率重渲染
+  // 全帧（金字塔中层级）；ROI 为 null（复位 1x）时跳过——预览本身已清晰。
+  const mobileRoiVersion = useEditorStore((s) => s.mobileRoiVersion);
+  const mobileRoi = useEditorStore((s) => s.mobileRoi);
+  useEffect(() => {
+    if (!mobileRoiVersion || !mobileRoi) return;
+    const store = useEditorStore.getState();
+    if (!store.selectedImage?.isReady || store.isSliderDragging) return;
+    applyAdjustments(store.previewOverride ?? store.adjustments, false);
+  }, [mobileRoiVersion, mobileRoi, applyAdjustments]);
 
   const calculateTargetRes = useCallback(() => {
     const baseTargetRes = appSettings?.editorPreviewResolution || 1920;

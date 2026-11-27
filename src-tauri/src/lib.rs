@@ -43,6 +43,8 @@ mod cli;
 mod color_profiles;
 mod color_transfer;
 mod culling;
+mod diagnostics;
+mod dng_writer;
 mod edit_history;
 mod effect_maps;
 mod exif_processing;
@@ -56,6 +58,7 @@ mod formats;
 mod gpu_processing;
 mod guided_perspective;
 mod hdr_deghosting;
+mod hdr_gainmap;
 mod highlight_reconstruction;
 mod http_tls;
 mod image_loader;
@@ -75,6 +78,7 @@ mod negative_conversion;
 mod panorama_stitching;
 mod panorama_utils;
 mod platform_features;
+mod ptp_ip;
 mod preset_converter;
 mod procedural_sky;
 mod raw_processing;
@@ -660,6 +664,8 @@ fn process_preview_job(
     mut adjustments_json: serde_json::Value,
     layer: DisplayLayer,
     is_interactive: bool,
+    // P0-2: 移动端 hi-fi 缩放补丁模式（非交互 + ROI + 补丁打包语义）。
+    patch_mode: bool,
     target_resolution: Option<u32>,
     roi: Option<(f32, f32, f32, f32)>,
     request_analytics: bool,
@@ -698,9 +704,19 @@ fn process_preview_job(
 
     // R1-3/R1-4: capability-based decision. Probes the wgpu adapter once,
     // falls back to the CPU path for software renderers (llvmpipe etc.), and
-    // keeps the preview path off on Linux/Android until the display-surface
+    // keeps the preview path off on Linux until the display-surface
     // integration is wired up there.
+    // P0-1 (Android): the decision may enable the GPU *compute* pipeline even
+    // though this platform has no display surface; in that mode the processed
+    // texture is read back and JPEG-encoded below instead of returning the
+    // WGPU_RENDER sentinel.
     let use_wgpu_renderer = crate::platform_features::resolve_wgpu_rendering(&state, &settings);
+    let has_display_surface = context
+        .display
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .is_some();
+    let present_to_display = use_wgpu_renderer && has_display_surface;
 
     let has_roi = roi.is_some();
     let (interactive_divisor, interactive_quality) = match live_quality {
@@ -794,7 +810,10 @@ fn process_preview_job(
 
     let (preview_width, preview_height) = processing_image.dimensions();
 
-    let pixel_roi = if is_interactive {
+    // P0-2: zoom-patch 请求（patch_mode）与交互渲染一样按视口 ROI 出补丁；
+    // 普通（桌面）非交互渲染忽略 roi 以保证整帧语义不变。
+    let patch_mode = patch_mode && !is_interactive && roi.is_some();
+    let pixel_roi = if is_interactive || patch_mode {
         roi.map(|(nx, ny, nw, nh)| crate::gpu_processing::Roi {
             x: (nx * preview_width as f32).round() as u32,
             y: (ny * preview_height as f32).round() as u32,
@@ -885,12 +904,12 @@ fn process_preview_job(
                 roi: pixel_roi,
             },
             "apply_adjustments",
-            use_wgpu_renderer.then_some(layer),
+            present_to_display.then_some(layer),
             analytics_config,
         );
 
     if let Ok(final_processed_image) = final_processed_image_result {
-        if use_wgpu_renderer {
+        if present_to_display {
             if layer == DisplayLayer::Original {
                 return Ok(b"WGPU_RENDER".to_vec());
             }
@@ -940,7 +959,7 @@ fn process_preview_job(
 
         match encode_result {
             Ok(encoded_bytes) => {
-                if is_interactive {
+                if is_interactive || (patch_mode && pixel_roi.is_some()) {
                     let (roi_w, roi_h) = final_rgba_image.dimensions();
                     let (rx, ry) = if let Some(r) = pixel_roi {
                         (r.x, r.y)
@@ -958,7 +977,8 @@ fn process_preview_job(
                     response.extend_from_slice(&encoded_bytes);
 
                     log::info!(
-                        "[process_preview_job] interactive ROI {}x{} encode in {:.2?}, total {:.2?}",
+                        "[process_preview_job] {} ROI {}x{} encode in {:.2?}, total {:.2?}",
+                        if is_interactive { "interactive" } else { "zoom-patch" },
                         roi_w,
                         roi_h,
                         step_start.elapsed(),
@@ -1117,7 +1137,9 @@ fn start_preview_worker(app_handle: tauri::AppHandle) {
                 match task {
                     WorkerTask::Preview(job) => {
                         let slot = job.layer as usize;
-                        if job.is_interactive {
+                        // P0-2: zoom-patch 与交互渲染同属用户等待的高优先车道，
+                        // 每车道仅保留最新一份以跳过期中间帧。
+                        if job.is_interactive || job.patch_mode {
                             interactive[slot] = Some(job);
                         } else {
                             finals[slot] = Some(job);
@@ -1177,6 +1199,7 @@ fn execute_preview_job(app_handle: &tauri::AppHandle, job: PreviewJob) {
             job.adjustments,
             job.layer,
             job.is_interactive,
+            job.patch_mode,
             job.target_resolution,
             job.roi,
             job.request_analytics,
@@ -1201,6 +1224,7 @@ async fn apply_adjustments(
     js_adjustments: serde_json::Value,
     original: bool,
     is_interactive: bool,
+    patch_mode: Option<bool>,
     target_resolution: Option<u32>,
     roi: Option<(f32, f32, f32, f32)>,
     request_analytics: bool,
@@ -1221,6 +1245,7 @@ async fn apply_adjustments(
                     DisplayLayer::Edited
                 },
                 is_interactive,
+                patch_mode: patch_mode.unwrap_or(false),
                 target_resolution,
                 roi,
                 request_analytics,
@@ -1877,6 +1902,9 @@ async fn save_hdr(
         .and_then(|s| s.to_str())
         .unwrap_or("hdr");
 
+    // P0-4: clone the float buffer before `hdr_image` may be moved below.
+    let hdr_f32_snapshot = hdr_image.as_rgb32f().cloned();
+
     let (output_filename, image_to_save): (String, DynamicImage) = if hdr_image.color().has_alpha()
     {
         (
@@ -1901,6 +1929,23 @@ async fn save_hdr(
     let (real_path, _) = crate::file_management::parse_virtual_path(&first_path_str);
     let _ =
         crate::exif_processing::write_rrexif_sidecar(&real_path.to_string_lossy(), &output_path);
+
+    // P0-4: also emit an Ultra HDR-style JPEG (SDR base + gain map) whenever
+    // the merged HDR result is float data. Best-effort: the primary save has
+    // already succeeded, so failures here only log.
+    if let Some(hdr_f32) = hdr_f32_snapshot {
+        let ultra_hdr_path = parent_dir.join(format!("{}_Hdr_UltraHDR.jpg", stem));
+        match crate::hdr_gainmap::encode_ultra_hdr_jpeg(&hdr_f32, 0.0, 92) {
+            Ok(bytes) => {
+                if let Err(e) = fs::write(&ultra_hdr_path, &bytes) {
+                    log::warn!("Ultra HDR JPEG write failed: {}", e);
+                } else {
+                    log::info!("Wrote Ultra HDR JPEG: {}", ultra_hdr_path.display());
+                }
+            }
+            Err(e) => log::warn!("Ultra HDR JPEG encode failed: {}", e),
+        }
+    }
 
     Ok(output_path.to_string_lossy().to_string())
 }
@@ -2956,6 +3001,10 @@ pub fn run() {
             export_processing::estimate_export_sizes,
             image_processing::calculate_auto_adjustments,
             image_processing::sample_white_balance,
+            image_processing::sample_point_color,
+            raw_processing::get_preview_exposure_baseline,
+            diagnostics::record_diagnostic_event,
+            diagnostics::export_diagnostics_session,
             auto_straighten::calculate_auto_straighten,
             file_management::apply_auto_straighten_to_paths,
             mask_generation::generate_mask_overlay,
@@ -3038,6 +3087,13 @@ pub fn run() {
             camera_tethering::tether_autofocus,
             camera_tethering::tether_start_interval_capture,
             camera_tethering::tether_stop_interval_capture,
+            hdr_gainmap::export_gain_map_jpeg,
+            hdr_gainmap::read_gain_map_jpeg,
+            hdr_gainmap::preview_gain_map_hdr,
+            ptp_ip::ptp_ip_connect,
+            ptp_ip::ptp_ip_disconnect,
+            ptp_ip::ptp_ip_list_objects,
+            ptp_ip::ptp_ip_download_object,
             platform_features::get_gpu_adapter_info,
             platform_features::report_wgpu_display_failure,
             platform_features::export_xmp_sidecar,

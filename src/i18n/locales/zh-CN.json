@@ -603,6 +603,14 @@
       "vignetteMidpoint": "中点",
       "vignetteRoundness": "圆度"
     },
+    "inspect": {
+      "camera": "相机",
+      "dimensions": "尺寸",
+      "file": "文件",
+      "lens": "镜头",
+      "shortcuts": "快捷跳转",
+      "title": "检视"
+    },
     "originalBadge": "原图",
     "portrait": {
       "bgBlur": "背景虚化",
@@ -755,6 +763,8 @@
         "paramsMode": "参数模式",
         "residualHint": "含色相旋转，参数表达有精度损失，建议高保真 LUT"
       },
+      "probe": "取样",
+      "probeArmed": "点击预览取样",
       "saturation": "饱和度",
       "shadows": "阴影",
       "tabColor": "颜色",
@@ -2393,6 +2403,22 @@
       }
     },
     "title": "欢迎使用 RapidRAW"
+  },
+  "ptp": {
+    "back": "返回",
+    "connect": "连接",
+    "connecting": "正在连接…",
+    "disconnect": "断开连接",
+    "download": "下载",
+    "downloaded": "已导入 {{name}} 到图库。",
+    "empty": "相机上未找到照片。",
+    "failed": "相机导入失败：{{message}}",
+    "folder": "文件夹",
+    "help": "在相机上开启 Wi-Fi 并加入同一网络，然后输入相机网络菜单中显示的地址（PTP/IP，端口 15740）。",
+    "hostLabel": "相机 IP 地址",
+    "hostPlaceholder": "例如 192.168.1.1",
+    "openCamera": "无线相机导入",
+    "refresh": "刷新"
   },
   "settings": {
     "categories": {

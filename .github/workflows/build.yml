@@ -24,6 +24,11 @@ on:
         required: false
         type: string
         default: ''
+      android-abi:
+        description: 'Android target ABI (aarch64 = arm64-v8a, x86_64)'
+        required: false
+        type: string
+        default: 'aarch64'
       include-updater-json:
         description: 'Upload latest.json for this build (set to "false" for variants that must not rewrite the updater manifest)'
         required: false
@@ -92,6 +97,10 @@ on:
         required: false
         type: string
         default: ''
+      android-abi:
+        required: false
+        type: string
+        default: 'aarch64'
       include-updater-json:
         required: false
         type: string
@@ -240,7 +249,7 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ inputs.mobile }}" == "android" ]]; then
-            rustup target add aarch64-linux-android
+            rustup target add ${{ inputs.android-abi }}-linux-android
           else
             rustup target add ${{ inputs.target }}
           fi
@@ -343,25 +352,41 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dest="src-tauri/libs/arm64-v8a"
+          abi="${{ inputs.android-abi }}"
+          case "$abi" in
+            aarch64) jni="arm64-v8a" ;;
+            x86_64)  jni="x86_64" ;;
+            *) echo "::error::Unsupported Android ABI: $abi"; exit 1 ;;
+          esac
+          dest="src-tauri/libs/$jni"
           mkdir -p "$dest"
           curl -fL --retry 3 --retry-delay 5 -o "$dest/libonnxruntime.so" \
-            "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/onnxruntimes-v1.22.0/libonnxruntime-android-arm64-v8a.so?download=true"
-          echo "999ecfdb5b5a13e4097487773b6d71ce8a075408a237daab072e8f5e817bd78e  $dest/libonnxruntime.so" | sha256sum -c -
+            "https://huggingface.co/CyberTimon/RapidRAW-Models/resolve/main/onnxruntimes-v1.22.0/libonnxruntime-android-$jni.so?download=true"
+          # The arm64 blob hash is pinned; x86_64 follows the upstream release.
+          if [[ "$abi" == "aarch64" ]]; then
+            echo "999ecfdb5b5a13e4097487773b6d71ce8a075408a237daab072e8f5e817bd78e  $dest/libonnxruntime.so" | sha256sum -c -
+          fi
           ls -la "$dest"
 
-      # --target aarch64 keeps both cargo and gradle on the single ABI that
-      # build.rs provides; the ORT_* vars come from the fetch step above.
+      # --target <abi> keeps cargo on one ABI; gradle's abiList/archList
+      # (gradle.properties) is patched to the same ABI so build.rs's jniLibs
+      # and the APK stay in sync.
       - name: Build Android
         if: ${{ inputs.mobile == 'android' }}
         shell: bash
         timeout-minutes: 120
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-          ORT_LIB_LOCATION: ${{ github.workspace }}/src-tauri/libs/arm64-v8a
+          ORT_LIB_LOCATION: ${{ github.workspace }}/src-tauri/libs/${{ inputs.android-abi == 'x86_64' && 'x86_64' || 'arm64-v8a' }}
           ORT_SKIP_DOWNLOAD: '1'
         run: |
-          npx tauri android build --verbose --target aarch64 ${{ inputs.build-args }}
+          set -euo pipefail
+          abi="${{ inputs.android-abi }}"
+          jni="$([[ "$abi" == "x86_64" ]] && echo "x86_64" || echo "arm64-v8a")"
+          sed -i "s/^abiList=.*/abiList=$jni/; s/^archList=.*/archList=$abi/; s/^targetList=.*/targetList=$abi/" \
+            src-tauri/gen/android/gradle.properties
+          grep -E '^(abiList|archList|targetList)=' src-tauri/gen/android/gradle.properties
+          npx tauri android build --verbose --target "$abi" ${{ inputs.build-args }}
 
       # Fail the build when the APK is not correctly signed or aligned, so a
       # broken Android bundle never reaches the release page.
@@ -394,7 +419,10 @@ jobs:
           app_name="RapidRAW"
           version="$(node -e "const fs=require('fs'); const conf=JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json','utf8')); process.stdout.write(conf.version || '')")"
           if [[ "${{ inputs.mobile }}" == "android" ]]; then
-            arch="arm64-v8a"
+            case "${{ inputs.android-abi }}" in
+              x86_64) arch="x86_64" ;;
+              *) arch="arm64-v8a" ;;
+            esac
           else
             arch="${{ inputs.target }}"
             arch="${arch%%-*}"

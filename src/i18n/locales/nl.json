@@ -605,6 +605,14 @@
       "vignetteMidpoint": "Midden",
       "vignetteRoundness": "Rondheid"
     },
+    "inspect": {
+      "camera": "Camera",
+      "dimensions": "Afmetingen",
+      "file": "Bestand",
+      "lens": "Lens",
+      "shortcuts": "Snelkoppelingen",
+      "title": "Inspecteren"
+    },
     "originalBadge": "ORIGINEEL",
     "portrait": {
       "bgBlur": "Achtergrond vervagen",
@@ -757,6 +765,8 @@
         "paramsMode": "Parametermodus",
         "residualHint": "Kleurtoonrotatie gedetecteerd — parameters verliezen precisie, hifi-LUT aanbevolen"
       },
+      "probe": "Pipet",
+      "probeArmed": "Tik op de voorbeeldweergave om te samplen",
       "saturation": "Verzadiging",
       "shadows": "Schaduwen",
       "tabColor": "Kleur",
@@ -2346,6 +2356,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "Terug",
+    "connect": "Verbinden",
+    "connecting": "Verbinding maken…",
+    "disconnect": "Verbreken",
+    "download": "Downloaden",
+    "downloaded": "{{name}} is geïmporteerd in de bibliotheek.",
+    "empty": "Geen foto's op de camera gevonden.",
+    "failed": "Camera-import mislukt: {{message}}",
+    "folder": "Map",
+    "help": "Zet de wifi van de camera aan en maak verbinding met hetzelfde netwerk, voer daarna het adres in dat in het netwerkmenu van de camera staat (PTP/IP, poort 15740).",
+    "hostLabel": "IP-adres van camera",
+    "hostPlaceholder": "bijv. 192.168.1.1",
+    "openCamera": "Draadloze camera-import",
+    "refresh": "Vernieuwen"
   },
   "settings": {
     "categories": {

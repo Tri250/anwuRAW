@@ -179,6 +179,9 @@ interface EditorState {
   zoom: number;
   displaySize: ImageDimensions;
   previewSize: ImageDimensions;
+  /** P0-2 移动端缩放视口：归一化 ROI（1x 时为 null）与手势结束版本号。 */
+  mobileRoi: [number, number, number, number] | null;
+  mobileRoiVersion: number;
   baseRenderSize: BaseRenderSize;
   originalSize: ImageDimensions;
 
@@ -259,6 +262,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   zoom: 1,
   displaySize: { width: 0, height: 0 },
   previewSize: { width: 0, height: 0 },
+  mobileRoi: null,
+  mobileRoiVersion: 0,
   baseRenderSize: { width: 0, height: 0, offsetX: 0, offsetY: 0, containerWidth: 0, containerHeight: 0 },
   originalSize: { width: 0, height: 0 },
 

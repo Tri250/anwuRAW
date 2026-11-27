@@ -271,6 +271,7 @@ fn heal_bloated_exif(meta: &mut ImageMetadata) -> bool {
 }
 
 fn quarantine_sidecar(sidecar_path: &Path, error: &serde_json::Error) {
+    cache_invalidate(sidecar_path);
     let mut quarantined = sidecar_path.as_os_str().to_os_string();
     quarantined.push(format!(".corrupt-{}", Utc::now().format("%Y%m%d%H%M%S")));
     match fs::rename(sidecar_path, &quarantined) {
@@ -289,7 +290,64 @@ fn quarantine_sidecar(sidecar_path: &Path, error: &serde_json::Error) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// P2-4: sidecar file-stamp 缓存 —— (mtime, size) 未变化时跳过重复解析。
+// 所有写入路径（write_sidecar_json / 删除 / 隔离）都会同步缓存。
+// ---------------------------------------------------------------------------
+
+struct SidecarCacheEntry {
+    mtime: std::time::SystemTime,
+    size: u64,
+    meta: ImageMetadata,
+}
+
+static SIDECAR_CACHE: std::sync::LazyLock<Mutex<HashMap<PathBuf, SidecarCacheEntry>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn file_stamp(path: &Path) -> Option<(std::time::SystemTime, u64)> {
+    let meta = fs::metadata(path).ok()?;
+    Some((meta.modified().ok()?, meta.len()))
+}
+
+fn cache_lookup(sidecar_path: &Path, stamp: (std::time::SystemTime, u64)) -> Option<ImageMetadata> {
+    let cache = SIDECAR_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+    let entry = cache.get(sidecar_path)?;
+    if entry.mtime == stamp.0 && entry.size == stamp.1 {
+        Some(entry.meta.clone())
+    } else {
+        None
+    }
+}
+
+fn cache_store(sidecar_path: &Path, stamp: (std::time::SystemTime, u64), meta: &ImageMetadata) {
+    let mut cache = SIDECAR_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+    if cache.len() > 512 {
+        cache.clear(); // 简单防膨胀：清空后按需重建
+    }
+    cache.insert(
+        sidecar_path.to_path_buf(),
+        SidecarCacheEntry {
+            mtime: stamp.0,
+            size: stamp.1,
+            meta: meta.clone(),
+        },
+    );
+}
+
+fn cache_invalidate(sidecar_path: &Path) {
+    SIDECAR_CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(sidecar_path);
+}
+
 fn read_sidecar(sidecar_path: &Path) -> std::io::Result<(ImageMetadata, bool)> {
+    if let Some(stamp) = file_stamp(sidecar_path)
+        && let Some(cached) = cache_lookup(sidecar_path, stamp)
+    {
+        return Ok((cached, false));
+    }
+
     let content = match fs::read_to_string(sidecar_path) {
         Ok(content) => content,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -300,7 +358,21 @@ fn read_sidecar(sidecar_path: &Path) -> std::io::Result<(ImageMetadata, bool)> {
 
     match serde_json::from_str::<ImageMetadata>(&content) {
         Ok(mut meta) => {
+            // P2-4: 更新版本的 schema —— 拒绝加载，返回默认元数据。
+            // 不隔离、不改写：文件留给支持该版本的应用处理。
+            if meta.schema_version > crate::image_processing::SIDECAR_SCHEMA_VERSION {
+                log::warn!(
+                    "Sidecar {} uses schema v{} (supported: v{}); ignoring it.",
+                    sidecar_path.display(),
+                    meta.schema_version,
+                    crate::image_processing::SIDECAR_SCHEMA_VERSION
+                );
+                return Ok((ImageMetadata::default(), false));
+            }
             let healed = heal_bloated_exif(&mut meta);
+            if let Some(stamp) = file_stamp(sidecar_path) {
+                cache_store(sidecar_path, stamp, &meta);
+            }
             Ok((meta, healed))
         }
         Err(e) => {
@@ -312,7 +384,11 @@ fn read_sidecar(sidecar_path: &Path) -> std::io::Result<(ImageMetadata, bool)> {
 
 fn write_sidecar_json(sidecar_path: &Path, metadata: &ImageMetadata) -> std::io::Result<()> {
     let json = serde_json::to_string_pretty(metadata).map_err(std::io::Error::other)?;
-    file_management::write_file_atomic(sidecar_path, json.as_bytes())
+    file_management::write_file_atomic(sidecar_path, json.as_bytes())?;
+    if let Some(stamp) = file_stamp(sidecar_path) {
+        cache_store(sidecar_path, stamp, metadata);
+    }
+    Ok(())
 }
 
 pub fn load_sidecar(sidecar_path: &Path) -> ImageMetadata {
@@ -365,7 +441,10 @@ fn write_sidecar(
         if !has_virtual_copy_sidecars(source_path) {
             return match fs::remove_file(sidecar_path) {
                 Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e),
-                _ => Ok(()),
+                _ => {
+                    cache_invalidate(sidecar_path);
+                    Ok(())
+                }
             };
         }
     }
@@ -2209,4 +2288,80 @@ pub fn write_rrexif_sidecar(source_path_str: &str, target_image_path: &Path) -> 
         metadata.exif = Some(exif_data);
     })
     .map_err(|e| format!("Failed to write sidecar: {}", e))
+}
+
+#[cfg(test)]
+mod sidecar_p2_4_tests {
+    use super::*;
+
+    /// P2-4: schema_version 始终写入；更高版本被拒绝且文件保留（不隔离）。
+    #[test]
+    fn sidecar_schema_version_write_and_reject() {
+        let dir = std::env::temp_dir().join(format!("cx_sidecar_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        let sidecar = dir.join("img.jpg.rrsidecar");
+
+        let meta = ImageMetadata {
+            rating: 4,
+            ..ImageMetadata::default()
+        };
+        write_sidecar_json(&sidecar, &meta).expect("write");
+        let text = fs::read_to_string(&sidecar).expect("read");
+        assert!(text.contains("\"schema_version\""));
+
+        let loaded = load_sidecar(&sidecar);
+        assert_eq!(loaded.rating, 4);
+
+        // 旧版 sidecar（无 schema_version 字段）→ serde default 填充，可读。
+        let legacy = serde_json::json!({ "version": 1, "rating": 2, "adjustments": null });
+        fs::write(&sidecar, legacy.to_string()).expect("legacy write");
+        let loaded2 = load_sidecar(&sidecar);
+        assert_eq!(loaded2.rating, 2);
+        assert_eq!(
+            loaded2.schema_version,
+            crate::image_processing::SIDECAR_SCHEMA_VERSION
+        );
+
+        // 更高 schema 版本 → 拒绝加载（默认元数据），文件原样保留。
+        let future =
+            serde_json::json!({ "version": 1, "schema_version": 999, "rating": 5, "adjustments": null });
+        fs::write(&sidecar, future.to_string()).expect("future write");
+        let loaded3 = load_sidecar(&sidecar);
+        assert_eq!(loaded3.rating, 0);
+        assert!(sidecar.exists(), "future sidecar must not be quarantined");
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// P2-4: file-stamp 缓存 —— (mtime, size) 未变时命中；外部修改后失效。
+    #[test]
+    fn sidecar_stamp_cache_hit_and_invalidate() {
+        let dir = std::env::temp_dir().join(format!("cx_sidecar_cache_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        let sidecar = dir.join("img2.jpg.rrsidecar");
+
+        write_sidecar_json(
+            &sidecar,
+            &ImageMetadata {
+                rating: 1,
+                ..Default::default()
+            },
+        )
+        .expect("w1");
+        assert_eq!(load_sidecar(&sidecar).rating, 1);
+        assert_eq!(load_sidecar(&sidecar).rating, 1); // 缓存命中路径
+
+        // 外部修改（绕过写入 API）→ stamp 失效 → 读到新内容。
+        let modified = serde_json::to_string_pretty(&ImageMetadata {
+            rating: 3,
+            ..Default::default()
+        })
+        .unwrap();
+        fs::write(&sidecar, &modified).expect("w2");
+        std::thread::sleep(std::time::Duration::from_millis(1100)); // 保证 mtime 变化
+        fs::write(&sidecar, &modified).expect("w2b");
+        assert_eq!(load_sidecar(&sidecar).rating, 3);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }

@@ -95,8 +95,9 @@ required_patterns=(
   '^03_RapidRAW_v[0-9.]+_ubuntu-24.04-arm_aarch64\.AppImage$'
   '^03_tethering_RapidRAW_v[0-9.]+_ubuntu-22.04_amd64\.AppImage$'
   '^03_tethering_RapidRAW_v[0-9.]+_ubuntu-24.04_amd64\.AppImage$'
-  # Android arm64-v8a (APK is the sideloadable bundle; .aab is for the store)
+  # Android arm64-v8a + x86_64 (APK is the sideloadable bundle; .aab is for the store)
   '^04_RapidRAW_v[0-9.]+_android_arm64-v8a\.apk$'
+  '^04_RapidRAW_v[0-9.]+_android_x86_64\.apk$'
 )
 
 # Updater signatures + manifest. build.yml strips the updater config when

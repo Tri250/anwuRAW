@@ -8,6 +8,7 @@ import {
   Crop,
   ImageIcon,
   Layers,
+  Info,
   Loader2,
   Redo2,
   RotateCcw,
@@ -38,6 +39,7 @@ import {
 } from './crystalShared';
 import { debouncedSave, debouncedSetHistory } from '../../hooks/useEditorActions';
 import { selectAiModelDownloadStatus } from '../../store/useProcessStore';
+import CrystalInspectSheet from './CrystalInspectSheet';
 import CrystalCategoryPanel from './CrystalCategoryPanel';
 import CrystalPreview from './CrystalPreview';
 import WatermarkExportPage from './WatermarkExportPage';
@@ -55,7 +57,17 @@ const CATEGORIES: Array<{ id: CrystalCategory; labelKey: ParseKeys; color: strin
   { id: 'fx', labelKey: 'crystal.categories.fx', color: 'var(--cx-cat-fx)', icon: Contrast },
 ];
 
-function CrystalTopBar({ camera, onBack, onSave }: { camera: string; onBack: () => void; onSave: () => void }) {
+function CrystalTopBar({
+  camera,
+  onBack,
+  onSave,
+  onInspect,
+}: {
+  camera: string;
+  onBack: () => void;
+  onSave: () => void;
+  onInspect?: () => void;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -68,6 +80,16 @@ function CrystalTopBar({ camera, onBack, onSave }: { camera: string; onBack: () 
         <div className="cx-title">{t('crystal.title')}</div>
         <div className="cx-subtitle">{camera || t('crystal.subtitleFallback')}</div>
       </div>
+      {/* P2-3: 检视套件入口（收敛为顶栏单一 Info 按钮） */}
+      {onInspect && (
+        <button
+          className="cx-inspect-btn"
+          onClick={onInspect}
+          aria-label={t('crystal.inspect.title')}
+        >
+          <Info size={17} />
+        </button>
+      )}
       <button className="cx-save-pill" onClick={onSave}>
         {t('crystal.save')}
       </button>
@@ -454,6 +476,8 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
 
   // D-CP-01: 沉浸裁剪激活态（.cx-app 挂 is-fullscreen-crop + 渲染浮层）
   const immersiveActive = useImmersiveCropStore((s) => s.active);
+  // P2-3: 检视抽屉开关
+  const [isInspectOpen, setIsInspectOpen] = useState(false);
 
   if (!selectedImage) return null;
 
@@ -461,7 +485,12 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
     <div className="crystal-shell" data-flow={flow}>
       {flow === 'edit' ? (
         <div className={`cx-app${immersiveActive ? ' is-fullscreen-crop' : ''}`}>
-          <CrystalTopBar camera={cameraSubtitle} onBack={handleBackToLibrary} onSave={goExport} />
+          <CrystalTopBar
+            camera={cameraSubtitle}
+            onBack={handleBackToLibrary}
+            onSave={goExport}
+            onInspect={() => setIsInspectOpen(true)}
+          />
           {modelDownloadStatus && (
             <div className="cx-dl-pill" role="status">
               <Loader2 size={11} className="animate-spin" />
@@ -484,6 +513,12 @@ export default function CrystalMobileApp({ onBackToLibrary }: { onBackToLibrary:
             confirmVariant="danger"
             onClose={() => setIsResetConfirmOpen(false)}
             onConfirm={handleReset}
+          />
+          {/* P2-3: 检视抽屉（信息+取样+快捷跳转） */}
+          <CrystalInspectSheet
+            open={isInspectOpen}
+            onClose={() => setIsInspectOpen(false)}
+            onJumpTo={setActiveCategory}
           />
         </div>
       ) : (

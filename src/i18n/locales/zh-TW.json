@@ -600,6 +600,14 @@
       "vignetteMidpoint": "中点",
       "vignetteRoundness": "圆度"
     },
+    "inspect": {
+      "camera": "相機",
+      "dimensions": "尺寸",
+      "file": "檔案",
+      "lens": "鏡頭",
+      "shortcuts": "快捷跳轉",
+      "title": "檢視"
+    },
     "originalBadge": "原圖",
     "portrait": {
       "bgBlur": "背景虛化",
@@ -752,6 +760,8 @@
         "paramsMode": "參數模式",
         "residualHint": "含色相旋轉，參數表達有精度損失，建議高保真 LUT"
       },
+      "probe": "取樣",
+      "probeArmed": "點擊預覽取樣",
       "saturation": "飽和度",
       "shadows": "陰影",
       "tabColor": "颜色",
@@ -2359,6 +2369,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "返回",
+    "connect": "連線",
+    "connecting": "正在連線…",
+    "disconnect": "中斷連線",
+    "download": "下載",
+    "downloaded": "已匯入 {{name}} 到圖庫。",
+    "empty": "相機上未找到照片。",
+    "failed": "相機匯入失敗：{{message}}",
+    "folder": "資料夾",
+    "help": "在相機上開啟 Wi-Fi 並加入同一網路，然後輸入相機網路選單中顯示的位址（PTP/IP，連接埠 15740）。",
+    "hostLabel": "相機 IP 位址",
+    "hostPlaceholder": "例如 192.168.1.1",
+    "openCamera": "無線相機匯入",
+    "refresh": "重新整理"
   },
   "settings": {
     "categories": {

@@ -256,6 +256,13 @@ jobs:
             args: ''
             mobile: 'android'
             asset-prefix: '04'
+          # Android x86_64（模拟器/平板/Chromebook）
+          - platform: 'ubuntu-latest'
+            target: ''
+            args: ''
+            mobile: 'android'
+            android-abi: 'x86_64'
+            asset-prefix: '04'
     uses: ./.github/workflows/build.yml
     with:
       release-id: ${{ needs.prepare.outputs.release-id }}
@@ -265,6 +272,7 @@ jobs:
       target: ${{ matrix.target }}
       build-args: ${{ matrix.args }}
       mobile: ${{ matrix.mobile }}
+      android-abi: ${{ matrix['android-abi'] || 'aarch64' }}
       asset-name-pattern: '[name]_v[version]_[platform]_[arch][ext]'
       asset-prefix: ${{ matrix.asset-prefix }}
       include-updater-json: ${{ matrix['updater-json'] || 'true' }}

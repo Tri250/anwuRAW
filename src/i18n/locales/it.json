@@ -627,6 +627,14 @@
       "vignetteMidpoint": "Punto medio",
       "vignetteRoundness": "Rotondità"
     },
+    "inspect": {
+      "camera": "Fotocamera",
+      "dimensions": "Dimensioni",
+      "file": "File",
+      "lens": "Obiettivo",
+      "shortcuts": "Scorciatoie",
+      "title": "Ispeziona"
+    },
     "originalBadge": "ORIGINALE",
     "portrait": {
       "bgBlur": "Sfocatura sfondo",
@@ -779,6 +787,8 @@
         "paramsMode": "Modalità parametri",
         "residualHint": "Rotazione di tonalità rilevata — i parametri perdono precisione, consigliata LUT alta fedeltà"
       },
+      "probe": "Contagocce",
+      "probeArmed": "Tocca l'anteprima per campionare",
       "saturation": "Saturazione",
       "shadows": "Ombre",
       "tabColor": "Colore",
@@ -2395,6 +2405,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "Indietro",
+    "connect": "Connetti",
+    "connecting": "Connessione…",
+    "disconnect": "Disconnetti",
+    "download": "Scarica",
+    "downloaded": "{{name}} è stata importata nella libreria.",
+    "empty": "Nessuna foto trovata sulla fotocamera.",
+    "failed": "Importazione dalla fotocamera non riuscita: {{message}}",
+    "folder": "Cartella",
+    "help": "Attiva il Wi-Fi sulla fotocamera e unisciti alla stessa rete, poi inserisci l'indirizzo mostrato nel menu di rete della fotocamera (PTP/IP, porta 15740).",
+    "hostLabel": "Indirizzo IP della fotocamera",
+    "hostPlaceholder": "es. 192.168.1.1",
+    "openCamera": "Importazione wireless dalla fotocamera",
+    "refresh": "Aggiorna"
   },
   "settings": {
     "categories": {

@@ -627,6 +627,14 @@
       "vignetteMidpoint": "Milieu",
       "vignetteRoundness": "Rondeur"
     },
+    "inspect": {
+      "camera": "Appareil",
+      "dimensions": "Dimensions",
+      "file": "Fichier",
+      "lens": "Objectif",
+      "shortcuts": "Accès rapide",
+      "title": "Inspecter"
+    },
     "originalBadge": "ORIGINAL",
     "portrait": {
       "bgBlur": "Flou d'arrière-plan",
@@ -779,6 +787,8 @@
         "paramsMode": "Mode paramètres",
         "residualHint": "Rotation de teinte détectée — les paramètres perdent en précision, LUT haute fidélité recommandée"
       },
+      "probe": "Pipette",
+      "probeArmed": "Touchez l'aperçu pour échantillonner",
       "saturation": "Saturation",
       "shadows": "Ombres",
       "tabColor": "Couleur",
@@ -2396,6 +2406,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "Retour",
+    "connect": "Connecter",
+    "connecting": "Connexion…",
+    "disconnect": "Déconnecter",
+    "download": "Télécharger",
+    "downloaded": "{{name}} a été importé dans la bibliothèque.",
+    "empty": "Aucune photo trouvée sur l'appareil.",
+    "failed": "Échec de l'import depuis l'appareil : {{message}}",
+    "folder": "Dossier",
+    "help": "Activez le Wi-Fi de l'appareil photo et rejoignez le même réseau, puis saisissez l'adresse affichée dans le menu réseau de l'appareil (PTP/IP, port 15740).",
+    "hostLabel": "Adresse IP de l'appareil",
+    "hostPlaceholder": "ex. 192.168.1.1",
+    "openCamera": "Import sans fil depuis l'appareil",
+    "refresh": "Actualiser"
   },
   "settings": {
     "categories": {

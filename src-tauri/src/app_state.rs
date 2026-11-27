@@ -152,6 +152,9 @@ pub struct PreviewJob {
     pub adjustments: serde_json::Value,
     pub layer: DisplayLayer,
     pub is_interactive: bool,
+    /// P0-2 移动端 hi-fi 缩放补丁：非交互请求但携带 ROI，后端按交互补丁的
+    /// 16 字节头打包返回，前端将补丁锚定在缩放视口上（1:1 渐进缩放）。
+    pub patch_mode: bool,
     pub target_resolution: Option<u32>,
     pub roi: Option<(f32, f32, f32, f32)>,
     pub request_analytics: bool,

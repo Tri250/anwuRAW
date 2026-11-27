@@ -501,6 +501,13 @@ html.android body > .global-tooltip {
   justify-content: center;
   will-change: transform;
 }
+/* P0-2: 1:1 hi-fi ROI 补丁（锚定 1x 布局坐标，随舞台变换与内容同步移动） */
+.cx-preview img.cx-preview-patch {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
 .cx-preview-badge {
   position: absolute;
   top: 10px;
@@ -1975,4 +1982,200 @@ html.android body > .global-tooltip {
   justify-content: center;
   background: color-mix(in srgb, var(--cx-page) 55%, transparent);
   border-radius: 12px;
+}
+
+/* ==========================================================================
+   P1-3: HSL 取样探针（tone 面板 arm → 预览单击取样）
+   ========================================================================== */
+.cx-hsl-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cx-probe-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  font-size: 11px;
+  color: var(--cx-text-secondary, #bbb);
+  background: color-mix(in srgb, var(--cx-page, #141414) 70%, transparent);
+  border: 1px solid var(--cx-border, #333);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.cx-probe-btn.is-armed {
+  color: var(--cx-gold);
+  border-color: var(--cx-gold);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cx-gold) 40%, transparent);
+}
+.cx-probe-btn:disabled {
+  opacity: 0.6;
+}
+
+.cx-probe-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 2px;
+  font-size: 11px;
+  color: var(--cx-text-secondary, #bbb);
+}
+.cx-probe-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, #fff 25%, transparent);
+  flex-shrink: 0;
+}
+.cx-probe-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 取样点标记：屏幕坐标定位（不随舞台变换），1s 后自动淡出 */
+.cx-probe-mark {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  outline: 1px solid rgba(0, 0, 0, 0.55);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 30;
+  animation: cx-probe-pop 0.9s ease-out forwards;
+}
+@keyframes cx-probe-pop {
+  0% { transform: translate(-50%, -50%) scale(1.7); opacity: 1; }
+  70% { opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+}
+
+/* 探针 armed 提示描边（不拦截指针） */
+.cx-probe-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 29;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cx-gold) 55%, transparent);
+  border-radius: 8px;
+}
+
+/* ==========================================================================
+   P2-3: 移动检视套件（顶栏 Info 入口 → 底部检视抽屉）
+   ========================================================================== */
+.cx-inspect-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--cx-text-secondary, #bbb);
+  flex-shrink: 0;
+}
+.cx-inspect-btn:active {
+  background: color-mix(in srgb, #fff 8%, transparent);
+}
+
+.cx-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+}
+.cx-sheet {
+  width: 100%;
+  max-height: 78%;
+  overflow-y: auto;
+  border-radius: 18px 18px 0 0;
+  background: var(--cx-page, #141414);
+  border-top: 1px solid var(--cx-border, #333);
+  padding: 10px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  animation: cx-sheet-up 0.22s ease-out;
+}
+@keyframes cx-sheet-up {
+  from { transform: translateY(18%); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.cx-sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--cx-border, #333);
+  margin: 0 auto 10px;
+}
+.cx-sheet-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.cx-sheet-close {
+  margin-left: auto;
+  padding: 6px;
+  border-radius: 8px;
+}
+.cx-sheet-close:active {
+  background: color-mix(in srgb, #fff 8%, transparent);
+}
+
+.cx-inspect-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.cx-inspect-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.cx-inspect-label {
+  color: var(--cx-text-secondary, #999);
+  flex-shrink: 0;
+}
+.cx-inspect-value {
+  text-align: right;
+  word-break: break-all;
+}
+
+.cx-inspect-section {
+  margin-bottom: 14px;
+}
+.cx-inspect-section-title {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cx-text-secondary, #999);
+  margin-bottom: 8px;
+}
+.cx-inspect-probe {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cx-inspect-jumps {
+  display: flex;
+  gap: 8px;
+}
+.cx-inspect-jump {
+  flex: 1;
+  padding: 9px 0;
+  font-size: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--cx-border, #333);
+  background: color-mix(in srgb, var(--cx-page, #141414) 70%, transparent);
+}
+.cx-inspect-jump:active {
+  border-color: var(--cx-gold, #d4a843);
 }

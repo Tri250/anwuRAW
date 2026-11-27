@@ -600,6 +600,14 @@
       "vignetteMidpoint": "중심점",
       "vignetteRoundness": "원형도"
     },
+    "inspect": {
+      "camera": "카메라",
+      "dimensions": "크기",
+      "file": "파일",
+      "lens": "렌즈",
+      "shortcuts": "빠른 이동",
+      "title": "검사"
+    },
     "originalBadge": "원본",
     "portrait": {
       "bgBlur": "배경 흐림",
@@ -752,6 +760,8 @@
         "paramsMode": "파라미터 모드",
         "residualHint": "색상 회전이 포함되어 파라미터는 정밀도를 잃습니다 — 고충실도 LUT 권장"
       },
+      "probe": "색 추출",
+      "probeArmed": "미리보기를 탭하여 색 추출",
       "saturation": "채도",
       "shadows": "그림자",
       "tabColor": "색상",
@@ -2334,6 +2344,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "뒤로",
+    "connect": "연결",
+    "connecting": "연결 중…",
+    "disconnect": "연결 해제",
+    "download": "다운로드",
+    "downloaded": "{{name}} 파일을 라이브러리로 가져왔습니다.",
+    "empty": "카메라에서 사진을 찾지 못했습니다.",
+    "failed": "카메라 가져오기 실패: {{message}}",
+    "folder": "폴더",
+    "help": "카메라에서 Wi-Fi를 켜고 같은 네트워크에 연결한 뒤, 카메라 네트워크 메뉴에 표시된 주소를 입력하세요(PTP/IP, 포트 15740).",
+    "hostLabel": "카메라 IP 주소",
+    "hostPlaceholder": "예: 192.168.1.1",
+    "openCamera": "무선 카메라 가져오기",
+    "refresh": "새로 고침"
   },
   "settings": {
     "categories": {

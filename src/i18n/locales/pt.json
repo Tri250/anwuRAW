@@ -627,6 +627,14 @@
       "vignetteMidpoint": "Ponto médio",
       "vignetteRoundness": "Arredondamento"
     },
+    "inspect": {
+      "camera": "Câmara",
+      "dimensions": "Dimensões",
+      "file": "Ficheiro",
+      "lens": "Objetiva",
+      "shortcuts": "Atalhos",
+      "title": "Inspecionar"
+    },
     "originalBadge": "ORIGINAL",
     "portrait": {
       "bgBlur": "Desfoque de fundo",
@@ -779,6 +787,8 @@
         "paramsMode": "Modo parâmetros",
         "residualHint": "Rotação de matiz detetada — os parâmetros perdem precisão, recomenda-se LUT de alta fidelidade"
       },
+      "probe": "Conta-gotas",
+      "probeArmed": "Toque na pré-visualização para amostrar",
       "saturation": "Saturação",
       "shadows": "Sombras",
       "tabColor": "Cor",
@@ -2395,6 +2405,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "Voltar",
+    "connect": "Ligar",
+    "connecting": "A ligar…",
+    "disconnect": "Desligar",
+    "download": "Transferir",
+    "downloaded": "{{name}} foi importada para a biblioteca.",
+    "empty": "Não foram encontradas fotos na câmara.",
+    "failed": "Falha na importação da câmara: {{message}}",
+    "folder": "Pasta",
+    "help": "Ative o Wi-Fi da câmara e ligue-se à mesma rede e, em seguida, introduza o endereço apresentado no menu de rede da câmara (PTP/IP, porta 15740).",
+    "hostLabel": "Endereço IP da câmara",
+    "hostPlaceholder": "p. ex. 192.168.1.1",
+    "openCamera": "Importação sem fios da câmara",
+    "refresh": "Atualizar"
   },
   "settings": {
     "categories": {

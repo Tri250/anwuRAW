@@ -17,6 +17,7 @@ import {
   Loader2,
   Maximize2,
   Octagon,
+  Pipette,
   Plus,
   RotateCcw,
   RotateCw,
@@ -64,8 +65,10 @@ import {
   matchAspectChip,
   useCrystalAdjust,
   useCrystalAiMasks,
+  useHslProbeStore,
   useImmersiveCropStore,
 } from './crystalShared';
+import { matchHslChannel } from '../../hooks/useTargetedAdjustment';
 import { Mask } from '../panel/right/Masks';
 import type { CrystalCategory } from './CrystalMobileApp';
 import CrystalPresetsPanel from './CrystalPresetsPanel';
@@ -246,6 +249,16 @@ function TonePanel() {
   const [curveChannel, setCurveChannel] = useState<CurveChannel>('luma');
 
   const bandHsl = adjustments.hsl?.[band] ?? { hue: 0, saturation: 0, luminance: 0 };
+
+  /* P1-3: HSL 取样探针 —— tone 面板 arm，CrystalPreview 下一次单击取样回填；
+   * 结果出现后自动选中对应色相带（matchHslChannel 与桌面目标调整同源）。 */
+  const probeArmed = useHslProbeStore((s) => s.armed);
+  const probeSampling = useHslProbeStore((s) => s.sampling);
+  const probeResult = useHslProbeStore((s) => s.result);
+  useEffect(() => () => useHslProbeStore.getState().disarm(), []);
+  useEffect(() => {
+    if (probeResult) setBand(matchHslChannel(probeResult.hue));
+  }, [probeResult]);
   const grading = adjustments.colorGrading ?? INITIAL_ADJUSTMENTS.colorGrading;
   const gradingRegionHsl = grading[gradingRegion] ?? { hue: 0, saturation: 0, luminance: 0 };
   const calibration = adjustments.colorCalibration ?? INITIAL_ADJUSTMENTS.colorCalibration;
@@ -642,7 +655,36 @@ function TonePanel() {
           />
 
           <div className="cx-hsl">
-            <div className="cx-hsl-title">{t('crystal.tone.hslTitle')}</div>
+            <div className="cx-hsl-title-row">
+              <div className="cx-hsl-title">{t('crystal.tone.hslTitle')}</div>
+              <button
+                className={`cx-probe-btn${probeArmed ? ' is-armed' : ''}`}
+                onClick={() => {
+                  haptic(6);
+                  if (probeArmed) {
+                    useHslProbeStore.getState().disarm();
+                  } else {
+                    useHslProbeStore.getState().arm();
+                  }
+                }}
+                disabled={probeSampling}
+                aria-pressed={probeArmed}
+              >
+                {probeSampling ? <Loader2 size={13} className="animate-spin" /> : <Pipette size={13} />}
+                {probeArmed ? t('crystal.tone.probeArmed') : t('crystal.tone.probe')}
+              </button>
+            </div>
+            {probeResult && (
+              <div className="cx-probe-result" role="status">
+                <span
+                  className="cx-probe-swatch"
+                  style={{ background: `rgb(${probeResult.r}, ${probeResult.g}, ${probeResult.b})` }}
+                />
+                <span className="cx-probe-nums">
+                  {`${Math.round(probeResult.hue)}° · ${Math.round(probeResult.saturation)}% · ${Math.round(probeResult.lightness)}%`}
+                </span>
+              </div>
+            )}
             <div className="cx-hsl-bands">
               {HSL_BANDS.map((bandDef) => (
                 <button

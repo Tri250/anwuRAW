@@ -649,6 +649,14 @@
       "vignetteMidpoint": "Środek",
       "vignetteRoundness": "Zaokrąglenie"
     },
+    "inspect": {
+      "camera": "Aparat",
+      "dimensions": "Wymiary",
+      "file": "Plik",
+      "lens": "Obiektyw",
+      "shortcuts": "Szybkie przejścia",
+      "title": "Inspekcja"
+    },
     "originalBadge": "ORYGINAŁ",
     "portrait": {
       "bgBlur": "Rozmycie tła",
@@ -801,6 +809,8 @@
         "paramsMode": "Tryb parametrów",
         "residualHint": "Wykryto rotację barwy — parametry tracą dokładność, zalecany LUT wysokiej wierności"
       },
+      "probe": "Pipeta",
+      "probeArmed": "Dotknij podglądu, aby pobrać próbkę",
       "saturation": "Nasycenie",
       "shadows": "Cienie",
       "tabColor": "Kolor",
@@ -2444,6 +2454,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "Wstecz",
+    "connect": "Połącz",
+    "connecting": "Łączenie…",
+    "disconnect": "Rozłącz",
+    "download": "Pobierz",
+    "downloaded": "Zaimportowano {{name}} do biblioteki.",
+    "empty": "Nie znaleziono zdjęć na aparacie.",
+    "failed": "Import z aparatu nie powiódł się: {{message}}",
+    "folder": "Folder",
+    "help": "Włącz Wi-Fi w aparacie i połącz się z tą samą siecią, a następnie wpisz adres wyświetlany w menu sieci aparatu (PTP/IP, port 15740).",
+    "hostLabel": "Adres IP aparatu",
+    "hostPlaceholder": "np. 192.168.1.1",
+    "openCamera": "Import bezprzewodowy z aparatu",
+    "refresh": "Odśwież"
   },
   "settings": {
     "categories": {

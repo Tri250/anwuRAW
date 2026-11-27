@@ -79,6 +79,135 @@ pub fn extract_embedded_preview(file_bytes: &[u8]) -> Option<DynamicImage> {
     Some(apply_orientation(preview, orientation))
 }
 
+// ---------------------------------------------------------------------------
+// P2-1: 预览曝光基准（可选调用，不参与渲染缓存键 / 不改 PROCESSING_VERSION）
+// ---------------------------------------------------------------------------
+
+/// 重采样到 128² 后的 Rec709 luma（0-255）。
+pub fn downsample_luma_128(img: &DynamicImage) -> Vec<u8> {
+    let small = img
+        .resize_exact(128, 128, image::imageops::FilterType::Triangle)
+        .to_rgb8();
+    small
+        .pixels()
+        .map(|p| {
+            (0.2126 * p[0] as f32 + 0.7152 * p[1] as f32 + 0.0722 * p[2] as f32)
+                .round()
+                .clamp(0.0, 255.0) as u8
+        })
+        .collect()
+}
+
+/// 8-bit 中值（偶数长度取中间两数均值）。
+pub fn median_u8(values: &[u8]) -> f32 {
+    if values.is_empty() {
+        return 0.0;
+    }
+    let mut sorted: Vec<u8> = values.to_vec();
+    sorted.sort_unstable();
+    let mid = sorted.len() / 2;
+    if sorted.len() % 2 == 1 {
+        sorted[mid] as f32
+    } else {
+        (sorted[mid - 1] as f32 + sorted[mid] as f32) / 2.0
+    }
+}
+
+/// 两组中值 → 建议 EV 补偿（log2(embedded/raw)，±3 EV 限幅）。
+/// 正值 = 显影预览比内嵌预览暗，需要加曝光。
+pub fn suggested_ev_from_medians(raw_median: f32, embedded_median: f32) -> f32 {
+    if raw_median < 1.0 || embedded_median < 1.0 {
+        return 0.0;
+    }
+    (embedded_median / raw_median).log2().clamp(-3.0, 3.0)
+}
+
+#[derive(serde::Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewExposureBaseline {
+    pub raw_median: f32,
+    pub embedded_median: f32,
+    pub suggested_ev: f32,
+    pub has_embedded_preview: bool,
+}
+
+/// P2-1: 预览曝光基准 —— 显影结果与相机内嵌预览各降采样 128²，中值亮度差
+/// 给出建议 EV（可让预览一键对齐相机 JPEG 的曝光观感）。纯读操作。
+#[tauri::command]
+pub async fn get_preview_exposure_baseline(
+    path: String,
+    linear_mode: Option<String>,
+) -> Result<PreviewExposureBaseline, String> {
+    let (real_path, _) = crate::file_management::parse_virtual_path(&path);
+    let path = real_path;
+    tokio::task::spawn_blocking(move || {
+        let mmap = crate::file_management::read_file_mapped(&path)
+            .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+        let bytes: &[u8] = &mmap;
+        let linear = linear_mode.filter(|s| !s.is_empty()).unwrap_or_default();
+        let developed = develop_raw_image(bytes, false, 0.0, linear, None)
+            .map_err(|e| format!("Failed to develop raw: {e}"))?;
+        let raw_median = median_u8(&downsample_luma_128(&developed));
+        let embedded_median = extract_embedded_preview(bytes)
+            .map(|img| median_u8(&downsample_luma_128(&img)));
+        Ok(PreviewExposureBaseline {
+            suggested_ev: suggested_ev_from_medians(raw_median, embedded_median.unwrap_or(0.0)),
+            raw_median,
+            embedded_median: embedded_median.unwrap_or(0.0),
+            has_embedded_preview: embedded_median.is_some(),
+        })
+    })
+    .await
+    .map_err(|e| format!("Task execution failed: {}", e))?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn solid_image(v: u8) -> DynamicImage {
+        DynamicImage::ImageRgb8(image::ImageBuffer::from_fn(64, 64, |_, _| {
+            image::Rgb([v, v, v])
+        }))
+    }
+
+    #[test]
+    fn median_u8_basic() {
+        assert_eq!(median_u8(&[]), 0.0);
+        assert_eq!(median_u8(&[7]), 7.0);
+        assert_eq!(median_u8(&[1, 2, 3, 4]), 2.5);
+        assert_eq!(median_u8(&[9, 1, 5, 5, 3]), 5.0);
+    }
+
+    #[test]
+    fn suggested_ev_anchors() {
+        // Equal medians → 0 EV.
+        assert!(suggested_ev_from_medians(100.0, 100.0).abs() < 1e-6);
+        // Raw twice as dark as embedded → +1 EV.
+        assert!((suggested_ev_from_medians(50.0, 100.0) - 1.0).abs() < 1e-4);
+        // Degenerate inputs → 0.
+        assert_eq!(suggested_ev_from_medians(0.0, 100.0), 0.0);
+        // Clamp at ±3 EV.
+        assert!((suggested_ev_from_medians(1.0, 100.0) - 3.0).abs() < 1e-4);
+        assert!((suggested_ev_from_medians(100.0, 1.0) + 3.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn downsample_luma_128_shape_and_value() {
+        let luma = downsample_luma_128(&solid_image(100));
+        assert_eq!(luma.len(), 128 * 128);
+        assert!(luma.iter().all(|&v| (v as i32 - 100).abs() <= 1));
+        // Channel weighting: pure green reads brighter than pure blue.
+        let green = DynamicImage::ImageRgb8(image::ImageBuffer::from_fn(32, 32, |_, _| {
+            image::Rgb([0, 255, 0])
+        }));
+        let blue = DynamicImage::ImageRgb8(image::ImageBuffer::from_fn(32, 32, |_, _| {
+            image::Rgb([0, 0, 255])
+        }));
+        assert!(downsample_luma_128(&green)[0] > downsample_luma_128(&blue)[0]);
+    }
+}
+
 fn is_linear_raw_format(raw_image: &RawImage) -> bool {
     matches!(
         raw_image.photometric,

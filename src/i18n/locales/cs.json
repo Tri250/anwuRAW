@@ -649,6 +649,14 @@
       "vignetteMidpoint": "Střed",
       "vignetteRoundness": "Zaoblení"
     },
+    "inspect": {
+      "camera": "Fotoaparát",
+      "dimensions": "Rozměry",
+      "file": "Soubor",
+      "lens": "Objektiv",
+      "shortcuts": "Rychlé skoky",
+      "title": "Prohlédnout"
+    },
     "originalBadge": "ORIGINÁL",
     "portrait": {
       "bgBlur": "Rozostření pozadí",
@@ -801,6 +809,8 @@
         "paramsMode": "Režim parametrů",
         "residualHint": "Zjištěna rotace odstínu — parametry ztrácejí přesnost, doporučena vysokofidelity LUT"
       },
+      "probe": "Pipeta",
+      "probeArmed": "Klepnutím na náhled odeberte vzorek",
       "saturation": "Nasycení",
       "shadows": "Stíny",
       "tabColor": "Barva",
@@ -2444,6 +2454,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "Zpět",
+    "connect": "Připojit",
+    "connecting": "Připojování…",
+    "disconnect": "Odpojit",
+    "download": "Stáhnout",
+    "downloaded": "{{name}} bylo importováno do knihovny.",
+    "empty": "V fotoaparátu nebyly nalezeny žádné fotografie.",
+    "failed": "Import z fotoaparátu se nezdařil: {{message}}",
+    "folder": "Složka",
+    "help": "Zapněte v fotoaparátu Wi-Fi a připojte se ke stejné síti, poté zadejte adresu uvedenou v síťové nabídce fotoaparátu (PTP/IP, port 15740).",
+    "hostLabel": "IP adresa fotoaparátu",
+    "hostPlaceholder": "např. 192.168.1.1",
+    "openCamera": "Bezdrátový import z fotoaparátu",
+    "refresh": "Obnovit"
   },
   "settings": {
     "categories": {

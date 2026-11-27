@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
 import { open } from '@tauri-apps/plugin-shell';
 import {
+  Camera,
   CheckCheck,
   Expand,
   Folder,
@@ -20,6 +21,7 @@ import {
   Rows3,
   X,
 } from 'lucide-react';
+import PtpImportPage from '../mobile/PtpImportPage';
 import CullingView from './library/CullingView';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -185,6 +187,8 @@ export default function MainLibrary(props: MainLibraryProps) {
   const [isBusyLoaderMounted, setIsBusyLoaderMounted] = useState(false);
   const [isProgressHovered, setIsProgressHovered] = useState(false);
   const [selectionModeActive, setSelectionModeActive] = useState(false);
+  // P0-3: PTP/IP 无线相机导入页（仅 Android 图库入口）。
+  const [isPtpImportOpen, setIsPtpImportOpen] = useState(false);
   const isSettingsOpen = useUIStore((state) => state.isSettingsOpen);
 
   const libraryDisplayMode = props.appSettings?.libraryDisplayMode || LibraryDisplayMode.Grid;
@@ -795,6 +799,27 @@ export default function MainLibrary(props: MainLibraryProps) {
         >
           <FolderInput className="w-6 h-6" />
         </Button>
+      )}
+      {props.isAndroid && (
+        <Button
+          className="absolute bottom-33 right-8 h-12 w-12 bg-bg-secondary text-text-primary shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsPtpImportOpen(true);
+          }}
+          data-tooltip={t('ptp.openCamera')}
+        >
+          <Camera className="w-6 h-6" />
+        </Button>
+      )}
+      {props.isAndroid && (
+        <PtpImportPage
+          open={isPtpImportOpen}
+          onClose={() => {
+            setIsPtpImportOpen(false);
+            props.onLibraryRefresh();
+          }}
+        />
       )}
     </div>
   );

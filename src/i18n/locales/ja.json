@@ -600,6 +600,14 @@
       "vignetteMidpoint": "中心",
       "vignetteRoundness": "丸み"
     },
+    "inspect": {
+      "camera": "カメラ",
+      "dimensions": "サイズ",
+      "file": "ファイル",
+      "lens": "レンズ",
+      "shortcuts": "クイック移動",
+      "title": "インスペクト"
+    },
     "originalBadge": "原画像",
     "portrait": {
       "bgBlur": "背景ぼかし",
@@ -752,6 +760,8 @@
         "paramsMode": "パラメータモード",
         "residualHint": "色相回転が含まれるためパラメータでは精度が失われます — 高忠実度LUTを推奨"
       },
+      "probe": "サンプル",
+      "probeArmed": "プレビューをタップしてサンプリング",
       "saturation": "彩度",
       "shadows": "シャドウ",
       "tabColor": "色",
@@ -2334,6 +2344,22 @@
       }
     },
     "title": "Welcome to RapidRAW"
+  },
+  "ptp": {
+    "back": "戻る",
+    "connect": "接続",
+    "connecting": "接続中…",
+    "disconnect": "切断",
+    "download": "ダウンロード",
+    "downloaded": "{{name}} をライブラリに読み込みました。",
+    "empty": "カメラに写真が見つかりません。",
+    "failed": "カメラからの読み込みに失敗しました：{{message}}",
+    "folder": "フォルダー",
+    "help": "カメラの Wi-Fi を有効にして同じネットワークに接続し、カメラのネットワークメニューに表示されるアドレスを入力してください（PTP/IP、ポート 15740）。",
+    "hostLabel": "カメラの IP アドレス",
+    "hostPlaceholder": "例: 192.168.1.1",
+    "openCamera": "無線カメラから読み込む",
+    "refresh": "更新"
   },
   "settings": {
     "categories": {

@@ -1589,8 +1589,10 @@ fn render_output_precision(
     output_format: &str,
     export_settings: &ExportSettings,
 ) -> RenderOutputPrecision {
-    if matches!(output_format.to_lowercase().as_str(), "tif" | "tiff")
-        && export_settings.tiff_bit_depth == TiffBitDepth::Sixteen
+    if matches!(
+        output_format.to_lowercase().as_str(),
+        "tif" | "tiff" if export_settings.tiff_bit_depth == TiffBitDepth::Sixteen
+    ) || output_format.eq_ignore_ascii_case("dng")
     {
         RenderOutputPrecision::SixteenBit
     } else {
@@ -1656,10 +1658,62 @@ fn save_image_with_metadata(
         )?;
     }
 
+    // P1-2: 原子导出写盘（桌面端）：临时文件 + sync + rename。编码中途崩溃/断电
+    // 不会留下“看似完好实则截断”的成品，最坏情况仅残留一个 .part 临时文件。
+    // Android 保持 MediaStore 流式写入（ContentResolver 无 rename 语义）。
     #[cfg(not(target_os = "android"))]
-    fs::write(output_path, image_bytes)
-        .map_err(|e| format!("Failed to write file to '{}': {}", output_path.display(), e))?;
+    write_image_bytes_atomically(output_path, &image_bytes).map_err(|e| {
+        crate::diagnostics::record_diagnostic(
+            "export_error",
+            serde_json::json!({ "phase": "write", "message": e }),
+        );
+        e
+    })?;
 
+    Ok(())
+}
+
+/// P1-2: Atomic export write — temp file in the destination directory,
+/// flushed to disk, then renamed over the target. On Windows, `rename` cannot
+/// replace an existing file, so there we remove the destination first (tiny
+/// best-effort non-atomic window on that platform only).
+#[cfg(not(target_os = "android"))]
+fn write_image_bytes_atomically(output_path: &Path, image_bytes: &[u8]) -> Result<(), String> {
+    let dir = output_path.parent().unwrap_or_else(|| Path::new("."));
+    let name = output_path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "export.bin".to_string());
+    let tmp = dir.join(format!(".{name}.part-{}", std::process::id()));
+
+    let write_result = (|| -> Result<(), String> {
+        let mut file = fs::File::create(&tmp)
+            .map_err(|e| format!("Failed to create temp file '{}': {}", tmp.display(), e))?;
+        file.write_all(image_bytes)
+            .map_err(|e| format!("Failed to write temp file '{}': {}", tmp.display(), e))?;
+        file.sync_all()
+            .map_err(|e| format!("Failed to flush temp file '{}': {}", tmp.display(), e))?;
+        Ok(())
+    })();
+    if let Err(e) = write_result {
+        let _ = fs::remove_file(&tmp);
+        return Err(e);
+    }
+
+    if let Err(rename_error) = fs::rename(&tmp, output_path) {
+        #[cfg(target_os = "windows")]
+        {
+            let _ = fs::remove_file(output_path);
+        }
+        fs::rename(&tmp, output_path).map_err(|e| {
+            let _ = fs::remove_file(&tmp);
+            format!(
+                "Failed to finalize '{}': {} (initial rename: {rename_error})",
+                output_path.display(),
+                e
+            )
+        })?;
+    }
     Ok(())
 }
 
@@ -1669,6 +1723,7 @@ pub fn mime_type_for_extension(extension: &str) -> &'static str {
         "jpg" | "jpeg" => "image/jpeg",
         "png" => "image/png",
         "webp" => "image/webp",
+        "dng" => "image/x-adobe-dng",
         "bmp" => "image/bmp",
         "gif" => "image/gif",
         "tif" | "tiff" => "image/tiff",
@@ -1875,6 +1930,12 @@ fn encode_image_to_bytes(
             image
                 .write_to(&mut cursor, image::ImageFormat::Avif)
                 .map_err(|e| e.to_string())?;
+        }
+        // P1-1: minimal linear DNG (16-bit LinearRaw). Data arriving here is
+        // display-referred sRGB; dng_writer converts it to scene-linear.
+        "dng" => {
+            let rgb16 = image.to_rgb16();
+            return crate::dng_writer::encode_linear_dng(&rgb16, None);
         }
         _ => return Err(format!("Unsupported file format: {}", output_format)),
     };
@@ -2453,7 +2514,8 @@ pub(crate) async fn export_images_impl(
                             )?;
                         }
                         #[cfg(not(target_os = "android"))]
-                        fs::write(&output_path, cube_bytes).map_err(|e| e.to_string())?;
+                        write_image_bytes_atomically(&output_path, &cube_bytes)
+                            .map_err(|e| e.to_string())?;
                         ensure_export_not_cancelled(&cancellation_token_clone)?;
                         return Ok(());
                     }
@@ -3191,6 +3253,36 @@ mod exif_frame_tests {
     use super::*;
     use exif::In;
     use std::io::Cursor as IoCursor;
+
+    /// P1-2: 原子写盘 — 覆盖已存在目标 + 无残留临时文件。
+    #[test]
+    fn atomic_write_overwrites_and_leaves_no_temp() {
+        let dir = std::env::temp_dir().join(format!("cx_atomic_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        let target = dir.join("out.jpg");
+        std::fs::write(&target, b"old-bytes").expect("seed");
+
+        write_image_bytes_atomically(&target, b"new-bytes").expect("atomic write");
+        assert_eq!(std::fs::read(&target).expect("read"), b"new-bytes");
+        // No leftover .part files in the destination directory.
+        let leftovers: Vec<_> = std::fs::read_dir(&dir)
+            .expect("readdir")
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().contains(".part-"))
+            .collect();
+        assert!(leftovers.is_empty(), "leftover temp files: {leftovers:?}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn atomic_write_creates_missing_target() {
+        let dir = std::env::temp_dir().join(format!("cx_atomic2_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        let target = dir.join("nested-out.png");
+        write_image_bytes_atomically(&target, b"payload").expect("atomic write");
+        assert_eq!(std::fs::read(&target).expect("read"), b"payload");
+        std::fs::remove_dir_all(&dir).ok();
+    }
 
     const W: u32 = 400;
     const H: u32 = 300;

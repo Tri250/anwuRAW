@@ -11,7 +11,7 @@ import { useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
-import { notifyWgpuFrameReady } from './useImageProcessing';
+import { notifyWgpuFrameReady, setGpuPreviewMode } from './useImageProcessing';
 
 const parseAnalyticsPacket = async (buffer: ArrayBuffer) => {
   const view = new DataView(buffer);
@@ -70,6 +70,8 @@ interface GpuAdapterReport {
   backend: string;
   isSoftware: boolean;
   wgpuRenderingActive: boolean;
+  /** "surface" | "compute" | "cpu" — 见后端 GpuAdapterReport::preview_mode。 */
+  previewMode: string;
   reason: string;
 }
 
@@ -77,6 +79,7 @@ interface GpuAdapterReport {
 let gpuFallbackNotified = false;
 
 function notifyGpuFallback(report: GpuAdapterReport) {
+  setGpuPreviewMode(report.previewMode || (report.wgpuRenderingActive ? 'surface' : 'cpu'));
   if (gpuFallbackNotified) return;
   // 仅当用户明确启用 WebGPU 预览时提示降级；Linux 等平台默认关闭属于正常状态。
   const wantsWgpu = useSettingsStore.getState().appSettings?.useWgpuRenderer !== false;

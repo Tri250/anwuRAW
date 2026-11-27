@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
 import type { Crop } from 'react-image-crop';
 import { ChevronsLeftRight, Loader2, Move, RotateCcw, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useEditorStore } from '../../store/useEditorStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { getOrientedDimensions, isCropWithinBounds, moveCropInsideBounds } from '../../utils/cropUtils';
-import { useCrystalAdjust, haptic, useImmersiveCropStore } from './crystalShared';
+import { prepareAdjustmentsPayload } from '../../utils/backendPayload';
+import { Invokes } from '../ui/AppProperties';
+import { computeMobileRoi, flushMobileViewport, getMobileViewport, setMobileViewport } from './mobileViewport';
+import { useCrystalAdjust, haptic, useHslProbeStore, useImmersiveCropStore } from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * P2 预览区升级：双指缩放 + 平移 + 双击缩放 + 前后对比分割滑杆。
@@ -135,6 +140,162 @@ export default function CrystalPreview({
   });
   const lastTap = useRef<{ t: number; x: number; y: number } | null>(null);
 
+  /* P1-3: HSL 取样探针 —— tone 面板 arm 后，下一次单击预览即取样并回填结果 */
+  const probeArmed = useHslProbeStore((s) => s.armed);
+  const probeSampling = useHslProbeStore((s) => s.sampling);
+  const probeMarkTimer = useRef<number | null>(null);
+  const [probeMark, setProbeMark] = useState<{ x: number; y: number } | null>(null);
+
+  const runProbe = useCallback(async (clientX: number, clientY: number) => {
+    const img = imgRef.current;
+    if (!img) return;
+    const rect = img.getBoundingClientRect();
+    const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+    const u = clamp01((clientX - rect.left) / Math.max(rect.width, 1));
+    const v = clamp01((clientY - rect.top) / Math.max(rect.height, 1));
+    const store = useHslProbeStore.getState();
+    store.setSampling(true);
+    try {
+      const sample = await invoke<{
+        r: number;
+        g: number;
+        b: number;
+        hue: number;
+        saturation: number;
+        lightness: number;
+      }>('sample_point_color', { u, v, jsAdjustments: useEditorStore.getState().adjustments });
+      store.setResult(sample);
+      const cRect = containerRef.current?.getBoundingClientRect();
+      if (cRect) {
+        setProbeMark({ x: clientX - cRect.left, y: clientY - cRect.top });
+        if (probeMarkTimer.current !== null) window.clearTimeout(probeMarkTimer.current);
+        probeMarkTimer.current = window.setTimeout(() => setProbeMark(null), 900);
+      }
+      haptic(10);
+    } catch (err) {
+      console.error('[crystal] hsl probe failed:', err);
+    } finally {
+      store.disarm();
+    }
+  }, []);
+
+  /* P0-2: 1:1 视口金字塔 —— 手势结束上报视口并触发 ROI 重渲染与 hi-fi 补丁 */
+  const mobileRoiVersion = useEditorStore((s) => s.mobileRoiVersion);
+  const [zoomPatch, setZoomPatch] = useState<{
+    url: string;
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const patchJobRef = useRef(0);
+  const flushTimerRef = useRef<number | null>(null);
+
+  /* 视口跟踪：transform / imgRect / 容器尺寸变化持续写入 mobileViewport（零重渲染） */
+  const trackViewport = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const t = transformRef.current;
+    setMobileViewport({
+      scale: t.scale,
+      roi: computeMobileRoi(t.scale, t.x, t.y, imgRect),
+      imgRect,
+      containerW: container.clientWidth,
+      containerH: container.clientHeight,
+    });
+  }, [imgRect]);
+  useEffect(() => {
+    trackViewport();
+  }, [trackViewport, transform]);
+
+  /** 手势结束 120ms 后上报视口（避开 0.2s 复位过渡起始帧） */
+  const scheduleViewportFlush = useCallback(() => {
+    trackViewport();
+    if (flushTimerRef.current) window.clearTimeout(flushTimerRef.current);
+    flushTimerRef.current = window.setTimeout(() => {
+      flushTimerRef.current = null;
+      if (compareRef.current || !urlRef.current) return;
+      flushMobileViewport();
+    }, 120);
+  }, [trackViewport]);
+  useEffect(() => {
+    return () => {
+      if (flushTimerRef.current) window.clearTimeout(flushTimerRef.current);
+    };
+  }, []);
+
+  /* 补丁失效：复位/对比/切图/沉浸裁剪/参数变更时丢弃（新全帧渲染即将接管） */
+  const adjustments = useEditorStore((s) => s.adjustments);
+  const previewOverride = useEditorStore((s) => s.previewOverride);
+  useEffect(() => {
+    if (transform.scale <= 1.01 || compare || immersive || !url) {
+      patchJobRef.current += 1;
+      setZoomPatch((prev) => {
+        if (prev) URL.revokeObjectURL(prev.url);
+        return null;
+      });
+    }
+  }, [transform.scale, compare, immersive, selectedPath, adjustments, previewOverride, url]);
+
+  /* hi-fi ROI 补丁：手势结束（mobileRoiVersion 变更）后按视口 ROI 请求 1:1 渲染 */
+  useEffect(() => {
+    if (!mobileRoiVersion) return;
+    const v = getMobileViewport();
+    const rect = v.imgRect;
+    if (compareRef.current || immersive || !rect || !v.roi || v.scale <= 1.01) return;
+    const store = useEditorStore.getState();
+    const sel = store.selectedImage;
+    if (!sel?.isReady || !sel.width || !sel.height) return;
+    const adjustmentsSnapshot = store.previewOverride ?? store.adjustments;
+    const capturedPath = sel.path;
+    const { payload, markSent } = prepareAdjustmentsPayload(adjustmentsSnapshot);
+    const zoomMult = useSettingsStore.getState().appSettings?.highResZoomMultiplier || 1.0;
+    const origMax = Math.max(sel.width, sel.height);
+    let targetRes = Math.max(rect.width, rect.height) * v.scale * 1.25 * zoomMult;
+    targetRes = Math.max(512, Math.min(targetRes, origMax));
+    if (targetRes < origMax) targetRes = Math.ceil(targetRes / 256) * 256;
+    const jobId = ++patchJobRef.current;
+    invoke<ArrayBuffer>(Invokes.ApplyAdjustments, {
+      jsAdjustments: payload,
+      original: false,
+      isInteractive: false,
+      patchMode: true,
+      targetResolution: Math.round(targetRes),
+      roi: v.roi,
+      requestAnalytics: false,
+      computeWaveform: false,
+      activeWaveformChannel: null,
+    })
+      .then((buffer) => {
+        markSent();
+        const cur = useEditorStore.getState();
+        if (jobId !== patchJobRef.current) return;
+        if ((cur.previewOverride ?? cur.adjustments) !== adjustmentsSnapshot) return;
+        if (cur.selectedImage?.path !== capturedPath) return;
+        if (!buffer || buffer.byteLength <= 24) return;
+        const view = new DataView(buffer);
+        const patchX = view.getUint32(0, true);
+        const patchY = view.getUint32(4, true);
+        const patchW = view.getUint32(8, true);
+        const patchH = view.getUint32(12, true);
+        const fullW = view.getUint32(16, true);
+        const fullH = view.getUint32(20, true);
+        if (!fullW || !fullH || !patchW || !patchH) return;
+        const next = {
+          url: URL.createObjectURL(new Blob([buffer.slice(24)], { type: 'image/jpeg' })),
+          left: (patchX / fullW) * rect.width,
+          top: (patchY / fullH) * rect.height,
+          width: (patchW / fullW) * rect.width,
+          height: (patchH / fullH) * rect.height,
+        };
+        setZoomPatch((prev) => {
+          if (prev) URL.revokeObjectURL(prev.url);
+          return next;
+        });
+      })
+      .catch(() => {});
+  }, [mobileRoiVersion, immersive]);
+
   /* C-2：对比视图独立缩放态（结构说明见下方手势实现处） */
   const [compareTransform, setCompareTransform] = useState<Transform>(IDENTITY);
   const compareTransformRef = useRef(compareTransform);
@@ -259,8 +420,9 @@ export default function CrystalPreview({
       const cur = transformRef.current;
       const factor = e.deltaY < 0 ? 1.25 : 1 / 1.25;
       zoomAt(e.clientX - rect.left, e.clientY - rect.top, clamp(cur.scale * factor, MIN_SCALE, MAX_SCALE));
+      scheduleViewportFlush();
     },
-    [zoomAt],
+    [zoomAt, scheduleViewportFlush],
   );
 
   /* 裁剪窗口拖动：屏幕位移 → 定向坐标系源像素位移（内容跟随手指） */
@@ -578,10 +740,16 @@ export default function CrystalPreview({
         g.resizeDir = null;
         g.startCrop = null;
         setGesturing(false);
+        // P0-2: 手势结束上报视口（触发金字塔中层级 ROI 渲染与 hi-fi 补丁）
+        scheduleViewportFlush();
         if (wasSingleTap) {
           const now = performance.now();
           const prev = lastTap.current;
-          if (prev && now - prev.t < DOUBLE_TAP_MS && dist(prev, { x: e.clientX, y: e.clientY }) < TAP_SLOP * 2) {
+          if (probeArmed && !probeSampling) {
+            // P1-3: 探针 armed 时单击被取样消费（不参与双击缩放判定）
+            lastTap.current = null;
+            void runProbe(e.clientX, e.clientY);
+          } else if (prev && now - prev.t < DOUBLE_TAP_MS && dist(prev, { x: e.clientX, y: e.clientY }) < TAP_SLOP * 2) {
             lastTap.current = null;
             haptic(8);
             if (transformRef.current.scale > 1.01) {
@@ -590,13 +758,14 @@ export default function CrystalPreview({
               const rect = containerRef.current?.getBoundingClientRect();
               if (rect) zoomAt(e.clientX - rect.left, e.clientY - rect.top, ZOOM_STEP);
             }
+            scheduleViewportFlush();
           } else {
             lastTap.current = { t: now, x: e.clientX, y: e.clientY };
           }
         }
       }
     },
-    [resetZoom, zoomAt],
+    [resetZoom, zoomAt, scheduleViewportFlush, probeArmed, probeSampling, runProbe],
   );
 
   /* P-2（v2.1.22 审计）：pointercancel 独立处理。
@@ -787,6 +956,21 @@ export default function CrystalPreview({
             <span>{t(hasRenderedFirstFrame ? 'crystal.previewRendering' : 'crystal.previewLoading')}</span>
           </div>
         )}
+        {/* P0-2: 1:1 hi-fi ROI 补丁 —— 锚定在 1x 布局坐标上，随舞台变换与图像内容同步 */}
+        {zoomPatch && !compare && (
+          <img
+            className="cx-preview-patch"
+            src={zoomPatch.url}
+            alt=""
+            draggable={false}
+            style={{
+              left: zoomPatch.left,
+              top: zoomPatch.top,
+              width: zoomPatch.width,
+              height: zoomPatch.height,
+            }}
+          />
+        )}
       </div>
 
       {/* 构图三分网格（对齐图像实际显示区，取景辅助；放大时隐藏） */}
@@ -820,6 +1004,7 @@ export default function CrystalPreview({
           onClick={() => {
             haptic(6);
             resetZoom();
+            scheduleViewportFlush();
           }}
           aria-label={t('crystal.previewResetZoom')}
         >
@@ -880,6 +1065,10 @@ export default function CrystalPreview({
           {t('crystal.compose.cropHint')}
         </div>
       )}
+
+      {/* P1-3: HSL 探针取样点标记（屏幕坐标，不随舞台变换；veil 仅视觉提示不拦截指针） */}
+      {probeMark && !compare && <div className="cx-probe-mark" style={{ left: probeMark.x, top: probeMark.y }} aria-hidden />}
+      {probeArmed && !compare && <div className="cx-probe-veil" aria-hidden />}
 
       {/* P2 前后对比：原图 | 效果 分割滑杆；C-2 缩放结构见 onComparePointerDown 注释 */}
       {compare && url && originalPreview && (
