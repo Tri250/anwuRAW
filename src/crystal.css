@@ -720,7 +720,10 @@ html.android body > .global-tooltip {
   background: var(--cx-cat-color, var(--cx-gold));
 }
 
-/* ================= 二级面板（196pt 定高滚动区） ================= */
+/* ================= 二级面板（196pt 定高滚动区） =================
+ * UX-排版（v2.1.25）：面板顶部内边距下沉到标题行（padding-top:0 + 标题
+ * padding-top），使粘性子导航/分组标题可以 top:0 齐平吸附，不漏出上方
+ * 滚动内容；分组标题吸顶后其下内容仍在同一卡片内滚动。 */
 .cx-panel {
   flex: none;
   height: clamp(216px, 27vh, 268px);
@@ -729,7 +732,7 @@ html.android body > .global-tooltip {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding: 12px 14px calc(env(safe-area-inset-bottom, 0px) + 12px);
+  padding: 0 14px calc(env(safe-area-inset-bottom, 0px) + 12px);
 }
 .cx-panel::-webkit-scrollbar {
   width: 0;
@@ -740,6 +743,7 @@ html.android body > .global-tooltip {
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--cx-muted);
+  padding-top: 12px;
   margin-bottom: 10px;
 }
 .cx-panel-title em {
@@ -926,9 +930,15 @@ html.android body > .global-tooltip {
   background: var(--cx-elev);
   border: 1px solid var(--cx-border);
 }
+/* UX-排版：调色页签吸顶——滚动长色卡时始终可见当前 tab，可直接切换 */
+.cx-panel > .cx-tone-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
 .cx-tone-tab {
   flex: 1;
-  height: 30px;
+  height: 32px;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -967,18 +977,18 @@ html.android body > .global-tooltip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 26px;
-  padding: 0 10px;
+  height: 32px;
+  padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--cx-border);
   background: var(--cx-elev);
   color: var(--cx-muted);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
 }
 .cx-hsl-band .cx-hswatch {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--band-color, var(--cx-accent));
 }
@@ -1012,8 +1022,8 @@ html.android body > .global-tooltip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 24px;
-  padding: 0 9px;
+  height: 30px;
+  padding: 0 11px;
   border-radius: 999px;
   border: 1px solid var(--cx-border);
   background: rgba(0, 0, 0, 0.45);
@@ -1030,9 +1040,9 @@ html.android body > .global-tooltip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin: -4px 0 8px auto;
-  height: 24px;
-  padding: 0 10px;
+  margin: -2px 0 8px auto;
+  height: 30px;
+  padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--cx-border);
   background: transparent;
@@ -1045,7 +1055,7 @@ html.android body > .global-tooltip {
   border-color: var(--cx-accent);
 }
 
-/* v2.1.13: 特效子分区 */
+/* v2.1.13: 特效子分区（UX-排版：分组标题吸顶，滚过长区块时锚点常驻） */
 .cx-subsection {
   margin-top: 12px;
   padding-top: 10px;
@@ -1057,11 +1067,16 @@ html.android body > .global-tooltip {
   border-top: none;
 }
 .cx-subsection-title {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--cx-card);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--cx-muted);
-  margin-bottom: 6px;
+  padding: 3px 0 6px;
+  margin-bottom: 0;
 }
 
 /* v2.1.13: LUT 滤镜条 */
@@ -1084,8 +1099,8 @@ html.android body > .global-tooltip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 24px;
-  padding: 0 10px;
+  height: 28px;
+  padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--cx-border);
   background: var(--cx-elev);
@@ -1195,8 +1210,8 @@ html.android body > .global-tooltip {
   margin-bottom: 10px;
 }
 .cx-light-swatch {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   border: 2px solid var(--cx-border);
   padding: 0;
@@ -1210,8 +1225,8 @@ html.android body > .global-tooltip {
   box-shadow: 0 0 0 2px var(--cx-accent-soft);
 }
 .cx-light-add {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   border: 1.5px dashed var(--cx-muted);
   background: transparent;
@@ -1365,6 +1380,11 @@ html.android body > .global-tooltip {
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
+/* UX-排版（v2.1.25）：AI 工具 9 宫格改 3 列——奇数个工具不再尾行孤卡，
+ * 每格更宽、触控目标更大；人像 4 键仍走默认 4 列单行。 */
+.cx-grid-tiles.cx-grid-tiles-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
 .cx-tile {
   display: flex;
   flex-direction: column;
@@ -1459,7 +1479,7 @@ html.android body > .global-tooltip {
   gap: 8px;
 }
 .cx-chip {
-  height: 32px;
+  height: 34px;
   padding: 0 14px;
   border-radius: 999px;
   background: var(--cx-card2);
@@ -1478,7 +1498,27 @@ html.android body > .global-tooltip {
   opacity: 0.45;
 }
 
-/* 子标签页 */
+/* UX-排版（v2.1.25）：构图比例宫格——3 列等宽大触点，比例一目了然不再折行 */
+.cx-aspect-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.cx-aspect-grid .cx-chip {
+  width: 100%;
+}
+
+/* 分组标签（收藏/最近使用等置顶分组标题，替代内联样式统一规格） */
+.cx-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--cx-muted);
+  margin: 0 2px 6px;
+}
+
+/* 子标签页（横滑：预设分组 / 滤镜分组 / 构图动作，单行滚动省纵向空间） */
 .cx-subtabs {
   display: flex;
   gap: 6px;
@@ -1491,7 +1531,7 @@ html.android body > .global-tooltip {
 }
 .cx-subtab {
   flex: none;
-  height: 28px;
+  height: 32px;
   padding: 0 13px;
   border-radius: 999px;
   background: var(--cx-card2);
@@ -1499,11 +1539,17 @@ html.android body > .global-tooltip {
   color: var(--cx-muted);
   font-size: 11.5px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .cx-subtab.is-active {
   color: var(--cx-accent);
   border-color: var(--cx-accent);
   background: var(--cx-accent-soft);
+}
+.cx-subtab:disabled {
+  opacity: 0.45;
 }
 
 /* ================= 水印导出域 ================= */
@@ -2048,9 +2094,17 @@ html.android body > .global-tooltip {
   animation: cx-probe-pop 0.9s ease-out forwards;
 }
 @keyframes cx-probe-pop {
-  0% { transform: translate(-50%, -50%) scale(1.7); opacity: 1; }
-  70% { opacity: 0.9; }
-  100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+  0% {
+    transform: translate(-50%, -50%) scale(1.7);
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.7;
+  }
 }
 
 /* 探针 armed 提示描边（不拦截指针） */
@@ -2099,8 +2153,14 @@ html.android body > .global-tooltip {
   animation: cx-sheet-up 0.22s ease-out;
 }
 @keyframes cx-sheet-up {
-  from { transform: translateY(18%); opacity: 0.6; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(18%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 .cx-sheet-handle {
   width: 40px;

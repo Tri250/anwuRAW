@@ -731,24 +731,10 @@ function TonePanel() {
             />
           </div>
 
-          <CxSubSection labelKey="adjustments.color.colorGrading">
-            <div className="cx-hsl-bands">
-              {GRADING_REGIONS.map((region) => (
-                <button
-                  key={region.id}
-                  className={`cx-hsl-band${gradingRegion === region.id ? ' active' : ''}`}
-                  style={{ '--band-color': region.swatch } as React.CSSProperties}
-                  onClick={() => {
-                    haptic(6);
-                    setGradingRegion(region.id);
-                  }}
-                  aria-pressed={gradingRegion === region.id}
-                >
-                  <span className="cx-hswatch" />
-                  {t(region.labelKey)}
-                </button>
-              ))}
-            </div>
+          {/* UX-排版（v2.1.25）：AI 追色独立子分区——样片拾取 / 聚合模式 /
+              双载体结果卡从分级调色中解耦，分级调色回归「选区 + 滑杆」的
+              纯手工调色流，区块语义与滚动锚点更清晰 */}
+          <CxSubSection labelKey="adjustments.color.colorMatch">
             <button
               className="cx-ai-apply mb-2 w-full"
               style={{ width: '100%' }}
@@ -860,6 +846,26 @@ function TonePanel() {
                 )}
               </div>
             )}
+          </CxSubSection>
+
+          <CxSubSection labelKey="adjustments.color.colorGrading">
+            <div className="cx-hsl-bands">
+              {GRADING_REGIONS.map((region) => (
+                <button
+                  key={region.id}
+                  className={`cx-hsl-band${gradingRegion === region.id ? ' active' : ''}`}
+                  style={{ '--band-color': region.swatch } as React.CSSProperties}
+                  onClick={() => {
+                    haptic(6);
+                    setGradingRegion(region.id);
+                  }}
+                  aria-pressed={gradingRegion === region.id}
+                >
+                  <span className="cx-hswatch" />
+                  {t(region.labelKey)}
+                </button>
+              ))}
+            </div>
             <CxSliderRow
               label={t('crystal.tone.hslHue')}
               min={0}
@@ -1698,46 +1704,51 @@ function PortraitPanel() {
         />
       )}
 
-      <CxSliderRow
-        label={t('crystal.portrait.softSkin')}
-        min={0}
-        max={100}
-        step={1}
-        value={Number(adjustments.lumaNoiseReduction ?? 0)}
-        onChange={(v) => applyPatch({ lumaNoiseReduction: v })}
-      />
-      <CxSliderRow
-        label={t('crystal.portrait.contour')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.structure ?? 0)}
-        onChange={(v) => applyPatch({ structure: v })}
-      />
-      <CxSliderRow
-        label={t('crystal.portrait.clarity')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.clarity ?? 0)}
-        onChange={(v) => applyPatch({ clarity: v })}
-      />
-      <CxSliderRow
-        label={t('crystal.portrait.warmth')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.temperature ?? 0)}
-        onChange={(v) => applyPatch({ temperature: v })}
-      />
-      <CxSliderRow
-        label={t('crystal.portrait.glow')}
-        min={0}
-        max={100}
-        step={1}
-        value={Number(adjustments.glowAmount ?? 0)}
-        onChange={(v) => applyPatch({ glowAmount: v })}
-      />
+      {/* UX-排版（v2.1.25）：全局精修滑杆归组——此前 5 条滑杆无标题裸排在
+          美型区块之后，层级不清；归入「全局精修」子分区（全图作用域，
+          与上方蒙版作用域的算子/美型形成对照） */}
+      <CxSubSection labelKey="crystal.portrait.refine">
+        <CxSliderRow
+          label={t('crystal.portrait.softSkin')}
+          min={0}
+          max={100}
+          step={1}
+          value={Number(adjustments.lumaNoiseReduction ?? 0)}
+          onChange={(v) => applyPatch({ lumaNoiseReduction: v })}
+        />
+        <CxSliderRow
+          label={t('crystal.portrait.contour')}
+          min={-100}
+          max={100}
+          step={1}
+          value={Number(adjustments.structure ?? 0)}
+          onChange={(v) => applyPatch({ structure: v })}
+        />
+        <CxSliderRow
+          label={t('crystal.portrait.clarity')}
+          min={-100}
+          max={100}
+          step={1}
+          value={Number(adjustments.clarity ?? 0)}
+          onChange={(v) => applyPatch({ clarity: v })}
+        />
+        <CxSliderRow
+          label={t('crystal.portrait.warmth')}
+          min={-100}
+          max={100}
+          step={1}
+          value={Number(adjustments.temperature ?? 0)}
+          onChange={(v) => applyPatch({ temperature: v })}
+        />
+        <CxSliderRow
+          label={t('crystal.portrait.glow')}
+          min={0}
+          max={100}
+          step={1}
+          value={Number(adjustments.glowAmount ?? 0)}
+          onChange={(v) => applyPatch({ glowAmount: v })}
+        />
+      </CxSubSection>
     </PanelShell>
   );
 }
@@ -1860,7 +1871,8 @@ function ComposePanel() {
 
   return (
     <PanelShell titleKey="crystal.categories.compose" icon={Crop}>
-      <div className="cx-chip-row mb-3">
+      {/* UX-排版（v2.1.25）：比例宫格 3 列等宽——比例不再折行拥挤，触点更大 */}
+      <div className="cx-aspect-grid">
         {ASPECT_CHIPS.map(({ labelKey, value }) => (
           <button
             key={labelKey}
@@ -1874,158 +1886,160 @@ function ComposePanel() {
           </button>
         ))}
       </div>
-      <div className="flex flex-wrap gap-8 mb-1" style={{ color: 'var(--cx-muted)' }}>
+      {/* 几何动作横滑单行（原 flex-wrap gap-8 折行两行、间距失控） */}
+      <div className="cx-subtabs mb-2">
         <button
-          className="cx-chip"
+          className="cx-subtab"
           onClick={() => {
             haptic(6);
             rotate90();
           }}
         >
-          <RotateCw size={14} className="inline mr-1 -mt-0.5" />
+          <RotateCw size={14} />
           {t('crystal.compose.rotate90')}
         </button>
         <button
-          className={`cx-chip ${adjustments.flipHorizontal ? 'is-active' : ''}`}
+          className={`cx-subtab ${adjustments.flipHorizontal ? 'is-active' : ''}`}
           onClick={() => {
             haptic(6);
             applyPatch({ flipHorizontal: !adjustments.flipHorizontal }, { enableTools: false });
           }}
         >
-          <FlipHorizontal size={14} className="inline mr-1 -mt-0.5" />
+          <FlipHorizontal size={14} />
           {t('crystal.compose.flipH')}
         </button>
         <button
-          className={`cx-chip ${adjustments.flipVertical ? 'is-active' : ''}`}
+          className={`cx-subtab ${adjustments.flipVertical ? 'is-active' : ''}`}
           onClick={() => {
             haptic(6);
             applyPatch({ flipVertical: !adjustments.flipVertical }, { enableTools: false });
           }}
         >
-          <FlipVertical size={14} className="inline mr-1 -mt-0.5" />
+          <FlipVertical size={14} />
           {t('crystal.compose.flipV')}
         </button>
         {/* 自动拉直：与桌面旋转区同链路（CalculateAutoStraighten + 面积保持裁剪） */}
         <button
-          className="cx-chip"
+          className="cx-subtab"
           disabled={isAutoStraightening}
           onClick={() => {
             haptic(6);
             void handleAutoStraighten();
           }}
         >
-          {isAutoStraightening ? (
-            <Loader2 size={14} className="inline mr-1 -mt-0.5 animate-spin" />
-          ) : (
-            <ScanLine size={14} className="inline mr-1 -mt-0.5" />
-          )}
+          {isAutoStraightening ? <Loader2 size={14} className="animate-spin" /> : <ScanLine size={14} />}
           {t('contextMenus.editor.autoStraighten')}
         </button>
         {/* 自动镜头校正：与桌面工具栏同链路（EXIF → 镜头档案 → ApplyAutoLensCorrectionToPaths） */}
         <button
-          className="cx-chip"
+          className="cx-subtab"
           onClick={() => {
             haptic(6);
             handleAutoLensCorrection();
           }}
         >
-          <Aperture size={14} className="inline mr-1 -mt-0.5" />
+          <Aperture size={14} />
           {t('contextMenus.editor.autoLensCorrection')}
         </button>
         {/* 沉浸裁剪：转交壳层浮层（比例 chips/取消/重置/确认）与预览手柄手势；
             store.enter 自带 active 防重入，此处再按 active 置灰避免重复触发 */}
         <button
-          className="cx-chip"
+          className="cx-subtab"
           disabled={immersiveCropActive}
           onClick={() => {
             haptic(6);
             useImmersiveCropStore.getState().enter();
           }}
         >
-          <Maximize2 size={14} className="inline mr-1 -mt-0.5" />
+          <Maximize2 size={14} />
           {t(COMPOSE_IMMERSIVE_KEY)}
         </button>
       </div>
-      <CxSliderRow
-        label={t('crystal.compose.straighten')}
-        min={-45}
-        max={45}
-        step={0.5}
-        value={Number(adjustments.rotation ?? 0)}
-        defaultValue={0}
-        onChange={setRotation}
-      />
-      <CxSliderRow
-        label={t('crystal.compose.perspectiveV')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.transformVertical ?? 0)}
-        onChange={(v) => applyPatch({ transformVertical: v }, { enableTools: false })}
-      />
-      <CxSliderRow
-        label={t('crystal.compose.perspectiveH')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.transformHorizontal ?? 0)}
-        onChange={(v) => applyPatch({ transformHorizontal: v }, { enableTools: false })}
-      />
+      {/* UX-排版：透视 / 几何变换分组呈现（复用桌面变换弹窗文案键） */}
+      <CxSubSection labelKey="modals.transform.perspective">
+        <CxSliderRow
+          label={t('crystal.compose.straighten')}
+          min={-45}
+          max={45}
+          step={0.5}
+          value={Number(adjustments.rotation ?? 0)}
+          defaultValue={0}
+          onChange={setRotation}
+        />
+        <CxSliderRow
+          label={t('crystal.compose.perspectiveV')}
+          min={-100}
+          max={100}
+          step={1}
+          value={Number(adjustments.transformVertical ?? 0)}
+          onChange={(v) => applyPatch({ transformVertical: v }, { enableTools: false })}
+        />
+        <CxSliderRow
+          label={t('crystal.compose.perspectiveH')}
+          min={-100}
+          max={100}
+          step={1}
+          value={Number(adjustments.transformHorizontal ?? 0)}
+          onChange={(v) => applyPatch({ transformHorizontal: v }, { enableTools: false })}
+        />
+      </CxSubSection>
       {/* 几何变换（与桌面 modals.transform 滑杆组同范围/同默认值） */}
-      <CxSliderRow
-        label={t('modals.transform.distortion')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.transformDistortion ?? 0)}
-        defaultValue={0}
-        onChange={(v) => applyPatch({ transformDistortion: v }, { enableTools: false })}
-      />
-      <CxSliderRow
-        label={t('modals.transform.rotate')}
-        min={-45}
-        max={45}
-        step={0.1}
-        value={Number(adjustments.transformRotate ?? 0)}
-        defaultValue={0}
-        onChange={(v) => applyPatch({ transformRotate: v }, { enableTools: false })}
-      />
-      <CxSliderRow
-        label={t('modals.transform.aspect')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.transformAspect ?? 0)}
-        defaultValue={0}
-        onChange={(v) => applyPatch({ transformAspect: v }, { enableTools: false })}
-      />
-      <CxSliderRow
-        label={t('modals.transform.scale')}
-        min={50}
-        max={150}
-        step={1}
-        value={Number(adjustments.transformScale ?? 100)}
-        defaultValue={100}
-        onChange={(v) => applyPatch({ transformScale: v }, { enableTools: false })}
-      />
-      <CxSliderRow
-        label={t('modals.transform.xAxis')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.transformXOffset ?? 0)}
-        defaultValue={0}
-        onChange={(v) => applyPatch({ transformXOffset: v }, { enableTools: false })}
-      />
-      <CxSliderRow
-        label={t('modals.transform.yAxis')}
-        min={-100}
-        max={100}
-        step={1}
-        value={Number(adjustments.transformYOffset ?? 0)}
-        defaultValue={0}
-        onChange={(v) => applyPatch({ transformYOffset: v }, { enableTools: false })}
-      />
+      <CxSubSection labelKey="modals.transform.geometry">
+        <CxSliderRow
+          label={t('modals.transform.distortion')}
+          min={-100}
+          max={100}
+          step={1}
+          value={Number(adjustments.transformDistortion ?? 0)}
+          defaultValue={0}
+          onChange={(v) => applyPatch({ transformDistortion: v }, { enableTools: false })}
+        />
+        <CxSliderRow
+          label={t('modals.transform.rotate')}
+          min={-45}
+          max={45}
+          step={0.1}
+          value={Number(adjustments.transformRotate ?? 0)}
+          defaultValue={0}
+          onChange={(v) => applyPatch({ transformRotate: v }, { enableTools: false })}
+        />
+        <CxSliderRow
+          label={t('modals.transform.aspect')}
+          min={-100}
+          max={100}
+          step={1}
+          value={Number(adjustments.transformAspect ?? 0)}
+          defaultValue={0}
+          onChange={(v) => applyPatch({ transformAspect: v }, { enableTools: false })}
+        />
+        <CxSliderRow
+          label={t('modals.transform.scale')}
+          min={50}
+          max={150}
+          step={1}
+          value={Number(adjustments.transformScale ?? 100)}
+          defaultValue={100}
+          onChange={(v) => applyPatch({ transformScale: v }, { enableTools: false })}
+        />
+        <CxSliderRow
+          label={t('modals.transform.xAxis')}
+          min={-100}
+          max={100}
+          step={1}
+          value={Number(adjustments.transformXOffset ?? 0)}
+          defaultValue={0}
+          onChange={(v) => applyPatch({ transformXOffset: v }, { enableTools: false })}
+        />
+        <CxSliderRow
+          label={t('modals.transform.yAxis')}
+          min={-100}
+          max={100}
+          step={1}
+          value={Number(adjustments.transformYOffset ?? 0)}
+          defaultValue={0}
+          onChange={(v) => applyPatch({ transformYOffset: v }, { enableTools: false })}
+        />
+      </CxSubSection>
       <button
         className="cx-mask-remove mt-2 w-full"
         onClick={() => {

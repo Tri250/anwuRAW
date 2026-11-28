@@ -1251,10 +1251,12 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
 
       {mode === 'presets' && <AiRecommendCard />}
 
+      {/* UX-排版（v2.1.25）：分组导航改横滑单行——文件夹多时不再折行挤占
+          纵向空间（面板为定高滚动区），单行滚动为移动端标准交互 */}
       {mode === 'presets' && namedGroups.length > 0 && (
-        <div className="cx-chip-row mt-3">
+        <div className="cx-subtabs mt-3">
           <button
-            className={`cx-chip ${selectedGroup === null ? 'is-active' : ''}`}
+            className={`cx-subtab ${selectedGroup === null ? 'is-active' : ''}`}
             onClick={() => {
               haptic(6);
               setSelectedGroup(null);
@@ -1265,7 +1267,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
           {namedGroups.map((g) => (
             <button
               key={g.name}
-              className={`cx-chip ${selectedGroup === g.name ? 'is-active' : ''}`}
+              className={`cx-subtab ${selectedGroup === g.name ? 'is-active' : ''}`}
               onClick={() => {
                 haptic(6);
                 setSelectedGroup(g.name);
@@ -1277,11 +1279,11 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
         </div>
       )}
 
-      {/* §3.2 滤镜子标签：全部/风景/人像/胶片/黑白 */}
+      {/* §3.2 滤镜子标签：全部/风景/人像/胶片/黑白（横滑单行） */}
       {mode === 'filter' && (
-        <div className="cx-chip-row mt-3">
+        <div className="cx-subtabs mt-3">
           <button
-            className={`cx-chip ${selectedGroup === null ? 'is-active' : ''}`}
+            className={`cx-subtab ${selectedGroup === null ? 'is-active' : ''}`}
             onClick={() => {
               haptic(6);
               setSelectedGroup(null);
@@ -1292,7 +1294,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
           {FILTER_GROUPS.map((g) => (
             <button
               key={g.id}
-              className={`cx-chip ${selectedGroup === g.id ? 'is-active' : ''}`}
+              className={`cx-subtab ${selectedGroup === g.id ? 'is-active' : ''}`}
               onClick={() => {
                 haptic(6);
                 setSelectedGroup(g.id);
@@ -1307,9 +1309,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
       {/* D-FL-03：滤镜收藏 / 最近使用置顶分组（跟随机子标签过滤，空组不显示） */}
       {mode === 'filter' && favoritePinned.length > 0 && (
         <div className="mt-3">
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--cx-muted)', margin: '0 2px 6px' }}>
-            {t('crystal.presets.favorites' as ParseKeys)}
-          </div>
+          <div className="cx-group-label">{t('crystal.presets.favorites' as ParseKeys)}</div>
           <div className="cx-hstrip">
             {favoritePinned.map((source) => (
               <SourceThumbCard
@@ -1330,9 +1330,7 @@ export default function CrystalPresetsPanel({ mode }: { mode: PanelMode }) {
       )}
       {mode === 'filter' && recentPinned.length > 0 && (
         <div className="mt-3">
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--cx-muted)', margin: '0 2px 6px' }}>
-            {t('crystal.presets.recent' as ParseKeys)}
-          </div>
+          <div className="cx-group-label">{t('crystal.presets.recent' as ParseKeys)}</div>
           <div className="cx-hstrip">
             {recentPinned.map((source) => (
               <SourceThumbCard

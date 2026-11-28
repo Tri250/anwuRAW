@@ -25,7 +25,14 @@ import { Invokes } from '../ui/AppProperties';
 import { Mask } from '../panel/right/Masks';
 import { useEditorActions } from '../../hooks/useEditorActions';
 import { useAiMasking } from '../../hooks/useAiMasking';
-import { CxSliderRow, awaitImageReady, haptic, useCrystalAdjust, useCrystalAiMasks } from './crystalShared';
+import {
+  CxSliderRow,
+  CxSubSection,
+  awaitImageReady,
+  haptic,
+  useCrystalAdjust,
+  useCrystalAiMasks,
+} from './crystalShared';
 
 /* ---------------------------------------------------------------------------
  * Crystal AI 工具面板：全部为真实管线能力。
@@ -748,7 +755,9 @@ export default function CrystalAiToolsPanel() {
             />
           </div>
 
-          <div className="cx-grid-tiles mb-2">
+          {/* UX-排版（v2.1.25）：9 个工具格改 3 列宫格——奇数格不再尾行孤卡，
+              每格更宽、触控目标更大（人像 4 键面板仍走默认 4 列） */}
+          <div className="cx-grid-tiles cx-grid-tiles-3 mb-2">
             {tiles.map(({ id, label, icon: Icon, color, source, onClick, active, busy: isBusy }) => {
               const badge = AI_SOURCE_BADGES[source];
               const badgeText = tKey(badge.badgeKey);
@@ -947,226 +956,246 @@ export default function CrystalAiToolsPanel() {
             </div>
           )}
 
-          {skyReady && (
-            <>
-              <CxSliderRow
-                label={t('crystal.ai.skyStrength')}
-                min={0}
-                max={100}
-                step={1}
-                defaultValue={50}
-                value={Math.max(0, Math.min(100, skyStrength))}
-                onChange={(v) =>
-                  skyContainer &&
-                  setMaskAdjustments(skyContainer.id, {
-                    clarity: Math.round(v * 0.2),
-                    dehaze: Math.round(v * 0.15),
-                    saturation: Math.round(v * 0.1),
-                  })
-                }
-              />
-              <button
-                className="cx-mask-remove"
-                onClick={() => {
-                  haptic(6);
-                  removeContainer(Mask.AiSky);
-                }}
-              >
-                <X size={11} />
-                {t('crystal.ai.removeMask')}
-              </button>
-            </>
-          )}
-          {subjectReady && (
-            <>
-              <CxSliderRow
-                label={t('crystal.ai.subjectStrength')}
-                min={0}
-                max={100}
-                step={1}
-                defaultValue={50}
-                value={Math.max(0, Math.min(100, subjectStrength))}
-                onChange={(v) =>
-                  subjectContainer && setMaskAdjustments(subjectContainer.id, { clarity: Math.round(v * 0.2) })
-                }
-              />
-              <button
-                className="cx-mask-remove"
-                onClick={() => {
-                  haptic(6);
-                  removeContainer(Mask.AiForeground);
-                }}
-              >
-                <X size={11} />
-                {t('crystal.ai.removeMask')}
-              </button>
-            </>
-          )}
-          {textReady && (
-            <>
-              <CxSliderRow
-                label={t('crystal.ai.textStrength')}
-                min={0}
-                max={100}
-                step={1}
-                defaultValue={50}
-                value={Math.max(0, Math.min(100, textStrength))}
-                onChange={(v) =>
-                  textContainer && setMaskAdjustments(textContainer.id, { clarity: Math.round(v * 0.2) })
-                }
-              />
-              <button
-                className="cx-mask-remove"
-                onClick={() => {
-                  haptic(6);
-                  removeContainer(Mask.AiText);
-                }}
-              >
-                <X size={11} />
-                {t('crystal.ai.removeMask')}
-              </button>
-            </>
-          )}
-          {depthReady && (
-            <>
-              {/* 死代码激活：深度强度（容器级 clarity ×0.2，反读与天空/主体/文本一致）。
+          {/* UX-排版（v2.1.25）：识别蒙版强度归组——天空/主体/文本/景深四组
+              强度滑杆 + 移除键此前裸排在结果卡之后，归入「AI 选择」子分区
+              （复用桌面 masks 标题键），与下方降噪/细节分区形成清晰层级 */}
+          {(skyReady || subjectReady || textReady || depthReady) && (
+            <CxSubSection labelKey="editor.masks.aiTitle">
+              {skyReady && (
+                <>
+                  <CxSliderRow
+                    label={t('crystal.ai.skyStrength')}
+                    min={0}
+                    max={100}
+                    step={1}
+                    defaultValue={50}
+                    value={Math.max(0, Math.min(100, skyStrength))}
+                    onChange={(v) =>
+                      skyContainer &&
+                      setMaskAdjustments(skyContainer.id, {
+                        clarity: Math.round(v * 0.2),
+                        dehaze: Math.round(v * 0.15),
+                        saturation: Math.round(v * 0.1),
+                      })
+                    }
+                  />
+                  <button
+                    className="cx-mask-remove"
+                    onClick={() => {
+                      haptic(6);
+                      removeContainer(Mask.AiSky);
+                    }}
+                  >
+                    <X size={11} />
+                    {t('crystal.ai.removeMask')}
+                  </button>
+                </>
+              )}
+              {subjectReady && (
+                <>
+                  <CxSliderRow
+                    label={t('crystal.ai.subjectStrength')}
+                    min={0}
+                    max={100}
+                    step={1}
+                    defaultValue={50}
+                    value={Math.max(0, Math.min(100, subjectStrength))}
+                    onChange={(v) =>
+                      subjectContainer && setMaskAdjustments(subjectContainer.id, { clarity: Math.round(v * 0.2) })
+                    }
+                  />
+                  <button
+                    className="cx-mask-remove"
+                    onClick={() => {
+                      haptic(6);
+                      removeContainer(Mask.AiForeground);
+                    }}
+                  >
+                    <X size={11} />
+                    {t('crystal.ai.removeMask')}
+                  </button>
+                </>
+              )}
+              {textReady && (
+                <>
+                  <CxSliderRow
+                    label={t('crystal.ai.textStrength')}
+                    min={0}
+                    max={100}
+                    step={1}
+                    defaultValue={50}
+                    value={Math.max(0, Math.min(100, textStrength))}
+                    onChange={(v) =>
+                      textContainer && setMaskAdjustments(textContainer.id, { clarity: Math.round(v * 0.2) })
+                    }
+                  />
+                  <button
+                    className="cx-mask-remove"
+                    onClick={() => {
+                      haptic(6);
+                      removeContainer(Mask.AiText);
+                    }}
+                  >
+                    <X size={11} />
+                    {t('crystal.ai.removeMask')}
+                  </button>
+                </>
+              )}
+              {depthReady && (
+                <>
+                  {/* 死代码激活：深度强度（容器级 clarity ×0.2，反读与天空/主体/文本一致）。
                   遮罩内默认 clarity:10 由 runDepth 首识别后写入。 */}
-              <CxSliderRow
-                label={t('crystal.ai.depthStrength')}
-                min={0}
-                max={100}
-                step={1}
-                defaultValue={50}
-                value={Math.max(0, Math.min(100, Math.round(Number(depthContainer?.adjustments.clarity ?? 0) / 0.2)))}
-                onChange={(v) =>
-                  depthContainer && setMaskAdjustments(depthContainer.id, { clarity: Math.round(v * 0.2) })
-                }
-              />
-              {/* 与桌面 DepthRangePicker 同构：近端显示值 = 100 - maxDepth，
+                  <CxSliderRow
+                    label={t('crystal.ai.depthStrength')}
+                    min={0}
+                    max={100}
+                    step={1}
+                    defaultValue={50}
+                    value={Math.max(
+                      0,
+                      Math.min(100, Math.round(Number(depthContainer?.adjustments.clarity ?? 0) / 0.2)),
+                    )}
+                    onChange={(v) =>
+                      depthContainer && setMaskAdjustments(depthContainer.id, { clarity: Math.round(v * 0.2) })
+                    }
+                  />
+                  {/* 与桌面 DepthRangePicker 同构：近端显示值 = 100 - maxDepth，
                   远端显示值 = 100 - minDepth，双向钳制保证带通区间有效。
                   审计修复：钳制边界从 store 实时读取，防止快速拖动时闭包旧值
                   导致近/远端互相穿越（minDepth > maxDepth）。 */}
-              <CxSliderRow
-                label={t('editor.masks.depthRange.near')}
-                min={0}
-                max={100}
-                step={1}
-                defaultValue={20}
-                value={Math.max(0, Math.min(100, 100 - depthMaxDepth))}
-                onChange={(v) => {
-                  if (!depthContainer) return;
-                  const fresh = useEditorStore.getState().adjustments.masks?.find((c) => c.id === depthContainer.id);
-                  const minDepth = Number(fresh?.subMasks[0]?.parameters?.minDepth ?? DEPTH_DEFAULTS.minDepth);
-                  updateSubMaskParameters(depthContainer.id, depthContainer.subMasks[0].id, {
-                    maxDepth: Math.max(100 - v, minDepth),
-                  });
-                }}
-              />
-              <CxSliderRow
-                label={t('editor.masks.depthRange.far')}
-                min={0}
-                max={100}
-                step={1}
-                defaultValue={80}
-                value={Math.max(0, Math.min(100, 100 - depthMinDepth))}
-                onChange={(v) => {
-                  if (!depthContainer) return;
-                  const fresh = useEditorStore.getState().adjustments.masks?.find((c) => c.id === depthContainer.id);
-                  const maxDepth = Number(fresh?.subMasks[0]?.parameters?.maxDepth ?? DEPTH_DEFAULTS.maxDepth);
-                  updateSubMaskParameters(depthContainer.id, depthContainer.subMasks[0].id, {
-                    minDepth: Math.min(100 - v, maxDepth),
-                  });
-                }}
-              />
-              <CxSliderRow
-                label={t('editor.masks.params.globalFeather')}
-                min={0}
-                max={100}
-                step={1}
-                defaultValue={10}
-                value={Math.max(0, Math.min(100, depthFeather))}
-                onChange={(v) =>
-                  depthContainer &&
-                  updateSubMaskParameters(depthContainer.id, depthContainer.subMasks[0].id, { feather: v })
-                }
-              />
-              <button
-                className="cx-mask-remove"
-                onClick={() => {
-                  haptic(6);
-                  removeContainer(Mask.AiDepth);
-                }}
-              >
-                <X size={11} />
-                {t('crystal.ai.removeMask')}
-              </button>
-            </>
+                  <CxSliderRow
+                    label={t('editor.masks.depthRange.near')}
+                    min={0}
+                    max={100}
+                    step={1}
+                    defaultValue={20}
+                    value={Math.max(0, Math.min(100, 100 - depthMaxDepth))}
+                    onChange={(v) => {
+                      if (!depthContainer) return;
+                      const fresh = useEditorStore
+                        .getState()
+                        .adjustments.masks?.find((c) => c.id === depthContainer.id);
+                      const minDepth = Number(fresh?.subMasks[0]?.parameters?.minDepth ?? DEPTH_DEFAULTS.minDepth);
+                      updateSubMaskParameters(depthContainer.id, depthContainer.subMasks[0].id, {
+                        maxDepth: Math.max(100 - v, minDepth),
+                      });
+                    }}
+                  />
+                  <CxSliderRow
+                    label={t('editor.masks.depthRange.far')}
+                    min={0}
+                    max={100}
+                    step={1}
+                    defaultValue={80}
+                    value={Math.max(0, Math.min(100, 100 - depthMinDepth))}
+                    onChange={(v) => {
+                      if (!depthContainer) return;
+                      const fresh = useEditorStore
+                        .getState()
+                        .adjustments.masks?.find((c) => c.id === depthContainer.id);
+                      const maxDepth = Number(fresh?.subMasks[0]?.parameters?.maxDepth ?? DEPTH_DEFAULTS.maxDepth);
+                      updateSubMaskParameters(depthContainer.id, depthContainer.subMasks[0].id, {
+                        minDepth: Math.min(100 - v, maxDepth),
+                      });
+                    }}
+                  />
+                  <CxSliderRow
+                    label={t('editor.masks.params.globalFeather')}
+                    min={0}
+                    max={100}
+                    step={1}
+                    defaultValue={10}
+                    value={Math.max(0, Math.min(100, depthFeather))}
+                    onChange={(v) =>
+                      depthContainer &&
+                      updateSubMaskParameters(depthContainer.id, depthContainer.subMasks[0].id, { feather: v })
+                    }
+                  />
+                  <button
+                    className="cx-mask-remove"
+                    onClick={() => {
+                      haptic(6);
+                      removeContainer(Mask.AiDepth);
+                    }}
+                  >
+                    <X size={11} />
+                    {t('crystal.ai.removeMask')}
+                  </button>
+                </>
+              )}
+            </CxSubSection>
           )}
 
           {denoiseOn && (
             <>
-              <CxSliderRow
-                label={t('crystal.ai.denoiseAmount')}
-                min={0}
-                max={100}
-                step={1}
-                defaultValue={100}
-                /* 自检修复（AI 降噪强度）：后端缺省按 100% 应用（ai_denoise.rs
-                 * unwrap_or(100)），桌面 Details.tsx 显示 ?? 100；移动端此前 ?? 0
-                 * 导致开启降噪后滑杆显示 0、实际满强度，拖动方向感知完全颠倒。 */
-                value={Number(adjustments.aiDenoiseAmount ?? 100)}
-                onChange={(v) => applyPatch({ aiDenoiseAmount: v })}
-              />
-              <CxSliderRow
-                label={t('crystal.ai.denoiseDetail')}
-                min={0}
-                max={100}
-                step={1}
-                value={Number(adjustments.aiDenoiseDetail ?? 0)}
-                onChange={(v) => applyPatch({ aiDenoiseDetail: v })}
-              />
+              <CxSubSection labelKey="adjustments.details.aiDenoise">
+                <CxSliderRow
+                  label={t('crystal.ai.denoiseAmount')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  defaultValue={100}
+                  /* 自检修复（AI 降噪强度）：后端缺省按 100% 应用（ai_denoise.rs
+                   * unwrap_or(100)），桌面 Details.tsx 显示 ?? 100；移动端此前 ?? 0
+                   * 导致开启降噪后滑杆显示 0、实际满强度，拖动方向感知完全颠倒。 */
+                  value={Number(adjustments.aiDenoiseAmount ?? 100)}
+                  onChange={(v) => applyPatch({ aiDenoiseAmount: v })}
+                />
+                <CxSliderRow
+                  label={t('crystal.ai.denoiseDetail')}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(adjustments.aiDenoiseDetail ?? 0)}
+                  onChange={(v) => applyPatch({ aiDenoiseDetail: v })}
+                />
+              </CxSubSection>
             </>
           )}
-          <CxSliderRow
-            label={t('crystal.ai.lumaNr')}
-            min={0}
-            max={100}
-            step={1}
-            value={Number(adjustments.lumaNoiseReduction ?? 0)}
-            onChange={(v) => applyPatch({ lumaNoiseReduction: v })}
-          />
-          <CxSliderRow
-            label={t('crystal.ai.structure')}
-            min={-100}
-            max={100}
-            step={1}
-            value={Number(adjustments.structure ?? 0)}
-            onChange={(v) => applyPatch({ structure: v })}
-          />
-          <CxSliderRow
-            label={t('crystal.ai.texture')}
-            min={-100}
-            max={100}
-            step={1}
-            value={Number(adjustments.textureAmount ?? 0)}
-            onChange={(v) => applyPatch({ textureAmount: v })}
-          />
-          <CxSliderRow
-            label={t('crystal.ai.clarity')}
-            min={-100}
-            max={100}
-            step={1}
-            value={Number(adjustments.clarity ?? 0)}
-            onChange={(v) => applyPatch({ clarity: v })}
-          />
-          <CxSliderRow
-            label={t('crystal.ai.dehaze')}
-            min={-100}
-            max={100}
-            step={1}
-            value={Number(adjustments.dehaze ?? 0)}
-            onChange={(v) => applyPatch({ dehaze: v })}
-          />
+          {/* UX-排版：细节滑杆归组（灰度降噪/结构/纹理/清晰度/去雾），
+              此前裸排在降噪之后无标题 */}
+          <CxSubSection labelKey="crystal.ai.detailGroup">
+            <CxSliderRow
+              label={t('crystal.ai.lumaNr')}
+              min={0}
+              max={100}
+              step={1}
+              value={Number(adjustments.lumaNoiseReduction ?? 0)}
+              onChange={(v) => applyPatch({ lumaNoiseReduction: v })}
+            />
+            <CxSliderRow
+              label={t('crystal.ai.structure')}
+              min={-100}
+              max={100}
+              step={1}
+              value={Number(adjustments.structure ?? 0)}
+              onChange={(v) => applyPatch({ structure: v })}
+            />
+            <CxSliderRow
+              label={t('crystal.ai.texture')}
+              min={-100}
+              max={100}
+              step={1}
+              value={Number(adjustments.textureAmount ?? 0)}
+              onChange={(v) => applyPatch({ textureAmount: v })}
+            />
+            <CxSliderRow
+              label={t('crystal.ai.clarity')}
+              min={-100}
+              max={100}
+              step={1}
+              value={Number(adjustments.clarity ?? 0)}
+              onChange={(v) => applyPatch({ clarity: v })}
+            />
+            <CxSliderRow
+              label={t('crystal.ai.dehaze')}
+              min={-100}
+              max={100}
+              step={1}
+              value={Number(adjustments.dehaze ?? 0)}
+              onChange={(v) => applyPatch({ dehaze: v })}
+            />
+          </CxSubSection>
         </div>
         {busy && (
           <div className="cx-busy-overlay" role="status" style={{ flexDirection: 'column', gap: 10 }}>
